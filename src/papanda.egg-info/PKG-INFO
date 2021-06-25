@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: papanda
+Version: 0.0.1a1
+Summary: A small example package
+Home-page: https://github.com/Ruslan-Nazarov/papanda
+Author: Ruslan Nazarov
+Author-email: runaz2007@gmail.com
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/Ruslan-Nazarov/papanda/issues
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+# papanda
+
+This is the package for detecting outliers in data.
+

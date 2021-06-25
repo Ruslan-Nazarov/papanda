@@ -1,0 +1,11 @@
+LICENSE.txt
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+src/papanda/__init__.py
+src/papanda/one_dimensional_data.py
+src/papanda.egg-info/PKG-INFO
+src/papanda.egg-info/SOURCES.txt
+src/papanda.egg-info/dependency_links.txt
+src/papanda.egg-info/top_level.txt
