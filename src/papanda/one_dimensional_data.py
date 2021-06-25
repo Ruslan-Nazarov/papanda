@@ -23,7 +23,9 @@ r: control statistics
 l: critical valu
 
 """
-
+import numpy as np
+import pandas as pd
+import scipy.stats
 
 def GESD(data, max_outliers, alpha=0.05):
 
