@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="papanda",
-    version="0.0.1a4",
+    version="0.0.1a1",
     author="Ruslan Nazarov",
     author_email="runaz2007@gmail.com",
     description="A small example package",
