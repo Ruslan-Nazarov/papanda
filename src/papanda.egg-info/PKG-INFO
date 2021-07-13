@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: papanda
-Version: 0.0.1a1
+Version: 0.0.1a4
 Summary: A small example package
 Home-page: https://github.com/Ruslan-Nazarov/papanda
 Author: Ruslan Nazarov
@@ -17,5 +17,5 @@ License-File: LICENSE.txt
 
 # papanda
 
-This is the package for detecting outliers in data.
+Useful tools for statistical data exploration.
 

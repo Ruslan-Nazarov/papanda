@@ -1,0 +1,4 @@
+# Add datasets .xlsx files
+include papanda/datasets/cochran.xlsx
+include papanda/datasets/coef.xlsx
+include papanda/datasets/greenwood_1.xlsx

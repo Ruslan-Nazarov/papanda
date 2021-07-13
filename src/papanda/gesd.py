@@ -1,10 +1,20 @@
+# July 2021
+import numpy as np
+import pandas as pd
+import scipy.stats
+import math
+
 """
-GESD test for detecting outliers
+Conducts GESD test for detecting outliers
+
+See details https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h3.htm
+
+Complaint ISO 16269-4:2010
 
 Parameters
 ____________
 
-data: list.
+data: array_like.
 
 alpha: significance level, optional
     Default is 0.05.
@@ -14,20 +24,29 @@ max_outliers: int
 Returns
 ____________
 
-DataFrame
+data_without_out: DataFrame
+
+Example
+____________
+
+See example in func_examples.ipynb github
 
 Notes
 ____________
 
 r: control statistics
-l: critical valu
+l: critical value
 
+1) The data should be approximately normally distributed. 
+2) It is necessary to establish the expected number of outliers
+on the normal distribution schedule. 
+3) max_outliers must be greater than 1
 """
-import numpy as np
-import pandas as pd
-import scipy.stats
 
-def GESD(data, max_outliers, alpha=0.05):
+def GESD(data, alpha, max_outliers):
+    """
+    Compute control statistics.
+    """
 
     def test_stat(data):
         mean = np.mean(data)
@@ -41,7 +60,9 @@ def GESD(data, max_outliers, alpha=0.05):
         r = round((max_difference / np.std(data, dtype=np.float32, ddof=1)), 4)
         return r, max_ind
 
-
+    """
+    Compute critical value
+    """
     def critical_value(data, alpha):
         p = (1 - alpha/2)**(1 / (len(data) - 0))
         t = scipy.stats.t.ppf(p, len(data))

@@ -1,10 +1,15 @@
 LICENSE.txt
+MANIFEST.in
 README.md
 pyproject.toml
 setup.cfg
 setup.py
 src/papanda/__init__.py
-src/papanda/one_dimensional_data.py
+src/papanda/cochran_test.py
+src/papanda/gesd.py
+src/papanda/greenwood_criterion.py
+src/papanda/modified_boxplot.py
+src/papanda/trimmed_mean.py
 src/papanda.egg-info/PKG-INFO
 src/papanda.egg-info/SOURCES.txt
 src/papanda.egg-info/dependency_links.txt
