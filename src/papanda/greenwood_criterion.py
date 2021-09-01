@@ -1,13 +1,14 @@
-# July 2021
+# September 2021
 import numpy as np
 import pandas as pd
 import scipy.stats
 import math
+import pkgutil
 
 """
 Greenwood's criterion for detecting outliers in data.
 
-Complaint ISO 16269-4:2010
+Compliant ISO 16269-4:2010
 
 Parameters
 ____________
@@ -34,7 +35,8 @@ The sample must obey an exponential distribution. The table shows the values for
 """
 
 def greenwood(data, alpha=0.025):
-    table_criterion = pd.read_excel('greenwood_1.xlsx')
+    data_pac = pkgutil.get_data(__name__, "datasets/greenwood_1.xlsx")
+    table_criterion = pd.read_excel(data_pac)
     low = "low " + str(alpha)
     up = "up " + str(alpha)
     n = len(data)

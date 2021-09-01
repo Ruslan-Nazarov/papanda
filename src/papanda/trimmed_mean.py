@@ -3,13 +3,14 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 import math
+import pkgutil
 
 """
 Compute trimmed mean.
 
 See details https://en.wikipedia.org/wiki/Truncated_mean
 
-Complaint ISO 16269-4:2010
+Compliant ISO 16269-4:2010
 
 Parameters
 ____________

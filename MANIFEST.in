@@ -1,4 +1,6 @@
 # Add datasets .xlsx files
-include papanda/datasets/cochran.xlsx
-include papanda/datasets/coef.xlsx
-include papanda/datasets/greenwood_1.xlsx
+include src/papanda/datasets/cochran.xlsx
+include src/papanda/datasets/coef.xlsx
+include src/papanda/datasets/greenwood_1.xlsx
+
+recursive-include package *

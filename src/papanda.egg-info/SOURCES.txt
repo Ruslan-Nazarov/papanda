@@ -14,3 +14,6 @@ src/papanda.egg-info/PKG-INFO
 src/papanda.egg-info/SOURCES.txt
 src/papanda.egg-info/dependency_links.txt
 src/papanda.egg-info/top_level.txt
+src/papanda/datasets/cochran.xlsx
+src/papanda/datasets/coef.xlsx
+src/papanda/datasets/greenwood_1.xlsx

@@ -1,15 +1,16 @@
-# July 2021
+# September 2021
 import numpy as np
 import pandas as pd
 import scipy.stats
 import math
+import pkgutil
 
 """
 Modified boxplot where the lower and upper quarters are used.
 
 See details https://www.itl.nist.gov/div898/handbook/eda/section3/boxplot.htm
 
-Complaint ISO 16269-4:2010
+Compliant ISO 16269-4:2010
 
 Parameters
 ____________
@@ -56,7 +57,8 @@ def boxplot(data, alpha = 0.05):
         x_u = data_boxplot[int(n-i-1)]
     """
     """
-    coef = pd.read_excel('coef.xlsx')
+    data_pac = pkgutil.get_data(__name__, "datasets/coef.xlsx")
+    coef = pd.read_excel(data_pac)
     coef['a'] = coef['a'].astype('str')
     coef['mod'] = coef['mod'].astype('str')
     coef['mod'] = coef['mod'].astype('str')

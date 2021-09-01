@@ -9,7 +9,7 @@ Conducts GESD test for detecting outliers
 
 See details https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h3.htm
 
-Complaint ISO 16269-4:2010
+Compliant ISO 16269-4:2010
 
 Parameters
 ____________

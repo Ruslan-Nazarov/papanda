@@ -1,8 +1,9 @@
-# July 2021
+# September 2021
 import numpy as np
 import pandas as pd
 import scipy.stats
 import math
+import pkgutil
 
 """
 Cochran's test for detecting outliers in variances.
@@ -42,8 +43,9 @@ In this case, the variances themselves should be determined
 from observations in the amount from 2 to 10.
 """
 
-def cochran(data, n, alpha=0.05): 
-    cochran = pd.read_excel('cochran.xlsx')
+def cochran(data, n, alpha=0.05):
+    data_pac = pkgutil.get_data(__name__, "datasets/cochran.xlsx") 
+    cochran = pd.read_excel(data_pac)
     cochran = cochran.set_index(['alpha', 'p'])
     
     amount_variances = len(data) 

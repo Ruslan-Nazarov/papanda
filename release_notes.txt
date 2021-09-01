@@ -1,0 +1,17 @@
+Release notes 0.0.1a2
+
+Buglists:
+1) fixed errors in the docstring;
+2) fixed problems with access to tables for statistical tests;
+3) fixed errors in func_examples.ipynb.
+
+Release notes 0.0.1a3
+
+Buglists:
+1) fixed errors in setup.py and setup.cfg.
+
+Release notes 0.0.1a4
+
+Buglists:
+1) fixed errors in setup.py and setup.cfg.
+

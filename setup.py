@@ -5,10 +5,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="papanda",
-    version="0.0.1a1",
+    version="0.0.1a4",
     author="Ruslan Nazarov",
     author_email="runaz2007@gmail.com",
-    description="A small example package",
+    description="Useful tools for statistical data exploration and detecting outliers",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Ruslan-Nazarov/papanda",
@@ -22,5 +22,6 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
+    include_package_data=True,
     python_requires=">=3.8",
 )
