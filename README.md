@@ -1,4 +1,4 @@
-**[🇷🇺 Читать на русском](README.ru.md)** | [🇬🇧 English Version](README.md)
+**[🇷🇺 Читать на русском](README.ru.md)** | [EN English Version](README.md)
 <div align="center">
   <img src="app/static/logo.ico" alt="Papanda Logo" width="120" height="120">
   <h1>Papanda v0.5</h1>
