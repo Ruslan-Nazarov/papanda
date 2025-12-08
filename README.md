@@ -1,3 +1,4 @@
+**[🇷🇺 Читать на русском](README.ru.md)** | [🇬🇧 English Version](README.md)
 <div align="center">
   <img src="app/static/logo.ico" alt="Papanda Logo" width="120" height="120">
   <h1>Papanda v0.5</h1>
@@ -22,62 +23,58 @@
   </p>
   
   <p>
-    <i>Организация времени и мыслей. Отслеживание эффективности. Изучение языков.</i>
+    <i>Time and thought organization. Efficiency tracking. Language learning.</i>
   </p>
 </div>
 
 ---
 
-## 📖 О проекте
+## 📖 About the Project
 
-**Papanda** — это система управления ресурсами личности, объединяющая планирование, обучение и рефлексию в едином интерфейсе. 
+**Papanda** is a personal resource management system combining planning, learning, and reflection in a single interface.
 
-В отличие от популярных аналогов (Notion, Todoist), проект следует философии **локального хранения данных**. Вся информация хранится в локальной базе `SQLite`, обеспечивая полную приватность и долговечность данных.
+Unlike popular alternatives (Notion, Todoist), the project follows the philosophy of **local data storage**. All information is stored in a local `SQLite` database, ensuring complete privacy and data durability.
 
-### Ключевые особенности
-* **Матрица событий:** Единый таймлайн для прошлого (Хронология) и будущего (События).
-* **Монолитная архитектура:** Календарь, задачи, тренировка привычек и словарь связаны в единую экосистему.
-* **Стохастическое обучение:** Алгоритм интервальных повторений с вероятностной выборкой для изучения языков.
-
----
-
-## 📐 Архитектура интерфейса (3 Уровня)
-
-Приложение построено по принципу трехуровневой иерархии информации.
-
-### 1. Верхний
-Зона планирования будущего и удержания фокуса.
-* **Events:** Календарь событий. Важные (Important) события подсвечиваются за 7 дней.
-* **One Thing:** Метод концентрации на одной главной цели периода. One thing – это выбор одного дела, которое является самым важным для вас в ближайший длительный период. На этом деле нужно сосредоточиться. Replacement – это дело на замену One thing, когда вы утомились от одной задачи, для разнообразия.
-* **Wink:** Механизм "мягкого" формирования привычек через подсознательное напоминание. Wink появляется в правом верхнем углу. Если вы 
-внесли несколько Wink, то они будут меняться (скорость смены задается в настройках).
-* **Counters:** Счетчики дней "До" события и "После" события. Здесь можно поставить счетчик до важного события в будущем или после важного события в прошлом.
-
-### 2. Средний
-Основная рабочая зона дня.
-* **Chronology & Notes:** Левая колонка. Рефлексия прошлого. Хронология фиксирует факты, Заметки — мысли.
-* **Tasks & Habits:** Центральная колонка. Списки текущих дел и трекер привычек (Streaks).
-* **Linguistics:** Правая колонка. Блок изучения языков с расчетом метрик **Coverage** (покрытие словаря) и **iMW** (интенсивность). Включает переключатель правил произношения (RU/EN).
-
-### 3. Нижний
-Управление данными.
-* Прямой доступ к таблицам базы данных (CRUD).
-
-### Доступ к настройкам и базам данных
-На этом уровне находятся ссылки на настройки и базы данных для редактирования. На страницах баз данных возможно как отредактировать запись, так
-и удалить ее.
-
-На странице Настройки вы видите календарь на 3 месяца, сгруппированный по месяцам. Здесь же отображаются последние записи в базы данных.
-В настройках можно установить время для Wink и периодичности смены слов. Дополнительно можно загрузить старые базы данных, очистить базу данных, 
-а также отредактировать категории для заметок.
+## Key Features
+* **Event Matrix:** A unified timeline for the past (Chronology) and the future (Events).
+* **Monolithic Architecture:** Calendar, tasks, habit training, and dictionary are connected into a single ecosystem.
+* **Stochastic Learning:** An interval repetition algorithm with probabilistic sampling for language learning.
 
 ---
 
-## 🛠 Установка и запуск
+## 📐 Interface Architecture (3 Levels)
 
-Проект не требует сложной настройки. Достаточно Python.
+The application is built on the principle of a three-level information hierarchy.
 
-### 1. Клонирование
+### 1. Top Level
+Future planning and focus retention zone.
+* **Events:** Event calendar. Important events are highlighted 7 days in advance.
+* **One Thing:** A method for concentrating on one main goal of the period. "One thing" is the choice of a single activity that is most important to you in the immediate long term. You need to focus on this activity. "Replacement" is an activity to replace the "One thing" when you get tired of one task, for variety.
+* **Wink:** A mechanism for "soft" habit formation through subconscious reminders. A Wink appears in the top right corner. If you have entered multiple Winks, they will change (the change speed is set in the settings).
+* **Counters:** Day counters "Until" an event and "After" an event. Here you can set a counter until an important event in the future or after an important event in the past.
+
+### 2. Middle Level
+The main working zone of the day.
+* **Chronology & Notes:** Left column. Reflection on the past. Chronology records facts, Notes record thoughts.
+* **Tasks & Habits:** Central column. Lists of current to-dos and habit tracker (Streaks).
+* **Linguistics:** Right column. Language learning block with calculation of **Coverage** (dictionary coverage) and **iMW** (intensity) metrics. Includes a pronunciation rule switch (RU/EN).
+
+### 3. Bottom Level
+Data management.
+* Direct access to database tables (CRUD).
+
+### Access to Settings and Databases
+At this level, there are links to settings and databases for editing. On the database pages, it is possible to both edit a record and delete it.
+
+On the Settings page, you see a 3-month calendar grouped by month. The latest database entries are also displayed here. In the settings, you can set the time for Wink and the word change frequency. Additionally, you can upload old databases, clear the database, and edit note categories.
+
+---
+
+## 🛠 Installation and Launch
+
+The project does not require complex configuration. Python is sufficient.
+
+### 1. Cloning
 ```bash
 git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
 cd papanda
