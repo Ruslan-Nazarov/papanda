@@ -74,6 +74,20 @@ On the Settings page, you see a 3-month calendar grouped by month. The latest da
 
 The project does not require complex configuration. Python is sufficient.
 
+
+## 🔄 How to Update
+
+Since Papanda works in **Portable Mode**, your data (database and settings) is stored in the `instance` folder right next to the application file.
+
+**To update to a new version:**
+
+1.  Download the new `run.exe` (or `papanda.exe`) file.
+2.  Open the folder where your current version is located.
+3.  **Replace** the old `.exe` file with the new one.
+4.  **Important:** Do NOT delete or replace the `instance` folder. This is where your `papanda.db` database is stored.
+
+Your data will automatically be picked up by the new version.
+
 ### 1. Cloning
 ```bash
 git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
