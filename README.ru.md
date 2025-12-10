@@ -40,6 +40,20 @@
 * **Монолитная архитектура:** Календарь, задачи, тренировка привычек и словарь связаны в единую экосистему.
 * **Стохастическое обучение:** Алгоритм интервальных повторений с вероятностной выборкой для изучения языков.
 
+
+---
+
+## 📸 Interface / Интерфейс
+
+<div align="center">
+  <h3>Main Window / Главное окно</h3>
+  <img src="screenshots/main_window.png" width="800" alt="Main Window" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+  
+  <h3>Settings / Настройки</h3>
+  <img src="screenshots/settings.png" width="800" alt="Settings Window" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+</div>
+
+---
 ---
 
 ## 📐 Архитектура интерфейса (3 Уровня)
@@ -103,4 +117,5 @@ Papanda работает в **Портативном режиме** (Portable). 
 ```bash
 git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
 cd papanda
+
 
