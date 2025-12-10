@@ -78,6 +78,14 @@
 
 Проект не требует сложной настройки. Достаточно Python.
 
+## 📥 Скачать приложение
+
+Актуальная версия для Windows и macOS доступна в разделе релизов:
+
+[**👉 СКАЧАТЬ ПОСЛЕДНЮЮ ВЕРСИЮ**](https://github.com/Ruslan-Nazarov/papanda/releases/latest)
+
+---
+
 ## 🔄 Как обновить приложение
 
 Papanda работает в **Портативном режиме** (Portable). Это значит, что все ваши данные (база данных и настройки) хранятся в папке `instance`, которая находится рядом с запускаемым файлом.
@@ -95,3 +103,4 @@ Papanda работает в **Портативном режиме** (Portable). 
 ```bash
 git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
 cd papanda
+
