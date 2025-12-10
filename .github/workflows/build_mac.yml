@@ -1,5 +1,6 @@
 name: Build Papanda Mac
 
+# ТРИГГЕРЫ
 on:
   push:
     branches: [ "main" ]
@@ -14,29 +15,36 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # ШАГ 2: Установка Python 3.12
+    # ШАГ 2: Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
 
-    # ШАГ 3: Установка библиотек
+    # ШАГ 3: Установка библиотек (ИСПРАВЛЕНО)
+    # Мы ставим библиотеки вручную, чтобы гарантировать наличие Flask и отсутствие мусора.
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        # Устанавливаем PyInstaller и специфичные для Mac библиотеки для окна
-        pip install pyinstaller pywebview pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-WebKit
+        
+        # 1. Основные библиотеки приложения (как на Windows)
+        pip install Flask Flask-SQLAlchemy SQLAlchemy openpyxl pywebview Pillow
+        
+        # 2. Специфичные библиотеки для macOS (нужны для pywebview)
+        pip install pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-WebKit
+        
+        # 3. Сборщик
+        pip install pyinstaller
 
     # ШАГ 4: Сборка
     - name: Build with PyInstaller
       run: |
-        # Используем тот же spec файл, он универсален
+        # Используем тот же spec файл
         pyinstaller Papanda.spec
 
-    # ШАГ 5: Архивация (Важно для Mac)
-    # macOS создает приложение как папку .app. GitHub не умеет загружать папки как артефакты.
-    # Поэтому мы архивируем папку Papanda.app в zip.
+    # ШАГ 5: Архивация
+    # macOS создает папку .app, которую нельзя просто так скачать.
+    # Пакуем её в ZIP.
     - name: Zip Application
       run: |
         cd dist
