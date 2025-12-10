@@ -1,0 +1,50 @@
+name: Build Papanda Mac
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    # ШАГ 1: Клонирование кода
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # ШАГ 2: Установка Python 3.12
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    # ШАГ 3: Установка библиотек
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Устанавливаем PyInstaller и специфичные для Mac библиотеки для окна
+        pip install pyinstaller pywebview pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-WebKit
+
+    # ШАГ 4: Сборка
+    - name: Build with PyInstaller
+      run: |
+        # Используем тот же spec файл, он универсален
+        pyinstaller Papanda.spec
+
+    # ШАГ 5: Архивация (Важно для Mac)
+    # macOS создает приложение как папку .app. GitHub не умеет загружать папки как артефакты.
+    # Поэтому мы архивируем папку Papanda.app в zip.
+    - name: Zip Application
+      run: |
+        cd dist
+        zip -r Papanda-Mac.zip Papanda.app
+
+    # ШАГ 6: Загрузка результата
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Papanda-Mac-App
+        path: dist/Papanda-Mac.zip
