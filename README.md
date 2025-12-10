@@ -40,6 +40,20 @@ Unlike popular alternatives (Notion, Todoist), the project follows the philosoph
 * **Monolithic Architecture:** Calendar, tasks, habit training, and dictionary are connected into a single ecosystem.
 * **Stochastic Learning:** An interval repetition algorithm with probabilistic sampling for language learning.
 
+
+---
+
+## 📸 Interface / Интерфейс
+
+<div align="center">
+  <h3>Main Window</h3>
+  <img src="screenshots/main_window.png" width="800" alt="Main Window" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+  
+  <h3>Settings</h3>
+  <img src="screenshots/settings.png" width="800" alt="Settings Window" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+</div>
+
+---
 ---
 
 ## 📐 Interface Architecture (3 Levels)
@@ -100,3 +114,4 @@ Your data will automatically be picked up by the new version.
 git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
 
 cd papanda
+
