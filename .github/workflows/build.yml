@@ -21,19 +21,21 @@ jobs:
       with:
         python-version: "3.12"
 
-    # ШАГ 3: Библиотеки
+    # ШАГ 3: Библиотеки (ИСПРАВЛЕНО)
+    # Мы устанавливаем библиотеки вручную прямо здесь.
+    # Это решает проблему "No module named 'flask'", потому что мы гарантированно ставим Flask.
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        # Устанавливаем зависимости из файла (если он есть)
-        pip install -r requirements.txt
-        # Доустанавливаем то, чего может не быть в requirements
-        pip install pyinstaller pywebview Pillow
+        # Ставим только то, что нужно для Papanda
+        pip install Flask Flask-SQLAlchemy SQLAlchemy openpyxl pywebview Pillow
+        # Ставим сборщик
+        pip install pyinstaller
 
     # ШАГ 4: Сборка
     - name: Build with PyInstaller
       run: |
-        # Убедитесь, что файл в репозитории называется именно так (Papanda.spec)
+        # Используем ваш spec-файл (убедитесь, что он залит в репозиторий!)
         pyinstaller Papanda.spec
 
     # ШАГ 5: Сохранение результата
@@ -41,5 +43,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Papanda-App
-        # Важно: PyInstaller создаст файл с именем, указанным в spec (Papanda.exe)
+        # Имя файла должно совпадать с name='...' в Papanda.spec
         path: dist/Papanda.exe
