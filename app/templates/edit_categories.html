@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Editing categories</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .page-container { 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background-color: #f7f7f7; 
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Заголовок */
+        .section-header {
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Текстовое поле */
+        .categories-textarea { 
+            width: 100%; 
+            height: 300px; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            border: 1px solid #aaa; 
+            border-radius: 4px;
+            font-family: monospace; 
+            font-size: 14px;
+        }
+        
+        /* Кнопки */
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .back-link {
+            text-decoration: none;
+            color: #6a0dad; 
+            font-weight: bold;
+            padding: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="section-header">
+            <h2>Editing note categories</h2>
+        </div>
+        
+        <p style="color: #666;">Each category must be on a separate line. Blank lines will be ignored when saving.</p>
+        
+        <form method="post" action="{{ url_for('main.edit_categories') }}">
+            <textarea name="categories_list" class="categories-textarea" required>{% for category in categories %}{{ category }}{{ "\n" }}{% endfor %}</textarea>
+            
+            <div class="button-group">
+                <a href="{{ url_for('main.settings') }}" class="back-link">
+                    ← Back to settings
+                </a>
+                <button type="submit" class="form-button" style="background-color: #90EE90; border: none; padding: 10px 20px;">
+                    Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

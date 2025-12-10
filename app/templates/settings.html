@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Настройки</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='app_icon.ico') }}">
+    <style>
+        .settings-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- ШАПКА --- */
+        .header-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .header-line h1 { margin: 0; }
+
+        /* --- КАРТОЧКИ --- */
+        .card {
+            background: rgba(255, 255, 255, 0.9); 
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.4em;
+            color: #222;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* --- ТАБЛИЦЫ --- */
+        .calendar-table { width: 100%; border-collapse: collapse; font-size: 1.05em; }
+        .calendar-table td { padding: 12px 8px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+        .date-col { font-weight: bold; color: #444; width: 110px; white-space: nowrap; }
+        
+        .month-header {
+            background-color: #e1f5fe;
+            color: #0277bd;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 8px 12px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+
+        .diag-table { width: 100%; border-collapse: collapse; }
+        .diag-table th { text-align: left; background: #eee; padding: 10px; color: #444; font-size: 0.9em; }
+        .diag-table td { padding: 10px; border-bottom: 1px solid #ddd; }
+
+        /* --- ФОРМЫ --- */
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-box { background: rgba(255,255,255,0.6); padding: 15px; border-radius: 6px; border: 1px solid #ccc; }
+        .form-box label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; }
+        .form-box input { width: 100%; padding: 8px; border: 1px solid #999; border-radius: 4px; box-sizing: border-box; }
+        
+        .btn-save {
+            width: 100%; margin-top: 10px; padding: 10px;
+            background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em;
+        }
+        .btn-save:hover { background: #45a049; }
+
+        .btn-blue { background: #2196F3; }
+        .btn-blue:hover { background: #1976D2; }
+        
+        .btn-del { 
+            color: #d32f2f; background: none; border: none; 
+            cursor: pointer; text-decoration: underline; font-size: 0.9em; 
+        }
+        .btn-del:hover { color: #b71c1c; }
+
+        @media (max-width: 600px) {
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="settings-wrapper">
+
+    <div class="header-line">
+        <h1>Settings</h1>
+        <div style="border: 1px solid #999; background-color: #FFF9F4; padding: 5px 15px; border-radius: 4px;">
+            <a href="{{ url_for('main.index') }}" style="text-decoration: none; color: #000; font-weight: bold; white-space: nowrap;">← Home</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Events Calendar (3 months)</h2>
+        <div style="max-height: 400px; overflow-y: auto;">
+            <table class="calendar-table">
+                {% set ns = namespace(current_month=None) %}
+                {% for event in events_next_three_months %}
+                    {% set event_month = event.date.strftime('%B %Y') %}
+                    {% if ns.current_month != event_month %}
+                        <tr><td colspan="3"><div class="month-header">{{ event_month }}</div></td></tr>
+                        {% set ns.current_month = event_month %}
+                    {% endif %}
+                    <tr>
+                        <td class="date-col">{{ event.date.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ event.title }}</td>
+                        <td style="text-align: right;">
+                            <form action="{{ url_for('main.delete_event_settings', event_id=event.id) }}" method="post">
+                                <button type="submit" class="btn-del">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Latest posts</h2>
+        <table class="diag-table">
+            <thead>
+                <tr><th style="width: 25%">Тип</th><th style="width: 10%">ID</th><th>Content</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Wink</strong></td><td>-</td>
+                    <td>
+                        {% for w in wink_last %}{{ w.title }} <small>({{ w.date }})</small><br>{% else %}<em>No data</em>{% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Chronology</strong></td>
+                    <td>{{ last_chrono.id if last_chrono else '-' }}</td>
+                    <td>{{ last_chrono.title if last_chrono else '-' }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Note</strong></td>
+                    <td>{{ notes_last.id if notes_last else '-' }}</td>
+                    <td>{{ notes_last.note if notes_last else '-' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Algorithm settings</h2>
+        <div class="settings-grid">
+            <div class="form-box">
+                <form action="{{ url_for('main.settings') }}" method="post">
+                    <label>Max Wink time, min:</label>
+                    <input type="number" name="max_duration" value="{{ max_duration }}" required>
+                    <button type="submit" class="btn-save">Save Wink</button>
+                </form>
+            </div>
+            <div class="form-box">
+                <form action="{{ url_for('main.settings') }}" method="post">
+                    <label>Word replacement interval, min:</label>
+                    <input type="number" name="max_random_minutes" value="{{ max_random_minutes }}" required>
+                    <button type="submit" class="btn-save">Save interval</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+    <h2>Batch import (DB + JSON)</h2>
+    <div class="form-box" style="background: #e3f2fd; border-color: #90caf9;">
+        <form action="{{ url_for('main.import_folder') }}" method="post" enctype="multipart/form-data">
+            <label style="margin-bottom: 10px;">Select the backup folder:</label>
+            
+            <div style="margin-bottom: 15px; overflow: hidden;">
+                <input type="file" name="files" webkitdirectory multiple required style="width: 100%;">
+            </div>
+
+            <button type="submit" class="btn-save btn-blue">Recover from folder</button>
+        </form>
+    </div>
+    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+        * Only the database file (<b>.db</b>) and settings files (<b>.json</b>) will be updated.
+    </p>
+</div>
+
+    <div class="card">
+        <h2>Managing database files</h2>
+        <table class="diag-table">
+            {% for f in db_files %}
+            <tr>
+                <td>{{ f.name }}</td>
+                <td>{{ f.size }}</td>
+                <td style="text-align: right;">
+                    {% if not f.is_active %}
+                    <form action="{{ url_for('main.delete_db_file', filename=f.name) }}" method="post">
+                        <button type="submit" class="btn-del">Delete file</button>
+                    </form>
+                    {% else %}
+                    <span style="color: green; font-weight: bold;">Active</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        <div style="margin-top: 15px; text-align: right;">
+            <form action="{{ url_for('main.factory_reset') }}" method="post" onsubmit="return confirm('Вы уверены? Это удалит ВСЕ данные!');">
+                <button type="submit" class="btn-del" style="color: red; font-weight: bold;">Factory reset</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="section" style="margin-top: 20px;">
+    <h4>Managing note categories</h4>
+    <p>
+        <a href="{{ url_for('main.show_categories') }}" class="form-button">Edit category list</a>
+    </p>
+</div>
+
+</div>
+
+</body>
+</html>

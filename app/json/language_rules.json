@@ -1,0 +1,134 @@
+{
+  "german": [
+    {
+      "ru": "'ch' после 'a', 'o', 'u' произносится как твёрдый 'х' (Bach – Бах), а после 'e', 'i', 'ä', 'ü' – как мягкий 'хь' (ich – ихь).",
+      "en": "'ch' after 'a', 'o', 'u' sounds like the Scottish 'ch' in 'Loch' (hard). After 'e', 'i', 'ä', 'ü', it's a soft hiss like a 'h' in 'huge' or 'sh' in 'fish' (ich)."
+    },
+    {
+      "ru": "'s' в начале слова перед гласной звучит как 'з' (Sonne – Зоннэ), в остальных случаях – как 'с' (Haus – Хаус).",
+      "en": "'s' at the beginning of a word before a vowel sounds like 'z' in 'zoo' (Sonne). Otherwise, it sounds like 's' in 'sun' (Haus)."
+    },
+    {
+      "ru": "'z' читается как 'ц' (Zeit – цайт), а 'tz' – как краткий 'ц' (Katze – катце).",
+      "en": "'z' is always pronounced as 'ts' like in 'cats' (Zeit). 'tz' is just a sharper 'ts' (Katze)."
+    },
+    {
+      "ru": "'r' в начале слова произносится чётко, как русское 'р' (rot – рот); в конце слова и в безударных слогах часто звучит как гортанная гласная, близкая к 'а' или 'ə' (Lehrer – Лерэра).",
+      "en": "'r' at the start is rolled in the throat (rot). At the end of words or unstressed, it often sounds like a vowel 'a' or 'uh' (Lehrer -> Leh-ah)."
+    },
+    {
+      "ru": "'ä' читается как 'э' (Bär – бэр), а в некоторых словах – ближе к 'е' (Mädchen – мэдхьен).",
+      "en": "'ä' sounds like 'e' in 'bed' or 'ai' in 'air' (Bär)."
+    },
+    {
+      "ru": "'ü' произносится как нечто среднее между 'и' и 'ю' (über – üбер), 'ö' – между 'ё' и 'э' (schön – шён).",
+      "en": "'ü': Round your lips for 'oo' but say 'ee' (über). 'ö': Round your lips for 'o' but say 'ay' like in 'girl' (schön)."
+    },
+    {
+      "ru": "'sp' и 'st' в начале слова читаются как 'шп' и 'шт' (Sprache – шпрахе, Stadt – штат), но внутри слова — как 'сп' и 'ст' (aussprechen – аусшпрэхен).",
+      "en": "'sp' and 'st' at the start of a word sound like 'shp' (ship) and 'sht' (shoot). Inside a word, they are normal 'sp'/'st'."
+    },
+    {
+      "ru": "'ei', 'ai', 'ey', 'ay' читаются как 'ай' (mein – майн), 'eu' и 'äu' — как 'ой' (heute – хойтэ, Bäume – боймэ).",
+      "en": "'ei', 'ai' sound like 'i' in 'mine' or 'eye'. 'eu', 'äu' sound like 'oy' in 'boy' (heute)."
+    },
+    {
+      "ru": "'ie' читается как долгий 'и' (Liebe – лиибэ), а одиночная 'i' — коротко (mit – мит).",
+      "en": "'ie' sounds like a long 'ee' in 'see' (Liebe). A single 'i' is short like 'i' in 'sit'."
+    },
+    {
+      "ru": "'ß' (эсцет) читается как долгий 'с' (Straße – штрассе); в Швейцарии заменяется на 'ss'.",
+      "en": "'ß' (Eszett) is a sharp 's', sounds like 'ss' in 'hiss' (Straße)."
+    },
+    {
+      "ru": "Ударение в сложных словах чаще падает на первый корень (Hausaufgabe – хаус-аув-гáбэ).",
+      "en": "Stress in compound words usually falls on the first component (Hausaufgabe)."
+    },
+    {
+      "ru": "Все согласные в немецком произносятся отчётливо, редукции как в русском нет.",
+      "en": "Consonants are pronounced crisply and clearly; vowels are not swallowed/reduced like in English."
+    },
+    {
+      "ru": "'h' между гласными обозначает их удлинение (sehen – зээн), а в начале слова читается как слабое придыхание (Haus – хаус).",
+      "en": "'h' after a vowel is silent but makes the vowel long (sehen). At the start, it's like 'h' in 'house'."
+    },
+    {
+      "ru": "Двойные согласные обычно укорачивают предшествующую гласную (Mitte – миттэ), а одиночные — удлиняют (Miete – миитэ).",
+      "en": "Double consonants make the previous vowel SHORT (Mitte). Single consonants often make the vowel LONG (Miete)."
+    },
+    {
+      "ru": "'e' в безударных слогах часто произносится как 'э' или редуцированно как 'ə' (bitte – битэ, Lehrer – лерэра).",
+      "en": "Unstressed 'e' at the end is pronounced like 'a' in 'sofa' (schwa sound), not silent (bitte)."
+    },
+    {
+      "ru": "'qu' читается как 'кв' (Quelle – квэлле), 'v' чаще всего как 'ф' (Vater – фатэр), а 'w' – как 'в' (Wasser – вассэр).",
+      "en": "'qu' sounds like 'kv'. 'v' usually sounds like 'f' in 'father'. 'w' sounds like 'v' in 'vest' (Wasser)."
+    }
+  ],
+  "italian": [
+    {
+      "ru": "Буквы 'e' и 'o' могут быть открытыми или закрытыми. Их произношение зависит от слова: 'e' как в 'это' или 'где', 'o' как в 'вот' или 'кто'.",
+      "en": "'e' and 'o' can be open (like 'e' in 'best', 'o' in 'not') or closed (like 'a' in 'gate', 'o' in 'note')."
+    },
+    {
+      "ru": "'H' не читается (например, ho – 'о').",
+      "en": "'H' is always silent (ho is pronounced 'o')."
+    },
+    {
+      "ru": "'C' перед 'e' или 'i' читается как 'ч' (ciao – чао), 'G' перед 'e' или 'i' – как 'дж' (gioco – джоко).",
+      "en": "'C' before 'e' or 'i' sounds like 'ch' in 'cheese' (ciao). 'G' before 'e' or 'i' sounds like 'j' in 'jump' (gioco)."
+    },
+    {
+      "ru": "'Ch' перед 'e', 'i' читается как 'к' (che – ке), 'gh' перед 'e', 'i' – как 'г' (ghiaccio – гьяччо).",
+      "en": "'Ch' before 'e' or 'i' sounds like 'k' in 'key' (che). 'Gh' before 'e' or 'i' sounds like 'g' in 'get' (ghiaccio)."
+    },
+    {
+      "ru": "'Sc' перед 'e', 'i' читается как 'ш' (pesce – пеше), а перед 'a', 'o', 'u' – как 'ск' (scuola – скуола).",
+      "en": "'Sc' before 'e' or 'i' sounds like 'sh' in 'shoe' (pesce). Before 'a', 'o', 'u' it sounds like 'sk' (scuola)."
+    },
+    {
+      "ru": "'Gn' читается как мягкое 'нь' (bagno – баньо).",
+      "en": "'Gn' sounds like 'ni' in 'onion' or 'ny' in 'canyon' (bagno)."
+    },
+    {
+      "ru": "'Gl' перед 'i' читается как мягкое 'ль' (figlio – фильо), но в некоторых словах может быть как 'гл' (англицизмы: 'globale').",
+      "en": "'Gl' (usually 'gli') sounds like 'lli' in 'million' (figlio)."
+    },
+    {
+      "ru": "'R' всегда чёткая и вибрирующая, особенно удвоенная (carro – карро).",
+      "en": "'R' is rolled (trilled), much stronger than in English, especially when doubled (carro)."
+    },
+    {
+      "ru": "Двойные согласные (tt, ss, pp и др.) произносятся дольше и сильнее, чем одиночные (palla – палла, pala – пала).",
+      "en": "Double consonants (tt, pp, etc.) must be held longer, like a pause or a stutter (palla vs pala)."
+    },
+    {
+      "ru": "Ударение чаще всего падает на предпоследний слог (italiano – италья́но), но если есть акцент (città), ударение на последнем.",
+      "en": "Stress usually falls on the second-to-last syllable (italiano). If there is an accent mark (città), stress the last letter."
+    },
+    {
+      "ru": "В сочетаниях 'cia', 'gia', 'scia' буква 'i' смягчает согласную (cielo – чело, scienza – шенца).",
+      "en": "In 'cia', 'gia', 'scia', the 'i' is silent! It just makes the 'c'/'g' soft (ciao = chao, not chi-ao)."
+    },
+    {
+      "ru": "Буква 'z' может произноситься как 'ц' или 'дз' в зависимости от слова (pizza – пицца, zero – дзеро).",
+      "en": "'Z' sounds like 'ts' (pizza) or 'ds' (pads) depending on the word."
+    },
+    {
+      "ru": "Гласные обычно произносятся отчётливо и не редуцируются (a, e, i, o, u всегда читаются ясно).",
+      "en": "Vowels are always pronounced clearly and crisply, never swallowed or turned into schwa like in English."
+    },
+    {
+      "ru": "Неударные 'i' и 'u' в сочетаниях могут быть полугласными (più – пью, viaggio – вьаджо).",
+      "en": "Unstressed 'i' and 'u' next to other vowels become quick glides like 'y' (yes) or 'w' (win) (più, uomo)."
+    },
+    {
+      "ru": "'S' между гласными может звучать как 'з' (casa – каза), но в начале слова и перед согласной — как 'с' (stato – стато).",
+      "en": "'S' between two vowels often sounds like 'z' in 'rose' (casa). At the start, it's 's' in 'sun'."
+    },
+    {
+      "ru": "'I' после 'c', 'g', 'sc' в сочетаниях с 'a', 'o', 'u' может быть немой, но влияет на смягчение (ciao, sciame).",
+      "en": "If you see 'i' after c/g/sc followed by a/o/u, the 'i' is usually silent, it just softens the consonant (giardino)."
+    }
+  ]
+}

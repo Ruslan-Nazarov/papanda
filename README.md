@@ -74,7 +74,6 @@ On the Settings page, you see a 3-month calendar grouped by month. The latest da
 
 The project does not require complex configuration. Python is sufficient.
 
-
 ## 🔄 How to Update
 
 Since Papanda works in **Portable Mode**, your data (database and settings) is stored in the `instance` folder right next to the application file.

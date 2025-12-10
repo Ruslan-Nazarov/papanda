@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DB: {{ model_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .db-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .db-table th { background-color: #f0f0f0; border: 1px solid #ccc; padding: 5px; }
+        .db-table td { border: 1px solid #ccc; padding: 5px; }
+        .action-link { margin-right: 10px; color: blue; text-decoration: none; }
+        .del-btn { background: none; border: none; color: red; cursor: pointer; text-decoration: underline; padding: 0;}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="container" style="padding: 10px;">
+        <h3>Data base: {{ model_name }}</h3>
+        <div class="button">
+            <p><a href="{{ url_for('main.index') }}" class="button">← Home</a></p>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="column_center" style="width: 100%; overflow-x: auto;">
+        <table class="db-table">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in records %}
+                <tr>
+                    {% for col in columns %}
+                    <td>{{ row[col] }}</td>
+                    {% endfor %}
+                    <td style="display: flex;">
+                        <a href="{{ url_for('main.edit_record', model_name=model_name, record_id=row.id) }}" class="action-link">Edit</a>
+                        <form action="{{ url_for('main.delete_record', model_name=model_name, record_id=row.id) }}" method="POST" onsubmit="return confirm('Удалить?');">
+                            <button type="submit" class="del-btn">Del</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="footer">
+</div>
+
+</body>
+</html>

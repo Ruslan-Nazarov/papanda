@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Papanda{% endblock %}</title>
+    
+    <link rel="shortcut icon" href="{{ url_for('static', filename='app_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    </head>
+<body>
+
+<div class="header">
+    <div class="container" style="display: flex; align-items: center; padding: 1px; font-size: 12px; height: 25px;">
+        <form method="post" action="/submit_form" id="common_form" style="display: flex; align-items: flex-start; margin-left: 0;">
+            <input list="suggestions" type="text" name="common_text" required placeholder="notepad" style="vertical-align: middle; width: 200px; height: 21px;">
+            <datalist id="suggestions"></datalist>
+            
+            <input type="date" name="common_date" required placeholder="Enter date" id="common_date" style="vertical-align: middle;width: 100px; height: 22px;" value="{{ today_for_calendar.strftime('%Y-%m-%d') }}">
+            
+            <select title="Choice" name="common_category" id="common_category" required style="width: 100px; height: 25px; vertical-align: middle; padding: 2px;">
+                <option value="event">event</option>
+                <option value="important">important</option>
+                <option value="habits">habits</option>
+                <option value="task">task</option>
+                <option value="wink">wink</option>
+                <option value="count until">count until</option>
+                <option value="count after">count after</option>
+                <option value="one_thing">one_thing</option>
+                <option value="replacement">replacement</option>
+            </select>
+            <button type="submit" style="vertical-align: middle; height: 25px;">OK</button>
+        </form>
+
+        <div style="margin-left: 10px;">
+            Average days: {{ average_days|round(2) }}
+        </div>
+        <div style="margin-left: 10px;">
+            Volume dictionary: {{ count_words_trahslate|safe }}
+        </div>
+        <div style="margin-left: 10px;">
+            Coverage dictionary: {{ coverage_learning_words|safe }}%
+        </div>
+        <div style="margin-left: 10px;">
+            iMW: {{ iMW|safe }}%
+        </div>
+        <div style="margin-left: 10px;">
+            Days until {{ title_until }}: {{ days_remaining|safe }}
+        </div>
+        <div style="margin-left: 10px;">
+            Days after {{ title_after }}: {{ days_passed|safe }}
+        </div>
+
+        <div class="button_radius" style="margin-left: 10px;">
+            {% for event in date_important %}
+                <p style="background-color: #FFE5B4;">{{ event.title }}</p>
+            {% endfor %}
+        </div>
+        <div class="button_radius" style="margin-left: 10px;">
+            <p>{{ wink }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    
+    <div class="column_left">
+        <div class="section chronology-section">
+            <h4 style="color: gray;">chronology</h4>
+            <form method="post" action="/submit_chrono" class="chrono-form" style="display: flex; flex-direction: column; gap: 8px;">
+                
+                <div style="width: 100%;">
+                    <textarea name="chrono_text" required placeholder="chronology" 
+                              style="width: 100%; height: 60px; resize: vertical; box-sizing: border-box; padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif;"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 5px; width: 100%;">
+                    
+                    <input type="date" name="chrono_date" required id="chrono_date" 
+                           value="{{ today_for_calendar.strftime('%Y-%m-%d') }}" 
+                           style="width: 110px; padding: 2px; border: 1px solid #ccc; border-radius: 4px;">
+                    
+                    <select name="chrono_category" id="chrono_category" required 
+                            style="flex: 1; padding: 2px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="ordinary">normal</option>
+                        <option value="important">important</option>
+                    </select>
+                    
+                    <button type="submit" style="cursor: pointer; padding: 0 15px; border: 1px solid #000; border-radius: 4px; background-color: #90EE90; font-weight: bold;">OK</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="section note-section">
+            <h4 style="color: gray;">notes</h4>
+            <form method="post" action="/add_note" class="form-common note-form">
+                <label for="category">Category:</label>
+                <select id="category" name="category" required>
+                    {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+                <textarea id="note" name="note" required></textarea>
+                <br>
+                <button type="submit" class="form-button note-button">Add Note</button>
+            </form>
+        </div>     
+    </div>
+
+    <div class="column_center">
+        <div class="events-section">
+            <div class="events-today">
+                <h1>Today</h1>
+                <ul>
+                    {% for event in events_today %}
+                        <li>{{ event.title }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="events-tomorrow">
+                <h1>Tomorrow</h1>
+                <ul>
+                    {% for event in events_tomorrow %}
+                        <li>{{ event.title }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="section task-section">
+            <h4 style="color: gray;">Tasks</h4>
+            <div class="task-info">
+                <span class="green-text">One thing:</span>
+                <span class="task-value">{{ one_thing }}</span>
+                {% if one_thing_date %}
+                <span class="green-text" style="margin-left: 10px;">Days: {{ one_thing_date }}</span>
+                {% endif %}
+            </div>
+            <div class="task-info">
+                <span class="green-text">Replacement:</span> {{ one_thing_replacement }}
+            </div>
+            <ul class="task-list">
+                {% for task in tasks %}
+                    <li class="task-item">
+                        {{ task.name }}
+                        <form action="/mark_done/{{ task.id }}" method="post" class="task-form">
+                            <button type="submit" class="task-button">Done</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>        
+        
+        <div class="section reading-section">
+            <h4 style="color: gray;">Habits Counter</h4>                 
+            <table class="table-common reading-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Days</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for habits in habits_all %}
+                        {% if not habits.read %}
+                        <tr>
+                            <td>{{ habits.title }}</td>
+                            <td class="text-right">{{ habits_count(habits.start_date) }}</td>
+                            <td>
+                                <form method="post" action="/mark_as_done/{{ habits.id }}" style="margin: 0;">
+                                    <input type="submit" value="Done" class="read-button">
+                                </form>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>                       
+    </div>
+
+    <div class="column_right">
+        <div class="section words-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h4 style="color: gray; margin: 0;">words</h4>
+        
+        <a href="{{ url_for('main.index') }}" title="Refresh words" style="
+            text-decoration: none; 
+            color: #555; 
+            border: 1px solid #ccc; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            background-color: #fff;
+            font-weight: bold;">
+            ↻
+        </a>
+    </div>
+
+    <table class="table-common words-table">
+                <thead>
+                    <tr>
+                        <th>English</th>
+                        <th>German</th>
+                        <th>Italian</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for word in words %}
+                    <tr>
+                        <td>{{ word.eng }}</td>
+                        <td>{{ word.de }}</td>
+                        <td>{{ word.it }}</td>
+                    </tr>
+                    <tr style="height: 1px; font-size: 0.1em;">
+                        <td colspan="3">&nbsp;</td>
+                    </tr> 
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+         
+        <div class="card" style="position: relative; margin-top: 25px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0; color: #666;">Language Rules</h3>
+            
+            <button onclick="toggleRule()" style="
+                background: white; 
+                border: 1px solid #ccc; 
+                border-radius: 4px; 
+                cursor: pointer; 
+                padding: 2px 8px;
+                font-weight: bold;
+                font-size: 0.8em;
+                color: #555;">
+                RU ⇄ EN
+            </button>
+        </div>
+
+        <div style="background: #66bb6a; color: white; padding: 5px 10px; font-weight: bold;">
+            {{ random_rule.language }}
+        </div>
+
+        <div style="background: #f9f9f9; padding: 15px; border: 1px solid #eee; border-top: none; text-align: left; line-height: 1.5;">
+            
+            <div id="rule-ru" style="display: block;">
+                {{ random_rule.rule_ru }}
+            </div>
+
+            <div id="rule-en" style="display: none;">
+                {{ random_rule.rule_en }}
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    function toggleRule() {
+        var ru = document.getElementById('rule-ru');
+        var en = document.getElementById('rule-en');
+        if (ru.style.display === 'none') {
+            ru.style.display = 'block';
+            en.style.display = 'none';
+        } else {
+            ru.style.display = 'none';
+            en.style.display = 'block';
+        }
+    }
+    </script>
+    </div>
+
+    <script>
+    function toggleRule() {
+        var ru = document.getElementById('rule-ru');
+        var en = document.getElementById('rule-en');
+        if (ru.style.display === 'none') {
+            ru.style.display = 'block';
+            en.style.display = 'none';
+        } else {
+            ru.style.display = 'none';
+            en.style.display = 'block';
+        }
+    }
+    </script>                   
+    </div>
+</div>
+
+<div class="footer">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 1px; font-size: 12px; height: 25px;">
+        
+        <div style="color: #000;">
+           papanda version 0.5.0 (est. 21.11.2023; last update 07.12.2025)
+        </div>
+
+        <div style="display: flex; gap: 5px; align-items: center;">
+            
+            <div class="button">
+                <p style="border: 2px solid #555; background-color: #f0f0f0;">
+                    <a href="{{ url_for('main.settings') }}" style="color: #000; font-weight: bold;">settings</a>
+                </p>
+            </div>
+            
+            <div style="width: 1px; height: 20px; background: #999; margin: 0 5px;"></div> 
+
+            <div class="button"><p><a href="{{ url_for('main.db_view', model_name='Event') }}">Event</a></p></div>
+            <div class="button"><p><a href="{{ url_for('main.db_view', model_name='Habits') }}">Habits</a></p></div>
+            <div class="button"><p><a href="{{ url_for('main.db_view', model_name='Task') }}">Task</a></p></div>
+            <div class="button"><p><a href="{{ url_for('main.db_view', model_name='Chronology') }}">Chronology</a></p></div>
+            <div class="button"><p><a href="{{ url_for('main.db_view', model_name='Notes') }}">Notes</a></p></div>
+            <div class="button"><p><a href="{{ url_for('main.db_view', model_name='Wink') }}">Wink</a></p></div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
