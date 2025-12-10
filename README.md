@@ -74,6 +74,14 @@ On the Settings page, you see a 3-month calendar grouped by month. The latest da
 
 The project does not require complex configuration. Python is sufficient.
 
+## 📥 Download App
+
+The latest version for Windows and macOS is available in the releases section:
+
+[**👉 DOWNLOAD LATEST VERSION**](https://github.com/Ruslan-Nazarov/papanda/releases/latest)
+
+---
+
 ## 🔄 How to Update
 
 Since Papanda works in **Portable Mode**, your data (database and settings) is stored in the `instance` folder right next to the application file.
@@ -90,4 +98,5 @@ Your data will automatically be picked up by the new version.
 ### 1. Cloning
 ```bash
 git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
+
 cd papanda
