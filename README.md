@@ -33,7 +33,7 @@
 
 **Papanda** is a personal resource management system combining planning, learning, and reflection in a single interface.
 
-Unlike popular alternatives (Notion, Todoist), the project follows the philosophy of **local data storage**. All information is stored in a local `SQLite` database, ensuring complete privacy and data durability.
+Unlike popular alternatives (Notаion, Todoist), the project follows the philosophy of **local data storage**. All information is stored in a local `SQLite` database, ensuring complete privacy and data durability.
 
 ## Key Features
 * **Event Matrix:** A unified timeline for the past (Chronology) and the future (Events).
