@@ -28,8 +28,12 @@ if __name__ == "__main__":
     from fastapi_app.config import IS_FROZEN
     
     if IS_FROZEN:
-        # В режиме без консоли uvicorn может ругаться на отсутствие stdout. 
-        # Мы оставляем логику для uvicorn в самом приложении через logging.
+        import sys
+        # В режиме --noconsole sys.stdout и sys.stderr равны None.
+        # Это ломает uvicorn (DefaultFormatter.isatty).
+        # Перенаправляем их в никуда, чтобы избежать ошибок.
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
         reload = False
     else:
         reload = os.getenv("RELOAD", "True").lower() == "true"
