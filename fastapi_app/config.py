@@ -25,7 +25,17 @@ else:
 
 # Шаблоны Jinja2
 templates = Jinja2Templates(directory=str(INTERNAL_ROOT / "fastapi_app" / "templates"))
-templates.env.filters['from_json'] = json.loads
+
+def from_json_safe(value):
+    """Безопасно преобразует строку JSON в объект."""
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except:
+            return value
+    return value
+
+templates.env.filters['from_json'] = from_json_safe
 
 def ensure_secret_key():
     """Проверяет наличие SECRET_KEY в .env и генерирует его, если файла нет или ключ отсутствует."""
