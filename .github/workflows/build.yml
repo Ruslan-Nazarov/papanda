@@ -1,9 +1,12 @@
 name: Build Papanda EXE
 
-# ТРИГГЕРЫ
+# ТРИГГЕРЫ:
+# - при пуше тега v* (например v0.6, v0.6.1) — собирает и создаёт GitHub Release
+# - вручную через кнопку "Run workflow" на вкладке Actions
 on:
   push:
-    branches: [ "main" ]
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -11,37 +14,66 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    # ШАГ 1: Клонирование кода
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      # ШАГ 1: Клонируем код
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    # ШАГ 2: Python
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
+      # ШАГ 2: Устанавливаем Python 3.12
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    # ШАГ 3: Библиотеки (ИСПРАВЛЕНО)
-    # Мы устанавливаем библиотеки вручную прямо здесь.
-    # Это решает проблему "No module named 'flask'", потому что мы гарантированно ставим Flask.
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # Ставим только то, что нужно для Papanda
-        pip install Flask Flask-SQLAlchemy SQLAlchemy openpyxl pywebview Pillow
-        # Ставим сборщик
-        pip install pyinstaller
+      # ШАГ 3: Устанавливаем зависимости из requirements.txt + PyInstaller
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
 
-    # ШАГ 4: Сборка
-    - name: Build with PyInstaller
-      run: |
-        # Используем ваш spec-файл (убедитесь, что он залит в репозиторий!)
-        pyinstaller Papanda.spec
+      # ШАГ 4: Собираем .exe через PyInstaller
+      # Команда повторяет логику create_bundle.bat
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile --noconsole `
+            --hidden-import aiosqlite `
+            --hidden-import jinja2 `
+            --hidden-import email_validator `
+            --hidden-import passlib.handlers.bcrypt `
+            --exclude-module tkinter `
+            --exclude-module tcl `
+            --exclude-module tk `
+            --exclude-module unittest `
+            --exclude-module pydoc `
+            --exclude-module lib2to3 `
+            --exclude-module tensorflow `
+            --exclude-module pandas `
+            --exclude-module numpy `
+            --exclude-module scipy `
+            --exclude-module torch `
+            --exclude-module matplotlib `
+            --exclude-module PIL `
+            --exclude-module PyQt5 `
+            --exclude-module PyQt6 `
+            --add-data "fastapi_app/templates;fastapi_app/templates" `
+            --add-data "fastapi_app/static;fastapi_app/static" `
+            --name Papanda `
+            run_fastapi.py
 
-    # ШАГ 5: Сохранение результата
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Papanda-App
-        # Имя файла должно совпадать с name='...' в Papanda.spec
-        path: dist/Papanda.exe
+      # ШАГ 5: Загружаем .exe как артефакт сборки (доступен во вкладке Actions)
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Papanda-Windows
+          path: dist/Papanda.exe
+          retention-days: 30
+
+      # ШАГ 6: Создаём GitHub Release и прикрепляем .exe (только при пуше тега)
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Papanda.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
