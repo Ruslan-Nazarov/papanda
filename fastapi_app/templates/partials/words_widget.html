@@ -1,0 +1,142 @@
+                    <div class="section words-section">
+                        <div class="widget-header">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Words
+                            </h1>
+                            <div class="widget-controls">
+                                <button
+                                    type="button"
+                                    class="collapse-btn"
+                                    onclick="toggleWidget(this)"
+                                    title="Свернуть / развернуть"
+                                    style="margin-left: 0"
+                                >
+                                    ▾
+                                </button>
+                                <a
+                                    href="/word_stats"
+                                    title="View Statistics"
+                                    style="
+                                        text-decoration: none;
+                                        color: #999;
+                                        font-size: 1.1em;
+                                        margin-right: 5px;
+                                    "
+                                    >📊</a
+                                >
+                                <a
+                                    href="javascript:void(0)"
+                                    onclick="resetWordStats()"
+                                    title="Reset statistics"
+                                    style="
+                                        text-decoration: none;
+                                        color: #ccc;
+                                        font-size: 0.8em;
+                                        line-height: 1;
+                                        transition: color 0.2s;
+                                    "
+                                    onmouseover="this.style.color = '#999'"
+                                    onmouseout="this.style.color = '#ccc'"
+                                    >×</a
+                                >
+                                <a
+                                    href="javascript:void(0)"
+                                    onclick="refreshWords()"
+                                    style="
+                                        text-decoration: none;
+                                        color: #999;
+                                        font-size: 1.2em;
+                                        line-height: 1;
+                                    "
+                                    >↻</a
+                                >
+                            </div>
+                        </div>
+                        <div class="widget-body">
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 12px;
+                                    font-size: 0.85em;
+                                    color: #666;
+                                    margin-bottom: 12px;
+                                    font-family: monospace;
+                                "
+                            >
+                                <span
+                                    >Volume:
+                                    <strong id="volume-count"
+                                        >{{ count_words_translate }}</strong
+                                    ></span
+                                >
+                                <span
+                                    >Coverage:
+                                    <strong id="coverage-count"
+                                        >{{ coverage_learning_words }}%</strong
+                                    ></span
+                                >
+                                <span
+                                    >iMW:
+                                    <strong id="imw-count"
+                                        >{{ iMW }}%</strong
+                                    ></span
+                                >
+                            </div>
+                            <table class="table-common words-table">
+                                <thead>
+                                    <tr>
+                                        <th>English</th>
+                                        <th>Italian</th>
+                                        <th>German</th>
+                                    </tr>
+                                </thead>
+                                <tbody
+                                    id="words-tbody"
+                                    style="font-size: 0.95em"
+                                >
+                                    {% for word in words %}
+                                    <tr>
+                                        <td>{{ word.eng }}</td>
+                                        <td>{{ word.it }}</td>
+                                        <td>{{ word.de }}</td>
+                                    </tr>
+                                    <tr class="word-extra-row">
+                                        <td
+                                            colspan="3"
+                                            style="padding: 4px 10px"
+                                        >
+                                            {{ word.ru }} {% if word.meaning
+                                            %}<span
+                                                class="meaning-divider"
+                                            ></span
+                                            ><span
+                                                style="
+                                                    font-style: italic;
+                                                    color: #888;
+                                                "
+                                                >{{ word.meaning }}</span
+                                            >{% endif %}
+                                            <span
+                                                class="edit-btn"
+                                                data-eng="{{ word.eng|e }}"
+                                                data-it="{{ (word.it or '')|e }}"
+                                                data-de="{{ (word.de or '')|e }}"
+                                                data-ru="{{ (word.ru or '')|e }}"
+                                                data-meaning="{{ (word.meaning or '')|e }}"
+                                                onclick="openEditModalFromData(this)"
+                                                >✎</span
+                                            >
+                                            <span
+                                                class="edit-btn"
+                                                title="Mark as fully learned"
+                                                style="margin-left: 10px; color: #27ae60;"
+                                                onclick="markTripletLearned('{{ word.eng|e }}', this)"
+                                                >✓</span
+                                            >
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>

@@ -1,117 +1,233 @@
-**[🇷🇺 Читать на русском](README.ru.md)** | [EN English Version](README.md)
-<div align="center">
-  <img src="app/static/logo.ico" alt="Papanda Logo" width="120" height="120">
-  <h1>Papanda v0.5</h1>
-  
-  <p>
-    <b>Personal Resource Planning (PRP) System</b>
-  </p>
+# Papanda v.0.5
 
-  <p>
-    <a href="https://www.python.org/">
-      <img src="https://img.shields.io/badge/Python-3.12-blue.svg" alt="Python 3.12">
-    </a>
-    <a href="https://flask.palletsprojects.com/">
-      <img src="https://img.shields.io/badge/Backend-Flask-green.svg" alt="Flask">
-    </a>
-    <a href="#">
-      <img src="https://img.shields.io/badge/Database-SQLite-lightgrey.svg" alt="SQLite">
-    </a>
-    <a href="#">
-      <img src="https://img.shields.io/badge/License-MIT-orange.svg" alt="License">
-    </a>
-  </p>
-  
-  <p>
-    <i>Time and thought organization. Efficiency tracking. Language learning.</i>
-  </p>
-</div>
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-aiosqlite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D4?style=flat-square&logo=windows&logoColor=white)
+
+*Мультитул организации времени, самоконтроля и обучения.*
+
+Ключевые особенности приложения:
+
+1. совмещает организацию времени, обучение и хранение информации;
+2. для организации времени применяются инструменты, позволяющие обследовать занятость в течение дня;
+3. запоминание иностранных слов по уникальному сочетанию задач, подробный анализ успехов.
+
+Цель приложения – помочь вам упорядочить свои дела, писать и сохранять полезные тексты, изучать языки (в перспективе – изучать любые науки особым, диалектическим, методом).
+
+Вся важная информация должна находиться на одном экране, чтобы вы могли охватить ее одним взглядом. Однако вы должны сохранят возможность свободно изменять размещение этой страницы на экране, чтобы вам проще было сориентироваться. Кроме того, должна быть возможность свернуть виджеты, чтобы они не мешали, если в них нет необходимости в текущий момент.
+
+Учитывая эти требования, на странице сведения организованы через виджеты, через которые вы можете видеть уже внесенные данные, а также вносить новые данные. Эти виджеты занимают центральную часть экрана. Выше находится управление данными (календарем, задачами), счетчики, а также карточки (подмигивание, важное). Внизу находятся кнопки управления, перехода к разделам (календарю, заметкам и т.п.).
+
+Ниже я даю описание по тем задачам, которые вы можете выполнить с помощью приложения.
+
+## Организация времени
+
+### Планируем событие в календаре
+
+Кликаем по полям верхнего меню. Здесь нужно выбрать тип события. Если у вас событие с конкретной датой выполнения, то выбирайте Event. Это работает как обычный календарь. Обратите внимание на возможность указать повторяемость события.
+Ваше событие появится в виджете Today-Tomorrow, если у него дата на сегодня или завтра. Здесь можно перетаскивать события между сегодня и завтра, редактировать события, удалять его.
+
+Более отдалённые события можно найти на странице Event Management. Здесь доступен просмотр в форме календаря. События можно перетаскивать между ячейками, редактировать, удалять, добавлять события по дням. Текущий день подсвечивается оранжевым. Можно переходить между месяцами, годами.
+
+### Если среди событий – важное
+
+Бывает, что некоторые события имеют особую важность, к ним стоит быть готовым заранее. Для этого вы можете создать событие, но пометить его как Important. Это событие будет появляться за 3 дня до назначенного дня в форме отдельной карточки вверху справа (рядом со счетчиками).
+
+### Планируем задачи
+
+Есть события, у которых известна дата. Такие события мы записываем в календарь. Есть события, у которых дата неизвестна. Мы знаем, что нам нужно что-то выполнить, но конкретного срока нет. В этом случае мы создаем задачу.
+Создать задачу можно в том же верхнем меню, где мы создавали запись события в календарь. Только в выборе типа события нужно выбрать Task. Для события выбирать дату не нужно. Однако каждому событию автоматически присваивается дата в момент создания.
+
+Все задачи можно найти в виджете Tasks. У задач здесь есть счетчик времени, которое прошло со дня, когда задача была внесена, а также возможность пометить задачу как выполненную.
+
+У задач, как и у календаря, есть отдельная страница Task Management. Здесь можно найти активные задачи, а также архивные. Для всех задач доступно редактирование и удаление. Задачи можно перетаскивать. Наиболее важные задачи можно держать вверху списка.
+
+#### Одно дело и Дело на замену
+
+Вы самостоятельно определяете, как выстраивать свои задачи. Однако мы рекомендуем выбирать одно дело, которое на текущем вашем этапе является основным, и сосредотачиваться на нем. Остальные задачи служат реализации этого дела. Поэтому в верхнем меню вы можете выбрать One Thing. Укажите здесь основное дело, а также дату, с которой начинаете это дело. Сами дело и количество прошедших дней можно увидеть в верхней части виджета Tasks.
+
+Однако дело – это может быть скучным. Иногда нужно разнообразить свои занятия. На этот случай вы можете указать Replacement, то есть замещающее дело.
+
+### Выработать или отследить привычку
+
+Если вы собираетесь выработать привычку или вам интересно отследить, сколько дней продлятся определенные занятия (например, чтение), то в верхнем меню нужно указать эту привычку, занятие, а затем выбрать пункт Habit.
+
+Привычка будет автоматически помечена датой, когда она была знасенеа. Все привычки можно увидеть в виджете Habits Counter. Здесь можно увидеть прошедшее число дней, а также пометить привычку как завершенную.
+
+На странице Habit Management можно найти активные привычки, а также архивные. Для каждой доступно редактирование и удаление.
+
+### Подмигивание
+
+Бывают такие занятия, которые не являются обязательными, не имеют определенного срока, их можно забыть или пропустить без особого ущерба. Однако желательно про эти занятия вспоминать, хотя бы нерегулярно. Для этого существует такой тип события как Wink (Подмигивание). С этой же помощью можно и запомнить какую-то задачу, только ненавязчиво. Периодически она будет появляться справа вверху экрана в отдельной карточке.
+
+В верхнем меню нужно выбрать пункт Wink и описать событие. Периодичность смены различных подмигиваний задается на странице Settings.
+
+### Счетчики
+
+В верхнем меню можно установить счетчики после события и до события.
+
+## Самоконтроль
+
+### Хронология
+
+Еще классики советовали в конце дня вспоминать, что с вами было в течение дня. Это позволяет не только лучше разобраться в себе и своих делах, но и постепенно составить хронологию вашей жизни. Для этого и служит виджет Chronology. Вы можете нажать двойную стрелку, чтобы виджет в более удобное модальное окно, которое пригодится вам, если у вас много событий.
+
+Всю свою хронологию вы можете найти на странице Chronology Management. Здесь в области Recent (Last 7 Days) отдельно выделена хронология последних 7 дней. Однако ниже доступен архив хронологии. Для всех записей доступно редактирование и удаление.
+
+### Обзор жизни
+
+Чтобы улучшить самоконтроль, надо тратить, как распределяются ваши занятия, дела, задачи. Для этого служит виджет Live Observation. Здесь вы заносите свои дела, указываете время, дату, тип занятия. Нажав на значок дерева, вы увидите в полном варианте дерево своих занятий.
+
+Дела без конкретного времени распределяются равномерно по дереву. В виджете такие дела выглядят как зеленые кружочки.
+
+### История
+
+Вся информация о ваших занятиях, делах, задачах, идеях собирается на странице On This Day. Когда вы переходите на страницу, то получаете всю информацию за текущий день и за этот день в прошлые годы. Вы можете перейти на любой другой день, чтобы узнать, что делали, что вас занимало, о чем вы думали в этот день. Если в этот день какого-то вида занятий, записей не было, то подбираются из ближайших дней.
+
+## Сохранение идей
+
+### Заметки
+
+В виджете Notes вы можете сохранять свои заметки по интересующим вас темам, идеи. Можно создать категории, чтобы сохранять идеи по категориям.
+
+Все свои заметки вы найдете на странице Notes Management. Здесь их можно отсортировать по теме и периоду. В зависимости от категории заметки имеют рамки разного цвета, что облегчает их поиск.
+
+### Sticky Thoughts
+
+Часто возникают идеи, которые нужно оставить для того, чтобы подумать над ними позже. Для сохранения таких идей и служит Sticky Thoughts. Можно выбрать тип заметки - список или текст. Можно выделить их разными цветами. Найти стики за прошлые периоды можно на страние On This Day.
+
+## Обучение
+
+### Изучение иностранных слов
+
+Виджет показывает слова на английском, итальянском, немецком языках. Под этой тройкой слов идет перевод на русский язык, а также контекст слова. Контекст вы должны заполнить самостоятельно, это то, как вы понимаете это слово, какие смыслы оно несет для вас.
+
+Слова обновляются с периодичностью, указанной на странице Settings, но только при перезагрузке страницы. Из виджета вы можете редактировать слова, а также помечать их выученными. Пометить можно только всю тройку слов сразу.
+
+Из виджета или из нижнего меню можно перейти на страницу Word Study Statistics.
+
+На странице Word Study Statistics сначала идет шесть карточек:
+
+1) Total Volume – показывает общее количество изучаемых слов;
+2) Coverage – показывает, какое количество из всего количества слов было показано в виджете на главной странице и в Brain Workout. Если слово показано в виджете и в Brain Workout, то учитывается только один показ в виджете, и наоборот. Количество повторений слова в виджете или в Brain Workout не влияет на счетчик Coverage;
+3) iMW Index – индекс запоминания слов. Каждое слово нужно увидеть не менее 80 раз в различных контекстах, чтобы запомнить его. Это средняя величина. Индекс показывает, как много слов из общего количества слов было показано раз по сравнению с количеством, которое получается как умножение общего количества слова на 80 показов каждого слова. Чем выше индекс, тем лучше;
+4) Fully Learned – количество выученных троек слов на главной странице;
+5) Known EN, Known IT, Known DE – количество выученных слов на разных языках. Здесь учитываются нажатия "I know this" в Brain Workout;
+6) Shown Today – здесь считается, сколько всего слов показано в течение дня на главной странице и в Brain Workout. Если одно и то же слово в течение дня было показано на главной странице и в Brain Workout, то оно считается дважды. Смысл Shown Today в том, чтобы показать, сколько раз вы видели иностранные слова в течение дня.
+
+Brain Workout – это виджет для оценки знания слов. Нажмите Start Test, вам покажут 5 слов на разных языках. Вы должны выбрать: знакомо это слово вам или нет. Здесь же доступны подсказки, а также возможность отредактировать слово.
+
+Most Encountered Words показывает 12 наиболее часто появлявшихся слов.
+
+Ниже идут графики, оценивающие уровень обучения:
+
+1) Distribution by Knowledge Level – показывает, сколько слов попадает в группы по количеству показов;
+2) Knowledge by Language – показывает, сколько слов по языкам вы пометили как знакомые вам;
+3) Words Shown Per Day (Last 30 days) - это графическое отображение данных из карточки Shown Today за 30 дней;
+4) Progress Trends (Last 30 snapshots) – гарфик показывает, как растет количество показа слов и индекс iMW.
 
 ---
 
-## 📖 About the Project
+## 🚀 Установка и запуск
 
-**Papanda** is a personal resource management system combining planning, learning, and reflection in a single interface.
+### Вариант 1: Запуск из исходного кода (для разработчиков)
 
-Unlike popular alternatives (Notаion, Todoist), the project follows the philosophy of **local data storage**. All information is stored in a local `SQLite` database, ensuring complete privacy and data durability.
+**Требования:**
+- Python 3.12+
 
-## Key Features
-* **Event Matrix:** A unified timeline for the past (Chronology) and the future (Events).
-* **Monolithic Architecture:** Calendar, tasks, habit training, and dictionary are connected into a single ecosystem.
-* **Stochastic Learning:** An interval repetition algorithm with probabilistic sampling for language learning.
+**Шаги:**
 
-
----
-
-## 📸 Interface / Интерфейс
-
-<div align="center">
-  <h3>Main Window</h3>
-  <img src="screenshots/main_window.png" width="800" alt="Main Window" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
-  
-  <h3>Settings</h3>
-  <img src="screenshots/settings.png" width="800" alt="Settings Window" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
-</div>
-
----
----
-
-## 📐 Interface Architecture (3 Levels)
-
-The application is built on the principle of a three-level information hierarchy.
-
-### 1. Top Level
-Future planning and focus retention zone.
-* **Events:** Event calendar. Important events are highlighted 7 days in advance.
-* **One Thing:** A method for concentrating on one main goal of the period. "One thing" is the choice of a single activity that is most important to you in the immediate long term. You need to focus on this activity. "Replacement" is an activity to replace the "One thing" when you get tired of one task, for variety.
-* **Wink:** A mechanism for "soft" habit formation through subconscious reminders. A Wink appears in the top right corner. If you have entered multiple Winks, they will change (the change speed is set in the settings).
-* **Counters:** Day counters "Until" an event and "After" an event. Here you can set a counter until an important event in the future or after an important event in the past.
-
-### 2. Middle Level
-The main working zone of the day.
-* **Chronology & Notes:** Left column. Reflection on the past. Chronology records facts, Notes record thoughts.
-* **Tasks & Habits:** Central column. Lists of current to-dos and habit tracker (Streaks).
-* **Linguistics:** Right column. Language learning block with calculation of **Coverage** (dictionary coverage) and **iMW** (intensity) metrics. Includes a pronunciation rule switch (RU/EN).
-
-### 3. Bottom Level
-Data management.
-* Direct access to database tables (CRUD).
-
-### Access to Settings and Databases
-At this level, there are links to settings and databases for editing. On the database pages, it is possible to both edit a record and delete it.
-
-On the Settings page, you see a 3-month calendar grouped by month. The latest database entries are also displayed here. In the settings, you can set the time for Wink and the word change frequency. Additionally, you can upload old databases, clear the database, and edit note categories.
-
----
-
-## 🛠 Installation and Launch
-
-The project does not require complex configuration. Python is sufficient.
-
-## 📥 Download App
-
-The latest version for Windows and macOS is available in the releases section:
-
-[**👉 DOWNLOAD LATEST VERSION**](https://github.com/Ruslan-Nazarov/papanda/releases/latest)
-
----
-
-## 🔄 How to Update
-
-Since Papanda works in **Portable Mode**, your data (database and settings) is stored in the `instance` folder right next to the application file.
-
-**To update to a new version:**
-
-1.  Download the new `run.exe` (or `papanda.exe`) file.
-2.  Open the folder where your current version is located.
-3.  **Replace** the old `.exe` file with the new one.
-4.  **Important:** Do NOT delete or replace the `instance` folder. This is where your `papanda.db` database is stored.
-
-Your data will automatically be picked up by the new version.
-
-### 1. Cloning
 ```bash
-git clone [https://github.com/Ruslan-Nazarov/papanda.git](https://github.com/Ruslan-Nazarov/papanda.git)
-
+# 1. Клонируйте репозиторий
+git clone https://github.com/your-username/papanda.git
 cd papanda
 
+# 2. Установите зависимости
+pip install -r requirements.txt
+
+# 3. Запустите приложение
+python run_fastapi.py
+```
+
+Приложение откроется в браузере автоматически по адресу `http://127.0.0.1:8000`.  
+При первом запуске база данных создаётся автоматически.
+
+---
+
+### Вариант 2: Готовый исполняемый файл (.exe)
+
+Скачайте `Papanda.exe` из раздела [Releases](https://github.com/your-username/papanda/releases), запустите его — браузер откроется сам.
+
+> ⚠️ Windows может показать предупреждение о неизвестном издателе. Нажмите **«Подробнее» → «Выполнить в любом случае»**.
+
+Все данные (база, настройки) будут сохраняться в папке `data/` рядом с `.exe` файлом.
+
+Чтобы **остановить сервер**, перейдите в **Settings → STOP SERVER**.
+
+---
+
+### Сборка .exe самостоятельно
+
+```bash
+pip install pyinstaller
+```
+
+Затем запустите файл `create_bundle.bat` в корне проекта. Готовый `Papanda.exe` появится в папке `dist/`.
+
+---
+
+## 🧪 Тесты
+
+```bash
+pytest tests/
+```
+
+---
+
+## 📋 Подготовка к публикации на GitHub
+
+В разделе **Settings → Sharing Preparation** доступна кнопка **«Deep Clean»**, которая удаляет все личные данные, сбрасывает ключи безопасности и очищает логи — оставляя только чистый код, готовый к публикации.
+
+---
+
+## 🛠️ Технологический стек
+
+Papanda — это полноценное веб-приложение, которое работает локально прямо на вашем компьютере. Никаких внешних серверов, никаких облаков — только вы и ваши данные.
+
+### Backend
+
+| Компонент | Библиотека | Роль |
+|---|---|---|
+| **Web-фреймворк** | [FastAPI](https://fastapi.tiangolo.com/) | Высокопроизводительный асинхронный фреймворк на Python. Обрабатывает все запросы, маршруты и API-эндпоинты. |
+| **ASGI-сервер** | [Uvicorn](https://www.uvicorn.org/) | Запускает FastAPI-приложение, обеспечивая асинхронную обработку соединений. |
+| **Шаблонизатор** | [Jinja2](https://jinja.palletsprojects.com/) | Генерирует HTML-страницы на сервере, поддерживает наследование шаблонов и частичные `partials`. |
+| **ORM** | [SQLAlchemy](https://www.sqlalchemy.org/) (async) | Описывает модели данных и выполняет запросы к базе данных в асинхронном режиме. |
+| **База данных** | [SQLite](https://www.sqlite.org/) + [aiosqlite](https://github.com/omnilib/aiosqlite) | Встраиваемая файловая БД. Не требует установки сервера, все данные хранятся в одном `.db`-файле. |
+| **Аутентификация** | [python-jose](https://github.com/mpdavis/python-jose) + [passlib](https://passlib.readthedocs.io/) | JWT-токены для сессий, хеширование паролей через bcrypt. |
+| **Конфигурация** | [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) + [python-dotenv](https://github.com/theskumar/python-dotenv) | Типизированные настройки приложения, загружаемые из `.env`-файла. |
+| **Excel** | [openpyxl](https://openpyxl.readthedocs.io/) | Экспорт и импорт словаря слов в формате `.xlsx`. |
+
+### Frontend
+
+Никаких тяжелых фреймворков — только нативные технологии браузера:
+
+- **HTML + Jinja2-шаблоны** — серверный рендеринг страниц с компонентной структурой через `partials/`
+- **Vanilla CSS** — кастомная дизайн-система с переменными, анимациями и glassmorphism-эффектами
+- **Vanilla JavaScript** — интерактивность виджетов, fetch-запросы к API, drag-and-drop, динамические обновления без перезагрузки страниц
+
+### Упаковка и распространение
+
+- **[PyInstaller](https://pyinstaller.org/)** — собирает всё приложение (Python, шаблоны, статику) в единый `.exe`-файл, который запускается без установки Python
+
+### Тестирование
+
+- **[pytest](https://pytest.org/) + [pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio)** — асинхронные юнит- и интеграционные тесты
+- **[httpx](https://www.python-httpx.org/)** — HTTP-клиент для тестирования API-эндпоинтов
+
+---
+
+## 📄 Лицензия
+
+[MIT License](LICENSE) © Руслан Назаров

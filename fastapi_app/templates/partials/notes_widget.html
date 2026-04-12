@@ -1,0 +1,155 @@
+                    <div class="section note-section">
+                        <div class="widget-header">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Notes
+                            </h1>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <button type="button" title="Open full editor" onclick="openNoteExpandModal()"
+                                    style="background: none; border: none; cursor: pointer; font-size: 1.1em; color: #888; padding: 2px 6px; border-radius: 4px; transition: background 0.2s;"
+                                    onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='none'"
+                                >⤢</button>
+                                <button
+                                    type="button"
+                                    class="collapse-btn collapse-btn-toggle"
+                                    onclick="toggleWidget(this)"
+                                    title="Свернуть / развернуть"
+                                >
+                                    ▾
+                                </button>
+                            </div>
+                        </div>
+                        <div class="widget-body">
+                            <form
+                                method="post"
+                                action="/add_note"
+                                class="form-common"
+                            >
+                                <div
+                                    style="
+                                        display: flex;
+                                        gap: 5px;
+                                        align-items: center;
+                                        flex-wrap: wrap;
+                                    "
+                                >
+                                    <select
+                                        name="category"
+                                        required
+                                        style="flex-grow: 1"
+                                    >
+                                        {% for category in categories %}
+                                        <option value="{{ category }}">
+                                            {{ category }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onclick="showAddCategory()"
+                                        title="New Category"
+                                        style="
+                                            padding: 5px 10px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 5px;
+                                            cursor: pointer;
+                                        "
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </form>
+
+                            <form
+                                id="addCategoryForm"
+                                method="post"
+                                action="/settings/categories/edit"
+                                style="
+                                    display: none;
+                                    margin-top: 10px;
+                                    padding: 10px;
+                                    background: #f0f8ff;
+                                    border-radius: 5px;
+                                    border: 1px dashed #add8e6;
+                                "
+                            >
+                                <div
+                                    style="
+                                        display: flex;
+                                        gap: 5px;
+                                        flex-wrap: wrap;
+                                    "
+                                >
+                                    <input
+                                        type="text"
+                                        name="new_category"
+                                        placeholder="Category name..."
+                                        style="
+                                            flex-grow: 1;
+                                            height: 30px;
+                                            padding: 0 10px;
+                                            border: 1px solid #ddd;
+                                            border-radius: 5px;
+                                        "
+                                    />
+                                    <button
+                                        type="submit"
+                                        style="
+                                            background: #add8e6;
+                                            border: none;
+                                            padding: 0 15px;
+                                            border-radius: 5px;
+                                            cursor: pointer;
+                                        "
+                                    >
+                                        Add
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onclick="hideAddCategory()"
+                                        style="
+                                            background: #eee;
+                                            border: none;
+                                            padding: 0 10px;
+                                            border-radius: 5px;
+                                            cursor: pointer;
+                                        "
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            </form>
+
+                            <form
+                                method="post"
+                                action="/add_note"
+                                class="form-common"
+                                style="margin-top: 10px"
+                            >
+                                <textarea
+                                    name="note"
+                                    required
+                                    placeholder="Type your note here..."
+                                    style="height: 70px"
+                                ></textarea>
+                                <!-- Category is selected above; we store it here so the backend receives it with note -->
+                                <input
+                                    type="hidden"
+                                    name="category"
+                                    id="note_category_hidden"
+                                    value="{{ categories[0] if categories else 'default' }}"
+                                />
+                                <button
+                                    type="submit"
+                                    class="form-button"
+                                    style="
+                                        background-color: lightblue;
+                                        width: 100%;
+                                        max-width: none;
+                                        margin-top: 10px;
+                                    "
+                                >
+                                    Add Note
+                                </button>
+                            </form>
+                        </div>
+                    </div>

@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Настройки</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', path='css/styles.css') }}?v=3"
+        />
+        <link
+            rel="shortcut icon"
+            href="{{ url_for('static', path='app_icon.ico') }}"
+        />
+        <style>
+            .settings-wrapper {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            /* --- ШАПКА --- */
+            .header-line {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 30px;
+                padding-bottom: 15px;
+                border-bottom: 2px solid #ccc;
+            }
+
+            .header-line h1 {
+                margin: 0;
+            }
+
+            /* --- КАРТОЧКИ --- */
+            .card {
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #aaa;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 25px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            }
+
+            .card h2 {
+                margin-top: 0;
+                font-size: 1.4em;
+                color: #222;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+
+            /* --- ТАБЛИЦЫ --- */
+            .calendar-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 1.05em;
+            }
+            .calendar-table td {
+                padding: 12px 8px;
+                border-bottom: 1px solid #ddd;
+                vertical-align: middle;
+            }
+            .date-col {
+                font-weight: bold;
+                color: #444;
+                width: 110px;
+                white-space: nowrap;
+            }
+
+            .month-header {
+                background-color: #e1f5fe;
+                color: #0277bd;
+                font-weight: bold;
+                text-transform: uppercase;
+                padding: 8px 12px;
+                margin-top: 15px;
+                margin-bottom: 5px;
+                border-radius: 4px;
+                display: inline-block;
+                font-size: 0.9em;
+            }
+
+            .diag-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .diag-table th {
+                text-align: left;
+                background: #eee;
+                padding: 10px;
+                color: #444;
+                font-size: 0.9em;
+            }
+            .diag-table td {
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            /* --- ФОРМЫ --- */
+            .settings-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            .form-box {
+                background: rgba(255, 255, 255, 0.6);
+                padding: 15px;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+            }
+            .form-box label {
+                display: block;
+                font-weight: bold;
+                margin-bottom: 8px;
+                color: #444;
+            }
+            .form-box input {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #999;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            .btn-save {
+                width: 100%;
+                margin-top: 10px;
+                padding: 10px;
+                background: #4caf50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 1em;
+            }
+            .btn-save:hover {
+                background: #45a049;
+            }
+
+            .btn-blue {
+                background: #2196f3;
+            }
+            .btn-blue:hover {
+                background: #1976d2;
+            }
+
+            .btn-del {
+                color: #d32f2f;
+                background: none;
+                border: none;
+                cursor: pointer;
+                text-decoration: underline;
+                font-size: 0.9em;
+            }
+            .btn-del:hover {
+                color: #b71c1c;
+            }
+
+            @media (max-width: 600px) {
+                .settings-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="settings-wrapper">
+            <div class="header-line">
+                <h1>Settings</h1>
+                <div
+                    style="
+                        border: 1px solid #999;
+                        background-color: #fff9f4;
+                        padding: 5px 15px;
+                        border-radius: 4px;
+                    "
+                >
+                    <a
+                        href="{{ url_for('index') }}"
+                        style="
+                            text-decoration: none;
+                            color: #000;
+                            font-weight: bold;
+                            white-space: nowrap;
+                        "
+                        >← Home</a
+                    >
+                </div>
+            </div>
+
+
+            <div class="card">
+                <h2>Dictionary Synchronization</h2>
+                <div
+                    class="form-box"
+                    style="
+                        background: #fff9f0;
+                        border-color: #ffe0b2;
+                        text-align: center;
+                    "
+                >
+                    <form
+                        action="{{ url_for('import_excel') }}"
+                        method="post"
+                        style="margin-bottom: 10px"
+                    >
+                        <label style="display: block; margin-bottom: 10px"
+                            >Import words from <b>translate.xlsx</b>:</label
+                        >
+                        <button
+                            type="submit"
+                            class="btn-save btn-orange"
+                            style="max-width: 300px; margin: 0 auto"
+                        >
+                            Import to Database
+                        </button>
+                    </form>
+                    <div
+                        style="
+                            display: flex;
+                            gap: 10px;
+                            justify-content: center;
+                            margin-bottom: 10px;
+                        "
+                    >
+                        <a
+                            href="{{ url_for('export_excel', model_name='WordStats') }}"
+                            class="btn-save"
+                            style="background-color: #28a745; color: white"
+                            >Export WordStats Excel</a
+                        >
+                    </div>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 10px">
+                        * This will update the word list and translations in the
+                        app from your Excel file.
+                    </p>
+                </div>
+            </div>
+
+            {% if import_result %}
+            <div class="card">
+                <h2>Import Results</h2>
+                <div
+                    class="form-box"
+                    style="background: {% if import_result.success %}#f0fff0{% else %}#fff0f0{% endif %}; border-color: {% if import_result.success %}#b2ffb2{% else %}#ffb2b2{% endif %};"
+                >
+                    <p><strong>{{ import_result.message }}</strong></p>
+                    {% if import_result.counts %}
+                    <p>Summary:</p>
+                    <ul>
+                        <li>New words: {{ import_result.counts.new }}</li>
+                        <li>
+                            Skipped (identical): {{ import_result.counts.skipped
+                            }}
+                        </li>
+                        <li>Conflicts: {{ import_result.counts.conflicts }}</li>
+                    </ul>
+                    {% endif %} {% if import_result.conflicts_list %}
+                    <h3 style="margin-top: 20px; color: #222">
+                        Окно синхронизации расхождений
+                    </h3>
+                    <p>
+                        Выберите, какое действие применить к найденным
+                        расхождениям (по умолчанию конфликты игнорируются).
+                    </p>
+
+                    <form
+                        action="/settings/sync_conflicts"
+                        method="post"
+                        id="syncForm"
+                    >
+                        <div style="margin-bottom: 10px">
+                            <button
+                                type="button"
+                                class="btn-save btn-blue"
+                                style="
+                                    width: auto;
+                                    margin-right: 10px;
+                                    padding: 5px 15px;
+                                "
+                                onclick="selectAll('to_db')"
+                            >
+                                Всё в БД (из Файла)
+                            </button>
+                            <button
+                                type="button"
+                                class="btn-save btn-blue"
+                                style="width: auto; padding: 5px 15px"
+                                onclick="selectAll('to_file')"
+                            >
+                                Всё в Файл (из БД)
+                            </button>
+                        </div>
+
+                        <table
+                            class="diag-table"
+                            style="
+                                background: white;
+                                border: 1px solid #ccc;
+                                max-width: 100%;
+                            "
+                        >
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">Слово</th>
+                                    <th style="width: 55%">
+                                        Детали (Поле: БД vs Файл)
+                                    </th>
+                                    <th style="width: 30%">Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for conflict in import_result.conflicts_list
+                                %}
+                                <tr>
+                                    <td
+                                        style="
+                                            font-weight: bold;
+                                            vertical-align: top;
+                                        "
+                                    >
+                                        {{ conflict.word }}
+                                    </td>
+                                    <td
+                                        style="
+                                            font-size: 0.9em;
+                                            line-height: 1.4;
+                                            vertical-align: top;
+                                        "
+                                    >
+                                        {% for field, diff in
+                                        conflict.field_diffs.items() %}
+                                        <strong>{{ field }}</strong>:
+                                        <span style="color: #c62828"
+                                            >БД: "{{ diff.db }}"</span
+                                        >
+                                        |
+                                        <span style="color: #1565c0"
+                                            >Файл: "{{ diff.file }}"</span
+                                        ><br />
+                                        {% endfor %}
+                                    </td>
+                                    <td
+                                        style="
+                                            font-size: 0.9em;
+                                            vertical-align: top;
+                                        "
+                                    >
+                                        <label
+                                            style="
+                                                display: block;
+                                                margin-bottom: 4px;
+                                                font-weight: normal;
+                                                font-size: 0.95em;
+                                                cursor: pointer;
+                                            "
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="action_{{ conflict.word }}"
+                                                value="ignore"
+                                                checked
+                                            />
+                                            Оставить как есть
+                                        </label>
+                                        <label
+                                            style="
+                                                display: block;
+                                                margin-bottom: 4px;
+                                                font-weight: normal;
+                                                font-size: 0.95em;
+                                                cursor: pointer;
+                                            "
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="action_{{ conflict.word }}"
+                                                value="to_db"
+                                                class="radio-to-db"
+                                            />
+                                            Взять из Файла (в БД)
+                                        </label>
+                                        <label
+                                            style="
+                                                display: block;
+                                                font-weight: normal;
+                                                font-size: 0.95em;
+                                                cursor: pointer;
+                                            "
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="action_{{ conflict.word }}"
+                                                value="to_file"
+                                                class="radio-to-file"
+                                            />
+                                            Отправить в Файл
+                                        </label>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 15px; text-align: center">
+                            <button
+                                type="submit"
+                                class="btn-save btn-orange"
+                                style="
+                                    max-width: 300px;
+                                    padding: 12px;
+                                    font-weight: bold;
+                                "
+                            >
+                                Применить синхронизацию
+                            </button>
+                            <p
+                                style="
+                                    font-size: 0.85em;
+                                    color: gray;
+                                    margin-top: 8px;
+                                "
+                            >
+                                * Внимание, сохранение "в Файл" требует
+                                закрытого Excel.
+                            </p>
+                        </div>
+                    </form>
+
+                    <script>
+                        function selectAll(val) {
+                            if (val === "to_db") {
+                                document
+                                    .querySelectorAll(".radio-to-db")
+                                    .forEach((el) => (el.checked = true));
+                            } else if (val === "to_file") {
+                                document
+                                    .querySelectorAll(".radio-to-file")
+                                    .forEach((el) => (el.checked = true));
+                            }
+                        }
+                    </script>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <h2>Algorithm settings</h2>
+                <div class="settings-grid">
+                    <div class="form-box">
+                        <form
+                            action="{{ url_for('update_settings') }}"
+                            method="post"
+                        >
+                            <label>Max Wink time, min:</label>
+                            <input
+                                type="number"
+                                name="max_duration"
+                                value="{{ max_duration }}"
+                                required
+                            />
+                            <button type="submit" class="btn-save">
+                                Save Wink
+                            </button>
+                        </form>
+                    </div>
+                    <div class="form-box">
+                        <form
+                            action="{{ url_for('update_settings') }}"
+                            method="post"
+                        >
+                            <label>Word replacement interval, min:</label>
+                            <input
+                                type="number"
+                                name="max_random_minutes"
+                                value="{{ max_random_minutes }}"
+                                required
+                            />
+                            <button type="submit" class="btn-save">
+                                Save interval
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Account Management</h2>
+                <div class="settings-grid">
+                    <div class="form-box">
+                        <form
+                            action="{{ url_for('update_account') }}"
+                            method="post"
+                            onsubmit="confirmFormSubmit(event, 'Update Account', 'Are you sure you want to change your username? The session might be terminated.')"
+                        >
+                            <label>Username:</label>
+                            <input
+                                type="text"
+                                name="username"
+                                value="{{ current_user_name }}"
+                                required
+                            />
+                            <button type="submit" class="btn-save">
+                                Update Username
+                            </button>
+                        </form>
+                    </div>
+                    <div class="form-box">
+                        <form
+                            action="{{ url_for('update_account') }}"
+                            method="post"
+                        >
+                            <label>New Password:</label>
+                            <input
+                                type="password"
+                                name="password"
+                                placeholder="Leave empty to keep current"
+                            />
+                            <p
+                                style="
+                                    font-size: 0.8em;
+                                    color: #666;
+                                    margin-top: 5px;
+                                "
+                            >
+                                * Минимум 8 символов
+                            </p>
+                            <button type="submit" class="btn-save">
+                                Update Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; text-align: center">
+                    <form
+                        action="{{ url_for('logout') }}"
+                        method="post"
+                        id="logout-form"
+                    >
+                        <button
+                            type="submit"
+                            class="btn-del"
+                            style="
+                                color: #ff8c00;
+                                font-weight: bold;
+                                font-size: 1.1em;
+                                background: none;
+                                border: none;
+                                cursor: pointer;
+                                text-decoration: underline;
+                            "
+                        >
+                            Logout from Session
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Managing database files</h2>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #ccc;">
+                    <h3 style="margin-top: 0; font-size: 1.1em;">Upload Database Backup</h3>
+                    <form action="{{ url_for('upload_db') }}" method="post" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="file" name="db_file" accept=".db" required style="flex-grow: 1; padding: 5px; border: 1px solid #ddd; background: white; border-radius: 4px;">
+                        <button type="submit" class="btn-save" style="width: auto; padding: 8px 15px; margin:0;">Upload .db</button>
+                    </form>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 8px; margin-bottom: 0;">
+                        Upload a previously saved <code>papanda.db</code> file to the list below.
+                    </p>
+                </div>
+
+                <table class="diag-table" style="width: 100%;">
+                    {% for f in db_files %}
+                    <tr>
+                        <td>{{ f.name }}</td>
+                        <td>{{ f.size }}</td>
+                        <td style="text-align: right">
+                            {% if not f.is_active %}
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+                                <form action="{{ url_for('activate_db', filename=f.name) }}" method="post" onsubmit="confirmFormSubmit(event, 'Activate Database', 'Switch to this database? The current one will be backed up.')">
+                                    <button type="submit" class="btn-save" style="background-color: #4caf50; padding: 3px 10px; width: auto; font-size: 0.9em; margin:0;">Activate</button>
+                                </form>
+                                <a href="{{ url_for('download_db', filename=f.name) }}" class="btn-del" style="color: #2196f3; text-decoration: none; border: 1px solid #2196f3; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">Download</a>
+                                <form
+                                    action="{{ url_for('delete_db_file', filename=f.name) }}"
+                                    method="post"
+                                    onsubmit="confirmFormSubmit(event, 'Delete Database', 'Are you sure? This will delete the database file!')"
+                                >
+                                    <button type="submit" class="btn-del" style="font-size: 0.9em; padding: 2px 8px;">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+                                <a href="{{ url_for('download_db', filename=f.name) }}" class="btn-del" style="color: #2196f3; text-decoration: none; border: 1px solid #2196f3; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">Download Active</a>
+                                <span style="color: green; font-weight: bold; font-size: 0.9em;">Active</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            <div class="card" style="border: 2px solid #ff5252; background: #fff8f8; margin-top: 30px;">
+                <h2 style="color: #d32f2f;">Sharing Preparation (Deep Clean)</h2>
+                <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
+                    This will <b>PERMANENTLY DELETE</b> all data, including your account, words, stickers, notes and history. 
+                    <b>All backup databases (.db) and your translate.xlsx file will also be deleted.</b> 
+                    Wink and Word intervals will be reset to defaults (360/60). You will be logged out.
+                </p>
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="cleanConfirmInput" placeholder="Type CLEAN to confirm" 
+                               style="padding: 12px; border: 2px solid #ffcdd2; border-radius: 6px; width: 280px; text-align: center; font-weight: bold; outline: none;">
+                    </div>
+                    <form action="{{ url_for('deep_clean') }}" method="post" id="deepCleanForm">
+                        <button type="submit" id="deepCleanBtn" class="btn-save" 
+                                style="background-color: #ff5252; opacity: 0.4; cursor: not-allowed; max-width: 320px; font-weight: bold;" disabled>
+                            WIPE EVERYTHING & LOGOUT
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 30px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 12px; transition: all 0.3s ease;">
+                <h2 style="color: #666; font-size: 1.4em;">Shutdown Application</h2>
+                <p style="font-size: 0.9em; color: #888; margin-bottom: 20px;">
+                    Correctly stops the server. Recommended for the portable (.exe) version.
+                </p>
+                <div style="text-align: center;">
+                    <button type="button" onclick="confirmShutdown()" class="btn-save" 
+                            style="background-color: #757575; max-width: 250px; border-radius: 8px;">
+                        STOP SERVER
+                    </button>
+                </div>
+            </div>
+
+            <script>
+                async function confirmShutdown() {
+                    const confirmed = await customConfirm({
+                        title: 'Confirm Shutdown',
+                        message: 'Save your work before stopping! The server will close and you will need to restart the application to access it again. Continue?',
+                        buttons: [
+                            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                            { label: 'Shutdown', value: true, class: 'confirm-btn-primary' }
+                        ]
+                    });
+                    
+                    if (confirmed) {
+                        try {
+                            const response = await fetch('/settings/shutdown_app', { method: 'POST' });
+                            const data = await response.json();
+                            if (data.status === 'success') {
+                                document.body.innerHTML = `
+                                    <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; text-align: center; background: #f4f4f4;">
+                                        <h1 style="color: #333;">Service Stopped</h1>
+                                        <p style="color: #666;">The application has been shut down safely.<br>You can now close this browser tab.</p>
+                                    </div>
+                                `;
+                            }
+                        } catch (e) {
+                            console.error('Shutdown failed', e);
+                            alert('Shutdown request failed. You may need to close it manually.');
+                        }
+                    }
+                }
+            </script>
+
+            <script>
+                (function() {
+                    const cleanInput = document.getElementById('cleanConfirmInput');
+                    const cleanBtn = document.getElementById('deepCleanBtn');
+                    if (cleanInput && cleanBtn) {
+                        cleanInput.addEventListener('input', function() {
+                            if (this.value === 'CLEAN') {
+                                cleanBtn.disabled = false;
+                                cleanBtn.style.opacity = '1';
+                                cleanBtn.style.cursor = 'pointer';
+                                cleanInput.style.borderColor = '#4caf50';
+                            } else {
+                                cleanBtn.disabled = true;
+                                cleanBtn.style.opacity = '0.4';
+                                cleanBtn.style.cursor = 'not-allowed';
+                                cleanInput.style.borderColor = '#ffcdd2';
+                            }
+                        });
+                    }
+                })();
+
+                async function confirmFormSubmit(event, title, message) {
+                    event.preventDefault();
+                    const form = event.target;
+                    const confirmed = await customConfirm({
+                        title: title,
+                        message: message,
+                        buttons: [
+                            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                            { label: 'Confirm', value: true, class: 'confirm-btn-primary' }
+                        ]
+                    });
+                    if (confirmed) {
+                        form.submit();
+                    }
+                }
+
+                /**
+                 * Beautiful Custom Confirmation Modal
+                 */
+                function customConfirm({ title = 'Confirmation', message = 'Are you sure?', buttons = [] }) {
+                    return new Promise((resolve) => {
+                        const modal = document.getElementById('customConfirmModal');
+                        const titleEl = document.getElementById('confirmModalTitle');
+                        const messageEl = document.getElementById('confirmModalMessage');
+                        const footerEl = document.getElementById('confirmModalFooter');
+
+                        titleEl.innerText = title;
+                        messageEl.innerHTML = message;
+                        footerEl.innerHTML = '';
+
+                        if (buttons.length === 0) {
+                            buttons = [
+                                { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                                { label: 'OK', value: true, class: 'confirm-btn-primary' }
+                            ];
+                        }
+
+                        buttons.forEach(btn => {
+                            const button = document.createElement('button');
+                            button.innerText = btn.label;
+                            button.className = 'confirm-btn ' + (btn.class || 'confirm-btn-secondary');
+                            button.onclick = () => {
+                                modal.style.setProperty('display', 'none', 'important');
+                                resolve(btn.value);
+                            };
+                            footerEl.appendChild(button);
+                        });
+
+                        modal.style.setProperty('display', 'flex', 'important');
+                    });
+                }
+            </script>
+
+            <!-- Custom Confirmation Modal -->
+            <div id="customConfirmModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span id="confirmModalTitle">Confirmation</span>
+                    </div>
+                    <div class="modal-body">
+                        <p id="confirmModalMessage">Are you sure?</p>
+                    </div>
+                    <div class="modal-footer" id="confirmModalFooter">
+                        <!-- Buttons will be injected here -->
+                    </div>
+                </div>
+            </div>
+            </script>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <div class="footer-container">
+                <div class="footer-nav main-nav">
+                    <a href="/word_stats" class="footer-btn">📊 Stats</a>
+                    <a href="/history" class="footer-btn">📅 History</a>
+                    <a href="/settings" class="footer-btn active"
+                        >⚙️ Settings</a
+                    >
+                </div>
+                <div class="footer-nav data-nav">
+                    <a href="/db_view/Event" class="footer-btn">Events</a>
+                    <a href="/db_view/Habit" class="footer-btn">Habits</a>
+                    <a href="/db_view/Task" class="footer-btn">Tasks</a>
+                    <a href="/db_view/Chronology" class="footer-btn">Chrono</a>
+                    <a href="/db_view/Notes" class="footer-btn">Notes</a>
+                    <a href="/db_view/Wink" class="footer-btn">Wink</a>
+                </div>
+                <div class="footer-version">
+                    papanda version 0.5.1 (est. 21.11.2023; last update
+                    18.12.2025)
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+```

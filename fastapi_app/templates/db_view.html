@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DB: {{ model_name }} - Papanda</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
+    <style>
+        .settings-wrapper {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 80vh;
+        }
+
+        /* --- ШАПКА --- */
+        .header-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #F2994A;
+        }
+
+        .header-line h1 { margin: 0; font-size: 1.8em; color: #333; }
+
+        /* --- FILTER BAR --- */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group label { font-size: 0.85em; font-weight: 600; color: #666; }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .filter-select:focus { border-color: #F2994A; }
+
+        .btn-filter-go {
+            background: #F2994A;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-filter-go:hover { background: #e08e45; }
+
+        .nav-arrow {
+            text-decoration: none;
+            background: #f8f9fa;
+            color: #333;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.2s;
+            border: 1px solid #ddd;
+        }
+        .nav-arrow:hover {
+            background: #F2994A;
+            color: white;
+            border-color: #F2994A;
+            transform: scale(1.1);
+        }
+
+        /* Custom Choice/Confirm Modal Styles - CRITICAL FIX FOR COLUMN VIEW */
+        #customConfirmModal {
+            display: none !important;
+            position: fixed !important;
+            z-index: 100000 !important;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        #customConfirmModal .modal-content {
+            background-color: #fff; border-radius: 16px; width: 95%; max-width: 500px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); overflow: hidden;
+            animation: modalSlideUp 0.3s ease-out;
+        }
+        #customConfirmModal .modal-header {
+            padding: 18px 25px; background: #fdfaf3; border-bottom: 1px solid #eee;
+            font-weight: bold; color: #333; font-size: 1.2rem;
+        }
+        #customConfirmModal .modal-body {
+            padding: 30px 25px; font-size: 1.05rem; color: #444;
+        }
+        #customConfirmModal .modal-footer {
+            padding: 15px 25px; background: #fdfaf3; border-top: 1px solid #eee;
+            display: flex; gap: 12px; justify-content: flex-end;
+        }
+        .choice-container { width: 100%; }
+        .choice-list { display: flex !important; flex-direction: column !important; gap: 12px !important; margin-top: 15px !important; width: 100% !important; }
+        .choice-item {
+            display: flex !important; align-items: center !important; 
+            padding: 15px 20px !important; border: 2px solid #eee !important;
+            border-radius: 12px !important; cursor: pointer !important;
+            transition: all 0.2s ease !important; background-color: #fff !important;
+            text-align: left !important; width: 100% !important;
+            margin: 0 !important;
+        }
+        .choice-item:hover { border-color: #ddd !important; background-color: #f9f9f9 !important; }
+        .choice-item.selected { border-color: #F2994A !important; background-color: #fff9f3 !important; }
+        .choice-item input[type="radio"] { width: 22px !important; height: 22px !important; margin-right: 15px !important; cursor: pointer !important; accent-color: #F2994A !important; }
+        .choice-item span { font-size: 1.05rem !important; font-weight: 500 !important; color: #333 !important; }
+        .confirm-btn { padding: 10px 22px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; transition: all 0.2s; }
+        .confirm-btn-primary { background: #F2994A; color: white; }
+        .confirm-btn-primary:hover { background: #e68a30; }
+        .confirm-btn-secondary { background: #eee; color: #555; }
+        .confirm-btn-secondary:hover { background: #e0e0e0; }
+        .confirm-btn-danger { background: #eb5757; color: white; }
+        .confirm-btn-danger:hover { background: #d94646; }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* --- КАРТОЧКА --- */
+        .card {
+            background: rgba(255, 255, 255, 0.98); 
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- ТАБЛИЦА --- */
+        .db-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.9em; 
+            color: #444;
+            table-layout: auto;
+        }
+        
+        .db-table th { 
+            text-align: left; 
+            background: #fafafa; 
+            padding: 15px 12px; 
+            color: #666; 
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            text-transform: uppercase;
+            font-size: 0.75em;
+            letter-spacing: 0.5px;
+        }
+        
+        .db-table td { 
+            padding: 12px; 
+            border-bottom: 1px solid #f8f8f8; 
+            vertical-align: middle;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .db-table tr:last-child td { border-bottom: none; }
+        .db-table tr:hover { background-color: #fdfaf5; }
+
+        /* Status Badges */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .badge-true { background: #e8f5e9; color: #2e7d32; }
+        .badge-false { background: #f5f5f5; color: #9e9e9e; }
+        .badge-null { color: #bdbdbd; font-style: italic; }
+
+        /* --- ACTIONS --- */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-edit { background-color: #e3f2fd; color: #1976d2; }
+        .btn-edit:hover { background-color: #bbdefb; transform: translateY(-1px); }
+        .btn-del { background-color: #ffebee; color: #d32f2f; }
+        .btn-del:hover { background-color: #ffcdd2; transform: translateY(-1px); }
+
+        .btn-home {
+            background-color: #fdfaf3; border: 1px solid #ddd; color: #555;
+            padding: 10px 20px; border-radius: 8px; text-decoration: none;
+            font-size: 0.9em; font-weight: bold; transition: all 0.2s;
+        }
+        .btn-home:hover { background-color: #f2994a; color: white; border-color: #f2994a; }
+
+        /* --- MODAL --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999 !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .modal-content {
+            background: white !important;
+            width: 900px !important;
+            max-width: 95vw !important;
+            height: auto !important;
+            max-height: 85vh !important;
+            border-radius: 24px !important;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.4) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            animation: modalScaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 0 !important; /* Premium modals have internal padding in body */
+        }
+        @keyframes modalScaleUp {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header {
+            padding: 24px 30px !important;
+            background: #fdfaf3 !important;
+            border-bottom: 2px solid #eee !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            font-size: 1.6rem !important;
+            font-weight: 800 !important;
+            color: #222 !important;
+            margin: 0 !important;
+        }
+        .modal-close {
+            font-size: 2rem !important;
+            cursor: pointer !important;
+            color: #aaa !important;
+            transition: 0.2s !important;
+        }
+        .modal-close:hover { color: #f44336 !important; }
+        .modal-body {
+            padding: 30px !important;
+            flex: 1 !important;
+            overflow-y: auto !important;
+            background: white !important;
+        }
+        .modal-footer {
+            padding: 20px 30px !important;
+            background: #f9f9f9 !important;
+            border-top: 1px solid #eee !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+            gap: 20px !important;
+            margin: 0 !important;
+        }
+        .form-group-large { margin-bottom: 25px !important; }
+        .form-label-premium { 
+            display: block !important;
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            color: #444 !important;
+            margin-bottom: 10px !important;
+        }
+        .form-input-premium {
+            width: 100% !important;
+            padding: 15px 20px !important;
+            border: 2px solid #eee !important;
+            border-radius: 12px !important;
+            font-size: 1.1rem !important;
+            transition: 0.3s !important;
+            background: #fafafa !important;
+            box-sizing: border-box !important;
+        }
+        .form-input-premium:focus {
+            border-color: #F2994A !important;
+            background: white !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(242, 153, 74, 0.15) !important;
+        }
+        .btn-premium {
+            padding: 12px 28px !important;
+            border-radius: 14px !important;
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            transition: 0.3s !important;
+            border: none !important;
+        }
+        .btn-save-premium {
+            background: #27ae60 !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3) !important;
+        }
+        .btn-save-premium:hover {
+            background: #2ecc71 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4) !important;
+        }
+        .btn-cancel-premium {
+            background: #eee !important;
+            color: #666 !important;
+        }
+        .btn-cancel-premium:hover {
+            background: #e0e0e0 !important;
+        }
+
+        /* Weekday row from index.html */
+        .weekday-row {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .weekday-row label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75em;
+            color: #555;
+            cursor: pointer;
+            gap: 2px;
+            width: 26px;
+        }
+        .weekday-row input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
+        @media (max-width: 768px) {
+            .db-table th, .db-table td { padding: 10px 8px; }
+            .header-line h1 { font-size: 1.4em; }
+            .filter-bar { padding: 15px; gap: 10px; }
+        }
+
+        /* Clickable Note Cell */
+        .clickable-note {
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+        .clickable-note:hover {
+            background-color: #fff9c4 !important;
+            color: #333;
+        }
+        .calendar-wrapper { padding: 20px; }
+        .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 4px 8px; font-weight: 700; color: #666; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .calendar-cell {
+            background: #ffffff;
+            border: 1px solid #d8d8d8;
+            border-radius: 10px;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .calendar-cell.today {
+            border: 2px solid #F2994A;
+            box-shadow: 0 4px 15px rgba(242, 153, 74, 0.2);
+            z-index: 1;
+        }
+        .calendar-cell.today .cell-header {
+            background: linear-gradient(180deg, #fff3e0, #ffe0b2);
+            border-bottom: 1px solid #ffcc80;
+        }
+        .calendar-cell.today .cell-day {
+            color: #e65100;
+        }
+        .calendar-cell.other-month {
+            background: #fcfcfc;
+            opacity: 0.7;
+        }
+        .calendar-cell.other-month .cell-header {
+            background: #f5f5f5;
+            border-bottom: 1px solid #eee;
+        }
+        .calendar-cell.other-month .cell-day {
+            color: #999;
+        }
+        .cell-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            font-size: 0.85em;
+            color: #555;
+            background: linear-gradient(180deg, #faf7ff, #f5f0ff);
+            border-bottom: 1px solid #e9e1ff;
+        }
+        .cell-day { font-weight: 900; color: #2c2c2c; }
+        .cell-actions { display: flex; gap: 6px; align-items: center; }
+        .cell-add {
+            width: 22px; height: 22px; border-radius: 6px;
+            border: 1px solid #c6a8ff; background: #f8f2ff; color: #7a4cff;
+            cursor: pointer; font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center;
+        }
+        .cell-add:hover { background: #f1e6ff; }
+        .cell-body { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; background: #fff; }
+        .event-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: #ffffff;
+            border: 1px solid #dcd5ff;
+            border-left: 4px solid #9b59b6;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 0.9em;
+            cursor: grab;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .event-chip .title { color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .chip-actions { display: flex; gap: 6px; }
+        .chip-btn {
+            background: none;
+            border: none;
+            color: #6b6b6b;
+            cursor: pointer;
+            padding: 0 4px;
+            font-size: 1em;
+            line-height: 1;
+        }
+        .chip-btn:hover { color: #2c2c2c; }
+        .drop-hover { outline: 2px dashed #9b59b6; outline-offset: -2px; background: #fcf8ff; }
+        
+        /* Popover Styles */
+        .event-popover {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 15px;
+            width: 300px;
+            border: 1px solid #eee;
+            animation: popoverFadeIn 0.2s ease-out;
+        }
+        @keyframes popoverFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .popover-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        .popover-title {
+            font-weight: 700;
+            color: #333;
+            font-size: 1.1em;
+            word-break: break-word;
+        }
+        .popover-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2em;
+            line-height: 1;
+        }
+        .popover-body {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .popover-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .popover-icon {
+            font-size: 1.1em;
+        }
+        
+        @media (max-width: 900px) {
+            .calendar-cell { min-height: 90px; }
+        }
+
+        /* --- HABIT CARDS --- */
+        .habit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .habit-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .habit-card.active {
+            border-left: 5px solid #F2994A;
+            background: #fffdfa;
+        }
+        .habit-card.finished {
+            background: #f8f8f8;
+            opacity: 0.75;
+            filter: grayscale(0.5);
+        }
+        .habit-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .habit-card .habit-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+            word-break: break-word;
+        }
+        .habit-card .habit-date {
+            font-size: 0.85em;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .habit-card .habit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .load-more-container {
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+        }
+        .btn-load-more {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-load-more:hover {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        /* --- TASK CARDS --- */
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .task-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .task-card.active {
+            border-left: 5px solid #3498db;
+            background: #f7fbff;
+        }
+        .task-card.finished {
+            background: #f8f8f8;
+            opacity: 0.75;
+            filter: grayscale(0.5);
+        }
+        .task-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .task-card .task-name {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+            word-break: break-word;
+        }
+        .task-card .task-date {
+            font-size: 0.8em;
+            color: #999;
+        }
+        .task-card .task-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        /* --- CHRONOLOGY CARDS --- */
+        .chrono-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .chrono-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s;
+            position: relative;
+            cursor: pointer;
+        }
+        .chrono-card.recent {
+            border-left: 5px solid #9b59b6;
+            background: #fbf7ff;
+        }
+        .chrono-card.old {
+            background: #fcfcfc;
+            opacity: 0.85;
+        }
+        .chrono-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .chrono-card .chrono-title {
+            font-size: 1em;
+            color: #444;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+        .chrono-card .chrono-date {
+            font-size: 0.85em;
+            color: #9b59b6;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chrono-card .chrono-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        /* Viewer Modal for Chrono Text */
+        #chronoViewModal .modal-content {
+            background: #ffffff !important;
+            border-top: 6px solid #9b59b6 !important;
+        }
+        .chrono-view-text {
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* --- NOTES CARDS --- */
+        .notes-filter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 20px 0;
+        }
+        .note-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .note-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .note-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .note-card .note-cat {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: #555;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #f4f4f4;
+            width: fit-content;
+        }
+        .note-card .note-date {
+            font-size: 0.8em;
+            color: #888;
+        }
+        .note-card .note-text {
+            font-size: 0.95em;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .note-card .note-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        /* --- EXPANDING SEARCH BAR --- */
+        .search-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            padding: 4px 12px;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .search-wrapper:focus-within, .search-wrapper.has-query {
+            width: 300px;
+            border-color: #F2994A;
+            box-shadow: 0 2px 10px rgba(242, 153, 74, 0.15);
+        }
+        .search-wrapper input {
+            border: none;
+            outline: none;
+            padding: 8px 5px;
+            width: 0;
+            transition: width 0.3s ease;
+            font-size: 0.9em;
+            background: transparent;
+        }
+        .search-wrapper:focus-within input, .search-wrapper.has-query input {
+            width: 100%;
+        }
+        .search-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #666;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .search-wrapper:focus-within .search-icon-btn, .search-wrapper.has-query .search-icon-btn {
+            color: #F2994A;
+        }
+        .btn-clear-search {
+            background: #f0f0f0;
+            color: #888;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 0.8em;
+            transition: 0.2s;
+        }
+        .btn-clear-search:hover { background: #e0e0e0; color: #444; }
+    </style>
+</head>
+<body>
+
+<div class="settings-wrapper">
+    <div class="header-line">
+        <h1>{{ model_name }} Management</h1>
+        <div style="display: flex; gap: 10px;">
+            {% if model_name == 'Wink' %}
+                <button type="button" class="btn-home" style="background-color: #f2994a; color: white; border: none;" onclick="openAddWinkForDay('{{ now_iso }}')">+ Add Wink</button>
+            {% endif %}
+            <a href="{{ url_for('index') }}" class="btn-home">← Home</a>
+        </div>
+    </div>
+
+    {% if model_name in ['Event', 'Notes', 'Chronology'] %}
+    <div class="search-container">
+        <form class="search-wrapper {% if search_query %}has-query{% endif %}" action="{{ url_for('db_view', model_name=model_name) }}" method="GET">
+            <button type="submit" class="search-icon-btn">🔍</button>
+            <input type="text" name="search" placeholder="Search in {{ model_name }}..." value="{{ search_query or '' }}">
+            {% if model_name == 'Notes' %}
+                <input type="hidden" name="category" value="{{ selected_category or '' }}">
+                <input type="hidden" name="sort" value="{{ sort_by or 'date' }}">
+            {% endif %}
+        </form>
+        {% if search_query %}
+            <a href="{{ url_for('db_view', model_name=model_name) }}" class="btn-clear-search" title="Clear search">✕</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if model_name == 'Event' %}
+    <form class="filter-bar" id="eventFilterForm" action="{{ url_for('db_view', model_name='Event') }}" method="GET">
+        {% if search_query %}
+            <input type="hidden" name="search" value="{{ search_query }}">
+        {% endif %}
+        <a href="{{ url_for('db_view', model_name='Event') }}?month={{ prev_month }}&year={{ prev_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Prev Month">←</a>
+        
+        <div class="filter-group">
+            <label>Month</label>
+            <select name="month" class="filter-select">
+                {% for m_val, m_name in months %}
+                    <option value="{{ m_val }}" {% if m_val == current_month %}selected{% endif %}>{{ m_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Day</label>
+            <select name="day" class="filter-select">
+                <option value="">All</option>
+                {% for d in range(1, 32) %}
+                    <option value="{{ d }}" {% if d == current_day %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Year</label>
+            <select name="year" class="filter-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn-filter-go">Go</button>
+        
+        <a href="{{ url_for('db_view', model_name='Event') }}?month={{ next_month }}&year={{ next_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Next Month">→</a>
+    </form>
+    {% endif %}
+
+    {% if model_name == 'Event' %}
+        {% if search_query %}
+            <div style="padding: 0 20px 20px; color: #666; font-style: italic;">
+                Search results for: "{{ search_query }}"
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table class="db-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th style="text-align: center; width: 140px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in records %}
+                            <tr>
+                                <td>{{ row.date.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>{% if row.important %}<span title="Important Event" style="margin-right: 4px; color: #F2D14A;">⭐</span>{% endif %}{% if row.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% endif %}{{ row.title }}</td>
+                                <td>
+                                    <div style="display: flex; justify-content: center; gap: 8px;">
+                                        <button class="btn-action btn-edit" 
+                                                data-id="{{ row.id }}"
+                                                data-title="{{ (row.title or "")|e }}"
+                                                data-date="{{ (row.date or "") }}"
+                                                data-rule="{{ (row.recurrence_rule or "")|e }}"
+                                                data-end="{{ (row.recurrence_end or "") }}"
+                                                data-recurrence-id="{{ row.recurrence_id or '' }}"
+                                                onclick="handleEventClick(this)">
+                                            Edit
+                                        </button>
+                                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Event', {{ row.id }}, {{ 'true' if row.recurrence_id else 'false' }})">Del</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 40px; color: #999;">No events found matching your search.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="calendar-wrapper">
+                    <div class="calendar-header">
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
+                        <div>Sun</div>
+                    </div>
+                    <div id="calendarGrid" class="calendar-grid"></div>
+                </div>
+            </div>
+        {% endif %}
+    {% elif model_name == 'Wink' %}
+        <div class="wink-management-view">
+            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Leisure (Wink)</h2>
+            <div class="habit-grid" id="winkGrid">
+                {% for row in records %}
+                    <div class="habit-card" data-id="{{ row.id }}" style="border-left: 5px solid #9b59b6; display: none;">
+                        <div class="habit-title">{{ row.title }}</div>
+                        <div class="habit-date">
+                            <span>📅 Date: {{ row.date.strftime('%d.%m.%Y %H:%M') if row.date else '—' }}</span>
+                        </div>
+                        <div class="habit-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditWinkModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.date.isoformat() if row.date else '' }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Wink', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="padding: 20px; color: #999;">No leisure found.</div>
+                {% endfor %}
+            </div>
+            
+            {% if records|length > 10 %}
+            <div class="load-more-container" id="loadMoreWinkContainer">
+                <button class="btn-load-more" onclick="loadMoreWink()">Show More (+10)</button>
+            </div>
+            {% endif %}
+        </div>
+    {% elif model_name == 'Habit' %}
+        <div class="habit-management-view">
+            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Active Habits</h2>
+            <div class="habit-grid" id="activeHabitsGrid">
+                {% set active_habits = records | selectattr('read', 'equalto', false) | list %}
+                {% for row in active_habits %}
+                    <div class="habit-card active" data-id="{{ row.id }}">
+                        <div class="habit-title">{{ row.title }}</div>
+                        <div class="habit-date">
+                            <span>📅 Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}</span>
+                            {% if today_date and row.start_date %}
+                                <br>
+                                <span style="font-size: 0.9em; color: #666;">
+                                    ⏱️ Days passed: <strong>{{ (today_date - row.start_date).days }}</strong>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="habit-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', false, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="padding: 20px; color: #999;">No active habits.</div>
+                {% endfor %}
+            </div>
+
+            <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Finished Habits</h2>
+            <div class="habit-grid" id="finishedHabitsGrid">
+                {% set finished_habits = records | selectattr('read', 'equalto', true) | list %}
+                {% for row in finished_habits %}
+                    <div class="habit-card finished" data-id="{{ row.id }}" style="display: none;">
+                        <div class="habit-title">{{ row.title }}</div>
+                        <div class="habit-date">
+                            <span>📅 Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}</span>
+                            {% if row.end_date and row.start_date %}
+                                <br>
+                                <span style="font-size: 0.9em; color: #666;">
+                                    🏁 Duration: <strong>{{ (row.end_date - row.start_date).days }}</strong> days
+                                </span>
+                            {% else %}
+                                <br>
+                                <span style="font-size: 0.85em; color: #999; font-style: italic;">
+                                    (No duration data)
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="habit-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', true, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if finished_habits|length > 0 %}
+            <div class="load-more-container" id="loadMoreContainer">
+                <button class="btn-load-more" onclick="loadMoreHabits()">Show More Finished Habits (+10)</button>
+            </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">No finished habits yet.</div>
+            {% endif %}
+        </div>
+    {% elif model_name == 'Task' %}
+        <div class="task-management-view">
+            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Active Tasks</h2>
+            <div class="task-grid" id="activeTasksGrid">
+                {% set active_tasks = records | selectattr('done', 'equalto', false) | list %}
+                {% for row in active_tasks %}
+                    <div class="task-card active" data-id="{{ row.id }}">
+                        <div class="task-name">{{ row.name }}</div>
+                        <div class="task-date">
+                            <span>📅 Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</span>
+                        </div>
+                        <div class="task-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditTaskModal('{{ row.id }}', '{{ row.name|e }}', false)">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="padding: 20px; color: #999;">No active tasks.</div>
+                {% endfor %}
+            </div>
+
+            <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Finished Tasks</h2>
+            <div class="task-grid" id="finishedTasksGrid">
+                {% set finished_tasks = records | selectattr('done', 'equalto', true) | list %}
+                {% for row in finished_tasks %}
+                    <div class="task-card finished" data-id="{{ row.id }}" style="display: none;">
+                        <div class="task-name">{{ row.name }}</div>
+                        <div class="task-date">
+                            <span>📅 Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</span>
+                        </div>
+                        <div class="task-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditTaskModal('{{ row.id }}', '{{ row.name|e }}', true)">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if finished_tasks|length > 0 %}
+            <div class="load-more-container" id="loadMoreTasksContainer">
+                <button class="btn-load-more" onclick="loadMoreTasks()">Show More Finished Tasks (+10)</button>
+            </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">No finished tasks yet.</div>
+            {% endif %}
+        </div>
+    {% elif model_name == 'Chronology' %}
+        <div class="chrono-management-view">
+            {% if search_query %}
+                <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Search Results for "{{ search_query }}"</h2>
+                <div class="chrono-grid" id="searchChronoGrid">
+                    {% for row in records %}
+                        <div class="chrono-card" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                            <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                            <div class="chrono-title">{{ row.title }}</div>
+                            <div class="chrono-actions">
+                                <button type="button" class="btn-action btn-edit" 
+                                        onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                    Edit
+                                </button>
+                                <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="padding: 20px; color: #999;">No matching records found.</div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Recent (Last 7 Days)</h2>
+                <div class="chrono-grid" id="recentChronoGrid">
+                    {% set recent_chrono = records | selectattr('date', 'greaterthan', seven_days_ago) | list %}
+                    {% for row in recent_chrono %}
+                        <div class="chrono-card recent" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                            <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                            <div class="chrono-title">{{ row.title }}</div>
+                            <div class="chrono-actions">
+                                <button type="button" class="btn-action btn-edit" 
+                                        onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                    Edit
+                                </button>
+                                <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="padding: 20px; color: #999;">No recent records.</div>
+                    {% endfor %}
+                </div>
+
+                <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Archive</h2>
+                <div class="chrono-grid" id="archiveChronoGrid">
+                    {% set archive_chrono = records | selectattr('date', 'lessthan', seven_days_ago) | list %}
+                    {% for row in archive_chrono %}
+                        <div class="chrono-card old" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" style="display: none;" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                            <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                            <div class="chrono-title">{{ row.title }}</div>
+                            <div class="chrono-actions">
+                                <button type="button" class="btn-action btn-edit" 
+                                        onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                    Edit
+                                </button>
+                                <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% if archive_chrono|length > 0 %}
+                <div class="load-more-container" id="loadMoreChronoContainer">
+                    <button class="btn-load-more" onclick="loadMoreChrono()">Show More Archive (+10)</button>
+                </div>
+                {% else %}
+                    <div style="padding: 20px; color: #999;">Archive is empty.</div>
+                {% endif %}
+            {% endif %}
+        </div>
+     {% elif model_name == 'Notes' %}
+         <div class="notes-management-view">
+             <form class="notes-filter" action="{{ url_for('db_view', model_name='Notes') }}" method="GET">
+                 {% if search_query %}
+                     <input type="hidden" name="search" value="{{ search_query }}">
+                 {% endif %}
+                 <label>Category</label>
+                 <select name="category" class="filter-select">
+                     <option value="">All</option>
+                     {% if categories %}
+                         {% for cat in categories %}
+                         <option value="{{ cat }}" {% if selected_category==cat %}selected{% endif %}>{{ cat }}</option>
+                         {% endfor %}
+                     {% endif %}
+                 </select>
+                 <label>Sort</label>
+                 <select name="sort" class="filter-select">
+                     <option value="date" {% if sort_by!='category' %}selected{% endif %}>By Date</option>
+                     <option value="category" {% if sort_by=='category' %}selected{% endif %}>By Category</option>
+                 </select>
+                 <button type="submit" class="btn-filter-go">Apply</button>
+             </form>
+ 
+             <div class="note-grid" id="noteGrid">
+                 {% for row in records %}
+                     <div class="note-card" data-id="{{ row.id }}" data-category="{{ row.category }}" data-note="{{ row.note|e }}" ondblclick="viewNoteFull(this.dataset.note, this.dataset.category)">
+                         <div class="note-cat">{{ row.category }}</div>
+                         <div class="note-date">📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</div>
+                         <div class="note-text">{{ row.note }}</div>
+                         <div class="note-actions">
+                             <button type="button" class="btn-action btn-edit" onclick="openEditNoteModal(this.parentElement.parentElement.dataset.id, this.parentElement.parentElement.dataset.category, this.parentElement.parentElement.dataset.note)">Edit</button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Notes', {{ row.id }})">Del</button>
+                         </div>
+                     </div>
+                 {% else %}
+                     <div style="padding: 20px; color: #999;">No notes found.</div>
+                 {% endfor %}
+             </div>
+ 
+             {% if records|length > 0 %}
+             <div class="load-more-container" id="loadMoreNotesContainer">
+                 <button class="btn-load-more" onclick="loadMoreNotes()">Show More Notes (+10)</button>
+             </div>
+             {% endif %}
+         </div>
+    {% else %}
+        <div class="card">
+            <div class="table-container">
+                <table class="db-table">
+                    <thead>
+                        <tr>
+                            {% for col in columns %}
+                                {% if model_name != 'Event' or (col != 'recurrence_id' and col != 'position') %}
+                                    <th>{{ col|replace('_', ' ') }}</th>
+                                {% endif %}
+                            {% endfor %}
+                            <th style="text-align: center; width: 140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in records %}
+                        <tr>
+                            {% for col in columns %}
+                                {% if model_name != 'Event' or (col != 'recurrence_id' and col != 'position') %}
+                                <td {% if model_name == 'Notes' and col == 'note' %}
+                                        class="clickable-note" 
+                                        data-id="{{ row.id }}"
+                                        data-category="{{ (row.category or "")|e }}"
+                                        data-note="{{ (row.note or "")|e }}"
+                                        onclick="handleNoteClick(this)"
+                                        ondblclick="viewNoteFull(this.dataset.note, this.dataset.category); event.stopPropagation();"
+                                        title="Click to edit / Double click to view full"
+                                    {% elif model_name == 'Chronology' and col == 'title' %}
+                                        class="clickable-note" 
+                                        data-id="{{ row.id }}"
+                                        data-title="{{ (row.title or "")|e }}"
+                                        data-date="{{ (row.date.strftime('%d.%m.%Y %H:%M') if row.date and row.date.strftime is defined else row.date) }}"
+                                        onclick="handleChronoClick(this)"
+                                        ondblclick="viewChronoFull(this.dataset.title, this.dataset.date); event.stopPropagation();"
+                                        title="Click to edit / Double click to view full"
+                                    {% endif %}>
+                                    {% if row[col] is sameas true %}
+                                        <span class="badge badge-true">Yes</span>
+                                    {% elif row[col] is sameas false %}
+                                        <span class="badge badge-false">No</span>
+                                    {% elif row[col] is none %}
+                                        <span class="badge badge-null">null</span>
+                                    {% else %}
+                                        {% if 'date' in col.lower() or 'at' in col.lower() %}
+                                            {% if row[col].strftime is defined %}
+                                                {{ row[col].strftime('%d.%m.%Y %H:%M' if 'time' in col.lower() or 'at' in col.lower() else '%d.%m.%Y') }}
+                                            {% elif row[col] is string and row[col]|length > 10 %}
+                                                {{ row[col][:16] }}
+                                            {% else %}
+                                                {{ row[col] }}
+                                            {% endif %}
+                                        {% else %}
+                                            {{ row[col] }}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            {% endfor %}
+                            <td>
+                                <div style="display: flex; justify-content: center; gap: 8px;">
+                                    {% set pk_val = row.id if row.id is defined else row.word %}
+                                    {% if model_name == 'Event' %}
+                                        <button class="btn-action btn-edit" 
+                                                data-id="{{ row.id }}"
+                                                data-title="{{ (row.title or "")|e }}"
+                                                data-date="{{ (row.date or "") }}"
+                                                data-rule="{{ (row.recurrence_rule or "")|e }}"
+                                                data-end="{{ (row.recurrence_end or "") }}"
+                                                onclick="handleEventClick(this)">
+                                            Edit
+                                        </button>
+                                    {% elif model_name == 'Notes' %}
+                                        <button class="btn-action btn-edit" 
+                                                data-id="{{ row.id }}"
+                                                data-category="{{ (row.category or "")|e }}"
+                                                data-note="{{ (row.note or "")|e }}"
+                                                onclick="handleNoteClick(this)">
+                                            Edit
+                                        </button>
+                                    {% elif model_name == 'Chronology' %}
+                                        <button class="btn-action btn-edit" 
+                                                data-id="{{ row.id }}"
+                                                data-title="{{ (row.title or "")|e }}"
+                                                data-date="{{ (row.date or "") }}"
+                                                onclick="handleChronoClick(this)">
+                                            Edit
+                                        </button>
+                                    {% else %}
+                                        <a href="{{ url_for('edit_record', model_name=model_name, record_id=pk_val) }}" class="btn-action btn-edit">Edit</a>
+                                    {% endif %}
+                                <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('{{ model_name }}', '{{ pk_val }}')">Del</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 40px; color: #999;">
+                                No records found for this criteria.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Event Popover -->
+<div id="eventPopover" class="event-popover">
+    <div class="popover-header">
+        <div id="popoverTitle" class="popover-title"></div>
+        <span class="popover-close" onclick="closePopover()">&times;</span>
+    </div>
+    <div class="popover-body">
+        <div class="popover-info">
+            <span class="popover-icon">📅</span>
+            <span id="popoverDate"></span>
+        </div>
+        <div id="popoverTimeRow" class="popover-info">
+            <span class="popover-icon">⏰</span>
+            <span id="popoverTime"></span>
+        </div>
+        <div id="popoverRuleRow" class="popover-info" style="display: none;">
+            <span class="popover-icon">🔁</span>
+            <span id="popoverRule"></span>
+        </div>
+    </div>
+</div>
+
+<div id="editEventModal" class="modal">
+    <div class="modal-content" style="width: 480px">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Event</span>
+            <span class="modal-close" onclick="closeEditEventModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editEventId" />
+            <input type="hidden" id="editEventRecId" />
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="editEventTitle" class="form-input-premium" />
+            </div>
+
+            <div id="editEventRecurrenceModeRow" class="form-group-large" style="display: none; background: #fff8f0; padding: 10px; border-radius: 8px; border: 1px solid #f2994a33;">
+                <label class="form-label-premium" style="font-size: 0.9em; color: #f2994a;">Recurring Event Options</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                        <input type="radio" name="edit_event_mode" value="only" checked> Only this
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                        <input type="radio" name="edit_event_mode" value="this_and_future"> This & future
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                        <input type="radio" name="edit_event_mode" value="all"> All instances
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-large">
+                    <label class="form-label-premium">Date & Time</label>
+                    <input type="datetime-local" id="editEventDate" class="form-input-premium" oninput="calcEditEventEndDateFromCount()" />
+                </div>
+                <div class="form-group-large">
+                    <label class="form-label-premium">Repeat Rule</label>
+                    <select id="editEventRecRule" class="form-input-premium" onchange="toggleEditEventWeekdays()">
+                        <option value="none">Once</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="weekdays">Weekdays (M-F)</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="editEventWeekdaysRow" class="form-group-large" style="display: none; margin-top: -10px;">
+                <label class="form-label-premium" style="font-size: 0.75em;">Select Days</label>
+                <div class="weekday-row" style="margin-bottom: 0;">
+                    <label><input type="checkbox" value="mon"><span>M</span></label>
+                    <label><input type="checkbox" value="tue"><span>T</span></label>
+                    <label><input type="checkbox" value="wed"><span>W</span></label>
+                    <label><input type="checkbox" value="thu"><span>T</span></label>
+                    <label><input type="checkbox" value="fri"><span>F</span></label>
+                    <label><input type="checkbox" value="sat"><span>S</span></label>
+                    <label><input type="checkbox" value="sun"><span>S</span></label>
+                </div>
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">End Mode</label>
+                <div style="display: flex; gap: 15px; margin-top: 5px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                        <input type="radio" name="edit_event_end_mode" value="date" id="editEventEndDateMode" checked onchange="toggleEditEventEndMode()"> Date
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                        <input type="radio" name="edit_event_end_mode" value="count" id="editEventEndCountMode" onchange="toggleEditEventEndMode()"> Count
+                    </label>
+                </div>
+            </div>
+
+            <div id="editEventEndDateBlock" class="form-group-large">
+                <label class="form-label-premium">Repeat until (Optional)</label>
+                <input type="date" id="editEventRecEnd" class="form-input-premium" />
+            </div>
+
+            <div id="editEventEndCountBlock" class="form-group-large" style="display: none;">
+                <label class="form-label-premium">Repeat N times</label>
+                <input type="number" id="editEventRecCount" class="form-input-premium" min="1" max="365" value="10" oninput="calcEditEventEndDateFromCount()" />
+                <div id="editEventRecEndFromCountLabel" style="font-size: 0.8em; color: #888; margin-top: 4px;"></div>
+                <input type="hidden" id="editEventRecEndFromCount" />
+            </div>
+
+            <div id="editEventError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditEventModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveEventEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="editNoteModal" class="modal">
+    <div class="modal-content" style="width: 600px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Note</span>
+            <span class="modal-close" onclick="closeEditNoteModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editNoteId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Category</label>
+                <select id="editNoteCategory" class="form-input-premium">
+                    {% if categories %}
+                        {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Note Content</label>
+                <textarea id="editNoteText" class="form-input-premium" style="height: 300px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
+            </div>
+
+            <div id="editNoteError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditNoteModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveNoteEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="editChronoModal" class="modal">
+    <div class="modal-content" style="width: 600px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Chronology</span>
+            <span class="modal-close" onclick="closeEditChronoModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editChronoId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Date & Time</label>
+                <input type="datetime-local" id="editChronoDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">Event Description</label>
+                <textarea id="editChronoTitle" class="form-input-premium" style="height: 200px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
+            </div>
+
+            <div id="editChronoError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditChronoModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveChronoEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="chronoViewModal" class="modal">
+    <div class="modal-content" style="width: 700px;">
+        <div class="modal-header">
+            <span id="chronoViewDate" style="margin: 0; font-size: 1.1rem; color: #9b59b6;"></span>
+            <span class="modal-close" onclick="closeChronoViewModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="chronoViewFullText" class="chrono-view-text"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeChronoViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+ 
+ <div id="noteViewModal" class="modal">
+     <div class="modal-content" style="width: 700px;">
+         <div class="modal-header">
+             <span id="noteViewCategory" style="margin: 0; font-size: 1.1rem;"></span>
+             <span class="modal-close" onclick="closeNoteViewModal()">&times;</span>
+         </div>
+         <div class="modal-body">
+             <div id="noteViewFullText" class="chrono-view-text"></div>
+         </div>
+         <div class="modal-footer">
+             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeNoteViewModal()">Close</button>
+         </div>
+     </div>
+ </div>
+
+<div id="editHabitModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Habit</span>
+            <span class="modal-close" onclick="closeEditHabitModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editHabitId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="editHabitTitle" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">Start Date</label>
+                <input type="date" id="editHabitStartDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large" id="editHabitEndDateGroup">
+                <label class="form-label-premium">End Date</label>
+                <input type="date" id="editHabitEndDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="editHabitRead" style="width: 20px; height: 20px; cursor: pointer;" onchange="toggleHabitEndDate()">
+                    Is Finished (Archived)
+                </label>
+            </div>
+
+            <div id="editHabitError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditHabitModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveHabitEdit()">OK</button>
+        </div>
+    </div>
+</div>
+ 
+ <div id="editWinkModal" class="modal">
+     <div class="modal-content" style="width: 480px">
+         <div class="modal-header">
+             <span style="margin: 0;">Edit Wink</span>
+             <span class="modal-close" onclick="closeEditWinkModal()">&times;</span>
+         </div>
+         
+         <div class="modal-body">
+             <input type="hidden" id="editWinkId" />
+             <div class="form-group-large">
+                 <label class="form-label-premium">Title</label>
+                 <input type="text" id="editWinkTitle" class="form-input-premium" />
+             </div>
+             <div class="form-group-large">
+                 <label class="form-label-premium">Date & Time</label>
+                 <input type="datetime-local" id="editWinkDate" class="form-input-premium" />
+             </div>
+             <div id="editWinkError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
+         </div>
+ 
+         <div class="modal-footer">
+             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditWinkModal()">Cancel</button>
+             <button type="button" class="btn-premium btn-save-premium" onclick="saveWinkEdit()">OK</button>
+         </div>
+     </div>
+ </div>
+
+<div id="editTaskModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Task</span>
+            <span class="modal-close" onclick="closeEditTaskModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editTaskId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Task Description</label>
+                <textarea id="editTaskName" class="form-input-premium" style="height: 120px; resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="editTaskDone" style="width: 20px; height: 20px; cursor: pointer;">
+                    Is Done
+                </label>
+            </div>
+
+            <div id="editTaskError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditTaskModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveTaskEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleEditEventWeekdays() {
+        const rule = document.getElementById('editEventRecRule').value;
+        const row = document.getElementById('editEventWeekdaysRow');
+        row.style.display = (rule === 'weekly') ? 'block' : 'none';
+        calcEditEventEndDateFromCount();
+    }
+
+    function toggleEditEventEndMode() {
+        const isCount = document.getElementById('editEventEndCountMode').checked;
+        document.getElementById('editEventEndDateBlock').style.display = isCount ? 'none' : 'block';
+        document.getElementById('editEventEndCountBlock').style.display = isCount ? 'block' : 'none';
+        if (isCount) calcEditEventEndDateFromCount();
+    }
+
+    function calcEditEventEndDateFromCount() {
+        const freq = document.getElementById('editEventRecRule').value;
+        const n = parseInt(document.getElementById('editEventRecCount').value) || 1;
+        const startStr = document.getElementById('editEventDate').value;
+        const endLabel = document.getElementById('editEventRecEndFromCountLabel');
+        const endHidden = document.getElementById('editEventRecEndFromCount');
+        
+        if (!startStr || freq === 'none') { 
+            endLabel.innerText = ''; 
+            endHidden.value = '';
+            return; 
+        }
+        
+        const start = new Date(startStr);
+        let end = new Date(start);
+
+        if (freq === 'daily') {
+            end.setDate(start.getDate() + n);
+        } else if (freq === 'weekly') {
+            const checked = [...document.querySelectorAll('#editEventWeekdaysRow input:checked')];
+            const daysPerWeek = checked.length > 0 ? checked.length : 1;
+            const totalDays = Math.ceil(n / daysPerWeek) * 7;
+            end.setDate(start.getDate() + totalDays);
+        } else if (freq === 'weekdays') {
+            const totalDays = Math.ceil(n / 5) * 7;
+            end.setDate(start.getDate() + totalDays);
+        } else if (freq === 'monthly') {
+            end.setMonth(start.getMonth() + n);
+        } else if (freq === 'yearly') {
+            end.setFullYear(start.getFullYear() + n);
+        }
+
+        const dateStr = end.toISOString().split('T')[0];
+        endLabel.innerText = 'Calculated end date: ' + dateStr;
+        endHidden.value = dateStr;
+    }
+
+    function openEditEventModal(id, title, dateStr, recRule, recEnd, recId) {
+        let formattedDate = "";
+        if (dateStr) {
+            formattedDate = dateStr.replace(' ', 'T').substring(0, 16);
+        }
+
+        document.getElementById('editEventId').value = id;
+        document.getElementById('editEventRecId').value = recId || '';
+        document.getElementById('editEventTitle').value = title || '';
+        document.getElementById('editEventDate').value = formattedDate;
+        document.getElementById('editEventRecEnd').value = recEnd ? recEnd.substring(0, 10) : '';
+        document.getElementById('editEventError').innerText = "";
+        
+        // Reset end mode to date
+        document.getElementById('editEventEndDateMode').checked = true;
+        toggleEditEventEndMode();
+        
+        // Reset checkboxes
+        const checkboxes = document.querySelectorAll('#editEventWeekdaysRow input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+
+        // Set select value
+        const select = document.getElementById('editEventRecRule');
+        if (!recRule || recRule === 'none') {
+            select.value = 'none';
+        } else if (recRule.startsWith('weekly:')) {
+            select.value = 'weekly';
+            const days = recRule.split(':')[1].split(',');
+            checkboxes.forEach(cb => {
+                if (days.includes(cb.value)) cb.checked = true;
+            });
+        } else {
+            select.value = recRule;
+        }
+
+        // Show recurrence mode options if it's a recurring event
+        const recRow = document.getElementById('editEventRecurrenceModeRow');
+        if (recId) {
+            recRow.style.display = 'block';
+            // Default to 'only'
+            document.querySelector('input[name="edit_event_mode"][value="only"]').checked = true;
+        } else {
+            recRow.style.display = 'none';
+        }
+        
+        toggleEditEventWeekdays();
+        document.getElementById('editEventModal').style.display = 'flex';
+    }
+
+    function closeEditEventModal() {
+        document.getElementById('editEventModal').style.display = 'none';
+    }
+
+    // --- Popover Logic ---
+    function openPopover(e, chip) {
+        const popover = document.getElementById('eventPopover');
+        const title = document.getElementById('popoverTitle');
+        const dateEl = document.getElementById('popoverDate');
+        const timeEl = document.getElementById('popoverTime');
+        const ruleEl = document.getElementById('popoverRule');
+        const ruleRow = document.getElementById('popoverRuleRow');
+
+        let titleText = e.title || '(no title)';
+        if (e.important) {
+            titleText = '⭐ ' + titleText;
+        }
+        title.textContent = titleText;
+        
+        const d = new Date(e.date);
+        dateEl.textContent = d.toLocaleDateString();
+        timeEl.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (e.rule && e.rule !== 'none') {
+            ruleEl.textContent = e.rule;
+            ruleRow.style.display = 'flex';
+        } else {
+            ruleRow.style.display = 'none';
+        }
+
+        // Positioning
+        const rect = chip.getBoundingClientRect();
+        popover.style.display = 'block';
+        
+        let left = rect.left + rect.width / 2 - 150; // center
+        let top = rect.bottom + 10;
+
+        // Boundary checks
+        if (left < 10) left = 10;
+        if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
+        if (top + 150 > window.innerHeight) top = rect.top - 160;
+
+        popover.style.left = left + 'px';
+        popover.style.top = top + 'px';
+    }
+
+    function closePopover() {
+        document.getElementById('eventPopover').style.display = 'none';
+    }
+
+    // --- Habit Logic ---
+    let visibleFinishedCount = 0;
+    const loadBatchSize = 10;
+
+    function loadMoreHabits() {
+        const grid = document.getElementById('finishedHabitsGrid');
+        if (!grid) return;
+        
+        const cards = grid.querySelectorAll('.habit-card.finished');
+        let count = 0;
+        
+        for (let i = visibleFinishedCount; i < cards.length && count < loadBatchSize; i++) {
+            cards[i].style.display = 'flex';
+            count++;
+            visibleFinishedCount++;
+        }
+        
+        // Hide button if all cards are visible
+        if (visibleFinishedCount >= cards.length) {
+            const btn = document.getElementById('loadMoreContainer');
+            if (btn) btn.style.display = 'none';
+        }
+    }
+
+    // --- Task Logic ---
+    let visibleFinishedTasksCount = 0;
+
+    function loadMoreTasks() {
+        const grid = document.getElementById('finishedTasksGrid');
+        if (!grid) return;
+        
+        const cards = grid.querySelectorAll('.task-card.finished');
+        let count = 0;
+        
+        for (let i = visibleFinishedTasksCount; i < cards.length && count < loadBatchSize; i++) {
+            cards[i].style.display = 'flex';
+            count++;
+            visibleFinishedTasksCount++;
+        }
+        
+        if (visibleFinishedTasksCount >= cards.length) {
+            const btn = document.getElementById('loadMoreTasksContainer');
+            if (btn) btn.style.display = 'none';
+        }
+    }
+
+    // --- Chrono Logic ---
+    let visibleArchiveChronoCount = 0;
+
+    function loadMoreChrono() {
+        const grid = document.getElementById('archiveChronoGrid');
+        if (!grid) return;
+        
+        const cards = grid.querySelectorAll('.chrono-card.old');
+        let count = 0;
+        
+        for (let i = visibleArchiveChronoCount; i < cards.length && count < loadBatchSize; i++) {
+            cards[i].style.display = 'flex';
+            count++;
+            visibleArchiveChronoCount++;
+        }
+        
+        if (visibleArchiveChronoCount >= cards.length) {
+            const btn = document.getElementById('loadMoreChronoContainer');
+            if (btn) btn.style.display = 'none';
+        }
+    }
+
+    function viewChronoFull(text, dateStr) {
+        document.getElementById('chronoViewDate').textContent = dateStr;
+        document.getElementById('chronoViewFullText').textContent = text;
+        document.getElementById('chronoViewModal').style.display = 'flex';
+    }
+
+    function closeChronoViewModal() {
+        document.getElementById('chronoViewModal').style.display = 'none';
+    }
+
+    function openEditChronoModal(id, title, dateStr) {
+        let formatted = "";
+        if (dateStr) formatted = dateStr.substring(0, 16);
+        
+        document.getElementById('editChronoId').value = id;
+        document.getElementById('editChronoTitle').value = title;
+        document.getElementById('editChronoDate').value = formatted;
+        document.getElementById('editChronoError').innerText = "";
+        document.getElementById('editChronoModal').style.display = 'flex';
+    }
+
+    function closeEditChronoModal() {
+        document.getElementById('editChronoModal').style.display = 'none';
+    }
+
+    async function saveChronoEdit() {
+        const id = document.getElementById('editChronoId').value;
+        const title = document.getElementById('editChronoTitle').value.trim();
+        const date = document.getElementById('editChronoDate').value;
+        const errEl = document.getElementById('editChronoError');
+
+        if (!title) { errEl.innerText = "Description required"; return; }
+        if (!date) { errEl.innerText = "Date required"; return; }
+
+        try {
+            const resp = await fetch('/edit_chrono_inline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, title, date })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                errEl.innerText = data.message || "Error saving record.";
+            }
+        } catch (e) {
+            errEl.innerText = "Network error.";
+        }
+    }
+
+    function openEditTaskModal(id, name, isDone) {
+        document.getElementById('editTaskId').value = id;
+        document.getElementById('editTaskName').value = name;
+        document.getElementById('editTaskDone').checked = isDone;
+        document.getElementById('editTaskError').innerText = '';
+        document.getElementById('editTaskModal').style.display = 'flex';
+    }
+
+    function closeEditTaskModal() {
+        document.getElementById('editTaskModal').style.display = 'none';
+    }
+
+    async function saveTaskEdit() {
+        const id = document.getElementById('editTaskId').value;
+        const name = document.getElementById('editTaskName').value.trim();
+        const isDone = document.getElementById('editTaskDone').checked;
+        const errEl = document.getElementById('editTaskError');
+
+        if (!name) { errEl.innerText = "Name required"; return; }
+
+        try {
+            const resp = await fetch('/edit_task_inline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, name, done: isDone })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                errEl.innerText = data.message || "Error saving task.";
+            }
+        } catch (e) {
+            errEl.innerText = "Network error.";
+        }
+    }
+
+    function openEditHabitModal(id, title, startDate, isRead, endDate) {
+        document.getElementById('editHabitId').value = id;
+        document.getElementById('editHabitTitle').value = title;
+        document.getElementById('editHabitStartDate').value = startDate ? startDate.substring(0, 10) : '';
+        document.getElementById('editHabitEndDate').value = endDate ? endDate.substring(0, 10) : '';
+        document.getElementById('editHabitRead').checked = isRead;
+        document.getElementById('editHabitError').innerText = '';
+        toggleHabitEndDate();
+        document.getElementById('editHabitModal').style.display = 'flex';
+    }
+
+    function toggleHabitEndDate() {
+        const isRead = document.getElementById('editHabitRead').checked;
+        const group = document.getElementById('editHabitEndDateGroup');
+        if (group) {
+            group.style.display = isRead ? 'block' : 'none';
+        }
+    }
+
+    function closeEditHabitModal() {
+        document.getElementById('editHabitModal').style.display = 'none';
+    }
+
+     // Wink edit modal logic
+     function openAddWinkForDay(isoDate) {
+         document.getElementById('editWinkId').value = '';
+         document.getElementById('editWinkTitle').value = '';
+         const defaultTime = '09:00';
+         document.getElementById('editWinkDate').value = `${isoDate}T${defaultTime}`;
+         document.getElementById('editWinkError').innerText = '';
+         document.getElementById('editWinkModal').style.display = 'flex';
+     }
+     function openEditWinkModal(id, title, dateStr) {
+         let formatted = '';
+         if (dateStr) {
+             formatted = dateStr.replace(' ', 'T').substring(0, 16);
+         }
+         document.getElementById('editWinkId').value = id;
+         document.getElementById('editWinkTitle').value = title || '';
+         document.getElementById('editWinkDate').value = formatted;
+         document.getElementById('editWinkError').innerText = '';
+         document.getElementById('editWinkModal').style.display = 'flex';
+     }
+     function closeEditWinkModal() {
+         document.getElementById('editWinkModal').style.display = 'none';
+     }
+     async function saveWinkEdit() {
+         const id = document.getElementById('editWinkId').value;
+         const title = document.getElementById('editWinkTitle').value.trim();
+         const date = document.getElementById('editWinkDate').value;
+         const errEl = document.getElementById('editWinkError');
+         errEl.innerText = '';
+         if (!title) { errEl.innerText = 'Title required'; return; }
+         if (!date) { errEl.innerText = 'Date required'; return; }
+         try {
+             if (id) {
+                 const resp = await fetch('/edit_wink_inline', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ id, title, date })
+                 });
+                 const data = await resp.json();
+                 if (data.status === 'success') location.reload();
+                 else errEl.innerText = data.message || 'Error saving wink.';
+             } else {
+                 const payload = {
+                     common_text: title,
+                     common_date: date,
+                     common_category: 'wink',
+                     repeat: 'none',
+                     repeat_end: ''
+                 };
+                 const resp = await fetch('/submit_form_json', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify(payload)
+                 });
+                 const data = await resp.json();
+                 if (data.status === 'success') location.reload();
+                 else errEl.innerText = data.message || 'Error creating wink.';
+             }
+         } catch (e) { errEl.innerText = 'Network error.'; }
+     }
+ 
+    async function saveHabitEdit() {
+        const id = document.getElementById('editHabitId').value;
+        const title = document.getElementById('editHabitTitle').value.trim();
+        const startDate = document.getElementById('editHabitStartDate').value;
+        const endDate = document.getElementById('editHabitEndDate').value;
+        const isRead = document.getElementById('editHabitRead').checked;
+        const errEl = document.getElementById('editHabitError');
+
+        if (!title) { errEl.innerText = "Title required"; return; }
+
+        try {
+            const resp = await fetch('/edit_habit_inline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    id, 
+                    title, 
+                    start_date: startDate, 
+                    end_date: endDate,
+                    read: isRead 
+                })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                errEl.innerText = data.message || "Error saving habit.";
+            }
+        } catch (e) {
+            errEl.innerText = "Network error.";
+        }
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Search UI Toggle ---
+        const searchInput = document.querySelector('.search-wrapper input');
+        const searchWrapper = document.querySelector('.search-wrapper');
+        const searchIcon = document.querySelector('.search-icon-btn');
+
+        if (searchIcon && searchInput && searchWrapper) {
+            searchIcon.addEventListener('click', function(e) {
+                if (!searchWrapper.classList.contains('has-query') && !searchWrapper.classList.contains('focused')) {
+                    if (searchInput.value.trim() === '') {
+                        e.preventDefault();
+                        searchInput.focus();
+                    }
+                }
+            });
+
+            searchInput.addEventListener('focus', () => searchWrapper.classList.add('focused'));
+            searchInput.addEventListener('blur', () => searchWrapper.classList.remove('focused'));
+        }
+
+        if (document.getElementById('finishedHabitsGrid')) {
+             loadMoreHabits();
+        }
+        if (document.getElementById('finishedTasksGrid')) {
+            loadMoreTasks();
+        }
+        if (document.getElementById('archiveChronoGrid')) {
+            loadMoreChrono();
+        }
+         if (document.getElementById('noteGrid')) {
+             loadMoreNotes();
+             applyNoteColors();
+         }
+         if (document.getElementById('winkGrid')) {
+             loadMoreWink();
+         }
+    });
+     // Fallback immediate calls in case DOMContentLoaded has already fired
+     if (document.getElementById('finishedHabitsGrid')) { try { loadMoreHabits(); } catch(_){} }
+     if (document.getElementById('finishedTasksGrid')) { try { loadMoreTasks(); } catch(_){} }
+     if (document.getElementById('archiveChronoGrid')) { try { loadMoreChrono(); } catch(_){} }
+     if (document.getElementById('noteGrid')) { try { loadMoreNotes(); applyNoteColors(); } catch(_){} }
+     if (document.getElementById('winkGrid')) { try { loadMoreWink(); } catch(_){} }
+ 
+     // --- Notes logic ---
+     let visibleNotesCount = 0;
+     function loadMoreNotes() {
+         const grid = document.getElementById('noteGrid');
+         if (!grid) return;
+         const cards = grid.querySelectorAll('.note-card');
+         const batch = 10;
+         let count = 0;
+         for (let i = visibleNotesCount; i < cards.length && count < batch; i++) {
+             cards[i].style.display = 'flex';
+             count++;
+             visibleNotesCount++;
+         }
+         if (visibleNotesCount >= cards.length) {
+             const btn = document.getElementById('loadMoreNotesContainer');
+             if (btn) btn.style.display = 'none';
+         }
+     }
+     function viewNoteFull(text, category) {
+         document.getElementById('noteViewCategory').textContent = category || 'Note';
+         document.getElementById('noteViewFullText').textContent = text;
+         document.getElementById('noteViewModal').style.display = 'flex';
+     }
+     function closeNoteViewModal() {
+         document.getElementById('noteViewModal').style.display = 'none';
+     }
+     function applyNoteColors() {
+         const cards = document.querySelectorAll('.note-card');
+         cards.forEach(card => {
+             const cat = card.getAttribute('data-category') || '';
+             const hue = [...cat].reduce((a,c)=>a+c.charCodeAt(0),0) % 360;
+             const color = `hsl(${hue}, 55%, 55%)`;
+             card.style.borderLeft = `5px solid ${color}`;
+             const tag = card.querySelector('.note-cat');
+             if (tag) { tag.style.background = `${color}20`; tag.style.color = color; }
+         });
+     }
+
+    async function saveEventEdit() {
+        const id = document.getElementById('editEventId').value;
+        const recId = document.getElementById('editEventRecId').value;
+        const title = document.getElementById('editEventTitle').value.trim();
+        const date = document.getElementById('editEventDate').value;
+        const errEl = document.getElementById('editEventError');
+        errEl.innerText = "";
+
+        let recEnd = document.getElementById('editEventRecEnd').value;
+        if (document.getElementById('editEventEndCountMode').checked) {
+            recEnd = document.getElementById('editEventRecEndFromCount').value;
+        }
+
+        let recRule = document.getElementById('editEventRecRule').value;
+        if (recRule === 'weekly') {
+            const checked = [...document.querySelectorAll('#editEventWeekdaysRow input:checked')].map(cb => cb.value);
+            if (checked.length > 0) {
+                recRule = 'weekly:' + checked.join(',');
+            }
+        }
+
+        const editMode = document.querySelector('input[name="edit_event_mode"]:checked')?.value || 'only';
+
+        if (!title) { errEl.innerText = "Title required"; return; }
+        if (!date) { errEl.innerText = "Date required"; return; }
+
+        try {
+            if (id) {
+                const resp = await fetch('/edit_event_inline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: id, 
+                        title: title, 
+                        date: date,
+                        recurrence_rule: recRule === 'none' ? null : recRule,
+                        recurrence_end: recEnd || null,
+                        edit_mode: editMode,
+                        recurrence_id: recId
+                    })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    errEl.innerText = data.message || "Error saving.";
+                }
+            } else {
+                const payload = {
+                    common_text: title,
+                    common_date: date,
+                    common_category: 'event',
+                    repeat: recRule === 'none' ? 'none' : recRule,
+                    repeat_end: recEnd || ''
+                };
+                const resp = await fetch('/submit_form_json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    errEl.innerText = data.message || "Error creating event.";
+                }
+            }
+        } catch (e) { errEl.innerText = "Network error."; }
+    }
+
+    window.onclick = function(e) {
+        const eventModal = document.getElementById('editEventModal');
+        const noteModal = document.getElementById('editNoteModal');
+        const chronoModal = document.getElementById('editChronoModal');
+        const chronoViewModal = document.getElementById('chronoViewModal');
+        const habitModal = document.getElementById('editHabitModal');
+        const taskModal = document.getElementById('editTaskModal');
+        const popover = document.getElementById('eventPopover');
+        
+        if (e.target == eventModal) closeEditEventModal();
+        if (e.target == noteModal) closeEditNoteModal();
+        if (e.target == chronoModal) closeEditChronoModal();
+        if (e.target == chronoViewModal) closeChronoViewModal();
+        if (e.target == habitModal) closeEditHabitModal();
+        if (e.target == taskModal) closeEditTaskModal();
+        
+        // Close popover if clicked outside
+        if (popover && popover.style.display === 'block' && !popover.contains(e.target) && !e.target.closest('.event-chip')) {
+            closePopover();
+        }
+         const viewNoteModal = document.getElementById('noteViewModal');
+         if (viewNoteModal && e.target == viewNoteModal) closeNoteViewModal();
+    }
+
+    // --- Event Click Handler ---
+    function handleEventClick(element) {
+        const id = element.getAttribute('data-id');
+        const title = element.getAttribute('data-title');
+        const dateStr = element.getAttribute('data-date');
+        const recRule = element.getAttribute('data-rule');
+        const recEnd = element.getAttribute('data-end');
+        const recId = element.getAttribute('data-recurrence-id');
+        openEditEventModal(id, title, dateStr, recRule, recEnd, recId);
+    }
+
+    {% if model_name == 'Event' %}
+    ;(function() {
+        const y = {{ current_year }};
+        const m = {{ current_month }};
+        const events = [
+            {% for e in records %}
+            {
+                id: {{ e.id }},
+                title: {{ (e.title or '')|tojson }},
+                date: {{ (e.date.strftime('%Y-%m-%dT%H:%M:%S') if e.date else '') | tojson }},
+                rule: {{ (e.recurrence_rule or '')|tojson }},
+                end: {{ (e.recurrence_end.isoformat() if e.recurrence_end else '') | tojson }},
+                recurrence_id: {{ (e.recurrence_id or '')|tojson }},
+                important: {{ 'true' if e.important else 'false' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        function daysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+        function getFirstWeekday(year, month) {
+            const d = new Date(year, month - 1, 1).getDay();
+            return d === 0 ? 7 : d;
+        }
+        function byDayMap(arr) {
+            const map = {};
+            arr.forEach(e => {
+                if (!e.date) return;
+                const key = String(e.date).slice(0, 10);
+                if (!map[key]) map[key] = [];
+                map[key].push(e);
+            });
+            return map;
+        }
+        function render() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            
+            const first = getFirstWeekday(y, m);
+            const dim = daysInMonth(y, m);
+            const totalCells = 42;
+            const eventMap = byDayMap(events);
+            
+            const todayDate = new Date();
+             const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+             
+             for (let i = 1; i <= totalCells; i++) {
+                 const cell = document.createElement('div');
+                 cell.className = 'calendar-cell';
+                 
+                 // Рассчитываем дату для ячейки
+                 // i - first + 1 — это число месяца.
+                 const cellDate = new Date(y, m - 1, i - first + 1);
+                 const dayNum = cellDate.getDate();
+                 const key = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+                 const inMonth = (cellDate.getMonth() + 1 === m) && (cellDate.getFullYear() === y);
+                
+                if (!inMonth) cell.classList.add('other-month');
+                if (key === todayStr) cell.classList.add('today');
+
+                const header = document.createElement('div');
+                header.className = 'cell-header';
+                const dayEl = document.createElement('div');
+                dayEl.className = 'cell-day';
+                dayEl.textContent = String(dayNum);
+                header.appendChild(dayEl);
+                
+                const actions = document.createElement('div');
+                actions.className = 'cell-actions';
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'cell-add';
+                addBtn.textContent = '+';
+                addBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    openAddEventForDay(key);
+                });
+                actions.appendChild(addBtn);
+                header.appendChild(actions);
+
+                const body = document.createElement('div');
+                body.className = 'cell-body';
+                
+                cell.dataset.date = key;
+                cell.addEventListener('dragover', ev => { ev.preventDefault(); cell.classList.add('drop-hover'); });
+                cell.addEventListener('dragleave', () => cell.classList.remove('drop-hover'));
+                cell.addEventListener('drop', async ev => {
+                    ev.preventDefault();
+                    cell.classList.remove('drop-hover');
+                    const id = ev.dataTransfer.getData('text/plain');
+                    if (!id) return;
+                    try {
+                        const resp = await fetch('/api/dnd/move_event', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ event_id: parseInt(id, 10), new_date: key })
+                        });
+                        if (resp.ok) location.reload();
+                    } catch (e) {}
+                });
+                
+                const list = eventMap[key] || [];
+                list.forEach(e => {
+                    const chip = document.createElement('div');
+                    chip.className = 'event-chip';
+                    chip.draggable = true;
+                        chip.addEventListener('dragstart', ev => {
+                            ev.dataTransfer.setData('text/plain', String(e.id));
+                        });
+                        // Double click to open popover
+                        chip.addEventListener('dblclick', (ev) => {
+                            ev.stopPropagation();
+                            openPopover(e, chip);
+                        });
+                        const title = document.createElement('div');
+                    title.className = 'title';
+                    let titleText = e.title || '(no title)';
+                    if (e.important) {
+                        titleText = '⭐ ' + titleText;
+                    }
+                    if (e.recurrence_id) {
+                        titleText = '🔁 ' + titleText;
+                    }
+                    title.textContent = titleText;
+                    const actions = document.createElement('div');
+                    actions.className = 'chip-actions';
+                    const btnEdit = document.createElement('button');
+                    btnEdit.className = 'chip-btn';
+                    btnEdit.textContent = '✎';
+                    btnEdit.addEventListener('click', () => {
+                        openEditEventModal(
+                            e.id,
+                            e.title || '',
+                            e.date || '',
+                            e.rule || '',
+                            e.end || '',
+                            e.recurrence_id || ''
+                        );
+                    });
+                    const btnDel = document.createElement('button');
+                    btnDel.className = 'chip-btn';
+                    btnDel.textContent = '×';
+                    btnDel.addEventListener('click', async () => {
+                        deleteRecordCustom('Event', e.id, !!e.recurrence_id);
+                    });
+                    actions.appendChild(btnEdit);
+                    actions.appendChild(btnDel);
+                    chip.appendChild(title);
+                    chip.appendChild(actions);
+                    body.appendChild(chip);
+                });
+
+                cell.appendChild(header);
+                cell.appendChild(body);
+                grid.appendChild(cell);
+            }
+        }
+        render();
+    })();
+    {% endif %}
+
+    // --- Wink Logic ---
+    let visibleWinkCount = 0;
+    function loadMoreWink() {
+        const grid = document.getElementById('winkGrid');
+        if (!grid) return;
+        const cards = grid.querySelectorAll('.habit-card');
+        const batch = 10;
+        let count = 0;
+        for (let i = visibleWinkCount; i < cards.length && count < batch; i++) {
+            cards[i].style.display = 'flex';
+            count++;
+            visibleWinkCount++;
+        }
+        if (visibleWinkCount >= cards.length) {
+            const btn = document.getElementById('loadMoreWinkContainer');
+            if (btn) btn.style.display = 'none';
+        }
+    }
+
+    {% if model_name == 'Event' %}
+    function openAddEventForDay(isoDate) {
+        document.getElementById('editEventId').value = '';
+        document.getElementById('editEventTitle').value = '';
+        const defaultTime = '09:00';
+        document.getElementById('editEventDate').value = `${isoDate}T${defaultTime}`;
+        document.getElementById('editEventRecRule').value = 'none';
+        document.getElementById('editEventRecEnd').value = '';
+        document.getElementById('editEventEndDateMode').checked = true;
+        toggleEditEventEndMode();
+        const checkboxes = document.querySelectorAll('#editEventWeekdaysRow input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        toggleEditEventWeekdays();
+        document.getElementById('editEventModal').style.display = 'flex';
+    }
+    {% endif %}
+
+    // --- Notes Management Functions ---
+    function handleNoteClick(element) {
+        const id = element.getAttribute('data-id');
+        const category = element.getAttribute('data-category');
+        const note = element.getAttribute('data-note');
+        openEditNoteModal(id, category, note);
+    }
+
+    function openEditNoteModal(id, category, note) {
+        document.getElementById('editNoteId').value = id;
+        document.getElementById('editNoteCategory').value = category;
+        document.getElementById('editNoteText').value = note;
+        document.getElementById('editNoteError').innerText = "";
+        document.getElementById('editNoteModal').style.display = 'flex';
+    }
+
+    function closeEditNoteModal() {
+        document.getElementById('editNoteModal').style.display = 'none';
+    }
+
+    async function saveNoteEdit() {
+        const id = document.getElementById('editNoteId').value;
+        const category = document.getElementById('editNoteCategory').value;
+        const note = document.getElementById('editNoteText').value.trim();
+        const errEl = document.getElementById('editNoteError');
+
+        if (!note) { errEl.innerText = "Note content required"; return; }
+
+        try {
+            const resp = await fetch('/edit_note_inline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, category: category, note: note })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                errEl.innerText = data.message || "Error saving.";
+            }
+        } catch (e) { errEl.innerText = "Network error."; }
+    }
+
+    // --- Chronology Management Functions ---
+    function handleChronoClick(element) {
+        const id = element.getAttribute('data-id');
+        const title = element.getAttribute('data-title');
+        const dateStr = element.getAttribute('data-date');
+        openEditChronoModal(id, title, dateStr);
+    }
+
+    function openEditChronoModal(id, title, dateStr) {
+        let formattedDate = "";
+        if (dateStr) {
+            formattedDate = dateStr.replace(' ', 'T').substring(0, 16);
+        }
+
+        document.getElementById('editChronoId').value = id;
+        document.getElementById('editChronoTitle').value = title;
+        document.getElementById('editChronoDate').value = formattedDate;
+        document.getElementById('editChronoError').innerText = "";
+        document.getElementById('editChronoModal').style.display = 'flex';
+    }
+
+    function closeEditChronoModal() {
+        document.getElementById('editChronoModal').style.display = 'none';
+    }
+
+    async function saveChronoEdit() {
+        const id = document.getElementById('editChronoId').value;
+        const title = document.getElementById('editChronoTitle').value.trim();
+        const date = document.getElementById('editChronoDate').value;
+        const errEl = document.getElementById('editChronoError');
+
+        if (!title) { errEl.innerText = "Description required"; return; }
+        if (!date) { errEl.innerText = "Date required"; return; }
+
+        try {
+            const resp = await fetch('/edit_chrono_inline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, title: title, date: date })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                errEl.innerText = data.message || "Error saving.";
+            }
+        } catch (e) { errEl.innerText = "Network error."; }
+    }
+    async function deleteRecordCustom(modelName, recordId, isRecurring = false) {
+        let confirmed = false;
+        let deleteMode = 'only';
+
+        if (modelName === 'Event' && isRecurring) {
+            const choice = await customChoice({
+                title: 'Recurring Event',
+                messageHTML: 'Choose how to delete this recurring event:',
+                options: [
+                    { value: 'only', label: 'Delete only this occurrence', checked: true },
+                    { value: 'this_and_future', label: 'Delete this and all future occurrences' },
+                    { value: 'future_only', label: 'Keep this, delete future occurrences' },
+                    { value: 'all', label: 'Delete ALL occurrences in the series' }
+                ],
+                okLabel: 'Delete',
+                cancelLabel: 'Cancel'
+            });
+            if (choice === null) return;
+            confirmed = true;
+            deleteMode = choice;
+        } else {
+            confirmed = await customConfirm({
+                title: 'Delete Record',
+                message: `Are you sure you want to delete this ${modelName}?`,
+                buttons: [
+                    { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                    { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+                ]
+            });
+        }
+
+        if (confirmed) {
+            const formData = new FormData();
+            if (modelName === 'Event') {
+                // Use unified delete_mode on backend
+                formData.append('delete_mode', deleteMode);
+                try {
+                    const url = `/delete_event/${recordId}`;
+                    const resp = await fetch(url, { method: 'POST', body: formData });
+                    if (resp.ok) {
+                        location.reload();
+                    }
+                } catch (e) {
+                    console.error('Error deleting event:', e);
+                }
+            } else {
+                // For other models, use the generic delete_record endpoint
+                try {
+                    const url = `/delete_record/${modelName}/${recordId}`;
+                    const resp = await fetch(url, { method: 'POST' });
+                    if (resp.ok) {
+                        location.reload();
+                    }
+                } catch (e) {
+                    console.error('Error deleting record:', e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Beautiful Custom Confirmation Modal
+     * @param {Object} options - { title, message, buttons: [{label, value, class}] }
+     * @returns {Promise} - Resolves with the value of the clicked button
+     */
+    function customConfirm({ title = 'Confirmation', message = 'Are you sure?', buttons = [] }) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('customConfirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const messageEl = document.getElementById('confirmModalMessage');
+            const footerEl = document.getElementById('confirmModalFooter');
+
+            titleEl.innerText = title;
+            messageEl.innerHTML = message;
+            footerEl.innerHTML = '';
+
+            // Default buttons if none provided
+            if (buttons.length === 0) {
+                buttons = [
+                    { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                    { label: 'OK', value: true, class: 'confirm-btn-primary' }
+                ];
+            }
+
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.innerText = btn.label;
+                button.className = 'confirm-btn ' + (btn.class || 'confirm-btn-secondary');
+                button.onclick = () => {
+                    modal.style.setProperty('display', 'none', 'important');
+                    resolve(btn.value);
+                };
+                footerEl.appendChild(button);
+            });
+
+            modal.style.setProperty('display', 'flex', 'important');
+        });
+    }
+
+    // Choice modal with radio list; returns selected value or null (Cancel)
+    function customChoice({ title = 'Select Option', messageHTML = '', options = [], okLabel = 'Confirm', cancelLabel = 'Cancel' }) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('customConfirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const messageEl = document.getElementById('confirmModalMessage');
+            const footerEl = document.getElementById('confirmModalFooter');
+
+            titleEl.innerText = title;
+            
+            const container = document.createElement('div');
+            container.className = 'choice-container';
+            
+            if (messageHTML) {
+                const msg = document.createElement('div');
+                msg.style.marginBottom = '15px';
+                msg.style.color = '#666';
+                msg.innerHTML = messageHTML;
+                container.appendChild(msg);
+            }
+
+            const list = document.createElement('div');
+            list.className = 'choice-list';
+
+            options.forEach((opt, idx) => {
+                const item = document.createElement('label');
+                item.className = 'choice-item' + (opt.checked ? ' selected' : '');
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'customChoiceRadio';
+                radio.value = opt.value;
+                radio.checked = !!opt.checked;
+
+                // Toggle 'selected' class on change
+                radio.addEventListener('change', () => {
+                    document.querySelectorAll('.choice-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                });
+
+                const text = document.createElement('span');
+                text.textContent = opt.label;
+
+                item.appendChild(radio);
+                item.appendChild(text);
+                list.appendChild(item);
+            });
+
+            container.appendChild(list);
+            messageEl.innerHTML = '';
+            messageEl.appendChild(container);
+
+            footerEl.innerHTML = '';
+            const btnCancel = document.createElement('button');
+            btnCancel.className = 'confirm-btn confirm-btn-secondary';
+            btnCancel.innerText = cancelLabel;
+            btnCancel.onclick = () => {
+                modal.style.setProperty('display', 'none', 'important');
+                resolve(null);
+            };
+
+            const btnOk = document.createElement('button');
+            btnOk.className = 'confirm-btn confirm-btn-primary';
+            btnOk.innerText = okLabel;
+            btnOk.onclick = () => {
+                const selected = document.querySelector('input[name="customChoiceRadio"]:checked');
+                modal.style.setProperty('display', 'none', 'important');
+                resolve(selected ? selected.value : null);
+            };
+
+            footerEl.appendChild(btnCancel);
+            footerEl.appendChild(btnOk);
+
+            modal.style.setProperty('display', 'flex', 'important');
+        });
+    }
+</script>
+
+<!-- Custom Confirmation Modal -->
+<div id="customConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="confirmModalTitle">Confirmation</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirmModalMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer" id="confirmModalFooter">
+            <!-- Buttons will be injected here -->
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    <div class="footer-container">
+        <div class="footer-nav main-nav">
+            <a href="/word_stats" class="footer-btn">📊 Stats</a>
+            <a href="/history" class="footer-btn">📅 History</a>
+            <a href="/settings" class="footer-btn">⚙️ Settings</a>
+        </div>
+        <div class="footer-nav data-nav">
+            <a href="/db_view/Event" class="footer-btn {% if model_name == 'Event' %}active{% endif %}">Events</a>
+            <a href="/db_view/Habit" class="footer-btn {% if model_name == 'Habit' %}active{% endif %}">Habits</a>
+            <a href="/db_view/Task" class="footer-btn {% if model_name == 'Task' %}active{% endif %}">Tasks</a>
+            <a href="/db_view/Chronology" class="footer-btn {% if model_name == 'Chronology' %}active{% endif %}">Chrono</a>
+            <a href="/db_view/Notes" class="footer-btn {% if model_name == 'Notes' %}active{% endif %}">Notes</a>
+            <a href="/db_view/Wink" class="footer-btn {% if model_name == 'Wink' %}active{% endif %}">Wink</a>
+        </div>
+        <div class="footer-version">papanda version 0.5.3 (last update 05.04.2026)</div>
+    </div>
+</div>
+
+</body>
+</html>

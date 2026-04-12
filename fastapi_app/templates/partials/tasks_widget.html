@@ -1,0 +1,75 @@
+                    <div class="section task-section">
+                        <div class="widget-header">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Tasks
+                            </h1>
+                            <button
+                                type="button"
+                                class="collapse-btn"
+                                onclick="toggleWidget(this)"
+                                title="Свернуть / развернуть"
+                            >
+                                ▾
+                            </button>
+                        </div>
+                        <div class="widget-body">
+                            <div class="task-info" style="margin-bottom: 10px">
+                                <span class="green-text">One thing:</span>
+                                <span class="task-value">{{ one_thing }}</span>
+                                {% if one_thing_date %}<span
+                                    class="green-text"
+                                    style="margin-left: 10px"
+                                    >Days: {{ one_thing_date }}</span
+                                >{% endif %}
+                            </div>
+                            <div class="task-info" style="margin-bottom: 15px">
+                                <span class="green-text">Replacement:</span> {{
+                                one_thing_replacement }}
+                            </div>
+                            <ul class="task-list" style="overflow-y: auto">
+                                {% for task in tasks %}
+                                <li class="task-item" data-id="{{ task.id }}">
+                                    <span style="font-size: 0.95em"
+                                        >{{ task.name }}
+                                        <span class="task-time-pill" style="
+                                            font-size: 0.7em;
+                                            color: #999;
+                                            background: #f5f5f5;
+                                            padding: 1px 6px;
+                                            border-radius: 10px;
+                                            margin-left: 5px;
+                                            white-space: nowrap;
+                                        ">
+                                            {% if task.created_at %}
+                                                {% set diff = now_utc - task.created_at %}
+                                                {% if diff.days > 0 %}
+                                                    {{ diff.days }}d
+                                                {% elif diff.seconds > 3600 %}
+                                                    {{ (diff.seconds / 3600)|int }}h
+                                                {% elif diff.seconds > 60 %}
+                                                    {{ (diff.seconds / 60)|int }}m
+                                                {% else %}
+                                                    now
+                                                {% endif %}
+                                            {% else %}
+                                                ?
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                                    <form
+                                        action="/mark_done/{{ task.id }}"
+                                        method="post"
+                                        style="margin: 0"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="task-button"
+                                        >
+                                            Done
+                                        </button>
+                                    </form>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>

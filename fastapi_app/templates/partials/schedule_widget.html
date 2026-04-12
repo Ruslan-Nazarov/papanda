@@ -1,0 +1,149 @@
+                    <div
+                        class="section note-section"
+                        style="padding: 0 !important"
+                    >
+                        <div
+                            class="widget-header"
+                            style="
+                                padding: 10px 15px 8px;
+                                margin-bottom: 0 !important;
+                            "
+                        >
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Today
+                            </h1>
+                            <button
+                                type="button"
+                                class="collapse-btn"
+                                onclick="toggleWidget(this)"
+                                title="Свернуть / развернуть"
+                            >
+                                ▾
+                            </button>
+                        </div>
+                        <div class="widget-body">
+                            <div
+                                class="events-today"
+                                style="
+                                    border: none !important;
+                                    padding: 0 15px 10px !important;
+                                "
+                            >
+                                <ul>
+                                    {% for event in events_today %}
+                                    <li data-id="{{ event.id }}"
+                                        style="
+                                            display: flex;
+                                            align-items: center;
+                                            border-bottom: 1px solid #eee;
+                                            padding: 5px 0;
+                                            flex-wrap: wrap;
+                                        "
+                                    >
+                                        <form
+                                            action="/mark_event_done/{{ event.id }}"
+                                            method="post"
+                                            style="margin-right: 5px"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="event-done-btn"
+                                            >
+                                                ✓
+                                            </button>
+                                        </form>
+                                        <span style="font-size: 0.95em"
+                                            >{% if event.important %}<span title="Important Event">⭐</span> {% endif %}{% if event.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% endif %}{{ event.title }}</span
+                                        >
+                                        <div class="event-actions">
+                                            <button
+                                                type="button"
+                                                class="btn-mini"
+                                                data-event-id="{{ event.id }}"
+                                                data-event-title="{{ event.title|e }}"
+                                                data-event-date="{{ event.date.strftime('%Y-%m-%dT%H:%M') if event.date else '' }}"
+                                                data-event-rule="{{ event.recurrence_rule if event.recurrence_rule else '' }}"
+                                                data-event-end="{{ event.recurrence_end.isoformat() if event.recurrence_end else '' }}"
+                                                data-event-rec-id="{{ event.recurrence_id or '' }}"
+                                                onclick="
+                                                    handleEventEditClick(
+                                                        event,
+                                                        this,
+                                                    )
+                                                "
+                                            >
+                                                ✎
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="btn-mini del"
+                                                onclick="deleteEvent('{{ event.id }}', {{ 'true' if event.recurrence_id else 'false' }})"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div
+                                class="events-tomorrow"
+                                style="
+                                    border: none !important;
+                                    border-top: 1px solid #ddd !important;
+                                    margin-top: 15px !important;
+                                "
+                            >
+                                <h1 style="margin-top: 10px !important">
+                                    Tomorrow
+                                </h1>
+                                <ul>
+                                    {% for event in events_tomorrow %}
+                                    <li data-id="{{ event.id }}"
+                                        style="
+                                            display: flex;
+                                            align-items: center;
+                                            border-bottom: 1px solid #eee;
+                                            padding: 5px 0;
+                                            flex-wrap: wrap;
+                                        "
+                                    >
+                                        <span
+                                            style="
+                                                font-size: 0.9em;
+                                                padding: 4px 0;
+                                            "
+                                            >{% if event.important %}<span title="Important Event">⭐</span> {% endif %}{% if event.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% else %}•{% endif %} {{ event.title }}</span
+                                        >
+                                        <div class="event-actions">
+                                            <button
+                                                type="button"
+                                                class="btn-mini"
+                                                data-event-id="{{ event.id }}"
+                                                data-event-title="{{ event.title|e }}"
+                                                data-event-date="{{ event.date.strftime('%Y-%m-%dT%H:%M') if event.date else '' }}"
+                                                data-event-rule="{{ event.recurrence_rule if event.recurrence_rule else '' }}"
+                                                data-event-end="{{ event.recurrence_end.isoformat() if event.recurrence_end else '' }}"
+                                                onclick="
+                                                    handleEventEditClick(
+                                                        event,
+                                                        this,
+                                                    )
+                                                "
+                                            >
+                                                ✎
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="btn-mini del"
+                                                onclick="deleteEvent('{{ event.id }}', {{ 'true' if event.recurrence_id else 'false' }})"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>

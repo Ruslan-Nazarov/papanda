@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>History - Papanda</title>
+    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
+    <style>
+        body { background-color: #FFF5EC; }
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .date-selector-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            border: 2px solid #FFE5B4;
+        }
+        .header-control {
+            height: 38px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+            font-family: inherit;
+        }
+        .header-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .header-control:hover {
+            border-color: #9ca3af;
+        }
+        .header-btn-submit {
+            height: 38px;
+            padding: 0 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            background-color: #F2994A;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(242, 153, 74, 0.2);
+        }
+        .header-btn-submit:hover {
+            background-color: #E08E45;
+            transform: translateY(-1px);
+        }
+        .header-btn-submit:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .fallback-alert {
+            background-color: #FFF9F4;
+            border: 1px dashed #F2994A;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #E08E45;
+            text-align: center;
+            font-weight: bold;
+        }
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .history-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 2px solid transparent;
+            transition: transform 0.3s;
+        }
+        .history-card:hover {
+            transform: translateY(-5px);
+        }
+        .history-card h2 {
+            font-size: 1.25em;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-chrono { border-color: lightgreen; }
+        .card-notes { border-color: #FFE5B4; }
+        .card-events { border-color: lightblue; }
+        .card-wink { border-color: #FFC0CB; }
+
+        .data-list { list-style: none; padding: 0; margin: 0; }
+        .data-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .data-item:last-child { border-bottom: none; }
+        .data-meta {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .empty-state {
+            color: #bbb;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #888;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .back-link:hover { color: #333; }
+        .year-badge {
+            display: inline-block;
+            background: #F2994A;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        /* Expandable list styles */
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #F2994A;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+            justify-content: center;
+            border-top: 1px solid #f0f0f0;
+            margin-top: 5px;
+        }
+        .expand-btn:hover { text-decoration: underline; }
+        .data-list li.hidden-item { display: none; }
+        .is-expanded .data-list li.hidden-item { display: block; }
+        .is-expanded .expand-btn { display: none; }
+        .is-done { text-decoration: line-through; color: #999; }
+        .sticky-thought-box { padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+        .sticky-thought-list { list-style: none; padding-left: 5px; margin: 5px 0 0 0; }
+        .sticky-item-done { text-decoration: line-through; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+<div class="history-container">
+    <a href="/" class="back-link">← Back to Dashboard</a>
+
+    <div class="date-selector-card">
+        <form action="/history" method="get" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;">
+            <label style="font-weight: bold; color: #555;">Choose Date:</label>
+            <input type="date" name="date_str" value="{{ target_date.strftime('%Y-%m-%d') }}" class="header-control">
+            <button type="submit" class="header-btn-submit">Show History</button>
+        </form>
+    </div>
+
+    {% if is_today_in_history %}
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: var(--primary); margin-bottom: 5px;">On This Day</h1>
+        <p style="color: #888;">Showing records for {{ target_date.strftime('%d %B') }} from all years</p>
+    </div>
+    {% else %}
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #444; margin-bottom: 5px;">{{ target_date.strftime('%d %B %Y') }}</h1>
+    </div>
+    {% endif %}
+
+    <div class="history-grid">
+        <!-- Chronology -->
+        <div class="history-card card-chrono">
+            <h2>Chronology</h2>
+            <ul class="data-list">
+                {% for item in chronology %}
+                    <li class="data-item {% if loop.index > 1 %}hidden-item{% endif %}">
+                        {% set item_date = item.date.date() if item.date.date is defined else item.date %}
+                        {% if is_today_in_history %}
+                            <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                        {% elif item_date != target_date %}
+                            <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                        {% endif %}
+                        {{ item.title }}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if chronology|length > 1 %}
+            <button class="expand-btn" onclick="this.parentElement.classList.add('is-expanded')">Show all ({{ chronology|length }})</button>
+            {% endif %}
+        </div>
+
+        <!-- Notes -->
+        <div class="history-card card-notes">
+            <h2>Notes</h2>
+            <ul class="data-list">
+                {% for item in notes %}
+                    <li class="data-item {% if loop.index > 1 %}hidden-item{% endif %}">
+                        {% set item_date = item.created_at.date() if item.created_at.date is defined else item.created_at %}
+                        <span class="data-meta">
+                            {% if is_today_in_history %}
+                                <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                            {% elif item_date != target_date %}
+                                <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                            {% endif %}
+                            {{ item.category }} | {{ item.created_at.strftime('%H:%M') }}
+                        </span>
+                        {{ item.note }}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if notes|length > 1 %}
+            <button class="expand-btn" onclick="this.parentElement.classList.add('is-expanded')">Show all ({{ notes|length }})</button>
+            {% endif %}
+        </div>
+
+        <!-- Events -->
+        <div class="history-card card-events">
+            <h2>Events</h2>
+            <ul class="data-list">
+                {% for item in events %}
+                    <li class="data-item {% if loop.index > 1 %}hidden-item{% endif %}">
+                        {% set item_date = item.date.date() if item.date.date is defined else item.date %}
+                        <span class="data-meta">
+                            {% if is_today_in_history %}
+                                <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                            {% elif item_date != target_date %}
+                                <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                            {% endif %}
+                            {% if item.important %}★ Important{% else %}Event{% endif %}
+                        </span>
+                        <span class="{% if item.done %}is-done{% endif %}">{{ item.title }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if events|length > 1 %}
+            <button class="expand-btn" onclick="this.parentElement.classList.add('is-expanded')">Show all ({{ events|length }})</button>
+            {% endif %}
+        </div>
+
+        <!-- Wink -->
+        <div class="history-card card-wink">
+            <h2>Leisure (Wink)</h2>
+            <ul class="data-list">
+                {% for item in wink %}
+                    <li class="data-item {% if loop.index > 1 %}hidden-item{% endif %}">
+                        {% set item_date = item.date.date() if item.date.date is defined else item.date %}
+                        {% if is_today_in_history %}
+                            <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                        {% elif item_date != target_date %}
+                            <span class="year-badge">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                        {% endif %}
+                        {{ item.title }}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if wink|length > 1 %}
+            <button class="expand-btn" onclick="this.parentElement.classList.add('is-expanded')">Show all ({{ wink|length }})</button>
+            {% endif %}
+        </div>
+
+        <!-- Sticky Thoughts -->
+        <div class="history-card" style="border-color: #ffd54f;">
+            <h2>Sticky Thoughts</h2>
+            <ul class="data-list">
+                {% for note in stickers %}
+                    <li class="data-item {% if loop.index > 2 %}hidden-item{% endif %} sticky-thought-box" style="background-color: {{ note.color }}20;">
+                        <span class="data-meta">
+                            {% set item_date = note.created_at.date() %}
+                            {% if is_today_in_history %}
+                                {% if item_date.strftime('%m-%d') == target_date.strftime('%m-%d') %}
+                                    <span class="year-badge" style="background:#ffd54f; color:#333">{{ item_date.year }}</span>
+                                {% else %}
+                                    <span class="year-badge" style="background:#ffd54f; color:#333">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                                {% endif %}
+                            {% elif item_date != target_date %}
+                                <span class="year-badge" style="background:#ffd54f; color:#333">{{ item_date.strftime('%d.%m.%Y') }}</span>
+                            {% endif %}
+                            Created: {{ note.created_at.strftime('%H:%M') }}
+                            {% if note.finished_at %} | Finished: {{ note.finished_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}
+                        </span>
+                        
+                        <div style="font-family: 'Indie Flower', cursive, sans-serif; font-size: 1.1em; color: #444;">
+                            {% if note.type == 'list' %}
+                                {% set list_data = note.text|from_json %}
+                                <ul class="sticky-thought-list">
+                                    {% for item in list_data['items'] %}
+                                        <li style="margin-bottom: 3px;" class="{% if item.done %}sticky-item-done{% endif %}">
+                                            {{ '✓ ' if item.done else '○ ' }}{{ item.text }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div style="white-space: pre-wrap;">{{ note.text }}</div>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if stickers|length > 2 %}
+            <button class="expand-btn" onclick="this.parentElement.classList.add('is-expanded')">Show all ({{ stickers|length }})</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    <div class="footer-container">
+        <div class="footer-nav main-nav">
+            <a href="/word_stats" class="footer-btn">📊 Stats</a>
+            <a href="/history" class="footer-btn active">📅 History</a>
+            <a href="/settings" class="footer-btn">⚙️ Settings</a>
+        </div>
+        <div class="footer-nav data-nav">
+            <a href="/db_view/Event" class="footer-btn">Events</a>
+            <a href="/db_view/Habit" class="footer-btn">Habits</a>
+            <a href="/db_view/Task" class="footer-btn">Tasks</a>
+            <a href="/db_view/Chronology" class="footer-btn">Chrono</a>
+            <a href="/db_view/Notes" class="footer-btn">Notes</a>
+            <a href="/db_view/Wink" class="footer-btn">Wink</a>
+        </div>
+        <div class="footer-version">papanda version 0.5.1 (est. 21.11.2023; last update 18.12.2025)</div>
+    </div>
+</div>
+</body>
+</html>

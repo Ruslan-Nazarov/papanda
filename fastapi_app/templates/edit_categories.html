@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Editing categories</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
+    <style>
+        .page-container { 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background-color: #f7f7f7; 
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Заголовок */
+        .section-header {
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Текстовое поле */
+        .categories-textarea { 
+            width: 100%; 
+            height: 300px; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            border: 1px solid #aaa; 
+            border-radius: 4px;
+            font-family: monospace; 
+            font-size: 14px;
+        }
+        
+        /* Кнопки */
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .back-link {
+            text-decoration: none;
+            color: #6a0dad; 
+            font-weight: bold;
+            padding: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="section-header">
+            <h2>Editing note categories</h2>
+        </div>
+        
+        <p style="color: #666;">Each category must be on a separate line. Blank lines will be ignored when saving.</p>
+        
+        <form method="post" action="{{ url_for('edit_categories') }}">
+            <textarea name="categories_list" class="categories-textarea" required>{% for category in categories %}{{ category }}{{ "\n" }}{% endfor %}</textarea>
+            
+            <div class="button-group">
+                <a href="{{ url_for('index') }}" class="back-link">
+                    ← Back to Dashboard
+                </a>
+                <button type="submit" class="form-button" style="background-color: #90EE90; border: none; padding: 10px 20px;">
+                    Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="footer">
+        <div class="footer-container">
+            <div class="footer-version">papanda version 0.5.1 (est. 21.11.2023; last update 18.12.2025)</div>
+            <div class="footer-nav">
+                <a href="/word_stats" class="footer-btn">Stats</a>
+                <a href="/history" class="footer-btn">History</a>
+                <a href="/settings" class="footer-btn">Settings</a>
+                <span class="footer-sep">|</span>
+                <a href="/db_view/Event" class="footer-btn">Event</a>
+                <a href="/db_view/Habit" class="footer-btn">Habits</a>
+                <a href="/db_view/Task" class="footer-btn">Task</a>
+                <a href="/db_view/Chronology" class="footer-btn">Chronology</a>
+                <a href="/db_view/Notes" class="footer-btn">Notes</a>
+                <a href="/db_view/Wink" class="footer-btn">Wink</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

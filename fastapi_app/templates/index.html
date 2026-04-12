@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{% block title %}Papanda{% endblock %}</title>
+
+        <link
+            rel="shortcut icon"
+            href="{{ url_for('static', path='logo.ico') }}"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', path='css/styles.css') }}?v=4"
+        />
+
+        <!-- GridStack.js -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+        <!-- Sortable.js -->
+        <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard_index.css') }}?v=1" />
+
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+    </head>
+    <body>
+        <div
+            class="header"
+            style="height: auto; padding: 10px 20px; position: relative"
+        >
+            <div style="display: flex; align-items: center; width: 100%; flex-wrap: nowrap !important; gap: 8px;">
+                <form
+                    method="post"
+                    action="/submit_form"
+                    id="common_form"
+                    style="
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        max-width: 650px;
+                        width: 100%;
+                    "
+                >
+                    <input
+                        list="suggestions"
+                        type="text"
+                        name="common_text"
+                        required
+                        placeholder="To do, save or plan..."
+                        class="header-control"
+                        style="flex: 1; min-width: 100px"
+                    />
+                    <datalist id="suggestions"></datalist>
+                    <input
+                        type="date"
+                        name="common_date"
+                        required
+                        id="common_date"
+                        class="header-control"
+                        style="width: 150px; padding: 0 8px; flex-shrink: 0;"
+                        value="{{ today_actual.strftime('%Y-%m-%d') }}"
+                    />
+
+                    <!-- Recurrence Dropdown -->
+                    <div class="recurrence-container" style="flex-shrink: 0;">
+                        <button
+                            type="button"
+                            class="header-control rec-btn"
+                            id="recurrenceToggle"
+                            title="Recurrence settings"
+                        >
+                            🔁
+                        </button>
+                        <div class="recurrence-menu" id="recurrenceMenu">
+                            <span class="rec-label">Repeat</span>
+                            <select id="repeatSelect">
+                                <option value="none">— Once —</option>
+                                <option value="daily">Every day</option>
+                                <option value="weekly">Every week</option>
+                                <option value="weekly">
+                                    Custom days of week
+                                </option>
+                                <option value="biweekly">Every 2 weeks</option>
+                                <option value="weekdays">
+                                    Weekdays (Mon–Fri)
+                                </option>
+                                <option value="monthly">Every month</option>
+                                <option value="yearly">Every year</option>
+                            </select>
+
+                            <!-- Дни недели (показываются при weekly) -->
+                            <div id="weekdayRow" class="weekday-row">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_mon"
+                                        value="mon"
+                                    />
+                                    Mo</label
+                                >
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_tue"
+                                        value="tue"
+                                    />
+                                    Tu</label
+                                >
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_wed"
+                                        value="wed"
+                                    />
+                                    We</label
+                                >
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_thu"
+                                        value="thu"
+                                    />
+                                    Th</label
+                                >
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_fri"
+                                        value="fri"
+                                    />
+                                    Fr</label
+                                >
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_sat"
+                                        value="sat"
+                                    />
+                                    Sa</label
+                                >
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        name="wd_sun"
+                                        value="sun"
+                                    />
+                                    Su</label
+                                >
+                            </div>
+
+                            <!-- Скрытое поле с итоговым правилом повторения -->
+                            <input
+                                type="hidden"
+                                name="repeat"
+                                id="repeatHidden"
+                                value="none"
+                            />
+
+                            <!-- Переключатель режима окончания -->
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 6px;
+                                    margin-bottom: 6px;
+                                    align-items: center;
+                                "
+                            >
+                                <span class="rec-label" style="margin-bottom: 0"
+                                    >End:</span
+                                >
+                                <label
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 3px;
+                                        font-size: 0.82em;
+                                        cursor: pointer;
+                                    "
+                                >
+                                    <input
+                                        type="radio"
+                                        name="rec_end_mode"
+                                        value="date"
+                                        id="recEndDate"
+                                        checked
+                                    />
+                                    Date
+                                </label>
+                                <label
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 3px;
+                                        font-size: 0.82em;
+                                        cursor: pointer;
+                                    "
+                                >
+                                    <input
+                                        type="radio"
+                                        name="rec_end_mode"
+                                        value="count"
+                                        id="recEndCount"
+                                    />
+                                    Count
+                                </label>
+                            </div>
+
+                            <!-- Режим: дата окончания -->
+                            <div id="endDateBlock">
+                                <span class="rec-label">Until date</span>
+                                <input
+                                    type="date"
+                                    name="repeat_end"
+                                    id="repeatEnd"
+                                />
+                            </div>
+
+                            <!-- Режим: количество повторений -->
+                            <div id="endCountBlock" style="display: none">
+                                <span class="rec-label">Repeat N times</span>
+                                <input
+                                    type="number"
+                                    id="repeatCount"
+                                    min="1"
+                                    max="365"
+                                    value="10"
+                                    style="
+                                        width: 100%;
+                                        height: 28px;
+                                        border: 1px solid #ddd;
+                                        border-radius: 4px;
+                                        padding: 0 6px;
+                                        font-size: 0.9em;
+                                        box-sizing: border-box;
+                                        margin-bottom: 10px;
+                                    "
+                                />
+                                <!-- Пересчитанная дата (скрытая, передаётся как repeat_end) -->
+                                <input
+                                    type="hidden"
+                                    name="repeat_end"
+                                    id="repeatEndFromCount"
+                                />
+                            </div>
+
+                            <div style="text-align: right; margin-top: 5px">
+                                <button
+                                    type="button"
+                                    onclick="closeRecurrence()"
+                                    style="
+                                        font-size: 0.9em;
+                                        padding: 6px 12px;
+                                        border-radius: 6px;
+                                        border: none;
+                                        background-color: #f3f4f6;
+                                        cursor: pointer;
+                                        font-weight: 500;
+                                    "
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <select
+                        name="common_category"
+                        class="header-control"
+                        style="width: 130px; cursor: pointer; padding: 0 6px; flex-shrink: 0;"
+                    >
+                        <option value="event">📅 Event</option>
+                        <option value="important">⭐ Important</option>
+                        <option value="task">✅ Task</option>
+                        <option value="habits">🔄 Habit</option>
+                        <option value="wink">😉 Wink</option>
+                        <option value="count until">⏳ Count Until</option>
+                        <option value="count after">⌛ Count After</option>
+                        <option value="one_thing">🎯 One Thing</option>
+                        <option value="replacement">🔀 Replacement</option>
+                    </select>
+                    <button
+                        type="submit"
+                        class="header-btn-submit"
+                        style="padding: 0 16px; flex-shrink: 0;"
+                    >
+                        OK
+                    </button>
+                </form>
+
+                <div style="margin-left: auto; display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-end; flex-shrink: 0;">
+
+                    <!-- Days until -->
+                    <div class="info-widget info-widget-orange">
+                        <span class="info-widget-title" title="{{ title_until }}">⏳ {{ title_until }}</span>
+                        <span class="info-widget-value text-orange">{{ days_remaining }} <span class="info-widget-subtext">days</span></span>
+                    </div>
+
+                    <!-- Days after -->
+                    <div class="info-widget info-widget-green">
+                        <span class="info-widget-title" title="{{ title_after }}">⌛ {{ title_after }}</span>
+                        <span class="info-widget-value text-green">{{ days_passed }} <span class="info-widget-subtext">days</span></span>
+                    </div>
+
+                    <!-- Important events (next 3 days) -->
+                    {% for event in date_important %}
+                    <div class="info-widget info-widget-amber">
+                        <span class="info-widget-title">⭐ important</span>
+                        <span class="info-widget-value-sm text-amber">{% if event.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% endif %}{{ event.title }}</span>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Wink -->
+                    <div id="wink-display" class="info-widget info-widget-purple" title="{{ wink }}">
+                        <span class="info-widget-title">😉 wink</span>
+                        <span class="info-widget-value-purple">{{ wink }}</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Edit Modal -->
+        {% include 'partials/index_modals.html' %}
+
+        <div class="grid-stack">
+            <!-- Chronology -->
+            <div
+                class="grid-stack-item"
+                gs-id="chrono"
+                gs-x="0"
+                gs-y="0"
+                gs-w="4"
+                gs-h="5"
+            >
+                <div class="grid-stack-item-content">
+                    {% include 'partials/chrono_widget.html' %}
+                </div>
+            </div>
+
+            <!-- Observations (Обследование) -->
+            <div
+                class="grid-stack-item"
+                gs-id="observation"
+                gs-x="0"
+                gs-y="5"
+                gs-w="4"
+                gs-h="10"
+            >
+                <div class="grid-stack-item-content">
+                    <div class="section observation-section">
+                        <div class="widget-header">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Live Observation
+                            </h1>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-left: auto; margin-right: 10px;">
+                                <button type="button" class="collapse-btn" onclick="openObsOverviewModal()" title="Full Overview" style="background: none; border: none; cursor: pointer; font-size: 1.1em; padding: 2px 6px; border-radius: 4px; transition: background 0.2s;">🌳</button>
+                                <button type="button" class="collapse-btn" onclick="openObsAddModal()" title="Add Activity" style="background: none; border: none; cursor: pointer; font-size: 1.1em; padding: 2px 6px; border-radius: 4px; transition: background 0.2s;">+</button>
+                            </div>
+                            <button
+                                type="button"
+                                class="collapse-btn collapse-btn-toggle"
+                                onclick="toggleWidget(this)"
+                                title="Свернуть / развернуть"
+                            >
+                                ▾
+                            </button>
+                        </div>
+                        <div class="widget-body">
+                            {% include 'observation_widget.html' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div
+                class="grid-stack-item"
+                gs-id="notes"
+                gs-x="4"
+                gs-y="0"
+                gs-w="4"
+                gs-h="5"
+            >
+                <div class="grid-stack-item-content">
+                    {% include 'partials/notes_widget.html' %}
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div
+                class="grid-stack-item"
+                gs-id="events"
+                gs-x="8"
+                gs-y="0"
+                gs-w="4"
+                gs-h="8"
+            >
+                <div class="grid-stack-item-content">
+                    {% include 'partials/schedule_widget.html' %}
+                </div>
+            </div>
+
+            <!-- Tasks -->
+            <div
+                class="grid-stack-item"
+                gs-id="tasks"
+                gs-x="0"
+                gs-y="5"
+                gs-w="4"
+                gs-h="6"
+            >
+                <div class="grid-stack-item-content">
+                    {% include 'partials/tasks_widget.html' %}
+                </div>
+            </div>
+
+            <!-- Habits -->
+            <div
+                class="grid-stack-item"
+                gs-id="habits"
+                gs-x="4"
+                gs-y="5"
+                gs-w="4"
+                gs-h="6"
+            >
+                <div class="grid-stack-item-content">
+                    {% include 'partials/habits_widget.html' %}
+                </div>
+            </div>
+
+            <!-- Words -->
+            <div
+                class="grid-stack-item"
+                gs-id="words"
+                gs-x="8"
+                gs-y="8"
+                gs-w="4"
+                gs-h="8"
+            >
+                <div class="grid-stack-item-content">
+                    {% include 'partials/words_widget.html' %}
+                </div>
+            </div>
+
+            <!-- Rules -->
+            <div
+                class="grid-stack-item"
+                gs-id="rules"
+                gs-x="0"
+                gs-y="11"
+                gs-w="8"
+                gs-h="4"
+            >
+                <div class="grid-stack-item-content">
+                    <div class="section random-rule">
+                        <div class="widget-header">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Language Rules
+                            </h1>
+                            <div class="widget-controls">
+                                <button
+                                    type="button"
+                                    class="collapse-btn"
+                                    onclick="toggleWidget(this)"
+                                    title="Свернуть / развернуть"
+                                    style="margin-left: 0"
+                                >
+                                    ▾
+                                </button>
+                                <button
+                                    onclick="refreshRule()"
+                                    title="Refresh Rule"
+                                    class="btn-rule"
+                                >
+                                    ↻
+                                </button>
+                                <button
+                                    onclick="toggleRule()"
+                                    class="btn-rule"
+                                >
+                                    RU ⇄ EN
+                                </button>
+                            </div>
+                        </div>
+                        <div class="widget-body">
+                            <div
+                                id="rule-lang"
+                                style="
+                                    background-color: #66bb6a;
+                                    color: white;
+                                    display: inline-block;
+                                    padding: 2px 10px;
+                                    border-radius: 5px;
+                                    font-weight: bold;
+                                    margin-bottom: 10px;
+                                "
+                            >
+                                {{ random_rule.language }}
+                            </div>
+                            <div
+                                style="
+                                    font-size: 0.95em;
+                                    color: #333;
+                                    line-height: 1.4;
+                                "
+                            >
+                                <div id="rule-ru">
+                                    {{ random_rule.rule_ru }}
+                                </div>
+                                <div id="rule-en" style="display: none">
+                                    {{ random_rule.rule_en }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Thoughts -->
+            <div
+                class="grid-stack-item"
+                gs-id="stickers"
+                gs-x="8"
+                gs-y="5"
+                gs-w="4"
+                gs-h="6"
+            >
+                <div class="grid-stack-item-content">
+                    <div class="section stickers-section" style="padding:0 !important">
+                        <div class="widget-header" style="padding: 10px 15px 8px; margin-bottom: 0 !important;">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Sticky Thoughts
+                            </h1>
+                            <button type="button" class="collapse-btn" onclick="toggleWidget(this)">▾</button>
+                        </div>
+                        <div class="widget-body">
+                            <div class="sticker-input-container">
+                                <div style="margin-bottom: 5px;">
+                                    <input type="text" id="stickerTitleInput" class="sticker-title-input" placeholder="Title (optional)...">
+                                </div>
+                                <div class="sticker-input-row">
+                                    <button id="stickerTypeBtn" class="sticker-type-btn" title="Toggle List/Text mode" onclick="toggleStickerMode()">📝</button>
+                                    <textarea id="stickerInput" class="sticker-quick-input" placeholder="Thought on your mind... (Ctrl+Enter to add)" rows="1" oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';" onkeydown="if(event.ctrlKey && event.key === 'Enter') addSticker()"></textarea>
+                                    <button class="sticker-ok-btn" onclick="addSticker()" title="Save (Ctrl+Enter)">OK</button>
+                                </div>
+                                <div class="color-picker" id="stickerColorPicker">
+                                    <div class="color-dot bg-yellow active" data-color="#fff9c4" title="Yellow"></div>
+                                    <div class="color-dot bg-pink" data-color="#f8bbd0" title="Pink"></div>
+                                    <div class="color-dot bg-blue" data-color="#bbdefb" title="Blue"></div>
+                                    <div class="color-dot bg-green" data-color="#c8e6c9" title="Green"></div>
+                                    <div class="color-dot bg-purple" data-color="#e1bee7" title="Purple"></div>
+                                    <div class="color-dot bg-orange" data-color="#ffe0b2" title="Orange"></div>
+                                    <div class="color-dot bg-teal" data-color="#b2dfdb" title="Teal"></div>
+                                    <div class="color-dot bg-gray" data-color="#f5f5f5" title="Gray"></div>
+                                </div>
+                            </div>
+                            <div class="corkboard" id="corkboard">
+                                {% for note in stickers %}
+                                <div class="sticker-thought {{ 'sticker-list-note' if note.type == 'list' else '' }}" 
+                                     data-id="{{ note.id }}" 
+                                     data-type="{{ note.type }}"
+                                     data-color="{{ note.color }}"
+                                     data-title="{{ (note.title or '')|e }}"
+                                     onclick="openStickerModal({{ note.id }})"
+                                     style="background-color: {{ note.color }} !important;">
+                                    
+                                    <button class="sticker-del-btn" onclick="event.stopPropagation(); deleteStickerFromData(this)">×</button>
+                                    
+                                    {% if note.title %}
+                                        <div class="sticker-title">{{ note.title }}</div>
+                                    {% endif %}
+
+                                    {% if note.type == 'list' %}
+                                        {% set list_data = note.text|from_json %}
+                                        {% set items = list_data['items'] %}
+                                        <ul class="sticker-list">
+                                            {% for item in items[:2] %}
+                                            <li class="sticker-list-item {{ 'done' if item.done else '' }}">
+                                                <span>{{ '✓' if item.done else '○' }} {{ item.text }}</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% if items|length > 2 %}
+                                            <button class="sticker-more-btn">+{{ items|length - 2 }} more</button>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="sticker-text">{{ note.text }}</div>
+                                    {% endif %}
+                                    <div class="sticker-meta">{{ note.created_at.strftime('%d.%m.%y') }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast">Saved successfully!</div>
+
+        <div class="footer">
+            <div class="footer-container">
+                <div class="footer-nav main-nav">
+                    <a href="/word_stats" class="footer-btn">📊 Words</a>
+                    <a href="/history" class="footer-btn">📅 History</a>
+                    <a href="/settings" class="footer-btn">⚙️ Settings</a>
+                </div>
+                <div class="footer-nav data-nav">
+                    <a href="/db_view/Event" class="footer-btn">Events</a>
+                    <a href="/db_view/Habit" class="footer-btn">Habits</a>
+                    <a href="/db_view/Task" class="footer-btn">Tasks</a>
+                    <a href="/db_view/Chronology" class="footer-btn">Chrono</a>
+                    <a href="/db_view/Notes" class="footer-btn">Notes</a>
+                    <a href="/db_view/Wink" class="footer-btn">Wink</a>
+                </div>
+                <div class="footer-version">
+                    papanda version 0.6 (est. 21.11.2023; last update
+                    12.04.2026)
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Jinja provided constants for external scripts
+            window.P_CHRONO_DATE = '{{ today_for_calendar.strftime("%Y-%m-%d") }}';
+            window.P_DASHBOARD_LAYOUT = {{ dashboard_layout|safe if dashboard_layout else '{}' }};
+        </script>
+        <script src="{{ url_for('static', path='js/dashboard_index.js') }}?v=2"></script>
+    </body>
+</html>

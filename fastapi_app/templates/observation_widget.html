@@ -1,0 +1,898 @@
+
+<style>
+    .observation-timeline {
+        position: relative;
+        padding-left: 30px;
+        margin-top: 15px;
+    }
+    .observation-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(155, 89, 182, 0.2);
+        border-radius: 2px;
+    }
+    .obs-item {
+        position: relative;
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    .obs-item::before {
+        content: '';
+        position: absolute;
+        left: -25px;
+        top: 18px;
+        width: 12px;
+        height: 12px;
+        background: #9b59b6;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.2);
+        z-index: 1;
+    }
+    .obs-item.no-time::before {
+        background: #27ae60; /* Green dot for no time */
+        box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+    }
+    .obs-item.priority-5 {
+        border-left: 4px solid #f1c40f;
+        background: rgba(241, 196, 15, 0.05);
+    }
+    .obs-item.priority-0 {
+        opacity: 0.5;
+        filter: grayscale(0.8);
+    }
+    
+    .obs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    
+    .obs-left {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .obs-time {
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #9b59b6;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .obs-content {
+        font-size: 1rem;
+        color: #2c3e50;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    .obs-status-badge {
+        font-size: 0.7rem;
+        background: #eee;
+        padding: 2px 6px;
+        border-radius: 10px;
+        color: #666;
+        width: fit-content;
+        margin-bottom: 6px;
+    }
+    .obs-status-badge.constant {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .obs-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .obs-weekdays {
+        display: flex;
+        gap: 4px;
+    }
+    .weekday-circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #f1f2f6;
+        color: #aaa;
+        font-size: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    .weekday-circle.active {
+        background: #9b59b6;
+        color: white;
+        box-shadow: 0 0 5px rgba(155, 89, 182, 0.4);
+    }
+
+    .weekday-circle-edit {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f1f2f6;
+        color: #aaa;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+    .weekday-circle-edit:hover {
+        background: #e1e2e6;
+    }
+    .weekday-circle-edit.active {
+        background: #9b59b6;
+        color: white;
+        box-shadow: 0 0 8px rgba(155, 89, 182, 0.4);
+    }
+
+    /* New Time Picker Styles */
+    .time-picker-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .time-select {
+        padding: 6px 4px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 0.9rem;
+        outline: none;
+        cursor: pointer;
+    }
+    .time-select:focus {
+        border-color: #9b59b6;
+    }
+    .time-sep {
+        font-weight: bold;
+        color: #666;
+    }
+    .time-mode-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .time-field-group {
+        transition: opacity 0.3s ease;
+    }
+    .time-field-group.disabled {
+        opacity: 0.2;
+        pointer-events: none;
+    }
+
+    .obs-actions {
+        display: flex;
+        gap: 6px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .obs-item:hover .obs-actions {
+        opacity: 1;
+    }
+
+    .obs-btn {
+        background: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        color: #555;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .obs-btn:hover {
+        background: #f8f9fa;
+        color: #333;
+        border-color: #ccc;
+    }
+    .obs-btn.check-btn {
+        background: #27ae60;
+        color: white;
+        border-color: #27ae60;
+        opacity: 1; /* always visible */
+    }
+    .obs-btn.check-btn:hover {
+        background: #219653;
+    }
+    
+    .obs-main-badge {
+        position: absolute;
+        left: -8px;
+        top: -8px;
+        font-size: 1.2rem;
+    }
+    .observation-timeline-tree {
+        position: relative;
+        padding: 0 20px;
+        margin-top: 15px;
+    }
+    .timeline-center-line {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(155, 89, 182, 0.2);
+        transform: translateX(-50%);
+        border-radius: 2px;
+    }
+    .timeline-item {
+        display: flex;
+        width: 100%;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    .timeline-item.left-side {
+        justify-content: flex-end;
+        padding-right: calc(50% + 20px); /* Adjust for line and dot */
+    }
+    .timeline-item.right-side {
+        justify-content: flex-start;
+        padding-left: calc(50% + 20px); /* Adjust for line and dot */
+    }
+    .timeline-content-box {
+        max-width: 45%; /* Adjust as needed */
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        position: relative;
+    }
+    .timeline-item.left-side .timeline-content-box {
+        margin-right: 20px;
+    }
+    .timeline-item.right-side .timeline-content-box {
+        margin-left: 20px;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        top: 18px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.2);
+        z-index: 1;
+    }
+    .timeline-item.left-side::before {
+        right: calc(50% - 6px); /* Position on the center line */
+        background: #27ae60; /* Green for no time */
+    }
+    .timeline-item.right-side::before {
+        left: calc(50% - 6px); /* Position on the center line */
+        background: #9b59b6; /* Purple for timed */
+    }
+    .edit-from-tree {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        color: #555;
+    }
+    .edit-from-tree:hover {
+        background: #e0e0e0;
+    }
+    .obs-item.no-time {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        margin-bottom: 0;
+        height: 25px; /* Controls spacing between dots */
+        display: block;
+        position: relative;
+    }
+    .obs-item.no-time .obs-header {
+        display: none;
+    }
+    .obs-item.no-time .obs-actions {
+        display: none;
+    }
+    .obs-item.no-time::before {
+        background: #27ae60; /* Green dot for no time */
+        box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+</style>
+
+<div class="observation-timeline" id="observation-container">
+    {% for obs in observations %}
+    <div class="obs-item priority-{{ obs['priority'] }} {% if obs['no_time'] %}no-time{% endif %}" data-id="{{ obs['id'] }}">
+        
+        <div class="obs-header">
+            <div class="obs-left">
+                {% if not obs['no_time'] %}
+                <span class="obs-time">
+                    {{ obs['created_at'].strftime('%H:%M') }}{% if obs['end_time'] %} – {{ obs['end_time'] }}{% endif %}
+                </span>
+                <div class="obs-content">{{ obs['text'] }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="obs-right">
+                <!-- Weekdays -->
+                <div class="obs-weekdays">
+                    {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                        <div class="weekday-circle {% if i in obs['done_days'] %}active{% endif %}">{{ letter }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="obs-actions" style="justify-content: flex-end; margin-top: -6px;">
+            <button class="obs-btn" 
+                data-id="{{ obs['id'] }}" 
+                data-text="{{ obs['text'] }}" 
+                data-time="{{ obs['created_at'].strftime('%H:%M') }}" 
+                data-priority="{{ obs['priority'] }}" 
+                data-end-time="{{ obs['end_time'] or '' }}"
+                data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
+                data-done-days="{{ obs['done_days']|list|tojson }}"
+                onclick="isEditingFromOverview = false; openObsEditModal(this)">✎ Edit</button>
+            <button class="obs-btn" data-id="{{ obs['id'] }}" onclick="deleteObs(this)" style="color: #e74c3c;">× Delete</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal for adding an observation -->
+<div id="obsAddModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span style="margin: 0; font-weight: 600;">Add New Activity</span>
+            <span class="modal-close" onclick="closeObsAddModal()">&times;</span>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="obsAddText" class="form-input-premium" placeholder="Activity name...">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="form-group-large">
+                    <label class="form-label-premium">Time Mode</label>
+                    <select id="obsAddTimeMode" class="form-input-premium" onchange="handleTimeModeChange('add')">
+                        <option value="exact">Exact Time</option>
+                        <option value="period" selected>Period</option>
+                        <option value="none">No specific time</option>
+                    </select>
+                </div>
+                <div class="form-group-large">
+                    <label class="form-label-premium">Classification</label>
+                    <div style="display:flex; gap:12px; padding-top: 6px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="radio" name="obsAddImportance" id="obsAddImportant" value="important" checked>
+                            important
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="radio" name="obsAddImportance" id="obsAddExcess" value="excess">
+                            excess
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="time-field-group" id="obsAddStartTimeGroup">
+                    <label class="form-label-premium">Start Time</label>
+                    <div class="time-picker-row">
+                        <select id="obsAddStartHour" class="time-select"></select>
+                        <span class="time-sep">:</span>
+                        <select id="obsAddStartMin" class="time-select"></select>
+                    </div>
+                </div>
+                <div class="time-field-group" id="obsAddEndTimeGroup">
+                    <label class="form-label-premium">End Time</label>
+                    <div class="time-picker-row">
+                        <select id="obsAddEndHour" class="time-select"></select>
+                        <span class="time-sep">:</span>
+                        <select id="obsAddEndMin" class="time-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: none;"></div>
+
+            <div style="margin-top: 15px;">
+                <div class="form-group-large">
+                    <label class="form-label-premium">Done Days</label>
+                    <div class="obs-weekdays-add" style="display: flex; gap: 8px; margin-top: 5px;">
+                        {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                            <div class="weekday-circle-edit" data-day="{{ i }}" onclick="toggleAddDay(this)">{{ letter }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeObsAddModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveObsAdd()">Add Activity</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for full overview (Tree) -->
+<div id="obsOverviewModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <span style="margin: 0; font-weight: 600;">Activity Tree Overview</span>
+            <span class="modal-close" onclick="closeObsOverviewModal()">&times;</span>
+        </div>
+
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div id="obsOverviewContent">
+                <div class="observation-timeline-tree" style="margin-top: 0;">
+                    <div class="timeline-center-line"></div>
+                    {% for obs in observations %}
+                    {% if obs['no_time'] %}
+                    <div class="timeline-item left-side">
+                        <div class="timeline-content-box">
+                            <div style="font-weight: 600; color: #2c3e50;">{{ obs['text'] }}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; gap: 10px;">
+                                <div class="obs-weekdays" style="margin-top: 0;">
+                                    {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                                        <div class="weekday-circle {% if i in obs['done_days'] %}active{% endif %}" style="width: 16px; height: 16px; font-size: 0.5rem;">{{ letter }}</div>
+                                    {% endfor %}
+                                </div>
+                                <button class="obs-btn" 
+                                    data-id="{{ obs['id'] }}" 
+                                    data-text="{{ obs['text'] }}" 
+                                    data-time="{{ obs['created_at'].strftime('%H:%M') }}" 
+                                    data-end-time="{{ obs['end_time'] or '' }}"
+                                    data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
+                                    data-priority="{{ obs['priority'] }}" 
+                                    data-done-days="{{ obs['done_days']|list|tojson }}"
+                                    onclick="isEditingFromOverview = true; closeObsOverviewModal(); openObsEditModal(this)"
+                                    style="padding: 4px 8px; font-size: 0.75rem; flex-shrink: 0;">✎ Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item right-side">
+                        <div class="timeline-content-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: #2c3e50;">{{ obs['text'] }}</span>
+                                <span style="font-size: 0.75rem; color: #9b59b6;">
+                                    {{ obs['created_at'].strftime('%H:%M') }}{% if obs['end_time'] %} – {{ obs['end_time'] }}{% endif %}
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; gap: 10px;">
+                                <div class="obs-weekdays" style="margin-top: 0;">
+                                    {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                                        <div class="weekday-circle {% if i in obs['done_days'] %}active{% endif %}" style="width: 16px; height: 16px; font-size: 0.5rem;">{{ letter }}</div>
+                                    {% endfor %}
+                                </div>
+                                <button class="obs-btn" 
+                                    data-id="{{ obs['id'] }}" 
+                                    data-text="{{ obs['text'] }}" 
+                                    data-time="{{ obs['created_at'].strftime('%H:%M') }}" 
+                                    data-end-time="{{ obs['end_time'] or '' }}"
+                                    data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
+                                    data-priority="{{ obs['priority'] }}" 
+                                    data-done-days="{{ obs['done_days']|list|tojson }}"
+                                    onclick="isEditingFromOverview = true; closeObsOverviewModal(); openObsEditModal(this)"
+                                    style="padding: 4px 8px; font-size: 0.75rem; flex-shrink: 0;">✎ Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeObsOverviewModal()" style="width: 100%;">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for editing an observation -->
+<div id="obsEditModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span style="margin: 0; font-weight: 600;">Edit Activity</span>
+            <span class="modal-close" onclick="closeObsEditModal()">&times;</span>
+        </div>
+
+        <input type="hidden" id="obsEditId">
+
+        <div class="modal-body">
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="obsEditText" class="form-input-premium" placeholder="Activity name...">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="form-group-large">
+                    <label class="form-label-premium">Time Mode</label>
+                    <select id="obsEditTimeMode" class="form-input-premium" onchange="handleTimeModeChange('edit')">
+                        <option value="exact">Exact Time</option>
+                        <option value="period">Period</option>
+                        <option value="none">No specific time</option>
+                    </select>
+                </div>
+                <div class="form-group-large">
+                    <label class="form-label-premium">Classification</label>
+                    <div style="display:flex; gap:12px; padding-top: 6px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="radio" name="obsEditImportance" id="obsEditImportant" value="important">
+                            important
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="radio" name="obsEditImportance" id="obsEditExcess" value="excess">
+                            excess
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="time-field-group" id="obsEditStartTimeGroup">
+                    <label class="form-label-premium">Start Time</label>
+                    <div class="time-picker-row">
+                        <select id="obsEditStartHour" class="time-select"></select>
+                        <span class="time-sep">:</span>
+                        <select id="obsEditStartMin" class="time-select"></select>
+                    </div>
+                </div>
+                <div class="time-field-group" id="obsEditEndTimeGroup">
+                    <label class="form-label-premium">End Time</label>
+                    <div class="time-picker-row">
+                        <select id="obsEditEndHour" class="time-select"></select>
+                        <span class="time-sep">:</span>
+                        <select id="obsEditEndMin" class="time-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: none;"></div>
+
+            <div style="margin-top: 15px;">
+                <div class="form-group-large">
+                    <label class="form-label-premium">Done Days</label>
+                    <div class="obs-weekdays-edit" style="display: flex; gap: 8px; margin-top: 5px;">
+                        {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                            <div class="weekday-circle-edit" data-day="{{ i }}" onclick="toggleEditDay(this)">{{ letter }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeObsEditModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveObsEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Logic to handle Activity Tree Overview persistence
+document.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('reopenObsOverview') === 'true') {
+        openObsOverviewModal();
+        sessionStorage.removeItem('reopenObsOverview');
+    }
+    // Initialize all time selects
+    const hours = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
+    const mins = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
+    
+    document.querySelectorAll('[id$="Hour"]').forEach(s => {
+        hours.forEach(h => s.add(new Option(h, h)));
+    });
+    document.querySelectorAll('[id$="Min"]').forEach(s => {
+        mins.forEach(m => s.add(new Option(m, m)));
+    });
+});
+
+let isEditingFromOverview = false;
+
+function handleTimeModeChange(prefix) {
+    const mode = document.getElementById(`obs${prefix.charAt(0).toUpperCase() + prefix.slice(1)}TimeMode`).value;
+    const startGroup = document.getElementById(`obs${prefix.charAt(0).toUpperCase() + prefix.slice(1)}StartTimeGroup`);
+    const endGroup = document.getElementById(`obs${prefix.charAt(0).toUpperCase() + prefix.slice(1)}EndTimeGroup`);
+    
+    if (mode === 'none') {
+        startGroup.classList.add('disabled');
+        endGroup.classList.add('disabled');
+    } else if (mode === 'exact') {
+        startGroup.classList.remove('disabled');
+        endGroup.classList.add('disabled');
+    } else {
+        startGroup.classList.remove('disabled');
+        endGroup.classList.remove('disabled');
+    }
+}
+
+function setSelectTime(prefix, type, timeStr) {
+    if (!timeStr) return;
+    const [h, m] = timeStr.split(':');
+    const hourSelect = document.getElementById(`${prefix}${type}Hour`);
+    const minSelect = document.getElementById(`${prefix}${type}Min`);
+    if (hourSelect) hourSelect.value = h;
+    if (minSelect) minSelect.value = m;
+}
+
+function getSelectTime(prefix, type) {
+    const h = document.getElementById(`${prefix}${type}Hour`).value;
+    const m = document.getElementById(`${prefix}${type}Min`).value;
+    return `${h}:${m}`;
+}
+
+async function logObservation(btn) {
+    const id = btn.dataset.id;
+    try {
+        const response = await fetch(`/api/observations/${id}/log`, {
+            method: 'POST'
+        });
+        if (response.ok) {
+            showToast('✓ Logged for today!', 'success');
+            setTimeout(() => location.reload(), 500);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function deleteObs(btn) {
+    const confirmed = await customConfirm({
+        title: 'Remove Activity',
+        message: 'Are you sure you want to remove this core activity entirely?',
+        buttons: [
+            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+            { label: 'Remove', value: true, class: 'confirm-btn-danger' }
+        ]
+    });
+    if (!confirmed) return;
+    
+    const id = btn.dataset.id;
+    try {
+        const response = await fetch(`/api/observations/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            btn.closest('.obs-item').remove();
+            showToast('✓ Removed', 'success');
+        }
+    } catch (e) { console.error(e); }
+}
+
+function openObsAddModal() {
+    isEditingFromOverview = false;
+    // Reset fields
+    document.getElementById('obsAddText').value = '';
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    
+    document.getElementById('obsAddStartHour').value = h;
+    document.getElementById('obsAddStartMin').value = m;
+    document.getElementById('obsAddEndHour').value = h;
+    document.getElementById('obsAddEndMin').value = m;
+
+    const addImp = document.getElementById('obsAddImportant');
+    const addEx = document.getElementById('obsAddExcess');
+    if (addImp) addImp.checked = true;
+    if (addEx) addEx.checked = false;
+    document.getElementById('obsAddTimeMode').value = 'period';
+    handleTimeModeChange('add');
+    
+    // Reset days
+    document.querySelectorAll('.obs-weekdays-add .weekday-circle-edit').forEach(circle => {
+        circle.classList.remove('active');
+    });
+    
+    document.getElementById('obsAddModal').style.display = 'flex';
+}
+
+function closeObsAddModal() {
+    document.getElementById('obsAddModal').style.display = 'none';
+}
+
+function toggleAddDay(circle) {
+    circle.classList.toggle('active');
+}
+
+async function saveObsAdd() {
+    try {
+        const textEl = document.getElementById('obsAddText');
+        const text = textEl ? textEl.value.trim() : '';
+        
+        if (!text) { 
+            if (typeof showToast === 'function') showToast('Title is required', 'error');
+            else alert('Title is required');
+            return; 
+        }
+        
+        const modeEl = document.getElementById('obsAddTimeMode');
+        const mode = modeEl ? modeEl.value : 'period';
+        
+        const doneDays = [];
+        document.querySelectorAll('.obs-weekdays-add .weekday-circle-edit.active').forEach(circle => {
+            doneDays.push(parseInt(circle.dataset.day));
+        });
+
+        const priorityVal = document.getElementById('obsAddImportant')?.checked ? 5 : 0;
+
+        const data = {
+            text: text,
+            created_at: getSelectTime('obsAdd', 'Start'),
+            end_time: (mode === 'period') ? getSelectTime('obsAdd', 'End') : null,
+            priority: priorityVal,
+            no_time: (mode === 'none'),
+            done_days: doneDays
+        };
+        console.log('Saving activity:', data);
+        
+        const response = await fetch(`/api/observations/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const errData = await response.json();
+            const errMsg = 'Error: ' + (errData.detail || 'Failed to save');
+            if (typeof showToast === 'function') showToast(errMsg, 'error');
+            else alert(errMsg);
+        }
+    } catch (e) { 
+        console.error('Save error:', e);
+        const errMsg = 'System error: ' + e.message;
+        if (typeof showToast === 'function') showToast(errMsg, 'error');
+        else alert(errMsg);
+    }
+}
+
+function openObsOverviewModal() {
+    document.getElementById('obsOverviewModal').style.display = 'flex';
+}
+
+function closeObsOverviewModal() {
+    document.getElementById('obsOverviewModal').style.display = 'none';
+}
+
+function openObsEditModal(btn) {
+    document.getElementById('obsEditId').value = btn.dataset.id;
+    document.getElementById('obsEditText').value = btn.dataset.text;
+    
+    const startTime = btn.dataset.time;
+    const endTime = btn.dataset.endTime;
+    const noTime = (btn.dataset.noTime === 'true');
+    
+    setSelectTime('obsEdit', 'Start', startTime);
+    setSelectTime('obsEdit', 'End', endTime || startTime);
+
+    const p = parseInt(btn.dataset.priority || '1', 10);
+    const imp = document.getElementById('obsEditImportant');
+    const exc = document.getElementById('obsEditExcess');
+    if (imp && exc) {
+        if (p >= 5) { imp.checked = true; exc.checked = false; }
+        else if (p === 0) { imp.checked = false; exc.checked = true; }
+        else { imp.checked = true; exc.checked = false; }
+    }
+    
+    // Determine mode
+    let mode = 'exact';
+    if (noTime) mode = 'none';
+    else if (endTime && endTime !== '') mode = 'period';
+    
+    document.getElementById('obsEditTimeMode').value = mode;
+    handleTimeModeChange('edit');
+
+    // Set days
+    const doneDays = JSON.parse(btn.dataset.doneDays || '[]');
+    document.querySelectorAll('.obs-weekdays-edit .weekday-circle-edit').forEach(circle => {
+        const dayIdx = parseInt(circle.dataset.day);
+        circle.classList.toggle('active', doneDays.includes(dayIdx));
+    });
+    
+    document.getElementById('obsEditModal').style.display = 'flex';
+}
+
+function toggleEditDay(circle) {
+    circle.classList.toggle('active');
+}
+
+function closeObsEditModal() {
+    document.getElementById('obsEditModal').style.display = 'none';
+    if (isEditingFromOverview) {
+        isEditingFromOverview = false;
+        openObsOverviewModal();
+    }
+}
+
+async function saveObsEdit() {
+    try {
+        const id = document.getElementById('obsEditId').value;
+        const textEl = document.getElementById('obsEditText');
+        const text = textEl ? textEl.value.trim() : '';
+        
+        if (!text) {
+            if (typeof showToast === 'function') showToast('Title is required', 'error');
+            else alert('Title is required');
+            return;
+        }
+
+        const modeEl = document.getElementById('obsEditTimeMode');
+        const mode = modeEl ? modeEl.value : 'period';
+        
+        if (isEditingFromOverview) {
+            sessionStorage.setItem('reopenObsOverview', 'true');
+        }
+
+        const doneDays = [];
+        document.querySelectorAll('.obs-weekdays-edit .weekday-circle-edit.active').forEach(circle => {
+            doneDays.push(parseInt(circle.dataset.day));
+        });
+
+        const priorityVal = document.getElementById('obsEditImportant')?.checked ? 5 : 0;
+
+        const data = {
+            text: text,
+            created_at: getSelectTime('obsEdit', 'Start'),
+            end_time: (mode === 'period') ? getSelectTime('obsEdit', 'End') : null,
+            priority: priorityVal,
+            no_time: (mode === 'none'),
+            done_days: doneDays
+        };
+        
+        const response = await fetch(`/api/observations/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const errData = await response.json();
+            const errMsg = 'Error: ' + (errData.detail || 'Failed to save');
+            if (typeof showToast === 'function') showToast(errMsg, 'error');
+            else alert(errMsg);
+        }
+    } catch (e) {
+        console.error('Edit error:', e);
+        const errMsg = 'System error: ' + e.message;
+        if (typeof showToast === 'function') showToast(errMsg, 'error');
+        else alert(errMsg);
+    }
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    if (event.target == document.getElementById('obsEditModal')) {
+        closeObsEditModal();
+    }
+});
+</script>

@@ -1,0 +1,47 @@
+# Секреты и конфигурация
+.env
+instance/
+
+# Данные приложения (база, ресурсы)
+data/
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+
+# Инструменты тестирования
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Артефакты сборки PyInstaller
+build/
+dist/
+*.spec
+
+# Alembic (миграции — для локальной разработки, не для публикации)
+alembic/versions/
+
+# Системные файлы Windows
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Прочее
+nul

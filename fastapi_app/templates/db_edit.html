@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit {{ model_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
+    <style>
+        .settings-wrapper {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- ШАПКА --- */
+        .header-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #F2994A;
+        }
+
+        .header-line h1 { margin: 0; font-size: 1.8em; color: #333; }
+
+        /* --- КАРТОЧКА --- */
+        .card {
+            background: rgba(255, 255, 255, 0.95); 
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        /* --- ФОРМА --- */
+        .edit-form { display: flex; flex-direction: column; gap: 20px; }
+        
+        .form-row { display: flex; flex-direction: column; gap: 8px; }
+        
+        .form-row label { 
+            font-weight: bold; 
+            font-size: 0.9em; 
+            color: #555; 
+            text-transform: capitalize;
+        }
+        
+        .form-row input, .form-row textarea { 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .form-row input:focus {
+            outline: none;
+            border-color: #F2994A;
+        }
+
+        .btn-save {
+            background-color: #27AE60;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        .btn-save:hover { background-color: #219150; }
+
+        .btn-cancel {
+            background-color: #fdfaf3;
+            border: 1px solid #ddd;
+            color: #555;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .btn-cancel:hover { background-color: #f2994a; color: white; border-color: #f2994a; }
+    </style>
+</head>
+<body>
+
+<div class="settings-wrapper">
+    <div class="header-line">
+        <h1>Edit: {{ model_name }}</h1>
+        <a href="{{ url_for('db_view', model_name=model_name) }}" class="btn-cancel">← Cancel</a>
+    </div>
+
+    <div class="card">
+        <form method="POST" class="edit-form">
+            {% for col in columns %}
+            <div class="form-row">
+                <label>{{ col }}</label>
+                {% if col == 'id' %}
+                    <input type="text" name="{{ col }}" value="{{ record[col] }}" readonly style="background: #f5f5f5; color: #888;">
+                {% elif col == 'created_at' %}
+                    <input type="text" name="{{ col }}" value="{{ record[col] }}" readonly style="background: #f5f5f5; color: #888;">
+                {% else %}
+                    <input type="text" name="{{ col }}" value="{{ record[col] if record[col] is not none else '' }}">
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn-save">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<div class="footer">
+    <div class="footer-container">
+        <div class="footer-nav main-nav">
+            <a href="/word_stats" class="footer-btn">📊 Words</a>
+            <a href="/history" class="footer-btn">📅 History</a>
+            <a href="/settings" class="footer-btn">⚙️ Settings</a>
+        </div>
+        <div class="footer-nav data-nav">
+            <a href="/db_view/Event" class="footer-btn">Events</a>
+            <a href="/db_view/Habit" class="footer-btn">Habits</a>
+            <a href="/db_view/Task" class="footer-btn">Tasks</a>
+            <a href="/db_view/Chronology" class="footer-btn">Chrono</a>
+            <a href="/db_view/Notes" class="footer-btn">Notes</a>
+            <a href="/db_view/Wink" class="footer-btn">Wink</a>
+        </div>
+        <div class="footer-version">papanda version 0.5.1 (est. 21.11.2023; last update 18.12.2025)</div>
+    </div>
+</div>
+</body>
+</html>

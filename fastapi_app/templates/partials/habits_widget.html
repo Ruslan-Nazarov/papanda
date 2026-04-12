@@ -1,0 +1,49 @@
+                    <div class="section reading-section">
+                        <div class="widget-header">
+                            <h1 class="widget-title">
+                                <span class="drag-handle">⠿</span>Habits Counter
+                            </h1>
+                            <button
+                                type="button"
+                                class="collapse-btn collapse-btn-toggle"
+                                onclick="toggleWidget(this)"
+                                title="Свернуть / развернуть"
+                            >
+                                ▾
+                            </button>
+                        </div>
+                        <div class="widget-body">
+                            <table class="table-common reading-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Days</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for habits in habits_all %}
+                                    <tr>
+                                        <td>{{ habits.title }}</td>
+                                        <td class="text-right">
+                                            {{ habits_count(habits.start_date)
+                                            }}
+                                        </td>
+                                        <td>
+                                            <form
+                                                method="post"
+                                                action="/mark_as_done/{{ habits.id }}"
+                                            >
+                                                <input
+                                                    type="submit"
+                                                    value="Done"
+                                                    class="read-button"
+                                                />
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
