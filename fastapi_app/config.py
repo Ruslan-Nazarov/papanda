@@ -122,13 +122,14 @@ class Settings(BaseSettings):
 # Создаем глобальный объект настроек
 try:
     settings = Settings()
+    # Обеспечиваем наличие папок данных
+    settings.db_dir.mkdir(parents=True, exist_ok=True)
+    settings.resources_dir.mkdir(parents=True, exist_ok=True)
 except Exception as e:
-    print(f"[CRITICAL] Ошибка конфигурации: {e}")
-    # В реальном приложении здесь должен быть sys.exit(1)
-    raise e
+    print(f"[CRITICAL] Ошибка конфигурации или создания папок: {e}")
+    # Не бросаем ошибку здесь, чтобы logger мог инициализироваться и записать её
+    settings = None
 
-
-
-# Обеспечиваем наличие папок
-for d in [settings.db_dir, settings.resources_dir]:
-    d.mkdir(parents=True, exist_ok=True)
+# Запускаем проверку секретного ключа (теперь безопасно)
+if settings:
+    ensure_secret_key()

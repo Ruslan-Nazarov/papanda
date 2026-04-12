@@ -34,8 +34,11 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      # ШАГ 3.5: Устанавливаем UPX (для максимального сжатия .exe)
+      - name: Install UPX
+        run: choco install upx
+
       # ШАГ 4: Собираем .exe через PyInstaller
-      # Команда повторяет логику create_bundle.bat
       - name: Build with PyInstaller
         run: |
           pyinstaller --onefile --noconsole `
@@ -43,6 +46,7 @@ jobs:
             --hidden-import jinja2 `
             --hidden-import email_validator `
             --hidden-import passlib.handlers.bcrypt `
+            --hidden-import cryptography `
             --exclude-module tkinter `
             --exclude-module tcl `
             --exclude-module tk `

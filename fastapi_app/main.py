@@ -22,20 +22,14 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # --- ГАРАНТИРОВАННАЯ ИНИЦИАЛИЗАЦИЯ БАЗЫ ---
-    # 1. Форсируем импорт всех модулей из папки models, 
-    # чтобы SQLAlchemy "увидела" все таблицы (включая users)
-    import importlib
-    import pkgutil
-    from . import models as models_pkg
+    # Все модели уже импортированы в fastapi_app/models/__init__.py, 
+    # поэтому SQLAlchemy "видит" их автоматически при импорте пакета.
     
-    logger.info("Starting model discovery...")
+    logger.info("Initializing database...")
     try:
-        for loader, module_name, is_pkg in pkgutil.walk_packages(models_pkg.__path__, "fastapi_app.models."):
-            importlib.import_module(module_name)
-            logger.info(f"Discovery: Imported model module {module_name}")
-            
-        # 2. Создаем таблицы
+        # Создаем таблицы, если их нет
         async with engine.begin() as conn:
+            from . import models as models_pkg
             await conn.run_sync(models_pkg.Base.metadata.create_all)
         logger.info("Database initialization successful. All tables verified.")
     except Exception as e:
@@ -133,7 +127,7 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(str(BASE_DIR / "fastapi_app" / "static" / "logo.ico"))
+    return FileResponse(str(INTERNAL_ROOT / "fastapi_app" / "static" / "logo.ico"))
 
 # Подключаем папку со статикой (CSS, иконки)
 app.mount(
