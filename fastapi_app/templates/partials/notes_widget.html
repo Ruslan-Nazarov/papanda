@@ -1,0 +1,63 @@
+<div class="section dashboard-widget notes-widget" id="widget-notes">
+    <div class="widget-header">
+        <h1 class="widget-title"><span class="drag-handle">⠿</span>📓 Notes</h1>
+        <div class="widget-controls">
+            <button type="button" class="action-btn" title="Expanded Editor" onclick="notesWidget.showExpandedEditor()">↗</button>
+            <button type="button" class="action-btn" title="All Notes" onclick="notesWidget.showSearchModal()">📂</button>
+        </div>
+    </div>
+
+    <div class="widget-body" style="background: #f8fafc;">
+        <div class="quick-note-area" style="padding: 12px; border-bottom: 1px solid #e2e8f0; background: #fff;">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <select id="regularNoteCategory" class="form-input-premium" style="flex: 1; height: 32px; font-size: 0.85em; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0 8px;">
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+                <div style="display: flex; align-items: center; gap: 5px; background: #f8fafc; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <input type="checkbox" id="regularNotePin" checked>
+                    <label for="regularNotePin" style="font-size: 0.75em; color: #64748b; cursor: pointer;">Pin</label>
+                </div>
+            </div>
+            <textarea id="regularNoteTextarea" class="dashboard-textarea" 
+                      placeholder="Quick note... (Ctrl+Enter to save)" 
+                      style="min-height: 80px; width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; font-size: 0.9em; resize: none; outline: none;"
+                      onkeydown="if(event.ctrlKey && event.key === 'Enter') notesWidget.saveNote()"></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                <button class="btn-premium" onclick="notesWidget.saveNote()" style="padding: 6px 20px; font-size: 0.85em; border-radius: 8px;">💾 Save Note</button>
+            </div>
+        </div>
+
+        <!-- Pinned Notes Grid -->
+        <div id="pinned-notes-list" class="pinned-notes-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px;">
+            {% for note in pinned_notes %}
+            <div class="pinned-note-card premium-glass" data-id="{{ note.id }}" style="padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; position: relative;">
+                <div class="card-pin-status active" style="position: absolute; top: -5px; left: -5px; background: #f59e0b; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px;">★</div>
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span class="card-category" style="font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">{{ note.category or 'General' }}</span>
+                    <div class="card-actions">
+                        <button class="action-btn" onclick="notesWidget.editNote({{ note.id }})" title="Edit" style="background: none; border: none; cursor: pointer; color: #94a3b8;">✎</button>
+                        <button class="action-btn delete" onclick="notesWidget.deleteNote({{ note.id }})" title="Delete" style="background: none; border: none; cursor: pointer; color: #94a3b8;">×</button>
+                    </div>
+                </div>
+                <div class="card-body" onclick="notesWidget.viewNote({{ note.id }})" style="font-size: 13px; color: #334155; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer;">
+                    {{ note.note }}
+                </div>
+                <div class="card-footer" style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="card-stickers" style="display: flex; gap: 4px;">
+                        {% for s in note.stickers %}
+                        <div class="mini-sticker-indicator" style="background: {{ s.color or '#fff9c4' }}; width: 8px; height: 8px; border-radius: 2px;" title="{{ s.text }}"></div>
+                        {% endfor %}
+                    </div>
+                    <small style="font-size: 10px; color: #cbd5e1;">#{{ note.id }}</small>
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px 20px; font-style: italic; font-size: 0.9em;">
+                No pinned notes yet
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

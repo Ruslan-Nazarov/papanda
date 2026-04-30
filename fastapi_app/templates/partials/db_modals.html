@@ -1,0 +1,445 @@
+<!-- Event Popover -->
+<div id="eventPopover" class="event-popover">
+    <div class="popover-header">
+        <span id="popoverTitle" class="popover-title"></span>
+        <span class="popover-close" onclick="closeEventPopover()">&times;</span>
+    </div>
+    <div class="popover-body">
+        <div id="popoverTimeRow" class="popover-info">
+            <span class="popover-icon">🕒</span>
+            <span id="popoverTime"></span>
+        </div>
+        <div id="popoverRuleRow" class="popover-info" style="display: none;">
+            <span class="popover-icon">🔁</span>
+            <span id="popoverRule"></span>
+        </div>
+        <div id="popoverStickers" class="popover-stickers" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; display: none;">
+            <div style="font-size: 0.85em; font-weight: 600; margin-bottom: 5px; color: #666;">Notes:</div>
+            <div id="popoverStickersList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Modal (Read-Only / Expand) -->
+<div id="eventDetailModal" class="modal" style="z-index: 1000002 !important;">
+    <div class="modal-content" style="width: 500px; border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div id="detailModalHeader" class="modal-header" style="background: #f8f9fa; border-bottom: 1px solid #eee; padding: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1;">
+                <div id="detailModalColor" style="width: 14px; height: 14px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;"></div>
+                <div style="flex: 1;">
+                    <div id="detailModalTitle" style="font-size: 1.4em; font-weight: 700; color: #1e293b; line-height: 1.2;"></div>
+                    <div id="detailModalCategory" style="font-size: 0.85em; color: #64748b; margin-top: 4px; font-weight: 500;"></div>
+                </div>
+            </div>
+            <span class="modal-close" onclick="closeEventDetailModal()" style="font-size: 1.8em; opacity: 0.4;">&times;</span>
+        </div>
+        
+        <div class="modal-body" style="padding: 25px; background: white;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div class="detail-info-item">
+                    <label style="display: block; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 5px; font-weight: 600;">Date & Time</label>
+                    <div id="detailModalDate" style="font-size: 1.05em; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 1.1em;">📅</span> <span id="detailDateText"></span>
+                    </div>
+                </div>
+                <div id="detailModalStatusItem" class="detail-info-item">
+                    <label style="display: block; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 5px; font-weight: 600;">Status</label>
+                    <div id="detailModalStatus" style="font-size: 1.05em; font-weight: 600;"></div>
+                </div>
+            </div>
+
+            <div id="detailModalRecurrenceRow" style="background: #f1f5f9; padding: 12px 15px; border-radius: 10px; margin-bottom: 25px; display: none; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2em;">🔁</span>
+                <div style="font-size: 0.9em; color: #475569;">
+                    Repeats: <span id="detailModalRecRule" style="font-weight: 600; color: #1e293b;"></span>
+                    <div id="detailModalRecEndRow" style="font-size: 0.85em; opacity: 0.8; margin-top: 2px;">End date: <span id="detailModalRecEnd"></span></div>
+                </div>
+            </div>
+
+            <div class="detail-stickers-section">
+                <label style="display: block; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 12px; font-weight: 600;">Associated Stickers</label>
+                <div id="detailStickersList" class="event-stickers-grid" style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Stickers will be injected here -->
+                </div>
+                <div id="detailStickersEmpty" style="display: none; padding: 20px; text-align: center; background: #f8fafc; border-radius: 10px; border: 1px dashed #e2e8f0; color: #94a3b8; font-size: 0.9em;">
+                    No stickers attached to this event.
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 15px 25px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" id="detailModalEditBtn" class="btn-premium" style="background: #6366f1; color: white; padding: 8px 18px; border-radius: 8px; font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">
+                Edit Event
+            </button>
+            <button type="button" class="btn-premium" onclick="closeEventDetailModal()" style="background: none; color: #64748b; font-weight: 600; border: none;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="editEventModal" class="modal">
+    <div class="modal-content" style="width: 480px">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Event</span>
+            <span class="modal-close" onclick="closeEditEventModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editEventId" />
+            <input type="hidden" id="editEventRecId" />
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="editEventTitle" class="form-input-premium" />
+            </div>
+
+            <div id="editEventRecurrenceModeRow" class="form-group-large" style="display: none; background: #fff8f0; padding: 10px; border-radius: 8px; border: 1px solid #f2994a33;">
+                <label class="form-label-premium" style="font-size: 0.9em; color: #f2994a;">Recurring Event Options</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                        <input type="radio" name="edit_event_mode" value="only" checked> Only this
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                        <input type="radio" name="edit_event_mode" value="this_and_future"> This & future
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                        <input type="radio" name="edit_event_mode" value="all"> All instances
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-large">
+                    <label class="form-label-premium">Date & Time</label>
+                    <input type="datetime-local" id="editEventDate" class="form-input-premium" oninput="calcEditEventEndDateFromCount()" />
+                </div>
+                <div class="form-group-large">
+                    <label class="form-label-premium">Repeat Rule</label>
+                    <select id="editEventRecRule" class="form-input-premium" onchange="toggleEditEventWeekdays()">
+                        <option value="none">Once</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="weekdays">Weekdays (M-F)</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="editEventWeekdaysRow" class="form-group-large" style="display: none; margin-top: -10px;">
+                <label class="form-label-premium" style="font-size: 0.75em;">Select Days</label>
+                <div class="weekday-row" style="margin-bottom: 0;">
+                    <label><input type="checkbox" value="mon"><span>M</span></label>
+                    <label><input type="checkbox" value="tue"><span>T</span></label>
+                    <label><input type="checkbox" value="wed"><span>W</span></label>
+                    <label><input type="checkbox" value="thu"><span>T</span></label>
+                    <label><input type="checkbox" value="fri"><span>F</span></label>
+                    <label><input type="checkbox" value="sat"><span>S</span></label>
+                    <label><input type="checkbox" value="sun"><span>S</span></label>
+                </div>
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">End Mode</label>
+                <div style="display: flex; gap: 15px; margin-top: 5px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                        <input type="radio" name="edit_event_end_mode" value="date" id="editEventEndDateMode" checked onchange="toggleEditEventEndMode()"> Date
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                        <input type="radio" name="edit_event_end_mode" value="count" id="editEventEndCountMode" onchange="toggleEditEventEndMode()"> Count
+                    </label>
+                </div>
+            </div>
+
+            <div id="editEventEndDateBlock" class="form-group-large">
+                <label class="form-label-premium">Repeat until (Optional)</label>
+                <input type="date" id="editEventRecEnd" class="form-input-premium" />
+            </div>
+
+            <div id="editEventEndCountBlock" class="form-group-large" style="display: none;">
+                <label class="form-label-premium">Repeat N times</label>
+                <input type="number" id="editEventRecCount" class="form-input-premium" min="1" max="365" value="10" oninput="calcEditEventEndDateFromCount()" />
+                <div id="editEventRecEndFromCountLabel" style="font-size: 0.8em; color: #888; margin-top: 4px;"></div>
+                <input type="hidden" id="editEventRecEndFromCount" />
+            </div>
+
+            <!-- NEW: Color Selection -->
+            <div class="form-group-large">
+                <label class="form-label-premium">Color (Theme/Tree)</label>
+                <input type="hidden" id="editEventColor" value="" />
+                <div class="color-picker-container" id="colorPicker" style="display: flex; gap: 10px;">
+                    <!-- Javascript will inject colors here -->
+                </div>
+            </div>
+
+            <!-- ENHANCED: Stickers Section (Dashboard Mechanics) -->
+            <div class="inner-stickers-container" id="eventStickersSection" style="display: none;">
+                <label class="form-label-premium">Stickers</label>
+                
+                <div class="sticker-quick-add">
+                    <div style="margin-bottom: 8px;">
+                        <input type="text" id="eventStickerTitleInput" class="form-input-premium" placeholder="Title (optional)..." style="padding: 8px 12px; font-size: 0.9em; height: auto;">
+                    </div>
+                    <div class="sticker-input-row">
+                        <button type="button" id="eventStickerTypeBtn" class="sticker-type-btn" title="Toggle List/Text mode" onclick="toggleEventStickerMode()">📝</button>
+                        <textarea id="eventStickerInput" class="form-input-premium" placeholder="Thought on your mind..." style="flex: 1; height: 38px; min-height: 38px; padding: 8px 12px; font-size: 0.9em; resize: none;" oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"></textarea>
+                        <button type="button" class="sticker-ok-btn" onclick="addNewStickerToEvent()">OK</button>
+                    </div>
+                    <div class="color-picker-dots" id="eventStickerColorPicker">
+                        <div class="color-dot bg-yellow active" data-color="#fff9c4"></div>
+                        <div class="color-dot bg-pink" data-color="#f8bbd0"></div>
+                        <div class="color-dot bg-blue" data-color="#bbdefb"></div>
+                        <div class="color-dot bg-green" data-color="#c8e6c9"></div>
+                        <div class="color-dot bg-purple" data-color="#e1bee7"></div>
+                        <div class="color-dot bg-orange" data-color="#ffe0b2"></div>
+                        <div class="color-dot bg-teal" data-color="#b2dfdb"></div>
+                        <div class="color-dot bg-gray" data-color="#f5f5f5"></div>
+                    </div>
+                </div>
+
+                <div id="eventStickersList" class="event-stickers-grid"></div>
+            </div>
+
+            <div id="editEventError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditEventModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveEventEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+
+<div id="editNoteModal" class="modal">
+    <div class="modal-content" style="width: 600px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Note</span>
+            <span class="modal-close" onclick="closeEditNoteModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editNoteId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Category</label>
+                <select id="editNoteCategory" class="form-input-premium">
+                    {% if categories %}
+                        {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Note Content</label>
+                <textarea id="editNoteText" class="form-input-premium" style="height: 300px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
+            </div>
+
+            <div id="editNoteError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditNoteModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveNoteEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="editChronoModal" class="modal">
+    <div class="modal-content" style="width: 600px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Chronology</span>
+            <span class="modal-close" onclick="closeEditChronoModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editChronoId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Date & Time</label>
+                <input type="datetime-local" id="editChronoDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">Event Description</label>
+                <textarea id="editChronoTitle" class="form-input-premium" style="height: 200px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
+            </div>
+
+            <div id="editChronoError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditChronoModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveChronoEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="chronoViewModal" class="modal">
+    <div class="modal-content" style="width: 700px;">
+        <div class="modal-header">
+            <span id="chronoViewDate" style="margin: 0; font-size: 1.1rem; color: #9b59b6;"></span>
+            <span class="modal-close" onclick="closeChronoViewModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="chronoViewFullText" class="chrono-view-text"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeChronoViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+ 
+ <div id="noteViewModal" class="modal">
+     <div class="modal-content" style="width: 700px;">
+         <div class="modal-header">
+             <span id="noteViewCategory" style="margin: 0; font-size: 1.1rem;"></span>
+             <span class="modal-close" onclick="closeNoteViewModal()">&times;</span>
+         </div>
+         <div class="modal-body">
+             <div id="noteViewFullText" class="chrono-view-text"></div>
+         </div>
+         <div class="modal-footer">
+             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeNoteViewModal()">Close</button>
+         </div>
+     </div>
+ </div>
+
+<div id="editHabitModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Habit</span>
+            <span class="modal-close" onclick="closeEditHabitModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editHabitId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="editHabitTitle" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">Start Date</label>
+                <input type="date" id="editHabitStartDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large" id="editHabitEndDateGroup">
+                <label class="form-label-premium">End Date</label>
+                <input type="date" id="editHabitEndDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="editHabitRead" style="width: 20px; height: 20px; cursor: pointer;" onchange="toggleHabitEndDate()">
+                    Is Finished (Archived)
+                </label>
+            </div>
+
+            <div id="editHabitError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditHabitModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveHabitEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="eventTreeModal" class="modal">
+    <div class="modal-content" style="width: 800px; max-width: 95%">
+        <div class="modal-header">
+            <span style="margin: 0;">Event Tree <span id="treeColorName"></span></span>
+            <span class="modal-close" onclick="closeEventTreeModal()">&times;</span>
+        </div>
+        <div class="modal-body" style="padding: 0; max-height: 80vh; overflow-y: auto; background: #f9f9f9;">
+            <div id="eventTreeBody" class="tree-container">
+                <div class="tree-trunk"></div>
+                <!-- Nodes generated by JS -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEventTreeModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="editWinkModal" class="modal">
+     <div class="modal-content" style="width: 480px">
+         <div class="modal-header">
+             <span style="margin: 0;">Edit Wink</span>
+             <span class="modal-close" onclick="closeEditWinkModal()">&times;</span>
+         </div>
+         
+         <div class="modal-body">
+             <input type="hidden" id="editWinkId" />
+             <div class="form-group-large">
+                 <label class="form-label-premium">Title</label>
+                 <input type="text" id="editWinkTitle" class="form-input-premium" />
+             </div>
+             <div class="form-group-large">
+                 <label class="form-label-premium">Date & Time</label>
+                 <input type="datetime-local" id="editWinkDate" class="form-input-premium" />
+             </div>
+             <div id="editWinkError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
+         </div>
+ 
+         <div class="modal-footer">
+             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditWinkModal()">Cancel</button>
+             <button type="button" class="btn-premium btn-save-premium" onclick="saveWinkEdit()">OK</button>
+         </div>
+     </div>
+ </div>
+
+<div id="editTaskModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Task</span>
+            <span class="modal-close" onclick="closeEditTaskModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editTaskId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Task Description</label>
+                <textarea id="editTaskName" class="form-input-premium" style="height: 120px; resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="editTaskDone" style="width: 20px; height: 20px; cursor: pointer;">
+                    Is Done
+                </label>
+            </div>
+
+            <div id="editTaskError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditTaskModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveTaskEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Confirmation Modal -->
+<div id="customConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="confirmModalTitle">Confirmation</span>
+        </div>
+        <div class="modal-body">
+            <div id="confirmModalIcon" style="font-size: 3rem; margin-bottom: 15px; display: none;">⚠️</div>
+            <div id="confirmModalMessage" style="font-weight: 500; font-size: 1.1rem; color: #334155;">Are you sure?</div>
+        </div>
+        <div class="modal-footer" id="confirmModalFooter">
+            <!-- Buttons will be injected here -->
+        </div>
+    </div>
+</div>
+
+

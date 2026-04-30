@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB: {{ model_name }} - Papanda</title>
+    <!-- Core & Modular Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=8">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/db_view.css') }}?v=17">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        .sticker-icon-small {
+            width: 14px;
+            height: 14px;
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 2px;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            transform: rotate(-3deg);
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        /* Premium Stats Counter */
+        .stats-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(242, 153, 74, 0.3);
+            padding: 10px 24px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(242, 153, 74, 0.1);
+            animation: statsSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 5px solid #F2994A;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .stats-counter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(242, 153, 74, 0.15);
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .stats-icon {
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #F2994A 0%, #F2C94C 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stats-label {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .stats-value {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: #333;
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin-left: 5px;
+        }
+
+        @keyframes statsSlideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="settings-wrapper">
+    <div class="header-line">
+        <h1>{{ model_name }} Management</h1>
+        <div style="display: flex; gap: 10px;">
+            {% if model_name == 'Wink' %}
+                <button type="button" class="btn-home" style="background-color: #f2994a; color: white; border: none;" onclick="openAddWinkForDay('{{ now_iso }}')">+ Add Wink</button>
+            {% endif %}
+            <a href="{{ url_for('index') }}" class="btn-home">← Home</a>
+        </div>
+    </div>
+    
+    <!-- Beautiful Record Counter -->
+    <div class="stats-counter">
+        <div class="stats-icon">📊</div>
+        <div class="stats-label">
+            Total records in <span style="color: #F2994A; font-weight: 700;">{{ model_name }}</span>:
+            <span class="stats-value">{{ total_in_db }}</span>
+        </div>
+    </div>
+
+    <!-- Universal Search Bar -->
+    {% if model_name in ['Event', 'Notes', 'Chronology', 'Stickers'] %}
+    <div class="search-container">
+        <form class="search-wrapper {% if search_query %}has-query{% endif %}" action="{{ url_for('db_view', model_name=model_name) }}" method="GET">
+            <button type="submit" class="search-icon-btn">🔍</button>
+            <input type="text" name="search" placeholder="Search in {{ model_name }}..." value="{{ search_query or '' }}">
+            {% if model_name == 'Notes' or model_name == 'Stickers' %}
+                <input type="hidden" name="category" value="{{ selected_category or '' }}">
+                <input type="hidden" name="sort" value="{{ sort_by or 'date' }}">
+            {% endif %}
+        </form>
+        {% if search_query %}
+            <a href="{{ url_for('db_view', model_name=model_name) }}" class="btn-clear-search" title="Clear search">✕</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- View Rendering Routing -->
+    {% if model_name == 'Event' %}
+        {% include 'partials/db_event_view.html' %}
+    {% elif model_name == 'Notes' %}
+        {% include 'partials/db_note_view.html' %}
+    {% elif model_name == 'Stickers' %}
+        {% include 'partials/db_sticker_view.html' %}
+    {% elif model_name == 'Wink' %}
+        {% include 'partials/db_wink_view.html' %}
+    {% elif model_name == 'Habit' %}
+        {% include 'partials/db_habit_view.html' %}
+    {% elif model_name == 'Task' %}
+        {% include 'partials/db_task_view.html' %}
+    {% elif model_name == 'Chronology' %}
+        {% include 'partials/db_chrono_view.html' %}
+    {% else %}
+        <!-- Catch-all for other models e.g. WordStats, User -->
+        <div class="card">
+            <div class="table-container">
+                <table class="db-table">
+                    <thead>
+                        <tr>
+                            {% for col in columns %}
+                                <th>{{ col|replace('_', ' ') }}</th>
+                            {% endfor %}
+                            <th style="text-align: center; width: 140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in records %}
+                        <tr>
+                            {% for col in columns %}
+                            <td>
+                                {% if row[col] is sameas true %}<span class="badge badge-true">Yes</span>
+                                {% elif row[col] is sameas false %}<span class="badge badge-false">No</span>
+                                {% elif row[col] is none %}<span class="badge badge-null">null</span>
+                                {% else %}{{ row[col] }}{% endif %}
+                            </td>
+                            {% endfor %}
+                            <td>
+                                <div style="display: flex; justify-content: center; gap: 8px;">
+                                    {% set pk_val = row.id if row.id is defined else row.word %}
+                                    <a href="{{ url_for('edit_record', model_name=model_name, record_id=pk_val) }}" class="btn-action btn-edit">Edit</a>
+                                    <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('{{ model_name }}', '{{ pk_val }}')">Del</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Pagination Controls -->
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 30px; padding-bottom: 20px;">
+        {% if current_page > 1 %}
+            <a href="{{ url_for('db_view', model_name=model_name) }}?page={{ current_page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" class="btn-home" style="padding: 8px 15px;">&larr; Prev</a>
+        {% else %}
+            <span class="btn-home disabled" style="opacity: 0.5; cursor: not-allowed; padding: 8px 15px;">&larr; Prev</span>
+        {% endif %}
+
+        <div class="page-numbers" style="display: flex; gap: 8px; align-items: center;">
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == current_page %}
+                    <span class="page-num active" style="background: #4F46E5; color: white; padding: 5px 12px; border-radius: 6px; font-weight: bold;">{{ p }}</span>
+                {% else %}
+                    <a href="{{ url_for('db_view', model_name=model_name) }}?page={{ p }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" class="page-num" style="padding: 5px 12px; border-radius: 6px; color: #4F46E5; text-decoration: none; border: 1px solid #e2e8f0;">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if current_page < total_pages %}
+            <a href="{{ url_for('db_view', model_name=model_name) }}?page={{ current_page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" class="btn-home" style="padding: 8px 15px;">Next &rarr;</a>
+        {% else %}
+            <span class="btn-home disabled" style="opacity: 0.5; cursor: not-allowed; padding: 8px 15px;">Next &rarr;</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Include Modals -->
+{% include 'partials/db_modals.html' %}
+{% include 'partials/sticker_modal.html' %}
+{% include 'partials/parent_stickers_modal.html' %}
+
+<!-- Core JS and Initialization -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="{{ url_for('static', path='js/stickers.js') }}?v=4"></script>
+<script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=28"></script>
+<script>
+    // Bridge variables from Jinja2 to JS
+    {% if model_name == 'Event' %}
+        const currentYear = {{ current_year }};
+        const currentMonth = {{ current_month }};
+        const eventRecords = [
+            {% for e in records %}
+            {
+                id: {{ e.id }},
+                title: {{ (e.title or '')|tojson }},
+                date: {{ (e.date.strftime('%Y-%m-%dT%H:%M:%S') if e.date else '') | tojson }},
+                rule: {{ (e.recurrence_rule or '')|tojson }},
+                end: {{ (e.recurrence_end.isoformat() if e.recurrence_end else '') | tojson }},
+                recurrence_id: {{ (e.recurrence_id or '')|tojson }},
+                color: {{ (e.color or '')|tojson }},
+                important: {{ 'true' if e.important else 'false' }},
+                done: {{ 'true' if e.done else 'false' }},
+                has_stickers: {{ 'true' if e.has_stickers else 'false' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+    {% endif %}
+</script>
+
+{% include 'partials/footer.html' %}
+
+</body>
+</html>

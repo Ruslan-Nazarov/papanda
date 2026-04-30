@@ -1,0 +1,196 @@
+        <!-- Sticker Detail Modal -->
+        <div id="stickerDetailModal" class="modal" style="z-index: 1000005 !important;">
+            <div class="modal-content modal-sticker-content" id="modalStickerWindow">
+                <div class="modal-header">
+                    <span id="modalStickerDate" style="font-size: 0.8em; color: #999;"></span>
+                    <span class="modal-close" onclick="closeStickerModal()">&times;</span>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="form-group-large" style="display: flex; align-items: flex-end; gap: 15px;">
+                        <div style="flex-grow: 1;">
+                            <label class="form-label-premium">Title</label>
+                            <input type="text" id="modalStickerTitle" class="form-input-premium" placeholder="Untitled Sticker" style="background: rgba(255,255,255,0.5);">
+                        </div>
+                        <div class="color-picker" id="modalStickerColorPicker" style="padding-bottom: 5px;">
+                            <div class="color-dot bg-yellow" data-color="#fff9c4" title="Yellow" onclick="setStickerColorInModal('#fff9c4', this)"></div>
+                            <div class="color-dot bg-pink" data-color="#f8bbd0" title="Pink" onclick="setStickerColorInModal('#f8bbd0', this)"></div>
+                            <div class="color-dot bg-blue" data-color="#bbdefb" title="Blue" onclick="setStickerColorInModal('#bbdefb', this)"></div>
+                            <div class="color-dot bg-green" data-color="#c8e6c9" title="Green" onclick="setStickerColorInModal('#c8e6c9', this)"></div>
+                            <div class="color-dot bg-purple" data-color="#e1bee7" title="Purple" onclick="setStickerColorInModal('#e1bee7', this)"></div>
+                            <div class="color-dot bg-orange" data-color="#ffe0b2" title="Orange" onclick="setStickerColorInModal('#ffe0b2', this)"></div>
+                            <div class="color-dot bg-teal" data-color="#b2dfdb" title="Teal" onclick="setStickerColorInModal('#b2dfdb', this)"></div>
+                            <div class="color-dot bg-gray" data-color="#f5f5f5" title="Gray" onclick="setStickerColorInModal('#f5f5f5', this)"></div>
+                        </div>
+                    </div>
+
+                    <div id="modalStickerTextContainer">
+                        <div class="form-group-large">
+                            <label class="form-label-premium">Thought</label>
+                            <textarea id="modalStickerTextArea" class="form-input-premium" style="height: 200px; resize: vertical; background: rgba(255,255,255,0.5);"></textarea>
+                        </div>
+                    </div>
+                    <div id="modalStickerListContainer" style="display:none;">
+                        <label class="form-label-premium">Checklist</label>
+                        <div id="modalStickerListItems" style="margin-bottom: 15px;">
+                            <!-- List rows added here -->
+                        </div>
+                        <button type="button" class="btn-premium" onclick="addStickerItemInModal()" style="font-size: 0.9rem; padding: 8px 15px;">+ Add Item</button>
+                    </div>
+
+                    <!-- Attached Note Preview -->
+                    <div id="modalStickerAttachedNoteContainer" style="display:none; margin-top: 20px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 15px;">
+                        <label class="form-label-premium">Linked Note</label>
+                        <div id="attachedNoteCard" class="attached-note-card">
+                            <span id="attachedNoteText" style="font-size: 0.9em; color: #444;"></span>
+                            <button class="btn-remove-note" onclick="removeNoteFromSticker()">×</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="padding: 15px 25px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <!-- Left Side: Type Toggle -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="sticker-type-segmented">
+                            <div class="type-segment" id="btnStickerToText" onclick="switchStickerTypeInModal('text')">
+                                📝 <span class="segment-label">Text</span>
+                            </div>
+                            <div class="type-segment" id="btnStickerToList" onclick="switchStickerTypeInModal('list')">
+                                ✅ <span class="segment-label">List</span>
+                            </div>
+                            <div class="type-segment" id="btnStickerAttachNote" onclick="openNoteSelectionModal()">
+                                🔗 <span class="segment-label">Note</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-archive-subtle" onclick="if(currentStickerId) archiveStickerGlobal(this, currentStickerId); closeStickerModal();" id="modalStickerDelBtn" style="display: none;">Archive</button>
+                    </div>
+
+                    <!-- Right Side: Actions -->
+                    <div style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
+                        <button type="button" class="btn-premium btn-cancel-premium" onclick="closeStickerModal()" style="padding: 8px 15px; font-size: 0.9em;">Cancel</button>
+                        <button type="button" class="btn-premium btn-save-premium" onclick="saveStickerModal()" style="padding: 8px 20px; font-size: 0.9em; background: #27ae60; color: white;">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Note Selection Modal -->
+        <div id="noteSelectionModal" class="modal" style="z-index: 1000006 !important;">
+            <div class="modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3 style="margin: 0;">Select Note</h3>
+                    <button type="button" class="btn-premium" onclick="createNewNoteFromSticker()" style="font-size: 0.8em; padding: 5px 12px; margin-left: auto; margin-right: 15px; background: #27ae60; color: white; border: none; height: 30px;">+ Create New</button>
+                    <span class="modal-close" onclick="closeNoteSelectionModal()">&times;</span>
+                </div>
+                <div class="modal-body" style="overflow: hidden; display: flex; flex-direction: column;">
+                    <div class="form-group-large">
+                        <input type="text" id="noteSearchInput" class="form-input-premium" placeholder="Search notes..." oninput="searchNotesForSticker(this.value)">
+                    </div>
+                    <div id="noteSearchResults" style="overflow-y: auto; flex-grow: 1; margin-top: 10px; max-height: 400px;">
+                        <!-- Results will be injected here -->
+                        <div style="padding: 20px; text-align: center; color: #999;">Loading notes...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .sticker-type-segmented {
+                display: flex;
+                background: #f1f3f5;
+                padding: 4px;
+                border-radius: 12px;
+                gap: 4px;
+            }
+            .type-segment {
+                padding: 6px 10px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-size: 0.85em;
+                font-weight: 600;
+                color: #495057;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                user-select: none;
+            }
+            .type-segment:hover {
+                background: rgba(255,255,255,0.5);
+            }
+            .type-segment.active {
+                background: white;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+                color: #212529;
+            }
+            .segment-label {
+                margin-top: 1px;
+            }
+
+            .btn-archive-subtle {
+                background: #fff5f5;
+                border: none;
+                color: #ff6b6b;
+                font-size: 0.8em;
+                font-weight: 700;
+                cursor: pointer;
+                padding: 6px 10px;
+                border-radius: 8px;
+                transition: all 0.2s;
+            }
+            .btn-archive-subtle:hover {
+                background: #ff6b6b;
+                color: white;
+            }
+
+            .attached-note-card {
+                background: rgba(255, 255, 255, 0.6);
+                border-radius: 12px;
+                padding: 12px;
+                border: 1px solid rgba(0,0,0,0.05);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            }
+            .btn-remove-note {
+                background: none;
+                border: none;
+                font-size: 1.5em;
+                color: #ff5252;
+                cursor: pointer;
+                line-height: 1;
+                padding: 0 5px;
+            }
+            .note-search-item {
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: 1px solid transparent;
+                background: #f9f9f9;
+            }
+            .note-search-item:hover {
+                background: #fff;
+                border-color: #F2994A;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            }
+            .note-search-item .note-category {
+                font-size: 0.75em;
+                color: #F2994A;
+                font-weight: 700;
+                margin-bottom: 4px;
+                display: block;
+            }
+            .note-search-item .note-text {
+                font-size: 0.9em;
+                color: #333;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+        </style>

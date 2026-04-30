@@ -1,0 +1,136 @@
+{% if model_name == 'Habit' %}
+    <div class="habit-management-view">
+        <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Active Habits</h2>
+        <div class="habit-grid" id="activeHabitsGrid">
+            {% set active_habits = records | selectattr('read', 'equalto', false) | list %}
+            {% for row in active_habits %}
+                <div class="habit-card active" data-id="{{ row.id }}">
+                    <div class="habit-title">{{ row.title }}</div>
+                    <div class="habit-date">
+                        <span>📅 Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}</span>
+                        {% if today_date and row.start_date %}
+                            <br>
+                            <span style="font-size: 0.9em; color: #666;">
+                                ⏱️ Days passed: <strong>{{ (today_date - row.start_date).days }}</strong>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="habit-actions">
+                        <button type="button" class="btn-action btn-edit" 
+                                onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', false, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
+                            Edit
+                        </button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">No active habits.</div>
+            {% endfor %}
+        </div>
+
+        <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Finished Habits</h2>
+        <div class="habit-grid" id="finishedHabitsGrid">
+            {% set finished_habits = records | selectattr('read', 'equalto', true) | list %}
+            {% for row in finished_habits %}
+                <div class="habit-card finished" data-id="{{ row.id }}">
+                    <div class="habit-title">{{ row.title }}</div>
+                    <div class="habit-date">
+                        <span>📅 Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}</span>
+                        {% if row.end_date and row.start_date %}
+                            <br>
+                            <span style="font-size: 0.9em; color: #666;">
+                                🏁 Duration: <strong>{{ (row.end_date - row.start_date).days }}</strong> days
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="habit-actions">
+                        <button type="button" class="btn-action btn-edit" 
+                                onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', true, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
+                            Edit
+                        </button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if finished_habits|length > 0 %}
+        <div class="load-more-container" id="loadMoreHabitContainer">
+            <button class="btn-load-more" onclick="loadMoreHabits()">Show More Finished Habits (+10)</button>
+        </div>
+        {% else %}
+            <div style="padding: 20px; color: #999;">No finished habits yet.</div>
+        {% endif %}
+    </div>
+
+    <script>
+        let visibleFinishedHabits = 10;
+        document.addEventListener('DOMContentLoaded', () => {
+            const finishedCards = document.querySelectorAll('#finishedHabitsGrid .habit-card.finished');
+            finishedCards.forEach((card, idx) => {
+                if (idx >= 10) card.style.display = 'none';
+            });
+            if (finishedCards.length <= 10) {
+                const btn = document.getElementById('loadMoreHabitContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        });
+
+        function loadMoreHabits() {
+            const cards = document.querySelectorAll('#finishedHabitsGrid .habit-card.finished');
+            const batch = 10;
+            let count = 0;
+            for (let i = visibleFinishedHabits; i < cards.length && count < batch; i++) {
+                cards[i].style.display = 'flex';
+                count++;
+                visibleFinishedHabits++;
+            }
+            if (visibleFinishedHabits >= cards.length) {
+                const btn = document.getElementById('loadMoreHabitContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        }
+
+        function openEditHabitModal(id, title, start, finished, end) {
+            document.getElementById('editHabitId').value = id;
+            document.getElementById('editHabitTitle').value = title;
+            document.getElementById('editHabitStartDate').value = start ? start.substring(0, 10) : '';
+            document.getElementById('editHabitEndDate').value = end ? end.substring(0, 10) : '';
+            document.getElementById('editHabitRead').checked = finished === true || finished === 'true';
+            document.getElementById('editHabitError').innerText = '';
+            toggleHabitEndDate();
+            document.getElementById('editHabitModal').style.display = 'flex';
+        }
+
+        function toggleHabitEndDate() {
+            const isFinished = document.getElementById('editHabitRead').checked;
+            document.getElementById('editHabitEndDateGroup').style.display = isFinished ? 'block' : 'none';
+        }
+
+        function closeEditHabitModal() {
+            document.getElementById('editHabitModal').style.display = 'none';
+        }
+
+        async function saveHabitEdit() {
+            const id = document.getElementById('editHabitId').value;
+            const title = document.getElementById('editHabitTitle').value.trim();
+            const start = document.getElementById('editHabitStartDate').value;
+            const end = document.getElementById('editHabitEndDate').value;
+            const finished = document.getElementById('editHabitRead').checked;
+            const errEl = document.getElementById('editHabitError');
+
+            if (!title) { errEl.innerText = "Title required"; return; }
+
+            try {
+                const resp = await fetch('/edit_habit_inline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, title, start_date: start, end_date: finished ? end : null, read: finished })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') location.reload();
+                else errEl.innerText = data.message || "Error saving.";
+            } catch (e) { errEl.innerText = "Network error."; }
+        }
+    </script>
+{% endif %}

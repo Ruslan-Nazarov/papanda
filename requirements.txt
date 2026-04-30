@@ -1,0 +1,25 @@
+# fastapi
+fastapi
+uvicorn[standard]
+python-multipart
+jinja2
+
+# database
+sqlalchemy
+aiosqlite
+
+# auth & security
+passlib[bcrypt]
+python-jose[cryptography]
+python-dotenv
+pydantic-settings
+
+# excel export/import
+openpyxl
+
+# testing
+pytest
+pytest-asyncio
+httpx
+anyio
+python-dateutil

@@ -1,0 +1,144 @@
+{% if model_name == 'Stickers' %}
+    <style>
+        .parent-badge {
+            font-size: 0.75em;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+        .sticker-card:hover .parent-badge {
+            background: rgba(0,0,0,0.1);
+        }
+    </style>
+    <div class="notes-management-view">
+        <form class="notes-filter" action="{{ url_for('db_view', model_name='Stickers') }}" method="GET">
+            {% if search_query %}
+                <input type="hidden" name="search" value="{{ search_query }}">
+            {% endif %}
+            <label>Category</label>
+            <select name="category" class="filter-select">
+                <option value="">All</option>
+                <option value="standalone" {% if selected_category == 'standalone' %}selected{% endif %}>Standalone</option>
+                <option value="task" {% if selected_category == 'task' %}selected{% endif %}>Tasks</option>
+                <option value="habit" {% if selected_category == 'habit' %}selected{% endif %}>Habits</option>
+                <option value="note" {% if selected_category == 'note' %}selected{% endif %}>Notes</option>
+                <option value="event" {% if selected_category == 'event' %}selected{% endif %}>Events</option>
+                <option value="active" {% if selected_category == 'active' %}selected{% endif %}>Only Active</option>
+                <option value="finished" {% if selected_category == 'finished' %}selected{% endif %}>Only Finished</option>
+                <option value="text" {% if selected_category == 'text' %}selected{% endif %}>Text Only</option>
+                <option value="list" {% if selected_category == 'list' %}selected{% endif %}>Lists Only</option>
+            </select>
+            <label>Sort</label>
+            <select name="sort" class="filter-select">
+                <option value="date" {% if sort_by != 'title' %}selected{% endif %}>By Date</option>
+                <option value="title" {% if sort_by == 'title' %}selected{% endif %}>By Title</option>
+            </select>
+            <button type="submit" class="btn-filter-go">Apply</button>
+        </form>
+
+        <div class="note-grid" id="stickerGrid">
+            {% for row in records %}
+                <div class="note-card sticker-card" data-id="{{ row.id }}" 
+                     data-title="{{ row.title|e if row.title else '' }}" 
+                     data-text="{{ row.text|e }}" 
+                     data-color="{{ row.color }}" 
+                     data-type="{{ row.type }}"
+                     style="border-left: 5px solid {{ row.color or '#fff9c4' }};"
+                     ondblclick="openStickerModal({ id: '{{ row.id }}' })">
+                    
+                    <div class="note-cat" style="background: {{ row.color or '#fff9c4' }}33; color: #333;">
+                        {{ row.type|capitalize }} 
+                        {% if row.finished_at %}<span style="color: #999; font-size: 0.8em;">(Archived)</span>{% endif %}
+                        {% if row.task_id %}
+                            <span class="parent-badge" title="Task: {{ row.task.name if row.task else 'Deleted Task' }}">📋 Task</span>
+                        {% elif row.habit_id %}
+                            <span class="parent-badge" title="Habit: {{ row.habit.title if row.habit else 'Deleted Habit' }}">🔄 Habit</span>
+                        {% elif row.note_id %}
+                            <span class="parent-badge" title="Note: {{ row.note.category if row.note else 'Deleted Note' }}">📝 Note</span>
+                        {% elif row.event_id or row.recurrence_id %}
+                            <span class="parent-badge" title="Event: {{ row.event.title if row.event else 'Recurring/Deleted' }}">📅 Event</span>
+                        {% endif %}
+                    </div>
+                    <div class="note-date">📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</div>
+                    {% if row.title %}
+                        <div class="note-title" style="font-weight: bold; margin-bottom: 5px;">{{ row.title }}</div>
+                    {% endif %}
+                    
+                    <div class="note-text sticker-content-placeholder" 
+                         data-text="{{ row.text|e }}" 
+                         data-type="{{ row.type }}"
+                         style="font-size: 0.95em; line-height: 1.4; color: #444;">
+                        {{ row.text.strip()[:200] }}...
+                    </div>
+                    
+                    <div class="note-actions">
+                        <button type="button" class="btn-action btn-edit" onclick="openStickerModal({ id: '{{ row.id }}' })">Edit</button>
+                        <button type="button" class="btn-action btn-archive" onclick="archiveStickerGlobal(this, '{{ row.id }}')" title="Archive (Hide from dashboard)">Archive</button>
+                        <button type="button" class="btn-action btn-del" onclick="hardDeleteStickerGlobal(this, {{ row.id }})" title="PERMANENTLY DELETE from database" style="background: #ffebee; color: #c62828;">Delete</button>
+                    </div>
+                </div>
+            {% else %}
+                <div style="padding: 40px; text-align: center; color: #999; grid-column: 1 / -1;">
+                    <div style="margin-bottom: 15px; opacity: 0.3; display: flex; justify-content: center;">
+                        <div class="sticker-icon-small" style="width: 60px; height: 60px; transform: rotate(-5deg);"></div>
+                    </div>
+                    No stickers found.
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if records|length > 0 %}
+        <div class="load-more-container" id="loadMoreStickersContainer">
+            <button class="btn-load-more" onclick="loadMoreStickers()">Show More Stickers (+10)</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        let visibleStickersCount = 10;
+        
+        function loadMoreStickers() {
+            const grid = document.getElementById('stickerGrid');
+            if (!grid) return;
+            const cards = grid.querySelectorAll('.sticker-card');
+            const batch = 10;
+            
+            const allCards = Array.from(cards);
+            allCards.forEach((card, idx) => {
+                if (idx >= visibleStickersCount && idx < visibleStickersCount + batch) {
+                    card.style.display = 'flex';
+                }
+            });
+            
+            visibleStickersCount += batch;
+            if (visibleStickersCount >= cards.length) {
+                const btn = document.getElementById('loadMoreStickersContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Populate sticker content placeholders
+            const placeholders = document.querySelectorAll('.sticker-content-placeholder');
+            placeholders.forEach(ph => {
+                const text = ph.dataset.text;
+                const type = ph.dataset.type;
+                if (typeof formatStickerContent === 'function') {
+                    ph.innerHTML = formatStickerContent({ text, type });
+                }
+            });
+
+            const cards = document.querySelectorAll('.sticker-card');
+            cards.forEach((card, idx) => {
+                if (idx >= 10) card.style.display = 'none';
+            });
+            if (cards.length <= 10) {
+                const btn = document.getElementById('loadMoreStickersContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        });
+    </script>
+{% endif %}

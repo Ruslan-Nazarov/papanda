@@ -1,0 +1,281 @@
+        <div id="editEventModal" class="modal">
+            <div class="modal-content" style="width: 480px">
+                <div class="modal-header">
+                    <span style="margin: 0;">Edit Event</span>
+                    <span class="modal-close" onclick="closeEventEditModal()">&times;</span>
+                </div>
+                
+                <div class="modal-body">
+                    <input type="hidden" id="editEventId" />
+                    <input type="hidden" id="editEventRecId" />
+                    <input type="hidden" id="editEventOriginalDate" />
+                    <div class="form-group-large">
+                        <label class="form-label-premium">Title</label>
+                        <input type="text" id="editEventTitle" class="form-input-premium" />
+                    </div>
+
+                    <div id="editEventRecurrenceModeRow" class="form-group-large" style="display: none; background: #fff8f0; padding: 10px; border-radius: 8px; border: 1px solid #f2994a33;">
+                        <label class="form-label-premium" style="font-size: 0.9em; color: #f2994a;">Recurring Event Options</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                                <input type="radio" name="edit_event_mode" value="only" checked> Only this
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                                <input type="radio" name="edit_event_mode" value="this_and_future"> This & future
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em;">
+                                <input type="radio" name="edit_event_mode" value="all"> All instances
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group-large">
+                            <label class="form-label-premium">Date & Time</label>
+                            <input type="datetime-local" id="editEventDate" class="form-input-premium" oninput="calcEditEventEndDateFromCount()" />
+                        </div>
+                        <div class="form-group-large">
+                            <label class="form-label-premium">Repeat Rule</label>
+                            <select id="editEventRecRule" class="form-input-premium" onchange="toggleEditEventWeekdays()">
+                                <option value="none">Once</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="weekdays">Weekdays (M-F)</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="editEventWeekdaysRow" class="form-group-large" style="display: none; margin-top: -10px;">
+                        <label class="form-label-premium" style="font-size: 0.75em;">Select Days</label>
+                        <div class="weekday-row" style="margin-bottom: 0;">
+                            <label><input type="checkbox" value="mon"><span>M</span></label>
+                            <label><input type="checkbox" value="tue"><span>T</span></label>
+                            <label><input type="checkbox" value="wed"><span>W</span></label>
+                            <label><input type="checkbox" value="thu"><span>T</span></label>
+                            <label><input type="checkbox" value="fri"><span>F</span></label>
+                            <label><input type="checkbox" value="sat"><span>S</span></label>
+                            <label><input type="checkbox" value="sun"><span>S</span></label>
+                        </div>
+                    </div>
+
+                    <div class="form-group-large">
+                        <label class="form-label-premium">End Mode</label>
+                        <div style="display: flex; gap: 15px; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                                <input type="radio" name="edit_event_end_mode" value="date" id="editEventEndDateMode" checked onchange="toggleEditEventEndMode()"> Date
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                                <input type="radio" name="edit_event_end_mode" value="count" id="editEventEndCountMode" onchange="toggleEditEventEndMode()"> Count
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="editEventEndDateBlock" class="form-group-large">
+                        <label class="form-label-premium">Repeat until (Optional)</label>
+                        <input type="date" id="editEventRecEnd" class="form-input-premium" />
+                    </div>
+
+                    <div id="editEventEndCountBlock" class="form-group-large" style="display: none;">
+                        <label class="form-label-premium">Repeat N times</label>
+                        <input type="number" id="editEventRecCount" class="form-input-premium" min="1" max="365" value="10" oninput="calcEditEventEndDateFromCount()" />
+                        <div id="editEventRecEndFromCountLabel" style="font-size: 0.8em; color: #888; margin-top: 4px;"></div>
+                        <input type="hidden" id="editEventRecEndFromCount" />
+                    </div>
+
+                    <div id="editEventError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEventEditModal()">Cancel</button>
+                    <button type="button" class="btn-premium btn-save-premium" onclick="saveEventEdit()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="editWordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span id="modalWordEng" style="margin: 0;">Edit Word</span>
+                    <span class="modal-close" onclick="closeEditModal()">&times;</span>
+                </div>
+                
+                <form action="/update_word_data" method="post" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                    <div class="modal-body">
+                        <input type="hidden" name="word_eng" id="inputWordEng" />
+
+                        <div id="dynamicLangsContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Динамические поля языков будут вставлены через JS -->
+                        </div>
+
+                        <div class="form-group-large">
+                            <label class="form-label-premium">Russian Translation</label>
+                            <input type="text" name="new_ru" id="inputWordRu" class="form-input-premium" />
+                        </div>
+
+                        <div class="form-group-large">
+                            <label class="form-label-premium">Meaning / Context</label>
+                            <textarea name="new_meaning" id="inputWordMeaning" class="form-input-premium" style="height: 120px; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditModal()">Cancel</button>
+                        <button type="submit" class="btn-premium btn-save-premium">OK</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- Note Expand Modal -->
+        <div id="noteExpandModal" class="modal" style="z-index: 1000010 !important;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span id="noteModalHeader" style="margin: 0;">Add Note</span>
+                    <span class="modal-close" onclick="closeNoteExpandModal()">&times;</span>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="expandNoteId">
+                    <!-- Hidden fields for sticker data -->
+                    <input type="hidden" id="expandNoteStickerText">
+                    <input type="hidden" id="expandNoteStickerTitle">
+                    <input type="hidden" id="expandNoteStickerColor" value="#fff9c4">
+                    <input type="hidden" id="expandNoteStickerType" value="text">
+                    <div class="form-group-large" style="display: flex; align-items: flex-end; gap: 10px;">
+                        <div style="flex-grow: 1;">
+                            <label class="form-label-premium">Category</label>
+                            <select id="expandNoteCategory" class="form-input-premium">
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <a href="{{ url_for('show_categories') }}" class="btn-premium" style="height: 38px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.8em; padding: 0 10px; background: #f0f0f0; color: #333;" title="Edit Categories">⚙️</a>
+                    </div>
+                    <div class="form-group-large">
+                        <label class="form-label-premium">Note</label>
+                        <div style="background: white; border-radius: 12px; border: 1px solid #e0e0e0; overflow: hidden; display: flex; flex-direction: column;">
+                            <div class="notes-toolbar" style="display: flex; gap: 10px; padding: 8px 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; align-items: center;">
+                                <div id="expandNoteStickerBtn" class="note-sticker-btn" title="Add Sticker" onclick="openNoteStickerModal('expand')">
+                                    <div class="sticker-icon-postit"></div>
+                                </div>
+                                <div style="height: 24px; width: 1px; background: #e2e8f0; margin: 0 5px;"></div>
+                                <span style="font-size: 0.95rem; font-weight: 600; color: #475569; letter-spacing: 0.01em;">NOTE CONTENT</span>
+                            </div>
+                            <textarea id="expandNoteText" class="form-input-premium" style="height: 350px; border: none; border-radius: 0; padding: 15px; font-size: 1rem; line-height: 1.6; resize: vertical; outline: none; background: white;"></textarea>
+                        </div>
+                    </div>
+                    <div id="expandNoteError" style="color: #e74c3c; font-size: 0.9em; min-height: 16px;"></div>
+                </div>
+
+                <div class="modal-footer" style="padding: 20px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0; gap: 12px; display: flex; flex-wrap: wrap;">
+                    <button type="button" class="btn-premium btn-premium-secondary" onclick="closeNoteExpandModal(false)" style="flex: 1; min-width: 100px;">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn-premium" onclick="saveNoteFromModal()" style="flex: 2; min-width: 150px;">
+                        ✓ Save Note
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chronology Expand Modal -->
+        <div id="chronoExpandModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span id="chronoModalHeader" style="margin: 0;">Add Chronology Entry</span>
+                    <span class="modal-close" onclick="closeChronoExpandModal()">&times;</span>
+                </div>
+                
+                <input type="hidden" id="expandChronoId" />
+                
+                <div class="modal-body">
+                    <div class="form-group-large">
+                        <label class="form-label-premium">Target Date</label>
+                        <input type="date" id="expandChronoDate" class="form-input-premium" style="width: 250px !important;">
+                    </div>
+
+                    <div class="form-group-large">
+                        <label class="form-label-premium">What happened?</label>
+                        <textarea id="expandChronoText" class="form-input-premium" style="height: 420px; resize: vertical;" placeholder="Tell your story..."></textarea>
+                    </div>
+
+                    <div id="expandChronoError" style="color: #e74c3c; font-size: 1rem; margin-top: 10px; min-height: 1.2em; font-weight: bold;"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-premium btn-cancel-premium" onclick="closeChronoExpandModal()">Cancel</button>
+                    <button type="button" class="btn-premium btn-save-premium" onclick="saveChronoFromModal()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Confirmation Modal -->
+        <div id="customConfirmModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span id="confirmModalTitle">Confirmation</span>
+                </div>
+                <div class="modal-body">
+                    <div id="confirmModalIcon" style="font-size: 3rem; margin-bottom: 15px; display: none;">⚠️</div>
+                    <div id="confirmModalMessage" style="font-weight: 500; font-size: 1.1rem; color: #334155;">Are you sure?</div>
+                </div>
+                <div class="modal-footer" id="confirmModalFooter">
+                    <!-- Buttons will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Recent Notes Modal (Global) -->
+        <div id="noteSearchModal" class="modal">
+            <div class="modal-content" style="width: 700px;">
+                <div class="modal-header">
+                    <span style="margin: 0;">📂 All Notes</span>
+                    <span class="modal-close" onclick="document.getElementById('noteSearchModal').style.display='none'">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group-large">
+                        <input type="text" id="noteGlobalSearchInput" oninput="window.app.searchAllNotes(this.value)" placeholder="Search in all notes..." class="form-input-premium">
+                    </div>
+                    <div id="noteGlobalSearchResults" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 50vh; overflow-y: auto; padding-top: 10px;">
+                        <!-- Results (Cards) -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-premium btn-cancel-premium" onclick="document.getElementById('noteSearchModal').style.display='none'">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expanded Editor Modal (Global) -->
+        <div id="expandedNoteEditorModal" class="modal" style="z-index: 1000010 !important;">
+            <div class="modal-content" style="width: 800px;">
+                <div class="modal-header">
+                    <span style="margin: 0;">📝 Expanded Editor</span>
+                    <span class="modal-close" onclick="document.getElementById('expandedNoteEditorModal').style.display='none'">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group-large" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <select id="expandedNoteCategory" class="form-input-premium" style="flex: 1;">
+                            {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 0 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <input type="checkbox" id="expandedNotePin" style="cursor: pointer;">
+                            <label for="expandedNotePin" style="font-size: 0.9em; color: #64748b; cursor: pointer;">Pin to Dashboard</label>
+                        </div>
+                    </div>
+                    <div class="form-group-large">
+                        <textarea id="expandedNoteTextarea" class="form-input-premium" style="min-height: 350px; resize: vertical; line-height: 1.6;" placeholder="Write your note here..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-premium btn-cancel-premium" onclick="document.getElementById('expandedNoteEditorModal').style.display='none'">Cancel</button>
+                    <button class="btn-premium btn-save-premium" onclick="window.app.saveExpandedNote()">💾 Save Note</button>
+                </div>
+            </div>
+        </div>

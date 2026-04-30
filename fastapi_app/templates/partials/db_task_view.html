@@ -1,0 +1,114 @@
+{% if model_name == 'Task' %}
+    <div class="task-management-view">
+        <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Active Tasks</h2>
+        <div class="task-grid" id="activeTasksGrid">
+            {% set active_tasks = records | selectattr('done', 'equalto', false) | list %}
+            {% for row in active_tasks %}
+                <div class="task-card active" data-id="{{ row.id }}">
+                    <div class="task-name">{{ row.name }}</div>
+                    <div class="task-date">
+                        <span>📅 Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</span>
+                    </div>
+                    <div class="task-actions">
+                        <button type="button" class="btn-action btn-edit" 
+                                onclick="openEditTaskModal('{{ row.id }}', '{{ row.name|e }}', false)">
+                            Edit
+                        </button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">No active tasks.</div>
+            {% endfor %}
+        </div>
+
+        <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Finished Tasks</h2>
+        <div class="task-grid" id="finishedTasksGrid">
+            {% set finished_tasks = records | selectattr('done', 'equalto', true) | list %}
+            {% for row in finished_tasks %}
+                <div class="task-card finished" data-id="{{ row.id }}">
+                    <div class="task-name">{{ row.name }}</div>
+                    <div class="task-date">
+                        <span>📅 Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</span>
+                    </div>
+                    <div class="task-actions">
+                        <button type="button" class="btn-action btn-edit" 
+                                onclick="openEditTaskModal('{{ row.id }}', '{{ row.name|e }}', true)">
+                            Edit
+                        </button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if finished_tasks|length > 0 %}
+        <div class="load-more-container" id="loadMoreTaskContainer">
+            <button class="btn-load-more" onclick="loadMoreTasks()">Show More Finished Tasks (+10)</button>
+        </div>
+        {% else %}
+            <div style="padding: 20px; color: #999;">No finished tasks yet.</div>
+        {% endif %}
+    </div>
+
+    <script>
+        let visibleFinishedTasks = 10;
+        document.addEventListener('DOMContentLoaded', () => {
+            const finishedCards = document.querySelectorAll('#finishedTasksGrid .task-card.finished');
+            finishedCards.forEach((card, idx) => {
+                if (idx >= 10) card.style.display = 'none';
+            });
+            if (finishedCards.length <= 10) {
+                const btn = document.getElementById('loadMoreTaskContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        });
+
+        function loadMoreTasks() {
+            const cards = document.querySelectorAll('#finishedTasksGrid .task-card.finished');
+            const batch = 10;
+            let count = 0;
+            for (let i = visibleFinishedTasks; i < cards.length && count < batch; i++) {
+                cards[i].style.display = 'flex';
+                count++;
+                visibleFinishedTasks++;
+            }
+            if (visibleFinishedTasks >= cards.length) {
+                const btn = document.getElementById('loadMoreTaskContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        }
+
+        function openEditTaskModal(id, name, done) {
+            document.getElementById('editTaskId').value = id;
+            document.getElementById('editTaskName').value = name;
+            document.getElementById('editTaskDone').checked = done === true || done === 'true';
+            document.getElementById('editTaskError').innerText = '';
+            document.getElementById('editTaskModal').style.display = 'flex';
+        }
+
+        function closeEditTaskModal() {
+            document.getElementById('editTaskModal').style.display = 'none';
+        }
+
+        async function saveTaskEdit() {
+            const id = document.getElementById('editTaskId').value;
+            const name = document.getElementById('editTaskName').value.trim();
+            const done = document.getElementById('editTaskDone').checked;
+            const errEl = document.getElementById('editTaskError');
+
+            if (!name) { errEl.innerText = "Task description required"; return; }
+
+            try {
+                const resp = await fetch('/edit_task_inline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, name, done })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') location.reload();
+                else errEl.innerText = data.message || "Error saving.";
+            } catch (e) { errEl.innerText = "Network error."; }
+        }
+    </script>
+{% endif %}

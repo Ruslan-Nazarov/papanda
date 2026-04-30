@@ -1,0 +1,32 @@
+{
+  "name": "papanda-smart-notes",
+  "version": "1.0.0",
+  "description": "Smart Notes component for Papanda",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@tiptap/core": "^2.27.2",
+    "@tiptap/extension-bubble-menu": "^2.27.2",
+    "@tiptap/extension-image": "^2.27.2",
+    "@tiptap/pm": "^2.1.13",
+    "@tiptap/starter-kit": "^2.27.2",
+    "d3": "^3.5.17",
+    "fabric": "^5.5.2",
+    "function-plot": "^1.25.3",
+    "mathlive": "^0.98.6"
+  },
+  "author": "",
+  "license": "ISC",
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
+}

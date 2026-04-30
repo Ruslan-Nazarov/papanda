@@ -1,0 +1,81 @@
+<style>
+    .footer {
+        width: 100%;
+        background-color: #fff;
+        border-top: 1px solid #e2e8f0;
+        padding: 20px 0;
+        margin-top: auto;
+    }
+    .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    .footer-nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+    }
+    .footer-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 24px; /* Wider padding */
+        min-width: 120px; /* Minimum width for consistency */
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 0.9em;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .footer-btn:hover {
+        background-color: #f1f5f9;
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    .footer-version {
+        font-size: 0.8em;
+        color: #94a3b8;
+        text-align: center;
+    }
+    /* Data nav style - slightly different color or just keep it consistent */
+    .data-nav .footer-btn {
+        background-color: #ffffff;
+    }
+</style>
+
+<div class="footer">
+    <div class="footer-container">
+        <div class="footer-nav main-nav">
+            <a href="/" class="footer-btn">🏠 Home</a>
+            <a href="/smart_notes" class="footer-btn">🧠 Smart Notes</a>
+            <a href="/word_stats" class="footer-btn">📊 Words</a>
+            <a href="/history" class="footer-btn">📅 History</a>
+            <a href="/settings" class="footer-btn">⚙️ Settings</a>
+        </div>
+        <div class="footer-nav data-nav">
+            <a href="/db_view/Event" class="footer-btn">📅 Events</a>
+            <a href="/db_view/Habit" class="footer-btn">🔄 Habits</a>
+            <a href="/db_view/Task" class="footer-btn">✅ Tasks</a>
+            <a href="/db_view/Chronology" class="footer-btn">📜 Chrono</a>
+            <a href="/db_view/Stickers" class="footer-btn" style="display: flex; gap: 8px;">
+                <div class="sticker-icon-small" style="background: #fff9c4; border-color: #fbc02d; width: 16px; height: 16px;"></div>
+                Stickers
+            </a>
+            <a href="/db_view/Notes" class="footer-btn">📝 Notes</a>
+            <a href="/db_view/Wink" class="footer-btn">😉 Wink</a>
+        </div>
+        <div class="footer-version">
+            papanda version 0.6 (est. 21.11.2023; last update 12.04..2026)
+        </div>
+    </div>
+</div>

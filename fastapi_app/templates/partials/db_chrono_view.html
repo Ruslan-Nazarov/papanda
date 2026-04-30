@@ -1,0 +1,144 @@
+{% if model_name == 'Chronology' %}
+    <div class="chrono-management-view">
+        {% if search_query %}
+            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Search Results for "{{ search_query }}"</h2>
+            <div class="chrono-grid" id="searchChronoGrid">
+                {% for row in records %}
+                    <div class="chrono-card" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                        <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                        <div class="chrono-title">{{ row.title }}</div>
+                        <div class="chrono-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="padding: 20px; color: #999;">No matching records found.</div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Recent (Last 7 Days)</h2>
+            <div class="chrono-grid" id="recentChronoGrid">
+                {% set recent_chrono = records | selectattr('date', 'greaterthan', seven_days_ago) | list %}
+                {% for row in recent_chrono %}
+                    <div class="chrono-card recent" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                        <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                        <div class="chrono-title">{{ row.title }}</div>
+                        <div class="chrono-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="padding: 20px; color: #999;">No recent records.</div>
+                {% endfor %}
+            </div>
+
+            <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Archive</h2>
+            <div class="chrono-grid" id="archiveChronoGrid">
+                {% set archive_chrono = records | selectattr('date', 'lessthan', seven_days_ago) | list %}
+                {% for row in archive_chrono %}
+                    <div class="chrono-card old" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" style="display: none;" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                        <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                        <div class="chrono-title">{{ row.title }}</div>
+                        <div class="chrono-actions">
+                            <button type="button" class="btn-action btn-edit" 
+                                    onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                Edit
+                            </button>
+                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if archive_chrono|length > 0 %}
+            <div class="load-more-container" id="loadMoreChronoContainer">
+                <button class="btn-load-more" onclick="loadMoreChrono()">Show More Archive (+10)</button>
+            </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">Archive is empty.</div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script>
+        let visibleArchiveChrono = 10;
+        document.addEventListener('DOMContentLoaded', () => {
+            const archiveCards = document.querySelectorAll('#archiveChronoGrid .chrono-card.old');
+            archiveCards.forEach((card, idx) => {
+                if (idx >= 10) card.style.display = 'none';
+            });
+            if (archiveCards.length <= 10) {
+                const btn = document.getElementById('loadMoreChronoContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        });
+
+        function loadMoreChrono() {
+            const cards = document.querySelectorAll('#archiveChronoGrid .chrono-card.old');
+            const batch = 10;
+            let count = 0;
+            for (let i = visibleArchiveChrono; i < cards.length && count < batch; i++) {
+                cards[i].style.display = 'flex';
+                count++;
+                visibleArchiveChrono++;
+            }
+            if (visibleArchiveChrono >= cards.length) {
+                const btn = document.getElementById('loadMoreChronoContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        }
+
+        function viewChronoFull(title, date) {
+            const modal = document.getElementById('chronoViewModal');
+            document.getElementById('chronoViewDate').innerText = date;
+            document.getElementById('chronoViewFullText').innerText = title;
+            modal.style.display = 'flex';
+        }
+
+        function closeChronoViewModal() {
+            document.getElementById('chronoViewModal').style.display = 'none';
+        }
+
+        function openEditChronoModal(id, title, dateStr) {
+            document.getElementById('editChronoId').value = id;
+            document.getElementById('editChronoTitle').value = title;
+            // Handle ISO string or space-separated string
+            document.getElementById('editChronoDate').value = dateStr ? dateStr.replace(' ', 'T').substring(0, 16) : '';
+            document.getElementById('editChronoError').innerText = '';
+            document.getElementById('editChronoModal').style.display = 'flex';
+        }
+
+        function closeEditChronoModal() {
+            document.getElementById('editChronoModal').style.display = 'none';
+        }
+
+        async function saveChronoEdit() {
+            const id = document.getElementById('editChronoId').value;
+            const title = document.getElementById('editChronoTitle').value.trim();
+            const date = document.getElementById('editChronoDate').value;
+            const errEl = document.getElementById('editChronoError');
+
+            if (!title) { errEl.innerText = "Description required"; return; }
+            if (!date) { errEl.innerText = "Date required"; return; }
+
+            try {
+                const resp = await fetch('/edit_chrono_inline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, title, date })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') location.reload();
+                else errEl.innerText = data.message || "Error saving.";
+            } catch (e) { errEl.innerText = "Network error."; }
+        }
+    </script>
+{% endif %}

@@ -1,0 +1,368 @@
+{% if search_query %}
+    <div style="padding: 0 20px 20px; color: #666; font-style: italic;">
+        Search results for: "{{ search_query }}"
+    </div>
+    <div class="card">
+        <div class="table-container">
+            <table class="db-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th style="text-align: center; width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in records %}
+                    <tr>
+                        <td>{{ row.date.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td style="{% if row.done %}text-decoration: line-through; opacity: 0.6;{% endif %}">
+                            {% if row.important %}<span title="Important Event" style="margin-right: 4px; color: #F2D14A;">⭐</span>{% endif %}
+                            {% if row.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% endif %}
+                            {{ row.title }}
+                        </td>
+                        <td>
+                            <div style="display: flex; justify-content: center; gap: 8px;">
+                                <button class="btn-action" 
+                                        style="background: {% if row.done %}#10B981{% else %}#eee{% endif %}; color: {% if row.done %}white{% else %}#666{% endif %}; min-width: 32px;"
+                                        title="Toggle Done"
+                                        onclick="toggleEventDone({{ row.id }})">
+                                    {% if row.done %}✓{% else %}○{% endif %}
+                                </button>
+                                <button class="btn-action btn-edit" 
+                                        style="background: #f0f9ff; color: #0369a1;"
+                                        data-id="{{ row.id }}"
+                                        data-title="{{ (row.title or "")|e }}"
+                                        data-date="{{ (row.date or "") }}"
+                                        data-rule="{{ (row.recurrence_rule or "")|e }}"
+                                        data-end="{{ (row.recurrence_end or "") }}"
+                                        data-recurrence-id="{{ row.recurrence_id or '' }}"
+                                        data-color="{{ row.color or '' }}"
+                                        data-important="{{ 'true' if row.important else 'false' }}"
+                                        data-done="{{ 'true' if row.done else 'false' }}"
+                                        onclick="openEventDetailModal(this.dataset)">
+                                    View
+                                </button>
+                                <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Event', {{ row.id }}, {{ 'true' if row.recurrence_id else 'false' }})">Del</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px; color: #999;">No events found matching your search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <!-- Filter bar moved here for better isolation -->
+    <form class="filter-bar" id="eventFilterForm" action="{{ url_for('db_view', model_name='Event') }}" method="GET">
+        {% if search_query %}
+            <input type="hidden" name="search" value="{{ search_query }}">
+        {% endif %}
+        <a href="{{ url_for('db_view', model_name='Event') }}?month={{ prev_month }}&year={{ prev_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Prev Month">←</a>
+        
+        <div class="filter-group">
+            <label>Month</label>
+            <select name="month" class="filter-select">
+                {% for m_val, m_name in months %}
+                    <option value="{{ m_val }}" {% if m_val == current_month %}selected{% endif %}>{{ m_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Day</label>
+            <select name="day" class="filter-select">
+                <option value="">All</option>
+                {% for d in range(1, 32) %}
+                    <option value="{{ d }}" {% if d == current_day %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Year</label>
+            <select name="year" class="filter-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn-filter-go">Go</button>
+        
+        <a href="{{ url_for('db_view', model_name='Event') }}?month={{ next_month }}&year={{ next_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Next Month">→</a>
+    </form>
+
+    <!-- Legend / Color Map -->
+    <div class="card color-legend-card" style="margin-bottom: 20px; padding: 12px 20px; border-radius: 12px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left;">
+        <h3 style="margin: 0 0 10px 0; font-size: 1.05em; color: #555; display: flex; align-items: center; gap: 8px; font-weight: 600;">🎨 Color Legend <span style="font-size: 0.75em; font-weight: normal; color: #999;">(Click to edit labels)</span></h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;" id="eventColorMapContainer">
+            {% set colors = ['#4F46E5', '#10B981', '#B91C1C', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EC4899', '#1E293B'] %}
+            {% for c in colors %}
+                {% set label = event_colors.get(c, '') %}
+                <div class="color-legend-item" style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: #fdfdfd; border: 1px solid #eaeaea; cursor: pointer; transition: all 0.2s;" onclick="editColorLabel('{{ c }}', this.getAttribute('data-raw-label'))" data-raw-label="{{ label|e }}" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='#fdfdfd'">
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: {{ c }}; flex-shrink: 0;"></div>
+                    <span id="label-{{ c|replace('#','') }}" style="font-size: 0.85em; color: #444; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">
+                        {% if label %}{{ label }}{% else %}<span style="opacity: 0.5; font-style: italic;">Unnamed</span>{% endif %}
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="calendar-wrapper">
+            <div class="calendar-header">
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+                <div>Sun</div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+    // Calendar rendering logic resides here to have access to eventRecords
+    function renderEventCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        if (!grid || typeof eventRecords === 'undefined') return;
+        
+        grid.innerHTML = '';
+        const y = currentYear;
+        const m = currentMonth;
+        
+        const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
+        const getFirstWeekday = (year, month) => {
+            const d = new Date(year, month - 1, 1).getDay();
+            return d === 0 ? 7 : d;
+        };
+        
+        const first = getFirstWeekday(y, m);
+        const dim = daysInMonth(y, m);
+        const totalCells = 42;
+        
+        // Group events by day
+        const eventMap = {};
+        eventRecords.forEach(e => {
+            if (!e.date) return;
+            const key = e.date.substring(0, 10);
+            if (!eventMap[key]) eventMap[key] = [];
+            eventMap[key].push(e);
+        });
+        
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        
+        for (let i = 1; i <= totalCells; i++) {
+            const cellDate = new Date(y, m - 1, i - first + 1);
+            const dayNum = cellDate.getDate();
+            const key = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+            const inMonth = (cellDate.getMonth() + 1 === m) && (cellDate.getFullYear() === y);
+            
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell' + (inMonth ? '' : ' other-month') + (key === todayStr ? ' today' : '');
+            cell.dataset.date = key;
+            
+            const header = document.createElement('div');
+            header.className = 'cell-header';
+            header.innerHTML = `<div class="cell-day">${dayNum}</div>`;
+            
+            const addBtn = document.createElement('button');
+            addBtn.className = 'cell-add';
+            addBtn.textContent = '+';
+            addBtn.onclick = (ev) => { ev.stopPropagation(); typeof openAddEventForDay !== 'undefined' && openAddEventForDay(key); };
+            
+            const actions = document.createElement('div');
+            actions.className = 'cell-actions';
+            actions.appendChild(addBtn);
+            header.appendChild(actions);
+            
+            const body = document.createElement('div');
+            body.className = 'cell-body';
+            
+            (eventMap[key] || []).forEach(e => {
+                const chip = document.createElement('div');
+                chip.className = 'event-chip';
+                chip.dataset.id = e.id;
+                chip.style.borderLeft = e.color ? `5px solid ${e.color}` : '5px solid #e0e0e0';
+                if (e.done) {
+                    chip.style.textDecoration = 'line-through';
+                    chip.style.opacity = '0.5';
+                }
+                
+                // Simplified chip with dedicated indicators (dot for stickers) and Three-Dots trigger
+                const stickerIndicator = e.has_stickers ? `<span class="sticker-dot" title="Has Stickers"></span>` : '';
+
+                chip.innerHTML = `
+                    <div class="title" style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1;">
+                        ${e.important ? '<span title="Important">⭐</span>' : ''}
+                        ${e.recurrence_id ? '<span title="Recurring">🔁</span>' : ''}
+                        ${stickerIndicator}
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${e.title}</span>
+                    </div>
+                    <div class="chip-three-dots" title="Actions (Right click also works)">⋮</div>
+                `;
+
+                // Logic for stickers moved to context menu (No direct click handler here)
+
+                // Handle Context Menu (Right Click)
+                chip.oncontextmenu = (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    showEventContextMenu(e, ev);
+                };
+
+                // Handle Three-Dots Click
+                const dots = chip.querySelector('.chip-three-dots');
+                dots.onclick = (ev) => {
+                    ev.stopPropagation();
+                    showEventContextMenu(e, ev);
+                };
+
+                // Normal click (Details)
+                chip.onclick = (ev) => { 
+                    ev.stopPropagation(); 
+                    openEventDetailModal(e); 
+                };
+                
+                body.appendChild(chip);
+            });
+            
+            cell.appendChild(header);
+            cell.appendChild(body);
+            grid.appendChild(cell);
+        }
+
+        // Initialize Sortable for all cells to allow dragging events between days
+        if (typeof Sortable !== 'undefined') {
+            document.querySelectorAll('.cell-body').forEach(el => {
+                Sortable.create(el, {
+                    group: 'events',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag',
+                    filter: '.chip-three-dots, .sticker-dot', // Don't drag by these
+                    onEnd: async function(evt) {
+                        if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+
+                        const itemEl = evt.item;
+                        const targetCell = evt.to.closest('.calendar-cell');
+                        const eventId = itemEl.dataset.id;
+                        const newDate = targetCell.dataset.date;
+                        
+                        // If moved to a different day
+                        if (evt.from !== evt.to) {
+                            try {
+                                const resp = await fetch('/api/dnd/move_event', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ event_id: parseInt(eventId), new_date: newDate })
+                                });
+                                if (resp.ok) {
+                                    // Update local state and re-render to keep everything clean
+                                    const rec = eventRecords.find(r => r.id == eventId);
+                                    if (rec) rec.date = newDate;
+                                    // We don't necessarily need to full re-render if we trust Sortable's DOM move,
+                                    // but re-rendering ensures all dates and classes (like "today") are correct.
+                                    // However, for performance, let's just log success.
+                                    console.log(`Event ${eventId} moved to ${newDate}`);
+                                } else {
+                                    alert('Failed to move event.');
+                                    renderEventCalendar();
+                                }
+                            } catch (e) {
+                                console.error("DnD Error:", e);
+                                renderEventCalendar();
+                            }
+                        } else {
+                            // Reordered within the same day - could implement reorder_events here if needed
+                            console.log("Reordered within the same day");
+                        }
+                    }
+                });
+            });
+        }
+    }
+    
+    // Run on load
+    document.addEventListener('DOMContentLoaded', renderEventCalendar);
+
+    // Tree View Logic
+    async function viewEventTree(color) {
+        if (!color) return;
+        const modal = document.getElementById('eventTreeModal');
+        const body = document.getElementById('eventTreeBody');
+        const colorName = document.getElementById('treeColorName');
+        
+        // Clear previous nodes
+        const nodes = body.querySelectorAll('.tree-node');
+        nodes.forEach(n => n.remove());
+        
+        colorName.textContent = `(${color})`;
+        body.style.setProperty('--tree-color', color);
+        modal.style.display = 'flex';
+
+        try {
+            const resp = await fetch(`/api/events/tree/${color.replace('#', '')}`);
+            const data = await resp.json();
+            if (data.status === 'success') {
+                data.data.forEach((e, index) => {
+                    const node = document.createElement('div');
+                    node.className = `tree-node ${index % 2 === 0 ? 'left' : 'right'}`;
+                    const dateStr = new Date(e.date).toLocaleString([], {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
+                    node.innerHTML = `
+                        <div class="tree-card" onclick="openEditEventModal('${e.id}', '${e.title}', '${e.date}', '', '', '${e.recurrence_id || ''}', '${color}')">
+                            <div class="tree-card-date">${dateStr}</div>
+                            <div class="tree-card-title">${e.title}</div>
+                        </div>
+                    `;
+                    body.appendChild(node);
+                });
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    function closeEventTreeModal() {
+        document.getElementById('eventTreeModal').style.display = 'none';
+    }
+
+    function openAddEventForDay(isoDate) {
+        if (typeof openEditEventModal !== 'undefined') {
+            openEditEventModal('', '', isoDate + 'T09:00', 'none', '', '', '');
+        }
+    }
+
+    function editColorLabel(color, currentLabel) {
+        let newLabel = prompt("Enter a label for this color:", currentLabel || "");
+        if (newLabel !== null) {
+            let spanId = 'label-' + color.replace('#', '');
+            fetch('/settings/update_event_color', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ color: color, label: newLabel })
+            }).then(res => res.json()).then(data => {
+                if (data.status === 'success') {
+                    let displaySpan = document.getElementById(spanId);
+                    let parentItem = displaySpan.closest('.color-legend-item');
+                    parentItem.setAttribute('data-raw-label', newLabel.trim());
+                    if (newLabel.trim() === "") {
+                        displaySpan.innerHTML = '<span style="opacity: 0.5; font-style: italic;">Unnamed</span>';
+                    } else {
+                        displaySpan.textContent = newLabel.trim();
+                    }
+                } else {
+                    alert("Error: " + data.message);
+                }
+            }).catch(err => console.error(err));
+        }
+    }
+</script>

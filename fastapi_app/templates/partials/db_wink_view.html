@@ -1,0 +1,96 @@
+{% if model_name == 'Wink' %}
+    <div class="wink-management-view">
+        <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">😉 Leisure (Wink)</h2>
+        <div class="habit-grid" id="winkGrid">
+            {% for row in records %}
+                <div class="habit-card" data-id="{{ row.id }}" style="border-left: 5px solid #9b59b6;">
+                    <div class="habit-title">{{ row.title }}</div>
+                    <div class="habit-date">
+                        <span>📅 Date: {{ row.date.strftime('%d.%m.%Y %H:%M') if row.date else '—' }}</span>
+                    </div>
+                    <div class="habit-actions">
+                        <button type="button" class="btn-action btn-edit" 
+                                onclick="openEditWinkModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.date.isoformat() if row.date else '' }}')">
+                            Edit
+                        </button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Wink', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% else %}
+                <div style="padding: 40px; text-align: center; color: #999; grid-column: 1 / -1;">No leisure records found.</div>
+            {% endfor %}
+        </div>
+        
+        {% if records|length > 10 %}
+        <div class="load-more-container" id="loadMoreWinkContainer">
+            <button class="btn-load-more" onclick="loadMoreWink()">Show More (+10)</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        let visibleWinkCount = 10;
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('#winkGrid .habit-card');
+            cards.forEach((card, idx) => {
+                if (idx >= 10) card.style.display = 'none';
+            });
+            if (cards.length <= 10) {
+                const btn = document.getElementById('loadMoreWinkContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        });
+
+        function loadMoreWink() {
+            const cards = document.querySelectorAll('#winkGrid .habit-card');
+            const batch = 10;
+            let count = 0;
+            for (let i = visibleWinkCount; i < cards.length && count < batch; i++) {
+                cards[i].style.display = 'flex';
+                count++;
+                visibleWinkCount++;
+            }
+            if (visibleWinkCount >= cards.length) {
+                const btn = document.getElementById('loadMoreWinkContainer');
+                if (btn) btn.style.display = 'none';
+            }
+        }
+
+        function openEditWinkModal(id, title, dateStr) {
+            const modal = document.getElementById('editWinkModal');
+            if (!modal) return;
+            document.getElementById('editWinkId').value = id;
+            document.getElementById('editWinkTitle').value = title;
+            document.getElementById('editWinkDate').value = dateStr ? dateStr.substring(0, 16) : '';
+            document.getElementById('editWinkError').innerText = '';
+            modal.style.display = 'flex';
+        }
+
+        function closeEditWinkModal() {
+            document.getElementById('editWinkModal').style.display = 'none';
+        }
+
+        async function saveWinkEdit() {
+            const id = document.getElementById('editWinkId').value;
+            const title = document.getElementById('editWinkTitle').value.trim();
+            const date = document.getElementById('editWinkDate').value;
+            const errEl = document.getElementById('editWinkError');
+
+            if (!title) { errEl.innerText = "Title required"; return; }
+
+            try {
+                const resp = await fetch('/edit_wink_inline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, title: title, date: date })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    errEl.innerText = data.message || "Error saving.";
+                }
+            } catch (e) { errEl.innerText = "Network error."; }
+        }
+    </script>
+{% endif %}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Notes - Papanda</title>
+    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/smart_notes.css') }}?v=31">
+    <!-- D3 for Function Plot is now bundled in GraphTool.init() -->
+    <!-- External libraries will be loaded locally or dynamically in later steps -->
+</head>
+
+<body>
+
+    <div class="smart-notes-container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+
+        <div class="page-intro">
+            <h1>🧠 Smart Notes</h1>
+            <p>Your intelligent knowledge base</p>
+        </div>
+
+        <!-- Main Smart Note Interface -->
+        <div class="note-interface">
+
+            <div class="note-header">
+                <input type="text" class="note-title-input" id="globalNoteTitle" placeholder="Enter Note Title..." style="flex: 1;">
+                
+                <select id="globalNoteCategory" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9em; background: #fff; color: #64748b; outline: none; cursor: pointer; margin-right: 15px;">
+                    <option value="">No Category</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+
+                <div class="header-actions">
+                    <button class="btn-delete-note" id="btnDeleteNote"
+                        style="display: none;">🗑️ Delete</button>
+                    <button class="btn-save-note btn-secondary" id="btnLoadNote">📂 Load</button>
+                    <button class="btn-save-note" id="btnSaveNote">💾 Save Note</button>
+                </div>
+            </div>
+
+            <div class="note-canvas" id="noteCanvas">
+                <div class="canvas-divider" id="canvasDivider"></div>
+                <!-- Блоки будут вставляться сюда -->
+            </div>
+
+            <!-- Backdrop for expanded mode -->
+            <div id="expandedBackdrop" class="expanded-backdrop"></div>
+
+            <!-- Inline Editor Popover -->
+            <div id="inlineEditor" class="inline-editor">
+
+                    <div class="editor-drag-handle" id="editorDragHandle">
+                        <span class="editor-title">Note Editor</span>
+                        <div class="editor-header-controls" style="display: flex; align-items: center; gap: 8px;">
+                            <!-- Standard Yellow Sticker Button -->
+                            <div class="note-sticker-btn mini-header" title="Add Sticker" onclick="event.stopPropagation(); window.openNoteStickerModal('smart')" style="cursor: pointer; transform: scale(0.9); margin-right: 5px;">
+                                <div class="sticker-icon-postit"></div>
+                            </div>
+                            
+                            <button id="btnMathFormula" class="editor-btn-math" title="Insert Formula">∑</button>
+                            <button id="btnBoldFormat" class="editor-btn-bold" style="display: none;" title="Make Bold">B</button>
+                            <button class="editor-btn-expand" id="btnEditorExpand" title="Expand to fullscreen">⛶</button>
+                            <button class="editor-btn-close" id="btnEditorClose" title="Close">✖</button>
+                        </div>
+                    </div>
+
+                <!-- Custom Math Menu (Step 3) -->
+                <div id="mathMenu" class="math-menu" style="display: none;">
+                    <div class="math-tabs">
+                        <div class="math-tab active" data-cat="main">Основные</div>
+                        <div class="math-tab" data-cat="brackets">Скобки</div>
+                        <div class="math-tab" data-cat="analysis">Анализ</div>
+                        <div class="math-tab" data-cat="misc">Разное</div>
+                    </div>
+                    <div id="mathPalette" class="math-palette">
+                        <!-- Buttons will be injected by JS -->
+                    </div>
+                </div>
+                <div id="mathContextMenu" class="math-context-menu" style="display: none;"></div>
+
+                <!-- Tabs Header -->
+                <div class="editor-tabs" id="editorTabs">
+                    <div class="editor-tab active" id="tab-text" data-tab="text">Текст</div>
+                    <div class="editor-tab" id="tab-graph" data-tab="graph">Графики</div>
+                    <div class="editor-tab" id="tab-shapes" data-tab="shapes">Фигуры</div>
+                </div>
+
+                <div class="editor-body" id="editorBody">
+                    <!-- Text Tab -->
+                    <div id="editor-text" class="tab-content active">
+                        <div id="tiptap-editor" class="tiptap-editor" style="min-height: 250px; cursor: text;"></div>
+                        
+                        <!-- Hidden inputs for sticker metadata -->
+                        <input type="hidden" id="smartNoteStickerText">
+                        <input type="hidden" id="smartNoteStickerTitle">
+                        <input type="hidden" id="smartNoteStickerColor" value="#fff9c4">
+                        <input type="hidden" id="smartNoteStickerType" value="text">
+                    </div>
+                    <!-- Graph Tab -->
+                    <div id="editor-graph" class="tab-content">
+                        <div class="graph-editor-ui">
+                            <div class="graph-input-group">
+                                <input type="text" id="graphFuncInput" placeholder="Например: x^2 or sin(x)" class="graph-input">
+                                <button class="graph-btn-plot" id="btnGraphPlot">Построить</button>
+                            </div>
+                            
+                            <div id="graphPreview" class="graph-preview">
+                                <div class="graph-placeholder-text">Введите функцию и нажмите "Построить"</div>
+                            </div>
+                            <button class="graph-btn-insert" id="btnGraphInsert">Вставить в текст</button>
+                        </div>
+                    </div>
+                    <!-- Shapes Tab (Step 5) -->
+                    <div id="editor-shapes" class="tab-content">
+                        <div class="shapes-editor-ui">
+                            <div class="shapes-toolbar">
+                                <div class="tool-group">
+                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение">🖱️</button>
+                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование">✏️</button>
+                                </div>
+                                <div class="tool-group">
+                                    <button class="shape-tool" data-shape="rect" title="Квадрат">⬜</button>
+                                    <button class="shape-tool" data-shape="circle" title="Круг">⭕</button>
+                                    <button class="shape-tool" data-shape="line" title="Линия">➖</button>
+                                    <button class="shape-tool" data-shape="text" title="Текст">T</button>
+                                </div>
+                                <div class="tool-group">
+                                    <input type="color" id="shapeColor" value="#3b82f6" title="Цвет">
+                                    <button class="shape-tool-delete" id="btnShapeDelete" title="Удалить">🗑️</button>
+                                    <button class="shape-tool-clear" id="btnShapeClear" title="Очистить всё">🧹</button>
+                                </div>
+                            </div>
+                            
+                            <div class="shapes-canvas-wrapper" id="shapesCanvasWrapper">
+                                <canvas id="shapesCanvas"></canvas>
+                            </div>
+
+                            <button class="graph-btn-insert" id="btnShapesInsert">Вставить в текст</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-actions">
+                    <div class="editor-word-count" id="wordCount">Editor Active</div>
+                    <div class="debug-logs" id="editorDebugLogs" style="font-family: monospace; font-size: 10px; color: #94a3b8; max-height: 40px; overflow-y: auto; flex: 1; margin: 0 15px; border-left: 1px solid #f1f5f9; padding-left: 10px;"></div>
+                    <div>
+                        <button class="editor-btn editor-btn-cancel" id="btnEditorCancel">Отмена</button>
+                        <button class="editor-btn editor-btn-save" id="btnEditorSave">ОК</button>
+                    </div>
+                </div>
+                <!-- Resize handle INSIDE the editor -->
+                <div id="editorResizeHandle" class="editor-resize-handle"></div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <!-- Load Note Modal -->
+    <div id="loadNoteModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Load Smart Note</h3>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 15px;">
+            <div id="loadNotesList" class="load-notes-list">
+                <div style="color: #64748b; text-align: center;">Loading...</div>
+            </div>
+            <button id="btnModalCancel" class="btn-modal-cancel" style="margin-top: 20px;">Cancel</button>
+        </div>
+    </div>
+
+
+
+
+    <script type="module" src="/static/dist/smart_notes.bundle.js?v={{ range(1, 9999) | random }}"></script>
+
+    {% include 'partials/footer.html' %}
+</body>
+
+</html>

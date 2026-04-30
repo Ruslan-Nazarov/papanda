@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — Papanda Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #FFF5EC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            border: 2px solid #FFE5B4;
+        }
+
+        .logo {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #F2994A;
+        }
+
+        h2 { font-weight: normal; margin-bottom: 20px; font-size: 1.1em; color: #555; }
+
+        .form-group { margin-bottom: 15px; text-align: left; }
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus {
+            border-color: #F2994A;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #F2994A;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #E08E45;
+        }
+
+        .error { color: #ff5252; margin-bottom: 15px; font-size: 0.9em; height: 1em; }
+        
+        .footer-link {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #888;
+        }
+        .footer-link a { color: #F2994A; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">Papanda</div>
+        <h2>Вход в дашборд</h2>
+        
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% else %}
+        <div class="error"></div>
+        {% endif %}
+
+        <form action="/login" method="post">
+            <div class="form-group">
+                <input type="text" name="username" placeholder="Логин" required autofocus>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Пароль" required>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: -5px; margin-bottom: 20px;">
+                <input type="checkbox" name="remember_me" id="remember_me" style="width: auto; cursor: pointer;">
+                <label for="remember_me" style="color: #666; cursor: pointer; font-size: 0.9em;">Запомнить меня</label>
+            </div>
+            <button type="submit">Войти</button>
+        </form>
+
+        <div class="footer-link">
+            Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+        </div>
+    </div>
+</body>
+</html>
