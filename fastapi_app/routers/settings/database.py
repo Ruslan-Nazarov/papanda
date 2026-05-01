@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Request, status, UploadFile, File, HTTPE
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 import os
 import shutil
-from ...config import settings, COOKIE_NAME
-from ...services.auth import check_auth_dependency
+from ...config import settings
+from ...services.auth import check_auth_dependency, COOKIE_NAME
 from ...services.maintenance_service import MaintenanceService
 from ...dependencies import get_maintenance_service
 from ...logger import logger
