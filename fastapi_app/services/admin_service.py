@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import calendar
 from typing import Optional, List, Dict, Any, Union, Type
 from .. import models
-from ..utils import generate_dates_rrule
+from ..utils import generate_dates_rrule, get_virtual_event_instances, attach_stickers_count
 from ..logger import logger
 
 class AdminService:
@@ -111,7 +111,7 @@ class AdminService:
         records = []
         extra_ctx = {}
 
-        # Специализированная логика для разных моделей
+        # Специализированная логика для разные моделей
         if model_name == 'Event':
             records, extra_ctx = await self._get_events_view(Model, i_month, i_year, i_day, s_search)
         elif model_name == 'Habit':
@@ -149,22 +149,7 @@ class AdminService:
         }
         return ctx
 
-    async def _attach_stickers_count(self, records: List[Any], fk_name: str) -> None:
-        """Вспомогательный метод для прикрепления количества стикеров к записям."""
-        if not records:
-            return
-            
-        record_ids = [r.id for r in records]
-        fk_attr = getattr(models.StickyNote, fk_name)
-        
-        s_res = await self.db.execute(
-            select(fk_attr, func.count(models.StickyNote.id))
-            .where(fk_attr.in_(record_ids), models.StickyNote.finished_at.is_(None))
-            .group_by(fk_attr)
-        )
-        s_map = dict(s_res.all())
-        for r in records:
-            r.stickers_count = s_map.get(r.id, 0)
+
 
     async def _get_events_view(self, Model, month, year, day, search):
         last_day = calendar.monthrange(year, month)[1]
@@ -195,13 +180,12 @@ class AdminService:
         # Для Admin View оставляем ВСЕ физические события (включая клоны)
         physical_events = physical_events_raw
         
-        # 2. Генерация виртуальных экземпляров
-        # Получаем все шаблоны (даже если они за пределами диапазона, но могут порождать события в диапазоне)
+        # 2. Шаблоны
         tmpl_stmt = select(Model).where(Model.recurrence_rule.isnot(None))
         tmpl_res = await self.db.execute(tmpl_stmt)
         templates = tmpl_res.scalars().all()
         
-        # Получаем исключения
+        # 3. Исключения
         exc_res = await self.db.execute(select(models.RecurrenceException))
         all_exceptions = exc_res.scalars().all()
         exc_map = {}
@@ -209,30 +193,15 @@ class AdminService:
             if e.recurrence_id not in exc_map: exc_map[e.recurrence_id] = set()
             exc_map[e.recurrence_id].add(e.exception_date)
 
-        virtual_events = []
-        for tmpl in templates:
-            # Генерируем даты для текущего месяца (плюс-минус запас)
-            dates = generate_dates_rrule(tmpl.date, tmpl.recurrence_rule, tmpl.recurrence_end, end_range.date())
-            exceptions = exc_map.get(tmpl.recurrence_id, set())
-            
-            for d in dates:
-                d_obj = d.date()
-                if start_range <= d <= end_range:
-                    # Подавляем виртуальное, если есть физическое или исключение
-                    if d_obj not in exceptions and (tmpl.recurrence_id, d_obj) not in physical_map:
-                        # Создаем виртуальный объект
-                        virt = models.Event(
-                            id=tmpl.id, 
-                            title=tmpl.title,
-                            date=d,
-                            important=tmpl.important,
-                            done=False,
-                            recurrence_id=tmpl.recurrence_id,
-                            recurrence_rule=tmpl.recurrence_rule,
-                            recurrence_end=tmpl.recurrence_end,
-                            color=tmpl.color
-                        )
-                        virtual_events.append(virt)
+        # Генерируем виртуальные события через хелпер
+        virtual_events = get_virtual_event_instances(
+            templates=templates,
+            physical_map=physical_map,
+            exc_map=exc_map,
+            start_dt=start_range,
+            end_dt=end_range,
+            event_class=models.Event
+        )
 
         # Объединяем
         records = physical_events + virtual_events
@@ -295,14 +264,14 @@ class AdminService:
         query = select(Model).order_by(Model.read.asc(), Model.start_date.desc())
         res = await self.db.execute(query)
         records = list(res.scalars().all())
-        await self._attach_stickers_count(records, 'habit_id')
+        await attach_stickers_count(self.db, records, 'habit_id', models.StickyNote)
         return records
 
     async def _get_tasks_view(self, Model):
         query = select(Model).order_by(Model.done.asc(), Model.created_at.desc())
         res = await self.db.execute(query)
         records = list(res.scalars().all())
-        await self._attach_stickers_count(records, 'task_id')
+        await attach_stickers_count(self.db, records, 'task_id', models.StickyNote)
         return records
 
     async def _get_chronology_view(self, Model, search):
@@ -370,6 +339,7 @@ class AdminService:
         Shows ALL stickers now, but filtered by category if provided.
         """
         from sqlalchemy.orm import selectinload
+        # 1. Base Query with relations
         q = select(Model).options(
             selectinload(Model.task),
             selectinload(Model.habit),
@@ -377,61 +347,42 @@ class AdminService:
             selectinload(Model.event)
         )
         
-        # Filtering logic
-        
-        # We can use 'category' to pass complex filters or add another param. 
-        # For simplicity, let's support 'finished' as a category value for now, 
-        # or just show everything and let the template handle it.
-        # But wait, the user wants to see 'old' ones.
-        
-        if category == 'standalone':
-            q = q.where(Model.task_id.is_(None), Model.habit_id.is_(None), Model.note_id.is_(None), Model.event_id.is_(None), Model.recurrence_id.is_(None))
-        elif category == 'task':
-            q = q.where(Model.task_id.isnot(None))
-        elif category == 'habit':
-            q = q.where(Model.habit_id.isnot(None))
-        elif category == 'note':
-            q = q.where(Model.note_id.isnot(None))
-        elif category == 'event':
-            q = q.where(or_(Model.event_id.isnot(None), Model.recurrence_id.isnot(None)))
-        elif category == 'finished':
-            q = q.where(Model.finished_at.isnot(None))
-        elif category == 'active':
-            q = q.where(Model.finished_at.is_(None))
-        elif category in ['text', 'list']:
-            q = q.where(Model.type == category)
+        # 2. Filtering logic
+        def apply_filters(query):
+            if category == 'standalone':
+                query = query.where(Model.task_id.is_(None), Model.habit_id.is_(None), Model.note_id.is_(None), Model.event_id.is_(None), Model.recurrence_id.is_(None))
+            elif category == 'task':
+                query = query.where(Model.task_id.isnot(None))
+            elif category == 'habit':
+                query = query.where(Model.habit_id.isnot(None))
+            elif category == 'note':
+                query = query.where(Model.note_id.isnot(None))
+            elif category == 'event':
+                query = query.where(or_(Model.event_id.isnot(None), Model.recurrence_id.isnot(None)))
+            elif category == 'finished':
+                query = query.where(Model.finished_at.isnot(None))
+            elif category == 'active':
+                query = query.where(Model.finished_at.is_(None))
+            elif category in ['text', 'list']:
+                query = query.where(Model.type == category)
 
-        if search:
-            q = q.where(or_(
-                Model.text.ilike(f"%{search}%"),
-                Model.title.ilike(f"%{search}%")
-            ))
+            if search:
+                query = query.where(or_(
+                    Model.text.ilike(f"%{search}%"),
+                    Model.title.ilike(f"%{search}%")
+                ))
+            return query
+
+        q = apply_filters(q)
 
         if sort == "title":
             q = q.order_by(Model.title.asc(), Model.created_at.desc())
         else:
             q = q.order_by(Model.created_at.desc())
 
-        # Count total for pagination
+        # 3. Count total for pagination
         total_q = select(func.count(Model.id))
-        if category == 'standalone':
-            total_q = total_q.where(Model.task_id.is_(None), Model.habit_id.is_(None), Model.note_id.is_(None), Model.event_id.is_(None), Model.recurrence_id.is_(None))
-        elif category == 'task':
-            total_q = total_q.where(Model.task_id.isnot(None))
-        elif category == 'habit':
-            total_q = total_q.where(Model.habit_id.isnot(None))
-        elif category == 'note':
-            total_q = total_q.where(Model.note_id.isnot(None))
-        elif category == 'event':
-            total_q = total_q.where(or_(Model.event_id.isnot(None), Model.recurrence_id.isnot(None)))
-        elif category == 'finished':
-            total_q = total_q.where(Model.finished_at.isnot(None))
-        elif category == 'active':
-            total_q = total_q.where(Model.finished_at.is_(None))
-        elif category in ['text', 'list']:
-            total_q = total_q.where(Model.type == category)
-        if search:
-            total_q = total_q.where(or_(Model.text.ilike(f"%{search}%"), Model.title.ilike(f"%{search}%")))
+        total_q = apply_filters(total_q)
             
         total_res = await self.db.execute(total_q)
         total_count = total_res.scalar_one()

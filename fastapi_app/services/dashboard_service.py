@@ -6,18 +6,13 @@ from typing import Optional, List, Set, Tuple, Dict, Any, Union
 
 from ..utils import (
     normalize_date, parse_recurrence_rule, generate_dates_rrule, 
+    get_virtual_event_instances, attach_stickers_count,
     RECURRENCE_HORIZON_DAYS, RECURRENCE_MAX_INSTANCES
 )
 from ..logger import logger
 import uuid
 from sqlalchemy import select, func, delete
 
-def _generate_dates_rrule(start_dt: datetime, rule_str: str, end_date: Optional[date] = None, horizon: date = None) -> List[datetime]:
-    """
-    Генерирует даты повторений через utils.generate_dates_rrule.
-    Оставлен как внутренний хелпер.
-    """
-    return generate_dates_rrule(start_dt, rule_str, end_date, horizon)
 
 class DashboardService:
     """Сервис для работы с главной страницей (Dashboard)."""
@@ -54,18 +49,6 @@ class DashboardService:
                 key = (ev.recurrence_id, d_key)
                 physical_map[key] = ev
 
-        # Получаем исключения для этого диапазона
-        exc_stmt = select(models.RecurrenceException).where(
-            models.RecurrenceException.exception_date >= start_dt.date(),
-            models.RecurrenceException.exception_date <= end_dt.date()
-        )
-        exc_res = await self.db.execute(exc_stmt)
-        all_exc = exc_res.scalars().all()
-        exc_map = {(e.recurrence_id, e.exception_date) for e in all_exc}
-
-        # Фильтруем физические события для отображения (на дашборде только невыполненные)
-        physical_events = [ev for ev in physical_events_raw if ev.done == False]
-        
         # 2. Шаблоны повторяющихся событий
         tmpl_stmt = select(models.Event).where(models.Event.recurrence_rule.isnot(None))
         if only_important:
@@ -74,40 +57,35 @@ class DashboardService:
         tmpl_res = await self.db.execute(tmpl_stmt)
         templates = tmpl_res.scalars().all()
         
-        virtual_events = []
-        for tmpl in templates:
-            # Получаем исключения для этой серии
-            exc_res = await self.db.execute(select(models.RecurrenceException.exception_date).where(models.RecurrenceException.recurrence_id == tmpl.recurrence_id))
-            exceptions = set(exc_res.scalars().all())
-            
-            # Генерируем даты до конца диапазона
-            # Horizon — это конец диапазона
-            dates = _generate_dates_rrule(tmpl.date, tmpl.recurrence_rule, tmpl.recurrence_end, end_dt.date())
-            
-            for d in dates:
-                d_obj = d.date()
-                if start_dt <= d <= end_dt:
-                    # Подавляем виртуальное, если есть физическое или исключение
-                    if d_obj not in exceptions and (tmpl.recurrence_id, d_obj) not in physical_map:
-                        # Создаем виртуальный объект события (без сохранения в БД)
-                        virt = models.Event(
-                            id=tmpl.id, 
-                            title=tmpl.title,
-                            date=d,
-                            important=tmpl.important,
-                            done=False,
-                            recurrence_id=tmpl.recurrence_id,
-                            recurrence_rule=tmpl.recurrence_rule,
-                            recurrence_end=tmpl.recurrence_end,
-                            color=tmpl.color,
-                            position=tmpl.position
-                        )
-                        virt._is_virtual = True 
-                        virtual_events.append(virt)
-                        
+        # 3. Исключения (fetch once for optimization)
+        exc_stmt = select(models.RecurrenceException).where(
+            models.RecurrenceException.exception_date >= start_dt.date(),
+            models.RecurrenceException.exception_date <= end_dt.date()
+        )
+        exc_res = await self.db.execute(exc_stmt)
+        all_exc = exc_res.scalars().all()
+        exc_map = {}
+        for e in all_exc:
+            if e.recurrence_id not in exc_map:
+                exc_map[e.recurrence_id] = set()
+            exc_map[e.recurrence_id].add(e.exception_date)
+
+        # Генерируем виртуальные события через общий хелпер
+        virtual_events = get_virtual_event_instances(
+            templates=templates,
+            physical_map=physical_map,
+            exc_map=exc_map,
+            start_dt=start_dt,
+            end_dt=end_dt,
+            event_class=models.Event
+        )
+
+        # Фильтруем физические события для отображения (на дашборде только невыполненные)
+        physical_events = [ev for ev in physical_events_raw if ev.done == False]
+        
         combined = physical_events + virtual_events
         # Сортировка по позиции и времени
-        combined.sort(key=lambda x: (x.position, x.date))
+        combined.sort(key=lambda x: (x.position or 0, x.date))
         return combined
 
     async def get_index_data(self) -> Dict[str, Any]:
@@ -167,23 +145,7 @@ class DashboardService:
             habits_all = habits_all_res.scalars().all()
             
             # Fetch stickers for these habits
-            habit_ids = [h.id for h in habits_all]
-            if habit_ids:
-                h_stickers_res = await self.db.execute(
-                    select(models.StickyNote)
-                    .where(
-                        models.StickyNote.habit_id.in_(habit_ids),
-                        models.StickyNote.finished_at.is_(None)
-                    )
-                )
-                h_stickers = h_stickers_res.scalars().all()
-                h_sticker_map = {}
-                for s in h_stickers:
-                    if s.habit_id not in h_sticker_map: h_sticker_map[s.habit_id] = []
-                    h_sticker_map[s.habit_id].append(s)
-                
-                for h in habits_all:
-                    h.stickers_count = len(h_sticker_map.get(h.id, []))
+            await attach_stickers_count(self.db, habits_all, 'habit_id', models.StickyNote)
             
             data["habits_all"] = habits_all
         except Exception as e:
@@ -199,23 +161,7 @@ class DashboardService:
             tasks = tasks_res.scalars().all()
             
             # Fetch stickers for these tasks
-            task_ids = [t.id for t in tasks]
-            if task_ids:
-                t_stickers_res = await self.db.execute(
-                    select(models.StickyNote)
-                    .where(
-                        models.StickyNote.task_id.in_(task_ids),
-                        models.StickyNote.finished_at.is_(None)
-                    )
-                )
-                t_stickers = t_stickers_res.scalars().all()
-                t_sticker_map = {}
-                for s in t_stickers:
-                    if s.task_id not in t_sticker_map: t_sticker_map[s.task_id] = []
-                    t_sticker_map[s.task_id].append(s)
-                
-                for t in tasks:
-                    t.stickers_count = len(t_sticker_map.get(t.id, []))
+            await attach_stickers_count(self.db, tasks, 'task_id', models.StickyNote)
             
             data["tasks"] = tasks
         except Exception as e:
@@ -488,12 +434,7 @@ class DashboardService:
             logger.error(f"Error in DashboardService.submit_form: {e}", exc_info=True)
             raise
 
-    async def expand_recurrence_events(self, horizon_date: Optional[date] = None) -> None:
-        """
-        Метод устарел. Генерация теперь происходит динамически в _get_events_for_range.
-        Оставлен для обратной совместимости вызовов.
-        """
-        pass
+
 
 
 
@@ -614,11 +555,11 @@ class DashboardService:
     async def reorder_tasks(self, task_ids: List[int]) -> bool:
         """Обновляет порядок задач."""
         try:
+            res = await self.db.execute(select(models.Task).where(models.Task.id.in_(task_ids)))
+            tasks = {t.id: t for t in res.scalars().all()}
             for index, task_id in enumerate(task_ids):
-                res = await self.db.execute(select(models.Task).where(models.Task.id == task_id))
-                task = res.scalar_one_or_none()
-                if task:
-                    task.position = index
+                if task_id in tasks:
+                    tasks[task_id].position = index
             await self.db.commit()
             return True
         except Exception as e:
@@ -629,11 +570,11 @@ class DashboardService:
     async def reorder_events(self, event_ids: List[int]) -> bool:
         """Обновляет порядок событий."""
         try:
+            res = await self.db.execute(select(models.Event).where(models.Event.id.in_(event_ids)))
+            events = {e.id: e for e in res.scalars().all()}
             for index, event_id in enumerate(event_ids):
-                res = await self.db.execute(select(models.Event).where(models.Event.id == event_id))
-                event = res.scalar_one_or_none()
-                if event:
-                    event.position = index
+                if event_id in events:
+                    events[event_id].position = index
             await self.db.commit()
             return True
         except Exception as e:

@@ -10,7 +10,7 @@ from ..services.auth import check_auth_dependency, get_current_user_from_cookie
 from ..services.dashboard_service import DashboardService
 from ..dependencies import get_dashboard_service
 from ..logger import logger
-from ..utils import parse_date_input
+from ..utils import parse_date_input, is_ajax_request
 from .. import schemas
 from pydantic import ValidationError
 
@@ -159,8 +159,7 @@ async def mark_task_done(
     """Помечает задачу как выполненную."""
     await dashboard_service.mark_task_done(task_id)
 
-    accept_header = request.headers.get("accept", "").lower()
-    if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+    if is_ajax_request(request):
         return JSONResponse(content={"status": "success", "done": True, "message": "Task marked as done"})
 
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
@@ -177,8 +176,7 @@ async def mark_event_done(
     """Помечает событие как выполненное."""
     await dashboard_service.mark_event_done(event_id, event_date=date)
     
-    accept_header = request.headers.get("accept", "").lower()
-    if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+    if is_ajax_request(request):
         return JSONResponse(content={"status": "success", "done": True, "message": "Event marked as done"})
         
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
@@ -207,8 +205,7 @@ async def mark_habit_done(
     """Помечает привычку как выполненную сегодня."""
     await dashboard_service.mark_habit_done(habit_id)
 
-    accept_header = request.headers.get("accept", "").lower()
-    if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+    if is_ajax_request(request):
         return JSONResponse(content={"status": "success", "done": True, "message": "Habit marked as done"})
 
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
@@ -227,14 +224,7 @@ async def delete_event(
     """Удаляет событие (или серию событий)."""
     await dashboard_service.delete_event(event_id, delete_mode, event_date)
         
-    accept_header = request.headers.get("accept", "").lower()
-    is_ajax = (
-        "application/json" in accept_header or
-        request.headers.get("X-Requested-With") == "XMLHttpRequest" or
-        delete_mode is not None
-    )
-    
-    if is_ajax:
+    if is_ajax_request(request) or delete_mode is not None:
         return JSONResponse(content={"status": "success", "message": "Event deleted"})
     
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)

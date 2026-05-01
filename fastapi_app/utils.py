@@ -1,5 +1,16 @@
 from datetime import datetime, date
 from typing import Optional, Union
+from fastapi import Request
+
+def is_ajax_request(request: Request) -> bool:
+    """
+    Проверяет, является ли запрос AJAX-запросом (JSON или X-Requested-With).
+    """
+    accept_header = request.headers.get("accept", "").lower()
+    return (
+        "application/json" in accept_header or 
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+    )
 
 def parse_date_input(d_str: Optional[Union[str, date, datetime]]) -> Union[date, datetime]:
     """
@@ -135,3 +146,72 @@ def generate_dates_rrule(start_dt: datetime, rule_str: str, end_date: Optional[d
     if all_dates and all_dates[0] == start_dt:
         return all_dates[1:]
     return all_dates
+
+def get_virtual_event_instances(
+    templates: list,
+    physical_map: dict,
+    exc_map: dict,
+    start_dt: datetime,
+    end_dt: datetime,
+    event_class: type
+) -> list:
+    """
+    Генерирует виртуальные экземпляры событий на основе шаблонов, 
+    подавляя те, для которых есть физические клоны или исключения.
+    """
+    virtual_events = []
+    for tmpl in templates:
+        # Генерируем даты повторений
+        dates = generate_dates_rrule(
+            tmpl.date, 
+            tmpl.recurrence_rule, 
+            tmpl.recurrence_end, 
+            end_dt.date()
+        )
+        
+        series_exceptions = exc_map.get(tmpl.recurrence_id, set())
+        
+        for d in dates:
+            d_obj = d.date()
+            if start_dt <= d <= end_dt:
+                # Подавляем виртуальное, если есть физическое или исключение
+                if d_obj not in series_exceptions and (tmpl.recurrence_id, d_obj) not in physical_map:
+                    virt = event_class(
+                        id=tmpl.id,
+                        title=tmpl.title,
+                        date=d,
+                        important=tmpl.important,
+                        done=False,
+                        recurrence_id=tmpl.recurrence_id,
+                        recurrence_rule=tmpl.recurrence_rule,
+                        recurrence_end=tmpl.recurrence_end,
+                        color=tmpl.color,
+                        position=getattr(tmpl, 'position', 0)
+                    )
+                    virt._is_virtual = True
+                    virtual_events.append(virt)
+    return virtual_events
+
+async def attach_stickers_count(db, records: list, fk_name: str, sticky_model: type) -> None:
+    """
+    Универсальный хелпер для прикрепления количества активных стикеров к списку объектов.
+    """
+    if not records:
+        return
+        
+    from sqlalchemy import select, func
+    record_ids = [r.id for r in records if hasattr(r, 'id')]
+    if not record_ids:
+        return
+
+    fk_attr = getattr(sticky_model, fk_name)
+    s_res = await db.execute(
+        select(fk_attr, func.count(sticky_model.id))
+        .where(fk_attr.in_(record_ids), sticky_model.finished_at.is_(None))
+        .group_by(fk_attr)
+    )
+    s_map = dict(s_res.all())
+    for r in records:
+        r.stickers_count = s_map.get(getattr(r, 'id', None), 0)
+
+

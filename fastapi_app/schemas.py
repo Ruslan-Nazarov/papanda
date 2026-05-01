@@ -1,4 +1,3 @@
-# NOTE: schemas defined here are currently unused - kept for future API use
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime, date
 from typing import Optional, List, Any

@@ -11,6 +11,15 @@ from .. import models
 from .settings_service import get_setting, set_settings_batch
 from ..logger import logger
 
+# Список известных кодов языков и их синонимов для импорта из Excel
+LANG_ALIASES = {
+    'word': 'en', 'eng': 'en', 'english': 'en',
+    'de': 'de', 'german': 'de', 'deutsch': 'de',
+    'it': 'it', 'italian': 'it', 'italiano': 'it',
+    'ru': 'ru', 'russian': 'ru', 'русский': 'ru',
+    'meaning': 'meaning', 'context': 'meaning', 'значение': 'meaning'
+}
+
 _state_locks: Dict[asyncio.AbstractEventLoop, asyncio.Lock] = {}
 
 def _get_state_lock() -> asyncio.Lock:
@@ -44,7 +53,7 @@ class StateManager:
             }
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
 
             def read_excel():
                 wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
@@ -72,20 +81,11 @@ class StateManager:
             header = rows[0]
             col_map: Dict[int, str] = {} # index -> lang_code
             
-            # Список известных кодов и их синонимов
-            lang_aliases = {
-                'word': 'en', 'eng': 'en', 'english': 'en',
-                'de': 'de', 'german': 'de', 'deutsch': 'de',
-                'it': 'it', 'italian': 'it', 'italiano': 'it',
-                'ru': 'ru', 'russian': 'ru', 'русский': 'ru',
-                'meaning': 'meaning', 'context': 'meaning', 'значение': 'meaning'
-            }
-
             has_header = False
             for i, cell in enumerate(header):
                 val = clean_excel_val(cell).lower()
-                if val in lang_aliases:
-                    col_map[i] = lang_aliases[val]
+                if val in LANG_ALIASES:
+                    col_map[i] = LANG_ALIASES[val]
                     has_header = True
                 elif len(val) == 2: # Предполагаем, что 2 буквы - это код языка (fr, es, la и т.д.)
                     col_map[i] = val
@@ -193,7 +193,7 @@ class StateManager:
             # Подготавливаем словарь для быстрого поиска
             db_map = {r.word: r for r in db_records}
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
 
             def process_excel():
                 wb = openpyxl.load_workbook(excel_path)
@@ -204,17 +204,10 @@ class StateManager:
 
                 # Определяем маппинг колонок по заголовку
                 header = [clean_excel_val(c.value).lower() for c in rows[0]]
-                lang_aliases = {
-                    'word': 'en', 'eng': 'en', 'english': 'en',
-                    'de': 'de', 'german': 'de', 'deutsch': 'de',
-                    'it': 'it', 'italian': 'it', 'italiano': 'it',
-                    'ru': 'ru', 'russian': 'ru', 'русский': 'ru',
-                    'meaning': 'meaning', 'context': 'meaning', 'значение': 'meaning'
-                }
                 
                 col_map: Dict[int, str] = {}
                 for i, val in enumerate(header):
-                    if val in lang_aliases: col_map[i] = lang_aliases[val]
+                    if val in LANG_ALIASES: col_map[i] = LANG_ALIASES[val]
                     elif len(val) == 2: col_map[i] = val
 
                 updated_file_count = 0

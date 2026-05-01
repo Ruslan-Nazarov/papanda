@@ -34,9 +34,7 @@ async def index(
     Отображает текущие задачи, события, привычки и слова для изучения.
     """
     db = dashboard_service.db
-    # Генерируем экземпляры повторяющихся событий
-    await dashboard_service.expand_recurrence_events()
-    
+    # Генерируем контекст для слов и винк
     ctx = await state_manager.get_runtime_context()
     today_obj = datetime.now()
     today_actual = today_obj.date()            # актуальная дата (для шапки)

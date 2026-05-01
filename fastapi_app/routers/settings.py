@@ -16,7 +16,7 @@ from .. import models
 from ..services.state_manager import StateManager
 from ..services.word_service import WordService
 from ..services.settings_service import get_setting, set_setting, initialize_language_settings, get_settings_context
-from ..utils import parse_date_input
+from ..utils import parse_date_input, is_ajax_request
 from ..config import settings, BASE_DIR, templates
 from ..services.auth import (
     check_auth_dependency, get_current_user_from_cookie,
@@ -179,7 +179,6 @@ async def db_view(
         eff_year = i_year or now.year
         last_day = calendar.monthrange(eff_year, eff_month)[1]
         target_horizon = date(eff_year, eff_month, last_day) + timedelta(days=10)
-        await dashboard_service.expand_recurrence_events(horizon_date=target_horizon)
 
     try:
         ctx = await as_service.get_db_view_context(
@@ -323,8 +322,7 @@ async def delete_record(
         await db.execute(stmt)
         await db.commit()
         
-    accept_header = request.headers.get("accept", "").lower()
-    if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+    if is_ajax_request(request):
         return JSONResponse(content={"status": "success", "message": f"{model_name} deleted"})
         
     return RedirectResponse(url=f"/db_view/{model_name}", status_code=status.HTTP_303_SEE_OTHER)
