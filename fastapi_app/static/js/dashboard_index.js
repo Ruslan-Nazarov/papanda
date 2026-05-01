@@ -12,26 +12,61 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Handled by ui_helpers.js
 
 
-    // ===== Intercept mark_event_done forms for Optimistic UI =====
+    // ===== Intercept mark_done forms for Optimistic UI =====
     document.addEventListener('submit', async (e) => {
         const form = e.target;
-        if (form.action && form.action.includes('/mark_event_done/')) {
+        if (!form.action) return;
+
+        const isEvent = form.action.includes('/mark_event_done/');
+        const isTask = form.action.includes('/mark_done/');
+        const isHabit = form.action.includes('/mark_as_done/');
+
+        if (isEvent || isTask || isHabit) {
             e.preventDefault();
-            const btn = form.querySelector('.event-done-btn');
+            const btn = form.querySelector('button, input[type="submit"]');
+            const li = form.closest('li, tr');
+
             try {
-                const resp = await fetch(form.action, { method: 'POST', headers: { 'Accept': 'application/json' } });
+                const resp = await fetch(form.action, { 
+                    method: 'POST', 
+                    headers: { 'Accept': 'application/json' } 
+                });
+                
                 if (resp.ok) {
                     const data = await resp.json();
-                    if (btn) {
-                        btn.style.color = data.done ? '#10B981' : '#ccc';
-                        btn.style.borderColor = data.done ? '#10B981' : '#ccc';
+                    const isDone = data.done || data.status === 'success';
+
+                    if (isDone) {
+                        // Success Toast
+                        let msg = 'Completed';
+                        if (isEvent) msg = 'Event completed';
+                        if (isTask) msg = 'Task completed';
+                        if (isHabit) msg = 'Habit updated';
+                        showToast(msg, 'success');
+
+                        // UI Feedback
+                        if (isEvent || isTask) {
+                            if (li) {
+                                li.classList.add('fade-out');
+                                setTimeout(() => li.remove(), 400);
+                            }
+                        } else if (isHabit) {
+                            if (btn) {
+                                btn.disabled = true;
+                                btn.style.opacity = '0.5';
+                                btn.value = '✓';
+                            }
+                            // Optionally update the counter column if we had the data
+                            // For now, simple feedback is enough as per "audit/debug" request
+                        }
+                    } else {
+                        showToast('Status: Pending', 'info');
                     }
-                    showToast(data.done ? 'Event completed' : 'Event pending', 'success');
                 } else {
-                    showToast('Failed to update event', 'error');
+                    showToast('Failed to update status', 'error');
                 }
             } catch (err) {
-                console.error(err);
+                console.error('[OptimisticUI] Error:', err);
                 showToast('Network error', 'error');
             }
         }

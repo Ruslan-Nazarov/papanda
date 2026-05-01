@@ -45,6 +45,7 @@
                                             method="post"
                                             style="margin-right: 5px"
                                         >
+                                            <input type="hidden" name="date" value="{{ event.date.strftime('%Y-%m-%d') }}">
                                             <button
                                                 type="submit"
                                                 class="event-done-btn"

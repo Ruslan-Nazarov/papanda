@@ -35,9 +35,8 @@ class DashboardService:
         """
         Возвращает список событий (физических и виртуальных) для указанного диапазона.
         """
-        # 1. Физические события (одиночные или уже выполненные клоны)
+        # 1. Физические события (включая выполненные клоны)
         stmt = select(models.Event).where(
-            models.Event.done == False,
             models.Event.date >= start_dt,
             models.Event.date <= end_dt
         )
@@ -47,6 +46,14 @@ class DashboardService:
         res = await self.db.execute(stmt.order_by(models.Event.position, models.Event.date))
         physical_events_raw = list(res.scalars().all())
         
+        # Индекс физических событий по (recurrence_id, date) для подавления виртуальных
+        physical_map = {}
+        for ev in physical_events_raw:
+            if ev.recurrence_id:
+                d_key = ev.date.date() if isinstance(ev.date, datetime) else ev.date
+                key = (ev.recurrence_id, d_key)
+                physical_map[key] = ev
+
         # Получаем исключения для этого диапазона
         exc_stmt = select(models.RecurrenceException).where(
             models.RecurrenceException.exception_date >= start_dt.date(),
@@ -56,10 +63,8 @@ class DashboardService:
         all_exc = exc_res.scalars().all()
         exc_map = {(e.recurrence_id, e.exception_date) for e in all_exc}
 
-        physical_events = [
-            ev for ev in physical_events_raw 
-            if not ev.recurrence_id or (ev.recurrence_id, ev.date.date()) not in exc_map
-        ]
+        # Фильтруем физические события для отображения (на дашборде только невыполненные)
+        physical_events = [ev for ev in physical_events_raw if ev.done == False]
         
         # 2. Шаблоны повторяющихся событий
         tmpl_stmt = select(models.Event).where(models.Event.recurrence_rule.isnot(None))
@@ -80,8 +85,10 @@ class DashboardService:
             dates = _generate_dates_rrule(tmpl.date, tmpl.recurrence_rule, tmpl.recurrence_end, end_dt.date())
             
             for d in dates:
+                d_obj = d.date()
                 if start_dt <= d <= end_dt:
-                    if d.date() not in exceptions:
+                    # Подавляем виртуальное, если есть физическое или исключение
+                    if d_obj not in exceptions and (tmpl.recurrence_id, d_obj) not in physical_map:
                         # Создаем виртуальный объект события (без сохранения в БД)
                         virt = models.Event(
                             id=tmpl.id, 
@@ -539,13 +546,47 @@ class DashboardService:
             logger.error(f"Error marking task {task_id} done: {e}")
             raise
 
-    async def mark_event_done(self, event_id: int) -> bool:
+    async def mark_event_done(self, event_id: int, event_date: Optional[str] = None) -> bool:
         """Помечает событие как выполненное."""
         try:
             res = await self.db.execute(select(models.Event).where(models.Event.id == event_id))
             event = res.scalar_one_or_none()
+            
             if event:
-                event.done = True
+                if event.recurrence_rule and event_date:
+                    # Это шаблон повторяющегося события, а мы помечаем конкретный день
+                    # Создаем физический клон с done=True
+                    target_date = date.fromisoformat(event_date)
+                    
+                    # Проверяем, не существует ли уже такой клон
+                    existing_clone_res = await self.db.execute(
+                        select(models.Event).where(
+                            models.Event.recurrence_id == event.recurrence_id,
+                            func.date(models.Event.date) == target_date
+                        )
+                    )
+                    existing_clone = existing_clone_res.scalar_one_or_none()
+                    
+                    if existing_clone:
+                        existing_clone.done = True
+                    else:
+                        # Сохраняем время из оригинального шаблона, меняем только дату
+                        event_time = event.date.time() if isinstance(event.date, datetime) else datetime.min.time()
+                        new_event = models.Event(
+                            title=event.title,
+                            date=datetime.combine(target_date, event_time),
+                            important=event.important,
+                            done=True,
+                            recurrence_id=event.recurrence_id,
+                            recurrence_rule=None, # Это физический экземпляр
+                            color=event.color,
+                            position=event.position
+                        )
+                        self.db.add(new_event)
+                else:
+                    # Одиночное событие или уже физический клон
+                    event.done = True
+                
                 await self.db.commit()
                 return True
             return False

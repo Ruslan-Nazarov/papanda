@@ -180,11 +180,20 @@ class AdminService:
             if day:
                 query = query.where(extract('day', Model.date) == day)
         
-        # Скрываем клоны повторяющихся событий (оставляем только шаблоны или одиночные)
-        query = query.where(or_(Model.recurrence_id.is_(None), Model.recurrence_rule.isnot(None)))
-        
         res = await self.db.execute(query.order_by(Model.date.asc()))
-        physical_events = list(res.scalars().all())
+        physical_events_raw = list(res.scalars().all())
+        
+        # Индекс физических событий по (recurrence_id, date)
+        physical_map = {}
+        for ev in physical_events_raw:
+            if ev.recurrence_id:
+                # Используем только дату (без времени) для ключа
+                d_key = ev.date.date() if isinstance(ev.date, datetime) else ev.date
+                key = (ev.recurrence_id, d_key)
+                physical_map[key] = ev
+        
+        # Для Admin View оставляем ВСЕ физические события (включая клоны)
+        physical_events = physical_events_raw
         
         # 2. Генерация виртуальных экземпляров
         # Получаем все шаблоны (даже если они за пределами диапазона, но могут порождать события в диапазоне)
@@ -207,8 +216,10 @@ class AdminService:
             exceptions = exc_map.get(tmpl.recurrence_id, set())
             
             for d in dates:
+                d_obj = d.date()
                 if start_range <= d <= end_range:
-                    if d.date() not in exceptions:
+                    # Подавляем виртуальное, если есть физическое или исключение
+                    if d_obj not in exceptions and (tmpl.recurrence_id, d_obj) not in physical_map:
                         # Создаем виртуальный объект
                         virt = models.Event(
                             id=tmpl.id, 

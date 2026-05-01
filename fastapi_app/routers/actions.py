@@ -151,12 +151,18 @@ async def edit_chrono_json(
 
 @router.post("/mark_done/{task_id}")
 async def mark_task_done(
+    request: Request,
     task_id: int,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
     user: Any = Depends(check_auth_dependency),
-) -> RedirectResponse:
+) -> Any:
     """Помечает задачу как выполненную."""
     await dashboard_service.mark_task_done(task_id)
+
+    accept_header = request.headers.get("accept", "").lower()
+    if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JSONResponse(content={"status": "success", "done": True, "message": "Task marked as done"})
+
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -164,15 +170,16 @@ async def mark_task_done(
 async def mark_event_done(
     request: Request,
     event_id: int,
+    date: Optional[str] = Form(None),
     dashboard_service: DashboardService = Depends(get_dashboard_service),
     user: Any = Depends(check_auth_dependency),
 ) -> Any:
     """Помечает событие как выполненное."""
-    await dashboard_service.mark_event_done(event_id)
+    await dashboard_service.mark_event_done(event_id, event_date=date)
     
     accept_header = request.headers.get("accept", "").lower()
     if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JSONResponse(content={"status": "success", "message": "Event marked as done"})
+        return JSONResponse(content={"status": "success", "done": True, "message": "Event marked as done"})
         
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -192,12 +199,18 @@ async def toggle_event_done(
 
 @router.post("/mark_as_done/{habit_id}")
 async def mark_habit_done(
+    request: Request,
     habit_id: int,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
     user: Any = Depends(check_auth_dependency),
-) -> RedirectResponse:
+) -> Any:
     """Помечает привычку как выполненную сегодня."""
     await dashboard_service.mark_habit_done(habit_id)
+
+    accept_header = request.headers.get("accept", "").lower()
+    if "application/json" in accept_header or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JSONResponse(content={"status": "success", "done": True, "message": "Habit marked as done"})
+
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 

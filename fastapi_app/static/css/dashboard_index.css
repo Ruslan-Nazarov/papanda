@@ -1126,4 +1126,11 @@ rtical;
 
             .note-pin-btn.active {
                 color: #f59e0b !important;
-            }
+            }
+
+            .fade-out {
+                opacity: 0;
+                transform: translateX(20px);
+                transition: opacity 0.4s ease, transform 0.4s ease;
+                pointer-events: none;
+            }

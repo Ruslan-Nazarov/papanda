@@ -1,1 +1,0 @@
-('kidnap', 'kidnap', '{"en": true, "it": false, "de": false}', 0, 'похищение', 'rapire', 'entführen')
