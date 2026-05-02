@@ -13,6 +13,9 @@ from .task_service import TaskService
 from .habit_service import HabitService
 from .chronology_service import ChronologyService
 from .wink_service import WinkService
+from .sticky_note_service import StickyNoteService
+from .note_service import NoteService
+from .observation_service import ObservationService
 
 class DashboardService:
     """
@@ -27,6 +30,9 @@ class DashboardService:
         self.habits = HabitService(db)
         self.chronology = ChronologyService(db)
         self.winks = WinkService(db)
+        self.sticky_notes = StickyNoteService(db)
+        self.notes = NoteService(db)
+        self.observations_service = ObservationService(db)
 
     async def get_index_data(self) -> Dict[str, Any]:
         """Собирает все данные для главной страницы."""
@@ -90,60 +96,19 @@ class DashboardService:
 
         # 4. Стикеры (Standalone Sticky Thoughts)
         try:
-            stickers_res = await self.db.execute(
-                select(models.StickyNote)
-                .options(selectinload(models.StickyNote.note))
-                .where(
-                    models.StickyNote.finished_at.is_(None),
-                    models.StickyNote.event_id.is_(None),
-                    models.StickyNote.recurrence_id.is_(None),
-                    models.StickyNote.task_id.is_(None),
-                    models.StickyNote.habit_id.is_(None),
-                    models.StickyNote.note_id.is_(None),
-                    models.StickyNote.smart_note_id.is_(None)
-                )
-                .order_by(models.StickyNote.position.asc(), models.StickyNote.created_at.desc())
-            )
-            data["stickers"] = stickers_res.scalars().all()
+            data["stickers"] = await self.sticky_notes.get_active_notes()
         except Exception as e:
             logger.error(f"Error fetching sticky notes: {e}")
 
         # 5. Обследования (Observation Tree)
         try:
-            obs_res = await self.db.execute(select(models.Observation).order_by(func.time(models.Observation.created_at).asc()))
-            all_observations = obs_res.scalars().all()
-            start_of_week_dt = datetime.combine(today_obj - timedelta(days=today_obj.weekday()), datetime.min.time())
-
-            if all_observations:
-                logs_res = await self.db.execute(
-                    select(models.ObservationLog)
-                    .where(models.ObservationLog.observation_id.in_([o.id for o in all_observations]), models.ObservationLog.done_at >= start_of_week_dt)
-                )
-                logs_by_obs = {}
-                for log in logs_res.scalars().all():
-                    logs_by_obs.setdefault(log.observation_id, []).append(log.done_at.weekday())
-
-                for obs in all_observations:
-                    data["observations"].append({
-                        "id": obs.id, "text": obs.text, "priority": obs.priority, "is_main": obs.is_main,
-                        "status": getattr(obs, "status", "periodic"), "created_at": obs.created_at,
-                        "done_days": logs_by_obs.get(obs.id, [])
-                    })
+            data["observations"] = await self.observations_service.get_dashboard_observations(today_obj)
         except Exception as e:
             logger.error(f"Error fetching observations: {e}")
 
         # 6. Закрепленные заметки
         try:
-            pinned_res = await self.db.execute(
-                select(models.Notes)
-                .options(selectinload(models.Notes.stickers))
-                .where(models.Notes.is_pinned == True)
-                .order_by(models.Notes.created_at.desc())
-            )
-            data["pinned_notes"] = pinned_res.scalars().all()
-            for n in data["pinned_notes"]:
-                n.preview = (n.note[:100] + '...') if len(n.note) > 100 else n.note
-                n.title = f"[{n.category}]" if n.category else f"Note #{n.id}"
+            data["pinned_notes"] = await self.notes.get_pinned_notes()
         except Exception as e:
             logger.error(f"Error fetching pinned_notes: {e}")
 

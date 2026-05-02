@@ -14,11 +14,11 @@
 .back-link {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    color: #888;
+    gap: var(--spacing-1);
+    color: var(--color-text-muted);
     text-decoration: none;
-    margin-bottom: 20px;
-    font-weight: bold;
+    margin-bottom: var(--spacing-5);
+    font-weight: 700;
 }
 .back-link:hover { color: var(--color-text-dark); }
 
@@ -32,9 +32,9 @@
 .note-header {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 15px 30px;
-    background: #fff;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-4) var(--spacing-8);
+    background: var(--color-bg-white);
     z-index: 10;
 }
 
@@ -50,28 +50,28 @@
 .note-title-input::placeholder { color: #cbd5e1; }
 
 .btn-save-note {
-    background: #27ae60;
-    color: white;
+    background: var(--color-success);
+    color: var(--color-white);
     border: none;
     padding: 8px 20px;
-    border-radius: 8px;
-    font-weight: bold;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background var(--transition-base);
 }
-.btn-save-note:hover { background: #2196f3; }
+.btn-save-note:hover { background: var(--color-success-dark); }
 
 .btn-delete-note {
-    background: #e74c3c;
-    color: white;
+    background: var(--color-error);
+    color: var(--color-white);
     border: none;
     padding: 8px 20px;
-    border-radius: 8px;
-    font-weight: bold;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background var(--transition-base);
 }
-.btn-delete-note:hover { background: #c0392b; }
+.btn-delete-note:hover { background: var(--color-error-dark); }
 
 /* --- Canvas Grid Layout (Fixed Step 17) --- */
 .note-canvas {
@@ -90,18 +90,18 @@
     position: absolute;
     top: 0; bottom: 0; left: 50%;
     width: 1px;
-    background: #cbd5e1;
+    background: var(--color-border-medium);
     transform: translateX(-50%);
     pointer-events: none;
     z-index: 1;
 }
 
 .note-block {
-    padding: 15px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    padding: var(--spacing-4);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     position: relative;
     z-index: 2;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -132,10 +132,10 @@ math-field::part(menu-toggle) {
 /* --- Inline Editor Container --- */
 .inline-editor {
     position: absolute;
-    background: white;
-    border: 2px solid #3b82f6;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    background: var(--color-bg-white);
+    border: 2px solid var(--color-blue);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
     z-index: 100;
     width: 480px;
     min-width: 320px;
@@ -147,15 +147,15 @@ math-field::part(menu-toggle) {
 }
 
 .editor-drag-handle {
-    background: #f1f5f9;
+    background: var(--color-bg-subtle);
     padding: 8px 15px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--color-border);
     cursor: grab;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.85em;
-    color: #64748b;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
     user-select: none;
 }
 .editor-drag-handle:active { cursor: grabbing; }
@@ -168,9 +168,9 @@ math-field::part(menu-toggle) {
 .editor-header-controls button:hover { color: #3b82f6; }
 
 #btnBoldFormat {
-    background: #4f46e5;
-    color: white;
-    border-radius: 6px;
+    background: var(--color-indigo);
+    color: var(--color-white);
+    border-radius: var(--radius-sm);
     padding: 3px 10px;
     font-size: 1em;
     font-weight: 800;
@@ -213,10 +213,10 @@ math-field.math-node:focus-within {
    или оставляем её для удобства. Пока оставим для максимальной функциональности. */
 math-field:not(:defined) {
     display: inline-block;
-    border: 1px dashed #f87171;
+    border: 1px dashed var(--color-error);
     min-width: 40px;
     min-height: 1.5em;
-    background: #fee2e2;
+    background: var(--color-error-light);
 }
 math-field:not(:defined)::after {
     content: "MathLive loading...";
@@ -234,33 +234,33 @@ math-field:not(:defined)::after {
 
 .formula-sidebar {
     width: 250px;
-    background: #ffffff;
-    border-right: 1px solid #e2e8f0;
-    padding: 20px;
+    background: var(--color-bg-white);
+    border-right: 1px solid var(--color-border);
+    padding: var(--spacing-5);
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: var(--spacing-4);
 }
 
 .formula-sidebar label {
-    font-size: 0.85em;
-    font-weight: 600;
-    color: #475569;
-    margin-bottom: 5px;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--color-text-medium);
+    margin-bottom: var(--spacing-1);
     display: block;
 }
 
 .formula-hint {
-    font-size: 0.8em;
-    color: #94a3b8;
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
     line-height: 1.4;
-    margin-bottom: 10px;
+    margin-bottom: var(--spacing-3);
 }
 
 .formula-editor-container {
     flex: 1;
-    padding: 30px;
-    background: #f8fafc;
+    padding: var(--spacing-8);
+    background: var(--color-bg-surface);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -271,25 +271,25 @@ math-field:not(:defined)::after {
     width: 100%;
     max-width: 600px;
     font-size: 24px;
-    padding: 15px;
-    background: white;
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding: var(--spacing-4);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     outline: none !important; /* Reset focus ring */
 }
 
 .formula-field:focus-within {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px var(--color-blue-glow);
 }
 
 .smart-formula {
-    padding: 15px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin: 10px 0;
+    padding: var(--spacing-4);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin: var(--spacing-3) 0;
     display: block;
     cursor: pointer;
     text-align: center;
@@ -313,19 +313,19 @@ math-field:not(:defined)::after {
 .markup-toolbar {
     display: flex;
     justify-content: flex-end;
-    padding: 6px 10px 4px;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
+    padding: var(--spacing-2) var(--spacing-3);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-surface);
 }
 
 .btn-copy-word {
-    background: #4f46e5;
-    color: white;
+    background: var(--color-indigo);
+    color: var(--color-white);
     border: none;
-    border-radius: 7px;
+    border-radius: var(--radius-sm);
     padding: 5px 14px;
-    font-size: 0.82em;
-    font-weight: 600;
+    font-size: var(--text-xs);
+    font-weight: 700;
     cursor: pointer;
     transition: background 0.2s;
     white-space: nowrap;
@@ -344,31 +344,31 @@ math-field:not(:defined)::after {
 .editor-tabs {
     display: flex !important;
     flex-direction: row !important;
-    background: #f8fafc;
-    border-bottom: 2px solid #e2e8f0;
-    padding: 0 10px;
+    background: var(--color-bg-surface);
+    border-bottom: 2px solid var(--color-border);
+    padding: 0 var(--spacing-3);
     width: 100%;
 }
 .editor-tab {
     padding: 12px 20px;
     cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 600;
-    color: #64748b;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    transition: all var(--transition-base);
     user-select: none;
     position: relative;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
 }
 .editor-tab:hover {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
+    color: var(--color-blue);
+    background: var(--color-blue-glow);
 }
 .editor-tab.active {
-    color: #3b82f6;
-    border-bottom-color: #3b82f6;
-    background: #fff;
+    color: var(--color-blue);
+    border-bottom-color: var(--color-blue);
+    background: var(--color-bg-white);
 }
 
 .tab-content {
@@ -376,8 +376,8 @@ math-field:not(:defined)::after {
     flex: 1;
     flex-direction: column;
     min-height: 0;
-    background: white;
-    border-top: 1px solid #f1f5f9;
+    background: var(--color-bg-white);
+    border-top: 1px solid var(--color-border-light);
 }
 .tab-content.active { display: flex; }
 
@@ -387,8 +387,8 @@ math-field:not(:defined)::after {
     display: flex;
     flex-direction: column;
     min-height: 250px;
-    background: #fff;
-    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    background: var(--color-bg-white);
+    font-family: var(--font-base);
     position: relative;
     cursor: text !important;
     pointer-events: auto !important;
@@ -433,13 +433,13 @@ math-field:not(:defined)::after {
 /* --- Bubble Menu (Floating) --- */
 .bubble-menu {
     display: flex;
-    background-color: #1e293b; /* Темный фон */
+    background-color: var(--color-text-dark); 
     padding: 4px;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
     gap: 2px;
     z-index: 1000;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--color-overlay-light);
 }
 
 .bubble-btn {
@@ -472,8 +472,8 @@ math-field:not(:defined)::after {
 .math-menu {
     display: flex;
     flex-direction: column;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--color-bg-surface);
+    border-bottom: 1px solid var(--color-border);
     padding: 12px;
     animation: slideDown 0.2s ease-out;
 }
@@ -504,8 +504,8 @@ math-field:not(:defined)::after {
 
 .math-tab:hover { color: #64748b; }
 .math-tab.active {
-    color: #3b82f6;
-    border-bottom: 2px solid #3b82f6;
+    color: var(--color-blue);
+    border-bottom: 2px solid var(--color-blue);
 }
 
 .math-palette {
@@ -515,24 +515,24 @@ math-field:not(:defined)::after {
 }
 
 .math-symbol-btn {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     padding: 4px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-base);
     display: flex;
     align-items: center;
     justify-content: center;
     min-width: 44px;
     height: 44px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-sm);
 }
 
 .math-symbol-btn:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    border-color: var(--color-blue);
+    background: var(--color-blue-light);
+    box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
 
@@ -546,10 +546,10 @@ math-field:not(:defined)::after {
 
 /* --- Math Context Menu (Step 3 Extension) --- */
 .math-context-menu {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
     min-width: 200px;
     padding: 6px 0;
     animation: fadeInScale 0.15s ease-out;
@@ -636,9 +636,9 @@ math-field:not(:defined)::after {
 
 .graph-input:focus {
     outline: none;
-    border-color: #3b82f6;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    border-color: var(--color-blue);
+    background: var(--color-bg-white);
+    box-shadow: 0 0 0 4px var(--color-blue-glow);
 }
 
 .graph-btn-plot {
@@ -653,7 +653,7 @@ math-field:not(:defined)::after {
 }
 
 .graph-btn-plot:hover {
-    background: #2563eb;
+    background: var(--color-blue-dark);
     transform: translateY(-1px);
 }
 
@@ -689,8 +689,8 @@ math-field:not(:defined)::after {
 }
 
 .graph-btn-insert:hover {
-    background: #047857;
-    box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.2);
+    background: var(--color-success-dark);
+    box-shadow: 0 10px 15px -3px var(--color-success-glow);
 }
 
 /* Стили для новых зон (График, Фигуры) */
@@ -725,12 +725,12 @@ math-field:not(:defined)::after {
 }
 .graph-sidebar {
     width: 250px;
-    background: #ffffff;
-    border-right: 1px solid #e2e8f0;
-    padding: 20px;
+    background: var(--color-bg-white);
+    border-right: 1px solid var(--color-border);
+    padding: var(--spacing-5);
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: var(--spacing-4);
 }
 .graph-sidebar label {
     font-size: 0.85em;
@@ -777,7 +777,7 @@ math-field:not(:defined)::after {
     max-width: 100%;
 }
 .smart-graph:hover {
-    border-color: #3b82f6;
+    border-color: var(--color-blue);
 }
 .smart-graph img {
     border-radius: 6px;
@@ -793,7 +793,7 @@ math-field:not(:defined)::after {
     font-weight: bold;
     animation: slideInRight 0.2s ease-out;
 }
-#btnInsertGraph:hover { background: #2196f3; }
+#btnInsertGraph:hover { background: var(--color-blue); }
 
 /* --- Toolbar --- */
 .editor-toolbar {
@@ -806,21 +806,21 @@ math-field:not(:defined)::after {
     flex-wrap: wrap;
 }
 .editor-toolbar button {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     padding: 6px 12px;
-    font-size: 0.9em;
-    font-weight: 500;
-    color: #475569;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-text-medium);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
 }
 .editor-toolbar button:hover {
-    border-color: #3b82f6;
-    color: #3b82f6;
-    background: #f0f7ff;
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+    background: var(--color-blue-light);
 }
 
 /* --- Editor Fields --- */
@@ -831,12 +831,12 @@ math-field:not(:defined)::after {
     font-family: inherit;
     min-height: 200px;
     font-size: 1.05em;
-    color: #334155;
-    padding: 20px;
+    color: var(--color-text-body);
+    padding: var(--spacing-5);
     box-sizing: border-box;
     flex: 1;
     overflow-y: auto;
-    background: white;
+    background: var(--color-bg-white);
     line-height: 1.7;
 }
 .rendered-editor p { margin-bottom: 1.2em; }
@@ -870,23 +870,23 @@ math-field:not(:defined)::after {
     content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 10px; z-index: 5;
 }
 .math-dropdown-btn {
-    background: #3b82f6 !important;
-    color: white !important;
+    background: var(--color-blue) !important;
+    color: var(--color-white) !important;
     border: none !important;
-    font-weight: bold !important;
+    font-weight: 700 !important;
 }
-.math-dropdown-btn:hover { background: #2563eb !important; }
+.math-dropdown-btn:hover { background: var(--color-blue-dark) !important; }
 
 .math-dropdown-content {
     display: none;
     position: absolute;
     top: 100%; left: 0;
-    background-color: white;
+    background-color: var(--color-bg-white);
     min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-md);
     z-index: 1001;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
     margin-top: 5px;
     overflow: hidden;
 }
@@ -904,17 +904,17 @@ math-field:not(:defined)::after {
     font-size: 0.95em !important;
 }
 .math-dropdown-content button:hover {
-    background-color: #f8fafc !important;
-    color: #3b82f6 !important;
+    background-color: var(--color-bg-surface) !important;
+    color: var(--color-blue) !important;
 }
 
 /* --- Menu Group Labels --- */
 .menu-group-label {
-    background: #f1f5f9;
+    background: var(--color-bg-subtle);
     padding: 6px 12px;
-    font-size: 0.75em;
+    font-size: var(--text-xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--color-text-faint);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -933,10 +933,10 @@ math-field:not(:defined)::after {
 .editor-btn {
     background: none; border: none; cursor: pointer; font-weight: bold; padding: 6px 15px; border-radius: 6px; transition: all 0.2s;
 }
-.editor-btn-cancel { color: #94a3b8; }
-.editor-btn-cancel:hover { background: #f1f5f9; color: #64748b; }
-.editor-btn-save { color: #3b82f6; }
-.editor-btn-save:hover { background: #f0f7ff; }
+.editor-btn-cancel { color: var(--color-text-faint); }
+.editor-btn-cancel:hover { background: var(--color-bg-subtle); color: var(--color-text-muted); }
+.editor-btn-save { color: var(--color-blue); }
+.editor-btn-save:hover { background: var(--color-blue-light); }
 
 /* --- Expanded & Modal Overlay --- */
 .expanded-mode {
@@ -953,12 +953,15 @@ math-field:not(:defined)::after {
 
 .modal-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 100000;
+    background: var(--color-overlay); backdrop-filter: blur(4px); z-index: 100000;
     display: flex; justify-content: center; align-items: center;
 }
 .modal-content {
-    background: white; padding: 30px; border-radius: 15px; width: 450px; max-width: 95%; max-height: 85vh;
-    display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    background: var(--color-bg-white); 
+    padding: var(--spacing-6); 
+    border-radius: var(--radius-lg); 
+    width: 450px; max-width: 95%; max-height: 85vh;
+    display: flex; flex-direction: column; box-shadow: var(--shadow-xl);
 }
 .load-notes-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .load-note-item {
@@ -966,17 +969,17 @@ math-field:not(:defined)::after {
     justify-content: space-between;
     align-items: center;
     padding: 12px 18px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-base);
 }
 .load-note-item:hover {
-    background: #fff;
-    border-color: #3b82f6;
+    background: var(--color-bg-white);
+    border-color: var(--color-blue);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    box-shadow: var(--shadow-md);
 }
 .load-note-item .note-info {
     display: flex;
@@ -995,10 +998,10 @@ math-field:not(:defined)::after {
 /* --- Redesigned Context Menu (Horizontal Palette) --- */
 .custom-context-menu {
     position: fixed;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.05);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
     min-width: 420px;
     min-height: 220px;
     z-index: 100000;
@@ -1007,7 +1010,7 @@ math-field:not(:defined)::after {
     display: none;
     flex-direction: column;
     animation: menuFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid var(--color-blue-glow);
 }
 
 /* Resize indicator in the corner */
@@ -1158,9 +1161,9 @@ math-field:not(:defined)::after {
 [contenteditable]:empty:before { content: attr(placeholder); color: #cbd5e1; cursor: text; }
 
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-::-webkit-scrollbar-track { background: #f8fafc; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-medium); }
+::-webkit-scrollbar-track { background: var(--color-bg-surface); }
 
 /* --- Page Intro --- */
 .page-intro { text-align: center; margin-bottom: 20px; }
@@ -1333,15 +1336,15 @@ canvas#shapesCanvas {
 .selection-menu-btn strong { font-weight: 800; }
 .selection-menu-btn em { font-style: italic; }
 .btn-selection-format {
-    background: #4f46e5 !important;
-    color: white !important;
+    background: var(--color-indigo) !important;
+    color: var(--color-white) !important;
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: var(--radius-sm) !important;
     padding: 4px 12px !important;
-    font-size: 0.85em !important;
-    font-weight: 600 !important;
+    font-size: var(--text-xs) !important;
+    font-weight: 700 !important;
     cursor: pointer !important;
-    margin-right: 10px !important;
+    margin-right: var(--spacing-3) !important;
     animation: slideInRight 0.3s ease-out;
 }
 

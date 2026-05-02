@@ -9,9 +9,9 @@
 
 :root {
     /* --- Бренд-цвета --- */
-    --color-primary:        #F2994A;   /* Главный оранжевый */
-    --color-primary-dark:   #E08E45;   /* Hover для primary */
-    --color-primary-light:  #fff9f3;   /* Фон с намёком на primary */
+    --color-primary:        #F2994A;
+    --color-primary-dark:   #E08E45;
+    --color-primary-light:  #fff9f3;
     --color-primary-glow:   rgba(242, 153, 74, 0.2);
 
     /* --- Акцентные --- */
@@ -38,30 +38,36 @@
     --color-warning-dark:   #d97706;
 
     /* --- Нейтральные (текст и UI) --- */
-    --color-text-dark:      #1e293b;   /* Заголовки */
-    --color-text-body:      #334155;   /* Основной текст */
-    --color-text-medium:    #475569;   /* Вторичный текст */
-    --color-text-muted:     #64748b;   /* Подсказки */
-    --color-text-faint:     #94a3b8;   /* Плейсхолдеры */
+    --color-text-dark:      #1e293b;
+    --color-text-body:      #334155;
+    --color-text-medium:    #475569;
+    --color-text-muted:     #64748b;
+    --color-text-faint:     #94a3b8;
     --color-text-disabled:  #cbd5e1;
 
     /* --- Фоны --- */
-    --color-bg-app:         #FFF5EC;   /* Фон всей страницы */
-    --color-bg-page:        #fdfaf3;   /* Шапка, хедер */
+    --color-bg-app:         #FFF5EC;
+    --color-bg-page:        #fdfaf3;
     --color-bg-white:       #ffffff;
-    --color-bg-surface:     #f8fafc;   /* Панели, сайдбары */
-    --color-bg-subtle:      #f1f5f9;   /* Hover-состояния */
+    --color-bg-surface:     #f8fafc;
+    --color-bg-subtle:      #f1f5f9;
     --color-bg-card:        #f9f9f9;
 
     /* --- Границы --- */
-    --color-border:         #e2e8f0;   /* Стандартная граница */
-    --color-border-light:   #f1f5f9;   /* Лёгкая граница */
-    --color-border-medium:  #cbd5e1;   /* Заметная граница */
+    --color-border:         #e2e8f0;
+    --color-border-light:   #f1f5f9;
+    --color-border-medium:  #cbd5e1;
     --color-border-dark:    #ddd;
 
     /* --- Стикеры --- */
     --color-sticker-default: #fff9c4;
     --color-sticker-accent:  #ffd54f;
+
+    /* --- Системные --- */
+    --color-white:          #ffffff;
+    --color-black:          #000000;
+    --color-overlay:        rgba(0, 0, 0, 0.4);
+    --color-overlay-light:  rgba(0, 0, 0, 0.2);
 
     /* --- Типографика --- */
     --font-base:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -69,12 +75,12 @@
     --font-sticker: 'Indie Flower', cursive, sans-serif;
 
     /* --- Размеры шрифта --- */
-    --text-xs:   0.75rem;    /* 12px */
-    --text-sm:   0.875rem;   /* 14px */
-    --text-base: 1rem;       /* 16px */
-    --text-lg:   1.125rem;   /* 18px */
-    --text-xl:   1.25rem;    /* 20px */
-    --text-2xl:  1.5rem;     /* 24px */
+    --text-xs:   0.75rem;
+    --text-sm:   0.875rem;
+    --text-base: 1rem;
+    --text-lg:   1.125rem;
+    --text-xl:   1.25rem;
+    --text-2xl:  1.5rem;
 
     /* --- Скругления --- */
     --radius-sm:  6px;
@@ -161,22 +167,22 @@ body {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.3);
+    background-color: var(--color-overlay);
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
 }
 
 #customConfirmModal .modal-content {
-    background: rgba(255, 255, 255, 0.98) !important;
+    background: var(--color-bg-white) !important;
     padding: 0 !important;
-    border-radius: 24px !important;
+    border-radius: var(--radius-2xl) !important;
     width: 90% !important;
-    max-width: 400px !important; /* Fixed width */
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2) !important;
+    max-width: 400px !important;
+    box-shadow: var(--shadow-xl) !important;
     animation: confirmPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden !important;
-    border: 1px solid rgba(0,0,0,0.05) !important;
+    border: 1px solid var(--color-border-light) !important;
 }
 
 @keyframes confirmPop {
@@ -226,7 +232,7 @@ body {
 
 .confirm-btn-primary {
     background: var(--color-text-dark);
-    color: white;
+    color: var(--color-white);
 }
 
 .confirm-btn-primary:hover {
@@ -247,7 +253,7 @@ body {
 
 .confirm-btn-danger {
     background: var(--color-error);
-    color: white;
+    color: var(--color-white);
 }
 
 .confirm-btn-danger:hover {
@@ -272,10 +278,10 @@ body {
     align-items: center;
     padding: 14px 18px;
     border: 2px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s ease;
-    background-color: #fff;
+    transition: all var(--transition-base);
+    background-color: var(--color-bg-white);
     user-select: none;
 }
 
@@ -300,8 +306,8 @@ body {
 
 /* Selected state for choice items */
 .choice-item.selected {
-    border-color: #F2994A;
-    background-color: #fff9f3;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
 }
 
 .footer-btn {
@@ -310,11 +316,11 @@ body {
     align-items: center;
     justify-content: center;
     text-decoration: none !important;
-    color: #333 !important;
+    color: var(--color-text-body) !important;
     border: none !important;
     border-right: 1px solid var(--color-border-dark) !important;
     border-bottom: 1px solid var(--color-border-dark) !important;
-    font-weight: bold;
+    font-weight: 600;
     white-space: nowrap;
     border-radius: 0 !important;
     transition: all var(--transition-base);
@@ -330,17 +336,12 @@ body {
     color: white !important;
 }
 
-.footer-btn.active {
-    background-color: var(--color-primary) !important;
-    color: white !important;
-}
-
 .footer-version {
-    color: #bbb;
-    font-size: 10px;
-    padding: 8px 20px;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    padding: var(--spacing-2) var(--spacing-5);
     text-align: center;
-    background: #fafafa;
+    background: var(--color-bg-surface);
 }
 
 .container {
@@ -402,12 +403,12 @@ body {
 
 /* task and words sections */
 .section, .events-today, .events-tomorrow {
-    padding: 20px;
-    border-radius: 10px;
-    background-color: #f9f9f9;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: var(--spacing-5);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-card);
+    box-shadow: var(--shadow-md);
     text-align: left;
-    margin-top: 20px;
+    margin-top: var(--spacing-5);
 }
 
 
@@ -416,19 +417,19 @@ body {
     border: 2px solid;
 }
 
-.task-section { border-color: rgb(58, 31, 181); }
-.words-section, .chronology-section { border-color: lightgreen; }
-.reading-section { border-color: lightcoral; }
-.random-rule { border-color: #ccc; color: #333; }
-.note-section, .events-today, .events-tomorrow { border-color: lightblue; }
+.task-section { border-color: var(--color-indigo); }
+.words-section, .chronology-section { border-color: var(--color-success); }
+.reading-section { border-color: var(--color-error); }
+.random-rule { border-color: var(--color-border); color: var(--color-text-body); }
+.note-section, .events-today, .events-tomorrow { border-color: var(--color-blue); }
 
 /* Заголовки */
 .section h1, .events-today h1, .events-tomorrow h1 {
-    font-size: 1.1em;
-    margin-bottom: 12px;
+    font-size: var(--text-lg);
+    margin-bottom: var(--spacing-3);
     text-align: left;
-    color: #555;
-    font-weight: bold;
+    color: var(--color-text-medium);
+    font-weight: 700;
 }
 
 /* Tasks styles */
@@ -451,15 +452,15 @@ body {
 }
 .task-item:last-child { border-bottom: none; }
 .task-button {
-    background-color: rgb(58, 31, 181);
-    color: white;
+    background-color: var(--color-indigo);
+    color: var(--color-white);
     border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-base);
 }
-.task-button:hover { background-color: rgb(44, 24, 137); }
+.task-button:hover { background-color: var(--color-indigo-dark); }
 
 /* Таблицы */
 .table-common {
@@ -476,21 +477,21 @@ body {
 .table-common tbody tr:nth-of-type(even) { background-color: #f3f3f3; }
 .table-common tbody tr:hover { background-color: #e1f5fe; }
 
-.words-table thead tr { background-color: lightgreen; color: #ffffff; text-align: left; font-weight: bold; }
-.reading-table thead tr { background-color: lightcoral; color: #ffffff; text-align: left; font-weight: bold; }
-.reading-table tbody tr:last-of-type { border-bottom: 2px solid lightcoral; }
+.words-table thead tr { background-color: var(--color-success); color: var(--color-white); text-align: left; font-weight: 700; }
+.reading-table thead tr { background-color: var(--color-error); color: var(--color-white); text-align: left; font-weight: 700; }
+.reading-table tbody tr:last-of-type { border-bottom: 2px solid var(--color-error); }
 
 .text-right { text-align: right; }
 .read-button {
-    background-color: lightcoral;
-    color: white;
+    background-color: var(--color-error);
+    color: var(--color-white);
     border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-base);
 }
-.read-button:hover { background-color: #cc564a; }
+.read-button:hover { background-color: var(--color-error-dark); }
 
 /* Forms */
 .form-common { display: flex; flex-direction: column; gap: 10px; }
@@ -503,26 +504,26 @@ body {
 }
 .form-common textarea { width: calc(100% - 20px); max-width: 600px; height: 100px; resize: vertical; }
 .form-button {
-    background-color: lightblue;
-    color: white;
+    background-color: var(--color-blue);
+    color: var(--color-white);
     border: none;
     padding: 10px 20px;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-base);
     max-width: 200px;
 }
-.form-button:hover { background-color: #3399cc; }
+.form-button:hover { background-color: var(--color-blue-dark); }
 
 .chrono-form { display: flex; flex-wrap: wrap; gap: 10px; }
 .chrono-form input[type="text"], .chrono-form input[type="date"], .chrono-form select, .chrono-form button { flex: 1; }
 .chrono-form button {
-    background-color: lightgreen;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-white);
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-base);
 }
-.chrono-form button:hover { background-color: #66cc66; }
+.chrono-form button:hover { background-color: var(--color-success-dark); }
 
 /* Lists */
 .events-today ul, .events-tomorrow ul { list-style-type: none; padding: 0; margin: 0; }
@@ -598,16 +599,7 @@ body {
 
 /* base_components.css imports basic modal, button and form styles */
 
-/* Row 1: Main Pages - Extra Large */
-.main-nav .footer-btn {
-    padding: 18px 10px !important;
-    font-size: 16px !important;
-    background-color: var(--color-bg-page) !important;
-    border-bottom: 1px solid var(--color-border) !important;
-}
-    color: white;
-    box-shadow: 0 4px 12px var(--color-success-glow);
-}
+/* End of premium modal styles */
 
 .btn-save-premium:hover {
     background: var(--color-success-dark);
@@ -635,11 +627,11 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    background: white;
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
     padding: 4px 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    box-shadow: var(--shadow-sm);
     line-height: 1.1;
     overflow: hidden;
     flex-shrink: 0;
@@ -647,7 +639,7 @@ body {
 }
 .info-widget-title {
     font-size: 0.62em;
-    color: #aaa;
+    color: var(--color-text-faint);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     white-space: nowrap;
@@ -670,28 +662,28 @@ body {
 .info-widget-subtext {
     font-size: 0.5em;
     font-weight: 500;
-    color: #bbb;
+    color: var(--color-text-faint);
 }
 .info-widget-orange {
-    border-left: 3px solid #f2994a;
+    border-left: 3px solid var(--color-primary);
     min-width: 70px;
     max-width: 120px;
 }
 .info-widget-green {
-    border-left: 3px solid #66bb6a;
+    border-left: 3px solid var(--color-success);
     min-width: 70px;
     max-width: 120px;
 }
 .info-widget-amber {
-    border-left: 3px solid #ffb74d;
+    border-left: 3px solid var(--color-warning);
 }
 .info-widget-purple {
-    border-left: 3px solid #ab47bc;
+    border-left: 3px solid var(--color-purple);
     max-width: 220px;
 }
-.text-orange { color: #f2994a; }
-.text-green { color: #66bb6a; }
-.text-amber { color: #e67e22; }
+.text-orange { color: var(--color-primary); }
+.text-green { color: var(--color-success); }
+.text-amber { color: var(--color-warning); }
 .info-widget-value-purple {
     font-size: 0.8em;
     font-weight: 500;
@@ -706,10 +698,10 @@ body {
 .sticker-icon-small {
     width: 18px;
     height: 18px;
-    background: #ffeb3b;
-    border: 1px solid #fbc02d;
+    background: var(--color-sticker-accent);
+    border: 1px solid var(--color-warning);
     border-radius: 2px;
-    box-shadow: 1px 2px 3px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-sm);
     transform: rotate(-5deg);
     display: inline-block;
     flex-shrink: 0;
@@ -723,13 +715,13 @@ body {
     min-height: 100px;
 }
 .sticker-thought {
-    background-color: #fff9c4;
+    background-color: var(--color-sticker-default);
     width: 110px;
     height: 110px;
     padding: 10px;
     border-radius: 2px;
-    font-family: 'Indie Flower', cursive, sans-serif;
-    box-shadow: 2px 4px 8px rgba(0,0,0,0.1);
+    font-family: var(--font-sticker);
+    box-shadow: var(--shadow-md);
     font-size: 1em;
     position: relative;
     cursor: pointer;
@@ -739,15 +731,18 @@ body {
     flex-direction: column;
     word-wrap: break-word;
 }
-.sticker-thought:hover { transform: scale(1.05) rotate(1deg); box-shadow: 4px 8px 12px rgba(0,0,0,0.15); }
+.sticker-thought:hover { 
+    transform: scale(1.05) rotate(1deg); 
+    box-shadow: var(--shadow-lg); 
+}
 
 .sticker-meta {
     font-size: 0.6em;
-    color: rgba(0,0,0,0.4);
+    color: var(--color-overlay-light);
     margin-top: auto;
     padding-top: 5px;
     text-align: right;
-    font-family: sans-serif;
+    font-family: var(--font-base);
 }
 
 .sticker-del-btn {
@@ -763,7 +758,7 @@ body {
     z-index: 5;
     transition: color 0.2s;
 }
-.sticker-del-btn:hover { color: #b71c1c; }
+.sticker-del-btn:hover { color: var(--color-error-dark); }
 
 .sticker-more-btn {
     background: rgba(0,0,0,0.05);
@@ -786,13 +781,13 @@ body {
     border-radius: 10px;
     padding: 25px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-    background: white !important;
-    border-radius: 12px !important;
-    padding: 10px !important; /* Smaller padding than main modals */
+    background: var(--color-bg-white) !important;
+    border-radius: var(--radius-md) !important;
+    padding: var(--spacing-3) !important; 
     max-width: 500px !important;
     font-family: inherit;
-    border: 2px solid rgba(0,0,0,0.1);
-    transition: background-color 0.3s;
+    border: 2px solid var(--color-border-light);
+    transition: background-color var(--transition-base);
 }
 .modal-sticker-body { margin-top: 15px; }
 .modal-sticker-list { list-style: none; padding: 0; }

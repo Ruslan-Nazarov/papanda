@@ -310,6 +310,83 @@ export const EventService = {
         this.renderStickers(id, recId);
     },
 
+    /**
+     * Toggles the 'done' status of an event.
+     */
+    async toggleDone(eventId) {
+        try {
+            const resp = await fetch(`/api/events/${eventId}/toggle_done`, { method: 'POST' });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                location.reload(); // Simple reload for now to reflect changes everywhere
+            } else {
+                if (window.showToast) window.showToast(data.message, 'error');
+            }
+        } catch (e) {
+            console.error("[EventService] toggleDone error:", e);
+        }
+    },
+
+    /**
+     * Shows a custom context menu for an event.
+     */
+    showContextMenu(e, ev) {
+        let menu = document.getElementById('customContextMenu');
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.id = 'customContextMenu';
+            menu.className = 'custom-context-menu';
+            document.body.appendChild(menu);
+        }
+
+        menu.innerHTML = '';
+        const items = [
+            { icon: '🔍', text: 'Показать полностью', action: () => this.openDetail(e) },
+            { icon: '✎', text: 'Редактировать', action: () => this.openEdit(e.id, e.title, e.date, e.rule, e.end, e.recurrence_id, e.color) },
+            { icon: e.done ? '○' : '✓', text: e.done ? 'Отменить выполнение' : 'Выполнить', action: () => this.toggleDone(e.id) }
+        ];
+
+        if (e.has_stickers) {
+            items.splice(1, 0, { 
+                icon: '<div class="sticker-icon-small"></div>', 
+                text: 'Стикеры', 
+                isHtmlIcon: true,
+                action: () => this.openDetail(e) 
+            });
+        }
+
+        if (e.color) {
+            items.push({ icon: '🌳', text: 'Дерево группы', action: () => window.viewEventTree(e.color) });
+        }
+
+        items.push({ icon: '×', text: 'Удалить', danger: true, action: () => window.deleteRecordCustom('Event', e.id, !!e.recurrence_id) });
+
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'context-menu-item' + (item.danger ? ' danger' : '');
+            div.innerHTML = `<span class="icon">${item.icon}</span><span>${item.text}</span>`;
+            div.onclick = () => {
+                menu.style.display = 'none';
+                item.action();
+            };
+            menu.appendChild(div);
+        });
+
+        menu.style.display = 'block';
+        
+        // Position
+        let x = ev.clientX;
+        let y = ev.clientY;
+        
+        const menuWidth = 200;
+        const menuHeight = items.length * 45;
+        if (x + menuWidth > window.innerWidth) x -= menuWidth;
+        if (y + menuHeight > window.innerHeight) y -= menuHeight;
+
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+    },
+
     _getNowIso() {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());

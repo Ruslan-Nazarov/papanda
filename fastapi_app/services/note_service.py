@@ -114,3 +114,25 @@ class NoteService:
         except Exception as e:
             logger.error(f"Error searching notes: {e}", exc_info=True)
             return []
+    async def get_pinned_notes(self, limit: int = 10) -> List[models.Notes]:
+        """Возвращает закрепленные заметки с подгруженными стикерами."""
+        try:
+            from sqlalchemy.orm import selectinload
+            result = await self.db.execute(
+                select(models.Notes)
+                .options(selectinload(models.Notes.stickers))
+                .where(models.Notes.is_pinned == True)
+                .order_by(models.Notes.created_at.desc())
+                .limit(limit)
+            )
+            notes = list(result.scalars().all())
+            
+            # Post-process for UI compatibility
+            for n in notes:
+                n.preview = (n.note[:100] + '...') if len(n.note) > 100 else n.note
+                n.title = f"[{n.category}]" if n.category else f"Note #{n.id}"
+                
+            return notes
+        except Exception as e:
+            logger.error(f"Error fetching pinned notes: {e}")
+            return []
