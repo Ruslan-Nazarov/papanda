@@ -1,3 +1,4 @@
+console.log("!!! GRID_CONTROLLER.JS LOADED !!!");
 /**
  * Grid Controller
  * Manages GridStack operations, saving layouts, and widget collapse logic.
@@ -64,13 +65,64 @@ export function applyCollapsedState() {
     });
 }
 
+export function initGrid() {
+    console.log("[Grid] Starting initialization...");
+    const gridStackEl = document.querySelector('.grid-stack');
+    if (!gridStackEl) {
+        console.error("[Grid] .grid-stack element not found!");
+        return null;
+    }
+    
+    let grid = null;
+    try {
+        // 1. Core Init with explicit element
+        grid = window.grid = GridStack.init({
+            cellHeight: 45,
+            margin: 10,
+            handle: '.drag-handle',
+            minRow: 1,
+            animate: false,
+            float: true
+        }, gridStackEl);
+
+        // 2. Restore Layout
+        const savedLayout = window.P_DASHBOARD_LAYOUT;
+        if (grid && savedLayout && typeof savedLayout === 'object' && Object.keys(savedLayout).length > 0) {
+            grid.batchUpdate();
+            Object.values(savedLayout).forEach(item => {
+                if (!item || !item.id) return;
+                const el = document.querySelector(`.grid-stack-item[gs-id="${item.id}"]`);
+                if (el) grid.update(el, { x: item.x, y: item.y, w: item.w, h: item.h });
+            });
+            grid.commit();
+        }
+
+        applyCollapsedState();
+        
+        // Forced refresh
+        setTimeout(() => {
+            if (window.grid) window.grid.compact();
+        }, 300);
+
+        grid.on('change', saveLayout);
+        return grid;
+    } catch (e) {
+        console.error('[Grid] Critical failure:', e);
+        // Temporary alert to see the error on user's screen
+        // alert('[Grid Error] ' + e.message); 
+        return null;
+    } finally {
+        // Guarantee visibility regardless of success
+        if (gridStackEl) gridStackEl.style.visibility = 'visible';
+    }
+}
+
 export function saveLayout() {
     if (!window.grid) return;
     let layout = {};
     window.grid.getGridItems().forEach(el => {
         let n = el.gridstackNode;
         if (!n) return;
-        // For collapsed widgets store original height, not the current h=1
         const isCollapsed = el.classList.contains('collapsed');
         let h = isCollapsed ? (parseInt(el.getAttribute('data-gs-orig-h')) || n.h) : n.h;
         if (h <= 1 && !isCollapsed) h = 2;

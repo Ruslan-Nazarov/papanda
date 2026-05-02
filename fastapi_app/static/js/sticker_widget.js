@@ -3,7 +3,7 @@
  * Extracted from dashboard_index.js (lines 400–565).
  */
 
-import { createStickerElement, openStickerModal } from './stickers.js';
+// window.createStickerElement and window.openStickerModal are provided by stickers.js (standard script)
 import { showToast } from './ui_helpers.js';
 
 // ─── Private state ────────────────────────────────────────────────────────────

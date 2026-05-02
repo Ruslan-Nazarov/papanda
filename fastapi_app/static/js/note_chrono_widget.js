@@ -3,7 +3,7 @@
  * Extracted from dashboard_index.js (lines 567–782, 1021–1059, 1147–1265).
  */
 
-import { openStickerModal } from './stickers.js';
+// window.openStickerModal is provided by stickers.js (standard script)
 import { showToast } from './ui_helpers.js';
 
 // ─── Chronology ───────────────────────────────────────────────────────────────

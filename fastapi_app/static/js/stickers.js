@@ -777,6 +777,9 @@ window.archiveStickerInOverview = archiveStickerInOverview;
 window.openStickerModal = openStickerModal;
 window.createStickerElement = createStickerElement;
 
+// Named exports for hybrid compatibility
+export { openStickerModal, createStickerElement };
+
 // Global initialization for hydration
 document.addEventListener('DOMContentLoaded', () => {
     const placeholders = document.querySelectorAll('.sticker-thought-placeholder');
@@ -800,5 +803,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Named exports for use by dashboard widget modules
-export { createStickerElement, openStickerModal };

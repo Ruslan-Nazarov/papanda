@@ -403,7 +403,7 @@
     {% include 'partials/sticker_modal.html' %}
     {% include 'partials/parent_stickers_modal.html' %}
 
-        <div class="grid-stack">
+        <div class="grid-stack" style="visibility: hidden;">
             <!-- Chronology -->
             <div
                 class="grid-stack-item"
@@ -664,9 +664,9 @@
             window.P_ALL_LANGUAGES = {{ all_languages|tojson|safe }};
         </script>
         <!-- Core Application Logic -->
-        <script src="{{ url_for('static', path='js/stickers.js') }}?v=4"></script>
-        <script type="module" src="{{ url_for('static', path='dist/smart_notes.bundle.js') }}?v=4"></script>
-        <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=1"></script>
-        <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=11"></script>
+        <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=13"></script>
+        <script type="module" src="{{ url_for('static', path='dist/smart_notes.bundle.js') }}?v=5"></script>
+        <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=2"></script>
+        <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=20"></script>
     </body>
 </html>

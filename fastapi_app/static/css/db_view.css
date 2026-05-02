@@ -1,3 +1,5 @@
+@import 'base_components.css';
+
 .settings-wrapper {
     width: 100%;
     max-width: 1240px;
@@ -67,7 +69,7 @@
 .nav-arrow {
     text-decoration: none;
     background: #f8f9fa;
-    color: #333;
+    color: var(--color-text-dark);
     width: 38px;
     height: 38px;
     display: flex;
@@ -98,19 +100,19 @@
     justify-content: center !important;
 }
 #customConfirmModal .modal-content {
-    background-color: #fff; border-radius: 16px; width: 95%; max-width: 500px;
+    background-color: var(--color-bg-white); border-radius: var(--radius-lg); width: 95%; max-width: 500px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.3); overflow: hidden;
     animation: modalSlideUp 0.3s ease-out;
 }
 #customConfirmModal .modal-header {
-    padding: 18px 25px; background: #fdfaf3; border-bottom: 1px solid #eee;
+    padding: 18px 25px; background: var(--color-bg-page); border-bottom: 1px solid var(--color-border);
     font-weight: bold; color: #333; font-size: 1.2rem;
 }
 #customConfirmModal .modal-body {
-    padding: 30px 25px; font-size: 1.05rem; color: #444;
+    padding: 30px 25px; font-size: 1.05rem; color: var(--color-text-body);
 }
 #customConfirmModal .modal-footer {
-    padding: 15px 25px; background: #fdfaf3; border-top: 1px solid #eee;
+    padding: 15px 25px; background: var(--color-bg-page); border-top: 1px solid var(--color-border);
     display: flex; gap: 12px; justify-content: flex-end;
 }
 .choice-container { width: 100%; }
@@ -229,124 +231,7 @@
 }
 .btn-home:hover { background-color: var(--color-primary); color: white; border-color: var(--color-primary); }
 
-/* --- MODAL --- */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999 !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    align-items: center !important;
-    justify-content: center !important;
-    pointer-events: auto !important;
-}
-.modal-content {
-    background: white !important;
-    width: 900px !important;
-    max-width: 95vw !important;
-    height: auto !important;
-    max-height: 85vh !important;
-    border-radius: 24px !important;
-    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.4) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    border: 1px solid rgba(255, 255, 255, 0.4) !important;
-    animation: modalScaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    padding: 0 !important; 
-}
-@keyframes modalScaleUp {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-.modal-header {
-    padding: 24px 30px !important;
-    background: #fdfaf3 !important;
-    border-bottom: 2px solid #eee !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    font-size: 1.6rem !important;
-    font-weight: 800 !important;
-    color: #222 !important;
-    margin: 0 !important;
-}
-.modal-close {
-    font-size: 2rem !important;
-    cursor: pointer !important;
-    color: #aaa !important;
-    transition: 0.2s !important;
-}
-.modal-close:hover { color: #f44336 !important; }
-.modal-body {
-    padding: 30px !important;
-    flex: 1 !important;
-    overflow-y: auto !important;
-    background: white !important;
-}
-.modal-footer {
-    padding: 20px 30px !important;
-    background: #f9f9f9 !important;
-    border-top: 1px solid #eee !important;
-    display: flex !important;
-    justify-content: flex-end !important;
-    gap: 20px !important;
-    margin: 0 !important;
-}
-.form-group-large { margin-bottom: 25px !important; }
-.form-label-premium { 
-    display: block !important;
-    font-size: 1.1rem !important;
-    font-weight: 700 !important;
-    color: #444 !important;
-    margin-bottom: 10px !important;
-}
-.form-input-premium {
-    width: 100% !important;
-    padding: 15px 20px !important;
-    border: 2px solid #eee !important;
-    border-radius: 12px !important;
-    font-size: 1.1rem !important;
-    transition: 0.3s !important;
-    background: #fafafa !important;
-    box-sizing: border-box !important;
-}
-.form-input-premium:focus {
-    border-color: var(--color-primary) !important;
-    background: white !important;
-    outline: none !important;
-    box-shadow: 0 0 0 4px var(--color-primary-glow) !important;
-}
-.btn-premium {
-    padding: 12px 28px !important;
-    border-radius: 14px !important;
-    font-size: 1.1rem !important;
-    font-weight: 700 !important;
-    cursor: pointer !important;
-    transition: 0.3s !important;
-    border: none !important;
-}
-.btn-save-premium {
-    background: var(--color-success) !important;
-    color: white !important;
-    box-shadow: 0 4px 12px var(--color-success-glow) !important;
-}
-.btn-save-premium:hover {
-    background: var(--color-success-dark) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 15px var(--color-success-glow) !important;
-}
-.btn-cancel-premium {
-    background: #eee !important;
-    color: #666 !important;
-}
-.btn-cancel-premium:hover {
-    background: #e0e0e0 !important;
-}
+/* Redundant modal styles removed - now using base_components.css */
 
 /* Weekday row from index.html */
 .weekday-row {
@@ -468,7 +353,7 @@
 }
 .clickable-note:hover {
     background-color: #fff9c4 !important;
-    color: #333;
+    color: var(--color-text-dark);
 }
 .calendar-wrapper { padding: 20px; }
 .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 4px 8px; font-weight: 700; color: #666; }
@@ -728,7 +613,7 @@
 }
 .popover-title {
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-dark);
     font-size: 1.1em;
     word-break: break-word;
 }
@@ -791,7 +676,7 @@
 .habit-card .habit-title {
     font-size: 1.2em;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-dark);
     margin: 0;
     word-break: break-word;
 }
@@ -827,7 +712,7 @@
 }
 .btn-load-more:hover {
     background: #e8e8e8;
-    color: #333;
+    color: var(--color-text-dark);
 }
 
 /* --- TASK CARDS --- */
@@ -865,7 +750,7 @@
 .task-card .task-name {
     font-size: 1.1em;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-dark);
     margin: 0;
     word-break: break-word;
 }
@@ -950,7 +835,7 @@
 .chrono-view-text {
     font-size: 1.2em;
     line-height: 1.6;
-    color: #333;
+    color: var(--color-text-dark);
     white-space: pre-wrap;
     word-break: break-word;
 }
@@ -1002,7 +887,7 @@
 }
 .note-card .note-text {
     font-size: 0.95em;
-    color: #333;
+    color: var(--color-text-dark);
     display: -webkit-box;
     -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;

@@ -5,6 +5,7 @@
 
 /* Google Fonts — Inter (основной) + Indie Flower (стикеры) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Indie+Flower&display=swap');
+@import 'base_components.css';
 
 :root {
     /* --- Бренд-цвета --- */
@@ -147,8 +148,8 @@ body {
 .main-nav .footer-btn {
     padding: 18px 10px !important;
     font-size: 16px !important;
-    background-color: #fdfaf3 !important;
-    border-bottom: 1px solid #eee !important;
+    background-color: var(--color-bg-page) !important;
+    border-bottom: 1px solid var(--color-border) !important;
 }
 
 /* Custom Confirm Modal */
@@ -188,7 +189,7 @@ body {
     background: transparent !important;
     border-bottom: none !important;
     font-weight: 700 !important;
-    color: #1e293b !important;
+    color: var(--color-text-dark) !important;
     display: flex !important;
     justify-content: center !important;
     text-align: center !important;
@@ -199,7 +200,7 @@ body {
     padding: 10px 25px 25px;
     font-size: 1rem;
     line-height: 1.5;
-    color: #64748b;
+    color: var(--color-text-muted);
     text-align: center;
 }
 
@@ -270,7 +271,7 @@ body {
     display: flex;
     align-items: center;
     padding: 14px 18px;
-    border: 2px solid #eee;
+    border: 2px solid var(--color-border);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -279,8 +280,8 @@ body {
 }
 
 .choice-item:hover {
-    border-color: #ddd;
-    background-color: #f9f9f9;
+    border-color: var(--color-border-medium);
+    background-color: var(--color-bg-surface);
 }
 
 .choice-item input[type="radio"] {
@@ -595,208 +596,15 @@ body {
     color: #d32f2f;
 }
 
-/* Premium Modal Design System */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: var(--z-modal);
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-slow);
+/* base_components.css imports basic modal, button and form styles */
+
+/* Row 1: Main Pages - Extra Large */
+.main-nav .footer-btn {
+    padding: 18px 10px !important;
+    font-size: 16px !important;
+    background-color: var(--color-bg-page) !important;
+    border-bottom: 1px solid var(--color-border) !important;
 }
-
-.modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    margin: auto;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    width: 800px;
-    max-width: 95%;
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    animation: modalFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
-}
-
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.modal-header {
-    padding: 20px 25px;
-    border-bottom: 1px solid #eee;
-    font-size: 1.4em;
-    font-weight: 700;
-    color: #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fdfaf3;
-    border-radius: 20px 20px 0 0;
-}
-
-.modal-close {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #666;
-    cursor: pointer;
-    line-height: 1;
-    transition: all 0.2s;
-}
-
-.modal-close:hover { color: #111; transform: scale(1.1); }
-
-.modal-body {
-    padding: 25px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.modal-footer {
-    padding: 20px 25px;
-    border-top: 1px solid #eee;
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    background: #fafafa;
-    border-radius: 0 0 20px 20px;
-}
-
-/* Premium Form Elements */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #555;
-    font-size: 0.95em;
-}
-
-.form-input {
-    width: 100% !important;
-    padding: 12px 15px !important;
-    border: 1px solid var(--color-border) !important;
-    border-radius: var(--radius-md) !important;
-    font-size: var(--text-base) !important;
-    font-family: inherit !important;
-    transition: all var(--transition-base) !important;
-    background: white !important;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02) !important;
-}
-
-.form-input:focus {
-    outline: none !important;
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 0 0 4px var(--color-primary-glow) !important;
-}
-
-textarea.form-input {
-    min-height: 120px;
-    line-height: 1.5;
-}
-
-/* Premium Buttons */
-.btn-primary, .btn-secondary {
-    padding: 12px 25px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    font-size: 0.95em;
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    color: white;
-    box-shadow: 0 4px 6px var(--color-primary-glow);
-}
-
-.btn-primary:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 12px var(--color-primary-glow);
-}
-
-.btn-secondary {
-    background-color: #eee;
-    color: #666;
-}
-
-.btn-secondary:hover {
-    background-color: #ddd;
-    color: #333;
-}
-
-/* Premium Form Elements (Unfied) */
-.form-group-large {
-    margin-bottom: 25px;
-}
-
-.form-label-premium {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: 700;
-    color: #444;
-    font-size: 1rem;
-}
-
-.form-input-premium {
-    width: 100% !important;
-    padding: 14px 18px !important;
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 12px !important;
-    font-size: 1.05rem !important;
-    font-family: inherit !important;
-    transition: all 0.2s ease !important;
-    background: #fcfcfc !important;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.01) !important;
-}
-
-.form-input-premium:focus {
-    outline: none !important;
-    border-color: #F2994A !important;
-    background: white !important;
-    box-shadow: 0 0 0 4px rgba(242, 153, 74, 0.12) !important;
-}
-
-textarea.form-input-premium {
-    min-height: 120px;
-    line-height: 1.5;
-    resize: vertical;
-}
-
-/* Premium Buttons (Unified) */
-.btn-premium {
-    padding: 12px 28px;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    font-size: 1rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.btn-save-premium {
-    background: var(--color-success);
     color: white;
     box-shadow: 0 4px 12px var(--color-success-glow);
 }

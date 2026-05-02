@@ -12,6 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from contextlib import asynccontextmanager
 from typing import Any, Callable
 
+from .exceptions import PapandaError
 from . import models
 from .database import get_engine
 from .routers import settings as settings_router, auth as auth_router, admin
@@ -87,6 +88,27 @@ async def add_security_headers_and_user(request: Request, call_next: Callable) -
     )
 
     return response
+
+@app.exception_handler(PapandaError)
+async def papanda_exception_handler(request: Request, exc: PapandaError) -> Any:
+    """Обработка кастомных ошибок приложения."""
+    logger.warning(f"App Error: {exc.message} (status: {exc.status_code})")
+    
+    if "text/html" in request.headers.get("accept", ""):
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "detail": exc.message,
+            "details": exc.details
+        }, status_code=exc.status_code)
+        
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": "error",
+            "message": exc.message,
+            "details": exc.details
+        }
+    )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> Any:

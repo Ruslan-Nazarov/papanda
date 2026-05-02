@@ -1,0 +1,195 @@
+/* ========================================================
+   PAPANDA BASE COMPONENTS
+   Общие UI-компоненты для всего приложения
+   ======================================================== */
+
+/* --- Модальные окна (Универсальные) --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: var(--z-modal);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-slow);
+}
+
+.modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    margin: auto;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 800px;
+    max-width: 95%;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    animation: modalFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+    padding: var(--spacing-5) var(--spacing-6);
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--color-text-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-bg-page);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.modal-close {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1;
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover { 
+    color: var(--color-text-dark); 
+    transform: scale(1.1); 
+}
+
+.modal-body {
+    padding: var(--spacing-6);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: var(--spacing-5) var(--spacing-6);
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-4);
+    background: var(--color-bg-white);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* --- Кнопки (Премиум) --- */
+.btn {
+    padding: 12px 28px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: none;
+    font-size: var(--text-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 6px var(--color-primary-glow);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px var(--color-primary-glow);
+}
+
+.btn-secondary {
+    background-color: var(--color-bg-subtle);
+    color: var(--color-text-medium);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-border);
+    color: var(--color-text-dark);
+}
+
+.btn-success {
+    background-color: var(--color-success);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: var(--color-success-dark);
+    box-shadow: 0 4px 12px var(--color-success-glow);
+}
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: var(--color-error-dark);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+/* --- Формы (Премиум) --- */
+.form-group {
+    margin-bottom: var(--spacing-5);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--spacing-2);
+    font-weight: 600;
+    color: var(--color-text-medium);
+    font-size: var(--text-sm);
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-family: inherit;
+    transition: all var(--transition-base);
+    background: var(--color-bg-white);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+/* --- Скроллбары --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border-medium);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-faint);
+}
