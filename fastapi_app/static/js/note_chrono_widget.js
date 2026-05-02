@@ -127,14 +127,14 @@ window.openNoteExpandModal = function (id = null, note = '', category = '') {
 window.openNoteStickerModal = function (source) {
     let id = null;
     if (source === 'expand') id = document.getElementById('expandNoteId')?.value;
-    else if (source === 'smart') id = window.app?.state?.currentNoteId;
+    else if (source === 'dialectics') id = window.app?.state?.currentNoteId;
 
     if (id) {
         openStickerModal({ parentType: 'note', parentId: id });
     } else {
         let prefix = 'widgetNote';
         if (source === 'expand') prefix = 'expandNote';
-        else if (source === 'smart') prefix = 'smartNote';
+        else if (source === 'dialectics') prefix = 'dialectics';
 
         openStickerModal({
             source: 'note_modal',
@@ -150,7 +150,7 @@ window.openNoteStickerModal = function (source) {
 window.updateNoteStickerUI = function (attached, source) {
     let btnId = 'widgetNoteStickerBtn';
     if (source === 'expand') btnId = 'expandNoteStickerBtn';
-    else if (source === 'smart') btnId = 'smartNoteStickerBtn';
+    else if (source === 'dialectics') btnId = 'dialecticsStickerBtn';
 
     const btn = document.getElementById(btnId);
     if (!btn) return;
@@ -338,23 +338,23 @@ window.refreshRule = async function () {
     } catch (e) { console.error('Rule refresh failed', e); }
 };
 
-// ─── Smart Notes Pinning ──────────────────────────────────────────────────────
+// ─── Dialectics Pinning ──────────────────────────────────────────────────────
 
-window.pinSmartNote = async function (id) {
+window.pinDialectics = async function (id) {
     try {
-        const resp = await fetch(`/api/smart_notes/${id}/pin`, { method: 'POST' });
+        const resp = await fetch(`/api/dialectics/${id}/pin`, { method: 'POST' });
         if (resp.ok) {
-            showToast('✓ Note pinned to Dashboard', 'success');
+            showToast('✓ Dialectics pinned to Dashboard', 'success');
             setTimeout(() => location.reload(), 500);
         }
     } catch (e) { console.error(e); }
 };
 
-window.unpinSmartNote = async function (id) {
+window.unpinDialectics = async function (id) {
     try {
-        const resp = await fetch(`/api/smart_notes/${id}/unpin`, { method: 'POST' });
+        const resp = await fetch(`/api/dialectics/${id}/unpin`, { method: 'POST' });
         if (resp.ok) {
-            showToast('✓ Note unpinned', 'success');
+            showToast('✓ Dialectics unpinned', 'success');
             setTimeout(() => location.reload(), 500);
         }
     } catch (e) { console.error(e); }

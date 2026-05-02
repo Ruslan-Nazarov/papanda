@@ -23,21 +23,21 @@
 
         <div class="note-grid" id="noteGrid">
             {% for row in records %}
-                <div class="note-card" data-id="{{ row.id }}" data-category="{{ row.category }}" data-note="{{ row.note|e }}" 
-                     onclick="viewNoteFull({{ row.id }}, `{{ row.note|e }}`, '{{ row.category|e }}', {{ row.stickers_list | tojson if row.stickers_list else '[]' }})">
+                <div class="note-card" data-id="{{ row.id }}" 
+                     onclick="NoteService.openView({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }}, {{ row.stickers_list | tojson if row.stickers_list else '[]' }})">
                     <div class="note-cat">{{ row.category or 'Uncategorized' }}</div>
                     <div class="note-date">📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</div>
                     <div class="note-text">{{ row.note }}</div>
                     <div class="note-actions">
                         <button type="button" class="btn-action btn-edit" 
                             style="display: flex; align-items: center; justify-content: center; gap: 4px; opacity: {{ 1 if row.stickers_count else 0.4 }}; filter: {{ 'grayscale(0)' if row.stickers_count else 'grayscale(1)' }};"
-                            onclick="event.stopPropagation(); openParentStickers('note', '{{ row.id }}')" 
+                            onclick="event.stopPropagation(); NoteService.openView({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }}, {{ row.stickers_list | tojson if row.stickers_list else '[]' }})" 
                             title="Stickers"
                         >
                             <div class="sticker-icon-small" style="opacity: {{ 1 if row.stickers_count else 0.4 }}; filter: {{ 'grayscale(0)' if row.stickers_count else 'grayscale(1)' }};"></div>
                         </button>
-                        <button type="button" class="btn-action btn-edit" onclick="event.stopPropagation(); openEditNoteModal('{{ row.id }}', '{{ row.category|e }}', `{{ row.note|e }}`)">Edit</button>
-                        <button type="button" class="btn-action btn-del" onclick="event.stopPropagation(); deleteRecordCustom('Notes', {{ row.id }})">Del</button>
+                        <button type="button" class="btn-action btn-edit" onclick="event.stopPropagation(); NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }})">Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="event.stopPropagation(); RecordService.delete('Notes', {{ row.id }})">Del</button>
                     </div>
                 </div>
             {% else %}
@@ -48,113 +48,23 @@
             {% endfor %}
         </div>
 
-        <!-- Note View Modal with Sticker Board -->
-        <div id="noteViewModal" class="modal-overlay" style="display: none; z-index: 2000;">
-            <div class="modal-content" style="width: 600px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-                    <h3 id="noteViewCategory" style="margin: 0; font-size: 1.1em; color: #1e293b;">Note</h3>
-                    <button onclick="closeNoteViewModal()" style="background: none; border: none; cursor: pointer; font-size: 1.5em; color: #94a3b8;">&times;</button>
-                </div>
-                
-                <div id="noteViewFullText" style="font-size: 1em; line-height: 1.6; color: #334155; white-space: pre-wrap; max-height: 35vh; overflow-y: auto; background: #f8fafc; padding: 15px; border-radius: 10px;">
-                    <!-- Content -->
-                </div>
-
-                <div id="noteStickerBoard" style="border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-                    <div style="font-size: 0.75em; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                        <span>Sticker Board</span>
-                        <button onclick="addStickerToDbViewNote()" style="background: #3b82f6; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;">+ Add Sticker</button>
-                    </div>
-                    <div id="noteStickersList" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px;">
-                        <!-- Stickers -->
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end;">
-                    <button class="btn-modal-cancel" onclick="closeNoteViewModal()" style="padding: 10px 25px; background: #f1f5f9; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Закрыть</button>
-                </div>
-            </div>
-        </div>
-
-        {% if records|length > 0 %}
+        {% if records|length > 10 %}
         <div class="load-more-container" id="loadMoreNotesContainer">
-            <button class="btn-load-more" onclick="loadMoreNotes()">Show More Notes (+10)</button>
+            <button class="btn-load-more" onclick="loadMoreNotesLocal()">Show More Notes (+10)</button>
         </div>
         {% endif %}
     </div>
 
     <script>
-        let currentNoteIdInView = null;
-
-        function viewNoteFull(id, text, category, stickers = []) {
-            currentNoteIdInView = id;
-            const modal = document.getElementById('noteViewModal');
-            document.getElementById('noteViewCategory').innerText = category || 'Note';
-            document.getElementById('noteViewFullText').innerText = text;
-            
-            // Render Stickers
-            const stickListEl = document.getElementById('noteStickersList');
-            stickListEl.innerHTML = '';
-            
-            if (stickers && stickers.length > 0) {
-                stickers.forEach(s => {
-                    const sCard = document.createElement('div');
-                    sCard.className = 'mini-sticker-card';
-                    sCard.style.cssText = `
-                        background-color: ${s.color || '#fff9c4'};
-                        padding: 10px;
-                        border-radius: 8px;
-                        min-width: 110px;
-                        max-width: 170px;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                        font-size: 0.85em;
-                        cursor: pointer;
-                        border: 1px solid rgba(0,0,0,0.05);
-                    `;
-                    
-                    let content = s.title ? `<div style="font-weight: 700; margin-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 2px;">${s.title}</div>` : '';
-                    content += `<div style="color: #334155; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">${s.text}</div>`;
-                    
-                    sCard.innerHTML = content;
-                    sCard.onclick = (e) => {
-                        e.stopPropagation();
-                        if (typeof window.openStickerModal === 'function') {
-                            window.openStickerModal({ id: s.id });
-                        }
-                    };
-                    stickListEl.appendChild(sCard);
-                });
-            } else {
-                stickListEl.innerHTML = '<div style="font-size: 0.85em; color: #94a3b8; font-style: italic;">No stickers linked to this note</div>';
-            }
-
-            modal.style.display = 'flex';
-        }
-
-        function addStickerToDbViewNote() {
-            if (currentNoteIdInView && typeof window.openStickerModal === 'function') {
-                window.openStickerModal({ 
-                    parentType: 'note', 
-                    parentId: currentNoteIdInView,
-                    source: 'parent'
-                });
-            }
-        }
-
-        function closeNoteViewModal() {
-            document.getElementById('noteViewModal').style.display = 'none';
-        }
-
-        // Note Pagination Logic
+        // Local pagination logic for notes grid
         let visibleNotesCount = 10;
-        function loadMoreNotes() {
+        function loadMoreNotesLocal() {
             const grid = document.getElementById('noteGrid');
             if (!grid) return;
             const cards = grid.querySelectorAll('.note-card');
             const batch = 10;
             
-            const allCards = Array.from(cards);
-            allCards.forEach((card, idx) => {
+            cards.forEach((card, idx) => {
                 if (idx >= visibleNotesCount && idx < visibleNotesCount + batch) {
                     card.style.display = 'flex';
                 }
@@ -169,7 +79,9 @@
 
         // Initialize display for notes
         document.addEventListener('DOMContentLoaded', () => {
-            const cards = document.querySelectorAll('.note-card');
+            const grid = document.getElementById('noteGrid');
+            if (!grid) return;
+            const cards = grid.querySelectorAll('.note-card');
             cards.forEach((card, idx) => {
                 if (idx >= 10) card.style.display = 'none';
             });

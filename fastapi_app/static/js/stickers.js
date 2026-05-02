@@ -11,7 +11,7 @@ let currentStickerElement = null; // Reference to the element being edited
 let currentStickerParentType = null; // 'task', 'habit', 'note', 'event'
 let currentStickerParentId = null;
 let currentStickerNoteId = null;
-let currentStickerNoteSource = null; // 'widget', 'expand' or 'smart'
+let currentStickerNoteSource = null; // 'widget', 'expand' or 'dialectics'
 
 /**
  * Format sticker content (handles text, math, checklists)
@@ -385,7 +385,7 @@ async function saveStickerModal() {
         const source = currentStickerNoteSource; // 'widget', 'expand', or 'smart'
         let prefix = 'widgetNote';
         if (source === 'expand') prefix = 'expandNote';
-        else if (source === 'smart') prefix = 'smartNote';
+        else if (source === 'dialectics') prefix = 'dialectics';
         
         const textEl = document.getElementById(prefix + 'StickerText');
         const titleEl = document.getElementById(prefix + 'StickerTitle');

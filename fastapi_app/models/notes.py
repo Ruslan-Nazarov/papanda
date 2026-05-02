@@ -44,11 +44,11 @@ class StickyNote(Base):
     task_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("task.id"), nullable=True)
     habit_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("habits.id"), nullable=True)
     note_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("notes.id"), nullable=True)
-    smart_note_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("smart_notes.id"), nullable=True)
+    dialectics_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("dialectics.id"), nullable=True)
 
     # Relationships
     event = relationship("Event", backref="stickers", lazy="select", viewonly=True, foreign_keys=[event_id])
     task = relationship("Task", backref="stickers", lazy="select", viewonly=True, foreign_keys=[task_id])
     habit = relationship("Habit", backref="stickers", lazy="select", viewonly=True, foreign_keys=[habit_id])
     note = relationship("Notes", back_populates="stickers", viewonly=False, foreign_keys=[note_id])
-    smart_note = relationship("SmartNote", backref="stickers", lazy="select", viewonly=True, foreign_keys=[smart_note_id])
+    dialectics = relationship("Dialectics", backref="stickers", lazy="select", viewonly=True, foreign_keys=[dialectics_id])

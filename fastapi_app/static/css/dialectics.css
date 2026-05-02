@@ -3,7 +3,7 @@
 /* --- Layout & Typography --- */
 /* body { background-color: #f7f9fc; } -- REMOVED to preserve Papanda theme */
 
-.smart-notes-container {
+.dialectics-container {
     width: 100%;
     box-sizing: border-box;
     max-width: 1200px;
@@ -55,7 +55,7 @@
 .btn-delete-note { }
 
 /* --- Canvas Grid Layout (Fixed Step 17) --- */
-.note-canvas {
+.dialectics-canvas {
     flex: 1;
     position: relative;
     padding: 20px;
@@ -77,7 +77,7 @@
     z-index: 1;
 }
 
-.note-block {
+.dialectics-block {
     padding: var(--spacing-4);
     background: var(--color-bg-white);
     border: 1px solid var(--color-border);
@@ -90,7 +90,7 @@
     width: 46%; /* Ensure it stays on one side of the divider */
 }
 
-.note-block:hover {
+.dialectics-block:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }

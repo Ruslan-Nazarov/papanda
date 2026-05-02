@@ -3,47 +3,40 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Smart Notes - Papanda</title>
+    <title>Dialectics - Papanda</title>
     <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/smart_notes.css') }}?v=31">
-    <!-- D3 for Function Plot is now bundled in GraphTool.init() -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-    <!-- External libraries will be loaded locally or dynamically in later steps -->
 </head>
 
 <body>
 
-    <div class="smart-notes-container">
+    <div class="dialectics-container">
         <a href="/" class="back-link">← Back to Dashboard</a>
 
         <div class="page-intro">
-            <h1>🧠 Smart Notes</h1>
-            <p>Your intelligent knowledge base</p>
+            <h1>🧠 Dialectics</h1>
+            <p>Your intelligent dialogue-based knowledge base</p>
         </div>
 
-        <!-- Main Smart Note Interface -->
+        <!-- Main Dialectics Interface -->
         <div class="note-interface">
 
             <div class="note-header">
-                <input type="text" class="note-title-input" id="globalNoteTitle" placeholder="Enter Note Title..." style="flex: 1;">
+                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Enter Dialectics Title..." style="flex: 1;">
                 
-                <select id="globalNoteCategory" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9em; background: #fff; color: #64748b; outline: none; cursor: pointer; margin-right: 15px;">
-                    <option value="">No Category</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}">{{ cat }}</option>
-                    {% endfor %}
-                </select>
+
 
                 <div class="header-actions">
-                    <button class="btn btn-danger btn-delete-note" id="btnDeleteNote"
+                    <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
                         style="display: none;">🗑️ Delete</button>
-                    <button class="btn btn-primary btn-save-note" id="btnLoadNote">📂 Load</button>
-                    <button class="btn btn-success btn-save-note" id="btnSaveNote">💾 Save Note</button>
+                    <button class="btn btn-primary btn-save-note" id="btnLoadDialectics">📂 Load</button>
+                    <button class="btn btn-success btn-save-note" id="btnSaveDialectics">💾 Save Dialectics</button>
                 </div>
             </div>
 
-            <div class="note-canvas" id="noteCanvas">
+            <div class="dialectics-canvas" id="dialecticsCanvas">
                 <div class="canvas-divider" id="canvasDivider"></div>
                 <!-- Блоки будут вставляться сюда -->
             </div>
@@ -55,10 +48,10 @@
             <div id="inlineEditor" class="inline-editor">
 
                     <div class="editor-drag-handle" id="editorDragHandle">
-                        <span class="editor-title">Note Editor</span>
+                        <span class="editor-title">Dialectics Editor</span>
                         <div class="editor-header-controls" style="display: flex; align-items: center; gap: 8px;">
                             <!-- Standard Yellow Sticker Button -->
-                            <div class="note-sticker-btn mini-header" title="Add Sticker" onclick="event.stopPropagation(); window.openNoteStickerModal('smart')" style="cursor: pointer; transform: scale(0.9); margin-right: 5px;">
+                            <div class="note-sticker-btn mini-header" id="dialecticsStickerBtn" title="Add Sticker" onclick="event.stopPropagation(); window.openNoteStickerModal('dialectics')" style="cursor: pointer; transform: scale(0.9); margin-right: 5px;">
                                 <div class="sticker-icon-postit"></div>
                             </div>
                             
@@ -68,20 +61,6 @@
                             <button class="editor-btn-close" id="btnEditorClose" title="Close">✖</button>
                         </div>
                     </div>
-
-                <!-- Custom Math Menu (Step 3) -->
-                <div id="mathMenu" class="math-menu" style="display: none;">
-                    <div class="math-tabs">
-                        <div class="math-tab active" data-cat="main">Основные</div>
-                        <div class="math-tab" data-cat="brackets">Скобки</div>
-                        <div class="math-tab" data-cat="analysis">Анализ</div>
-                        <div class="math-tab" data-cat="misc">Разное</div>
-                    </div>
-                    <div id="mathPalette" class="math-palette">
-                        <!-- Buttons will be injected by JS -->
-                    </div>
-                </div>
-                <div id="mathContextMenu" class="math-context-menu" style="display: none;"></div>
 
                 <!-- Tabs Header -->
                 <div class="editor-tabs" id="editorTabs">
@@ -96,10 +75,10 @@
                         <div id="tiptap-editor" class="tiptap-editor" style="min-height: 250px; cursor: text;"></div>
                         
                         <!-- Hidden inputs for sticker metadata -->
-                        <input type="hidden" id="smartNoteStickerText">
-                        <input type="hidden" id="smartNoteStickerTitle">
-                        <input type="hidden" id="smartNoteStickerColor" value="#fff9c4">
-                        <input type="hidden" id="smartNoteStickerType" value="text">
+                        <input type="hidden" id="dialecticsStickerText">
+                        <input type="hidden" id="dialecticsStickerTitle">
+                        <input type="hidden" id="dialecticsStickerColor" value="#fff9c4">
+                        <input type="hidden" id="dialecticsStickerType" value="text">
                     </div>
                     <!-- Graph Tab -->
                     <div id="editor-graph" class="tab-content">
@@ -115,7 +94,7 @@
                             <button class="graph-btn-insert" id="btnGraphInsert">Вставить в текст</button>
                         </div>
                     </div>
-                    <!-- Shapes Tab (Step 5) -->
+                    <!-- Shapes Tab -->
                     <div id="editor-shapes" class="tab-content">
                         <div class="shapes-editor-ui">
                             <div class="shapes-toolbar">
@@ -153,31 +132,42 @@
                         <button class="btn btn-primary editor-btn-save" id="btnEditorSave">ОК</button>
                     </div>
                 </div>
-                <!-- Resize handle INSIDE the editor -->
                 <div id="editorResizeHandle" class="editor-resize-handle"></div>
             </div>
 
         </div>
     </div>
 
-
-
-    <!-- Load Note Modal -->
-    <div id="loadNoteModal" class="modal" style="display: none;">
+    <!-- Load Dialectics Modal -->
+    <div id="loadDialecticsModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h3 style="margin-top: 0;">Load Smart Note</h3>
+            <h3 style="margin-top: 0;">Load Dialectics</h3>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 15px;">
-            <div id="loadNotesList" class="load-notes-list">
+            <div id="loadDialecticsList" class="load-notes-list">
                 <div style="color: #64748b; text-align: center;">Loading...</div>
             </div>
             <button id="btnModalCancel" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
         </div>
     </div>
 
+    <!-- Dialectics View Modal -->
+    <div id="dialecticsViewModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; border: 2px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <h2 id="dialecticsViewTitle" style="margin: 0; color: #1e293b;">Dialectics Title</h2>
+                <button class="btn-close-modal" onclick="document.getElementById('dialecticsViewModal').style.display='none'">×</button>
+            </div>
+            <div id="dialecticsViewBody" style="color: #475569; line-height: 1.6; font-size: 1.1em; background: #f8fafc; padding: 20px; border-radius: 10px;">
+                <!-- Content will be injected here -->
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="btnViewModalEdit" class="btn btn-primary" style="background-color: #6366f1;">Edit in Canvas</button>
+                <button onclick="document.getElementById('dialecticsViewModal').style.display='none'" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
 
-
-
-    <script type="module" src="/static/dist/smart_notes.bundle.js?v={{ range(1, 9999) | random }}"></script>
+    <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
 
     {% include 'partials/footer.html' %}
 </body>

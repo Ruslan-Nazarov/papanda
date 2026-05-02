@@ -4,15 +4,14 @@ from sqlalchemy.sql import func
 from datetime import datetime
 from ..database import Base
 
-class SmartNote(Base):
+class Dialectics(Base):
     """
-    Модель 'умной заметки' с поддержкой JSON-структуры блоков.
+    Модель 'Диалектики' (ранее Smart Note) с поддержкой JSON-структуры блоков.
     """
-    __tablename__ = "smart_notes"
+    __tablename__ = "dialectics"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    title: Mapped[str] = mapped_column(String, index=True, default="Untitled Note")
-    category: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String, index=True, default="Untitled Dialectics")
     content_json: Mapped[str] = mapped_column(Text, default="[]")
     is_pinned: Mapped[bool] = mapped_column(default=False)
     

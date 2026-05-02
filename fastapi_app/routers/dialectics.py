@@ -10,45 +10,38 @@ from ..database import get_db
 from ..services.auth import check_auth_dependency
 from ..config import templates
 from ..logger import logger
-from ..models.smart_notes import SmartNote
-from ..schemas import SmartNoteCreate, SmartNoteView, SmartNoteUpdate, StickyNoteCreate, SuccessResponse
+from ..models.dialectics import Dialectics
+from ..schemas import DialecticsCreate, DialecticsView, DialecticsUpdate, StickyNoteCreate, SuccessResponse
 from ..services.sticky_note_service import StickyNoteService
 from ..dependencies import get_sticky_note_service
 
 router = APIRouter(
-    tags=["smart_notes"]
+    tags=["dialectics"]
 )
 
-@router.get("/smart_notes", response_class=HTMLResponse)
-async def view_smart_notes(
+@router.get("/dialectics", response_class=HTMLResponse)
+async def view_dialectics(
     request: Request,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
 ) -> HTMLResponse:
-    """Отображает страницу 'умных заметок'."""
-    categories_res = await db.execute(select(models.NoteCategory))
-    categories = [c.name for c in categories_res.scalars().all()]
-    
-    return templates.TemplateResponse("smart_notes.html", {
-        "request": request,
-        "categories": categories
+    """Отображает страницу 'Диалектики'."""
+    return templates.TemplateResponse("dialectics.html", {
+        "request": request
     })
 
-@router.post("/api/smart_notes/save", response_model=SmartNoteView)
-async def save_smart_note(
-    data: SmartNoteCreate,
+@router.post("/api/dialectics/save", response_model=DialecticsView)
+async def save_dialectics(
+    data: DialecticsCreate,
     db: AsyncSession = Depends(get_db),
     sns: StickyNoteService = Depends(get_sticky_note_service),
     user: Any = Depends(check_auth_dependency)
-) -> SmartNote:
-    """Сохраняет новую 'умную заметку' (с блоками содержимого)."""
-    # Removed auto-unpinning to allow multiple pinned notes
-
+) -> Dialectics:
+    """Сохраняет новую запись 'Диалектики'."""
     # Convert blocks back to standard dicts before dumping
     content_json = json.dumps([b.model_dump() for b in data.blocks], ensure_ascii=False)
-    new_note = SmartNote(
-        title=data.title or "Untitled Note",
-        category=data.category,
+    new_note = Dialectics(
+        title=data.title or "Untitled Dialectics",
         content_json=content_json,
         is_pinned=data.is_pinned
     )
@@ -63,59 +56,57 @@ async def save_smart_note(
             "title": data.sticker_title,
             "color": data.sticker_color or "#fff9c4",
             "type": data.sticker_type or "text",
-            "smart_note_id": new_note.id
+            "dialectics_id": new_note.id
         }
         await sns.create_note(s_data)
 
     return new_note
 
-@router.get("/api/smart_notes", response_model=List[SmartNoteView])
-async def list_smart_notes(
+@router.get("/api/dialectics", response_model=List[DialecticsView])
+async def list_dialectics(
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
 ) -> Any:
-    """Возвращает список всех 'умных заметок' с возможностью поиска."""
-    query = select(SmartNote)
+    """Возвращает список записей 'Диалектики'."""
+    query = select(Dialectics)
     if search:
-        query = query.where(SmartNote.title.ilike(f"%{search}%"))
-    result = await db.execute(query.order_by(SmartNote.updated_at.desc()))
+        query = query.where(Dialectics.title.ilike(f"%{search}%"))
+    result = await db.execute(query.order_by(Dialectics.updated_at.desc()))
     return result.scalars().all()
 
-@router.get("/api/smart_notes/{note_id}", response_model=SmartNoteView)
-async def get_smart_note(
-    note_id: int,
+@router.get("/api/dialectics/{id}", response_model=DialecticsView)
+async def get_dialectics(
+    id: int,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
-) -> SmartNote:
-    """Возвращает содержимое конкретной 'умной заметки'."""
-    note = await db.get(SmartNote, note_id)
+) -> Dialectics:
+    """Возвращает содержимое конкретной записи."""
+    note = await db.get(Dialectics, id)
     if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
+        raise HTTPException(status_code=404, detail="Entry not found")
     return note
 
-@router.put("/api/smart_notes/{note_id}", response_model=SmartNoteView)
-async def update_smart_note(
-    note_id: int,
-    data: SmartNoteUpdate,
+@router.put("/api/dialectics/{id}", response_model=DialecticsView)
+async def update_dialectics(
+    id: int,
+    data: DialecticsUpdate,
     db: AsyncSession = Depends(get_db),
     sns: StickyNoteService = Depends(get_sticky_note_service),
     user: Any = Depends(check_auth_dependency)
-) -> SmartNote:
-    """Обновляет существующую 'умную заметку'."""
-    note = await db.get(SmartNote, note_id)
+) -> Dialectics:
+    """Обновляет существующую запись 'Диалектики'."""
+    note = await db.get(Dialectics, id)
     if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
+        raise HTTPException(status_code=404, detail="Entry not found")
     
     # Convert blocks back to standard dicts before dumping
     content_json = json.dumps([b.model_dump() for b in data.blocks], ensure_ascii=False)
     
     note.title = data.title
-    note.category = data.category
     note.content_json = content_json
     
     if data.is_pinned is not None:
-        # Removed auto-unpinning
         note.is_pinned = data.is_pinned
     
     await db.commit()
@@ -123,9 +114,9 @@ async def update_smart_note(
 
     # Handle sticker
     if data.sticker_text or data.sticker_title:
-        # Check if sticker already exists for this smart note
+        # Check if sticker already exists for this dialectics record
         result = await db.execute(select(models.StickyNote).where(
-            models.StickyNote.smart_note_id == note.id,
+            models.StickyNote.dialectics_id == note.id,
             models.StickyNote.finished_at.is_(None)
         ).limit(1))
         existing_sticker = result.scalar_one_or_none()
@@ -135,7 +126,7 @@ async def update_smart_note(
             "title": data.sticker_title,
             "color": data.sticker_color or "#fff9c4",
             "type": data.sticker_type or "text",
-            "smart_note_id": note.id
+            "dialectics_id": note.id
         }
         
         if existing_sticker:
@@ -151,58 +142,58 @@ async def update_smart_note(
 
     return note
 
-@router.get("/api/smart_notes/pinned/active", response_model=Optional[SmartNoteView])
-async def get_pinned_smart_note(
+@router.get("/api/dialectics/pinned/active", response_model=Optional[DialecticsView])
+async def get_pinned_dialectics(
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
-) -> Optional[SmartNote]:
-    """Возвращает текущую закрепленную заметку."""
-    result = await db.execute(select(SmartNote).where(SmartNote.is_pinned == True).limit(1))
+) -> Optional[Dialectics]:
+    """Возвращает закрепленную запись."""
+    result = await db.execute(select(Dialectics).where(Dialectics.is_pinned == True).limit(1))
     return result.scalar_one_or_none()
 
-@router.post("/api/smart_notes/{note_id}/pin", response_model=SmartNoteView)
-async def pin_smart_note(
-    note_id: int,
+@router.post("/api/dialectics/{id}/pin", response_model=DialecticsView)
+async def pin_dialectics(
+    id: int,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
-) -> SmartNote:
-    """Закрепляет конкретную заметку."""
-    note = await db.get(SmartNote, note_id)
+) -> Dialectics:
+    """Закрепляет запись."""
+    note = await db.get(Dialectics, id)
     if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
+        raise HTTPException(status_code=404, detail="Entry not found")
     
     note.is_pinned = True
     await db.commit()
     await db.refresh(note)
     return note
 
-@router.post("/api/smart_notes/{note_id}/unpin", response_model=SmartNoteView)
-async def unpin_smart_note(
-    note_id: int,
+@router.post("/api/dialectics/{id}/unpin", response_model=DialecticsView)
+async def unpin_dialectics(
+    id: int,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
-) -> SmartNote:
-    """Открепляет конкретную заметку."""
-    note = await db.get(SmartNote, note_id)
+) -> Dialectics:
+    """Открепляет запись."""
+    note = await db.get(Dialectics, id)
     if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
+        raise HTTPException(status_code=404, detail="Entry not found")
     
     note.is_pinned = False
     await db.commit()
     await db.refresh(note)
     return note
 
-@router.delete("/api/smart_notes/{note_id}", response_model=schemas.SuccessResponse)
-async def delete_smart_note(
-    note_id: int,
+@router.delete("/api/dialectics/{id}", response_model=schemas.SuccessResponse)
+async def delete_dialectics(
+    id: int,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
 ):
-    """Удаляет 'умную заметку'."""
-    note = await db.get(SmartNote, note_id)
+    """Удаляет запись."""
+    note = await db.get(Dialectics, id)
     if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
+        raise HTTPException(status_code=404, detail="Entry not found")
     
     await db.delete(note)
     await db.commit()
-    return schemas.SuccessResponse(message="Note deleted")
+    return schemas.SuccessResponse(message="Dialectics entry deleted")

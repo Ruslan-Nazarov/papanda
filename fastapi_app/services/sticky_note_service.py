@@ -21,7 +21,7 @@ class StickyNoteService:
                 models.StickyNote.task_id.is_(None),
                 models.StickyNote.habit_id.is_(None),
                 models.StickyNote.note_id.is_(None),
-                models.StickyNote.smart_note_id.is_(None)
+                models.StickyNote.dialectics_id.is_(None)
             )
             .order_by(models.StickyNote.position.asc(), models.StickyNote.created_at.desc())
         )
@@ -52,7 +52,8 @@ class StickyNoteService:
             recurrence_id=data.get("recurrence_id"),
             task_id=data.get("task_id"),
             habit_id=data.get("habit_id"),
-            note_id=data.get("note_id")
+            note_id=data.get("note_id"),
+            dialectics_id=data.get("dialectics_id")
         )
         self.db.add(note)
         await self.db.commit()
@@ -175,7 +176,7 @@ class StickyNoteService:
                 models.StickyNote.task_id.is_(None),
                 models.StickyNote.habit_id.is_(None),
                 models.StickyNote.note_id.is_(None),
-                models.StickyNote.smart_note_id.is_(None)
+                models.StickyNote.dialectics_id.is_(None)
             )
             .order_by(models.StickyNote.created_at.asc())
         )

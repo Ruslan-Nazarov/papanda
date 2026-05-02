@@ -1,21 +1,21 @@
 /**
- * smart_notes.js - Главный оркестратор (Entry Point)
+ * dialectics.js - Главный оркестратор (Entry Point) для Диалектики
  */
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { NoteAPI } from './smart_notes/api.js';
-import { NoteUI } from './smart_notes/ui_utils.js';
-import { MathNode, ResizableImage } from './smart_notes/editor_setup.js';
-import { MathTool } from './smart_notes/tools/math.js';
-import { GraphTool } from './smart_notes/tools/graph.js';
-import { ShapeTool } from './smart_notes/tools/shapes.js';
+import { DialecticsAPI } from './dialectics/api.js';
+import { DialecticsUI } from './dialectics/ui_utils.js';
+import { MathNode, ResizableImage } from './dialectics/editor_setup.js';
+import { MathTool } from './dialectics/tools/math.js';
+import { GraphTool } from './dialectics/tools/graph.js';
+import { ShapeTool } from './dialectics/tools/shapes.js';
 
-class SmartNoteEngine {
+class DialecticsEngine {
     constructor() {
         // Fallback for Toast notifications if not defined globally
         window.showToast = window.showToast || ((msg) => console.log("Toast:", msg));
         
-        console.log("SmartNoteEngine: Initializing Modular App...");
+        console.log("DialecticsEngine: Initializing Modular App...");
         this.state = { 
             currentNoteId: null, 
             pendingSide: null, 
@@ -35,18 +35,18 @@ class SmartNoteEngine {
             }
         };
         this.dom = {
-            canvas: document.getElementById('noteCanvas'), 
+            canvas: document.getElementById('dialecticsCanvas'), 
             editor: document.getElementById('inlineEditor'),
-            title: document.getElementById('globalNoteTitle'), 
-            category: document.getElementById('globalNoteCategory'),
-            deleteBtn: document.getElementById('btnDeleteNote'), 
+            title: document.getElementById('globalDialecticsTitle'), 
+
+            deleteBtn: document.getElementById('btnDeleteDialectics'), 
             backdrop: document.getElementById('expandedBackdrop'), 
             dragHandle: document.getElementById('editorDragHandle'),
-            loadModal: document.getElementById('loadNoteModal'), 
-            loadList: document.getElementById('loadNotesList'),
-            viewModal: document.getElementById('smartNoteViewModal'),
-            viewTitle: document.getElementById('viewModalTitle'),
-            viewBody: document.getElementById('viewModalBody'),
+            loadModal: document.getElementById('loadDialecticsModal'), 
+            loadList: document.getElementById('loadDialecticsList'),
+            viewModal: document.getElementById('dialecticsViewModal'),
+            viewTitle: document.getElementById('dialecticsViewTitle'),
+            viewBody: document.getElementById('dialecticsViewBody'),
             debug: document.getElementById('editorDebugLogs'),
             dashboardTextarea: document.getElementById('dashboard-note-editor')
         };
@@ -57,8 +57,11 @@ class SmartNoteEngine {
     }
 
     async init() {
-        this.logDebug("Engine init...");
+        this.logDebug("Engine init... (Dialectics)");
         
+        if (!this.dom.canvas) {
+            this.logDebug("WARNING: dialecticsCanvas not found in DOM");
+        }
         try {
             await MathTool.initMathLive();
         } catch (e) {
@@ -78,7 +81,7 @@ class SmartNoteEngine {
             if (this.dom.editor.classList.contains('embedded') && this.dom.dashboardTextarea) {
                 this.setupDashboardTextarea();
             } else {
-                // Standalone mode: check URL for note ID
+                // Standalone mode: check URL for record ID
                 const params = new URLSearchParams(window.location.search);
                 const noteId = params.get('id');
                 if (noteId) {
@@ -111,7 +114,7 @@ class SmartNoteEngine {
         const line = document.createElement('div');
         line.textContent = `[${time}] ${msg}`;
         this.dom.debug.prepend(line);
-        console.log(`[SmartNotes Debug] ${msg}`);
+        console.log(`[Dialectics Debug] ${msg}`);
     }
 
     checkLibs() {
@@ -125,12 +128,12 @@ class SmartNoteEngine {
     }
 
     _bindEvents() {
-        NoteUI.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state);
+        DialecticsUI.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state);
         
         const bind = (id, fn) => document.getElementById(id)?.addEventListener('click', fn.bind(this));
         
-        bind('btnDeleteNote', this.deleteGlobal);
-        bind('btnSaveNote', this.saveGlobal);
+        bind('btnDeleteDialectics', this.deleteGlobal);
+        bind('btnSaveDialectics', this.saveGlobal);
         bind('btnMathFormula', this.showMathMenu);
         bind('btnBoldFormat', this.toggleBold);
         
@@ -144,7 +147,7 @@ class SmartNoteEngine {
         bind('btnPinNote', this.pinCurrent);
         bind('btnEditorClose', this.close);
         bind('btnEditorExpand', this.toggleExpand);
-        bind('btnLoadNote', this.showLoadModal);
+        bind('btnLoadDialectics', this.showLoadModal);
         
         bind('btnViewModalEdit', () => {
             this.hideViewModal();
@@ -152,33 +155,58 @@ class SmartNoteEngine {
         });
         
         bind('btnViewModalDelete', async () => {
-            if (confirm("Delete this note?")) {
-                if (await NoteAPI.delete(this.state.viewingNoteId)) location.reload();
+            if (confirm("Delete this entry?")) {
+                if (await DialecticsAPI.delete(this.state.viewingNoteId)) location.reload();
             }
         });
 
         if (this.dom.canvas) {
-            this.dom.canvas.addEventListener('click', (e) => {
-                if (e.target.closest('button, .resize-handle')) return;
-                const b = e.target.closest('.note-block');
+            this.logDebug("Canvas found, binding events...");
+            
+            const handleCanvasClick = (e) => {
+                // If it's a touch event, we need to extract the target from the touch object
+                const target = e.target || (e.changedTouches && e.changedTouches[0].target);
+                if (!target) return;
+
+                this.logDebug("Canvas clicked, checking target...");
+
+                // Ignore if clicked on buttons or existing blocks
+                if (target.closest('button, .resize-handle, .block-actions')) return;
+                const b = target.closest('.dialectics-block');
                 if (b) return;
 
                 const r = this.dom.canvas.getBoundingClientRect();
+                const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
                 const mid = r.left + (r.width / 2);
-                const clickedSide = e.clientX < mid ? 'left' : 'right';
-                const lastSide = this.getLastSide();
                 
-                if (lastSide === null || clickedSide !== lastSide) {
-                    this.state.editingBlock = null;
-                    this.state.pendingSide = clickedSide;
-                    this.open();
-                } else {
-                    window.showToast("Пожалуйста, чередуйте стороны (формат диалога)", "info");
+                // Ступенчатая логика: определяем следующую сторону
+                const lastSide = this.getLastSide();
+                let nextSide = 'left'; // Default for first block
+                
+                if (lastSide === 'left') nextSide = 'right';
+                else if (lastSide === 'right') nextSide = 'left';
+                else {
+                    // Если это первая запись, можно разрешить выбор стороны кликом
+                    nextSide = clientX < mid ? 'left' : 'right';
                 }
+
+                this.logDebug(`Canvas click: lastSide=${lastSide}, determined nextSide=${nextSide}`);
+                
+                this.state.editingBlock = null;
+                this.state.pendingSide = nextSide;
+                this.open();
+            };
+
+            this.dom.canvas.addEventListener('click', handleCanvasClick);
+            // Support for touch devices
+            this.dom.canvas.addEventListener('touchend', (e) => {
+                // Prevent ghost clicks if needed, but usually touchend is enough
+                if (e.cancelable) e.preventDefault();
+                handleCanvasClick(e.changedTouches[0]);
             });
 
             this.dom.canvas.addEventListener('dblclick', (e) => {
-                const b = e.target.closest('.note-block');
+                const b = e.target.closest('.dialectics-block');
                 if (b) {
                     this.state.editingBlock = b;
                     this.openEdit(b);
@@ -340,9 +368,9 @@ class SmartNoteEngine {
     }
 
     open(content = '') {
-        // On standalone page, the editor is a modal/popover that needs to be shown
+        this.logDebug(`Opening editor... pendingSide=${this.state.pendingSide}`);
         if (this.dom.editor && !this.dom.editor.classList.contains('embedded')) {
-            NoteUI.toggleDisplay(this.dom.editor, true, true);
+            DialecticsUI.toggleDisplay(this.dom.editor, true, true);
         }
         
         this.switchTab('text');
@@ -350,11 +378,10 @@ class SmartNoteEngine {
             this.state.tiptap.commands.setContent(content);
             this.state.tiptap.commands.focus();
         } else if (this.dom.dashboardTextarea) {
-            // Convert HTML to text for textarea
             const temp = document.createElement('div');
             temp.innerHTML = content;
             this.dom.dashboardTextarea.value = temp.innerText || temp.textContent || "";
-            this.dom.dashboardTextarea.dispatchEvent(new Event('input')); // Trigger resize
+            this.dom.dashboardTextarea.dispatchEvent(new Event('input')); 
         }
     }
 
@@ -364,7 +391,7 @@ class SmartNoteEngine {
     }
 
     close() {
-        console.log("SmartNotes: Closing editor...");
+        console.log("Dialectics: Closing editor...");
         if (this.dom.editor) {
             this.dom.editor.style.display = 'none';
             this.dom.editor.classList.remove('expanded');
@@ -378,14 +405,13 @@ class SmartNoteEngine {
         this.state.isExpanded = !this.state.isExpanded;
         if (this.dom.editor) {
             this.dom.editor.classList.toggle('expanded', this.state.isExpanded);
-            if (this.dom.backdrop) NoteUI.toggleDisplay(this.dom.backdrop, this.state.isExpanded);
+            if (this.dom.backdrop) DialecticsUI.toggleDisplay(this.dom.backdrop, this.state.isExpanded);
         }
     }
 
     async saveAndPin() {
         this.logDebug("Saving and pinning...");
-        const title = this.dom.title.value || "Untitled Note";
-        const category = this.dom.category ? this.dom.category.value : "";
+        const title = this.dom.title.value || "Untitled Dialectics";
         let html = "";
         
         if (this.state.tiptap) {
@@ -396,17 +422,19 @@ class SmartNoteEngine {
         
         const payload = { 
             title, 
-            category,
             blocks: [{ side: 'left', html }],
-            is_pinned: true 
+            is_pinned: true,
+            sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
+            sticker_title: document.getElementById('dialecticsStickerTitle')?.value || "",
+            sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
+            sticker_type: document.getElementById('dialecticsStickerType')?.value || "text"
         };
         
         try {
-            const res = await NoteAPI.save(payload, this.state.currentNoteId);
+            const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
             if (res) {
-                window.showToast("✓ Note saved and pinned", "success");
+                window.showToast("✓ Dialectics entry saved and pinned", "success");
                 if (this.dom.editor) this.close();
-                // Reload dashboard to update pinned widget
                 if (this.dom.editor && this.dom.editor.classList.contains('embedded')) {
                     setTimeout(() => location.reload(), 500);
                 }
@@ -418,16 +446,16 @@ class SmartNoteEngine {
         if (this.state.currentNoteId) {
             await this.togglePin(this.state.currentNoteId, true);
         } else {
-            alert("Save note first.");
+            alert("Save entry first.");
         }
     }
 
     async togglePin(id, shouldPin) {
         const endpoint = shouldPin ? 'pin' : 'unpin';
         try {
-            const res = await fetch(`/api/smart_notes/${id}/${endpoint}`, { method: 'POST' });
+            const res = await fetch(`/api/dialectics/${id}/${endpoint}`, { method: 'POST' });
             if (res.ok) {
-                window.showToast(`✓ Note ${shouldPin?'pinned':'unpinned'}`, "success");
+                window.showToast(`✓ Dialectics ${shouldPin?'pinned':'unpinned'}`, "success");
                 setTimeout(() => location.reload(), 500);
             }
         } catch (e) { console.error(e); }
@@ -445,15 +473,15 @@ class SmartNoteEngine {
     async searchNotes(query) {
         if (this._searchTimeout) clearTimeout(this._searchTimeout);
         this._searchTimeout = setTimeout(async () => {
-            NoteUI.setLoading(this.dom.loadList);
-            const notes = await NoteAPI.list(query);
+            DialecticsUI.setLoading(this.dom.loadList);
+            const notes = await DialecticsAPI.list(query);
             this.state.notesList = notes;
             this.renderNotesList(notes);
         }, 300);
     }
 
     renderNotesList(notes) {
-        this.dom.loadList.innerHTML = notes.length ? '' : '<div style="color: #94a3b8; text-align: center; margin-top: 20px;">No notes found</div>';
+        this.dom.loadList.innerHTML = notes.length ? '' : '<div style="color: #94a3b8; text-align: center; margin-top: 20px;">No entries found</div>';
         notes.forEach(n => {
             const blocks = typeof n.content_json === 'string' ? JSON.parse(n.content_json) : n.content_json;
             const fullText = blocks.map(b => this.utils.extractText(b.html)).join(' ');
@@ -485,24 +513,37 @@ class SmartNoteEngine {
     }
 
     async loadNoteToEditor(id) {
-        const n = await NoteAPI.get(id);
+        const n = await DialecticsAPI.get(id);
         if (n) {
             this.state.currentNoteId = n.id;
             this.dom.title.value = n.title;
-            if (this.dom.category) this.dom.category.value = n.category || "";
             const blocks = typeof n.content_json === 'string' ? JSON.parse(n.content_json) : n.content_json;
             
             if (this.dom.canvas) {
-                // Full mode: render blocks on canvas and update URL
                 this.renderCanvas(blocks);
                 const url = new URL(window.location);
                 url.searchParams.set('id', n.id);
                 window.history.replaceState({}, '', url);
-            } else {
-                // Embedded mode: join all blocks into one textarea
-                const html = blocks.map(b => DOMPurify.sanitize(b.html)).join('<br>');
-                this.open(html);
             }
+            
+            // Handle sticker loading
+            const textEl = document.getElementById('dialecticsStickerText');
+            const titleEl = document.getElementById('dialecticsStickerTitle');
+            const colorEl = document.getElementById('dialecticsStickerColor');
+            const typeEl = document.getElementById('dialecticsStickerType');
+
+            if (n.sticker_text || n.sticker_title) {
+                if (textEl) textEl.value = n.sticker_text || "";
+                if (titleEl) titleEl.value = n.sticker_title || "";
+                if (colorEl) colorEl.value = n.sticker_color || "#fff9c4";
+                if (typeEl) typeEl.value = n.sticker_type || "text";
+                if (window.updateNoteStickerUI) window.updateNoteStickerUI(true, 'dialectics');
+            } else {
+                if (textEl) textEl.value = "";
+                if (titleEl) titleEl.value = "";
+                if (window.updateNoteStickerUI) window.updateNoteStickerUI(false, 'dialectics');
+            }
+
             this.hideLoadModal();
             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
         }
@@ -510,16 +551,15 @@ class SmartNoteEngine {
 
     renderCanvas(blocks) {
         if (!this.dom.canvas) return;
-        // Keep the divider if it's there
         const divider = document.getElementById('canvasDivider');
         this.dom.canvas.innerHTML = '';
         if (divider) this.dom.canvas.appendChild(divider);
 
         blocks.forEach(b => {
             const el = document.createElement('div');
-            el.className = `note-block block-${b.side}`;
+            el.className = `dialectics-block block-${b.side}`;
             el.innerHTML = `
-                <div class="note-content-inner">${b.html}</div>
+                <div class="dialectics-content-inner">${b.html}</div>
                 <div class="block-actions">
                     <button class="btn-block-edit">✎</button>
                     <button class="btn-block-del">×</button>
@@ -539,39 +579,43 @@ class SmartNoteEngine {
     }
 
     async saveGlobal() {
-        this.logDebug("Saving note (Full Mode)...");
-        const title = this.dom.title.value || "Untitled Note";
-        const category = this.dom.category ? this.dom.category.value : "";
+        this.logDebug("Saving Dialectics (Full Mode)...");
+        const title = this.dom.title.value || "Untitled Dialectics";
         
         if (this.state.editingBlock && this.state.tiptap) {
-            const inner = this.state.editingBlock.querySelector('.note-content-inner');
+            const inner = this.state.editingBlock.querySelector('.dialectics-content-inner');
             if (inner) inner.innerHTML = this.state.tiptap.getHTML();
         } else if (this.state.pendingSide && this.state.tiptap) {
             const html = this.state.tiptap.getHTML();
-            // Prevent adding completely empty blocks
             if (html !== '<p></p>' && html.trim() !== '') {
                 this.renderCanvas([...this.getBlocksFromCanvas(), { side: this.state.pendingSide, html }]);
             }
         }
 
         const blocks = this.getBlocksFromCanvas();
-        const payload = { title, category, blocks };
+        const payload = { 
+            title, 
+            blocks,
+            sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
+            sticker_title: document.getElementById('dialecticsStickerTitle')?.value || "",
+            sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
+            sticker_type: document.getElementById('dialecticsStickerType')?.value || "text"
+        };
         if (this.state.currentNoteId) payload.id = this.state.currentNoteId;
         
         this.logDebug(`Payload prepared with ${blocks.length} blocks`);
         
         try {
-            const res = await NoteAPI.save(payload, this.state.currentNoteId);
+            const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
             if (res) {
                 this.logDebug("Save successful");
                 this.state.currentNoteId = res.id;
                 
-                // Update URL seamlessly
                 const url = new URL(window.location);
                 url.searchParams.set('id', res.id);
                 window.history.replaceState({}, '', url);
 
-                window.showToast("✓ Note Saved", "success");
+                window.showToast("✓ Dialectics Saved", "success");
                 this.close();
                 if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
             } else {
@@ -587,8 +631,8 @@ class SmartNoteEngine {
     getBlocksFromCanvas() {
         if (!this.dom.canvas) return [];
         const blocks = [];
-        this.dom.canvas.querySelectorAll('.note-block').forEach(b => {
-            const inner = b.querySelector('.note-content-inner');
+        this.dom.canvas.querySelectorAll('.dialectics-block').forEach(b => {
+            const inner = b.querySelector('.dialectics-content-inner');
             if (inner) {
                 blocks.push({
                     side: b.classList.contains('block-left') ? 'left' : 'right',
@@ -600,7 +644,7 @@ class SmartNoteEngine {
     }
 
     async viewNoteDetails(id) {
-        const n = await NoteAPI.get(id);
+        const n = await DialecticsAPI.get(id);
         if (n) {
             this.state.viewingNoteId = n.id;
             this.dom.viewTitle.innerText = n.title;
@@ -615,18 +659,18 @@ class SmartNoteEngine {
     }
 
     async deleteGlobal() {
-        if (this.state.currentNoteId && confirm("Удалить заметку?")) {
-            if (await NoteAPI.delete(this.state.currentNoteId)) location.reload();
+        if (this.state.currentNoteId && confirm("Удалить запись?")) {
+            if (await DialecticsAPI.delete(this.state.currentNoteId)) location.reload();
         }
     }
 
     getLastSide() {
         if (!this.dom.canvas) return null;
-        const blocks = this.dom.canvas.querySelectorAll('.note-block');
+        const blocks = this.dom.canvas.querySelectorAll('.dialectics-block');
         if (blocks.length === 0) return null;
         return blocks[blocks.length - 1].classList.contains('block-left') ? 'left' : 'right';
     }
 
 }
 
-window.app = new SmartNoteEngine();
+window.app = new DialecticsEngine();

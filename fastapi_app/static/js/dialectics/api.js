@@ -1,18 +1,18 @@
 /**
- * api.js - Работа с сервером
+ * api.js - Работа с сервером (Dialectics)
  */
-export const NoteAPI = {
+export const DialecticsAPI = {
     async list(query = '') {
-        const url = query ? `/api/smart_notes?search=${encodeURIComponent(query)}` : '/api/smart_notes';
+        const url = query ? `/api/dialectics?search=${encodeURIComponent(query)}` : '/api/dialectics';
         const res = await fetch(url);
         return res.ok ? await res.json() : [];
     },
     async get(id) {
-        const res = await fetch(`/api/smart_notes/${id}`);
+        const res = await fetch(`/api/dialectics/${id}`);
         return res.ok ? await res.json() : null;
     },
     async save(payload, id = null) {
-        const url = id ? `/api/smart_notes/${id}` : '/api/smart_notes/save';
+        const url = id ? `/api/dialectics/${id}` : '/api/dialectics/save';
         const method = id ? 'PUT' : 'POST';
         const res = await fetch(url, {
             method,
@@ -22,7 +22,7 @@ export const NoteAPI = {
         return res.ok ? await res.json() : null;
     },
     async delete(id) {
-        const res = await fetch(`/api/smart_notes/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/dialectics/${id}`, { method: 'DELETE' });
         return res.ok;
     }
 };

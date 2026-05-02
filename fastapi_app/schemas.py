@@ -314,7 +314,7 @@ class StickyNoteCreate(StickyNoteBase):
     task_id: Optional[int] = None
     habit_id: Optional[int] = None
     note_id: Optional[int] = None
-    smart_note_id: Optional[int] = None
+    dialectics_id: Optional[int] = None
 
 class StickyNoteView(StickyNoteBase):
     """Схема для отображения стикера."""
@@ -327,7 +327,7 @@ class StickyNoteView(StickyNoteBase):
     task_id: Optional[int] = None
     habit_id: Optional[int] = None
     note_id: Optional[int] = None
-    smart_note_id: Optional[int] = None
+    dialectics_id: Optional[int] = None
     note: Optional[NoteView] = None
     model_config = ConfigDict(from_attributes=True)
 
@@ -359,18 +359,17 @@ class ObservationLogView(BaseModel):
     done_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
-# --- SMART NOTES ---
+# --- DIALECTICS (Formerly Smart Notes) ---
 
-class SmartNoteBlock(BaseModel):
-    """Блок содержимого 'умной заметки'."""
+class DialecticsBlock(BaseModel):
+    """Блок содержимого 'Диалектики'."""
     side: str
     html: str
 
-class SmartNoteCreate(BaseModel):
-    """Схема для создания 'умной заметки'."""
+class DialecticsCreate(BaseModel):
+    """Схема для создания 'Диалектики'."""
     title: str
-    category: Optional[str] = None
-    blocks: List[SmartNoteBlock]
+    blocks: List[DialecticsBlock]
     is_pinned: bool = False
     
     # Sticker data (optional)
@@ -379,12 +378,11 @@ class SmartNoteCreate(BaseModel):
     sticker_color: Optional[str] = "#fff9c4"
     sticker_type: Optional[str] = "text"
 
-class SmartNoteUpdate(BaseModel):
-    """Схема для обновления 'умной заметки'."""
+class DialecticsUpdate(BaseModel):
+    """Схема для обновления 'Диалектики'."""
     id: int
     title: str
-    category: Optional[str] = None
-    blocks: List[SmartNoteBlock]
+    blocks: List[DialecticsBlock]
     is_pinned: Optional[bool] = None
     
     # Sticker data (optional)
@@ -393,11 +391,10 @@ class SmartNoteUpdate(BaseModel):
     sticker_color: Optional[str] = "#fff9c4"
     sticker_type: Optional[str] = "text"
 
-class SmartNoteView(BaseModel):
-    """Схема для отображения 'умной заметки'."""
+class DialecticsView(BaseModel):
+    """Схема для отображения 'Диалектики'."""
     id: int
     title: str
-    category: Optional[str] = None
     content_json: str
     is_pinned: bool
     created_at: datetime

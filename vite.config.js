@@ -7,9 +7,9 @@ export default defineConfig({
     outDir: 'fastapi_app/static/dist',
     emptyOutDir: true,
     lib: {
-      entry: path.resolve(__dirname, 'fastapi_app/static/js/smart_notes.js'),
+      entry: path.resolve(__dirname, 'fastapi_app/static/js/dialectics.js'),
       formats: ['es'],
-      fileName: () => 'smart_notes.bundle.js'
+      fileName: () => 'dialectics.bundle.js'
     },
     rollupOptions: {
       // Мы НЕ помечаем зависимости как внешние, чтобы Vite запаковал их в бандл

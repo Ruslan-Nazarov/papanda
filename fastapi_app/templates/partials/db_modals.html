@@ -300,6 +300,17 @@
          </div>
          <div class="modal-body">
              <div id="noteViewFullText" class="chrono-view-text"></div>
+             
+             <!-- Sticker Board for Notes -->
+             <div id="dbViewNoteStickerBoard" style="border-top: 1px dashed #e2e8f0; padding-top: 15px; margin-top: 15px; display: none;">
+                <div style="font-size: 0.75em; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Sticker Board</span>
+                    <button id="addStickerToNoteBtn" style="background: #3b82f6; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;">+ Add Sticker</button>
+                </div>
+                <div id="dbViewNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px;">
+                    <!-- Stickers -->
+                </div>
+            </div>
          </div>
          <div class="modal-footer">
              <button type="button" class="btn-premium btn-cancel-premium" onclick="closeNoteViewModal()">Close</button>
