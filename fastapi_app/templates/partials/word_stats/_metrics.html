@@ -1,0 +1,67 @@
+{# partials/word_stats/_metrics.html — Top metric cards #}
+
+<div class="metrics-grid">
+    <div class="metric-card card-total card-relative">
+        <span class="help-trigger" onclick="showHelp(event, 'Total number of unique words in your database across all languages.')">?</span>
+        <span class="metric-label">Total Volume</span>
+        <span class="metric-value">{{ total_count }}</span>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 100%; background: #ccc"></div>
+        </div>
+    </div>
+
+    <div class="metric-card card-coverage card-relative">
+        <span class="help-trigger" onclick="showHelp(event, 'Percentage of words you have encountered at least once.')">?</span>
+        <span class="metric-label">Coverage</span>
+        <span class="metric-value">{{ coverage }}%</span>
+        <span style="font-size: 0.85em; color: #888">{{ learned_count }} words seen avg.</span>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ coverage }}%; background: lightgreen;"></div>
+        </div>
+    </div>
+
+    <div class="metric-card card-imw card-relative">
+        <span class="help-trigger" onclick="showHelp(event, 'Intelligent Memory Weight. Shows how close you are to the target of 80 repetitions per word.')">?</span>
+        <span class="metric-label">iMW Index</span>
+        <span class="metric-value">{{ imw }}%</span>
+        <span style="font-size: 0.85em; color: #888">Target: 80 shows/word</span>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ imw }}%; background: #5D9CEC;"></div>
+        </div>
+    </div>
+
+    <div class="metric-card card-relative" style="border-color: #27ae60; background-color: #f0fff4;">
+        <span class="help-trigger" onclick="showHelp(event, 'Number of word triplets marked as fully known and excluded from regular training.')">?</span>
+        <span class="metric-label">Fully Learned</span>
+        <span class="metric-value">{{ fully_learned_count }}</span>
+        <span style="font-size: 0.85em; color: #888">Word triplets excluded</span>
+        <div class="progress-bar-container">
+            <div class="progress-bar"
+                style="width: {{ (fully_learned_count / total_count * 100)|round(1) if total_count > 0 else 0 }}%; background: #27ae60;">
+            </div>
+        </div>
+    </div>
+
+    {% set colors = ['#3498DB', '#2ECC71', '#F1C40F'] %}
+    {% for lang_code in active_languages %}
+    <div class="metric-card card-relative" style="border-color: {{ colors[loop.index0 % 3] }}">
+        <span class="help-trigger" onclick="showHelp(event, 'Number of words marked as Known for the {{ all_languages.get(lang_code, lang_code|upper) }} language.')">?</span>
+        <span class="metric-label">Known {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+        <span class="metric-value">{{ known_counts.get(lang_code, 0) }}</span>
+        <div class="progress-bar-container">
+            <div class="progress-bar"
+                style="width: {{ (known_counts.get(lang_code, 0) / total_count * 100)|round(1) if total_count > 0 else 0 }}%; background: {{ colors[loop.index0 % 3] }};">
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="metric-card card-relative">
+        <span class="help-trigger" onclick="showHelp(event, 'Number of times any word was displayed on your dashboard or in a workout today.')">?</span>
+        <span class="metric-label">Shown Today</span>
+        <span class="metric-value">{{ shown_today }}</span>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 100%; background: var(--color-primary)"></div>
+        </div>
+    </div>
+</div>
