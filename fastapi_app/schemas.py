@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime, date
 from typing import Optional, List, Any
+from fastapi import Form
 
 # --- ОБЩИЕ СХЕМЫ ---
 
@@ -47,7 +48,16 @@ class NoteView(NoteBase):
     id: int
     is_pinned: bool = False
     created_at: datetime
+    preview: Optional[str] = None
+    title: Optional[str] = None
+    stickers: List['StickyNoteView'] = []
     model_config = ConfigDict(from_attributes=True)
+
+class NoteUpdate(BaseModel):
+    """Схема для обновления заметки."""
+    category: str
+    note: str
+    is_pinned: bool = False
 
 # --- TASKS (Задачи) ---
 
@@ -138,6 +148,28 @@ class WordUpdate(BaseModel):
     new_ru: str
     new_meaning: str = ""
 
+class MarkKnownRequest(BaseModel):
+    """Запрос на пометку слова как известного."""
+    eng: str
+    lang: str
+    is_known: bool = True
+
+class TestResultRequest(BaseModel):
+    """Запрос на запись результата теста."""
+    eng: str
+    is_correct: bool
+    lang: str
+
+class TripletLearnedRequest(BaseModel):
+    """Запрос на пометку тройки языков как изученной."""
+    eng: str
+    is_learned: bool = True
+
+class GenericUpdateSchema(BaseModel):
+    """Универсальная схема для inline-обновления любых записей."""
+    id: int
+    model_config = ConfigDict(extra='allow')
+
 # --- DASHBOARD ---
 
 # --- DASHBOARD & ACTIONS ---
@@ -177,6 +209,10 @@ class AccountUpdateSchema(BaseModel):
     """Схема обновления данных аккаунта."""
     username: Optional[str] = Field(None, min_length=3, max_length=20)
     password: Optional[str] = Field(None, min_length=5)
+
+    @classmethod
+    def as_form(cls, username: Optional[str] = Form(None), password: Optional[str] = Form(None)):
+        return cls(username=username, password=password)
 
 class SettingsUpdateSchema(BaseModel):
     """Схема обновления глобальных настроек."""

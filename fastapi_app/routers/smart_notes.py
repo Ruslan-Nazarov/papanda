@@ -4,14 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import json
 from typing import List, Any, Optional
-from .. import models
+from .. import models, schemas
 
 from ..database import get_db
 from ..services.auth import check_auth_dependency
 from ..config import templates
 from ..logger import logger
 from ..models.smart_notes import SmartNote
-from ..schemas import SmartNoteCreate, SmartNoteView, SmartNoteUpdate, StickyNoteCreate
+from ..schemas import SmartNoteCreate, SmartNoteView, SmartNoteUpdate, StickyNoteCreate, SuccessResponse
 from ..services.sticky_note_service import StickyNoteService
 from ..dependencies import get_sticky_note_service
 
@@ -192,12 +192,12 @@ async def unpin_smart_note(
     await db.refresh(note)
     return note
 
-@router.delete("/api/smart_notes/{note_id}")
+@router.delete("/api/smart_notes/{note_id}", response_model=schemas.SuccessResponse)
 async def delete_smart_note(
     note_id: int,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
-) -> JSONResponse:
+):
     """Удаляет 'умную заметку'."""
     note = await db.get(SmartNote, note_id)
     if not note:
@@ -205,4 +205,4 @@ async def delete_smart_note(
     
     await db.delete(note)
     await db.commit()
-    return JSONResponse(content={"status": "success", "message": "Note deleted"})
+    return schemas.SuccessResponse(message="Note deleted")

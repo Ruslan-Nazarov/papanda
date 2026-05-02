@@ -14,15 +14,10 @@ router = APIRouter(
 @router.post("/settings/update_account", name="update_account")
 async def update_account(
     request: Request,
+    data: schemas.AccountUpdateSchema = Depends(schemas.AccountUpdateSchema.as_form),
     account_service: AccountService = Depends(get_account_service),
 ) -> RedirectResponse:
     """Обновляет имя пользователя или пароль."""
-    try:
-        form_data = await request.form()
-        data = schemas.AccountUpdateSchema(**dict(form_data))
-    except Exception:
-        return RedirectResponse(url="/settings?error=validation", status_code=status.HTTP_303_SEE_OTHER)
-
     current_username = get_current_user_from_cookie(request)
     if not current_username:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)

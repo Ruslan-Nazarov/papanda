@@ -13,7 +13,7 @@ from ..services.auth import check_auth_dependency
 from ..services.state_manager import StateManager
 from ..services.word_service import WordService
 from ..dependencies import get_word_service, get_state_manager
-from .. import models
+from .. import models, schemas
 from ..config import templates
 from ..logger import logger
 
@@ -222,44 +222,25 @@ async def get_test_words(
     result = await word_service.get_random_test_words_data(limit=5)
     return {"words": result}
 
-@router.post("/mark_word_known")
+@router.post("/mark_word_known", response_model=schemas.SuccessResponse)
 async def mark_word_known(
-    request: Request,
+    data: schemas.MarkKnownRequest,
     word_service: WordService = Depends(get_word_service),
-) -> Any:
+):
     """Помечает конкретный язык слова как знакомый (JSON body)."""
-    data = await request.json()
-    eng = data.get("eng")
-    lang = data.get("lang")
-    is_known = data.get("is_known", True)
-
-    if not eng or not lang:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "Missing eng or lang"})
-
-    word = await word_service.mark_word_known(eng, lang, is_known)
+    word = await word_service.mark_word_known(data.eng, data.lang, data.is_known)
     if word:
-        db_lang = "en" if lang == "eng" else lang
-        field_name = f"is_known_{db_lang}"
-        return {
-            "status": "success",
-            "field": field_name,
-            "is_known": getattr(word, field_name, False)
-        }
-    return JSONResponse(status_code=404, content={"status": "error", "message": "Word not found"})
+        return schemas.SuccessResponse(message="Word status updated")
+    raise HTTPException(status_code=404, detail="Word not found")
 
-@router.post("/record_test_result")
+@router.post("/record_test_result", response_model=schemas.SuccessResponse)
 async def record_test_result(
-    request: Request,
+    data: schemas.TestResultRequest,
     word_service: WordService = Depends(get_word_service),
-) -> Any:
+):
     """Записывает результат теста."""
-    data = await request.json()
-    eng = data.get("eng")
-    is_correct = data.get("is_correct", False)
-    lang = data.get("lang")
-    
-    await word_service.record_test_result(is_correct, lang)
-    return {"status": "success"}
+    await word_service.record_test_result(data.is_correct, data.lang)
+    return schemas.SuccessResponse(message="Result recorded")
 
 @router.post("/update_word_data")
 async def update_word_data(
@@ -285,29 +266,20 @@ async def update_word_data(
     await word_service.update_word_full_dynamic(word_eng, new_translations, new_meaning)
     return RedirectResponse("/?saved=1", status_code=status.HTTP_303_SEE_OTHER)
 
-@router.post("/reset_word_stats")
-async def reset_word_stats(word_service: WordService = Depends(get_word_service)) -> Dict[str, str]:
+@router.post("/reset_word_stats", response_model=schemas.SuccessResponse)
+async def reset_word_stats(word_service: WordService = Depends(get_word_service)):
     """Обнуляет счётчик показов для всех слов."""
     await word_service.reset_all_stats()
-    return {"status": "success", "message": "Статистика слов сброшена"}
-
-@router.post("/mark_triplet_learned")
+@router.post("/mark_triplet_learned", response_model=schemas.SuccessResponse)
 async def mark_triplet_learned(
-    request: Request,
+    data: schemas.TripletLearnedRequest,
     word_service: WordService = Depends(get_word_service),
-) -> Any:
+):
     """Помечает активную тройку языков для слова как изученную (JSON body)."""
-    data = await request.json()
-    eng = data.get("eng")
-    is_learned = data.get("is_learned", True)
-
-    if not eng:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "Missing eng"})
-
-    word = await word_service.toggle_active_triplet_known(eng, is_learned)
+    word = await word_service.toggle_active_triplet_known(data.eng, data.is_learned)
     if word:
-        return {"status": "success", "is_learned": True}
-    return JSONResponse(status_code=404, content={"status": "error", "message": "Word not found"})
+        return schemas.SuccessResponse(message="Triplet status updated")
+    raise HTTPException(status_code=404, detail="Word not found")
 
 @router.get("/word_lookup")
 async def word_lookup(q: str, word_service: WordService = Depends(get_word_service)) -> Dict[str, Any]:

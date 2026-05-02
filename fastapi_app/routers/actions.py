@@ -40,10 +40,8 @@ async def _extract_form_data(request: Request) -> schemas.UniversalFormSchema:
     return schemas.UniversalFormSchema(**data)
 
 
-async def _process_form_submission(request: Request, dashboard_service: DashboardService) -> Union[int, str, None]:
+async def _process_form_submission(data: schemas.UniversalFormSchema, dashboard_service: DashboardService) -> Union[int, str, None]:
     """Обработка через DashboardService (Facade)."""
-    data = await _extract_form_data(request)
-    
     dt = parse_date_input(data.common_date)
     if isinstance(dt, date) and not isinstance(dt, datetime):
         dt = datetime.combine(dt, datetime.min.time())
@@ -69,27 +67,26 @@ async def submit_form(
     dashboard_service: DashboardService = Depends(get_dashboard_service),
     user: Any = Depends(check_auth_dependency),
 ) -> RedirectResponse:
+    """Обработка стандартной HTML-формы."""
     try:
-        await _process_form_submission(request, dashboard_service)
-    except ValidationError:
-        logger.info("Validation failed in submit_form")
+        data = await _extract_form_data(request)
+        await _process_form_submission(data, dashboard_service)
+    except ValidationError as e:
+        logger.warning(f"Form validation failed: {e}")
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/submit_form_json")
+@router.post("/submit_form_json", response_model=schemas.SuccessResponse)
 async def submit_form_json(
-    request: Request,
+    data: schemas.UniversalFormSchema,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
     user: Any = Depends(check_auth_dependency),
-) -> JSONResponse:
-    try:
-        created_id = await _process_form_submission(request, dashboard_service)
-        if created_id:
-            return JSONResponse(status_code=200, content={"status": "success", "id": created_id, "message": "Данные успешно сохранены"})
-        return JSONResponse(status_code=500, content={"status": "error", "message": "Ошибка при сохранении"})
-    except ValidationError as e:
-        logger.info(f"Validation failed in submit_form_json: {e}")
-        return JSONResponse(status_code=400, content={"status": "error", "message": "Ошибка валидации данных"})
+):
+    """Обработка JSON-запроса с автоматической валидацией Pydantic."""
+    created_id = await _process_form_submission(data, dashboard_service)
+    if created_id:
+        return schemas.SuccessResponse(message=f"Данные успешно сохранены. ID: {created_id}")
+    return JSONResponse(status_code=500, content={"status": "error", "message": "Ошибка при сохранении"})
 
 
 @router.post("/submit_chrono")
@@ -106,42 +103,29 @@ async def submit_chrono(
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/submit_chrono_json")
+@router.post("/submit_chrono_json", response_model=schemas.SuccessResponse)
 async def submit_chrono_json(
-    chrono_text: str = Form(..., min_length=1, max_length=10000),
-    chrono_date: str = Form(..., min_length=10, max_length=10),
+    data: schemas.ChronoCreate,
     chronology_service: ChronologyService = Depends(get_chronology_service),
     user: Any = Depends(check_auth_dependency),
-) -> JSONResponse:
-    dt = parse_date_input(chrono_date)
-    if isinstance(dt, date) and not isinstance(dt, datetime):
-        dt = datetime.combine(dt, datetime.min.time())
-    created_id = await chronology_service.add_chronology(chrono_text, dt)
+):
+    """Принимает ChronoCreate напрямую."""
+    created_id = await chronology_service.add_chronology(data.text, data.date)
     if created_id:
-        return JSONResponse(status_code=200, content={"status": "success", "id": created_id, "message": "Хронология успешно сохранена"})
+        return schemas.SuccessResponse(message="Хронология успешно сохранена")
     return JSONResponse(status_code=500, content={"status": "error", "message": "Ошибка при сохранении"})
 
 
-@router.post("/edit_chrono_json")
+@router.post("/edit_chrono_json", response_model=schemas.SuccessResponse)
 async def edit_chrono_json(
-    request: Request,
+    data: schemas.ChronoView,
     chronology_service: ChronologyService = Depends(get_chronology_service),
     user: Any = Depends(check_auth_dependency),
-) -> Any:
-    data = await request.json()
-    chrono_id = data.get("id")
-    text = data.get("text")
-    date_str = data.get("date")
-
-    if not chrono_id or not text or not date_str:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "Необходимы ID, текст и дата"})
-
-    dt = parse_date_input(str(date_str))
-    if isinstance(dt, date) and not isinstance(dt, datetime):
-        dt = datetime.combine(dt, datetime.min.time())
-
-    success = await chronology_service.update_chronology(int(chrono_id), str(text), dt)
-    return {"status": "success", "message": "Chronology updated"} if success else JSONResponse(status_code=404, content={"status": "error", "message": "Запись не найдена"})
+):
+    success = await chronology_service.update_chronology(data.id, data.text, data.date)
+    if success:
+        return schemas.SuccessResponse(message="Chronology updated")
+    return JSONResponse(status_code=404, content={"status": "error", "message": "Запись не найдена"})
 
 
 @router.post("/mark_done/{task_id}")
