@@ -799,3 +799,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Named exports for use by dashboard widget modules
+export { createStickerElement, openStickerModal };
