@@ -26,16 +26,10 @@ async def view_settings(
 
 @router.post("/settings", name="update_settings")
 async def update_settings(
-    request: Request,
+    data: schemas.SettingsUpdateSchema = Depends(schemas.SettingsUpdateSchema.as_form),
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     """Обновляет глобальные настройки приложения."""
-    try:
-        form_data = await request.form()
-        data = schemas.SettingsUpdateSchema(**dict(form_data))
-    except Exception:
-        return RedirectResponse(url="/settings?error=validation", status_code=status.HTTP_303_SEE_OTHER)
-
     if data.max_duration is not None:
         await set_setting(db, 'max_duration', str(data.max_duration))
     if data.max_random_minutes is not None:
@@ -44,18 +38,13 @@ async def update_settings(
     await db.commit()
     return RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
 
+
 @router.post("/settings/update_languages", name="update_languages")
 async def update_languages(
-    request: Request,
+    data: schemas.LanguageUpdateSchema = Depends(schemas.LanguageUpdateSchema.as_form),
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     """Обновляет список активных языков и их названия."""
-    try:
-        form_data = await request.form()
-        data = schemas.LanguageUpdateSchema(**dict(form_data))
-    except Exception:
-        return RedirectResponse(url="/settings?error=validation", status_code=status.HTTP_303_SEE_OTHER)
-    
     active_langs = [l.strip() for l in data.active_order.split(",") if l.strip()]
     if len(active_langs) > 3:
         active_langs = active_langs[:3]
@@ -76,6 +65,7 @@ async def update_languages(
     await db.commit()
     return RedirectResponse(url="/settings?saved=1", status_code=status.HTTP_303_SEE_OTHER)
 
+
 @router.get("/settings/categories", name="show_categories", response_class=HTMLResponse)
 async def show_categories(request: Request, db: AsyncSession = Depends(get_db)) -> Any:
     """Отображает страницу редактирования категорий заметок."""
@@ -86,18 +76,13 @@ async def show_categories(request: Request, db: AsyncSession = Depends(get_db)) 
         "categories": categories,
     })
 
+
 @router.post("/settings/categories/edit", name="edit_categories")
 async def edit_categories(
-    request: Request,
+    data: schemas.CategoryUpdateSchema = Depends(schemas.CategoryUpdateSchema.as_form),
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     """Обновляет список категорий заметок."""
-    try:
-        form_data = await request.form()
-        data = schemas.CategoryUpdateSchema(**dict(form_data))
-    except Exception:
-        return RedirectResponse(url="/settings/categories?error=validation", status_code=status.HTTP_303_SEE_OTHER)
-
     new_categories = [c.strip() for c in data.categories_list.split('\n') if c.strip()]
     await db.execute(delete(models.NoteCategory))
     for cat in new_categories:
@@ -105,34 +90,25 @@ async def edit_categories(
     await db.commit()
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-@router.post("/settings/update_event_color", name="update_event_color")
-async def update_event_color(
-    request: Request,
-    db: AsyncSession = Depends(get_db)
-) -> JSONResponse:
-    """Обновляет подпись (легенду) для конкретного цвета событий."""
-    try:
-        data = await request.json()
-    except Exception:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "Invalid JSON"})
-        
-    color = data.get("color")
-    label = data.get("label", "")
-    if not color:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "No color provided"})
 
+@router.post("/settings/update_event_color", response_model=schemas.SuccessResponse)
+async def update_event_color(
+    data: schemas.EventColorUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    """Обновляет подпись (легенду) для конкретного цвета событий."""
     event_colors_raw = await get_setting(db, "event_colors", "{}")
     try:
         colors = json.loads(event_colors_raw)
     except Exception:
         colors = {}
     
-    if label.strip() == "":
-        if color in colors:
-            del colors[color]
+    if data.label.strip() == "":
+        if data.color in colors:
+            del colors[data.color]
     else:
-        colors[color] = label.strip()
+        colors[data.color] = data.label.strip()
         
     await set_setting(db, "event_colors", json.dumps(colors))
     await db.commit()
-    return JSONResponse(content={"status": "success", "message": "Color label updated"})
+    return schemas.SuccessResponse(message="Color label updated")

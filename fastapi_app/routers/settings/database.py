@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request, status, UploadFile, File, HTTPE
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 import os
 import shutil
+from typing import Any
 from ...config import settings
 from ...services.auth import check_auth_dependency, COOKIE_NAME
 from ...services.maintenance_service import MaintenanceService
@@ -85,8 +86,10 @@ async def exit_sandbox() -> RedirectResponse:
     response.delete_cookie("papanda_mode")
     return response
 
-@router.post("/settings/shutdown_app", name="shutdown_app")
-async def shutdown_app() -> JSONResponse:
+from ... import schemas
+
+@router.post("/settings/shutdown_app", response_model=schemas.SuccessResponse)
+async def shutdown_app() -> Any:
     """Завершает работу сервера."""
     import threading
     import time
@@ -97,4 +100,4 @@ async def shutdown_app() -> JSONResponse:
         os.kill(os.getpid(), signal.SIGTERM)
         
     threading.Thread(target=kill_self, daemon=True).start()
-    return JSONResponse(content={"status": "success", "message": "Приложение завершает работу."})
+    return schemas.SuccessResponse(message="Приложение завершает работу.")

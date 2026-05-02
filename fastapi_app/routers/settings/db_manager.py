@@ -13,6 +13,7 @@ from ...services.admin_service import AdminService
 from ...dependencies import get_admin_service
 from ...utils import is_ajax_request
 from ...config import templates
+from ... import schemas
 
 router = APIRouter(
     dependencies=[Depends(check_auth_dependency)]
@@ -74,16 +75,17 @@ async def edit_record_get(
 
 @router.post("/edit_record/{model_name}/{record_id}")
 async def edit_record_post(
-    request: Request,
     model_name: str,
     record_id: str,
+    data: schemas.GenericUpdateSchema = Depends(schemas.GenericUpdateSchema.as_form),
     as_service: AdminService = Depends(get_admin_service)
 ) -> RedirectResponse:
     """Сохранение изменений записи."""
-    form_data = await request.form()
-    data = {k: v for k, v in form_data.items() if k not in ['id', 'created_at', 'word']}
-    await as_service.update_item(model_name, record_id, data)
+    # Удаляем служебные поля, если они попали в форму
+    update_data = {k: v for k, v in data.model_dump().items() if k not in ['id', 'created_at', 'word']}
+    await as_service.update_item(model_name, record_id, update_data)
     return RedirectResponse(url=f"/db_view/{model_name}", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @router.post("/delete_record/{model_name}/{record_id}", name="delete_record")
 async def delete_record(
@@ -105,8 +107,9 @@ async def delete_record(
         await db.commit()
         
     if is_ajax_request(request):
-        return JSONResponse(content={"status": "success", "message": f"{model_name} deleted"})
+        return schemas.SuccessResponse(message=f"{model_name} deleted")
     return RedirectResponse(url=f"/db_view/{model_name}", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @router.post("/delete_event_settings/{event_id}", name="delete_event_settings")
 async def delete_event_settings(

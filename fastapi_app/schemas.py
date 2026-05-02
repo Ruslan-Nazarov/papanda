@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime, date
 from typing import Optional, List, Any
-from fastapi import Form
+from fastapi import Form, Request
 
 # --- ОБЩИЕ СХЕМЫ ---
 
@@ -118,6 +118,14 @@ class ChronoCreate(BaseModel):
     text: str = Field(..., min_length=1, max_length=10000)
     date: datetime
 
+    @classmethod
+    def as_form(cls, chrono_text: str = Form(...), chrono_date: str = Form(...)):
+        from .utils import parse_date_input
+        dt = parse_date_input(chrono_date)
+        if isinstance(dt, date) and not isinstance(dt, datetime):
+            dt = datetime.combine(dt, datetime.min.time())
+        return cls(text=chrono_text, date=dt)
+
 class ChronoView(ChronoCreate):
     """Схема для отображения записи в хронологии."""
     id: int
@@ -142,11 +150,17 @@ class WordView(WordBase):
     last_shown: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
-class WordUpdate(BaseModel):
+class WordUpdateSchema(BaseModel):
     """Схема для обновления слова."""
     word_eng: str
     new_ru: str
     new_meaning: str = ""
+    model_config = ConfigDict(extra='allow')
+
+    @classmethod
+    async def as_form(cls, request: Request):
+        form_data = await request.form()
+        return cls(**dict(form_data))
 
 class MarkKnownRequest(BaseModel):
     """Запрос на пометку слова как известного."""
@@ -170,7 +184,24 @@ class GenericUpdateSchema(BaseModel):
     id: int
     model_config = ConfigDict(extra='allow')
 
-# --- DASHBOARD ---
+    @classmethod
+    async def as_form(cls, request: Request):
+        form_data = await request.form()
+        return cls(**dict(form_data))
+
+class EventColorUpdate(BaseModel):
+    """Схема обновления цвета событий."""
+    color: str
+    label: str = ""
+
+class ConflictResolutionSchema(BaseModel):
+    """Схема для разрешения конфликтов синхронизации."""
+    model_config = ConfigDict(extra='allow')
+
+    @classmethod
+    async def as_form(cls, request: Request):
+        form_data = await request.form()
+        return cls(**dict(form_data))
 
 # --- DASHBOARD & ACTIONS ---
 
@@ -189,6 +220,32 @@ class UniversalFormSchema(BaseModel):
     sticker_color: Optional[str] = "#fff9c4"
     sticker_type: Optional[str] = "text"
     sticker_apply_series: bool = False
+
+    @classmethod
+    async def as_form(cls, request: Request):
+        form_data = await request.form()
+        data = dict(form_data)
+        if "sticker_apply_series" in data:
+            data["sticker_apply_series"] = str(data["sticker_apply_series"]).lower() in ["true", "on", "1"]
+        return cls(**data)
+
+class ChronoCreate(BaseModel):
+    """Схема для создания записи в хронологии."""
+    text: str = Field(..., min_length=1, max_length=10000)
+    date: datetime
+
+    @classmethod
+    def as_form(cls, chrono_text: str = Form(...), chrono_date: str = Form(...)):
+        from .utils import parse_date_input
+        dt = parse_date_input(chrono_date)
+        if isinstance(dt, date) and not isinstance(dt, datetime):
+            dt = datetime.combine(dt, datetime.min.time())
+        return cls(text=chrono_text, date=dt)
+
+class ToggleDoneResponse(BaseModel):
+    """Ответ для переключения статуса выполнения."""
+    done: bool
+    message: Optional[str] = None
 
 class DashboardItem(BaseModel):
     """Элемент дашборда."""
@@ -219,6 +276,10 @@ class SettingsUpdateSchema(BaseModel):
     max_duration: Optional[int] = Field(None, ge=1, le=1440)
     max_random_minutes: Optional[int] = Field(None, ge=0, le=1440)
 
+    @classmethod
+    def as_form(cls, max_duration: Optional[int] = Form(None), max_random_minutes: Optional[int] = Form(None)):
+        return cls(max_duration=max_duration, max_random_minutes=max_random_minutes)
+
 class LanguageUpdateSchema(BaseModel):
     """Схема обновления порядков языков (динамические имена обрабатываются отдельно)."""
     active_order: str = Field(..., description="Comma-separated language codes")
@@ -226,11 +287,18 @@ class LanguageUpdateSchema(BaseModel):
     # Мы позволяем дополнительные поля для динамических имен языков (name_en, name_ru и т.д.)
     model_config = ConfigDict(extra='allow')
 
+    @classmethod
+    async def as_form(cls, request: Request):
+        form_data = await request.form()
+        return cls(**dict(form_data))
+
 class CategoryUpdateSchema(BaseModel):
     """Схема обновления категорий заметок."""
     categories_list: str = Field(..., description="Newline-separated list of categories")
 
-# --- STICKY NOTES ---
+    @classmethod
+    def as_form(cls, categories_list: str = Form(...)):
+        return cls(categories_list=categories_list)
 
 class StickyNoteBase(BaseModel):
     """Базовая схема стикера (Sticky Note)."""

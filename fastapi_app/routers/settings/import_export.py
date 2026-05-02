@@ -13,6 +13,7 @@ from ...services.settings_service import get_settings_context
 from ...dependencies import get_admin_service, get_export_service, get_state_manager
 from ...config import settings, templates
 from ...logger import logger
+from ... import schemas
 
 router = APIRouter(
     dependencies=[Depends(check_auth_dependency)]
@@ -57,19 +58,23 @@ async def import_excel_route(
     state_manager: StateManager = Depends(get_state_manager),
 ) -> Any:
     """Импорт из Excel."""
+    # Этот эндпоинт не имеет тела, но мы можем добавить пустую схему если нужно.
+    # Но для POST без тела Pydantic не обязателен в аргументах если он не ожидается.
     result = await state_manager.import_excel_to_db(str(settings.excel_path))
     ctx = await get_settings_context(db, request, import_result=result)
     return templates.TemplateResponse(request, "settings.html", ctx)
 
+
 @router.post("/settings/sync_conflicts", name="sync_conflicts", response_class=HTMLResponse)
 async def sync_conflicts_route(
     request: Request,
+    data: schemas.ConflictResolutionSchema = Depends(schemas.ConflictResolutionSchema.as_form),
     db: AsyncSession = Depends(get_db),
     state_manager: StateManager = Depends(get_state_manager),
 ) -> Any:
     """Разрешение конфликтов синхронизации."""
-    form_data = await request.form()
-    resolutions = {k[len("action_"):]: str(v) for k, v in form_data.items() if k.startswith("action_") and v in ("to_db", "to_file")}
+    extra_fields = data.model_extra or {}
+    resolutions = {k[len("action_"):]: str(v) for k, v in extra_fields.items() if k.startswith("action_") and v in ("to_db", "to_file")}
     result = await state_manager.sync_conflicts(str(settings.excel_path), resolutions)
     ctx = await get_settings_context(db, request, import_result=result)
     return templates.TemplateResponse(request, "settings.html", ctx)

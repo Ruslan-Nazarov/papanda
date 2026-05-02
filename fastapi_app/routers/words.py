@@ -244,32 +244,31 @@ async def record_test_result(
 
 @router.post("/update_word_data")
 async def update_word_data(
-    request: Request,
-    word_eng: str = Form(...),
-    new_ru: str = Form(...),
-    new_meaning: str = Form(""),
+    data: schemas.WordUpdateSchema = Depends(schemas.WordUpdateSchema.as_form),
     word_service: WordService = Depends(get_word_service),
 ) -> RedirectResponse:
     """Обновляет все данные слова (включая динамические языки из формы)."""
-    form_data = await request.form()
-    
     # Собираем все переводы, которые начинаются на 'lang_'
     new_translations = {}
-    for key, value in form_data.items():
+    extra_fields = data.model_extra or {}
+    for key, value in extra_fields.items():
         if isinstance(key, str) and key.startswith('lang_'):
             lang_code = key.replace('lang_', '')
             new_translations[lang_code] = value
     
-    new_translations['ru'] = new_ru
-    new_translations['en'] = word_eng
+    new_translations['ru'] = data.new_ru
+    new_translations['en'] = data.word_eng
     
-    await word_service.update_word_full_dynamic(word_eng, new_translations, new_meaning)
+    await word_service.update_word_full_dynamic(data.word_eng, new_translations, data.new_meaning)
     return RedirectResponse("/?saved=1", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @router.post("/reset_word_stats", response_model=schemas.SuccessResponse)
 async def reset_word_stats(word_service: WordService = Depends(get_word_service)):
     """Обнуляет счётчик показов для всех слов."""
     await word_service.reset_all_stats()
+    return schemas.SuccessResponse(message="Stats reset")
+
 @router.post("/mark_triplet_learned", response_model=schemas.SuccessResponse)
 async def mark_triplet_learned(
     data: schemas.TripletLearnedRequest,
@@ -306,17 +305,12 @@ async def word_lookup(q: str, word_service: WordService = Depends(get_word_servi
         out.append(w_data)
     return {"results": out}
 
-@router.post("/upsert_word")
+@router.post("/upsert_word", response_model=schemas.SuccessResponse)
 async def upsert_word(
-    request: Request,
-    eng: str = Form(...),
-    ru: str = Form(...),
-    meaning: str = Form(""),
+    data: schemas.WordUpdateSchema = Depends(schemas.WordUpdateSchema.as_form),
     word_service: WordService = Depends(get_word_service),
-) -> Dict[str, Any]:
+):
     """Добавляет или обновляет слово (из формы поиска в статистике)."""
-    form_data = await request.form()
-    
     translations = {}
     for key, value in form_data.items():
         if isinstance(key, str) and key.startswith('lang_'):
