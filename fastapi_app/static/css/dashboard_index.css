@@ -6,10 +6,10 @@
 
             /* CRITICAL FIX: Disable all margins/shadows that break GridStack */
             body {
-                background-color: #fff5ec;
+                background-color: var(--color-bg-app);
             }
             .grid-stack {
-                background-color: #fff5ec;
+                background-color: var(--color-bg-app);
                 padding: 10px;
                 margin-top: 0;
             }
@@ -78,8 +78,8 @@
                 font-size: 1.1em !important;
                 margin-bottom: 12px !important;
                 text-align: left !important;
-                color: #555 !important; /* Unified dark gray color */
-                font-family: Arial, sans-serif !important; /* Unified font */
+                color: var(--color-text-medium) !important;
+                font-family: var(--font-base) !important;
                 font-weight: bold !important;
                 display: flex;
                 align-items: center;
@@ -184,10 +184,10 @@
                 padding: 0 !important;
                 display: flex !important;
                 align-items: center !important;
-                font-size: 1.1rem !important; /* Use rem for better consistency */
+                font-size: 1.1rem !important;
                 font-weight: bold !important;
-                color: #555 !important;
-                font-family: Arial, sans-serif !important;
+                color: var(--color-text-medium) !important;
+                font-family: var(--font-base) !important;
                 text-transform: none !important; /* Avoid auto-capitalization issues */
                 line-height: 1.2 !important;
             }
@@ -196,8 +196,8 @@
             }
             .grid-stack-item[gs-id="notes"] .form-button,
             .grid-stack-item[gs-id="notes"] button[type="submit"] {
-                background-color: #f2994a !important;
-                border: 1px solid #e08e45;
+                background-color: var(--color-primary) !important;
+                border: 1px solid var(--color-primary-dark);
                 color: white !important;
                 font-weight: bold;
             }
@@ -265,8 +265,8 @@
                 font-family: inherit;
             }
             .header-control:focus {
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+                border-color: var(--color-blue);
+                box-shadow: 0 0 0 3px var(--color-blue-glow);
             }
             .header-control:hover {
                 border-color: #9ca3af;
@@ -289,17 +289,17 @@
                 height: 38px;
                 padding: 0 20px;
                 border: none;
-                border-radius: 8px;
-                font-size: 14px;
+                border-radius: var(--radius-sm);
+                font-size: var(--text-sm);
                 font-weight: 600;
-                background-color: #f2994a;
+                background-color: var(--color-primary);
                 color: white;
                 cursor: pointer;
-                transition: all 0.2s ease;
-                box-shadow: 0 2px 4px rgba(242, 153, 74, 0.2);
+                transition: all var(--transition-base);
+                box-shadow: 0 2px 4px var(--color-primary-glow);
             }
             .header-btn-submit:hover {
-                background-color: #e08e45;
+                background-color: var(--color-primary-dark);
                 transform: translateY(-1px);
             }
             .header-btn-submit:active {
@@ -634,14 +634,14 @@
                 border-color: #2196f3;
             }
             .sticker-ok-btn {
-                background: #4caf50;
+                background: var(--color-success);
                 color: white;
                 font-weight: bold;
                 font-size: 0.8em;
                 padding: 0 12px;
             }
             .sticker-ok-btn:hover {
-                background: #45a049;
+                background: var(--color-success-dark);
             }
             .color-picker {
                 display: flex;

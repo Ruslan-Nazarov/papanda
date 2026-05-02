@@ -1,7 +1,6 @@
 /**
  * Global Sticker Logic (stickers.js) v3
  */
-console.log("[STIKERS] Script version 3 loaded and ready");
 
 // Global State for Modal
 let currentStickerId = null;
@@ -153,7 +152,6 @@ function createStickerElement(note, options = {}) {
  * options: { id, element, parentType, parentId, source }
  */
 async function openStickerModal(options = {}) {
-    console.log('Opening sticker modal with options:', options);
     const id = options.id || null;
     const element = options.element || null;
     
@@ -533,7 +531,6 @@ async function deleteStickerGlobal(btn, id) {
  * 1+ stickers -> Open Overview Modal
  */
 async function openParentStickers(parentType, parentId) {
-    console.log(`Smart Opening for ${parentType} ${parentId}...`);
     try {
         const res = await fetch(`/api/stickers/${parentType}/${parentId}/`);
         if (res.ok) {
@@ -782,7 +779,6 @@ window.createStickerElement = createStickerElement;
 
 // Global initialization for hydration
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Stickers.js: Hydrating placeholders...');
     const placeholders = document.querySelectorAll('.sticker-thought-placeholder');
     placeholders.forEach(el => {
         const id = el.dataset.id;

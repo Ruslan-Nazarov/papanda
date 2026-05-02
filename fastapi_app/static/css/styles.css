@@ -1,3 +1,114 @@
+/* ========================================================
+   PAPANDA DESIGN SYSTEM — CSS Custom Properties
+   Единый источник правды для всего приложения
+   ======================================================== */
+
+/* Google Fonts — Inter (основной) + Indie Flower (стикеры) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Indie+Flower&display=swap');
+
+:root {
+    /* --- Бренд-цвета --- */
+    --color-primary:        #F2994A;   /* Главный оранжевый */
+    --color-primary-dark:   #E08E45;   /* Hover для primary */
+    --color-primary-light:  #fff9f3;   /* Фон с намёком на primary */
+    --color-primary-glow:   rgba(242, 153, 74, 0.2);
+
+    /* --- Акцентные --- */
+    --color-blue:           #3b82f6;
+    --color-blue-dark:      #2563eb;
+    --color-blue-light:     #eff6ff;
+    --color-blue-glow:      rgba(59, 130, 246, 0.15);
+
+    --color-indigo:         #4f46e5;
+    --color-indigo-dark:    #4338ca;
+    --color-purple:         #ab47bc;
+
+    /* --- Семантические --- */
+    --color-success:        #27ae60;
+    --color-success-dark:   #219150;
+    --color-success-light:  #ecfdf5;
+    --color-success-glow:   rgba(39, 174, 96, 0.2);
+
+    --color-error:          #ef4444;
+    --color-error-dark:     #dc2626;
+    --color-error-light:    #fef2f2;
+
+    --color-warning:        #f59e0b;
+    --color-warning-dark:   #d97706;
+
+    /* --- Нейтральные (текст и UI) --- */
+    --color-text-dark:      #1e293b;   /* Заголовки */
+    --color-text-body:      #334155;   /* Основной текст */
+    --color-text-medium:    #475569;   /* Вторичный текст */
+    --color-text-muted:     #64748b;   /* Подсказки */
+    --color-text-faint:     #94a3b8;   /* Плейсхолдеры */
+    --color-text-disabled:  #cbd5e1;
+
+    /* --- Фоны --- */
+    --color-bg-app:         #FFF5EC;   /* Фон всей страницы */
+    --color-bg-page:        #fdfaf3;   /* Шапка, хедер */
+    --color-bg-white:       #ffffff;
+    --color-bg-surface:     #f8fafc;   /* Панели, сайдбары */
+    --color-bg-subtle:      #f1f5f9;   /* Hover-состояния */
+    --color-bg-card:        #f9f9f9;
+
+    /* --- Границы --- */
+    --color-border:         #e2e8f0;   /* Стандартная граница */
+    --color-border-light:   #f1f5f9;   /* Лёгкая граница */
+    --color-border-medium:  #cbd5e1;   /* Заметная граница */
+    --color-border-dark:    #ddd;
+
+    /* --- Стикеры --- */
+    --color-sticker-default: #fff9c4;
+    --color-sticker-accent:  #ffd54f;
+
+    /* --- Типографика --- */
+    --font-base:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    --font-sticker: 'Indie Flower', cursive, sans-serif;
+
+    /* --- Размеры шрифта --- */
+    --text-xs:   0.75rem;    /* 12px */
+    --text-sm:   0.875rem;   /* 14px */
+    --text-base: 1rem;       /* 16px */
+    --text-lg:   1.125rem;   /* 18px */
+    --text-xl:   1.25rem;    /* 20px */
+    --text-2xl:  1.5rem;     /* 24px */
+
+    /* --- Скругления --- */
+    --radius-sm:  6px;
+    --radius-md:  10px;
+    --radius-lg:  14px;
+    --radius-xl:  20px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+
+    /* --- Тени --- */
+    --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md:  0 4px 8px rgba(0, 0, 0, 0.10);
+    --shadow-lg:  0 10px 25px rgba(0, 0, 0, 0.15);
+    --shadow-xl:  0 20px 40px rgba(0, 0, 0, 0.20);
+
+    /* --- Переходы --- */
+    --transition-fast:   0.15s ease;
+    --transition-base:   0.2s ease;
+    --transition-slow:   0.3s ease;
+
+    /* --- Отступы --- */
+    --spacing-1:  4px;
+    --spacing-2:  8px;
+    --spacing-3:  12px;
+    --spacing-4:  16px;
+    --spacing-5:  20px;
+    --spacing-6:  24px;
+    --spacing-8:  32px;
+
+    /* --- Z-index слои --- */
+    --z-modal:    3000;
+    --z-confirm:  10000;
+    --z-toast:    2000;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -5,8 +116,8 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #FFF5EC;
+    font-family: var(--font-base);
+    background-color: var(--color-bg-app);
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -44,7 +155,7 @@ body {
 #customConfirmModal {
     display: none !important;
     position: fixed !important;
-    z-index: 10000 !important;
+    z-index: var(--z-confirm) !important;
     left: 0;
     top: 0;
     width: 100%;
@@ -113,32 +224,33 @@ body {
 }
 
 .confirm-btn-primary {
-    background: #1e293b; /* Darker more professional button */
+    background: var(--color-text-dark);
     color: white;
 }
 
 .confirm-btn-primary:hover {
-    background: #0f172a;
+    background: var(--color-text-dark);
+    filter: brightness(0.85);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-md);
 }
 
 .confirm-btn-secondary {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-medium);
 }
 
 .confirm-btn-secondary:hover {
-    background: #e2e8f0;
+    background: var(--color-border);
 }
 
 .confirm-btn-danger {
-    background: #ef4444; /* Standard Red */
+    background: var(--color-error);
     color: white;
 }
 
 .confirm-btn-danger:hover {
-    background: #dc2626;
+    background: var(--color-error-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
@@ -199,12 +311,12 @@ body {
     text-decoration: none !important;
     color: #333 !important;
     border: none !important;
-    border-right: 1px solid #eee !important;
-    border-bottom: 1px solid #eee !important;
+    border-right: 1px solid var(--color-border-dark) !important;
+    border-bottom: 1px solid var(--color-border-dark) !important;
     font-weight: bold;
     white-space: nowrap;
     border-radius: 0 !important;
-    transition: all 0.2s;
+    transition: all var(--transition-base);
     padding: 12px 10px;
 }
 
@@ -213,12 +325,12 @@ body {
 }
 
 .footer-btn:hover {
-    background-color: #F2994A !important;
+    background-color: var(--color-primary) !important;
     color: white !important;
 }
 
 .footer-btn.active {
-    background-color: #F2994A !important;
+    background-color: var(--color-primary) !important;
     color: white !important;
 }
 
@@ -353,7 +465,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 1em;
-    font-family: Arial, sans-serif;
+    font-family: var(--font-base);
     border: 1px solid #dddddd;
 }
 .table-common th, .table-common td {
@@ -423,13 +535,13 @@ body {
 #toast {
     visibility: hidden;
     min-width: 250px;
-    background-color: #4CAF50;
+    background-color: var(--color-success);
     color: #fff;
     text-align: center;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     padding: 16px;
     position: fixed;
-    z-index: 2000;
+    z-index: var(--z-toast);
     left: 50%;
     bottom: 30px;
     transform: translateX(-50%);
@@ -445,11 +557,11 @@ body {
 }
 
 #toast.success {
-    background-color: #4CAF50;
+    background-color: var(--color-success);
 }
 
 #toast.error {
-    background-color: #f44336;
+    background-color: var(--color-error);
 }
 
 /* Semi-transparent action buttons */
@@ -487,7 +599,7 @@ body {
 .modal {
     display: none;
     position: fixed;
-    z-index: 3000;
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -498,7 +610,7 @@ body {
     -webkit-backdrop-filter: blur(8px);
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all var(--transition-slow);
 }
 
 .modal-content {
@@ -577,19 +689,19 @@ body {
 .form-input {
     width: 100% !important;
     padding: 12px 15px !important;
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 10px !important;
-    font-size: 1em !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: var(--radius-md) !important;
+    font-size: var(--text-base) !important;
     font-family: inherit !important;
-    transition: all 0.2s ease !important;
+    transition: all var(--transition-base) !important;
     background: white !important;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.02) !important;
 }
 
 .form-input:focus {
     outline: none !important;
-    border-color: #F2994A !important;
-    box-shadow: 0 0 0 4px rgba(242, 153, 74, 0.15) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 4px var(--color-primary-glow) !important;
 }
 
 textarea.form-input {
@@ -609,15 +721,15 @@ textarea.form-input {
 }
 
 .btn-primary {
-    background-color: #F2994A;
+    background-color: var(--color-primary);
     color: white;
-    box-shadow: 0 4px 6px rgba(242, 153, 74, 0.2);
+    box-shadow: 0 4px 6px var(--color-primary-glow);
 }
 
 .btn-primary:hover {
-    background-color: #E08E45;
+    background-color: var(--color-primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 6px 12px rgba(242, 153, 74, 0.3);
+    box-shadow: 0 6px 12px var(--color-primary-glow);
 }
 
 .btn-secondary {
@@ -684,27 +796,27 @@ textarea.form-input-premium {
 }
 
 .btn-save-premium {
-    background: #27ae60;
+    background: var(--color-success);
     color: white;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+    box-shadow: 0 4px 12px var(--color-success-glow);
 }
 
 .btn-save-premium:hover {
-    background: #219150;
+    background: var(--color-success-dark);
     transform: translateY(-1px);
-    box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3);
+    box-shadow: 0 6px 15px var(--color-success-glow);
 }
 
 .btn-cancel-premium {
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #e2e8f0;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-body);
+    border: 1px solid var(--color-border);
 }
 
 .btn-cancel-premium:hover {
-    background: #e2e8f0;
-    color: #0f172a;
-    border-color: #cbd5e1;
+    background: var(--color-border);
+    color: var(--color-text-dark);
+    border-color: var(--color-border-medium);
 }
 
 /* End of premium modal styles */

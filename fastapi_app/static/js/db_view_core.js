@@ -247,8 +247,6 @@ async function openEventDetailModal(e) {
         const important = e.important === true || e.important === 'true';
         const done = e.done === true || e.done === 'true';
 
-        console.log("[DetailModal] Opening for event ID:", id);
-
         // Populate fields
         const titleEl = document.getElementById('detailModalTitle');
         if (!titleEl) throw new Error("ID 'detailModalTitle' not found");
@@ -438,7 +436,6 @@ async function saveEventEdit() {
             body: JSON.stringify(payload)
         });
         const data = await resp.json();
-        console.log('[saveEventEdit DB] Server response:', data);
 
         if (data.status === 'success' || data.success === true) {
             if (errEl) {

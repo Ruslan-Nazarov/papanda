@@ -14,7 +14,7 @@
     align-items: center;
     margin-bottom: 25px;
     padding-bottom: 15px;
-    border-bottom: 2px solid #F2994A;
+    border-bottom: 2px solid var(--color-primary);
 }
 
 .header-line h1 { margin: 0; font-size: 1.8em; color: #333; }
@@ -50,19 +50,19 @@
     outline: none;
     transition: border-color 0.2s;
 }
-.filter-select:focus { border-color: #F2994A; }
+.filter-select:focus { border-color: var(--color-primary); }
 
 .btn-filter-go {
-    background: #F2994A;
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 8px 18px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background var(--transition-base);
 }
-.btn-filter-go:hover { background: #e08e45; }
+.btn-filter-go:hover { background: var(--color-primary-dark); }
 
 .nav-arrow {
     text-decoration: none;
@@ -80,9 +80,9 @@
     border: 1px solid #ddd;
 }
 .nav-arrow:hover {
-    background: #F2994A;
+    background: var(--color-primary);
     color: white;
-    border-color: #F2994A;
+    border-color: var(--color-primary);
     transform: scale(1.1);
 }
 
@@ -129,12 +129,12 @@
 .choice-item span { font-size: 1.05rem !important; font-weight: 500 !important; color: #333 !important; }
 .choice-item span.icon { display: flex !important; align-items: center !important; justify-content: center !important; width: 24px !important; }
 .confirm-btn { padding: 10px 22px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; transition: all 0.2s; }
-.confirm-btn-primary { background: #F2994A; color: white; }
-.confirm-btn-primary:hover { background: #e68a30; }
+.confirm-btn-primary { background: var(--color-primary); color: white; }
+.confirm-btn-primary:hover { background: var(--color-primary-dark); }
 .confirm-btn-secondary { background: #eee; color: #555; }
 .confirm-btn-secondary:hover { background: #e0e0e0; }
-.confirm-btn-danger { background: #eb5757; color: white; }
-.confirm-btn-danger:hover { background: #d94646; }
+.confirm-btn-danger { background: var(--color-error); color: white; }
+.confirm-btn-danger:hover { background: var(--color-error-dark); }
 
 @keyframes modalSlideUp {
     from { transform: translateY(20px); opacity: 0; }
@@ -227,7 +227,7 @@
     padding: 10px 20px; border-radius: 8px; text-decoration: none;
     font-size: 0.9em; font-weight: bold; transition: all 0.2s;
 }
-.btn-home:hover { background-color: #f2994a; color: white; border-color: #f2994a; }
+.btn-home:hover { background-color: var(--color-primary); color: white; border-color: var(--color-primary); }
 
 /* --- MODAL --- */
 .modal {
@@ -316,10 +316,10 @@
     box-sizing: border-box !important;
 }
 .form-input-premium:focus {
-    border-color: #F2994A !important;
+    border-color: var(--color-primary) !important;
     background: white !important;
     outline: none !important;
-    box-shadow: 0 0 0 4px rgba(242, 153, 74, 0.15) !important;
+    box-shadow: 0 0 0 4px var(--color-primary-glow) !important;
 }
 .btn-premium {
     padding: 12px 28px !important;
@@ -331,14 +331,14 @@
     border: none !important;
 }
 .btn-save-premium {
-    background: #27ae60 !important;
+    background: var(--color-success) !important;
     color: white !important;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3) !important;
+    box-shadow: 0 4px 12px var(--color-success-glow) !important;
 }
 .btn-save-premium:hover {
-    background: #2ecc71 !important;
+    background: var(--color-success-dark) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4) !important;
+    box-shadow: 0 6px 15px var(--color-success-glow) !important;
 }
 .btn-cancel-premium {
     background: #eee !important;
@@ -436,7 +436,7 @@
 }
 .sticker-type-btn.active { background: #e3f2fd; border-color: #2196f3; }
 .sticker-ok-btn {
-    background: #27ae60; color: white; border: none; border-radius: 8px;
+    background: var(--color-success); color: white; border: none; border-radius: 8px;
     padding: 0 15px; height: 38px; cursor: pointer; font-weight: bold;
 }
 .color-picker-dots { display: flex; gap: 8px; margin-top: 10px; }
@@ -776,7 +776,7 @@
     position: relative;
 }
 .habit-card.active {
-    border-left: 5px solid #F2994A;
+    border-left: 5px solid var(--color-primary);
     background: #fffdfa;
 }
 .habit-card.finished {

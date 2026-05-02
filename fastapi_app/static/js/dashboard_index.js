@@ -245,8 +245,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 id, title, date, recurrence_rule: recRule === 'none' ? null : recRule, recurrence_end: recEnd || null, edit_mode: editMode, recurrence_id: recId, original_date: originalDate
             });
             const data = await resp.json();
-            console.log('[saveEventEdit] Server response:', data);
-            
             if (data.status === 'success' || data.success === true) {
                 errEl.style.color = 'green';
                 errEl.innerText = '✓ Success! Reloading...';
@@ -461,7 +459,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             finalText = JSON.stringify({ items: items.map(t => ({ text: t, done: false })) });
         }
         try {
-            console.log('Adding sticker:', { finalText, title: rawTitle, color: selectedStickerColor, type: finalType });
             const response = await fetch('/api/stickers/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
