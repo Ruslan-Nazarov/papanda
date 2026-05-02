@@ -1,18 +1,14 @@
 /* Скрываем грид до инициализации, чтобы не было анимации пересборки */
-            .grid-stack {
-                visibility: hidden;
-            }
-        
+.grid-stack {
+    visibility: hidden;
+}
 
-            /* CRITICAL FIX: Disable all margins/shadows that break GridStack */
-            body {
-                background-color: var(--color-bg-app);
-            }
-            .grid-stack {
-                background-color: var(--color-bg-app);
-                padding: 10px;
-                margin-top: 0;
-            }
+/* Контейнер GridStack должен быть прозрачным, чтобы видеть фон body */
+.grid-stack {
+    background-color: transparent !important;
+    padding: 10px;
+    margin-top: 0;
+}
 
             /* Reset original section styles to fit grid */
             .section,
