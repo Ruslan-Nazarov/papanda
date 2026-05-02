@@ -305,24 +305,25 @@ async def word_lookup(q: str, word_service: WordService = Depends(get_word_servi
         out.append(w_data)
     return {"results": out}
 
-@router.post("/upsert_word", response_model=schemas.SuccessResponse)
+@router.post("/upsert_word")
 async def upsert_word(
     data: schemas.WordUpdateSchema = Depends(schemas.WordUpdateSchema.as_form),
     word_service: WordService = Depends(get_word_service),
 ):
     """Добавляет или обновляет слово (из формы поиска в статистике)."""
     translations = {}
-    for key, value in form_data.items():
+    extra_fields = data.model_extra or {}
+    for key, value in extra_fields.items():
         if isinstance(key, str) and key.startswith('lang_'):
             lang_code = key.replace('lang_', '')
             translations[lang_code] = value
     
-    translations['en'] = eng
-    translations['ru'] = ru
+    translations['en'] = data.word_eng
+    translations['ru'] = data.new_ru
     
-    word = await word_service.update_word_full_dynamic(eng, translations, meaning)
+    word = await word_service.update_word_full_dynamic(data.word_eng, translations, data.new_meaning)
     if not word:
-        word = await word_service.upsert_word_dynamic(eng, translations, meaning)
+        word = await word_service.upsert_word_dynamic(data.word_eng, translations, data.new_meaning)
         
     return {"status": "success", "word": f"{word.eng}" if word else ""}
 

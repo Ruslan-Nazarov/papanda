@@ -627,12 +627,6 @@ class SmartNoteEngine {
         return blocks[blocks.length - 1].classList.contains('block-left') ? 'left' : 'right';
     }
 
-    getLastSide() {
-        if (!this.dom.canvas) return null;
-        const blocks = this.dom.canvas.querySelectorAll('.note-block');
-        if (blocks.length === 0) return null;
-        return blocks[blocks.length - 1].classList.contains('block-left') ? 'left' : 'right';
-    }
 }
 
 window.app = new SmartNoteEngine();

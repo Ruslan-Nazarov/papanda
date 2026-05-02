@@ -30,9 +30,9 @@
     --color-success-light:  #ecfdf5;
     --color-success-glow:   rgba(39, 174, 96, 0.2);
 
-    --color-error:          #ef4444;
-    --color-error-dark:     #dc2626;
-    --color-error-light:    #fef2f2;
+    --color-error:          #b91c1c; /* Глубокий красный вместо ядовитого */
+    --color-error-dark:     #7f1d1d;
+    --color-error-light:    #fff5f5;
 
     --color-warning:        #f59e0b;
     --color-warning-dark:   #d97706;
@@ -295,13 +295,13 @@ body {
     height: 20px;
     margin-right: 15px;
     cursor: pointer;
-    accent-color: #F2994A;
+    accent-color: var(--color-primary);
 }
 
 .choice-item span {
     font-size: 1rem;
     font-weight: 500;
-    color: #444;
+    color: var(--color-text-body);
 }
 
 /* Selected state for choice items */
@@ -364,7 +364,7 @@ body {
 }
 
 .button p {
-    background-color: #FFF9F4;
+    background-color: var(--color-primary-light);
     width: auto;
     min-width: 0;
     padding: 0;
@@ -375,7 +375,7 @@ body {
     align-items: center;
     font-size: 10px;
     font-weight: bold;
-    border: 1px solid #000;
+    border: 1px solid var(--color-black);
     margin: 0;
 }
 
@@ -440,15 +440,15 @@ body {
     align-items: center;
 }
 .task-info span { margin-right: 10px; white-space: nowrap; }
-.task-value { color: #2979FF; font-weight: bold; }
-.green-text { color: #888; }
+.task-value { color: var(--color-blue); font-weight: bold; }
+.green-text { color: var(--color-text-muted); }
 .task-list { list-style-type: none; padding: 0; margin: 0; }
 .task-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--color-border);
 }
 .task-item:last-child { border-bottom: none; }
 .task-button {
@@ -468,14 +468,14 @@ body {
     border-collapse: collapse;
     font-size: 1em;
     font-family: var(--font-base);
-    border: 1px solid #dddddd;
+    border: 1px solid var(--color-border);
 }
 .table-common th, .table-common td {
     padding: 12px 15px;
-    border: 1px solid #dddddd;
+    border: 1px solid var(--color-border);
 }
-.table-common tbody tr:nth-of-type(even) { background-color: #f3f3f3; }
-.table-common tbody tr:hover { background-color: #e1f5fe; }
+.table-common tbody tr:nth-of-type(even) { background-color: var(--color-bg-subtle); }
+.table-common tbody tr:hover { background-color: var(--color-blue-light); }
 
 .words-table thead tr { background-color: var(--color-success); color: var(--color-white); text-align: left; font-weight: 700; }
 .reading-table thead tr { background-color: var(--color-error); color: var(--color-white); text-align: left; font-weight: 700; }
@@ -498,7 +498,7 @@ body {
 .form-common label { font-weight: bold; margin-bottom: 5px; }
 .form-common input, .form-common select, .form-common textarea, .form-common button {
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
     font-size: 1em;
 }
@@ -527,11 +527,11 @@ body {
 
 /* Lists */
 .events-today ul, .events-tomorrow ul { list-style-type: none; padding: 0; margin: 0; }
-.events-today li, .events-tomorrow li { padding: 10px; border-bottom: 1px solid #ddd; }
+.events-today li, .events-tomorrow li { padding: 10px; border-bottom: 1px solid var(--color-border); }
 .events-today li:last-child, .events-tomorrow li:last-child { border-bottom: none; }
 
-.btn-blue { background-color: #3498DB !important; color: white !important; }
-.btn-orange { background-color: #F39C12 !important; color: white !important; }
+.btn-blue { background-color: var(--color-blue) !important; color: white !important; }
+.btn-orange { background-color: var(--color-primary) !important; color: white !important; }
 
 /* Toast Notification */
 #toast {
@@ -584,17 +584,17 @@ body {
     border: none;
     cursor: pointer;
     font-size: 0.85em;
-    color: #666;
+    color: var(--color-text-muted);
     padding: 2px 5px;
     text-decoration: none;
 }
 
 .btn-mini:hover {
-    color: #333;
+    color: var(--color-text-dark);
 }
 
 .btn-mini.del:hover {
-    color: #d32f2f;
+    color: var(--color-error);
 }
 
 /* base_components.css imports basic modal, button and form styles */
@@ -687,7 +687,7 @@ body {
 .info-widget-value-purple {
     font-size: 0.8em;
     font-weight: 500;
-    color: #555;
+    color: var(--color-text-body);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -799,8 +799,8 @@ body {
     padding: 4px 8px;
     background: rgba(255,255,255,0.7);
 }
-.modal-list-del { background: none; border: none; color: #999; cursor: pointer; padding: 0 5px; font-size: 1.2em;}
-.modal-list-del:hover { color: #f44336; }
+.modal-list-del { background: none; border: none; color: var(--color-text-faint); cursor: pointer; padding: 0 5px; font-size: 1.2em;}
+.modal-list-del:hover { color: var(--color-error); }
 
 .sticker-title {
     font-weight: bold;
@@ -811,7 +811,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #333 !important;
+    color: var(--color-text-dark) !important;
     min-height: 1.2em;
     line-height: 1.2;
     flex-shrink: 0;
@@ -819,7 +819,7 @@ body {
 .sticker-title-input {
     width: 100%;
     border: none;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--color-border);
     background: transparent;
     font-size: 0.9em;
     padding: 4px 5px;
@@ -827,7 +827,7 @@ body {
 }
 .sticker-title-input:focus {
     outline: none;
-    border-bottom-color: #ffd54f;
+    border-bottom-color: var(--color-sticker-accent);
 }
 .sticker-quick-input {
     flex-grow: 1;
@@ -846,13 +846,13 @@ body {
 }
 .sticker-quick-input:focus {
     outline: none;
-    border-color: #ffd54f;
-    box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.1);
+    border-color: var(--color-sticker-accent);
+    box-shadow: 0 0 0 2px var(--color-primary-glow);
 }
 .sticker-input-container {
     padding: 10px 15px;
-    background: rgba(255, 255, 255, 0.5);
-    border-bottom: 1px solid #ffd54f;
+    background: var(--color-overlay-light);
+    border-bottom: 1px solid var(--color-sticker-accent);
 }
 .btn-add-item {
     background: rgba(0,0,0,0.05); border: 1px dashed rgba(0,0,0,0.2);
@@ -886,21 +886,21 @@ body {
     transition: background 0.2s;
 }
 .sticker-type-btn:hover, .sticker-ok-btn:hover {
-    background: #f0f0f0;
+    background: var(--color-bg-subtle);
 }
 .sticker-type-btn.active {
-    background: #e3f2fd;
-    border-color: #2196f3;
+    background: var(--color-blue-light);
+    border-color: var(--color-blue);
 }
 .sticker-ok-btn {
-    background: #4caf50;
+    background: var(--color-success);
     color: white;
     font-weight: bold;
     font-size: 0.8em;
     padding: 0 12px;
 }
 .sticker-ok-btn:hover {
-    background: #45a049;
+    background: var(--color-success-dark);
 }
 .color-picker {
     display: flex;
@@ -982,13 +982,13 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 700;
-    color: #F2994A;
+    color: var(--color-primary);
     margin-bottom: 2px;
 }
 
 .note-card-preview {
     font-size: 0.8em;
-    color: #444;
+    color: var(--color-text-body);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -999,7 +999,7 @@ body {
     padding-top: 8px;
     border-top: 1px solid rgba(0,0,0,0.05);
     font-size: 0.85em;
-    color: #333;
+    color: var(--color-text-dark);
     line-height: 1.4;
     width: 100%;
 }

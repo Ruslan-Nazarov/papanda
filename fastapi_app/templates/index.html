@@ -41,8 +41,8 @@
         .sticker-icon-small {
             width: 18px;
             height: 18px;
-            background: #ffeb3b; /* Bright Yellow Post-it */
-            border: 1px solid #fbc02d;
+            background: var(--color-sticker-default);
+            border: 1px solid var(--color-sticker-accent);
             border-radius: 2px;
             box-shadow: 1px 2px 3px rgba(0,0,0,0.2);
             transform: rotate(-5deg);
@@ -51,12 +51,12 @@
         }
     </style>
 </head>
-    <body style="margin: 0; background-color: #FFF5EC;">
+    <body style="margin: 0; background-color: var(--color-bg-app);">
         {% if request.cookies.get('papanda_mode') == 'sandbox' %}
-        <div style="background: #ff5252; color: white; text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+        <div style="background: var(--color-error); color: var(--color-white); text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 20px; box-shadow: var(--shadow-md);">
             <span>🚧 SANDBOX MODE ACTIVE - Using temporary database (sandbox_demo.db) 🚧</span>
             <form action="{{ url_for('exit_sandbox') }}" method="post" style="margin: 0;">
-                <button type="submit" style="background: white; color: #ff5252; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Exit Sandbox</button>
+                <button type="submit" style="background: var(--color-white); color: var(--color-error); border: none; padding: 5px 15px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Exit Sandbox</button>
             </form>
         </div>
         {% endif %}
@@ -288,7 +288,7 @@
                                         padding: 6px 12px;
                                         border-radius: 6px;
                                         border: none;
-                                        background-color: #f3f4f6;
+                                        background-color: var(--color-bg-subtle);
                                         cursor: pointer;
                                         font-weight: 500;
                                     "
@@ -384,7 +384,7 @@
                     {% for event in date_important %}
                     <div class="info-widget info-widget-amber">
                         <span class="info-widget-title">⭐ important</span>
-                        <span class="info-widget-value-sm text-amber">{% if event.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% endif %}{{ event.title }}</span>
+                        <span class="info-widget-value-sm text-amber">{% if event.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: var(--color-primary);">🔁</span>{% endif %}{{ event.title }}</span>
                     </div>
                     {% endfor %}
 
@@ -567,8 +567,8 @@
                             <div
                                 id="rule-lang"
                                 style="
-                                    background-color: #66bb6a;
-                                    color: white;
+                                    background-color: var(--color-success);
+                                    color: var(--color-white);
                                     display: inline-block;
                                     padding: 2px 10px;
                                     border-radius: 5px;
@@ -581,7 +581,7 @@
                             <div
                                 style="
                                     font-size: 0.95em;
-                                    color: #333;
+                                    color: var(--color-text-dark);
                                     line-height: 1.4;
                                 "
                             >

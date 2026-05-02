@@ -4,7 +4,7 @@
 
 // Global State for Modal
 let currentStickerId = null;
-let currentStickerColor = '#fff9c4';
+let currentStickerColor = 'var(--color-sticker-default)';
 let currentStickerType = 'text';
 let currentStickerSource = 'global'; // 'global', 'header', 'parent'
 let currentStickerElement = null; // Reference to the element being edited
@@ -83,11 +83,11 @@ function createStickerElement(note, options = {}) {
     
     noteDiv.dataset.id = note.id || '';
     noteDiv.dataset.type = note.type || 'text';
-    noteDiv.dataset.color = note.color || '#fff9c4';
+    noteDiv.dataset.color = note.color || 'var(--color-sticker-default)';
     noteDiv.dataset.title = note.title || '';
     
-    noteDiv.style.backgroundColor = note.color || '#fff9c4';
-    noteDiv.style.setProperty('background-color', note.color || '#fff9c4', 'important');
+    noteDiv.style.backgroundColor = note.color || 'var(--color-sticker-default)';
+    noteDiv.style.setProperty('background-color', note.color || 'var(--color-sticker-default)', 'important');
     
     noteDiv.onclick = (e) => {
         if (options.onClick) {
@@ -179,7 +179,7 @@ async function openStickerModal(options = {}) {
     
     // Default type and color for new stickers
     currentStickerType = 'text';
-    currentStickerColor = '#fff9c4';
+    currentStickerColor = 'var(--color-sticker-default)';
     
     const delBtn = document.getElementById('modalStickerDelBtn');
     if (delBtn) delBtn.style.display = id ? 'block' : 'none';
@@ -189,7 +189,7 @@ async function openStickerModal(options = {}) {
     if (id) {
         // Mode: Edit Existing
         const el = currentStickerElement;
-        currentStickerColor = el ? (el.dataset.color || '#fff9c4') : '#fff9c4';
+        currentStickerColor = el ? (el.dataset.color || 'var(--color-sticker-default)') : 'var(--color-sticker-default)';
         currentStickerType = el ? (el.dataset.type || 'text') : 'text';
 
         // Initial UI state before fetch
@@ -200,7 +200,7 @@ async function openStickerModal(options = {}) {
             if (res.ok) {
                 const sticker = await res.json();
                 if (titleEl) titleEl.value = sticker.title || '';
-                currentStickerColor = sticker.color || '#fff9c4';
+                currentStickerColor = sticker.color || 'var(--color-sticker-default)';
                 currentStickerType = sticker.type || 'text';
                 
                 // Extract parent context from fetched sticker if not provided
@@ -233,7 +233,7 @@ async function openStickerModal(options = {}) {
         }
     } else {
         // Mode: Create New
-        currentStickerColor = options.color || '#fff9c4';
+        currentStickerColor = options.color || 'var(--color-sticker-default)';
         currentStickerType = options.type || 'text';
         
         if (currentStickerSource === 'header') {
@@ -508,7 +508,7 @@ async function hardDeleteStickerGlobal(btn, id) {
         if (res.ok) {
             const el = btn.closest('.note-card') || btn.closest('.sticker-thought');
             if (el) {
-                el.style.backgroundColor = '#ffcdd2';
+                el.style.backgroundColor = 'var(--color-error-light)';
                 el.style.opacity = '0.5';
                 setTimeout(() => el.remove(), 300);
             } else {
@@ -573,7 +573,7 @@ function openParentStickersOverview(type, id, stickers) {
     stickers.forEach(s => {
         const card = document.createElement('div');
         card.className = 'mini-sticker-card';
-        card.style.backgroundColor = s.color || '#fff9c4';
+        card.style.backgroundColor = s.color || 'var(--color-sticker-default)';
         
         let textPreview = s.text;
         if (s.type === 'list') {

@@ -15,7 +15,7 @@ class WordService:
     Acts as a coordinator for specialized word sub-services.
     """
     
-    # Simple search cache (static to persist across instances in the same process)
+    # Simple search cache
     _search_cache: Dict[str, List[Any]] = {}
 
     def __init__(self, db: AsyncSession):
@@ -27,15 +27,15 @@ class WordService:
     # --- Search with Cache ---
     async def search_words(self, query: str, limit: int = 10) -> List[models.WordStats]:
         """Searches words by pattern with in-memory caching."""
-        query = query.strip().lower()
-        if not query: return []
+        query_cleaned = query.strip().lower()
+        if not query_cleaned: return []
         
-        cache_key = f"{query}_{limit}"
+        cache_key = f"{query_cleaned}_{limit}"
         if cache_key in self._search_cache:
             return self._search_cache[cache_key]
 
         try:
-            q = f"%{query}%"
+            q = f"%{query_cleaned}%"
             stmt = select(models.WordStats).where(
                 or_(
                     models.WordStats.eng.ilike(q),
@@ -49,7 +49,6 @@ class WordService:
             result = await self.db.execute(stmt)
             words = list(result.scalars().all())
             
-            # Cache the result
             self._search_cache[cache_key] = words
             return words
         except Exception as e:
@@ -66,7 +65,6 @@ class WordService:
             if w:
                 w.meaning = meaning
                 w.ru = translations.get('ru', w.ru)
-                # JSON Merge
                 current_trans = dict(w.translations or {})
                 current_trans.update(translations)
                 w.translations = current_trans
@@ -81,12 +79,16 @@ class WordService:
                 self.db.add(w)
             
             await self.db.commit()
-            self._search_cache.clear() # Invalidate cache on write
+            self._search_cache.clear()
             return w
         except Exception as e:
             await self.db.rollback()
             logger.error(f"Error upserting word '{eng}': {e}")
             raise
+
+    async def update_word_full_dynamic(self, word_eng: str, translations: Dict[str, str], meaning: str) -> Optional[models.WordStats]:
+        """Update existing word translations and meaning."""
+        return await self.upsert_word_dynamic(word_eng, translations, meaning)
 
     async def delete_word(self, word_eng: str) -> bool:
         """Deletes a word and invalidates cache."""
@@ -110,7 +112,6 @@ class WordService:
                 stats[lang] = is_known
                 w.knowledge_stats = stats
                 
-                # Check if fully learned for all active languages
                 active_langs = await self.langs.get_active_languages()
                 w.is_learned = all(stats.get(al) for al in active_langs)
                 
@@ -122,16 +123,82 @@ class WordService:
             logger.error(f"Error marking word known {word_eng}: {e}")
             return None
 
-    # --- Delegation Methods for backward compatibility ---
-    async def get_active_languages(self): return await self.langs.get_active_languages()
+    async def toggle_active_triplet_known(self, word_eng: str, is_known: bool = True) -> Optional[models.WordStats]:
+        """Toggles known status for all currently active languages for a word."""
+        try:
+            res = await self.db.execute(select(models.WordStats).where(models.WordStats.eng == word_eng))
+            w = res.scalar_one_or_none()
+            if w:
+                active_langs = await self.langs.get_active_languages()
+                k_stats = dict(w.knowledge_stats or {})
+                for lang in active_langs:
+                    k_stats[lang] = is_known
+                w.knowledge_stats = k_stats
+                w.is_learned = is_known
+                await self.db.commit()
+                return w
+            return None
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Error toggling triplet known {word_eng}: {e}")
+            return None
+
+    async def reset_all_stats(self) -> bool:
+        """Resets all word learning statistics."""
+        try:
+            await self.db.execute(update(models.WordStats).values({
+                models.WordStats.count: 0,
+                models.WordStats.is_learned: False,
+                models.WordStats.show_stats: {},
+                models.WordStats.knowledge_stats: {}
+            }))
+            await self.db.execute(delete(models.WordStatsSnapshot))
+            await self.db.commit()
+            self._search_cache.clear()
+            return True
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Error resetting stats: {e}")
+            return False
+
+    # --- Delegations (Facade) ---
+    async def get_active_languages(self): 
+        return await self.langs.get_active_languages()
+    
+    async def get_all_language_names(self):
+        return await self.langs.get_all_language_names()
+
     async def get_current_metrics(self): 
         active = await self.langs.get_active_languages()
         return await self.stats.get_current_metrics(active)
-    async def get_random_test_words_data(self, limit=5): return await self.test.get_random_test_words_data(limit)
-    async def record_test_result(self, correct, lang): await self.test.record_test_result(correct, lang)
+
+    async def get_distribution_stats(self):
+        active = await self.langs.get_active_languages()
+        return await self.stats.get_distribution_stats(active)
+
+    async def get_random_test_words_data(self, limit=5): 
+        return await self.test.get_random_test_words_data(limit)
     
+    async def record_test_result(self, correct, lang): 
+        await self.test.record_test_result(correct, lang)
+
+    async def get_snapshot_history(self, limit=30):
+        return await self.stats.get_snapshot_history(limit)
+
+    async def get_daily_shows_history(self, limit=30):
+        return await self.stats.get_daily_shows_history(limit)
+
+    async def get_knowledge_counts(self, languages: List[str]):
+        return await self.stats.get_knowledge_counts(languages)
+
+    async def get_fully_learned_count(self, languages: Optional[List[str]] = None):
+        # We ignore languages arg for now as it's global
+        return await self.stats.get_fully_learned_count()
+    
+    async def save_daily_snapshot(self, date_obj, coverage, imw, total, learned):
+        await self.stats.save_daily_snapshot(date_obj, coverage, imw, total, learned)
+
     async def get_top_encountered_words(self, limit: int = 12) -> List[models.WordStats]:
-        """Returns most frequent words based on show stats."""
         active_langs = await self.langs.get_active_languages()
         sum_expr = " + ".join([f"COALESCE(JSON_EXTRACT(show_stats, '$.{l}'), 0)" for l in active_langs])
         stmt = select(models.WordStats).order_by(text(f"({sum_expr}) DESC")).limit(limit)

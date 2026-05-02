@@ -127,3 +127,35 @@ class WordStatsService:
         except Exception as e:
             logger.error(f"Error fetching snapshot history: {e}")
             return []
+
+    async def get_daily_shows_history(self, limit: int = 30) -> List[models.WordShowsDaily]:
+        """Returns history of daily word shows."""
+        try:
+            stmt = select(models.WordShowsDaily).order_by(models.WordShowsDaily.date.desc()).limit(limit)
+            res = await self.db.execute(stmt)
+            return list(reversed(res.scalars().all()))
+        except Exception as e:
+            logger.error(f"Error fetching daily shows: {e}")
+            return []
+
+    async def get_knowledge_counts(self, languages: List[str]) -> Dict[str, int]:
+        """Returns count of known words for each language."""
+        counts = {}
+        try:
+            for lang in languages:
+                stmt = text(f"SELECT COUNT(*) FROM word_stats WHERE JSON_EXTRACT(knowledge_stats, '$.{lang}') = 1")
+                res = await self.db.execute(stmt)
+                counts[lang] = res.scalar() or 0
+        except Exception as e:
+            logger.error(f"Error getting knowledge counts: {e}")
+        return counts
+
+    async def get_fully_learned_count(self) -> int:
+        """Returns total count of fully learned words."""
+        try:
+            stmt = select(func.count(models.WordStats.word)).where(models.WordStats.is_learned == True)
+            res = await self.db.execute(stmt)
+            return res.scalar() or 0
+        except Exception as e:
+            logger.error(f"Error getting fully learned count: {e}")
+            return 0

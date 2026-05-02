@@ -187,12 +187,8 @@
     margin-bottom: 10px;
     flex-wrap: wrap;
 }
-.weekday-row label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     font-size: 0.75em;
-    color: #555;
+    color: var(--color-text-medium);
     cursor: pointer;
     gap: 2px;
     width: 26px;
@@ -201,7 +197,7 @@
     width: 14px;
     height: 14px;
     cursor: pointer;
-    accent-color: #3b82f6;
+    accent-color: var(--color-blue);
 }
 
 @media (max-width: 768px) {
@@ -214,7 +210,7 @@
 .inner-stickers-container {
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 2px solid #eee;
+    border-top: 2px solid var(--color-border-light);
 }
 .event-stickers-grid {
     display: flex;
@@ -254,8 +250,8 @@
 
 /* Sticker Input UI */
 .sticker-quick-add {
-    background: #fdfdfd;
-    border: 1px solid #eee;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-light);
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 20px;
@@ -266,7 +262,7 @@
     width: 38px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     font-size: 1.2em; transition: 0.2s;
 }
-.sticker-type-btn.active { background: #e3f2fd; border-color: #2196f3; }
+.sticker-type-btn.active { background: var(--color-blue-light); border-color: var(--color-blue); }
 .sticker-ok-btn {
     background: var(--color-success); color: white; border: none; border-radius: 8px;
     padding: 0 15px; height: 38px; cursor: pointer; font-weight: bold;
@@ -276,7 +272,7 @@
     width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
     border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-.color-dot.active { transform: scale(1.2); box-shadow: 0 0 0 2px #555; }
+.color-dot.active { transform: scale(1.2); box-shadow: 0 0 0 2px var(--color-text-body); }
 
 .bg-yellow { background-color: #fff9c4 !important; }
 .bg-pink   { background-color: #f8bbd0 !important; }
@@ -299,11 +295,11 @@
     transition: background-color 0.2s;
 }
 .clickable-note:hover {
-    background-color: #fff9c4 !important;
+    background-color: var(--color-sticker-default) !important;
     color: var(--color-text-dark);
 }
 .calendar-wrapper { padding: 20px; }
-.calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 4px 8px; font-weight: 700; color: #666; }
+.calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 4px 8px; font-weight: 700; color: var(--color-text-muted); }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .calendar-cell {
     background: var(--color-bg-white);
@@ -322,22 +318,22 @@
     z-index: 1;
 }
 .calendar-cell.today .cell-header {
-    background: linear-gradient(180deg, var(--color-primary-light), #ffe0b2);
+    background: linear-gradient(180deg, var(--color-primary-light), var(--color-bg-subtle));
     border-bottom: 1px solid var(--color-primary-glow);
 }
 .calendar-cell.today .cell-day {
     color: var(--color-primary-dark);
 }
 .calendar-cell.other-month {
-    background: #fcfcfc;
+    background: var(--color-bg-surface);
     opacity: 0.7;
 }
 .calendar-cell.other-month .cell-header {
-    background: #f5f5f5;
-    border-bottom: 1px solid #eee;
+    background: var(--color-bg-subtle);
+    border-bottom: 1px solid var(--color-border-light);
 }
 .calendar-cell.other-month .cell-day {
-    color: #999;
+    color: var(--color-text-faint);
 }
 .cell-header {
     display: flex;
@@ -353,11 +349,11 @@
 .cell-actions { display: flex; gap: 6px; align-items: center; }
 .cell-add {
     width: 22px; height: 22px; border-radius: 6px;
-    border: 1px solid #c6a8ff; background: #f8f2ff; color: #7a4cff;
+    border: 1px solid var(--color-indigo-dark); background: var(--color-bg-subtle); color: var(--color-indigo);
     cursor: pointer; font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center;
 }
-.cell-add:hover { background: #f1e6ff; }
-.cell-body { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; background: #fff; }
+.cell-add:hover { background: var(--color-border-light); }
+.cell-body { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; background: var(--color-white); }
 .event-chip {
     position: relative;
     display: flex;
@@ -380,7 +376,7 @@
     z-index: 10;
 }
 .event-chip .title { 
-    color: #333; 
+    color: var(--color-text-dark); 
     overflow: hidden; 
     text-overflow: ellipsis; 
     white-space: nowrap; 
@@ -417,7 +413,7 @@
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.9em;
-    color: #445;
+    color: var(--color-text-medium);
     font-weight: 500;
     transition: all 0.2s;
 }
@@ -435,14 +431,14 @@
     align-items: center;
 }
 
-.context-menu-item.danger { color: #dc2626; }
-.context-menu-item.danger:hover { background: #fee2e2; }
+.context-menu-item.danger { color: var(--color-error); }
+.context-menu-item.danger:hover { background: var(--color-error-light); }
 
 /* --- THREE DOTS BUTTON --- */
 .chip-three-dots {
     opacity: 0;
     cursor: pointer;
-    color: #94a3b8;
+    color: var(--color-text-faint);
     font-size: 1.2em;
     padding: 2px 4px;
     border-radius: 4px;
@@ -455,8 +451,8 @@
 }
 
 .chip-three-dots:hover {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-medium);
 }
 .chip-actions { 
     display: flex; 
@@ -466,9 +462,9 @@
     z-index: 101;
 }
 .chip-btn {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #64748b;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
     cursor: pointer;
     width: 24px;
     height: 24px;
@@ -496,9 +492,9 @@
     justify-content: center;
     width: 26px;
     height: 26px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #166534;
+    background: var(--color-success-light);
+    border: 1px solid var(--color-success-glow);
+    color: var(--color-success-dark);
     border-radius: 6px;
     cursor: pointer;
     font-size: 1.1em;
@@ -507,9 +503,9 @@
     margin-right: 4px;
 }
 .tree-icon:hover {
-    background: #dcfce7;
+    background: var(--color-success-light);
     transform: scale(1.1) rotate(-5deg);
-    border-color: #86efac;
+    border-color: var(--color-success);
 }
 
 /* Premium Sticker Hover Icon */
@@ -517,19 +513,19 @@
     display: inline-flex;
     width: 14px;
     height: 14px;
-    background: #fff176; /* Bright Yellow */
+    background: var(--color-sticker-accent); /* Bright Yellow */
     border-radius: 1px;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
     transform: rotate(-12deg);
     cursor: help;
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 1px solid #fdd835;
+    border: 1px solid var(--color-sticker-accent);
     user-select: none;
     margin-left: 2px;
 }
 .sticker-hover-icon:hover {
     transform: rotate(0deg) scale(1.4);
-    background: #ffff00;
+    background: var(--color-sticker-accent);
     box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
 }
 
@@ -555,7 +551,7 @@
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 10px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-bg-subtle);
     padding-bottom: 8px;
 }
 .popover-title {
@@ -566,13 +562,13 @@
 }
 .popover-close {
     cursor: pointer;
-    color: #999;
+    color: var(--color-text-faint);
     font-size: 1.2em;
     line-height: 1;
 }
 .popover-body {
     font-size: 0.9em;
-    color: #666;
+    color: var(--color-text-muted);
 }
 .popover-info {
     display: flex;
@@ -612,7 +608,7 @@
     background: var(--color-primary-light);
 }
 .habit-card.finished {
-    background: #f8f8f8;
+    background: var(--color-bg-page);
     opacity: 0.75;
     filter: grayscale(0.5);
 }
@@ -629,7 +625,7 @@
 }
 .habit-card .habit-date {
     font-size: 0.85em;
-    color: #888;
+    color: var(--color-text-faint);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -640,7 +636,7 @@
     gap: 10px;
     margin-top: auto;
     padding-top: 10px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--color-bg-subtle);
 }
 .load-more-container {
     display: flex;
@@ -648,17 +644,17 @@
     padding: 30px;
 }
 .btn-load-more {
-    background: #f0f0f0;
-    border: 1px solid #ddd;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
     padding: 12px 30px;
     border-radius: 25px;
     font-weight: bold;
-    color: #666;
+    color: var(--color-text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 .btn-load-more:hover {
-    background: #e8e8e8;
+    background: var(--color-border);
     color: var(--color-text-dark);
 }
 
@@ -686,7 +682,7 @@
     background: var(--color-blue-light);
 }
 .task-card.finished {
-    background: #f8f8f8;
+    background: var(--color-bg-page);
     opacity: 0.75;
     filter: grayscale(0.5);
 }
@@ -703,7 +699,7 @@
 }
 .task-card .task-date {
     font-size: 0.8em;
-    color: #999;
+    color: var(--color-text-faint);
 }
 .task-card .task-actions {
     display: flex;
@@ -711,7 +707,7 @@
     gap: 10px;
     margin-top: auto;
     padding-top: 10px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--color-bg-subtle);
 }
 
 /* --- CHRONOLOGY CARDS --- */
@@ -739,7 +735,7 @@
     background: var(--color-primary-light); /* Subtle accent */
 }
 .chrono-card.old {
-    background: #fcfcfc;
+    background: var(--color-bg-surface);
     opacity: 0.85;
 }
 .chrono-card:hover {
@@ -748,7 +744,7 @@
 }
 .chrono-card .chrono-title {
     font-size: 1em;
-    color: #444;
+    color: var(--color-text-body);
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -759,7 +755,7 @@
 }
 .chrono-card .chrono-date {
     font-size: 0.85em;
-    color: #9b59b6;
+    color: var(--color-purple);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -771,13 +767,13 @@
     gap: 10px;
     margin-top: auto;
     padding-top: 10px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--color-bg-subtle);
 }
 
 /* Viewer Modal for Chrono Text */
 #chronoViewModal .modal-content {
-    background: #ffffff !important;
-    border-top: 6px solid #9b59b6 !important;
+    background: var(--color-white) !important;
+    border-top: 6px solid var(--color-purple) !important;
 }
 .chrono-view-text {
     font-size: 1.2em;
@@ -804,7 +800,7 @@
     background: white;
     border-radius: 14px;
     padding: 18px;
-    border: 1px solid #eee;
+    border: 1px solid var(--color-border-light);
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
@@ -822,15 +818,15 @@
     gap: 6px;
     font-size: 0.8em;
     font-weight: 700;
-    color: #555;
+    color: var(--color-text-medium);
     padding: 3px 8px;
     border-radius: 999px;
-    background: #f4f4f4;
+    background: var(--color-bg-subtle);
     width: fit-content;
 }
 .note-card .note-date {
     font-size: 0.8em;
-    color: #888;
+    color: var(--color-text-faint);
 }
 .note-card .note-text {
     font-size: 0.95em;
@@ -848,7 +844,7 @@
     gap: 10px;
     margin-top: auto;
     padding-top: 8px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--color-bg-subtle);
 }
 
 /* --- EXPANDING SEARCH BAR --- */
@@ -863,7 +859,7 @@
     display: flex;
     align-items: center;
     background: white;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 25px;
     padding: 4px 12px;
     transition: all 0.3s ease;
@@ -874,8 +870,8 @@
 }
 .search-wrapper:focus-within, .search-wrapper.has-query {
     width: 300px;
-    border-color: #F2994A;
-    box-shadow: 0 2px 10px rgba(242, 153, 74, 0.15);
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 10px var(--color-primary-glow);
 }
 .search-wrapper input {
     border: none;
@@ -894,7 +890,7 @@
     border: none;
     cursor: pointer;
     font-size: 1.1em;
-    color: #666;
+    color: var(--color-text-muted);
     padding: 0;
     display: flex;
     align-items: center;
@@ -902,11 +898,11 @@
     flex-shrink: 0;
 }
 .search-wrapper:focus-within .search-icon-btn, .search-wrapper.has-query .search-icon-btn {
-    color: #F2994A;
+    color: var(--color-primary);
 }
 .btn-clear-search {
-    background: #f0f0f0;
-    color: #888;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-faint);
     border-radius: 50%;
     width: 24px;
     height: 24px;
@@ -917,7 +913,7 @@
     font-size: 0.8em;
     transition: 0.2s;
 }
-.btn-clear-search:hover { background: #e0e0e0; color: #444; }
+.btn-clear-search:hover { background: var(--color-border-medium); color: var(--color-text-body); }
 /* --- Color Picker --- */
 .color-picker-container {
 display: flex;
@@ -937,7 +933,7 @@ transition: all 0.2s;
 transform: scale(1.1);
 }
 .color-option.selected {
-border-color: #333;
+border-color: var(--color-text-dark);
 box-shadow: 0 0 5px rgba(0,0,0,0.2);
 }
 .color-option.none-option {
@@ -946,8 +942,8 @@ display: flex;
 align-items: center;
 justify-content: center;
 font-weight: bold;
-color: #999;
-border: 1px solid #ddd;
+color: var(--color-text-faint);
+border: 1px solid var(--color-border);
 }
 .color-option.none-option span {
 font-size: 1.2em;
@@ -980,7 +976,7 @@ left: 50%;
 top: 0;
 bottom: 0;
 width: 4px;
-background: #e0e0e0;
+background: var(--color-border-medium);
 transform: translateX(-50%);
 border-radius: 2px;
 }
@@ -1005,7 +1001,7 @@ position: absolute;
 top: 30px;
 width: 20px;
 height: 4px;
-background: #e0e0e0;
+background: var(--color-border-medium);
 }
 .tree-node.left::after {
 right: 0;
@@ -1020,7 +1016,7 @@ top: 24px;
 width: 16px;
 height: 16px;
 background: #fff;
-border: 4px solid #999;
+border: 4px solid var(--color-text-faint);
 border-radius: 50%;
 z-index: 1;
 }
@@ -1048,27 +1044,27 @@ transform: translateY(-3px);
 }
 .tree-card-date {
 font-size: 0.8em;
-color: #666;
+color: var(--color-text-muted);
 margin-bottom: 5px;
 }
 .tree-card-title {
 font-weight: 600;
-color: #2c3e50;
+color: var(--color-text-dark);
 }
 .tree-card-stickers {
 margin-top: 8px;
 font-size: 0.9em;
-color: #3498db;
+color: var(--color-blue);
 }
 
 /* --- Inner Stickers View --- */
 .inner-stickers-container {
 margin-top: 20px;
-border-top: 1px solid #eee;
+border-top: 1px solid var(--color-border-light);
 padding-top: 15px;
 }
 .inner-sticker-item {
-background: #fff9c4;
+background: var(--color-sticker-default);
 padding: 10px;
 border-radius: 8px;
 margin-bottom: 8px;
@@ -1089,18 +1085,18 @@ opacity: 0.5;
 .sticker-dot {
     width: 6px;
     height: 6px;
-    background-color: #f2994a;
+    background-color: var(--color-primary);
     border-radius: 50%;
     display: inline-block;
     flex-shrink: 0;
-    box-shadow: 0 0 4px rgba(242, 153, 74, 0.5);
+    box-shadow: 0 0 4px var(--color-primary-glow);
 }
 
 .sticker-icon-small {
     width: 14px;
     height: 14px;
-    background: #fff8e1;
-    border: 1px solid #ffe082;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-sticker-accent);
     border-radius: 2px;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     transform: rotate(-3deg);
@@ -1113,7 +1109,7 @@ opacity: 0.5;
     gap: 20px;
     padding: 20px;
     justify-content: center;
-    background: #fafafa;
+    background: var(--color-bg-surface);
     min-height: 200px;
 }
 
@@ -1157,8 +1153,8 @@ opacity: 0.5;
 /* --- SORTABLE JS (Drag and Drop) --- */
 .sortable-ghost {
     opacity: 0.4 !important;
-    background: #f0f7ff !important;
-    border: 2px dashed #3b82f6 !important;
+    background: var(--color-blue-light) !important;
+    border: 2px dashed var(--color-blue) !important;
 }
 .sortable-drag {
     cursor: grabbing !important;

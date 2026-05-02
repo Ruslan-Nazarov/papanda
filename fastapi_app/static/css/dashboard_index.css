@@ -103,7 +103,7 @@
                 cursor: grabbing;
             }
             .drag-handle:hover {
-                color: #ccc;
+                color: var(--color-text-muted);
             }
 
 
@@ -132,7 +132,7 @@
             }
             .edit-btn:hover {
                 opacity: 1 !important;
-                color: #4caf50;
+                color: var(--color-success);
             }
 
             .btn-rule {
@@ -274,7 +274,7 @@
             }
             .recurrence-menu .rec-label {
                 font-size: 0.82em;
-                color: #666;
+                color: var(--color-text-muted);
                 margin-bottom: 4px;
                 display: block;
                 font-weight: 600;
@@ -286,7 +286,7 @@
                 width: 100%;
                 margin-bottom: 10px;
                 height: 28px;
-                border: 1px solid #ddd;
+                border: 1px solid var(--color-border);
                 border-radius: 4px;
                 padding: 0 6px;
                 font-size: 0.9em;
@@ -303,7 +303,7 @@
                 flex-direction: column;
                 align-items: center;
                 font-size: 0.75em;
-                color: #555;
+                color: var(--color-text-medium);
                 cursor: pointer;
                 gap: 2px;
                 width: 26px;
@@ -380,8 +380,8 @@
 
             /* Sticky Thoughts Widget Styles */
             .grid-stack-item[gs-id="stickers"] .grid-stack-item-content {
-                border-color: #ffd54f !important;
-                background-color: #fff9c4 !important;
+                border-color: var(--color-sticker-accent) !important;
+                background-color: var(--color-sticker-default) !important;
             }
             .corkboard {
                 display: flex;
@@ -392,12 +392,12 @@
                 min-height: 100px;
             }
             .sticker-thought {
-                background-color: #fff9c4;
+                background-color: var(--color-sticker-default);
                 width: 110px;
                 height: 110px;
                 padding: var(--spacing-3);
                 border-radius: var(--radius-xs);
-                font-family: 'Indie Flower', cursive, sans-serif;
+                font-family: var(--font-sticker);
                 box-shadow: var(--shadow-sm);
                 font-size: var(--text-base);
                 position: relative;
@@ -432,7 +432,7 @@
                 z-index: 5;
                 transition: color 0.2s;
             }
-            .sticker-del-btn:hover { color: #b71c1c; }
+            .sticker-del-btn:hover { color: var(--color-error-dark); }
             
             .sticker-more-btn {
                 background: rgba(0,0,0,0.05);
@@ -441,12 +441,12 @@
                 font-size: 0.75em;
                 padding: 2px 8px;
                 margin-top: 5px;
-                color: #666;
+                color: var(--color-text-muted);
                 cursor: pointer;
                 align-self: flex-start;
                 font-family: sans-serif;
             }
-            .sticker-more-btn:hover { background: rgba(0,0,0,0.1); }
+            .sticker-more-btn:hover { background: var(--color-overlay-light); }
             
             /* Modal sticker specific */
             .modal-sticker-content {
@@ -454,13 +454,13 @@
                 width: 90%;
                 border-radius: 10px;
                 padding: 25px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-                background: white !important;
-                border-radius: 12px !important;
+                box-shadow: var(--shadow-xl);
+                background: var(--color-white) !important;
+                border-radius: var(--radius-md) !important;
                 padding: 10px !important; /* Smaller padding than main modals */
                 max-width: 500px !important;
                 font-family: inherit;
-                border: 2px solid rgba(0,0,0,0.1);
+                border: 2px solid var(--color-border-light);
                 transition: background-color 0.3s;
             }
             .modal-sticker-body { margin-top: 15px; }
@@ -473,8 +473,8 @@
                 padding: 4px 8px;
                 background: rgba(255,255,255,0.7);
             }
-            .modal-list-del { background: none; border: none; color: #999; cursor: pointer; padding: 0 5px; font-size: 1.2em;}
-            .modal-list-del:hover { color: #f44336; }
+            .modal-list-del { background: none; border: none; color: var(--color-text-faint); cursor: pointer; padding: 0 5px; font-size: 1.2em;}
+            .modal-list-del:hover { color: var(--color-error); }
             
             .sticker-title {
                 font-weight: bold;
@@ -485,14 +485,14 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                color: #333 !important;
+                color: var(--color-text-dark) !important;
                 min-height: 1.2em;
                 line-height: 1.2;
             }
             .sticker-title-input {
                 width: 100%;
                 border: none;
-                border-bottom: 1px solid #ddd;
+                border-bottom: 1px solid var(--color-border);
                 background: transparent;
                 font-size: 0.9em;
                 padding: 4px 5px;
@@ -500,7 +500,7 @@
             }
             .sticker-title-input:focus {
                 outline: none;
-                border-bottom-color: #ffd54f;
+                border-bottom-color: var(--color-sticker-accent);
             }
             .sticker-quick-input {
                 flex-grow: 1;
@@ -519,13 +519,13 @@
             }
             .sticker-quick-input:focus {
                 outline: none;
-                border-color: #ffd54f;
-                box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.1);
+                border-color: var(--color-sticker-accent);
+                box-shadow: 0 0 0 2px var(--color-primary-glow);
             }
             .sticker-input-container {
                 padding: 10px 15px;
-                background: rgba(255, 255, 255, 0.5);
-                border-bottom: 1px solid #ffd54f;
+                background: var(--color-overlay-light);
+                border-bottom: 1px solid var(--color-sticker-accent);
             }
             .btn-add-item {
                 background: rgba(0,0,0,0.05); border: 1px dashed rgba(0,0,0,0.2);
@@ -568,11 +568,11 @@
                 transition: background 0.2s;
             }
             .sticker-type-btn:hover, .sticker-ok-btn:hover {
-                background: #f0f0f0;
+                background: var(--color-bg-subtle);
             }
             .sticker-type-btn.active {
-                background: #e3f2fd;
-                border-color: #2196f3;
+                background: var(--color-blue-light);
+                border-color: var(--color-blue);
             }
             .sticker-ok-btn {
                 background: var(--color-success);
@@ -800,7 +800,7 @@
                 align-items: center;
                 justify-content: center;
                 font-weight: bold;
-                border: 1.5px solid white;
+                border: 1.5px solid var(--color-white);
             }
 
             .btn-premium {
@@ -944,19 +944,19 @@
 }
 
 .action-btn:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+    background: var(--color-border);
+    color: var(--color-text-dark);
 }
 
 .action-btn.delete:hover {
-    background: #fee2e2;
-    color: #ef4444;
+    background: var(--color-error-light);
+    color: var(--color-error);
 }
 
 .card-body {
     flex-grow: 1;
     font-size: 0.85em;
-    color: #334155;
+    color: var(--color-text-body);
     line-height: 1.5;
     overflow: hidden;
 }
@@ -974,7 +974,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--color-bg-subtle);
     padding-top: 8px;
 }
 
@@ -992,7 +992,7 @@
 
 .card-footer small {
     font-size: 0.65em;
-    color: #94a3b8;
+    color: var(--color-text-faint);
 }
 
 /* Search Results Enhancements */
@@ -1016,16 +1016,16 @@
 .card-category-tag {
     font-size: 0.7em;
     font-weight: 800;
-    color: #3b82f6;
+    color: var(--color-blue);
     text-transform: uppercase;
-    background: #eff6ff;
+    background: var(--color-blue-light);
     padding: 2px 8px;
     border-radius: 4px;
 }
 
 .search-note-preview {
     font-size: 0.85em;
-    color: #334155;
+    color: var(--color-text-body);
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 3;

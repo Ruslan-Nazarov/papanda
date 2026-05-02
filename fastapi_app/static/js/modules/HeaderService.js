@@ -25,7 +25,7 @@ export const HeaderService = {
         const input = document.getElementById('headerCommonColor');
         const indicator = document.getElementById('headerColorIndicator');
         if (input) input.value = color;
-        if (indicator) indicator.style.background = color || '#e0e0e0';
+        if (indicator) indicator.style.background = color || 'var(--color-border-medium)';
 
         document.querySelectorAll('#headerColorPickerPopup .color-dot').forEach(d => d.classList.remove('active'));
         if (el) el.classList.add('active');

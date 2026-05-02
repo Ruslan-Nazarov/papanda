@@ -23,7 +23,7 @@ export const EventService = {
 
             const titleEl = document.getElementById('detailModalTitle');
             if (titleEl) {
-                titleEl.innerHTML = (important ? '<span style="color: #F2D14A; margin-right: 8px;">⭐</span>' : '') + (title || '(No Title)');
+                titleEl.innerHTML = (important ? '<span style="color: var(--color-primary); margin-right: 8px;">⭐</span>' : '') + (title || '(No Title)');
             }
             
             const dateEl = document.getElementById('detailDateText');
@@ -39,8 +39,8 @@ export const EventService = {
             const statusEl = document.getElementById('detailModalStatus');
             if (statusEl) {
                 statusEl.innerHTML = done ? 
-                    '<span style="color: #10B981; background: #ecfdf5; padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' : 
-                    '<span style="color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px;">○ Pending</span>';
+                    '<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' : 
+                    '<span style="color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 20px;">○ Pending</span>';
             }
 
             const colorCircle = document.getElementById('detailModalColor');
@@ -237,7 +237,7 @@ export const EventService = {
         const emptyEl = document.getElementById('detailStickersEmpty');
         if (!listEl || !emptyEl) return;
 
-        listEl.innerHTML = '<div style="color: #94a3b8; font-size: 0.9em; padding: 10px;">Loading stickers...</div>';
+        listEl.innerHTML = '<div style="color: var(--color-text-faint); font-size: 0.9em; padding: 10px;">Loading stickers...</div>';
         emptyEl.style.display = 'none';
 
         try {
@@ -257,7 +257,7 @@ export const EventService = {
                 });
             }
         } catch (e) {
-            listEl.innerHTML = '<div style="color: #ef4444; font-size: 0.9em; padding: 10px;">Failed to load stickers.</div>';
+            listEl.innerHTML = '<div style="color: var(--color-error); font-size: 0.9em; padding: 10px;">Failed to load stickers.</div>';
         }
     },
 
@@ -266,7 +266,7 @@ export const EventService = {
         if (!listEl) return;
         
         if (!id) {
-            listEl.innerHTML = '<div style="color: #94a3b8; font-size: 0.85em; font-style: italic;">Temporary stickers for new event:</div>';
+            listEl.innerHTML = '<div style="color: var(--color-text-faint); font-size: 0.85em; font-style: italic;">Temporary stickers for new event:</div>';
             this.tempStickers.forEach((s, idx) => {
                 const el = this._createTempStickerEl(s, idx);
                 listEl.appendChild(el);
@@ -294,7 +294,7 @@ export const EventService = {
     _createTempStickerEl(s, idx) {
         const div = document.createElement('div');
         div.className = 'sticker-chip-mini';
-        div.style.background = s.color || '#fff9c4';
+        div.style.background = s.color || 'var(--color-sticker-default)';
         div.innerHTML = `
             <span class="sticker-emoji">${s.type === 'list' ? '📋' : '📝'}</span>
             <span class="sticker-text-preview">${s.title || (s.text ? s.text.substring(0,10)+'...' : 'Sticker')}</span>

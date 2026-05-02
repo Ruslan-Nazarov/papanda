@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', path='css/smart_notes.css') }}?v=31">
     <!-- D3 for Function Plot is now bundled in GraphTool.init() -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <!-- External libraries will be loaded locally or dynamically in later steps -->
 </head>
 
@@ -35,10 +36,10 @@
                 </select>
 
                 <div class="header-actions">
-                    <button class="btn-delete-note" id="btnDeleteNote"
+                    <button class="btn btn-danger btn-delete-note" id="btnDeleteNote"
                         style="display: none;">🗑️ Delete</button>
-                    <button class="btn-save-note btn-secondary" id="btnLoadNote">📂 Load</button>
-                    <button class="btn-save-note" id="btnSaveNote">💾 Save Note</button>
+                    <button class="btn btn-primary btn-save-note" id="btnLoadNote">📂 Load</button>
+                    <button class="btn btn-success btn-save-note" id="btnSaveNote">💾 Save Note</button>
                 </div>
             </div>
 
@@ -148,8 +149,8 @@
                     <div class="editor-word-count" id="wordCount">Editor Active</div>
                     <div class="debug-logs" id="editorDebugLogs" style="font-family: monospace; font-size: 10px; color: #94a3b8; max-height: 40px; overflow-y: auto; flex: 1; margin: 0 15px; border-left: 1px solid #f1f5f9; padding-left: 10px;"></div>
                     <div>
-                        <button class="editor-btn editor-btn-cancel" id="btnEditorCancel">Отмена</button>
-                        <button class="editor-btn editor-btn-save" id="btnEditorSave">ОК</button>
+                        <button class="btn btn-secondary editor-btn-cancel" id="btnEditorCancel">Отмена</button>
+                        <button class="btn btn-primary editor-btn-save" id="btnEditorSave">ОК</button>
                     </div>
                 </div>
                 <!-- Resize handle INSIDE the editor -->

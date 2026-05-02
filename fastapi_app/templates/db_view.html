@@ -19,8 +19,8 @@
         .sticker-icon-small {
             width: 14px;
             height: 14px;
-            background: #fff8e1;
-            border: 1px solid #ffe082;
+            background: var(--color-sticker-default);
+            border: 1px solid var(--color-sticker-accent);
             border-radius: 2px;
             box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
             transform: rotate(-3deg);
@@ -36,13 +36,13 @@
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(242, 153, 74, 0.3);
+            border: 1px solid var(--color-primary-glow);
             padding: 10px 24px;
             border-radius: 16px;
             margin-bottom: 25px;
-            box-shadow: 0 8px 32px rgba(242, 153, 74, 0.1);
+            box-shadow: var(--shadow-lg);
             animation: statsSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            border-left: 5px solid #F2994A;
+            border-left: 5px solid var(--color-primary);
             transition: all 0.3s ease;
             cursor: default;
         }
@@ -55,7 +55,7 @@
 
         .stats-icon {
             font-size: 1.5em;
-            background: linear-gradient(135deg, #F2994A 0%, #F2C94C 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-warning) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
@@ -65,7 +65,7 @@
 
         .stats-label {
             font-size: 0.9em;
-            color: #666;
+            color: var(--color-text-muted);
             font-weight: 500;
             letter-spacing: 0.3px;
         }
@@ -73,8 +73,8 @@
         .stats-value {
             font-size: 1.4em;
             font-weight: 800;
-            color: #333;
-            font-family: 'Inter', -apple-system, sans-serif;
+            color: var(--color-text-dark);
+            font-family: var(--font-base);
             margin-left: 5px;
         }
 
@@ -101,7 +101,7 @@
     <div class="stats-counter">
         <div class="stats-icon">📊</div>
         <div class="stats-label">
-            Total records in <span style="color: #F2994A; font-weight: 700;">{{ model_name }}</span>:
+            Total records in <span style="color: var(--color-primary); font-weight: 700;">{{ model_name }}</span>:
             <span class="stats-value">{{ total_in_db }}</span>
         </div>
     </div>
