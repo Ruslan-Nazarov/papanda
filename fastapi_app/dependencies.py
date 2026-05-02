@@ -16,6 +16,8 @@ from .services.task_service import TaskService
 from .services.habit_service import HabitService
 from .services.chronology_service import ChronologyService
 from .services.wink_service import WinkService
+from .services.sync_service import SyncService
+from .services.context_service import ContextService
 
 async def get_note_service(db: AsyncSession = Depends(get_db)) -> NoteService:
     """Возвращает экземпляр NoteService с внедренной сессией БД."""
@@ -76,5 +78,13 @@ async def get_chronology_service(db: AsyncSession = Depends(get_db)) -> Chronolo
 async def get_wink_service(db: AsyncSession = Depends(get_db)) -> WinkService:
     """Возвращает экземпляр WinkService с внедренной сессией БД."""
     return WinkService(db)
+
+async def get_sync_service(db: AsyncSession = Depends(get_db)) -> SyncService:
+    """Возвращает экземпляр SyncService с внедренной сессией БД."""
+    return SyncService(db)
+
+async def get_context_service(db: AsyncSession = Depends(get_db)) -> ContextService:
+    """Возвращает экземпляр ContextService с внедренной сессией БД."""
+    return ContextService(db)
 
 
