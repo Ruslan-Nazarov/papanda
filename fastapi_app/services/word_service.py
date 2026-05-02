@@ -168,6 +168,9 @@ class WordService:
     async def get_all_language_names(self):
         return await self.langs.get_all_language_names()
 
+    async def get_all_available_language_codes(self):
+        return await self.langs.get_all_available_language_codes()
+
     async def get_current_metrics(self): 
         active = await self.langs.get_active_languages()
         return await self.stats.get_current_metrics(active)

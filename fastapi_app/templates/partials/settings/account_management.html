@@ -1,0 +1,27 @@
+<div class="card">
+    <h2>Account Management</h2>
+    <div class="settings-grid">
+        <div class="form-box">
+            <form action="{{ url_for('update_account') }}" method="post" onsubmit="confirmFormSubmit(event, 'Update Account', 'Are you sure you want to change your username? The session might be terminated.')">
+                <label>Username:</label>
+                <input type="text" name="username" value="{{ current_user_name }}" required />
+                <button type="submit" class="btn-save">Update Username</button>
+            </form>
+        </div>
+        <div class="form-box">
+            <form action="{{ url_for('update_account') }}" method="post">
+                <label>New Password:</label>
+                <input type="password" name="password" placeholder="Leave empty to keep current" />
+                <p style="font-size: 0.8em; color: #666; margin-top: 5px;">* Минимум 8 символов</p>
+                <button type="submit" class="btn-save">Update Password</button>
+            </form>
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center">
+        <form action="{{ url_for('logout') }}" method="post" id="logout-form">
+            <button type="submit" class="btn-del" style="color: #ff8c00; font-weight: bold; font-size: 1.1em; background: none; border: none; cursor: pointer; text-decoration: underline;">
+                Logout from Session
+            </button>
+        </form>
+    </div>
+</div>

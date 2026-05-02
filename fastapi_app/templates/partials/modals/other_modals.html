@@ -1,0 +1,103 @@
+<!-- Habit Edit Modal -->
+<div id="editHabitModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Habit</span>
+            <span class="modal-close" onclick="closeEditHabitModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editHabitId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Title</label>
+                <input type="text" id="editHabitTitle" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium">Start Date</label>
+                <input type="date" id="editHabitStartDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large" id="editHabitEndDateGroup">
+                <label class="form-label-premium">End Date</label>
+                <input type="date" id="editHabitEndDate" class="form-input-premium">
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="editHabitRead" style="width: 20px; height: 20px; cursor: pointer;" onchange="toggleHabitEndDate()">
+                    Is Finished (Archived)
+                </label>
+            </div>
+
+            <div id="editHabitError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditHabitModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveHabitEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Wink Edit Modal -->
+<div id="editWinkModal" class="modal">
+     <div class="modal-content" style="width: 480px">
+         <div class="modal-header">
+             <span style="margin: 0;">Edit Wink</span>
+             <span class="modal-close" onclick="closeEditWinkModal()">&times;</span>
+         </div>
+         
+         <div class="modal-body">
+             <input type="hidden" id="editWinkId" />
+             <div class="form-group-large">
+                 <label class="form-label-premium">Title</label>
+                 <input type="text" id="editWinkTitle" class="form-input-premium" />
+             </div>
+             <div class="form-group-large">
+                 <label class="form-label-premium">Date & Time</label>
+                 <input type="datetime-local" id="editWinkDate" class="form-input-premium" />
+             </div>
+             <div id="editWinkError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
+         </div>
+ 
+         <div class="modal-footer">
+             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditWinkModal()">Cancel</button>
+             <button type="button" class="btn-premium btn-save-premium" onclick="saveWinkEdit()">OK</button>
+         </div>
+     </div>
+ </div>
+
+<!-- Task Edit Modal -->
+<div id="editTaskModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <span style="margin: 0;">Edit Task</span>
+            <span class="modal-close" onclick="closeEditTaskModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editTaskId">
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Task Description</label>
+                <textarea id="editTaskName" class="form-input-premium" style="height: 120px; resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-group-large">
+                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="editTaskDone" style="width: 20px; height: 20px; cursor: pointer;">
+                    Is Done
+                </label>
+            </div>
+
+            <div id="editTaskError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditTaskModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveTaskEdit()">OK</button>
+        </div>
+    </div>
+</div>

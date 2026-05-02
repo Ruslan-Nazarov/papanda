@@ -1,0 +1,118 @@
+<!-- Note Edit/Add Modal (Unified) -->
+<div id="editNoteModal" class="modal">
+    <div class="modal-content" style="width: 600px;">
+        <div class="modal-header">
+            <span id="editNoteHeader" style="margin: 0;">Edit Note</span>
+            <span class="modal-close" onclick="closeEditNoteModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <input type="hidden" id="editNoteId">
+            <div class="form-group-large">
+                <label class="form-label-premium">Category</label>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <select id="editNoteCategory" class="form-input-premium" style="flex: 1;">
+                        {% if categories %}
+                            {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    <a href="{{ url_for('show_categories') }}" class="btn-premium" style="height: 38px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.8em; padding: 0 10px; background: #f0f0f0; color: #333;" title="Edit Categories">⚙️</a>
+                </div>
+            </div>
+            
+            <div class="form-group-large">
+                <label class="form-label-premium">Note Content</label>
+                <textarea id="editNoteText" class="form-input-premium" style="height: 350px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
+            </div>
+
+            <div id="editNoteError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditNoteModal()">Cancel</button>
+            <button type="button" class="btn-premium btn-save-premium" onclick="saveNoteEdit()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Note View Modal (Read-Only) -->
+<div id="noteViewModal" class="modal">
+    <div class="modal-content" style="width: 700px;">
+        <div class="modal-header">
+            <span id="noteViewCategory" style="margin: 0; font-size: 1.1rem;"></span>
+            <span class="modal-close" onclick="closeNoteViewModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="noteViewFullText" class="chrono-view-text"></div>
+            
+            <!-- Sticker Board for Notes -->
+            <div id="dbViewNoteStickerBoard" style="border-top: 1px dashed #e2e8f0; padding-top: 15px; margin-top: 15px; display: none;">
+               <div style="font-size: 0.75em; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                   <span>Sticker Board</span>
+                   <button id="addStickerToNoteBtn" style="background: #3b82f6; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;">+ Add Sticker</button>
+               </div>
+               <div id="dbViewNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px;">
+                   <!-- Stickers injected by JS -->
+               </div>
+           </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeNoteViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Global Note Search Modal -->
+<div id="noteSearchModal" class="modal">
+    <div class="modal-content" style="width: 700px;">
+        <div class="modal-header">
+            <span style="margin: 0;">📂 All Notes</span>
+            <span class="modal-close" onclick="document.getElementById('noteSearchModal').style.display='none'">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group-large">
+                <input type="text" id="noteGlobalSearchInput" oninput="window.app.searchAllNotes(this.value)" placeholder="Search in all notes..." class="form-input-premium">
+            </div>
+            <div id="noteGlobalSearchResults" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 50vh; overflow-y: auto; padding-top: 10px;">
+                <!-- Results cards injected by JS -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-premium btn-cancel-premium" onclick="document.getElementById('noteSearchModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Expanded Editor Modal (Dashboard) -->
+<div id="expandedNoteEditorModal" class="modal" style="z-index: 1000010 !important;">
+    <div class="modal-content" style="width: 800px;">
+        <div class="modal-header">
+            <span style="margin: 0;">📝 Expanded Editor</span>
+            <span class="modal-close" onclick="document.getElementById('expandedNoteEditorModal').style.display='none'">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group-large" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <select id="expandedNoteCategory" class="form-input-premium" style="flex: 1;">
+                    {% if categories %}
+                        {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+                <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 0 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <input type="checkbox" id="expandedNotePin" style="cursor: pointer;">
+                    <label for="expandedNotePin" style="font-size: 0.9em; color: #64748b; cursor: pointer;">Pin to Dashboard</label>
+                </div>
+            </div>
+            <div class="form-group-large">
+                <textarea id="expandedNoteTextarea" class="form-input-premium" style="min-height: 350px; resize: vertical; line-height: 1.6;" placeholder="Write your note here..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-premium btn-cancel-premium" onclick="document.getElementById('expandedNoteEditorModal').style.display='none'">Cancel</button>
+            <button class="btn-premium btn-save-premium" onclick="window.app.saveExpandedNote()">💾 Save Note</button>
+        </div>
+    </div>
+</div>

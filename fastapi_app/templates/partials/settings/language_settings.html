@@ -1,0 +1,123 @@
+<div class="card">
+    <h2>Language Display Settings</h2>
+    <div class="form-box" style="background: #f0f7ff; border-color: #b2d4ff;">
+        <p style="margin-top: 0; color: #444;">Drag to reorder. Select <b>up to 3</b> to display as columns in the Words widget:</p>
+        
+        <form action="{{ url_for('update_languages') }}" method="post" id="langForm" onsubmit="prepareLangSubmit()">
+            <input type="hidden" name="active_order" id="activeOrderInput">
+            
+            <div id="sortableLangs" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                {# First show active languages in their saved order #}
+                {% for code in active_languages %}
+                    {% if code in all_languages and code != 'ru' %}
+                    <div class="lang-item" data-code="{{ code }}" style="display: flex; align-items: center; gap: 12px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #cce0ff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: grab;">
+                        <span class="drag-handle" style="color: #999; cursor: grab;">⠿</span>
+                        <input type="checkbox" class="lang-check" value="{{ code }}" checked onchange="checkLimit(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                        <div style="flex-grow: 1; display: flex; align-items: center; gap: 8px;">
+                            <input type="text" name="name_{{ code }}" value="{{ all_languages[code] }}" placeholder="{{ code|upper }}" style="border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; font-weight: bold; width: 150px;">
+                            <span style="color: #888; font-size: 0.85em;">({{ code }})</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                
+                {# Then show the rest #}
+                {% for code, name in all_languages.items() %}
+                    {% if code != 'ru' and code not in active_languages %}
+                    <div class="lang-item" data-code="{{ code }}" style="display: flex; align-items: center; gap: 12px; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee; cursor: grab; opacity: 0.8;">
+                        <span class="drag-handle" style="color: #ccc; cursor: grab;">⠿</span>
+                        <input type="checkbox" class="lang-check" value="{{ code }}" onchange="checkLimit(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                        <div style="flex-grow: 1; display: flex; align-items: center; gap: 8px;">
+                            <input type="text" name="name_{{ code }}" value="{{ name }}" placeholder="{{ code|upper }}" style="border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; width: 150px;">
+                            <span style="color: #888; font-size: 0.85em;">({{ code }})</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn-save btn-blue" id="saveLangsBtn">
+                Update Column Languages
+            </button>
+        </form>
+        <p id="langWarning" style="color: #d32f2f; font-size: 0.9em; margin-top: 10px; display: none;">
+            * You can select maximum 3 foreign languages. <b>Drag</b> to change their order in the widget!
+        </p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    // Initialize Sortable
+    (function() {
+        const el = document.getElementById('sortableLangs');
+        if (el) {
+            Sortable.create(el, {
+                animation: 150,
+                handle: '.lang-item',
+                ghostClass: 'sortable-ghost'
+            });
+        }
+    })();
+
+    function checkLimit(checkbox) {
+        const checkboxes = document.querySelectorAll('.lang-check');
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const warning = document.getElementById('langWarning');
+        const saveBtn = document.getElementById('saveLangsBtn');
+        
+        const item = checkbox.closest('.lang-item');
+        if (checkbox.checked) {
+            item.style.background = 'white';
+            item.style.borderColor = '#cce0ff';
+            item.style.opacity = '1';
+        } else {
+            item.style.background = '#fafafa';
+            item.style.borderColor = '#eee';
+            item.style.opacity = '0.8';
+        }
+
+        if (checkedCount > 3) {
+            checkbox.checked = false;
+            item.style.background = '#fafafa';
+            item.style.borderColor = '#eee';
+            item.style.opacity = '0.8';
+            warning.style.display = 'block';
+        } else {
+            warning.style.display = 'none';
+        }
+        
+        saveBtn.disabled = (checkedCount === 0);
+        saveBtn.style.opacity = (checkedCount === 0) ? '0.5' : '1';
+    }
+
+    function prepareLangSubmit() {
+        const checkboxes = document.querySelectorAll('.lang-check');
+        const activeCodes = [];
+        
+        // The order in the DOM is the desired order
+        const items = document.querySelectorAll('.lang-item');
+        items.forEach(item => {
+            const cb = item.querySelector('.lang-check');
+            if (cb.checked) {
+                activeCodes.push(cb.value);
+            }
+        });
+        
+        document.getElementById('activeOrderInput').value = activeCodes.join(',');
+    }
+
+    // Initial check and styling
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.lang-check').forEach(cb => {
+            if (cb.checked) {
+                const item = cb.closest('.lang-item');
+                if (item) {
+                    item.style.background = 'white';
+                    item.style.borderColor = '#cce0ff';
+                    item.style.opacity = '1';
+                }
+            }
+        });
+    });
+</script>

@@ -1,4 +1,4 @@
-<!-- Event Popover -->
+<!-- Event Popover (Calendar/Tree) -->
 <div id="eventPopover" class="event-popover">
     <div class="popover-header">
         <span id="popoverTitle" class="popover-title"></span>
@@ -78,6 +78,7 @@
     </div>
 </div>
 
+<!-- Edit Event Modal -->
 <div id="editEventModal" class="modal">
     <div class="modal-content" style="width: 480px">
         <div class="modal-header">
@@ -88,6 +89,8 @@
         <div class="modal-body">
             <input type="hidden" id="editEventId" />
             <input type="hidden" id="editEventRecId" />
+            <input type="hidden" id="editEventOriginalDate" />
+            
             <div class="form-group-large">
                 <label class="form-label-premium">Title</label>
                 <input type="text" id="editEventTitle" class="form-input-premium" />
@@ -163,7 +166,7 @@
                 <input type="hidden" id="editEventRecEndFromCount" />
             </div>
 
-            <!-- NEW: Color Selection -->
+            <!-- Color Selection -->
             <div class="form-group-large">
                 <label class="form-label-premium">Color (Theme/Tree)</label>
                 <input type="hidden" id="editEventColor" value="" />
@@ -172,7 +175,7 @@
                 </div>
             </div>
 
-            <!-- ENHANCED: Stickers Section (Dashboard Mechanics) -->
+            <!-- Stickers Section (Dashboard Mechanics) -->
             <div class="inner-stickers-container" id="eventStickersSection" style="display: none;">
                 <label class="form-label-premium">Stickers</label>
                 
@@ -210,156 +213,7 @@
     </div>
 </div>
 
-
-<div id="editNoteModal" class="modal">
-    <div class="modal-content" style="width: 600px;">
-        <div class="modal-header">
-            <span style="margin: 0;">Edit Note</span>
-            <span class="modal-close" onclick="closeEditNoteModal()">&times;</span>
-        </div>
-        
-        <div class="modal-body">
-            <input type="hidden" id="editNoteId">
-            
-            <div class="form-group-large">
-                <label class="form-label-premium">Category</label>
-                <select id="editNoteCategory" class="form-input-premium">
-                    {% if categories %}
-                        {% for cat in categories %}
-                            <option value="{{ cat }}">{{ cat }}</option>
-                        {% endfor %}
-                    {% endif %}
-                </select>
-            </div>
-            
-            <div class="form-group-large">
-                <label class="form-label-premium">Note Content</label>
-                <textarea id="editNoteText" class="form-input-premium" style="height: 300px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
-            </div>
-
-            <div id="editNoteError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditNoteModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveNoteEdit()">OK</button>
-        </div>
-    </div>
-</div>
-
-<div id="editChronoModal" class="modal">
-    <div class="modal-content" style="width: 600px;">
-        <div class="modal-header">
-            <span style="margin: 0;">Edit Chronology</span>
-            <span class="modal-close" onclick="closeEditChronoModal()">&times;</span>
-        </div>
-        
-        <div class="modal-body">
-            <input type="hidden" id="editChronoId">
-            
-            <div class="form-group-large">
-                <label class="form-label-premium">Date & Time</label>
-                <input type="datetime-local" id="editChronoDate" class="form-input-premium">
-            </div>
-
-            <div class="form-group-large">
-                <label class="form-label-premium">Event Description</label>
-                <textarea id="editChronoTitle" class="form-input-premium" style="height: 200px; resize: vertical; font-family: inherit; font-size: 1.1rem;"></textarea>
-            </div>
-
-            <div id="editChronoError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditChronoModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveChronoEdit()">OK</button>
-        </div>
-    </div>
-</div>
-
-<div id="chronoViewModal" class="modal">
-    <div class="modal-content" style="width: 700px;">
-        <div class="modal-header">
-            <span id="chronoViewDate" style="margin: 0; font-size: 1.1rem; color: #9b59b6;"></span>
-            <span class="modal-close" onclick="closeChronoViewModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <div id="chronoViewFullText" class="chrono-view-text"></div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeChronoViewModal()">Close</button>
-        </div>
-    </div>
-</div>
- 
- <div id="noteViewModal" class="modal">
-     <div class="modal-content" style="width: 700px;">
-         <div class="modal-header">
-             <span id="noteViewCategory" style="margin: 0; font-size: 1.1rem;"></span>
-             <span class="modal-close" onclick="closeNoteViewModal()">&times;</span>
-         </div>
-         <div class="modal-body">
-             <div id="noteViewFullText" class="chrono-view-text"></div>
-             
-             <!-- Sticker Board for Notes -->
-             <div id="dbViewNoteStickerBoard" style="border-top: 1px dashed #e2e8f0; padding-top: 15px; margin-top: 15px; display: none;">
-                <div style="font-size: 0.75em; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Sticker Board</span>
-                    <button id="addStickerToNoteBtn" style="background: #3b82f6; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;">+ Add Sticker</button>
-                </div>
-                <div id="dbViewNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px;">
-                    <!-- Stickers -->
-                </div>
-            </div>
-         </div>
-         <div class="modal-footer">
-             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeNoteViewModal()">Close</button>
-         </div>
-     </div>
- </div>
-
-<div id="editHabitModal" class="modal">
-    <div class="modal-content" style="width: 500px;">
-        <div class="modal-header">
-            <span style="margin: 0;">Edit Habit</span>
-            <span class="modal-close" onclick="closeEditHabitModal()">&times;</span>
-        </div>
-        
-        <div class="modal-body">
-            <input type="hidden" id="editHabitId">
-            
-            <div class="form-group-large">
-                <label class="form-label-premium">Title</label>
-                <input type="text" id="editHabitTitle" class="form-input-premium">
-            </div>
-
-            <div class="form-group-large">
-                <label class="form-label-premium">Start Date</label>
-                <input type="date" id="editHabitStartDate" class="form-input-premium">
-            </div>
-
-            <div class="form-group-large" id="editHabitEndDateGroup">
-                <label class="form-label-premium">End Date</label>
-                <input type="date" id="editHabitEndDate" class="form-input-premium">
-            </div>
-
-            <div class="form-group-large">
-                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="editHabitRead" style="width: 20px; height: 20px; cursor: pointer;" onchange="toggleHabitEndDate()">
-                    Is Finished (Archived)
-                </label>
-            </div>
-
-            <div id="editHabitError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditHabitModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveHabitEdit()">OK</button>
-        </div>
-    </div>
-</div>
-
+<!-- Event Tree Modal -->
 <div id="eventTreeModal" class="modal">
     <div class="modal-content" style="width: 800px; max-width: 95%">
         <div class="modal-header">
@@ -377,80 +231,3 @@
         </div>
     </div>
 </div>
-
-<div id="editWinkModal" class="modal">
-     <div class="modal-content" style="width: 480px">
-         <div class="modal-header">
-             <span style="margin: 0;">Edit Wink</span>
-             <span class="modal-close" onclick="closeEditWinkModal()">&times;</span>
-         </div>
-         
-         <div class="modal-body">
-             <input type="hidden" id="editWinkId" />
-             <div class="form-group-large">
-                 <label class="form-label-premium">Title</label>
-                 <input type="text" id="editWinkTitle" class="form-input-premium" />
-             </div>
-             <div class="form-group-large">
-                 <label class="form-label-premium">Date & Time</label>
-                 <input type="datetime-local" id="editWinkDate" class="form-input-premium" />
-             </div>
-             <div id="editWinkError" style="margin-top: 10px; color: #c00; font-size: 0.9em; min-height: 16px;"></div>
-         </div>
- 
-         <div class="modal-footer">
-             <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditWinkModal()">Cancel</button>
-             <button type="button" class="btn-premium btn-save-premium" onclick="saveWinkEdit()">OK</button>
-         </div>
-     </div>
- </div>
-
-<div id="editTaskModal" class="modal">
-    <div class="modal-content" style="width: 500px;">
-        <div class="modal-header">
-            <span style="margin: 0;">Edit Task</span>
-            <span class="modal-close" onclick="closeEditTaskModal()">&times;</span>
-        </div>
-        
-        <div class="modal-body">
-            <input type="hidden" id="editTaskId">
-            
-            <div class="form-group-large">
-                <label class="form-label-premium">Task Description</label>
-                <textarea id="editTaskName" class="form-input-premium" style="height: 120px; resize: vertical;"></textarea>
-            </div>
-
-            <div class="form-group-large">
-                <label class="form-label-premium" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="editTaskDone" style="width: 20px; height: 20px; cursor: pointer;">
-                    Is Done
-                </label>
-            </div>
-
-            <div id="editTaskError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditTaskModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveTaskEdit()">OK</button>
-        </div>
-    </div>
-</div>
-
-<!-- Custom Confirmation Modal -->
-<div id="customConfirmModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span id="confirmModalTitle">Confirmation</span>
-        </div>
-        <div class="modal-body">
-            <div id="confirmModalIcon" style="font-size: 3rem; margin-bottom: 15px; display: none;">⚠️</div>
-            <div id="confirmModalMessage" style="font-weight: 500; font-size: 1.1rem; color: #334155;">Are you sure?</div>
-        </div>
-        <div class="modal-footer" id="confirmModalFooter">
-            <!-- Buttons will be injected here -->
-        </div>
-    </div>
-</div>
-
-
