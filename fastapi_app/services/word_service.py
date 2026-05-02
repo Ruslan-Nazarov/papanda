@@ -185,8 +185,9 @@ class WordService:
                     models.WordStats.it.ilike(q),
                     models.WordStats.de.ilike(q),
                     models.WordStats.ru.ilike(q),
+                    text("EXISTS (SELECT 1 FROM json_each(translations) WHERE value LIKE :query)")
                 )
-            ).limit(limit)
+            ).params(query=q).limit(limit)
             result = await self.db.execute(stmt)
             return list(result.scalars().all())
         except Exception as e:

@@ -141,7 +141,7 @@ async def edit_chrono_json(
         dt = datetime.combine(dt, datetime.min.time())
 
     success = await chronology_service.update_chronology(int(chrono_id), str(text), dt)
-    return {"status": "success"} if success else JSONResponse(status_code=404, content={"status": "error", "message": "Запись не найдена"})
+    return {"status": "success", "message": "Chronology updated"} if success else JSONResponse(status_code=404, content={"status": "error", "message": "Запись не найдена"})
 
 
 @router.post("/mark_done/{task_id}")

@@ -77,7 +77,4 @@ async def get_wink_service(db: AsyncSession = Depends(get_db)) -> WinkService:
     """Возвращает экземпляр WinkService с внедренной сессией БД."""
     return WinkService(db)
 
-async def get_uow(db: AsyncSession = Depends(get_db)):
-    """Возвращает UnitOfWork с текущей сессией."""
-    from .uow import UnitOfWork
-    return UnitOfWork(db)
+

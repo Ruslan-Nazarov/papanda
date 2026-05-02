@@ -171,4 +171,4 @@ async def save_dashboard_layout(
     data = await request.json()
     layout = data.get("layout", "{}")
     await set_setting(db, "dashboard_layout", layout)
-    return {"status": "success"}
+    return {"status": "success", "message": "Layout saved"}
