@@ -1,0 +1,71 @@
+/* --- PAPANDA Widgets & Notifications --- */
+
+/* Info Widget for Header */
+.info-widget {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    box-shadow: var(--shadow-sm);
+    line-height: 1.1;
+    overflow: hidden;
+    flex-shrink: 0;
+    text-align: left;
+}
+.info-widget-title {
+    font-size: 0.62em;
+    color: var(--color-text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.info-widget-value {
+    font-size: 1.15em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.info-widget-value-sm { font-size: 0.85em; font-weight: 600; white-space: nowrap; }
+.info-widget-subtext { font-size: 0.7em; font-weight: 500; color: var(--color-text-faint); }
+
+.info-widget-orange { border-left: 3px solid var(--color-primary); min-width: 70px; max-width: 120px; }
+.info-widget-green { border-left: 3px solid var(--color-success); min-width: 70px; max-width: 120px; }
+.info-widget-amber { border-left: 3px solid var(--color-warning); }
+.info-widget-purple { border-left: 3px solid var(--color-purple); max-width: 220px; }
+
+/* Toast Notification */
+#toast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: var(--color-success);
+    color: #fff;
+    text-align: center;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    position: fixed;
+    z-index: var(--z-toast);
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    font-size: 17px;
+    opacity: 0;
+    transition: opacity 0.5s, bottom 0.5s;
+}
+#toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+#toast.success { background-color: var(--color-success); }
+#toast.error { background-color: var(--color-error); }
+
+.fade-out {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+}

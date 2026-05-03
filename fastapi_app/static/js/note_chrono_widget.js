@@ -10,33 +10,42 @@ import { showToast } from './ui_helpers.js';
 
 window.openChronoExpandModal = function (id = null, text = '', date = '') {
     const widgetText = text || document.querySelector('textarea[name="chrono_text"]')?.value || '';
-    const widgetDate = date || document.querySelector('input[name="chrono_date"]')?.value || '';
+    let widgetDate = date || document.querySelector('input[name="chrono_date"]')?.value || '';
 
-    document.getElementById('expandChronoId').value = id || '';
-    document.getElementById('expandChronoText').value = widgetText;
-    document.getElementById('expandChronoDate').value = widgetDate;
+    // If we only have a date (YYYY-MM-DD), append T00:00 for datetime-local compatibility
+    if (widgetDate && widgetDate.length === 10) {
+        widgetDate += 'T00:00';
+    }
+
+    document.getElementById('editChronoId').value = id || '';
+    document.getElementById('editChronoTitle').value = widgetText;
+    document.getElementById('editChronoDate').value = widgetDate;
+    
     document.getElementById('chronoModalHeader').innerText = id ? 'Edit Chronology Entry' : 'Add Chronology Entry';
-    document.getElementById('expandChronoError').innerText = '';
-    document.getElementById('chronoExpandModal').style.display = 'flex';
+    document.getElementById('editChronoError').innerText = '';
+    document.getElementById('editChronoModal').style.display = 'flex';
 };
 
 window.closeChronoExpandModal = function (sync = true) {
     if (sync === true) {
-        const id = document.getElementById('expandChronoId').value;
+        const id = document.getElementById('editChronoId').value;
         if (!id) {
-            const modalText = document.getElementById('expandChronoText').value;
+            const modalText = document.getElementById('editChronoTitle').value;
             const t = document.querySelector('textarea[name="chrono_text"]');
             if (t) t.value = modalText;
         }
     }
-    document.getElementById('chronoExpandModal').style.display = 'none';
+    document.getElementById('editChronoModal').style.display = 'none';
 };
 
+window.closeEditChronoModal = () => window.closeChronoExpandModal(true);
+window.saveChronoEdit = () => window.saveChronoFromModal();
+
 window.saveChronoFromModal = async function () {
-    const id   = document.getElementById('expandChronoId').value;
-    const text = document.getElementById('expandChronoText').value.trim();
-    const date = document.getElementById('expandChronoDate').value;
-    const errEl = document.getElementById('expandChronoError');
+    const id   = document.getElementById('editChronoId').value;
+    const text = document.getElementById('editChronoTitle').value.trim();
+    const date = document.getElementById('editChronoDate').value;
+    const errEl = document.getElementById('editChronoError');
 
     if (!text) { errEl.innerText = 'Text cannot be empty'; return; }
 

@@ -1,0 +1,20 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-base);
+    background-color: var(--color-bg-app);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+[contenteditable]:empty:before { content: attr(placeholder); color: #cbd5e1; cursor: text; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-medium); }
+::-webkit-scrollbar-track { background: var(--color-bg-surface); }

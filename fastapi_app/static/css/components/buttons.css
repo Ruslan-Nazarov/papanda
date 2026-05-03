@@ -1,0 +1,118 @@
+/* --- PAPANDA Button System --- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: none;
+    text-decoration: none;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+}
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--color-primary-glow);
+}
+
+.btn-secondary {
+    background-color: var(--color-bg-subtle);
+    color: var(--color-text-medium);
+}
+.btn-secondary:hover { background-color: var(--color-border); }
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: white;
+}
+.btn-danger:hover { background-color: var(--color-error-dark); }
+
+.btn-success {
+    background-color: var(--color-success);
+    color: white;
+}
+.btn-success:hover { background-color: var(--color-success-dark); }
+
+.btn-blue { background-color: var(--color-blue) !important; color: white !important; }
+.btn-orange { background-color: var(--color-primary) !important; color: white !important; }
+
+/* Premium Buttons */
+.btn-premium {
+    background: linear-gradient(135deg, var(--color-indigo-light) 0%, var(--color-indigo) 100%);
+    color: var(--color-white) !important;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 12px 24px;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+}
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.1);
+}
+.btn-premium:active { transform: translateY(0); }
+
+.btn-premium-secondary {
+    background: var(--color-bg-surface);
+    color: var(--color-text-body) !important;
+    border: 1px solid var(--color-border);
+}
+.btn-premium-secondary:hover { 
+    background: var(--color-bg-subtle); 
+    color: var(--color-text-dark) !important;
+    border-color: var(--color-border-medium);
+}
+
+/* Action buttons */
+.btn-mini {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--color-text-muted);
+    padding: 2px 5px;
+    text-decoration: none;
+}
+.btn-mini:hover { color: var(--color-text-dark); }
+.btn-mini.del:hover { color: var(--color-error); }
+
+.task-button {
+    background-color: var(--color-indigo);
+    color: var(--color-white);
+    border: none;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-base);
+}
+.task-button:hover { background-color: var(--color-indigo-dark); }
+
+.read-button {
+    background-color: var(--color-error);
+    color: var(--color-white);
+    border: none;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-base);
+}
+.read-button:hover { background-color: var(--color-error-dark); }

@@ -1,0 +1,91 @@
+/* --- Dashboard Notes & Stickers Widget Specifics --- */
+
+.grid-stack-item[gs-id="notes"] .grid-stack-item-content {
+    border-color: var(--color-primary-light) !important;
+}
+
+.grid-stack-item[gs-id="notes"] .form-button,
+.grid-stack-item[gs-id="notes"] button[type="submit"] {
+    background-color: var(--color-primary) !important;
+    border: 1px solid var(--color-primary-dark);
+    color: var(--color-white) !important;
+    font-weight: 700;
+}
+
+/* Pinned Notes Grid */
+.pinned-notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.pinned-note-card {
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-3);
+    position: relative;
+    transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.pinned-note-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-border-medium);
+}
+
+.card-pin-status {
+    position: absolute;
+    top: -8px; left: -8px;
+    width: 24px; height: 24px;
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-radius: var(--radius-full);
+    display: flex; align-items: center; justify-content: center;
+    font-size: var(--text-xs);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.pinned-note-card:hover .card-pin-status { opacity: 1; }
+
+/* Sticky Widget */
+.grid-stack-item[gs-id="stickers"] .grid-stack-item-content {
+    border-color: var(--color-sticker-accent) !important;
+    background-color: var(--color-sticker-default) !important;
+}
+
+.note-sticker-btn {
+    width: 32px; height: 32px;
+    display: flex !important;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    position: relative;
+}
+.note-sticker-btn.attached .sticker-icon-postit {
+    background-color: #ffeb3b;
+    transform: scale(1.1);
+}
+.note-sticker-btn.attached::after {
+    content: "✓";
+    position: absolute;
+    top: -3px; right: -3px;
+    background: var(--color-success);
+    color: var(--color-white);
+    font-size: 8px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--color-white);
+}

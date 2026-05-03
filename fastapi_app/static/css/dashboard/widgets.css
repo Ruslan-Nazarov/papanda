@@ -1,0 +1,113 @@
+/* --- Dashboard Widgets Base Styles --- */
+
+.section,
+.events-today,
+.events-tomorrow,
+.card {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background-color: transparent !important;
+    padding: 15px !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.widget-header {
+    margin-bottom: var(--spacing-3) !important;
+    padding-bottom: var(--spacing-2);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.widget-title {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    color: var(--color-text-medium) !important;
+    font-family: var(--font-base) !important;
+    text-transform: none !important;
+    line-height: 1.2 !important;
+}
+
+.widget-controls {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.widget-body {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Widget collapse */
+.collapse-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+    line-height: 1;
+    padding: 0 4px;
+    margin-left: auto;
+    transition: all var(--transition-base);
+}
+.collapse-btn:hover { color: var(--color-text-muted); }
+
+.grid-stack-item.collapsed .widget-body { display: none; }
+.grid-stack-item.collapsed .section,
+.grid-stack-item.collapsed .events-today,
+.grid-stack-item.collapsed .events-tomorrow,
+.grid-stack-item.collapsed .card {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    justify-content: center;
+}
+.grid-stack-item.collapsed .widget-header {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding: 0 12px !important;
+    height: 100%;
+    align-items: center;
+}
+
+/* Hover effects for actions */
+.event-actions {
+    opacity: 0 !important;
+    transition: opacity 0.2s;
+}
+.events-today li:hover .event-actions,
+.events-tomorrow li:hover .event-actions {
+    opacity: 0.3 !important;
+}
+.event-actions:hover { opacity: 1 !important; }
+
+.task-item .task-sticker-btn,
+.task-item .task-button,
+.reading-table tr .habit-sticker-btn,
+.reading-table tr .read-button {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.task-item:hover .task-sticker-btn,
+.task-item:hover .task-button,
+.reading-table tr:hover .habit-sticker-btn,
+.reading-table tr:hover .read-button {
+    opacity: 1;
+}

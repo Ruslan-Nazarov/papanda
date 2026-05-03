@@ -83,7 +83,7 @@ async def submit_chrono(
 
 @router.post("/submit_chrono_json", response_model=schemas.SuccessResponse)
 async def submit_chrono_json(
-    data: schemas.ChronoCreate,
+    data: schemas.ChronoCreate = Depends(schemas.ChronoCreate.as_form),
     chronology_service: ChronologyService = Depends(get_chronology_service),
     user: Any = Depends(check_auth_dependency),
 ):
