@@ -1,0 +1,54 @@
+/* --- PAPANDA UNIFIED PREMIUM SCROLLBAR --- */
+
+/* Global Scrollbar Settings */
+::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+}
+
+/* Hide scrollbar buttons (arrows) */
+::-webkit-scrollbar-button {
+    display: none !important;
+}
+
+/* Track: Always opaque to hide underlying artifacts/grid lines */
+::-webkit-scrollbar-track {
+    background: #ffffff !important;
+    border-radius: 10px !important;
+}
+
+/* Thumb: Branded 'Soft Gold' */
+::-webkit-scrollbar-thumb {
+    background: #FFB74D !important; /* Papanda Primary Accent */
+    border-radius: 10px !important;
+    border: 2px solid #ffffff !important; /* Inset effect */
+    min-height: 40px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #FFA726 !important;
+}
+
+/* Firefox Support */
+* {
+    scrollbar-width: thin !important;
+    scrollbar-color: #FFB74D #ffffff !important;
+}
+
+/* Ensure only one container scrolls in widgets */
+.widget-body, .widget-content, .modal-body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 12px !important; /* Move content away from scrollbar */
+}
+
+/* Force children to not have their own scrollbars if they are inside a scrolling widget */
+.widget-body *, .widget-content *, .modal-body * {
+    scrollbar-width: none; /* Hide for Firefox */
+}
+
+.widget-body *::-webkit-scrollbar, 
+.widget-content *::-webkit-scrollbar, 
+.modal-body *::-webkit-scrollbar {
+    display: none !important; /* Hide for Webkit */
+}

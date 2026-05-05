@@ -63,31 +63,17 @@ export const NoteService = {
             
             if (stickers && stickers.length > 0) {
                 stickers.forEach(s => {
-                    const sCard = document.createElement('div');
-                    sCard.className = 'mini-sticker-card';
-                    sCard.style.cssText = `
-                        background-color: ${s.color || '#fff9c4'};
-                        padding: 10px;
-                        border-radius: 8px;
-                        min-width: 110px;
-                        max-width: 170px;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                        font-size: 0.85em;
-                        cursor: pointer;
-                        border: 1px solid rgba(0,0,0,0.05);
-                    `;
-                    
-                    let content = s.title ? `<div style="font-weight: 700; margin-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 2px;">${s.title}</div>` : '';
-                    content += `<div style="color: #334155; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">${s.text}</div>`;
-                    
-                    sCard.innerHTML = content;
-                    sCard.onclick = (e) => {
-                        e.stopPropagation();
-                        if (typeof window.openStickerModal === 'function') {
-                            window.openStickerModal({ id: s.id });
-                        }
-                    };
-                    stickersList.appendChild(sCard);
+                    if (typeof window.createStickerElement === 'function') {
+                        const el = window.createStickerElement(s, { 
+                            isWidget: true, 
+                            onClick: () => {
+                                if (typeof window.openStickerModal === 'function') {
+                                    window.openStickerModal({ id: s.id });
+                                }
+                            }
+                        });
+                        stickersList.appendChild(el);
+                    }
                 });
             } else {
                 stickersList.innerHTML = '<div style="font-size: 0.85em; color: #94a3b8; font-style: italic;">No stickers linked to this note</div>';

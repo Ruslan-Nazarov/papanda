@@ -79,7 +79,7 @@ export function initGrid() {
         grid = window.grid = GridStack.init({
             cellHeight: 45,
             margin: 10,
-            handle: '.drag-handle',
+            handle: '.widget-header',
             minRow: 1,
             animate: false,
             float: true
@@ -99,12 +99,19 @@ export function initGrid() {
 
         applyCollapsedState();
         
-        // Forced refresh
-        setTimeout(() => {
-            if (window.grid) window.grid.compact();
-        }, 300);
+        // Disable automatic compacting to respect user-defined gaps (float: true)
+        // grid.compact(); 
 
-        grid.on('change', saveLayout);
+        // Delay event registration to prevent saving layout during initial render
+        setTimeout(() => {
+            if (grid) {
+                grid.on('change', saveLayout);
+                grid.on('dragstop', saveLayout);
+                grid.on('resizestop', saveLayout);
+                console.log("[Grid] Event listeners active");
+            }
+        }, 1000);
+
         return grid;
     } catch (e) {
         console.error('[Grid] Critical failure:', e);
@@ -119,15 +126,21 @@ export function initGrid() {
 
 export function saveLayout() {
     if (!window.grid) return;
-    let layout = {};
+    let layout = window.P_DASHBOARD_LAYOUT || {};
     window.grid.getGridItems().forEach(el => {
         let n = el.gridstackNode;
         if (!n) return;
         const isCollapsed = el.classList.contains('collapsed');
         let h = isCollapsed ? (parseInt(el.getAttribute('data-gs-orig-h')) || n.h) : n.h;
         if (h <= 1 && !isCollapsed) h = 2;
-        layout[n.id] = { id: n.id, x: n.x, y: n.y, w: n.w, h: h };
+        
+        // Preserve existing extra data (like border_color)
+        const existing = layout[n.id] || {};
+        layout[n.id] = { ...existing, id: n.id, x: n.x, y: n.y, w: n.w, h: h };
     });
+    // Update global reference
+    window.P_DASHBOARD_LAYOUT = layout;
+    
     fetch('/save_dashboard_layout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

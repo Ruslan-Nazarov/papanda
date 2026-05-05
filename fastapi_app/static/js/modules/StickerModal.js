@@ -27,190 +27,230 @@ export class StickerModal {
         this.state.noteSource = options.noteSource || null;
         this.state.noteId = null;
 
-        const modalWindow = document.getElementById('modalStickerWindow');
-        const titleEl = document.getElementById('modalStickerTitle');
-        const ta = document.getElementById('modalStickerTextArea');
-        const dateEl = document.getElementById('modalStickerDate');
-        const listContainer = document.getElementById('modalStickerListItems');
-        const delBtn = document.getElementById('modalStickerDelBtn');
-        const addAnotherBtn = document.getElementById('modalStickerAddAnotherBtn');
-
+        const titleEl = document.getElementById('stickerDetailTitle');
+        const ta = document.getElementById('stickerDetailText');
+        
         // Reset Modal
         if (titleEl) titleEl.value = '';
         if (ta) ta.value = '';
-        if (dateEl) dateEl.innerText = this.state.id ? '' : 'New Sticker';
-        if (listContainer) listContainer.innerHTML = '';
         
         this.state.type = 'text';
-        this.state.color = 'var(--color-sticker-default)';
+        this.state.color = '#fff9c4';
         
-        if (delBtn) delBtn.style.display = this.state.id ? 'block' : 'none';
-
         if (this.state.id) {
-            const el = this.state.element;
-            this.state.color = el ? (el.dataset.color || 'var(--color-sticker-default)') : 'var(--color-sticker-default)';
-            this.state.type = el ? (el.dataset.type || 'text') : 'text';
-
-            this.switchType(this.state.type);
-
             try {
                 const sticker = await StickerService.getById(this.state.id);
+                this.state.rawText = sticker.text || ''; // SOURCE OF TRUTH
                 if (titleEl) titleEl.value = sticker.title || '';
-                this.state.color = sticker.color || 'var(--color-sticker-default)';
-                this.state.type = sticker.type || 'text';
                 
-                if (!this.state.parentType) {
-                    if (sticker.task_id) { this.state.parentType = 'task'; this.state.parentId = sticker.task_id; }
-                    else if (sticker.habit_id) { this.state.parentType = 'habit'; this.state.parentId = sticker.habit_id; }
-                    else if (sticker.event_id) { this.state.parentType = 'event'; this.state.parentId = sticker.event_id; }
-                    else if (sticker.note_id && sticker.type !== 'note_link') { this.state.parentType = 'note'; this.state.parentId = sticker.note_id; }
-                }
-
-                if (sticker.note_id && this.state.parentType !== 'note') {
+                // Handle JSON to List Text
+                this.state.type = sticker.type || 'text';
+                if (ta) ta.value = this.deserializeContent(sticker.text || '', this.state.type);
+                
+                this.state.color = sticker.color || '#fff9c4';
+                
+                if (sticker.note_id) {
                     this.state.noteId = sticker.note_id;
                     this.updateAttachedNoteUI(sticker.note);
-                } else {
-                    const attachedContainer = document.getElementById('modalStickerAttachedNoteContainer');
-                    if (attachedContainer) attachedContainer.style.display = 'none';
-                }
-
-                if (sticker.type === 'list') {
-                    this.renderListItems(sticker.text);
-                } else {
-                    if (ta) ta.value = sticker.text;
-                    this.switchType('text');
                 }
             } catch(e) {
                 console.error('Error fetching sticker:', e);
             }
-        } else {
-            this.state.color = options.color || 'var(--color-sticker-default)';
-            this.state.type = options.type || 'text';
-            
-            if (this.state.source === 'header') {
-                const hText = document.getElementById('headerStickerText')?.value || '';
-                const hTitle = document.getElementById('headerStickerTitle')?.value || '';
-                if (titleEl) titleEl.value = hTitle;
-                if (this.state.type === 'list' && hText) {
-                    this.renderListItems(hText);
-                } else {
-                    if (ta) ta.value = hText;
-                    this.switchType(this.state.type);
-                }
-            } else {
-                this.switchType(this.state.type);
-            }
         }
 
-        if (addAnotherBtn) {
-            addAnotherBtn.style.display = (this.state.id && this.state.parentId) ? 'block' : 'none';
-        }
-
-        if (modalWindow) modalWindow.style.backgroundColor = this.state.color;
-        ModalManager.open('stickerDetailModal');
+        this.switchType(this.state.type);
+        this.setColor(this.state.color);
         
-        this.updateColorPickerUI();
+        // If it's an existing sticker, start in View Mode
+        if (this.state.id) {
+            this.setMode('view');
+        } else {
+            this.setMode('edit');
+        }
+        
+        this.updatePreview();
+        ModalManager.open('stickerDetailModal');
     }
 
-    static close() {
-        ModalManager.close('stickerDetailModal');
-        this.state.id = null;
-        this.state.element = null;
-        this.state.parentType = null;
-        this.state.parentId = null;
+    static deserializeContent(text, type) {
+        if (type !== 'list') return text;
+        try {
+            const data = JSON.parse(text);
+            if (data && data.items) {
+                return data.items.map(i => (i.done ? '✓ ' : '') + i.text).join('\n');
+            }
+        } catch (e) {}
+        return text;
+    }
+
+    static serializeContent(text, type) {
+        if (type !== 'list' || !text) return text;
+        const trimmed = text.trim();
+        // PROTECTION: If it's already JSON, don't re-serialize it!
+        if (trimmed.startsWith('{') && trimmed.includes('"items"')) return trimmed;
+        
+        const lines = trimmed.split(/\r?\n/).filter(l => l.trim().length > 0);
+        const items = lines.map(line => {
+            const trimmed = line.trim();
+            // Handle both marks
+            const isDone = trimmed.startsWith('✓') || trimmed.startsWith('[x]');
+            let content = trimmed;
+            if (trimmed.startsWith('✓')) content = trimmed.substring(1).trim();
+            else if (trimmed.startsWith('[x]')) content = trimmed.substring(3).trim();
+            
+            return { text: content, done: isDone };
+        });
+        return JSON.stringify({ items });
+    }
+
+    static setMode(mode) {
+        const editor = document.getElementById('stickerModalEditor');
+        const viewer = document.getElementById('stickerModalViewer');
+        const editBtn = document.getElementById('stickerEditBtn');
+        const saveBtn = document.getElementById('stickerSaveBtn');
+        const modalTitle = document.getElementById('modalStickerActionTitle');
+
+        if (mode === 'view') {
+            if (editor) editor.style.display = 'none';
+            if (viewer) viewer.style.display = 'block';
+            if (editBtn) editBtn.style.display = 'block';
+            if (saveBtn) saveBtn.style.display = 'none';
+            if (modalTitle) modalTitle.innerText = 'View Sticker';
+        } else {
+            if (editor) editor.style.display = 'block';
+            if (viewer) viewer.style.display = 'none';
+            if (editBtn) editBtn.style.display = 'none';
+            if (saveBtn) saveBtn.style.display = 'block';
+            if (modalTitle) modalTitle.innerText = this.state.id ? 'Edit Sticker' : 'Create Sticker';
+        }
+    }
+
+    static updatePreview() {
+        const previewContainer = document.getElementById('stickerPreviewContent');
+        const previewContainerEdit = document.getElementById('stickerPreviewContentEdit');
+        const titleInput = document.getElementById('stickerDetailTitle');
+        const textInput = document.getElementById('stickerDetailText');
+
+        const mockSticker = {
+            title: titleInput ? titleInput.value.trim() : '',
+            text: this.serializeContent(textInput ? textInput.value.trim() : '', this.state.type),
+            type: this.state.type,
+            color: this.state.color,
+            isWidget: false
+        };
+
+        const renderPreview = (container, isLarge = false) => {
+            if (!container) return;
+            const rendered = StickerRenderer.createStickerElement(mockSticker, { 
+                isWidget: false, // PREVIEW IS ALWAYS FULL
+                onClick: (e) => e.stopPropagation(),
+                additionalClasses: isLarge ? ['large', 'modal-preview'] : ['modal-preview']
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(rendered);
+
+            // Allow interactions in Viewer (isLarge)
+            if (isLarge) {
+                rendered.classList.add('interactive-preview');
+                rendered.onclick = (e) => this.handlePreviewClick(e);
+                
+                // Add Hint
+                const hint = document.createElement('div');
+                hint.className = 'sticker-interaction-hint';
+                hint.innerText = 'Click items to toggle status';
+                container.appendChild(hint);
+            } else {
+                rendered.style.pointerEvents = 'none';
+            }
+        };
+
+        renderPreview(previewContainer, true); // Large for viewer
+        renderPreview(previewContainerEdit, false); // Normal for editor
     }
 
     static switchType(type) {
         this.state.type = type;
-        const txtContainer = document.getElementById('modalStickerTextContainer');
-        const lstContainer = document.getElementById('modalStickerListContainer');
-        
-        if (type === 'text') {
-            if (txtContainer) txtContainer.style.display = 'block';
-            if (lstContainer) lstContainer.style.display = 'none';
-        } else {
-            if (txtContainer) txtContainer.style.display = 'none';
-            if (lstContainer) lstContainer.style.display = 'block';
+        document.querySelectorAll('.type-segment').forEach(s => s.classList.remove('active'));
+        if (type === 'text') document.getElementById('type-text')?.classList.add('active');
+        if (type === 'list') document.getElementById('type-list')?.classList.add('active');
+        this.updatePreview();
+    }
+
+    static async handlePreviewClick(e) {
+        if (this.state.type !== 'list') return;
+        const item = e.target.closest('.sticker-list-item');
+        if (!item) return;
+
+        const index = parseInt(item.dataset.index);
+        if (isNaN(index)) return;
+
+        // Use state.rawText directly (it should already be JSON or raw text)
+        let data;
+        try {
+            data = JSON.parse(this.state.rawText);
+        } catch (e) {
+            // If not JSON, convert to JSON structure first
+            data = JSON.parse(this.serializeContent(this.state.rawText, 'list'));
         }
 
-        document.querySelectorAll('.type-segment').forEach(s => s.classList.remove('active'));
-        if (type === 'text') document.getElementById('btnStickerToText')?.classList.add('active');
-        if (type === 'list') document.getElementById('btnStickerToList')?.classList.add('active');
-    }
-
-    static renderListItems(jsonText) {
-        let data = { items: [] };
-        try { data = JSON.parse(jsonText); } catch(e) {}
-        const container = document.getElementById('modalStickerListItems');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        data.items.forEach((item) => {
-            this.addStickerItemInModal(item);
-        });
-        this.switchType('list');
-    }
-
-    static addStickerItemInModal(item = { text: '', done: false }) {
-        const container = document.getElementById('modalStickerListItems');
-        if (!container) return;
-        const row = document.createElement('div');
-        row.className = 'modal-list-row';
-        row.innerHTML = `
-            <input type="checkbox" ${item.done ? 'checked' : ''}>
-            <input type="text" class="modal-list-input" value="${item.text.replace(/"/g, '&quot;')}" placeholder="New item...">
-            <button class="modal-list-del" onclick="this.parentElement.remove()">×</button>
-        `;
-        container.appendChild(row);
-        if (!item.text) row.querySelector('input[type="text"]').focus();
+        if (data && data.items && data.items[index]) {
+            data.items[index].done = !data.items[index].done;
+            
+            const newJson = JSON.stringify(data);
+            this.state.rawText = newJson; // Update local state
+            
+            // Sync editor field
+            const textInput = document.getElementById('stickerDetailText');
+            if (textInput) textInput.value = this.deserializeContent(newJson, 'list');
+            
+            this.updatePreview();
+            
+            // Background save - it's safe now because we use state.rawText
+            if (this.state.id) {
+                await this.save({ close: false, overrideText: newJson });
+            }
+        }
     }
 
     static setColor(color, btn) {
         this.state.color = color;
-        const modalWindow = document.getElementById('modalStickerWindow');
-        if (modalWindow) modalWindow.style.backgroundColor = color;
-        if (btn) {
-            document.querySelectorAll('#modalStickerColorPicker .color-dot').forEach(d => d.classList.remove('active'));
-            btn.classList.add('active');
-        }
-    }
-
-    static updateColorPickerUI() {
-        document.querySelectorAll('#modalStickerColorPicker .color-dot').forEach(dot => {
-            dot.classList.toggle('active', dot.dataset.color === this.state.color);
+        this.updatePreview();
+        
+        document.querySelectorAll('.color-swatch').forEach(sw => {
+            sw.classList.toggle('active', sw.dataset.color === color);
         });
     }
 
     static updateAttachedNoteUI(note) {
-        const container = document.getElementById('modalStickerAttachedNoteContainer');
-        const textEl = document.getElementById('attachedNoteText');
-        if (container && textEl && note) {
-            textEl.innerText = note.note.substring(0, 100) + (note.note.length > 100 ? '...' : '');
+        const container = document.getElementById('stickerNoteSection');
+        const contentEl = document.getElementById('attachedNoteContent');
+        if (container && contentEl && note) {
+            contentEl.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; font-size: 0.8rem; color: var(--color-text-dark);">${note.category || 'General'}</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-body);">${note.note.substring(0, 80)}...</div>
+                </div>
+            `;
             container.style.display = 'block';
-        } else {
+        } else if (container) {
             container.style.display = 'none';
         }
     }
 
-    static async save() {
-        if (typeof window.showToast === 'function') window.showToast('Saving sticker...', 'info');
-        
-        let finalText = '';
-        if (this.state.type === 'text') {
-            const ta = document.getElementById('modalStickerTextArea');
-            if (ta) finalText = ta.value.trim();
-        } else {
-            const items = [];
-            document.querySelectorAll('#modalStickerListItems .modal-list-row').forEach(row => {
-                const text = row.querySelector('.modal-list-input').value.trim();
-                const done = row.querySelector('input[type="checkbox"]').checked;
-                if (text) items.push({ text, done });
-            });
-            finalText = JSON.stringify({ items });
-        }
-
-        const titleEl = document.getElementById('modalStickerTitle');
+    static async save(options = {}) {
+        const shouldClose = options.close !== false;
+        const titleEl = document.getElementById('stickerDetailTitle');
+        const textEl = document.getElementById('stickerDetailText');
         const finalTitle = titleEl ? titleEl.value.trim() : '';
+        
+        let finalText;
+        if (options.overrideText) {
+            finalText = options.overrideText;
+        } else {
+            const rawText = textEl ? textEl.value.trim() : '';
+            finalText = this.serializeContent(rawText, this.state.type);
+        }
 
         // Header Sticker Bridge
         if (this.state.source === 'header') {
@@ -264,35 +304,46 @@ export class StickerModal {
         };
 
         try {
-            if (this.state.id) {
-                const updated = await StickerService.save(this.state.id, payload);
-                if (this.state.element) {
-                    const isWidget = !!document.getElementById('corkboard')?.contains(this.state.element);
-                    const newEl = StickerRenderer.createStickerElement(updated, { isWidget: isWidget });
-                    this.state.element.parentNode.replaceChild(newEl, this.state.element);
-                } else {
+                if (this.state.id) {
+                    const updated = await StickerService.save(this.state.id, payload);
+                    if (this.state.element) {
+                        const isWidget = !!document.getElementById('corkboard')?.contains(this.state.element);
+                        const newEl = StickerRenderer.createStickerElement(updated, { isWidget: isWidget });
+                        this.state.element.parentNode.replaceChild(newEl, this.state.element);
+                        
+                        // Update state to point to the new element
+                        this.state.element = newEl;
+                    } else {
                     location.reload();
                 }
                 if (typeof window.showToast === 'function') window.showToast('✓ Sticker updated', 'success');
             } else {
-                if (this.state.parentType === 'note' && this.state.parentId) {
-                    payload.note_id = this.state.parentId;
-                } else if (this.state.parentType && this.state.parentId) {
+                if (this.state.parentType && this.state.parentId) {
                     payload[`${this.state.parentType}_id`] = this.state.parentId;
                 }
+                const created = await StickerService.save(null, payload);
                 
-                await StickerService.save(null, payload);
-                if (this.state.source === 'parent' && typeof window.refreshParentStickers === 'function') {
-                    window.refreshParentStickers(this.state.parentType, this.state.parentId);
+                // If we are in a parent context (like creating a note), 
+                // DON'T reload. Just refresh the parent UI if possible.
+                if (this.state.parentType === 'note' && window.notesWidget) {
+                    console.log("[StickerModal] Refreshing parent note:", this.state.parentId);
+                    window.notesWidget.editNote(this.state.parentId); 
                 } else {
                     location.reload();
                 }
-                if (typeof window.showToast === 'function') window.showToast('✓ Sticker created', 'success');
             }
-            this.close();
+            if (shouldClose) this.close();
         } catch (e) {
             console.error(e);
             if (typeof window.showToast === 'function') window.showToast('⚠ Error: ' + e.message, 'error');
         }
+    }
+
+    static close() {
+        ModalManager.close('stickerDetailModal');
+        this.state.id = null;
+        this.state.element = null;
+        this.state.parentType = null;
+        this.state.parentId = null;
     }
 }

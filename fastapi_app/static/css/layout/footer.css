@@ -1,58 +1,58 @@
+/* --- FOOTER & NAVIGATION STYLES --- */
+
+.footer {
+    width: 100%;
+    background: var(--color-bg-white);
+    border-top: 1px solid var(--color-border-light);
+    padding: 32px 0;
+    margin-top: 40px;
+}
+
 .footer-container {
-    display: flex !important;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
     flex-direction: column;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0;
-    padding: 0;
+    align-items: center;
+    gap: 20px;
 }
 
 .footer-nav {
-    display: flex !important;
-    flex-direction: row;
+    display: flex;
     flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
     width: 100%;
-    gap: 0;
-}
-
-/* Row 1: Main Pages - Extra Large */
-.main-nav .footer-btn {
-    padding: 18px 10px !important;
-    font-size: 16px !important;
-    background-color: var(--color-bg-page) !important;
-    border-bottom: 1px solid var(--color-border) !important;
 }
 
 .footer-btn {
-    flex: 1 1 120px;
-    display: flex !important;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    text-decoration: none !important;
-    color: var(--color-text-body) !important;
-    border: none !important;
-    border-right: 1px solid var(--color-border-dark) !important;
-    border-bottom: 1px solid var(--color-border-dark) !important;
+    gap: 8px;
+    padding: 12px 28px;
+    min-width: 150px;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    color: var(--color-text-body);
+    font-size: 0.95rem;
     font-weight: 600;
-    white-space: nowrap;
-    border-radius: 0 !important;
     transition: all var(--transition-base);
-    padding: 12px 10px;
-}
-
-.footer-btn:last-child {
-    border-right: none !important;
 }
 
 .footer-btn:hover {
-    background-color: var(--color-primary) !important;
-    color: white !important;
+    background: white;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .footer-version {
+    font-size: 0.75rem;
     color: var(--color-text-faint);
-    font-size: var(--text-xs);
-    padding: var(--spacing-2) var(--spacing-5);
     text-align: center;
-    background: var(--color-bg-surface);
+    margin-top: 12px;
 }

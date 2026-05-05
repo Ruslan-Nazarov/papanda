@@ -13,19 +13,21 @@ let stickerType = 'text';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-window.toggleStickerMode = function () {
-    const btn = document.getElementById('stickerTypeBtn');
+window.toggleStickerMode = function (mode) {
     const stInput = document.getElementById('stickerInput');
+    stickerType = mode || (stickerType === 'text' ? 'list' : 'text');
+    
+    // Update UI Toggles
+    const toggles = document.querySelectorAll('.sticker-type-segmented .type-segment');
+    toggles.forEach(t => {
+        const isCurrent = (t.id === `type-${stickerType}-quick`);
+        t.classList.toggle('active', isCurrent);
+    });
+
     if (stickerType === 'text') {
-        stickerType = 'list';
-        btn.textContent = '📋';
-        btn.classList.add('active');
-        if (stInput) stInput.placeholder = 'Add items (Enter each item, or use commas)...';
+        if (stInput) stInput.placeholder = 'Write something... (Enter to save)';
     } else {
-        stickerType = 'text';
-        btn.textContent = '📝';
-        btn.classList.remove('active');
-        if (stInput) stInput.placeholder = 'Thought on your mind... (Enter to add)';
+        if (stInput) stInput.placeholder = 'Add items (use commas or new lines)...';
     }
 };
 
@@ -58,22 +60,23 @@ async function addSticker() {
             const note = await response.json();
             const corkboard = document.getElementById('corkboard');
             if (corkboard) {
-                const noteDiv = createStickerElement(note, { isWidget: true });
+                // Ensure we use the modular createStickerElement
+                const noteDiv = window.createStickerElement(note);
                 corkboard.appendChild(noteDiv);
             }
             stInput.value = '';
-            stInput.style.height = 'auto';
+            stInput.style.height = '40px';
             const titleInput = document.getElementById('stickerTitleInput');
             if (titleInput) titleInput.value = '';
-            showToast('Sticker added!', 'success');
+            if (typeof window.showToast === 'function') window.showToast('Sticker added!', 'success');
         } else {
             const errText = await response.text();
             console.error(`Failed to add sticker. Status: ${response.status}`, errText);
-            showToast(`Failed to save sticker (Error ${response.status})`, 'error');
+            if (typeof window.showToast === 'function') window.showToast(`Failed to save sticker`, 'error');
         }
     } catch (e) {
         console.error('Sticker fetch error:', e);
-        showToast('Network error while adding sticker', 'error');
+        if (typeof window.showToast === 'function') window.showToast('Network error', 'error');
     }
 }
 window.addSticker = addSticker;
@@ -106,14 +109,14 @@ window.syncCategoryStickerVisibility = function () {
 // ─── Initializer ─────────────────────────────────────────────────────────────
 
 export async function initStickerWidget() {
-    // Color picker dots
+    // Color picker swatches
     const stickerColorPicker = document.getElementById('stickerColorPicker');
     if (stickerColorPicker) {
-        stickerColorPicker.querySelectorAll('.color-dot').forEach(dot => {
-            dot.addEventListener('click', () => {
-                stickerColorPicker.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-                dot.classList.add('active');
-                selectedStickerColor = dot.dataset.color;
+        stickerColorPicker.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                stickerColorPicker.querySelectorAll('.color-swatch').forEach(d => d.classList.remove('active'));
+                swatch.classList.add('active');
+                selectedStickerColor = swatch.dataset.color;
             });
         });
     }
@@ -144,7 +147,7 @@ export async function initStickerWidget() {
                 const stickers = await res.json();
                 corkboard.innerHTML = '';
                 stickers.forEach(s => {
-                    const noteDiv = createStickerElement(s, { isWidget: true });
+                    const noteDiv = window.createStickerElement(s);
                     corkboard.appendChild(noteDiv);
                 });
             }

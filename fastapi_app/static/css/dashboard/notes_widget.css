@@ -1,15 +1,13 @@
-/* --- Dashboard Notes & Stickers Widget Specifics --- */
+/* --- Dashboard Notes Widget Specifics --- */
 
-.grid-stack-item[gs-id="notes"] .grid-stack-item-content {
-    border-color: var(--color-primary-light) !important;
+.notes-widget .widget-body {
+    padding: 16px;
 }
 
-.grid-stack-item[gs-id="notes"] .form-button,
-.grid-stack-item[gs-id="notes"] button[type="submit"] {
-    background-color: var(--color-primary) !important;
-    border: 1px solid var(--color-primary-dark);
-    color: var(--color-white) !important;
-    font-weight: 700;
+.quick-note-area {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1.5px solid var(--color-border-light);
 }
 
 /* Pinned Notes Grid */
@@ -17,75 +15,91 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    padding: 10px;
-    overflow-y: auto;
+    margin-top: 10px;
 }
 
 .pinned-note-card {
     background: var(--color-bg-white);
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-border-light);
     border-radius: var(--radius-md);
-    padding: var(--spacing-3);
+    padding: 14px;
     position: relative;
     transition: all var(--transition-base);
     display: flex;
     flex-direction: column;
-    min-height: 120px;
-    cursor: pointer;
+    min-height: 100px;
     box-shadow: var(--shadow-sm);
 }
 
 .pinned-note-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    border-color: var(--color-border-medium);
+    border-color: var(--color-primary-glow);
 }
 
-.card-pin-status {
-    position: absolute;
-    top: -8px; left: -8px;
-    width: 24px; height: 24px;
-    background: var(--color-primary);
-    color: var(--color-white);
-    border-radius: var(--radius-full);
-    display: flex; align-items: center; justify-content: center;
-    font-size: var(--text-xs);
+.pinned-note-card .row-actions {
     opacity: 0;
-    transition: opacity 0.2s;
-}
-.pinned-note-card:hover .card-pin-status { opacity: 1; }
-
-/* Sticky Widget */
-.grid-stack-item[gs-id="stickers"] .grid-stack-item-content {
-    border-color: var(--color-sticker-accent) !important;
-    background-color: var(--color-sticker-default) !important;
+    transition: opacity 0.2s ease;
 }
 
+.pinned-note-card:hover .row-actions {
+    opacity: 1;
+}
+
+.premium-note-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Specific button style for the widget buttons */
+.btn-row-action {
+    color: var(--color-text-faint);
+    transition: color 0.2s;
+}
+
+.btn-row-action:hover {
+    color: var(--color-primary);
+}
+
+/* corkboard / stickers compatibility */
 .note-sticker-btn {
-    width: 32px; height: 32px;
+    width: 28px; height: 28px;
     display: flex !important;
     align-items: center; justify-content: center;
     cursor: pointer;
-    background: #ffffff;
-    border: 1px solid #d1d5db;
+    background: var(--color-bg-white);
+    border: 1.5px solid var(--color-border-light);
     border-radius: 6px;
     transition: all 0.2s ease;
-    flex-shrink: 0;
-    position: relative;
 }
-.note-sticker-btn.attached .sticker-icon-postit {
-    background-color: #ffeb3b;
-    transform: scale(1.1);
+
+/* Editor Mini Stickers */
+#expandedNoteStickersList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0;
+    min-height: 40px;
 }
-.note-sticker-btn.attached::after {
-    content: "✓";
-    position: absolute;
-    top: -3px; right: -3px;
-    background: var(--color-success);
-    color: var(--color-white);
-    font-size: 8px;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    border: 1.5px solid var(--color-white);
+
+.editor-mini-sticker-wrapper {
+    transform: scale(0.75);
+    transform-origin: top left;
+    width: 135px; /* (180 * 0.75) */
+    height: 135px;
+    margin-right: -25px;
+    margin-bottom: -35px;
+}
+
+.editor-mini-sticker-wrapper .sticker-thought {
+    margin: 0 !important;
+    cursor: pointer !important;
+}
+
+.editor-mini-sticker-wrapper:hover {
+    transform: scale(0.8);
+    z-index: 10;
 }

@@ -86,7 +86,8 @@ async function expandNoteOnSticker(noteId, cardEl, fullText = null) {
 
 // Actions
 async function archiveStickerGlobal(btn, id) {
-    if (!confirm('Archive this thought? (It will be hidden from the dashboard)')) return;
+    const confirmed = await window.NotificationService.confirm('Archive this thought? (It will be hidden from the dashboard)', { okText: 'Archive' });
+    if (!confirmed) return;
     try {
         await StickerService.archive(id);
         const el = btn.closest('.sticker-thought') || btn.closest('.note-card');
@@ -101,7 +102,8 @@ async function archiveStickerGlobal(btn, id) {
 }
 
 async function hardDeleteStickerGlobal(btn, id) {
-    if (!confirm('PERMANENTLY DELETE this sticker from the database? This cannot be undone.')) return;
+    const confirmed = await window.NotificationService.confirm('PERMANENTLY DELETE this sticker? This cannot be undone.', { isDanger: true, okText: 'Delete Forever' });
+    if (!confirmed) return;
     try {
         await StickerService.hardDelete(id);
         const el = btn.closest('.note-card') || btn.closest('.sticker-thought');
@@ -118,13 +120,19 @@ async function hardDeleteStickerGlobal(btn, id) {
 // Global Bridge
 window.openStickerModal = (opts) => StickerModal.open(opts);
 window.closeStickerModal = () => StickerModal.close();
-window.saveStickerModal = () => StickerModal.save();
-window.setStickerColorInModal = (c, b) => StickerModal.setColor(c, b);
-window.switchStickerTypeInModal = (t) => StickerModal.switchType(t);
-window.addStickerItemInModal = () => StickerModal.addStickerItemInModal();
+window.closeStickerDetail = () => StickerModal.close();
+window.saveStickerDetail = () => StickerModal.save();
+window.updateStickerPreview = () => StickerModal.updatePreview();
+window.setStickerDetailType = (t) => StickerModal.switchType(t);
+window.setStickerDetailColor = (c, b) => StickerModal.setColor(c, b);
+window.setStickerModalMode = (m) => StickerModal.setMode(m);
 window.archiveStickerGlobal = archiveStickerGlobal;
 window.hardDeleteStickerGlobal = hardDeleteStickerGlobal;
-window.deleteStickerGlobal = archiveStickerGlobal;
+window.deleteStickerFromModal = () => {
+    if (StickerModal.state.id) archiveStickerGlobal(null, StickerModal.state.id);
+    else StickerModal.close();
+};
+
 
 window.openParentStickers = (type, id) => StickerOverview.open(type, id);
 window.closeParentStickersOverview = () => StickerOverview.close();
@@ -177,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             color: el.dataset.color || '#fff9c4',
             type: el.dataset.type || 'text'
         };
-        const noteDiv = StickerRenderer.createStickerElement(note, { isWidget: false });
+        const noteDiv = StickerRenderer.createStickerElement(note);
         el.parentNode.replaceChild(noteDiv, el);
     });
 });

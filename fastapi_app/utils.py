@@ -40,6 +40,12 @@ def parse_date_input(d_str: Optional[Union[str, date, datetime]]) -> Union[date,
                 clean_str = s_val.split('T')[0]
                 return datetime.strptime(clean_str, '%Y-%m-%d').date()
                 
+        # Обработка DD.MM.YYYY
+        try:
+            return datetime.strptime(s_val, '%d.%m.%Y').date()
+        except ValueError:
+            pass
+
         # Обработка стандартной строки даты (например, 2023-11-21)
         clean_str = s_val.split()[0]
         return datetime.strptime(clean_str, '%Y-%m-%d').date()
@@ -213,5 +219,46 @@ async def attach_stickers_count(db, records: list, fk_name: str, sticky_model: t
     s_map = dict(s_res.all())
     for r in records:
         r.stickers_count = s_map.get(getattr(r, 'id', None), 0)
+
+async def attach_event_stickers_count(db, events: list, sticky_model: type) -> None:
+    """
+    Специализированный хелпер для событий, учитывающий и event_id, и recurrence_id.
+    """
+    if not events:
+        return
+        
+    from sqlalchemy import select, func, or_
+    
+    physical_ids = [e.id for e in events if hasattr(e, 'id') and not getattr(e, '_is_virtual', False)]
+    series_ids = [e.recurrence_id for e in events if getattr(e, 'recurrence_id', None)]
+    
+    # 1. Считаем стикеры по event_id (конкретные экземпляры)
+    e_map = {}
+    if physical_ids:
+        e_res = await db.execute(
+            select(sticky_model.event_id, func.count(sticky_model.id))
+            .where(sticky_model.event_id.in_(physical_ids), sticky_model.finished_at.is_(None))
+            .group_by(sticky_model.event_id)
+        )
+        e_map = dict(e_res.all())
+        
+    # 2. Считаем стикеры по recurrence_id (всей серии)
+    r_map = {}
+    if series_ids:
+        r_res = await db.execute(
+            select(sticky_model.recurrence_id, func.count(sticky_model.id))
+            .where(sticky_model.recurrence_id.in_(series_ids), sticky_model.finished_at.is_(None))
+            .group_by(sticky_model.recurrence_id)
+        )
+        r_map = dict(r_res.all())
+        
+    # 3. Суммируем
+    for ev in events:
+        count = 0
+        if not getattr(ev, '_is_virtual', False):
+            count += e_map.get(ev.id, 0)
+        if ev.recurrence_id:
+            count += r_map.get(ev.recurrence_id, 0)
+        ev.stickers_count = count
 
 

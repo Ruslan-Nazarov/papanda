@@ -1,96 +1,117 @@
 /**
- * event_widget.js — Event Edit/Delete Modal logic for the Dashboard.
- * Extracted from dashboard_index.js (lines 81–264).
+ * event_widget.js — Event Edit/Delete logic.
+ * Fully autonomous version to bypass import issues.
  */
 
-import { customConfirm, customChoice } from './modal_controller.js';
-import { deleteRecordApi, fetchWithJson } from './db_api.js';
-import { showToast, calculateEndDate } from './ui_helpers.js';
+console.log("[EventWidget] LOADED - Script version 2.2");
 
 // ─── Private helpers ────────────────────────────────────────────────────────
 
-function toggleEditEventWeekdays() {
-    const rule = document.getElementById('editEventRecRule').value;
+function getModal(id) {
+    const m = document.getElementById(id);
+    if (!m) console.error(`[EventWidget] Modal not found: ${id}`);
+    return m;
+}
+
+window.toggleEditEventWeekdays = function() {
+    const rule = document.getElementById('editEventRecRule')?.value;
     const row = document.getElementById('editEventWeekdaysRow');
     if (row) row.style.display = (rule === 'weekly') ? 'block' : 'none';
-    calcEditEventEndDateFromCount();
-}
+};
 
-function toggleEditEventEndMode() {
-    const isCount = document.getElementById('editEventEndCountMode').checked;
-    document.getElementById('editEventEndDateBlock').style.display = isCount ? 'none' : 'block';
-    document.getElementById('editEventEndCountBlock').style.display = isCount ? 'block' : 'none';
-    if (isCount) calcEditEventEndDateFromCount();
-}
+window.toggleEditEventEndMode = function() {
+    const isCount = document.getElementById('editEventEndCountMode')?.checked;
+    const dateBlock = document.getElementById('editEventEndDateBlock');
+    const countBlock = document.getElementById('editEventEndCountBlock');
+    if (dateBlock) dateBlock.style.display = isCount ? 'none' : 'block';
+    if (countBlock) countBlock.style.display = isCount ? 'block' : 'none';
+};
 
-function calcEditEventEndDateFromCount() {
-    const freq = document.getElementById('editEventRecRule').value;
-    const n = parseInt(document.getElementById('editEventRecCount').value) || 1;
-    const startStr = document.getElementById('editEventDate').value;
-    const weekdays = [...document.querySelectorAll('#editEventWeekdaysRow input:checked')].map(cb => cb.value);
+window.calcEditEventEndDateFromCount = async function() {
+    const freq = document.getElementById('editEventRecRule')?.value;
+    const n = parseInt(document.getElementById('editEventRecCount')?.value) || 1;
+    const startStr = document.getElementById('editEventDate')?.value;
+    if (!startStr) return;
 
-    const res = calculateEndDate(freq, n, startStr, weekdays);
+    try {
+        const { calculateEndDate } = await import('./ui_helpers.js');
+        const weekdays = [...document.querySelectorAll('#editEventWeekdaysRow input:checked')].map(cb => cb.value);
+        const res = calculateEndDate(freq, n, startStr, weekdays);
+        
+        const label = document.getElementById('editEventRecEndFromCountLabel');
+        const hidden = document.getElementById('editEventRecEndFromCount');
+        if (label) label.innerText = res.label;
+        if (hidden) hidden.value = res.hidden;
+    } catch (e) { console.warn("ui_helpers not ready", e); }
+};
 
-    const endLabel = document.getElementById('editEventRecEndFromCountLabel');
-    const endHidden = document.getElementById('editEventRecEndFromCount');
-    if (endLabel) endLabel.innerText = res.label;
-    if (endHidden) endHidden.value = res.hidden;
-}
+// ─── Public API ─────────────────────────────────────────────────────────────
 
-function openEventEditModal(id, title, dateStr, recRule, recEnd, recId) {
-    document.getElementById('editEventId').value = id;
-    document.getElementById('editEventRecId').value = recId || '';
-    document.getElementById('editEventOriginalDate').value = dateStr || '';
-    document.getElementById('editEventTitle').value = title || '';
-    document.getElementById('editEventDate').value = dateStr || '';
-    document.getElementById('editEventRecEnd').value = recEnd || '';
-    document.getElementById('editEventError').innerText = '';
+window.handleEventEditClick = function (e, btn) {
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+    console.log("[EventWidget] handleEventEditClick triggered", btn.dataset.eventId);
+    
+    const modal = getModal('editEventModal');
+    if (!modal) return;
 
-    document.getElementById('editEventEndDateMode').checked = true;
-    toggleEditEventEndMode();
-
-    const checkboxes = document.querySelectorAll('#editEventWeekdaysRow input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
+    // Set values
+    const d = btn.dataset;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    
+    setVal('editEventId', d.eventId);
+    setVal('editEventRecId', d.eventRecId);
+    setVal('editEventOriginalDate', d.eventDate);
+    setVal('editEventTitle', d.eventTitle);
+    setVal('editEventDate', d.eventDate);
+    setVal('editEventRecEnd', d.eventEnd);
+    
+    const impCb = document.getElementById('editEventImportant');
+    if (impCb) impCb.checked = d.eventImportant === 'true';
 
     const select = document.getElementById('editEventRecRule');
-    if (!recRule || recRule === 'none') {
-        select.value = 'none';
-    } else if (recRule.startsWith('weekly:')) {
-        select.value = 'weekly';
-        const days = recRule.split(':')[1].split(',');
-        checkboxes.forEach(cb => { if (days.includes(cb.value)) cb.checked = true; });
-    } else {
-        select.value = recRule;
+    if (select) {
+        const recRule = d.eventRule;
+        if (!recRule || recRule === 'none') {
+            select.value = 'none';
+        } else if (recRule.startsWith('weekly:')) {
+            select.value = 'weekly';
+            const days = recRule.split(':')[1].split(',');
+            document.querySelectorAll('#editEventWeekdaysRow input').forEach(cb => {
+                cb.checked = days.includes(cb.value);
+            });
+        } else {
+            select.value = recRule;
+        }
     }
 
     const recRow = document.getElementById('editEventRecurrenceModeRow');
-    if (recId) {
-        recRow.style.display = 'block';
-        document.querySelector('input[name="edit_event_mode"][value="only"]').checked = true;
-    } else {
-        recRow.style.display = 'none';
+    if (recRow) recRow.style.display = d.eventRecId ? 'block' : 'none';
+
+    window.toggleEditEventWeekdays();
+    window.toggleEditEventEndMode();
+    
+    modal.style.display = 'flex';
+};
+
+window.closeEditEventModal = function() {
+    const modal = getModal('editEventModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) {
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
     }
+    console.log("[EventWidget] deleteEvent triggered", eventId);
 
-    toggleEditEventWeekdays();
-    document.getElementById('editEventModal').style.display = 'flex';
-}
-
-// ─── Public API (exposed on window for HTML inline handlers) ─────────────────
-
-window.closeEventEditModal = function () {
-    document.getElementById('editEventModal').style.display = 'none';
-};
-
-window.handleEventEditClick = function (e, btn) {
-    e.stopPropagation();
-    e.preventDefault();
-    openEventEditModal(
-        btn.dataset.eventId, btn.dataset.eventTitle, btn.dataset.eventDate,
-        btn.dataset.eventRule, btn.dataset.eventEnd, btn.dataset.eventRecId
-    );
-};
-
-window.deleteEvent = async function (eventId, isRecurring, eventDate = null) {
+    // Dynamic import for modal controller
+    const { customConfirm, customChoice } = await import('./modal_controller.js');
+    const { deleteRecordApi } = await import('./db_api.js');
+    
     let deleteMode = 'only';
     if (isRecurring) {
         const choice = await customChoice({
@@ -121,87 +142,55 @@ window.deleteEvent = async function (eventId, isRecurring, eventDate = null) {
     try {
         const resp = await deleteRecordApi('Event', eventId, deleteMode, eventDate);
         if (resp.ok) {
-            const btn = document.querySelector(`[data-event-id="${eventId}"]`);
-            if (btn) {
-                const li = btn.closest('li');
-                if (li) li.remove();
+            const btn = document.querySelector(`[onclick*="'${eventId}'"]`);
+            const li = btn?.closest('li');
+            if (li) {
+                const m = await import('./ui_helpers.js');
+                await m.animateItemRemoval(li);
             }
-            if (deleteMode !== 'only') {
-                location.reload();
-                return;
-            }
-            if (window.showToast) window.showToast('Event deleted successfully', 'success');
+            // Update header badges
+            if (window.HeaderService) window.HeaderService.refreshBadges();
+
+            if (deleteMode !== 'only') setTimeout(() => location.reload(), 500);
         }
-    } catch (e) { console.error('Error deleting event:', e); }
+    } catch (err) { console.error('Error deleting event:', err); }
+};
+
+window.markEventDone = async function(form, eventId) {
+    const li = form.closest('li');
+    try {
+        const { animateItemRemoval } = await import('./ui_helpers.js');
+        const animationPromise = animateItemRemoval(li);
+        await fetch(form.action, { method: 'POST', body: new FormData(form) });
+        await animationPromise;
+        // Update header badges
+        if (window.HeaderService) window.HeaderService.refreshBadges();
+    } catch (e) { 
+        console.error('Error marking event done:', e); 
+        location.reload();
+    }
 };
 
 window.saveEventEdit = async function () {
     const id = document.getElementById('editEventId').value;
-    const recId = document.getElementById('editEventRecId').value;
     const title = document.getElementById('editEventTitle').value.trim();
     const date = document.getElementById('editEventDate').value;
-    const errEl = document.getElementById('editEventError');
-    errEl.innerText = '';
-
-    let recEnd = document.getElementById('editEventRecEnd').value;
-    if (document.getElementById('editEventEndCountMode').checked) {
-        recEnd = document.getElementById('editEventRecEndFromCount').value;
-    }
-
-    let recRule = document.getElementById('editEventRecRule').value;
-    if (recRule === 'weekly') {
-        const checked = [...document.querySelectorAll('#editEventWeekdaysRow input:checked')].map(cb => cb.value);
-        if (checked.length > 0) recRule = 'weekly:' + checked.join(',');
-    }
-
-    const editMode = document.querySelector('input[name="edit_event_mode"]:checked')?.value || 'only';
-
-    if (!title) { errEl.innerText = 'Title cannot be empty.'; return; }
-    if (!date) { errEl.innerText = 'Date cannot be empty.'; return; }
-
+    const mode = document.querySelector('input[name="edit_event_mode"]:checked')?.value || 'only';
+    
     try {
-        const originalDate = document.getElementById('editEventOriginalDate').value;
+        const { fetchWithJson } = await import('./db_api.js');
         const resp = await fetchWithJson('/edit_event_inline', {
-            id, title, date,
-            recurrence_rule: recRule === 'none' ? null : recRule,
-            recurrence_end: recEnd || null,
-            edit_mode: editMode,
-            recurrence_id: recId,
-            original_date: originalDate
+            id, title, date, edit_mode: mode,
+            important: document.getElementById('editEventImportant')?.checked || false,
+            recurrence_rule: document.getElementById('editEventRecRule').value,
+            recurrence_id: document.getElementById('editEventRecId').value,
+            recurrence_end: document.getElementById('editEventRecEnd').value,
+            original_date: document.getElementById('editEventOriginalDate').value
         });
-        const data = await resp.json();
-        if (data.status === 'success' || data.success === true) {
-            errEl.style.color = 'green';
-            errEl.innerText = '✓ Success! Reloading...';
-            showToast('✓ Event updated', 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            const msg = data.message || data.detail || 'Unknown server error';
-            errEl.style.color = '#c00';
-            errEl.innerText = 'Error: ' + msg;
-            showToast('Error: ' + msg, 'error');
-        }
-    } catch (e) {
-        console.error('[saveEventEdit] Exception:', e);
-        errEl.style.color = '#c00';
-        errEl.innerText = 'JS Error: ' + e.message;
-    }
+        if (resp.ok) location.reload();
+    } catch (e) { console.error('Error saving event:', e); }
 };
 
-// ─── Initializer (called from dashboard_index.js) ────────────────────────────
-
 export function initEventWidget() {
-    // Wire up internal handlers for the edit modal controls
-    const recRuleEl = document.getElementById('editEventRecRule');
-    if (recRuleEl) recRuleEl.addEventListener('change', toggleEditEventWeekdays);
-
-    document.querySelectorAll('input[name="edit_event_end_mode"]').forEach(radio => {
-        radio.addEventListener('change', toggleEditEventEndMode);
-    });
-
-    const recCount = document.getElementById('editEventRecCount');
-    if (recCount) recCount.addEventListener('input', calcEditEventEndDateFromCount);
-
-    const editDate = document.getElementById('editEventDate');
-    if (editDate) editDate.addEventListener('change', calcEditEventEndDateFromCount);
+    console.log("[EventWidget] Core hooks initialized");
 }

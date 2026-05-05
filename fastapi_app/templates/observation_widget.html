@@ -1,254 +1,44 @@
-
-<link rel="stylesheet" href="{{ url_for('static', path='css/observation_widget.css') }}?v=1">
-
-<div class="observation-timeline" id="observation-container">
+{% if observations %}
+<div class="observation-tree-container">
     {% for obs in observations %}
-    <div class="obs-item priority-{{ obs['priority'] }} {% if obs['no_time'] %}no-time{% endif %}" data-id="{{ obs['id'] }}">
-        
-        <div class="obs-header">
-            <div class="obs-left">
-                {% if not obs['no_time'] %}
-                <span class="obs-time">
-                    {{ obs['created_at'].strftime('%H:%M') }}{% if obs['end_time'] %} – {{ obs['end_time'] }}{% endif %}
-                </span>
-                <div class="obs-content">{{ obs['text'] }}</div>
-                {% endif %}
-            </div>
+        <div class="tree-item {{ 'right' if obs['task_id'] else 'left' }}" 
+             data-id="{{ obs['id'] }}"
+             data-text="{{ obs['text'] }}"
+             data-time="{{ obs['created_at'].strftime('%H:%M') }}"
+             data-task-id="{{ obs['task_id'] or '' }}"
+             data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
+             data-done-days='{{ obs["done_days"] | tojson }}'>
             
-            <div class="obs-right">
-                <!-- Weekdays -->
-                <div class="obs-weekdays">
-                    {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
-                        <div class="weekday-circle {% if i in obs['done_days'] %}active{% endif %}">{{ letter }}</div>
-                    {% endfor %}
+            <div class="tree-marker"></div>
+            
+            <div class="tree-content">
+                <div class="tree-time">
+                    {% if not obs['no_time'] %}
+                        {{ obs['created_at'].strftime('%H:%M') }}
+                    {% endif %}
+                </div>
+
+                <div class="tree-card">
+                    {% if obs['task_id'] %}
+                        <div class="tree-category">TASK ACTIVITY</div>
+                    {% endif %}
+                    <div class="tree-text">{{ obs['text'] }}</div>
+                    
+                    <div class="tree-footer">
+                        <div class="tree-weekdays">
+                            {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                                <span class="day-dot {{ 'active' if i in obs['done_days'] }}">{{ letter }}</span>
+                            {% endfor %}
+                        </div>
+                        <button class="btn-tree-edit" onclick="openObsEditModalFromTree({{ obs['id'] }})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="obs-actions" style="justify-content: flex-end; margin-top: -6px;">
-            <button class="obs-btn" 
-                data-id="{{ obs['id'] }}" 
-                data-text="{{ obs['text'] }}" 
-                data-time="{{ obs['created_at'].strftime('%H:%M') }}" 
-                data-priority="{{ obs['priority'] }}" 
-                data-end-time="{{ obs['end_time'] or '' }}"
-                data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
-                data-done-days="{{ obs['done_days']|list|tojson }}"
-                onclick="isEditingFromOverview = false; openObsEditModal(this)">✎ Edit</button>
-            <button class="obs-btn" data-id="{{ obs['id'] }}" onclick="deleteObs(this)" style="color: #e74c3c;">× Delete</button>
-        </div>
-    </div>
     {% endfor %}
 </div>
-
-<!-- Modal for adding an observation -->
-<div id="obsAddModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span style="margin: 0; font-weight: 600;">Add New Activity</span>
-            <span class="modal-close" onclick="closeObsAddModal()">&times;</span>
-        </div>
-
-        <div class="modal-body">
-            <div class="form-group-large">
-                <label class="form-label-premium">Title</label>
-                <input type="text" id="obsAddText" class="form-input-premium" placeholder="Activity name...">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div class="form-group-large">
-                    <label class="form-label-premium">Time Mode</label>
-                    <select id="obsAddTimeMode" class="form-input-premium" onchange="handleTimeModeChange('add')">
-                        <option value="exact">Exact Time</option>
-                        <option value="period" selected>Period</option>
-                        <option value="none">No specific time</option>
-                    </select>
-                </div>
-                <div class="form-group-large">
-                    <label class="form-label-premium">Classification</label>
-                    <div style="display:flex; gap:12px; padding-top: 6px;">
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="obsAddImportance" id="obsAddImportant" value="important" checked>
-                            important
-                        </label>
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="obsAddImportance" id="obsAddExcess" value="excess">
-                            excess
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="time-field-group" id="obsAddStartTimeGroup">
-                    <label class="form-label-premium">Start Time</label>
-                    <div class="time-picker-row">
-                        <select id="obsAddStartHour" class="time-select"></select>
-                        <span class="time-sep">:</span>
-                        <select id="obsAddStartMin" class="time-select"></select>
-                    </div>
-                </div>
-                <div class="time-field-group" id="obsAddEndTimeGroup">
-                    <label class="form-label-premium">End Time</label>
-                    <div class="time-picker-row">
-                        <select id="obsAddEndHour" class="time-select"></select>
-                        <span class="time-sep">:</span>
-                        <select id="obsAddEndMin" class="time-select"></select>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top: 15px;">
-                <div class="form-group-large">
-                    <label class="form-label-premium">Done Days</label>
-                    <div class="obs-weekdays-add" style="display: flex; gap: 8px; margin-top: 5px;">
-                        {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
-                            <div class="weekday-circle-edit" data-day="{{ i }}" onclick="toggleAddDay(this)">{{ letter }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeObsAddModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveObsAdd()">Add Activity</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal for full overview (Tree) -->
-<div id="obsOverviewModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <span style="margin: 0; font-weight: 600;">Activity Tree Overview</span>
-            <span class="modal-close" onclick="closeObsOverviewModal()">&times;</span>
-        </div>
-
-        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-            <div id="obsOverviewContent">
-                <div class="observation-timeline-tree" style="margin-top: 0;">
-                    <div class="timeline-center-line"></div>
-                    {% for obs in observations %}
-                    <div class="timeline-item {% if obs['no_time'] %}no-time-item{% else %}timed-item{% endif %}">
-                        <div class="timeline-content-box">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                                <span style="font-weight: 700; color: #1e293b; font-size: 1rem;">{{ obs['text'] }}</span>
-                                {% if not obs['no_time'] %}
-                                <span class="tree-card-time">
-                                    {{ obs['created_at'].strftime('%H:%M') }}{% if obs['end_time'] %} – {{ obs['end_time'] }}{% endif %}
-                                </span>
-                                {% else %}
-                                <span style="font-size: 0.75rem; color: #27ae60; font-weight: 600; background: #f0fdf4; padding: 2px 8px; border-radius: 6px;">Anytime</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 15px;">
-                                <div class="obs-weekdays" style="margin-top: 0; gap: 4px;">
-                                    {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
-                                        <div class="weekday-circle-small {% if i in obs['done_days'] %}active{% endif %}">{{ letter }}</div>
-                                    {% endfor %}
-                                </div>
-                                <button class="obs-btn btn-premium" 
-                                    data-id="{{ obs['id'] }}" 
-                                    data-text="{{ obs['text'] }}" 
-                                    data-time="{{ obs['created_at'].strftime('%H:%M') }}" 
-                                    data-end-time="{{ obs['end_time'] or '' }}"
-                                    data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
-                                    data-priority="{{ obs['priority'] }}" 
-                                    data-done-days="{{ obs['done_days']|list|tojson }}"
-                                    onclick="isEditingFromOverview = true; closeObsOverviewModal(); openObsEditModal(this)"
-                                    style="padding: 4px 10px; font-size: 0.75rem; flex-shrink: 0; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-weight: 600;">✎ Edit</button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeObsOverviewModal()" style="width: 100%;">Close</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal for editing an observation -->
-<div id="obsEditModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span style="margin: 0; font-weight: 600;">Edit Activity</span>
-            <span class="modal-close" onclick="closeObsEditModal()">&times;</span>
-        </div>
-
-        <input type="hidden" id="obsEditId">
-
-        <div class="modal-body">
-            <div class="form-group-large">
-                <label class="form-label-premium">Title</label>
-                <input type="text" id="obsEditText" class="form-input-premium" placeholder="Activity name...">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div class="form-group-large">
-                    <label class="form-label-premium">Time Mode</label>
-                    <select id="obsEditTimeMode" class="form-input-premium" onchange="handleTimeModeChange('edit')">
-                        <option value="exact">Exact Time</option>
-                        <option value="period">Period</option>
-                        <option value="none">No specific time</option>
-                    </select>
-                </div>
-                <div class="form-group-large">
-                    <label class="form-label-premium">Classification</label>
-                    <div style="display:flex; gap:12px; padding-top: 6px;">
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="obsEditImportance" id="obsEditImportant" value="important">
-                            important
-                        </label>
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="obsEditImportance" id="obsEditExcess" value="excess">
-                            excess
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="time-field-group" id="obsEditStartTimeGroup">
-                    <label class="form-label-premium">Start Time</label>
-                    <div class="time-picker-row">
-                        <select id="obsEditStartHour" class="time-select"></select>
-                        <span class="time-sep">:</span>
-                        <select id="obsEditStartMin" class="time-select"></select>
-                    </div>
-                </div>
-                <div class="time-field-group" id="obsEditEndTimeGroup">
-                    <label class="form-label-premium">End Time</label>
-                    <div class="time-picker-row">
-                        <select id="obsEditEndHour" class="time-select"></select>
-                        <span class="time-sep">:</span>
-                        <select id="obsEditEndMin" class="time-select"></select>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top: 15px;">
-                <div class="form-group-large">
-                    <label class="form-label-premium">Done Days</label>
-                    <div class="obs-weekdays-edit" style="display: flex; gap: 8px; margin-top: 5px;">
-                        {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
-                            <div class="weekday-circle-edit" data-day="{{ i }}" onclick="toggleEditDay(this)">{{ letter }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeObsEditModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveObsEdit()">Save Changes</button>
-        </div>
-    </div>
-</div>
-
-<script src="{{ url_for('static', path='js/observation_widget.js') }}?v=1"></script>
+{% else %}
+    <div class="empty-state">No activities yet</div>
+{% endif %}

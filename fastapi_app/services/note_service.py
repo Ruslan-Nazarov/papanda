@@ -86,31 +86,57 @@ class NoteService:
             logger.error(f"Error deleting note {note_id}: {e}", exc_info=True)
             return False
 
+    async def get_note(self, note_id: int) -> Optional[models.Notes]:
+        """Возвращает заметку по ID с подгруженными стикерами."""
+        try:
+            from sqlalchemy.orm import selectinload
+            result = await self.db.execute(
+                select(models.Notes)
+                .options(selectinload(models.Notes.stickers))
+                .where(models.Notes.id == note_id)
+            )
+            note = result.scalar_one_or_none()
+            if note:
+                self._prepare_note_view(note)
+            return note
+        except Exception as e:
+            logger.error(f"Error getting note {note_id}: {e}", exc_info=True)
+            return None
+
     async def get_recent_notes(self, limit: int = 10) -> List[models.Notes]:
         """Возвращает последние добавленные заметки."""
+        from sqlalchemy.orm import selectinload
         result = await self.db.execute(
             select(models.Notes)
+            .options(selectinload(models.Notes.stickers))
             .order_by(models.Notes.created_at.desc())
             .limit(limit)
         )
-        return list(result.scalars().all())
+        notes = list(result.scalars().all())
+        for n in notes:
+            self._prepare_note_view(n)
+        return notes
 
-    async def search_notes(self, query: str, limit: int = 50) -> List[models.Notes]:
+    async def search_notes(self, query: str, limit: int = 500) -> List[models.Notes]:
         """Поиск заметок по тексту или категории."""
         try:
-            q = f"%{query.lower()}%"
+            from sqlalchemy.orm import selectinload
             result = await self.db.execute(
                 select(models.Notes)
+                .options(selectinload(models.Notes.stickers))
                 .where(
                     or_(
-                        func.lower(models.Notes.note).like(q),
-                        func.lower(models.Notes.category).like(q)
+                        models.Notes.note.ilike(f"%{query}%"),
+                        models.Notes.category.ilike(f"%{query}%")
                     )
                 )
                 .order_by(models.Notes.created_at.desc())
                 .limit(limit)
             )
-            return list(result.scalars().all())
+            notes = list(result.scalars().all())
+            for n in notes:
+                self._prepare_note_view(n)
+            return notes
         except Exception as e:
             logger.error(f"Error searching notes: {e}", exc_info=True)
             return []
@@ -129,10 +155,34 @@ class NoteService:
             
             # Post-process for UI compatibility
             for n in notes:
-                n.preview = (n.note[:100] + '...') if len(n.note) > 100 else n.note
-                n.title = f"[{n.category}]" if n.category else f"Note #{n.id}"
+                self._prepare_note_view(n)
                 
             return notes
         except Exception as e:
             logger.error(f"Error fetching pinned notes: {e}")
             return []
+
+    def _prepare_note_view(self, n: models.Notes):
+        """Adds preview and title fields to a note model instance for UI compatibility."""
+        n.preview = (n.note[:100] + '...') if len(n.note) > 100 else n.note
+        n.title = f"[{n.category}]" if n.category else f"Note #{n.id}"
+        if not hasattr(n, 'stickers') or n.stickers is None:
+            n.stickers = []
+
+
+    async def add_category(self, name: str) -> bool:
+        """Создает новую категорию для заметок."""
+        try:
+            # Check if exists
+            res = await self.db.execute(select(models.NoteCategory).where(models.NoteCategory.name == name))
+            if res.scalar_one_or_none():
+                return True # Already exists
+                
+            new_cat = models.NoteCategory(name=name)
+            self.db.add(new_cat)
+            await self.db.commit()
+            return True
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Error adding category {name}: {e}")
+            return False

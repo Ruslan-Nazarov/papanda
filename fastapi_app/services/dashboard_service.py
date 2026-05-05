@@ -100,9 +100,9 @@ class DashboardService:
         except Exception as e:
             logger.error(f"Error fetching sticky notes: {e}")
 
-        # 5. Обследования (Observation Tree)
+        # 5. Обследования (Observation Tree) - Limit to 5 for widget
         try:
-            data["observations"] = await self.observations_service.get_dashboard_observations(today_obj)
+            data["observations"] = await self.observations_service.get_dashboard_observations(today_obj, limit=5)
         except Exception as e:
             logger.error(f"Error fetching observations: {e}")
 

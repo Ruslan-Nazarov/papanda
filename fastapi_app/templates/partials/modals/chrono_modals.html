@@ -1,52 +1,48 @@
 <!-- Chronology Edit/Add Modal -->
 <div id="editChronoModal" class="modal">
-    <div class="modal-content" style="width: 600px;">
+    <div class="modal-content">
         <div class="modal-header">
-            <span id="chronoModalHeader" style="margin: 0;">Chronology Entry</span>
-            <span class="modal-close" onclick="closeEditChronoModal()">&times;</span>
+            <h3 id="chronoModalHeader">Chronology Entry</h3>
         </div>
         
         <div class="modal-body">
             <input type="hidden" id="editChronoId">
-            <input type="hidden" id="expandChronoId" /><!-- Compatibility with index.html JS -->
+            <input type="hidden" id="expandChronoId" />
             
-            <div class="form-group-large">
-                <label class="form-label-premium">Target Date & Time</label>
-                <input type="datetime-local" id="editChronoDate" class="form-input-premium">
-                <!-- Fallback ID for some scripts -->
-                <input type="date" id="expandChronoDate" class="form-input-premium" style="display:none;">
+            <div class="form-group">
+                <label class="form-label">Target Date & Time</label>
+                <input type="datetime-local" id="editChronoDate" class="form-input">
+                <input type="date" id="expandChronoDate" style="display:none;">
             </div>
 
-            <div class="form-group-large">
-                <label class="form-label-premium">Event Description</label>
-                <textarea id="editChronoTitle" class="form-input-premium" style="height: 350px; resize: vertical; font-family: inherit; font-size: 1.1rem;" placeholder="Tell your story..."></textarea>
-                <!-- Fallback ID -->
+            <div class="form-group">
+                <label class="form-label">Event Description</label>
+                <textarea id="editChronoTitle" class="form-input" style="height: 350px; resize: vertical; font-size: 1.1rem; line-height: 1.6;" placeholder="Tell your story..."></textarea>
                 <textarea id="expandChronoText" style="display:none;"></textarea>
             </div>
 
-            <div id="editChronoError" style="color: #c00; font-size: 0.9em; margin-bottom: 10px; min-height: 1.2em;"></div>
+            <div id="editChronoError" class="form-error-text"></div>
             <div id="expandChronoError" style="display:none;"></div>
         </div>
 
         <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeEditChronoModal()">Cancel</button>
-            <button type="button" class="btn-premium btn-save-premium" onclick="saveChronoEdit()">OK</button>
+            <button type="button" class="btn btn-secondary" onclick="closeEditChronoModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveChronoEdit()">Save Entry</button>
         </div>
     </div>
 </div>
 
 <!-- Chronology View Modal (Read-Only) -->
 <div id="chronoViewModal" class="modal">
-    <div class="modal-content" style="width: 700px;">
+    <div class="modal-content" style="width: 750px;">
         <div class="modal-header">
-            <span id="chronoViewDate" style="margin: 0; font-size: 1.1rem; color: #9b59b6;"></span>
-            <span class="modal-close" onclick="closeChronoViewModal()">&times;</span>
+            <h3 id="chronoViewDate" style="color: var(--color-indigo);"></h3>
         </div>
         <div class="modal-body">
-            <div id="chronoViewFullText" class="chrono-view-text"></div>
+            <div id="chronoViewFullText" class="chrono-view-text" style="font-size: 1.15rem; line-height: 1.8; color: var(--color-text-body);"></div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-premium btn-cancel-premium" onclick="closeChronoViewModal()">Close</button>
+            <button type="button" class="btn btn-secondary" onclick="closeChronoViewModal()">Close</button>
         </div>
     </div>
 </div>

@@ -11,16 +11,17 @@ class ObservationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_dashboard_observations(self, today_obj: date) -> List[Dict[str, Any]]:
+    async def get_dashboard_observations(self, today_obj: date, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Fetches all active observations and calculates completion status for the current week.
         """
         try:
-            # Fetch all active observations
-            obs_res = await self.db.execute(
-                select(models.Observation)
-                .order_by(models.Observation.priority.desc(), models.Observation.created_at.asc())
-            )
+            # Fetch all active observations, sorted chronologically
+            query = select(models.Observation).order_by(models.Observation.created_at.asc(), models.Observation.id.asc())
+            if limit:
+                query = query.limit(limit)
+                
+            obs_res = await self.db.execute(query)
             all_observations = obs_res.scalars().all()
             
             # Start of the current week (Monday)
@@ -40,7 +41,7 @@ class ObservationService:
                 logs_by_obs = {}
                 for log in logs_res.scalars().all():
                     logs_by_obs.setdefault(log.observation_id, []).append(log.done_at.weekday())
-
+ 
                 for obs in all_observations:
                     observations_data.append({
                         "id": obs.id,
@@ -49,6 +50,9 @@ class ObservationService:
                         "is_main": obs.is_main,
                         "status": getattr(obs, "status", "periodic"),
                         "created_at": obs.created_at,
+                        "end_time": obs.end_time,
+                        "no_time": obs.no_time,
+                        "task_id": obs.task_id,
                         "done_days": logs_by_obs.get(obs.id, [])
                     })
             return observations_data

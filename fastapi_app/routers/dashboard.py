@@ -53,7 +53,6 @@ async def index(
             if isinstance(d_obj, datetime):
                 d_obj = d_obj.date()
             one_thing_date = (today_obj.date() - d_obj).days
-
     if 'replacement' in dashboard_map:
         one_thing_replacement = dashboard_map['replacement'].title
 
@@ -172,3 +171,22 @@ async def save_dashboard_layout(
     layout = data.get("layout", "{}")
     await set_setting(db, "dashboard_layout", layout)
     return {"status": "success", "message": "Layout saved"}
+
+@router.get("/api/header/widgets", response_class=HTMLResponse)
+async def get_header_widgets(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    state_manager: StateManager = Depends(get_state_manager),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает свежий HTML для виджетов в шапке."""
+    dash_data = await dashboard_service.get_index_data()
+    ctx = await state_manager.get_runtime_context()
+    return templates.TemplateResponse(request, "partials/header_info_widgets.html", {
+        "date_important": dash_data.get('date_important', []),
+        "title_until": dash_data.get('title_until', '...'),
+        "days_remaining": dash_data.get('days_remaining', 0),
+        "title_after": dash_data.get('title_after', '...'),
+        "days_passed": dash_data.get('days_passed', 0),
+        "wink": ctx.get('wink', '...')
+    })

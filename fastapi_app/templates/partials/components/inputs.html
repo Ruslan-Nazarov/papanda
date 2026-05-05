@@ -1,0 +1,29 @@
+{# Premium Input Component #}
+{% macro premium_input(type='text', name='', id='', placeholder='', value='', required=False, style='', extra_classes='', rows=4, onkeydown='', oninput='') %}
+    {% if type == 'textarea' %}
+        <textarea 
+            {% if id %}id="{{ id }}"{% endif %}
+            {% if name %}name="{{ name }}"{% endif %}
+            placeholder="{{ placeholder }}"
+            {% if required %}required{% endif %}
+            class="form-input {{ extra_classes }}"
+            {% if rows %}rows="{{ rows }}"{% endif %}
+            {% if onkeydown %}onkeydown="{{ onkeydown }}"{% endif %}
+            {% if oninput %}oninput="{{ oninput }}"{% endif %}
+            style="{{ style }}"
+        >{{ value }}</textarea>
+    {% else %}
+        <input 
+            type="{{ type }}"
+            {% if id %}id="{{ id }}"{% endif %}
+            {% if name %}name="{{ name }}"{% endif %}
+            placeholder="{{ placeholder }}"
+            value="{{ value }}"
+            {% if required %}required{% endif %}
+            class="form-input {{ extra_classes }}"
+            {% if onkeydown %}onkeydown="{{ onkeydown }}"{% endif %}
+            {% if oninput %}oninput="{{ oninput }}"{% endif %}
+            style="{{ style }}"
+        >
+    {% endif %}
+{% endmacro %}

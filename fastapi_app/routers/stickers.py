@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from typing import List, Optional, Any, Dict
+from ..database import get_db
 from ..dependencies import get_sticky_note_service
 from ..services.sticky_note_service import StickyNoteService
 from ..services.auth import check_auth_dependency
-from ..database import get_db
 from pydantic import BaseModel
 from ..schemas import StickyNoteView, NoteView
 

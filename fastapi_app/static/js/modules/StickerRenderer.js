@@ -18,23 +18,26 @@ export class StickerRenderer {
                 const data = JSON.parse(trimmedText);
                 if (data && data.items && Array.isArray(data.items)) {
                     let html = '<ul class="sticker-list">';
-                    // If we are in the widget (small preview), limit items
+                    // Limit to 2 items to guarantee the 'more' button appears for anything extra
                     const items = (s.isWidget) ? data.items.slice(0, 2) : data.items;
                     
-                    items.forEach(item => {
+                    items.forEach((item, index) => {
+                        // Double-failsafe: never render more than 2 in widget mode
+                        if (s.isWidget && index >= 2) return;
+
                         const isDone = item.done === true || item.done === 'true';
                         let itemText = item.text || '';
                         itemText = this.renderStickerMath(itemText);
                         
                         html += `
-                            <li class="sticker-list-item ${isDone ? 'done' : ''}">
-                                <span class="sticker-check-icon">${isDone ? '✓' : '○'}</span>
-                                <span>${itemText}</span>
+                            <li class="sticker-list-item ${isDone ? 'done' : ''}" data-index="${index}">
+                                <span class="sticker-check-icon">${isDone ? '✓' : ''}</span>
+                                <span class="sticker-item-text">${itemText}</span>
                             </li>`;
                     });
                     html += '</ul>';
                     if (s.isWidget && data.items.length > 2) {
-                        html += `<button class="sticker-more-btn">+${data.items.length - 2} more</button>`;
+                        html += `<button class="sticker-more-capsule">+${data.items.length - 2} more</button>`;
                     }
                     return html;
                 }
@@ -64,7 +67,14 @@ export class StickerRenderer {
      */
     static createStickerElement(note, options = {}) {
         const noteDiv = document.createElement('div');
-        const isWidget = options.isWidget || false;
+        
+        // Hard-default to widget mode for safety
+        let isWidget = (options.isWidget !== undefined) ? options.isWidget : true;
+        
+        // Only auto-disable widget mode if it wasn't explicitly provided
+        if (options.isWidget === undefined && document.querySelector('.modal.active')) {
+            isWidget = false;
+        }
         
         // Add base class and list class if needed
         let classes = ['sticker-thought'];

@@ -1,0 +1,59 @@
+/* --- Dashboard Tasks Widget Specifics --- */
+
+.tasks-widget .widget-body {
+    padding-top: 0;
+}
+
+/* One Thing / Highlights Block */
+.task-highlights {
+    margin-bottom: 12px;
+    background: var(--color-primary-soft);
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-primary-glow);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.task-highlights::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--color-primary);
+}
+
+.highlight-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.highlight-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.03em;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.highlight-value {
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--color-primary);
+    letter-spacing: -0.01em;
+    display: inline-block;
+}
+
+.replace-value {
+    font-size: 0.75rem;
+    color: var(--color-text-body);
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Specific overrides removed to allow unified widgets.css to handle list items */

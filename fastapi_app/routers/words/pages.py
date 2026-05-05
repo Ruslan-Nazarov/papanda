@@ -112,8 +112,8 @@ async def language_learning(
     user: Any = Depends(check_auth_dependency),
 ) -> HTMLResponse:
     """Обучающая страница "Language Learning"."""
-    from ..services.note_service import NoteService
-    from ..models.notes import Notes
+    from ...services.note_service import NoteService
+    from ...models.notes import Notes
     from sqlalchemy import select
     
     ns = NoteService(db)

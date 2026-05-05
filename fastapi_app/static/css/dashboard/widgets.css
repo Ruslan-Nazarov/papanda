@@ -46,12 +46,16 @@
     align-items: center;
 }
 
-.widget-body {
+/* Scrollbar styles removed for centralization */
+
+.widget-body, .widget-content, .corkboard {
     flex: 1;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    padding-right: 2px;
 }
 
 /* Widget collapse */

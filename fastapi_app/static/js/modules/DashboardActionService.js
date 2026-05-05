@@ -71,17 +71,34 @@ export const DashboardActionService = {
         if (e) e.preventDefault();
         const form = e.target;
         try {
-            const response = await fetch('/submit_form_json', { method: 'POST', body: new FormData(form) });
+            const formData = new FormData(form);
+            const jsonData = Object.fromEntries(formData.entries());
+            
+            // Handle checkbox for Pydantic boolean
+            if (jsonData.sticker_apply_series !== undefined) {
+                jsonData.sticker_apply_series = formData.has('sticker_apply_series');
+            }
+
+            const response = await fetch('/submit_form_json', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonData) 
+            });
+            
             const data = await response.json();
-            if (data.status === 'success') {
+            if (response.ok && data.status === 'success') {
                 showToast('✓ ' + (data.message || 'Saved'), 'success');
                 form.reset();
-                if (window.updateHeaderStickerUI) window.updateHeaderStickerUI(false);
                 if (window.syncCategoryStickerVisibility) window.syncCategoryStickerVisibility();
                 if (window.setHeaderColor) window.setHeaderColor('', document.querySelector('.bg-none'));
+                
+                // Refresh badges immediately
+                if (window.HeaderService) window.HeaderService.refreshBadges();
+
                 setTimeout(() => location.reload(), 500);
             } else {
-                showToast('⚠ ' + (data.message || 'Error saving'), 'error');
+                const errorMsg = data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : (data.message || 'Error saving');
+                showToast('⚠ ' + errorMsg, 'error');
             }
         } catch (error) {
             console.error('[ActionService] Submit form error:', error);

@@ -16,6 +16,7 @@ class Observation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     end_time: Mapped[str | None] = mapped_column(String(10), nullable=True)
     no_time: Mapped[bool] = mapped_column(Boolean, default=False)
+    task_id: Mapped[int | None] = mapped_column(ForeignKey('task.id', ondelete='SET NULL'), nullable=True)
 
 class ObservationLog(Base):
     """

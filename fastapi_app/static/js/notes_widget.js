@@ -4,16 +4,38 @@
 
 class NotesWidget {
     constructor() {
+        this.currentNoteId = null;
         this.init();
     }
 
     init() {
         console.log("NotesWidget: Initializing...");
         this.setupEventListeners();
+        this.loadNotes(); // Load pinned notes immediately
+        
+        // Safety run for local time
+        setTimeout(() => {
+            if (window.applyLocalTimeGlobally) window.applyLocalTimeGlobally();
+        }, 500);
     }
+
 
     setupEventListeners() {
         // Global listeners for outside clicks on modals if needed
+    }
+
+    async loadNotes() {
+        const container = document.getElementById('pinned-notes-list');
+        if (!container) return;
+
+        try {
+            const res = await fetch('/api/notes/pinned');
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const notes = await res.json();
+            this.renderNotes(notes);
+        } catch (e) { 
+            console.error("[Notes] Failed to load pinned notes:", e);
+        }
     }
 
     async refreshPinnedNotes() {
@@ -36,41 +58,42 @@ class NotesWidget {
     }
 
     renderNoteCard(n) {
-        const stickersHtml = (n.stickers || []).map(s => `
-            <div class="mini-sticker-indicator" style="background: ${s.color || '#fff9c4'};" title="${s.text}"></div>
-        `).join('');
-
         return `
-            <div class="pinned-note-card premium-glass" data-id="${n.id}">
-                <div class="card-pin-status active" onclick="notesWidget.togglePin(${n.id}, true)">★</div>
-                <div class="card-header">
-                    <span class="card-category">${n.category || 'General'}</span>
-                    <div class="card-actions">
-                        <button class="action-btn" onclick="notesWidget.editNote(${n.id})" title="Edit">✎</button>
-                        <button class="action-btn delete" onclick="notesWidget.deleteNote(${n.id})" title="Delete">×</button>
+            <div class="pinned-note-card" data-id="${n.id}">
+                <div class="note-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span class="premium-badge">${n.category || 'General'}</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-row-action pin-btn active" 
+                                onclick="notesWidget.togglePin(${n.id}, true)" 
+                                title="Unpin from dashboard">
+                            📌
+                        </button>
+                        <button class="btn-row-action del-btn" 
+                                onclick="notesWidget.deleteNote(${n.id})" 
+                                title="Delete">
+                            ×
+                        </button>
                     </div>
                 </div>
-                <div class="card-body" onclick="notesWidget.viewNote(${n.id})">
-                    <p>${n.preview}</p>
-                </div>
-                <div class="card-footer">
-                    <div class="card-stickers">${stickersHtml}</div>
-                    <small>#${n.id}</small>
+                <div class="premium-note-text" onclick="notesWidget.viewNote(${n.id})" style="cursor: pointer; font-weight: 400; font-size: 0.9rem; line-height: 1.4; color: var(--color-text-dark); max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
+                    ${n.note}
                 </div>
             </div>
         `;
     }
 
-    async saveNote(isExpanded = false) {
+    async saveNote(isExpanded = false, shouldClose = true) {
         const prefix = isExpanded ? 'expanded' : 'regular';
+        
         const ta = document.getElementById(`${prefix}NoteTextarea`);
         const cat = document.getElementById(`${prefix}NoteCategory`);
         const pin = document.getElementById(`${prefix}NotePin`);
-        const noteId = document.getElementById(`${prefix}NoteId`)?.value;
+        const idInput = document.getElementById(`${prefix}NoteId`);
+        const noteId = idInput ? idInput.value : null;
 
         if (!ta || !ta.value.trim()) {
             if (typeof window.showToast === 'function') window.showToast("Note cannot be empty", "error");
-            return;
+            return null;
         }
 
         const formData = new FormData();
@@ -78,32 +101,39 @@ class NotesWidget {
         formData.append('category', cat ? cat.value : 'General');
         formData.append('is_pinned', pin ? pin.checked : true);
 
-        const url = noteId ? `/api/notes/${noteId}/update` : '/add_note';
-        
+        const url = (noteId && noteId !== 'NEW' && noteId !== '') ? `/api/notes/${noteId}/update` : '/add_note';
+
         try {
             const res = await fetch(url, { method: 'POST', body: formData });
+            
+            if (!res.ok) {
+                if (window.showToast) window.showToast("Save failed", "error");
+                return null;
+            }
+
             const result = await res.json();
             
             if (result.status === 'success') {
-                if (typeof window.showToast === 'function') window.showToast(`✓ Note ${noteId ? 'updated' : 'saved'}`, "success");
-                
-                // Clear input
-                ta.value = '';
-                if (pin) pin.checked = false;
-                if (document.getElementById(`${prefix}NoteId`)) document.getElementById(`${prefix}NoteId`).value = '';
-
-                // Close modal if expanded
-                if (isExpanded) {
-                    document.getElementById('expandedNoteEditorModal').style.display = 'none';
+                if (shouldClose) {
+                    ta.value = '';
+                    if (pin) pin.checked = false;
+                    if (idInput) idInput.value = '';
+                    
+                    if (isExpanded) {
+                        const modal = document.getElementById('expandedNoteEditorModal');
+                        if (modal) modal.style.display = 'none';
+                    }
                 }
 
                 this.refreshPinnedNotes();
+                return result.id || noteId; 
             } else {
                 if (typeof window.showToast === 'function') window.showToast("Error: " + result.message, "error");
             }
         } catch (e) {
             console.error("Save failed:", e);
         }
+        return null;
     }
 
     async editNote(id) {
@@ -130,7 +160,11 @@ class NotesWidget {
                 if (expCat) expCat.value = note.category;
                 if (expPin) expPin.checked = note.is_pinned;
                 expId.value = note.id;
+                this.currentNoteId = note.id;
                 
+                // Show existing stickers
+                this.renderStickersInEditor('expanded', note.stickers);
+
                 modal.style.display = 'flex';
                 setTimeout(() => expTa.focus(), 100);
             }
@@ -140,8 +174,103 @@ class NotesWidget {
         }
     }
 
+    renderStickersInEditor(prefix, stickers, retryCount = 0) {
+        const list = document.getElementById(`${prefix}NoteStickersList`);
+        const section = document.getElementById(`${prefix}NoteStickersSection`);
+        if (!list || !section) return;
+
+        // If renderer isn't ready yet, wait a bit and try again (up to 10 times)
+        if (typeof window.createStickerElement !== 'function') {
+            if (retryCount < 10) {
+                setTimeout(() => this.renderStickersInEditor(prefix, stickers, retryCount + 1), 150);
+                return;
+            }
+        }
+
+        list.innerHTML = '';
+        if (stickers && stickers.length > 0) {
+            section.style.display = 'block';
+            stickers.forEach((s, idx) => {
+                if (typeof window.createStickerElement === 'function') {
+                    try {
+                        const noteDiv = window.createStickerElement(s, { 
+                            isWidget: true, 
+                            onClick: () => {
+                                if (window.openStickerModal) window.openStickerModal({ id: s.id });
+                            }
+                        });
+                        
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'editor-mini-sticker-wrapper';
+                        wrapper.appendChild(noteDiv);
+                        list.appendChild(wrapper);
+                    } catch (err) {
+                        console.error("[NotesWidget] Render crash:", err);
+                    }
+                } else {
+                    const fb = document.createElement('div');
+                    fb.className = 'mini-sticker-preview';
+                    fb.style.background = s.color || '#fff9c4';
+                    fb.textContent = s.title || `Sticker ${s.id}`;
+                    list.appendChild(fb);
+                }
+            });
+        } else {
+            section.style.display = (prefix === 'expanded') ? 'block' : 'none';
+            list.innerHTML = (prefix === 'expanded') ? '<span style="color:var(--color-text-faint);font-size:0.8rem;">No stickers yet</span>' : '';
+        }
+    }
+
+    async manageStickersForNewNote(retryCount = 0) {
+        try {
+            // Ensure bridge is ready
+            const bridgeReady = typeof window.openParentStickers === 'function';
+
+            if (!bridgeReady) {
+                if (retryCount < 10) {
+                    setTimeout(() => this.manageStickersForNewNote(retryCount + 1), 100);
+                    return;
+                }
+                if (window.showToast) window.showToast("Stickers module not loaded yet", "error");
+                return;
+            }
+
+            const ta = document.getElementById('expandedNoteTextarea');
+            if (!ta || !ta.value.trim()) {
+                if (window.showToast) window.showToast("Write something first!", "info");
+                return;
+            }
+
+            // 1. If we already have an ID, just open modal
+            if (this.currentNoteId) {
+                window.openParentStickers('note', this.currentNoteId);
+                return;
+            }
+
+            // 2. If no ID, we MUST save first
+            const savedId = await this.saveNote(true, false); 
+
+            if (savedId) {
+                this.currentNoteId = savedId;
+                const idInput = document.getElementById('expandedNoteId');
+                if (idInput) idInput.value = savedId;
+                
+                window.openParentStickers('note', savedId);
+            }
+        } catch (e) {
+            console.error("Sticker flow failed:", e);
+        }
+    }
+
+    formatLocalTime(utcString) {
+        if (!utcString) return '';
+        const d = new Date(utcString + 'Z'); // Force UTC interpretation
+        return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
     async deleteNote(id) {
-        if (!confirm("Delete this note permanently?")) return;
+        const confirmed = await window.NotificationService.confirm("Delete this note permanently?", { isDanger: true, okText: 'Delete' });
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
@@ -154,42 +283,175 @@ class NotesWidget {
         }
     }
 
-    async togglePin(id, currentPinned) {
-        const action = currentPinned ? 'unpin' : 'pin';
+    // --- All Notes Modal Logic ---
+
+    showAllNotesModal() {
+        const modal = document.getElementById('allNotesModal');
+        if (!modal) return;
+        
+        modal.style.display = 'flex';
+        const input = document.getElementById('allNotesSearchInput');
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
+        }
+        
+        // Initial load
+        this.searchInModal('');
+    }
+
+    async searchInModal(query) {
+        const grid = document.getElementById('allNotesGrid');
+        const debug = document.getElementById('notesCountDebug');
+        if (!grid) return;
+
+        if (debug) debug.innerText = '(loading...)';
+
         try {
-            const res = await fetch(`/api/notes/${id}/${action}`, { method: 'POST' });
+            const res = await fetch(`/api/notes/search?query=${encodeURIComponent(query)}`);
             if (res.ok) {
-                if (typeof window.showToast === 'function') window.showToast(`Note ${currentPinned ? 'unpinned' : 'pinned'}`, "success");
-                this.refreshPinnedNotes();
-                
-                // If search modal is open, refresh it too
-                if (document.getElementById('noteSearchModal').style.display === 'flex') {
-                    this.searchAllNotes(document.getElementById('noteGlobalSearchInput').value);
-                }
+                const notes = await res.json();
+                if (debug) debug.innerText = `(${notes.length} found)`;
+                this.renderModalCards(notes);
+            } else {
+                if (debug) debug.innerText = '(error loading)';
             }
         } catch (e) {
-            console.error("Toggle pin failed:", e);
+            console.error("Failed to search notes in modal:", e);
+            if (debug) debug.innerText = '(fetch failed)';
         }
+    }
+
+    renderNotes(notes) {
+        const container = document.getElementById('pinned-notes-list');
+        if (!container) return;
+
+        if (!notes || notes.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px 20px; font-style: italic;">No pinned notes on dashboard</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        notes.forEach(n => {
+            const card = document.createElement('div');
+            card.className = 'pinned-note-card'; // Back to correct style
+            card.dataset.id = n.id;
+            
+            card.innerHTML = `
+                <div class="note-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span class="premium-badge">${n.category || 'General'}</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-row-action pin-btn active" 
+                                onclick="notesWidget.togglePin(${n.id}, true)" 
+                                title="Unpin from dashboard">
+                            📌
+                        </button>
+                        <button class="btn-row-action del-btn" 
+                                onclick="notesWidget.deleteNote(${n.id})" 
+                                title="Delete">
+                            ×
+                        </button>
+                    </div>
+                </div>
+                <div class="premium-note-text" style="cursor: pointer; font-size: 0.9rem; line-height: 1.5; color: var(--color-text-dark); max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;"></div>
+            `;
+            
+            const textEl = card.querySelector('.premium-note-text');
+            textEl.textContent = n.note;
+            textEl.onclick = () => this.viewNote(n.id);
+            
+            container.appendChild(card);
+        });
+    }
+
+    renderModalCards(notes) {
+        const container = document.getElementById('allNotesGrid');
+        if (!container) return;
+
+        if (!notes || notes.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; color: var(--color-text-faint); padding: 60px 20px;">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
+                    <p style="font-size: 1.1rem; font-weight: 500;">No notes matching your search</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = '';
+        notes.forEach(n => {
+            const card = document.createElement('div');
+            card.className = 'pinned-note-card search-result-card';
+            card.dataset.id = n.id;
+            card.style.cssText = 'background: var(--color-bg-white); border: 2px solid var(--color-border-light); cursor: default; transition: all 0.2s ease;';
+            
+            card.innerHTML = `
+                <div class="note-card-header">
+                    <span class="note-card-category">${n.category || 'General'}</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="note-card-action pin-btn ${n.is_pinned ? 'active' : ''}" 
+                                onclick="notesWidget.togglePin(${n.id}, ${n.is_pinned})" 
+                                title="${n.is_pinned ? 'Unpin from dashboard' : 'Pin to dashboard'}">
+                            ${n.is_pinned ? '📌' : '📍'}
+                        </button>
+                        <button class="note-card-action del-btn" onclick="notesWidget.deleteNote(${n.id})" title="Delete">×</button>
+                    </div>
+                </div>
+                <div class="premium-note-text" style="cursor: pointer; font-size: 0.95rem; line-height: 1.5; color: var(--color-text-dark); max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;"></div>
+            `;
+            
+            const textEl = card.querySelector('.premium-note-text');
+            textEl.textContent = n.note;
+            textEl.onclick = () => this.viewNote(n.id);
+            
+            container.appendChild(card);
+        });
     }
 
     async viewNote(id) {
         try {
             const res = await fetch(`/api/notes/${id}`);
-            const note = await res.json();
-            
-            // We can reuse the viewRegularNoteDetails if it still exists or implement here
-            if (window.app && typeof window.app.viewRegularNoteDetails === 'function') {
-                window.app.viewRegularNoteDetails(note.id, note.category, note.note, note.stickers);
-            } else {
-                // Fallback implementation
-                const modal = document.getElementById('regularNoteViewModal');
-                if (modal) {
-                    document.getElementById('regViewModalCategory').innerText = note.category;
-                    document.getElementById('regViewModalBody').innerText = note.note;
-                    modal.style.display = 'flex';
-                }
+            if (!res.ok) {
+                console.error(`[Notes] Failed to fetch note ${id}`);
+                return;
             }
-        } catch (e) { console.error(e); }
+
+            const note = await res.json();
+            const modal = document.getElementById('noteViewModal');
+            if (modal) {
+                document.getElementById('noteViewCategory').innerText = note.category || 'General';
+                document.getElementById('noteViewFullText').innerText = note.note;
+                
+                const stickerList = document.getElementById('dbViewNoteStickersList');
+                const stickerBoard = document.getElementById('dbViewNoteStickerBoard');
+                if (stickerList && stickerBoard) {
+                    if (note.stickers && note.stickers.length > 0) {
+                        stickerBoard.style.display = 'block';
+                        stickerList.innerHTML = '';
+                        note.stickers.forEach(s => {
+                            // Use the official renderer for visual consistency
+                            if (typeof window.createStickerElement === 'function') {
+                                const sEl = window.createStickerElement(s, { isWidget: false });
+                                stickerList.appendChild(sEl);
+                            } else {
+                                const sDiv = document.createElement('div');
+                                sDiv.className = 'sticker-mini-preview';
+                                sDiv.style.background = s.color || '#fff9c4';
+                                sDiv.innerText = s.title || s.text.substring(0, 20) + '...';
+                                stickerList.appendChild(sDiv);
+                            }
+                        });
+                    } else {
+                        stickerBoard.style.display = 'none';
+                    }
+                }
+
+                if (window.ModalManager) window.ModalManager.open('noteViewModal');
+                else modal.style.display = 'flex';
+            }
+        } catch (e) { 
+            console.error("[Notes] Exception in viewNote:", e);
+        }
     }
 
     showExpandedEditor() {
@@ -209,50 +471,85 @@ class NotesWidget {
         }
     }
 
-    showSearchModal() {
-        document.getElementById('noteSearchModal').style.display = 'flex';
-        this.searchAllNotes('');
-    }
 
-    async searchAllNotes(query) {
-        const resultsEl = document.getElementById('noteGlobalSearchResults');
-        if (!resultsEl) return;
-
-        try {
-            const res = await fetch(`/api/stickers/notes_search?query=${encodeURIComponent(query)}`);
-            if (res.ok) {
-                const notes = await res.json();
-                this.renderSearchResults(notes);
+    showAddCategoryModal() {
+        const modal = document.getElementById('addCategoryModal');
+        const input = document.getElementById('newCategoryName');
+        if (modal) {
+            modal.style.display = 'flex';
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 100);
             }
-        } catch (e) {
-            console.error("Search failed:", e);
         }
     }
 
-    renderSearchResults(notes) {
-        const container = document.getElementById('noteGlobalSearchResults');
-        if (notes.length === 0) {
-            container.innerHTML = '<div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">No notes found</div>';
+    async saveNewCategory() {
+        const input = document.getElementById('newCategoryName');
+        if (!input || !input.value.trim()) {
+            if (typeof window.showToast === 'function') window.showToast("Category name cannot be empty", "error");
             return;
         }
-        
-        container.innerHTML = notes.map(n => `
-            <div class="search-note-card" onclick="notesWidget.viewNote(${n.id})" title="Click to view">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="note-pin-btn ${n.is_pinned?'active':''}" 
-                              onclick="event.stopPropagation(); notesWidget.togglePin(${n.id}, ${n.is_pinned})"
-                              style="font-size: 1.2em; color: ${n.is_pinned ? '#f59e0b' : '#cbd5e1'}; cursor: pointer;">
-                            ${n.is_pinned ? '★' : '☆'}
-                        </span>
-                        <span class="card-category-tag">${n.category || 'General'}</span>
-                    </div>
-                    <button class="action-btn" onclick="event.stopPropagation(); notesWidget.editNote(${n.id})">✎</button>
-                </div>
-                <div class="search-note-preview">${n.note}</div>
-            </div>
-        `).join('');
+
+        const name = input.value.trim();
+        try {
+            const res = await fetch('/api/notes/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            });
+
+            if (res.ok) {
+                if (typeof window.showToast === 'function') window.showToast(`✓ Category "${name}" added`, "success");
+                document.getElementById('addCategoryModal').style.display = 'none';
+                
+                // Refresh all category selects
+                this.updateCategorySelects(name);
+            } else {
+                const err = await res.json();
+                if (typeof window.showToast === 'function') window.showToast(err.detail || "Error adding category", "error");
+            }
+        } catch (e) {
+            console.error("Failed to add category:", e);
+        }
+    }
+
+    updateCategorySelects(newName) {
+        // Find all category selects and add the new option, selecting it
+        const selects = ['regularNoteCategory', 'expandedNoteCategory', 'editNoteCategory'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const opt = document.createElement('option');
+                opt.value = newName;
+                opt.text = newName;
+                el.add(opt);
+                el.value = newName; // Auto-select new category
+            }
+        });
+    }
+
+    async togglePin(id, currentStatus) {
+        try {
+            const res = await fetch(`/api/notes/${id}/toggle-pin`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                this.loadNotes();
+                if (typeof window.showToast === 'function') {
+                    const data = await res.json();
+                    window.showToast(data.message || "Note pin status updated", "success");
+                }
+            }
+        } catch (e) {
+            console.error("[Notes] Failed to toggle pin:", e);
+        }
     }
 }
 
 window.notesWidget = new NotesWidget();
+
+window.closeNoteViewModal = function() {
+    if (window.ModalManager) window.ModalManager.close('noteViewModal');
+    else document.getElementById('noteViewModal').style.display = 'none';
+};

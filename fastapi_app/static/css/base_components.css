@@ -1,253 +1,103 @@
-/* ========================================================
-   PAPANDA BASE COMPONENTS
-   Общие UI-компоненты для всего приложения
-   ======================================================== */
+/* --- PAPANDA PREMIUM BASE COMPONENTS --- */
 
-/* --- Модальные окна (Универсальные) --- */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: var(--z-modal);
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+/* --- Buttons --- */
+.btn, .btn-premium {
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-slow);
+    gap: 8px;
+    user-select: none;
 }
 
-.modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    margin: auto;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    width: 800px;
-    max-width: 95%;
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-xl);
-    animation: modalFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
+.btn:active, .btn-premium:active { transform: scale(0.96); }
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
 }
 
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+.btn-primary, .btn-save-premium {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 12px var(--color-primary-glow);
 }
 
-.modal-header {
-    padding: var(--spacing-5) var(--spacing-6);
-    border-bottom: 1px solid var(--color-border-light);
-    font-size: var(--text-xl);
-    font-weight: 700;
+.btn-primary:hover, .btn-save-premium:hover {
+    background: var(--color-primary-dark);
+    box-shadow: 0 6px 20px var(--color-primary-glow);
+    transform: translateY(-2px);
+}
+
+.btn-secondary, .btn-cancel-premium {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-medium);
+}
+
+.btn-secondary:hover, .btn-cancel-premium:hover {
+    background: var(--color-border);
     color: var(--color-text-dark);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--color-bg-page);
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
-.modal-close {
-    font-size: 1.5em;
-    font-weight: bold;
+.btn-success { background: var(--color-success); color: white; }
+.btn-success:hover { background: var(--color-success-dark); box-shadow: 0 4px 12px var(--color-success-glow); }
+
+.btn-danger { background: var(--color-error); color: white; }
+.btn-danger:hover { background: var(--color-error-dark); box-shadow: 0 4px 12px var(--color-error-glow); }
+
+/* --- Inputs --- */
+.form-input, .form-input-premium {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all var(--transition-base);
+    color: var(--color-text-dark);
+    box-sizing: border-box;
+}
+
+.form-input:focus, .form-input-premium:focus {
+    outline: none;
+    background: white;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+.form-label, .form-label-premium {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--color-text-muted);
-    cursor: pointer;
-    line-height: 1;
-    transition: all var(--transition-fast);
 }
 
-.modal-close:hover { 
-    color: var(--color-text-dark); 
-    transform: scale(1.1); 
-}
-
-.modal-body {
-    padding: var(--spacing-6);
-    overflow-y: auto;
-    flex: 1;
-}
-
-.modal-footer {
-    padding: var(--spacing-5) var(--spacing-6);
-    border-top: 1px solid var(--color-border-light);
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--spacing-4);
-    background: var(--color-bg-white);
-    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-}
-
-/* --- Поповеры (Всплывающие окна) --- */
+/* --- Popovers --- */
 .event-popover {
     display: none;
     position: absolute;
     z-index: 1000;
-    width: 280px;
-    background: var(--color-bg-white);
+    width: 300px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    padding: 15px;
-    border: 1px solid var(--color-border-light);
-    animation: popIn 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    padding: 20px;
+    border: 1px solid var(--glass-border);
+    animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes popIn {
     from { opacity: 0; transform: scale(0.9) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.popover-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--color-bg-subtle);
-    padding-bottom: 8px;
-}
-
-.popover-title {
-    font-weight: 700;
-    color: var(--color-text-dark);
-    font-size: 1.1em;
-    word-break: break-word;
-}
-
-.popover-close {
-    cursor: pointer;
-    color: var(--color-text-faint);
-    font-size: 1.2em;
-    line-height: 1;
-}
-
-.popover-body {
-    font-size: 0.9em;
-    color: var(--color-text-muted);
-}
-
-.popover-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 5px;
-}
-
-.popover-icon {
-    font-size: 1.1em;
-}
-
-/* --- Кнопки (Премиум) --- */
-.btn {
-    padding: 12px 28px;
-    border-radius: var(--radius-md);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all var(--transition-base);
-    border: none;
-    font-size: var(--text-base);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-2);
-}
-
-.btn:active {
-    transform: scale(0.98);
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    color: white;
-    box-shadow: 0 4px 6px var(--color-primary-glow);
-}
-
-.btn-primary:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 12px var(--color-primary-glow);
-}
-
-.btn-secondary {
-    background-color: var(--color-bg-subtle);
-    color: var(--color-text-medium);
-}
-
-.btn-secondary:hover {
-    background-color: var(--color-border);
-    color: var(--color-text-dark);
-}
-
-.btn-success {
-    background-color: var(--color-success);
-    color: white;
-}
-
-.btn-success:hover {
-    background-color: var(--color-success-dark);
-    box-shadow: 0 4px 12px var(--color-success-glow);
-}
-
-.btn-danger {
-    background-color: var(--color-error);
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: var(--color-error-dark);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-}
-
-/* --- Формы (Премиум) --- */
-.form-group {
-    margin-bottom: var(--spacing-5);
-}
-
-.form-label {
-    display: block;
-    margin-bottom: var(--spacing-2);
-    font-weight: 600;
-    color: var(--color-text-medium);
-    font-size: var(--text-sm);
-}
-
-.form-input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--text-base);
-    font-family: inherit;
-    transition: all var(--transition-base);
-    background: var(--color-bg-white);
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 4px var(--color-primary-glow);
-}
-
-/* --- Скроллбары --- */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--color-border-medium);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-faint);
 }

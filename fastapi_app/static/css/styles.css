@@ -1,24 +1,26 @@
-/* --- PAPANDA GLOBAL STYLES (Entry Point) --- */
+/* --- PAPANDA MODULAR CSS ARCHITECTURE --- */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Indie+Flower&display=swap');
-
+/* 1. Base Styles & Tokens */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import 'base/variables.css';
 @import 'base/reset.css';
-@import 'base/forms.css';
-@import 'base/tables.css';
+@import 'base/scrollbar.css';
 
-@import 'layout/header.css';
-@import 'layout/footer.css';
-
+/* 2. Unified UI Kit (Components) */
+@import 'components/forms.css';
 @import 'components/buttons.css';
+@import 'components/cards.css';
 @import 'components/modals.css';
-@import 'components/widgets.css';
 @import 'components/stickers.css';
 
-/* Shared base components */
-@import 'base_components.css';
+/* 3. Layout & Widgets */
+@import 'layout/header.css';
+@import 'layout/footer.css';
+@import 'layout/grid.css';
+@import 'layout/journey.css';
+@import 'components/widgets.css';
+@import 'dashboard/notes_widget.css';
+@import 'dashboard/tasks_widget.css';
 
-/* Utility Classes */
-.text-orange { color: var(--color-primary); }
-.text-green { color: var(--color-success); }
-.text-amber { color: var(--color-warning); }
+
+/* Scrollbar styles moved to base/scrollbar.css */

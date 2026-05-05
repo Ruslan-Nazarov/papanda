@@ -1,0 +1,52 @@
+<div class="premium-card note-chrono-widget" id="widget-note-chrono">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">📝</span>
+            <span>Journal & Notes</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openNoteSearch()" title="Search All Notes">🔍</button>
+            <button type="button" class="btn btn-primary btn-icon" onclick="openExpandedEditor()" title="Expand Editor">↗</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
+        </div>
+    </div>
+
+    <div class="widget-body" style="padding-top: 0;">
+        <!-- Quick Note / Chronology Tabs -->
+        <div class="premium-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; background: var(--color-bg-subtle); padding: 4px; border-radius: 12px; border: 1px solid var(--color-bg-app);">
+            <button id="tab-note" class="type-segment active" onclick="switchNoteTab('note')" style="flex: 1; justify-content: center; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Quick Note</button>
+            <button id="tab-chrono" class="type-segment" onclick="switchNoteTab('chrono')" style="flex: 1; justify-content: center; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Chronology</button>
+        </div>
+
+        <!-- Note Section -->
+        <div id="section-note" class="note-section">
+            <div class="form-group">
+                <textarea id="dashboardNoteTextarea" 
+                          class="form-input" 
+                          placeholder="Quick note... (Ctrl+Enter to save)" 
+                          style="min-height: 180px; resize: vertical; line-height: 1.6; font-size: 1rem;"
+                          onkeydown="if(event.ctrlKey && event.key === 'Enter') saveQuickNote()"></textarea>
+            </div>
+            
+            <div id="pinnedNotesList" class="pinned-notes-grid" style="margin-top: 16px;">
+                <!-- Pinned notes from JS -->
+            </div>
+        </div>
+
+        <!-- Chronology Section -->
+        <div id="section-chrono" class="chrono-section" style="display: none;">
+            <div class="form-group">
+                <textarea id="dashboardChronoTextarea" 
+                          class="form-input" 
+                          placeholder="What happened today? (Ctrl+Enter to save)" 
+                          style="min-height: 180px; resize: vertical; line-height: 1.6; font-size: 1rem;"
+                          onkeydown="if(event.ctrlKey && event.key === 'Enter') saveChronoFromDashboard()"></textarea>
+            </div>
+            
+            <div id="recentChronoList" class="chrono-timeline" style="margin-top: 16px;">
+                <!-- Recent chrono entries from JS -->
+            </div>
+        </div>
+    </div>
+</div>

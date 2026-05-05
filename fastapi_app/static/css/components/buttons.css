@@ -1,118 +1,80 @@
-/* --- PAPANDA Button System --- */
+/* --- UNIFIED BUTTON SYSTEM --- */
 
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    border: none;
-    text-decoration: none;
-    font-family: inherit;
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    color: white;
-}
-.btn-primary:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--color-primary-glow);
-}
-
-.btn-secondary {
-    background-color: var(--color-bg-subtle);
-    color: var(--color-text-medium);
-}
-.btn-secondary:hover { background-color: var(--color-border); }
-
-.btn-danger {
-    background-color: var(--color-error);
-    color: white;
-}
-.btn-danger:hover { background-color: var(--color-error-dark); }
-
-.btn-success {
-    background-color: var(--color-success);
-    color: white;
-}
-.btn-success:hover { background-color: var(--color-success-dark); }
-
-.btn-blue { background-color: var(--color-blue) !important; color: white !important; }
-.btn-orange { background-color: var(--color-primary) !important; color: white !important; }
-
-/* Premium Buttons */
-.btn-premium {
-    background: linear-gradient(135deg, var(--color-indigo-light) 0%, var(--color-indigo) 100%);
-    color: var(--color-white) !important;
-    border: none;
-    border-radius: var(--radius-md);
-    padding: 12px 24px;
-    font-weight: 700;
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 8px;
-    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: none;
+    user-select: none;
+    white-space: nowrap;
 }
-.btn-premium:hover {
+
+/* Primary (Action) */
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(242, 153, 74, 0.39);
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-dark);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    filter: brightness(1.1);
+    box-shadow: 0 6px 20px rgba(242, 153, 74, 0.23);
 }
-.btn-premium:active { transform: translateY(0); }
 
-.btn-premium-secondary {
-    background: var(--color-bg-surface);
-    color: var(--color-text-body) !important;
-    border: 1px solid var(--color-border);
+/* Secondary (Glass/Cancel) */
+.btn-secondary {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-body);
+    border: 1.5px solid var(--color-border-light);
 }
-.btn-premium-secondary:hover { 
-    background: var(--color-bg-subtle); 
-    color: var(--color-text-dark) !important;
+
+.btn-secondary:hover {
+    background: white;
     border-color: var(--color-border-medium);
+    color: var(--color-text-dark);
 }
 
-/* Action buttons */
-.btn-mini {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85em;
-    color: var(--color-text-muted);
-    padding: 2px 5px;
-    text-decoration: none;
+/* Danger (Delete/Archive) */
+.btn-danger {
+    background: var(--color-error-light);
+    color: var(--color-error);
 }
-.btn-mini:hover { color: var(--color-text-dark); }
-.btn-mini.del:hover { color: var(--color-error); }
 
-.task-button {
-    background-color: var(--color-indigo);
-    color: var(--color-white);
-    border: none;
-    padding: 5px 12px;
+.btn-danger:hover {
+    background: var(--color-error);
+    color: white;
+}
+
+/* Small Variant */
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
     border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background-color var(--transition-base);
 }
-.task-button:hover { background-color: var(--color-indigo-dark); }
 
-.read-button {
-    background-color: var(--color-error);
-    color: var(--color-white);
-    border: none;
-    padding: 5px 12px;
+/* Icon Only Button */
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
     border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background-color var(--transition-base);
+    background: transparent;
+    color: var(--color-text-faint);
 }
-.read-button:hover { background-color: var(--color-error-dark); }
+
+.btn-icon:hover {
+    background: var(--color-bg-subtle);
+    color: var(--color-primary);
+}
+
+.btn:active {
+    transform: scale(0.96);
+}

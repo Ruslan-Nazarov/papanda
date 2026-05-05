@@ -1,17 +1,12 @@
 /**
  * recurrence_form.js — Recurrence controls for the Dashboard header add-form.
- * Extracted from dashboard_index.js (lines 315–398).
  */
 
 import { calculateEndDate } from './ui_helpers.js';
 
-// ─── Private state (DOM refs resolved on init) ───────────────────────────────
-
 let repeatSelect, repeatHidden, repeatEnd, repeatCount;
 let repeatEndFromCount, endDateBlock, endCountBlock, weekdayRow;
 let recurrenceToggle, recurrenceMenu;
-
-// ─── Private helpers ─────────────────────────────────────────────────────────
 
 function calcEndDateFromCount() {
     if (!repeatSelect || !repeatCount || !repeatEndFromCount) return;
@@ -42,15 +37,11 @@ function updateRecurrenceBtnStyle() {
     recurrenceToggle.classList.toggle('active', val && val !== 'none');
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
-
 window.closeRecurrence = function () {
     if (repeatHidden) repeatHidden.value = buildRepeatValue();
-    if (recurrenceMenu) recurrenceMenu.classList.remove('show');
+    if (recurrenceMenu) recurrenceMenu.classList.remove('active');
     updateRecurrenceBtnStyle();
 };
-
-// ─── Initializer ─────────────────────────────────────────────────────────────
 
 export function initRecurrenceForm() {
     recurrenceToggle = document.getElementById('recurrenceToggle');
@@ -64,7 +55,6 @@ export function initRecurrenceForm() {
     endCountBlock    = document.getElementById('endCountBlock');
     weekdayRow       = document.getElementById('weekdayRow');
 
-    // End-mode radio buttons (date vs count)
     document.querySelectorAll('input[name="rec_end_mode"]').forEach(radio => {
         radio.addEventListener('change', () => {
             const isCount = document.getElementById('recEndCount').checked;
@@ -78,21 +68,23 @@ export function initRecurrenceForm() {
     if (repeatEnd) repeatEnd.disabled = false;
     if (repeatEndFromCount) repeatEndFromCount.disabled = true;
 
-    // Count/date change recalculates end date
     if (repeatCount) repeatCount.addEventListener('input', calcEndDateFromCount);
     if (repeatSelect) repeatSelect.addEventListener('change', calcEndDateFromCount);
     const commonDateEl = document.getElementById('common_date');
     if (commonDateEl) commonDateEl.addEventListener('change', calcEndDateFromCount);
 
-    // Toggle menu visibility
     if (recurrenceToggle && recurrenceMenu) {
+        console.log("[RecurrenceForm] Initialized toggle and menu");
         recurrenceToggle.addEventListener('click', (e) => {
+            console.log("[RecurrenceForm] Toggle clicked");
             e.stopPropagation();
-            recurrenceMenu.classList.toggle('show');
+            recurrenceMenu.classList.toggle('active');
+            console.log("[RecurrenceForm] Menu active state:", recurrenceMenu.classList.contains('active'));
         });
+    } else {
+        console.warn("[RecurrenceForm] Toggle or menu not found", {recurrenceToggle, recurrenceMenu});
     }
 
-    // Weekly day-of-week row visibility
     if (repeatSelect && weekdayRow) {
         repeatSelect.addEventListener('change', () => {
             const isWeekly = repeatSelect.value === 'weekly';
@@ -101,11 +93,10 @@ export function initRecurrenceForm() {
         });
     }
 
-    // Close menu on outside click
     document.addEventListener('click', (e) => {
         if (recurrenceMenu && recurrenceToggle) {
             if (!recurrenceMenu.contains(e.target) && e.target !== recurrenceToggle) {
-                if (recurrenceMenu.classList.contains('show')) window.closeRecurrence();
+                if (recurrenceMenu.classList.contains('active')) window.closeRecurrence();
             }
         }
     });

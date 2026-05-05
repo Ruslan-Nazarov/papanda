@@ -1,0 +1,18 @@
+<div class="premium-badge badge-orange" title="{{ title_until }}">
+    <span class="badge-label">⏳ {{ title_until }}</span>
+    <span class="badge-value">{{ days_remaining }} <span style="font-size: 0.7rem; opacity: 0.6;">days</span></span>
+</div>
+<div class="premium-badge badge-green" title="{{ title_after }}">
+    <span class="badge-label">⌛ {{ title_after }}</span>
+    <span class="badge-value">{{ days_passed }} <span style="font-size: 0.7rem; opacity: 0.6;">days</span></span>
+</div>
+{% for event in date_important %}
+<div class="premium-badge badge-amber">
+    <span class="badge-label">⭐ Important</span>
+    <span class="badge-value-text">{% if event.recurrence_id %}🔁 {% endif %}{{ event.title }}</span>
+</div>
+{% endfor %}
+<div id="wink-display" class="premium-badge badge-purple" title="{{ wink }}">
+    <span class="badge-label">😉 Wink</span>
+    <span class="badge-value-text">{{ wink }}</span>
+</div>

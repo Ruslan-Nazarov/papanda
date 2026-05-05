@@ -1,84 +1,65 @@
-                    <div class="section task-section">
-                        <div class="widget-header">
-                            <h1 class="widget-title">
-                                <span class="drag-handle">⠿</span>Tasks
-                            </h1>
-                            <button
-                                type="button"
-                                class="collapse-btn"
-                                onclick="toggleWidget(this)"
-                                title="Свернуть / развернуть"
-                            >
-                                ▾
-                            </button>
+<div class="premium-card tasks-widget" id="widget-tasks">
+    <div class="widget-header" style="margin-bottom: 8px;">
+        <div class="widget-title">
+            <span class="widget-icon">🎯</span>
+            <span>Tasks</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
+        </div>
+    </div>
+
+    <div class="widget-body">
+        <!-- Compact One Thing Block -->
+        <div class="task-highlights">
+            <div class="highlight-row">
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                    <span class="highlight-label">One Thing:</span>
+                    <span class="highlight-value">{{ one_thing }}</span>
+                </div>
+                {% if one_thing_date %}
+                <div class="premium-badge" style="padding: 1px 6px; font-size: 0.6rem;">{{ one_thing_date }} <span style="opacity: 0.6;">DAYS</span></div>
+                {% endif %}
+            </div>
+            <div class="highlight-row" style="margin-top: 2px;">
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                    <span class="highlight-label">Replace:</span>
+                    <span class="replace-value">{{ one_thing_replacement }}</span>
+                </div>
+            </div>
+        </div>
+
+
+        <ul class="premium-list">
+            {% for task in tasks %}
+            <li class="premium-list-item" data-id="{{ task.id }}">
+                <span class="premium-item-name">{{ task.name }}</span>
+                <span class="task-meta">
+                    {% if task.created_at %}
+                        {% set diff = now_utc - task.created_at %}
+                        {% if diff.days > 0 %}{{ diff.days }}d
+                        {% elif diff.seconds > 3600 %}{{ (diff.seconds / 3600)|int }}h
+                        {% elif diff.seconds > 60 %}{{ (diff.seconds / 60)|int }}m
+                        {% else %}now{% endif %}
+                    {% else %}?{% endif %}
+                </span>
+                
+                <div class="row-actions">
+                    <button type="button" class="btn-row-action" onclick="openParentStickers('task', '{{ task.id }}')" title="Stickers">
+                        <div class="sticker-icon-mini {{ 'inactive' if not task.stickers_count }}">
+                            {% if task.stickers_count > 0 %}
+                            <span class="sticker-count">{{ task.stickers_count }}</span>
+                            {% endif %}
                         </div>
-                        <div class="widget-body">
-                            <div class="task-info" style="margin-bottom: 10px">
-                                <span class="green-text">One thing:</span>
-                                <span class="task-value">{{ one_thing }}</span>
-                                {% if one_thing_date %}<span
-                                    class="green-text"
-                                    style="margin-left: 10px"
-                                    >Days: {{ one_thing_date }}</span
-                                >{% endif %}
-                            </div>
-                            <div class="task-info" style="margin-bottom: 15px">
-                                <span class="green-text">Replacement:</span> {{
-                                one_thing_replacement }}
-                            </div>
-                            <ul class="task-list" style="overflow-y: auto">
-                                {% for task in tasks %}
-                                <li class="task-item" data-id="{{ task.id }}">
-                                    <span style="font-size: 0.95em"
-                                        >{{ task.name }}
-                                        <span class="task-time-pill" style="
-                                            font-size: 0.7em;
-                                            color: #999;
-                                            background: #f5f5f5;
-                                            padding: 1px 6px;
-                                            border-radius: 10px;
-                                            margin-left: 5px;
-                                            white-space: nowrap;
-                                        ">
-                                            {% if task.created_at %}
-                                                {% set diff = now_utc - task.created_at %}
-                                                {% if diff.days > 0 %}
-                                                    {{ diff.days }}d
-                                                {% elif diff.seconds > 3600 %}
-                                                    {{ (diff.seconds / 3600)|int }}h
-                                                {% elif diff.seconds > 60 %}
-                                                    {{ (diff.seconds / 60)|int }}m
-                                                {% else %}
-                                                    now
-                                                {% endif %}
-                                            {% else %}
-                                                ?
-                                            {% endif %}
-                                        </span>
-                                    </span>
-                                    <div style="display: flex; gap: 5px; align-items: center; margin-left: auto;">
-                                        <button type="button" class="task-sticker-btn" 
-                                            onclick="openParentStickers('task', '{{ task.id }}')" 
-                                            title="Stickers"
-                                            style="background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;"
-                                        >
-                                            <div class="sticker-icon-small" style="opacity: {{ 1 if task.stickers_count else 0.3 }};"></div>
-                                        </button>
-                                        <form
-                                            action="/mark_done/{{ task.id }}"
-                                            method="post"
-                                            style="margin: 0"
-                                        >
-                                        <button
-                                            type="submit"
-                                            class="task-button"
-                                        >
-                                            Done
-                                        </button>
-                                    </form>
-                                    </div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
+                    </button>
+                    <form action="/mark_done/{{ task.id }}" method="post" style="margin: 0" onsubmit="event.preventDefault(); markTaskDone(this, '{{ task.id }}')">
+                        <button type="submit" class="btn-row-action done" title="Complete task">✓</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+

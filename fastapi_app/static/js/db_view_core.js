@@ -11,6 +11,7 @@ import { NoteService } from './modules/NoteService.js';
 import { ChronoService } from './modules/ChronoService.js';
 import { TaskService } from './modules/TaskService.js';
 import { HabitService } from './modules/HabitService.js';
+import { applyLocalTimeGlobally } from './ui_helpers.js';
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Global Modal Manager
     ModalManager.initGlobal();
     
+    // Apply local time to all .local-time elements
+    applyLocalTimeGlobally();
+
     console.log("[Papanda] DB View Core initialized.");
 });
 

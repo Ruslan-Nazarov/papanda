@@ -26,7 +26,7 @@
                 <div class="note-card" data-id="{{ row.id }}" 
                      onclick="NoteService.openView({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }}, {{ row.stickers_list | tojson if row.stickers_list else '[]' }})">
                     <div class="note-cat">{{ row.category or 'Uncategorized' }}</div>
-                    <div class="note-date">📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</div>
+                    <div class="note-date">📅 <span class="local-time" data-utc="{{ row.created_at.isoformat() if row.created_at else '' }}">{{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</span></div>
                     <div class="note-text">{{ row.note }}</div>
                     <div class="note-actions">
                         <button type="button" class="btn-action btn-edit" 

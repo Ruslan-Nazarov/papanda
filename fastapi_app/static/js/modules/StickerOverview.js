@@ -76,7 +76,8 @@ export class StickerOverview {
     }
 
     static async archive(btn, id) {
-        if (!confirm('Archive this thought?')) return;
+        const confirmed = await window.NotificationService.confirm('Archive this thought?', { okText: 'Archive' });
+        if (!confirmed) return;
         try {
             await StickerService.archive(id);
             btn.parentElement.remove();

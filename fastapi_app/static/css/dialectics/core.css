@@ -83,7 +83,4 @@
 /* --- Utilities --- */
 [contenteditable]:empty:before { content: attr(placeholder); color: #cbd5e1; cursor: text; }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-border-medium); }
-::-webkit-scrollbar-track { background: var(--color-bg-surface); }
+/* Scrollbar styles removed for centralization in base/scrollbar.css */

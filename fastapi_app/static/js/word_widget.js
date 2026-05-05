@@ -19,13 +19,27 @@ function openEditModal(eng, translations, ru, meaning) {
 
     activeLangs.forEach(code => {
         const group = document.createElement('div');
-        group.className = 'form-group-large';
-        let val = (translations[code] || '').toString();
-        const normCode = code.toLowerCase().trim();
+        group.className = 'form-group';
+        
+        // Case-insensitive lookup
+        const lookupCode = code.toLowerCase().trim();
+        let val = '';
+        
+        // Try exact match first, then case-insensitive
+        if (translations[code] !== undefined) {
+            val = translations[code];
+        } else {
+            const foundKey = Object.keys(translations).find(k => k.toLowerCase().trim() === lookupCode);
+            if (foundKey) val = translations[foundKey];
+        }
+
+        const normCode = lookupCode;
         const label = (allLangNames[code] || '').toLowerCase();
+        // Fallback for English if empty
         if (!val && (normCode === 'en' || normCode === 'eng' || label.includes('english'))) val = eng;
-        group.innerHTML = `<label class="form-label-premium">${allLangNames[code] || code.toUpperCase()}</label>`
-            + `<input type="text" name="lang_${code}" value="${val.replace(/"/g, '&quot;')}" class="form-input-premium" />`;
+        
+        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}</label>`
+            + `<input type="text" name="lang_${code}" value="${(val || '').toString().replace(/"/g, '&quot;')}" class="form-input" />`;
         container.appendChild(group);
     });
 
@@ -39,16 +53,27 @@ function openEditModal(eng, translations, ru, meaning) {
 window.openEditModalFromData = function (btn) {
     const d = btn.dataset;
     let translations = {};
+    
+    // Parse the general translations object if available
     try {
         if (d.translations) {
             translations = typeof d.translations === 'string' ? JSON.parse(d.translations) : d.translations;
-            if (typeof translations === 'string') translations = JSON.parse(translations);
         }
     } catch (e) { console.error('Translation parse error:', e); }
-    if (!translations || typeof translations !== 'object') translations = {};
+
+    // Merge in explicit data-lang-XX attributes (they take priority)
+    const activeLangs = window.P_ACTIVE_LANGUAGES || ['en', 'it', 'de'];
+    activeLangs.forEach(code => {
+        const lowerCode = code.toLowerCase().trim();
+        // Dataset attributes for data-lang-it becomes d.langIt
+        const attrKey = 'lang' + lowerCode.charAt(0).toUpperCase() + lowerCode.slice(1);
+        
+        if (d[attrKey] !== undefined) {
+            translations[code] = d[attrKey];
+        }
+    });
+
     if (!translations.en && d.eng) translations.en = d.eng;
-    if (!translations.it && d.it) translations.it = d.it;
-    if (!translations.de && d.de) translations.de = d.de;
     openEditModal(d.eng, translations, d.ru, d.meaning);
 };
 

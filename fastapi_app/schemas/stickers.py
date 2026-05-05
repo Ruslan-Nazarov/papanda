@@ -34,5 +34,4 @@ class StickyNoteView(StickyNoteBase):
     habit_id: Optional[int] = None
     note_id: Optional[int] = None
     dialectics_id: Optional[int] = None
-    note: Optional[NoteView] = None
     model_config = ConfigDict(from_attributes=True)

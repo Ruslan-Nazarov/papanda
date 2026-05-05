@@ -48,9 +48,9 @@
             align-items: center;
             background: rgba(0,0,0,0.03);
             border-radius: 20px;
-            padding: 10px;
+            padding: 6px;
             border: 1px solid rgba(0,0,0,0.05);
-            min-height: 140px;
+            min-height: 130px;
             overflow: hidden;
         }
 
@@ -99,7 +99,7 @@
         /* Compact stickers for horizontal view */
         .sticker-canvas .sticker-thought {
             flex-shrink: 0;
-            width: 160px !important;
+            width: 140px !important;
             height: 110px !important;
             margin: 0 !important;
             font-size: 0.85em;
@@ -319,7 +319,7 @@
             </div>
             
             <div class="sticker-canvas-wrapper">
-                <div class="add-sticker-btn" onclick="openStickerModal({ parentType: 'note', parentId: {{ anchor_note_id }}, source: 'parent' })" title="Добавить заметку">+</div>
+                <div class="add-sticker-btn" onclick="openParentStickers('note', {{ anchor_note_id }})" title="Добавить заметку">+</div>
                 <div id="languageStickersCanvas" class="sticker-canvas"></div>
             </div>
         </div>
@@ -357,13 +357,24 @@
 
     {% include 'partials/sticker_modal.html' %}
     {% include 'partials/parent_stickers_modal.html' %}
-    <script src="{{ url_for('static', path='js/stickers.js') }}?v=5"></script>
+    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=5"></script>
 
     <script id="sentences-data" type="application/json">
         {{ sentences_json | safe }}
     </script>
 
-    <script>
+    <script type="module">
+        import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "{{ url_for('static', path='js/stickers.js') }}?v=5";
+        
+        // Expose to window for inline HTML onclicks
+        window.openParentStickers = (type, id) => StickerOverview.open(type, id);
+        window.openStickerModal = (params) => StickerModal.open(params);
+        window.toggleTranslation = toggleTranslation;
+        window.runFlash = runFlash;
+        window.nextSentence = nextSentence;
+        window.setLanguage = setLanguage;
+        window.handleDisplayClick = handleDisplayClick;
+
         const anchorNoteId = {{ anchor_note_id | default(0) }};
         const dataElement = document.getElementById('sentences-data');
         let rawSentences = [];
@@ -486,22 +497,31 @@
             renderCurrentSentence();
         }
 
-        function loadLanguageStickers() {
-            if (!anchorNoteId) return;
+        async function loadLanguageStickers() {
+            console.log("Loading stickers for anchor:", anchorNoteId);
+            if (!anchorNoteId || anchorNoteId === 0) {
+                console.warn("Anchor Note ID is missing or 0");
+                return;
+            }
             const canvas = document.getElementById('languageStickersCanvas');
             if (!canvas) return;
-            fetch(`/api/stickers/note/${anchorNoteId}/?t=${Date.now()}`)
-                .then(r => r.json())
-                .then(stickers => {
-                    canvas.innerHTML = '';
-                    if (stickers.length === 0) {
-                        canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
-                    }
-                    stickers.forEach(s => {
-                        canvas.appendChild(createStickerElement(s, { isWidget: true }));
-                    });
-                })
-                .catch(err => console.error("Stickers load error:", err));
+            
+            try {
+                const stickers = await StickerService.getByParent('note', anchorNoteId);
+                console.log("Stickers fetched:", stickers.length);
+                canvas.innerHTML = '';
+                if (!stickers || stickers.length === 0) {
+                    canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
+                    return;
+                }
+                stickers.forEach(s => {
+                    const el = StickerRenderer.createStickerElement(s, { isWidget: true });
+                    canvas.appendChild(el);
+                });
+            } catch (err) {
+                console.error("Stickers load error:", err);
+                canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Ошибка загрузки заметок</div>';
+            }
         }
 
         function initLanguages() {
@@ -524,9 +544,16 @@
             }
         }
 
+        // Module script runs after DOM is parsed, but we use DOMContentLoaded for extra safety
         document.addEventListener('DOMContentLoaded', () => {
             initLanguages();
             loadLanguageStickers();
+            
+            window.addEventListener('stickersUpdated', (e) => {
+                if (e.detail.parentType === 'note' && e.detail.parentId == anchorNoteId) {
+                    loadLanguageStickers();
+                }
+            });
         });
     </script>
     

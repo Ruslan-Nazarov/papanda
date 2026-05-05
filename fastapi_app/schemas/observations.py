@@ -10,6 +10,7 @@ class ObservationBase(BaseModel):
     status: str = "periodic"
     end_time: Optional[str] = None
     no_time: bool = False
+    task_id: Optional[int] = None
 
 class ObservationCreate(ObservationBase):
     """Схема для создания наблюдения."""

@@ -1,44 +1,84 @@
 /**
- * Observation Widget Controller
- * Manages the Activity Tree timeline, modals, and persistence.
+ * Observation Widget Controller (Tree Refactoring)
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Logic to handle Activity Tree Overview persistence
-    if (sessionStorage.getItem('reopenObsOverview') === 'true') {
-        openObsOverviewModal();
-        sessionStorage.removeItem('reopenObsOverview');
-    }
-    
-    // Initialize all time selects
+function initTimeSelects() {
     const hours = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
     const mins = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
     
     document.querySelectorAll('[id$="Hour"]').forEach(s => {
+        if (s.options.length > 0) return;
         hours.forEach(h => s.add(new Option(h, h)));
     });
     document.querySelectorAll('[id$="Min"]').forEach(s => {
+        if (s.options.length > 0) return;
         mins.forEach(m => s.add(new Option(m, m)));
     });
-});
+}
 
-let isEditingFromOverview = false;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTimeSelects);
+} else {
+    initTimeSelects();
+}
+
+function safeShowToast(msg, type = 'info') {
+    if (typeof showToast === 'function') {
+        showToast(msg, type);
+    } else {
+        if (type === 'error') alert(msg);
+        else console.log(`[${type.toUpperCase()}] ${msg}`);
+    }
+}
 
 function handleTimeModeChange(prefix) {
-    const mode = document.getElementById(`obs${prefix.charAt(0).toUpperCase() + prefix.slice(1)}TimeMode`).value;
-    const startGroup = document.getElementById(`obs${prefix.charAt(0).toUpperCase() + prefix.slice(1)}StartTimeGroup`);
-    const endGroup = document.getElementById(`obs${prefix.charAt(0).toUpperCase() + prefix.slice(1)}EndTimeGroup`);
+    const p = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    const mode = document.getElementById(`obs${p}TimeMode`)?.value;
+    const startGroup = document.getElementById(`obs${p}StartTimeGroup`);
+    const hourSelect = document.getElementById(`obs${p}StartHour`);
+    const minSelect = document.getElementById(`obs${p}StartMin`);
     
     if (mode === 'none') {
-        if (startGroup) startGroup.classList.add('disabled');
-        if (endGroup) endGroup.classList.add('disabled');
-    } else if (mode === 'exact') {
-        if (startGroup) startGroup.classList.remove('disabled');
-        if (endGroup) endGroup.classList.add('disabled');
+        startGroup?.classList.add('disabled');
+        if (hourSelect) hourSelect.disabled = true;
+        if (minSelect) minSelect.disabled = true;
     } else {
-        if (startGroup) startGroup.classList.remove('disabled');
-        if (endGroup) endGroup.classList.remove('disabled');
+        startGroup?.classList.remove('disabled');
+        if (hourSelect) hourSelect.disabled = false;
+        if (minSelect) minSelect.disabled = false;
     }
+}
+
+function handleObsCategoryChange(prefix) {
+    const p = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    const category = document.getElementById(`obs${p}Category`)?.value;
+    const taskGroup = document.getElementById(`obs${p}TaskGroup`);
+    
+    if (category === 'task') {
+        if (taskGroup) taskGroup.style.display = 'block';
+        loadActiveTasks(prefix);
+    } else {
+        if (taskGroup) taskGroup.style.display = 'none';
+    }
+}
+
+async function loadActiveTasks(prefix, selectedTaskId = null) {
+    const p = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    const select = document.getElementById(`obs${p}TaskSelect`);
+    if (!select) return;
+
+    try {
+        const response = await fetch('/api/observations/active-tasks');
+        const tasks = await response.json();
+        
+        const currentVal = selectedTaskId || select.value;
+        select.innerHTML = '<option value="">-- Select a Task --</option>';
+        tasks.forEach(task => {
+            const opt = new Option(task.name, task.id);
+            if (String(task.id) === String(currentVal)) opt.selected = true;
+            select.add(opt);
+        });
+    } catch (e) { console.error(e); }
 }
 
 function setSelectTime(prefix, type, timeStr) {
@@ -54,69 +94,45 @@ function getSelectTime(prefix, type) {
     const hourEl = document.getElementById(`${prefix}${type}Hour`);
     const minEl = document.getElementById(`${prefix}${type}Min`);
     if (!hourEl || !minEl) return "00:00";
-    return `${hourEl.value}:${minEl.value}`;
+    return `${hourEl.value || '00'}:${minEl.value || '00'}`;
 }
 
-async function logObservation(btn) {
-    const id = btn.dataset.id;
-    try {
-        const response = await fetch(`/api/observations/${id}/log`, {
-            method: 'POST'
-        });
-        if (response.ok) {
-            if (typeof showToast === 'function') showToast('✓ Logged for today!', 'success');
-            setTimeout(() => location.reload(), 500);
-        }
-    } catch (e) { console.error(e); }
-}
-
-async function deleteObs(btn) {
-    const confirmed = await (typeof customConfirm === 'function' ? customConfirm({
-        title: 'Remove Activity',
-        message: 'Are you sure you want to remove this core activity entirely?',
-        buttons: [
-            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-            { label: 'Remove', value: true, class: 'confirm-btn-danger' }
-        ]
-    }) : Promise.resolve(confirm('Are you sure?')));
-    
+async function deleteObs(id) {
+    const confirmed = await window.NotificationService.confirm('Remove this activity from the tree?', {
+        isDanger: true,
+        okText: 'Remove'
+    });
     if (!confirmed) return;
-    
-    const id = btn.dataset.id;
     try {
         const response = await fetch(`/api/observations/${id}`, { method: 'DELETE' });
         if (response.ok) {
-            btn.closest('.obs-item').remove();
-            if (typeof showToast === 'function') showToast('✓ Removed', 'success');
+            document.querySelector(`.tree-item[data-id="${id}"]`)?.remove();
+            safeShowToast('✓ Removed', 'success');
         }
     } catch (e) { console.error(e); }
 }
 
 function openObsAddModal() {
-    isEditingFromOverview = false;
-    // Reset fields
     const textEl = document.getElementById('obsAddText');
     if (textEl) textEl.value = '';
     
     const now = new Date();
     const h = now.getHours().toString().padStart(2, '0');
     const m = now.getMinutes().toString().padStart(2, '0');
-    
     setSelectTime('obsAdd', 'Start', `${h}:${m}`);
-    setSelectTime('obsAdd', 'End', `${h}:${m}`);
 
-    const addImp = document.getElementById('obsAddImportant');
-    const addEx = document.getElementById('obsAddExcess');
-    if (addImp) addImp.checked = true;
-    if (addEx) addEx.checked = false;
+    const catEl = document.getElementById('obsAddCategory');
+    if (catEl) {
+        catEl.value = 'task';
+        handleObsCategoryChange('add');
+    }
     
     const modeEl = document.getElementById('obsAddTimeMode');
     if (modeEl) {
-        modeEl.value = 'period';
+        modeEl.value = 'exact';
         handleTimeModeChange('add');
     }
     
-    // Reset days
     document.querySelectorAll('.obs-weekdays-add .weekday-circle-edit').forEach(circle => {
         circle.classList.remove('active');
     });
@@ -130,110 +146,80 @@ function closeObsAddModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function toggleAddDay(circle) {
-    circle.classList.toggle('active');
-}
-function toggleEditDay(circle) {
-    circle.classList.toggle('active');
-}
+function toggleAddDay(circle) { circle.classList.toggle('active'); }
+function toggleEditDay(circle) { circle.classList.toggle('active'); }
 
 async function saveObsAdd() {
     try {
-        const textEl = document.getElementById('obsAddText');
-        const text = textEl ? textEl.value.trim() : '';
-        
-        if (!text) { 
-            if (typeof showToast === 'function') showToast('Title is required', 'error');
-            return; 
-        }
-        
-        const modeEl = document.getElementById('obsAddTimeMode');
-        const mode = modeEl ? modeEl.value : 'period';
-        
-        const doneDays = [];
-        document.querySelectorAll('.obs-weekdays-add .weekday-circle-edit.active').forEach(circle => {
-            doneDays.push(parseInt(circle.dataset.day));
-        });
+        const titleEl = document.getElementById('obsAddText');
+        const text = titleEl ? titleEl.value.trim() : '';
+        if (!text) { safeShowToast('Title is required', 'error'); return; }
 
-        const priorityVal = document.getElementById('obsAddImportant')?.checked ? 5 : 0;
+        const mode = document.getElementById('obsAddTimeMode')?.value || 'exact';
+        const category = document.getElementById('obsAddCategory')?.value || 'other';
+        const taskSelect = document.getElementById('obsAddTaskSelect');
+        const taskIdStr = (category === 'task' && taskSelect) ? taskSelect.value : null;
+        const taskId = taskIdStr ? parseInt(taskIdStr) : null;
+
+        if (category === 'task' && !taskId) {
+            safeShowToast('Please select a linked task', 'error');
+            return;
+        }
+
+        const doneDays = Array.from(document.querySelectorAll('.obs-weekdays-add .weekday-circle-edit.active'))
+                             .map(c => parseInt(c.dataset.day));
 
         const data = {
             text: text,
             created_at: getSelectTime('obsAdd', 'Start'),
-            end_time: (mode === 'period') ? getSelectTime('obsAdd', 'End') : null,
-            priority: priorityVal,
+            task_id: taskId,
             no_time: (mode === 'none'),
             done_days: doneDays
         };
-        
-        const response = await fetch(`/api/observations/`, {
+
+        const response = await fetch('/api/observations/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
+
         if (response.ok) {
             location.reload();
         } else {
-            const errData = await response.json();
-            const errMsg = 'Error: ' + (errData.detail || 'Failed to save');
-            if (typeof showToast === 'function') showToast(errMsg, 'error');
+            const err = await response.json();
+            safeShowToast(err.detail || 'Save failed', 'error');
         }
-    } catch (e) { 
-        console.error('Save error:', e);
-        if (typeof showToast === 'function') showToast('System error: ' + e.message, 'error');
-    }
+    } catch (e) { console.error(e); safeShowToast('System error', 'error'); }
 }
 
-function openObsOverviewModal() {
-    const modal = document.getElementById('obsOverviewModal');
-    if (modal) modal.style.display = 'flex';
-}
+function openObsEditModalFromTree(id) {
+    const el = document.querySelector(`.tree-item[data-id="${id}"]`);
+    if (!el) return;
 
-function closeObsOverviewModal() {
-    const modal = document.getElementById('obsOverviewModal');
-    if (modal) modal.style.display = 'none';
-}
-
-function openObsEditModal(btn) {
     const idEl = document.getElementById('obsEditId');
     const textEl = document.getElementById('obsEditText');
-    if (idEl) idEl.value = btn.dataset.id;
-    if (textEl) textEl.value = btn.dataset.text;
+    if (idEl) idEl.value = id;
+    if (textEl) textEl.value = el.dataset.text;
     
-    const startTime = btn.dataset.time;
-    const endTime = btn.dataset.endTime;
-    const noTime = (btn.dataset.noTime === 'true');
-    
-    setSelectTime('obsEdit', 'Start', startTime);
-    setSelectTime('obsEdit', 'End', endTime || startTime);
+    setSelectTime('obsEdit', 'Start', el.dataset.time);
 
-    const p = parseInt(btn.dataset.priority || '1', 10);
-    const imp = document.getElementById('obsEditImportant');
-    const exc = document.getElementById('obsEditExcess');
-    if (imp && exc) {
-        if (p >= 5) { imp.checked = true; exc.checked = false; }
-        else if (p === 0) { imp.checked = false; exc.checked = true; }
-        else { imp.checked = true; exc.checked = false; }
+    const taskId = el.dataset.taskId;
+    const catEl = document.getElementById('obsEditCategory');
+    if (catEl) {
+        catEl.value = taskId ? 'task' : 'other';
+        handleObsCategoryChange('edit');
+        if (taskId) loadActiveTasks('edit', taskId);
     }
-    
-    // Determine mode
-    let mode = 'exact';
-    if (noTime) mode = 'none';
-    else if (endTime && endTime !== '') mode = 'period';
     
     const modeEl = document.getElementById('obsEditTimeMode');
     if (modeEl) {
-        modeEl.value = mode;
+        modeEl.value = (el.dataset.noTime === 'true') ? 'none' : 'exact';
         handleTimeModeChange('edit');
     }
     
-    // Set days
-    const doneDays = JSON.parse(btn.dataset.doneDays || '[]');
+    const doneDays = JSON.parse(el.dataset.doneDays || '[]');
     document.querySelectorAll('.obs-weekdays-edit .weekday-circle-edit').forEach(circle => {
-        const day = parseInt(circle.dataset.day);
-        if (doneDays.includes(day)) circle.classList.add('active');
-        else circle.classList.remove('active');
+        circle.classList.toggle('active', doneDays.includes(parseInt(circle.dataset.day)));
     });
 
     const modal = document.getElementById('obsEditModal');
@@ -246,38 +232,80 @@ function closeObsEditModal() {
 }
 
 async function saveObsEdit() {
-    const id = document.getElementById('obsEditId').value;
-    const text = document.getElementById('obsEditText').value.trim();
-    if (!text) return;
-
-    const mode = document.getElementById('obsEditTimeMode').value;
-    const doneDays = [];
-    document.querySelectorAll('.obs-weekdays-edit .weekday-circle-edit.active').forEach(circle => {
-        doneDays.push(parseInt(circle.dataset.day));
-    });
-
-    const priorityVal = document.getElementById('obsEditImportant')?.checked ? 5 : 0;
-
-    const data = {
-        text: text,
-        created_at: getSelectTime('obsEdit', 'Start'),
-        end_time: (mode === 'period') ? getSelectTime('obsEdit', 'End') : null,
-        priority: priorityVal,
-        no_time: (mode === 'none'),
-        done_days: doneDays
-    };
-
     try {
+        const id = document.getElementById('obsEditId')?.value;
+        const text = document.getElementById('obsEditText')?.value.trim();
+        if (!text || !id) return;
+
+        const mode = document.getElementById('obsEditTimeMode')?.value || 'exact';
+        const category = document.getElementById('obsEditCategory')?.value || 'other';
+        const taskSelect = document.getElementById('obsEditTaskSelect');
+        const taskIdStr = (category === 'task' && taskSelect) ? taskSelect.value : null;
+        const taskId = taskIdStr ? parseInt(taskIdStr) : null;
+
+        const doneDays = Array.from(document.querySelectorAll('.obs-weekdays-edit .weekday-circle-edit.active'))
+                             .map(c => parseInt(c.dataset.day));
+
+        const data = {
+            text: text,
+            created_at: getSelectTime('obsEdit', 'Start'),
+            task_id: taskId,
+            no_time: (mode === 'none'),
+            done_days: doneDays
+        };
+
         const response = await fetch(`/api/observations/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         if (response.ok) {
-            if (isEditingFromOverview) {
-                sessionStorage.setItem('reopenObsOverview', 'true');
-            }
             location.reload();
+        } else {
+            const err = await response.json();
+            safeShowToast(err.detail || 'Update failed', 'error');
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); safeShowToast('System error', 'error'); }
 }
+
+// Global exposure
+window.openObsAddModal = openObsAddModal;
+window.closeObsAddModal = closeObsAddModal;
+window.saveObsAdd = saveObsAdd;
+window.openObsEditModalFromTree = openObsEditModalFromTree;
+window.closeObsEditModal = closeObsEditModal;
+window.saveObsEdit = saveObsEdit;
+window.deleteObs = deleteObs;
+window.handleTimeModeChange = handleTimeModeChange;
+window.handleObsCategoryChange = handleObsCategoryChange;
+window.toggleAddDay = toggleAddDay;
+window.toggleEditDay = toggleEditDay;
+
+async function openObsOverviewModal() {
+    const modal = document.getElementById('obsOverviewModal');
+    const body = document.getElementById('obsOverviewBody');
+    if (!modal || !body) return;
+
+    modal.style.display = 'flex';
+    body.innerHTML = '<div class="loading-spinner">Loading full tree...</div>';
+
+    try {
+        const response = await fetch('/api/observations/full-tree');
+        if (response.ok) {
+            body.innerHTML = await response.text();
+        } else {
+            body.innerHTML = '<div style="color:var(--color-danger);">Failed to load tree.</div>';
+        }
+    } catch (e) {
+        console.error(e);
+        body.innerHTML = '<div style="color:var(--color-danger);">Error loading tree.</div>';
+    }
+}
+
+function closeObsOverviewModal() {
+    const modal = document.getElementById('obsOverviewModal');
+    if (modal) modal.style.display = 'none';
+}
+
+window.openObsOverviewModal = openObsOverviewModal;
+window.closeObsOverviewModal = closeObsOverviewModal;

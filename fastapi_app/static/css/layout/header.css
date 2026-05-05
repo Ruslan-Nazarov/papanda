@@ -1,139 +1,283 @@
-/* --- Header & Navigation Controls --- */
-.header {
-    background-color: var(--color-bg-page) !important;
-    border-bottom: 1px solid var(--color-border);
-    padding: 10px 20px;
+/* --- PREMIUM HEADER ARCHITECTURE --- */
+
+.header-container {
+    background: var(--color-bg-app);
+    border-bottom: 1px solid var(--color-border-light);
+    padding: 12px 32px;
     box-shadow: var(--shadow-sm);
-    z-index: 100;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-.header-control {
-    height: 38px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 0 12px;
-    font-size: 14px;
-    background-color: #ffffff;
-    box-sizing: border-box;
-    outline: none;
-    transition: all 0.2s ease;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
-    font-family: var(--font-base);
-}
-
-.header-control:focus {
-    border-color: var(--color-blue);
-    box-shadow: 0 0 0 3px var(--color-blue-glow);
-}
-
-.header-control:hover {
-    border-color: var(--color-text-faint);
-}
-
-.header-btn-submit {
-    height: 38px;
-    padding: 0 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    background-color: var(--color-primary);
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px var(--color-primary-glow);
-}
-
-.header-btn-submit:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-1px);
-}
-
-/* --- Header Specific Widgets (Stickers, Color Picker) --- */
-.header-color-btn {
-    width: 38px;
-    height: 38px;
-    background: #fff;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    cursor: pointer;
+.header-main {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-.header-color-btn:hover { background: var(--color-bg-subtle); border-color: var(--color-text-faint); }
-
-.color-indicator-dot {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #e0e0e0;
-    border: 1px solid rgba(0,0,0,0.1);
+    justify-content: space-between;
+    gap: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
-.header-color-popup {
-    display: none;
-    position: absolute;
-    top: 52px;
-    background: white;
-    padding: 12px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    border: 1px solid #ddd;
-    flex-wrap: wrap;
-    gap: 8px;
-    width: 140px;
-    z-index: 10001;
+.header-form {
+    flex: 1;
+    max-width: 1000px;
 }
 
-.header-color-popup .color-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 1px solid #eee;
-    transition: transform 0.2s;
-}
-.header-color-popup .color-dot:hover { transform: scale(1.1); }
-.header-color-popup .color-dot.active { border: 2px solid #555; }
-
-.header-sticker-btn {
-    width: 38px;
-    height: 38px;
-    display: none; /* Controlled by JS */
+.form-input-group {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
+    gap: 8px;
+    background: var(--color-bg-subtle);
+    padding: 6px;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border-light);
+    transition: all var(--transition-base);
+}
+
+.form-input-group:focus-within {
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+/* Header Specific Input Overrides */
+.header-main-input {
+    flex: 1;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 10px 16px !important;
+    font-weight: 600 !important;
+}
+
+.header-date-input {
+    width: 150px !important;
+    border: none !important;
+    background: white !important;
+    border-radius: var(--radius-md) !important;
+    padding: 8px 12px !important;
+}
+
+.header-cat-select {
+    width: 140px !important;
+    border: none !important;
+    background: white !important;
+    border-radius: var(--radius-md) !important;
+    padding: 8px 12px !important;
+}
+
+/* Popups & Menus */
+.recurrence-wrapper {
     position: relative;
 }
 
-.header-sticker-btn:hover {
-    background-color: var(--color-bg-subtle);
-    border-color: var(--color-border-medium);
+.recurrence-glass-menu {
+    position: absolute;
+    top: calc(100% + 16px);
+    right: 0;
+    width: 340px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    padding: 28px;
+    display: none;
+    z-index: 2000;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity: 0;
 }
 
-.header-sticker-btn.attached::after {
-    content: "✓";
+.recurrence-glass-menu.active {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.recurrence-glass-menu .radio-tab {
+    color: var(--color-text-muted);
+    background: transparent;
+}
+
+.recurrence-glass-menu input[type="radio"]:checked + .radio-tab {
+    background: white;
+    color: var(--color-primary);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+#recurrenceToggle.active {
+    background: var(--color-primary-soft) !important;
+    color: var(--color-primary) !important;
+    border-color: var(--color-primary-glow) !important;
+    box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+
+.color-picker-glass-popup {
     position: absolute;
-    top: -4px;
-    right: -4px;
-    background: var(--color-success);
-    color: var(--color-white);
-    font-size: 9px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
+    top: calc(100% + 16px);
+    right: 0;
+    width: 200px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    padding: 12px;
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    z-index: 2000;
+}
+
+.color-picker-glass-popup.active {
+    display: grid;
+}
+
+.recurrence-glass-menu .form-label {
+    font-size: 0.65rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.recurrence-glass-menu .form-select, 
+.recurrence-glass-menu .form-input {
+    background: white;
+    border: 1.5px solid var(--color-border-light);
+    border-radius: 14px;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.recurrence-glass-menu .form-select:focus, 
+.recurrence-glass-menu .form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-glow);
+    outline: none;
+}
+
+/* Custom Day Pills */
+.weekday-row-compact {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.day-pill-item {
+    flex: 1;
+}
+
+.day-pill-item input {
+    display: none;
+}
+
+.day-pill-item span {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    height: 32px;
+    background: var(--color-bg-app);
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.day-pill-item input:checked + span {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 10px var(--color-primary-soft);
+}
+
+.recurrence-glass-menu .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    border: none;
+    border-radius: 14px;
+    padding: 10px 24px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px var(--color-primary-soft);
+    transition: transform 0.2s;
+}
+
+.recurrence-glass-menu .btn-primary:hover {
+    transform: translateY(-2px);
+}
+
+/* Info Badges */
+.header-info-widgets {
+    display: flex;
+    gap: 12px;
+}
+
+.premium-badge {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 100px;
+    border: 1px solid transparent;
+}
+
+.badge-orange { background: #FFF3E0; border-color: #FFE0B2; }
+.badge-green { background: #E8F5E9; border-color: #C8E6C9; }
+.badge-amber { background: #FFF8E1; border-color: #FFECB3; }
+.badge-purple { background: #F3E5F5; border-color: #E1BEE7; }
+
+.badge-label {
+    font-size: 0.65rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.badge-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-text-dark);
+}
+
+/* Header Color Picker Button Visibility */
+#headerColorBtn {
+    background: var(--color-bg-white) !important;
+    border: 1px solid var(--color-border-medium) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+#headerColorBtn:hover {
+    border-color: var(--color-primary) !important;
+    transform: translateY(-1px);
+}
+
+#headerColorIndicator {
+    transition: background 0.3s ease;
+}
+
+.badge-value-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+#recurrenceToggle.active {
+    background: var(--color-primary-soft) !important;
+    color: var(--color-primary) !important;
+    border-color: var(--color-primary-glow) !important;
+    box-shadow: 0 0 0 4px var(--color-primary-soft);
 }

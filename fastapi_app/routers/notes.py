@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status, Body
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import Optional, Any, Dict, Union, List
-
+from ..database import get_db, get_main_db
 from ..services.auth import check_auth_dependency
-from ..services.note_service import NoteService
-from ..dependencies import get_note_service
+from ..dependencies import get_note_service, get_admin_service
 from .. import models, schemas
 from ..logger import logger
 
@@ -23,7 +22,7 @@ async def add_note(
     sticker_color: Optional[str] = Form(None),
     sticker_type: Optional[str] = Form(None),
     is_pinned: bool = Form(False),
-    note_service: NoteService = Depends(get_note_service),
+    note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
     """
@@ -44,78 +43,91 @@ async def add_note(
         }
 
     note_id = await note_service.add_note(category, note, sticker_data=sticker_data, is_pinned=is_pinned)
-    return schemas.SuccessResponse(message=f"Заметка успешно сохранена. ID: {note_id}")
+    return JSONResponse(content={
+        "status": "success", 
+        "message": "Note saved", 
+        "id": note_id
+    })
 
 
-@router.post("/api/notes/{note_id}/pin", response_model=schemas.SuccessResponse)
-async def pin_note(
+@router.post("/api/notes/{note_id}/toggle-pin", response_model=schemas.SuccessResponse)
+async def toggle_pin_note(
     note_id: int,
-    note_service: NoteService = Depends(get_note_service),
+    note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
     note = await note_service.db.get(models.Notes, note_id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
-    note.is_pinned = True
+    note.is_pinned = not note.is_pinned
     await note_service.db.commit()
-    return schemas.SuccessResponse(message="Note pinned")
+    status_str = "pinned" if note.is_pinned else "unpinned"
+    return schemas.SuccessResponse(message=f"Note {status_str}")
 
 
 @router.get("/api/notes/pinned", response_model=List[schemas.NoteView])
 async def get_pinned_notes(
-    note_service: NoteService = Depends(get_note_service),
+    note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
-    res = await note_service.db.execute(
-        select(models.Notes)
-        .options(selectinload(models.Notes.stickers))
-        .where(models.Notes.is_pinned == True)
-        .order_by(models.Notes.created_at.desc())
-    )
-    pinned = res.scalars().all()
+    return await note_service.get_pinned_notes()
+
+
+@router.get("/api/notes/search")
+async def search_all_notes(
+    query: Optional[str] = None,
+    db: Any = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+):
+    """Глобальный поиск по всем заметкам (плоская сериализация для избежания рекурсии)."""
+    from sqlalchemy import select, or_
+    stmt = select(models.Notes)
+    if query:
+        stmt = stmt.where(or_(
+            models.Notes.note.ilike(f"%{query}%"),
+            models.Notes.category.ilike(f"%{query}%")
+        ))
+    stmt = stmt.order_by(models.Notes.created_at.desc())
+    res = await db.execute(stmt)
+    records = res.scalars().all()
     
-    # Расширяем данные для схемы
-    for n in pinned:
-        n.preview = (n.note[:100] + '...') if len(n.note) > 100 else n.note
-        n.title = f"[{n.category}]" if n.category else f"Note #{n.id}"
-        
-    return pinned
-
-
-@router.post("/api/notes/{note_id}/unpin", response_model=schemas.SuccessResponse)
-async def unpin_note(
-    note_id: int,
-    note_service: NoteService = Depends(get_note_service),
-    user: Any = Depends(check_auth_dependency)
-):
-    note = await note_service.db.get(models.Notes, note_id)
-    if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    note.is_pinned = False
-    await note_service.db.commit()
-    return schemas.SuccessResponse(message="Note unpinned")
+    return [
+        {
+            "id": r.id, 
+            "note": r.note, 
+            "category": r.category or "General", 
+            "is_pinned": bool(r.is_pinned)
+        } for r in records
+    ]
 
 
 @router.get("/api/notes/{note_id}", response_model=schemas.NoteView)
 async def get_note(
     note_id: int,
-    note_service: NoteService = Depends(get_note_service),
+    note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
-    note = await note_service.db.get(models.Notes, note_id)
-    if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    return note
+    try:
+        note = await note_service.get_note(note_id)
+        if not note:
+            raise HTTPException(status_code=404, detail="Note not found")
+        return note
+    except Exception as e:
+        from ..logger import logger
+        logger.error(f"Error in get_note router: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/api/notes/{note_id}/update", response_model=schemas.SuccessResponse)
 async def update_note(
     note_id: int,
-    data: schemas.NoteUpdate,
-    note_service: NoteService = Depends(get_note_service),
+    note: str = Form(...),
+    category: str = Form("General"),
+    is_pinned: bool = Form(True),
+    note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
-    success = await note_service.update_note(note_id, data.category, data.note, data.is_pinned)
+    success = await note_service.update_note(note_id, category, note, is_pinned)
     if success:
         return schemas.SuccessResponse(message="Note updated")
     raise HTTPException(status_code=500, detail="Failed to update note")
@@ -124,10 +136,27 @@ async def update_note(
 @router.delete("/api/notes/{note_id}", response_model=schemas.SuccessResponse)
 async def delete_note(
     note_id: int,
-    note_service: NoteService = Depends(get_note_service),
+    note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
     success = await note_service.delete_note(note_id)
     if success:
         return schemas.SuccessResponse(message="Note deleted")
     raise HTTPException(status_code=500, detail="Failed to delete note")
+
+@router.post("/api/notes/categories", response_model=schemas.SuccessResponse)
+async def add_category(
+    name: str = Body(..., embed=True),
+    note_service: Any = Depends(get_note_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    if not name:
+        raise HTTPException(status_code=400, detail="Category name is required")
+    success = await note_service.add_category(name)
+    if success:
+        return schemas.SuccessResponse(message="Category added")
+    raise HTTPException(status_code=500, detail="Failed to add category")
+
+
+
+
