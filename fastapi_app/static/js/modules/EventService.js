@@ -4,23 +4,36 @@
 
 import { ModalManager } from './ModalManager.js';
 import { EventApi } from './EventApi.js';
+import { StickerRenderer } from './StickerRenderer.js';
 
 export const EventService = {
     tempStickers: [],
 
     async openDetail(e) {
         try {
-            const { id, title, date: dateStr, color, important, done, recurrence_id: recId } = e;
+            // Support both raw objects (snake_case) and DOM datasets (camelCase)
+            const id = e.id;
+            const title = e.title;
+            const dateStr = e.date;
+            const color = e.color;
+            const important = (e.important === true || e.important === 'true');
+            const done = (e.done === true || e.done === 'true');
+            const recId = e.recurrence_id || e.recurrenceId || '';
             const rule = e.rule || e.recurrenceRule || 'none';
             const end = e.end || e.recurrenceEnd || '';
 
+            const idEl = document.getElementById('detailEventId');
+            if (idEl) idEl.value = id || '';
+            const recIdEl = document.getElementById('detailEventRecId');
+            if (recIdEl) recIdEl.value = recId || '';
+
             this._setDetailText('detailModalTitle', (important ? '<span style="color: var(--color-primary); margin-right: 8px;">⭐</span>' : '') + (title || '(No Title)'), true);
             this._setDetailText('detailDateText', dateStr ? new Date(dateStr).toLocaleString([], { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No date set');
-            
+
             const statusEl = document.getElementById('detailModalStatus');
             if (statusEl) {
-                statusEl.innerHTML = done ? 
-                    '<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' : 
+                statusEl.innerHTML = done ?
+                    '<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' :
                     '<span style="color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 20px;">○ Pending</span>';
             }
 
@@ -28,7 +41,7 @@ export const EventService = {
             this._updateRecurrenceInfo(rule, end);
 
             const editBtn = document.getElementById('detailModalEditBtn');
-            if (editBtn) editBtn.onclick = () => this.openEdit(id, title, dateStr, rule, end, recId, color);
+            if (editBtn) editBtn.onclick = () => this.openEdit(id, title, dateStr, rule, end, recId, color, important, done);
 
             this.loadDetailStickers(id, recId);
             ModalManager.open('eventDetailModal');
@@ -37,27 +50,128 @@ export const EventService = {
         }
     },
 
-    async openEdit(id, title, dateStr, recRule, recEnd, recId, color) {
+    async openEdit(id, title, dateStr, recRule, recEnd, recId, color, important = false, done = false) {
         ModalManager.close('eventDetailModal');
-        
+
         const fields = {
             'editEventId': id || '',
             'editEventRecId': recId || '',
             'editEventTitle': title || '',
-            'editEventDate': id ? dateStr : this._getNowIso(),
-            'editEventRecEnd': recEnd || ''
+            'editEventDate': id ? (dateStr ? dateStr.replace(' ', 'T').slice(0, 16) : '') : this._getNowIso(),
+            'editEventRecEnd': recEnd || '',
+            'editEventColor': color || '',
+            'editEventImportant': !!important,
+            'editEventDone': !!done
         };
 
-        for (const [key, val] of Object.entries(fields)) {
-            const el = document.getElementById(key);
-            if (el) el.value = val;
+        for (const [fid, val] of Object.entries(fields)) {
+            const el = document.getElementById(fid);
+            if (!el) continue;
+            if (el.type === 'checkbox') el.checked = val;
+            else el.value = val;
         }
 
-        this._resetEditState(recRule, color);
-        
-        this.tempStickers = [];
-        this.renderStickers(id, recId);
+        this._updateEditStickersList(id, recId);
+
+        this._resetEditState(recRule, color, important);
         ModalManager.open('editEventModal');
+    },
+
+    openDraftSticker() {
+        const color = document.getElementById('editEventStickerColor')?.value || '#fff9c4';
+        const type  = document.getElementById('editEventStickerType')?.value || 'text';
+        window.openStickerModal({ source: 'event_editor', color, type });
+    },
+
+    updateDraftStickerUI(hasDraft) {
+        const btn = document.getElementById('editEventDraftStickerBtn');
+        const listEl = document.getElementById('editEventStickersList');
+        if (!btn || !listEl) return;
+
+        if (hasDraft) {
+            btn.classList.add('attached');
+            const text = document.getElementById('editEventStickerText').value;
+            const title = document.getElementById('editEventStickerTitle').value;
+            const type = document.getElementById('editEventStickerType').value;
+            const color = document.getElementById('editEventStickerColor').value;
+
+            listEl.innerHTML = '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mini-sticker-wrapper';
+            
+            const sticker = StickerRenderer.createStickerElement({
+                text: text,
+                title: title,
+                type: type,
+                color: color
+            }, {
+                isWidget: true,
+                onDelete: () => this.clearDraftSticker()
+            });
+            
+            wrapper.appendChild(sticker);
+            listEl.appendChild(wrapper);
+        } else {
+            btn.classList.remove('attached');
+            listEl.innerHTML = '<div style="color:var(--color-text-faint); font-size:0.8rem; font-style:italic;">No stickers drafted.</div>';
+        }
+    },
+
+    clearDraftSticker() {
+        document.getElementById('editEventStickerText').value = '';
+        document.getElementById('editEventStickerTitle').value = '';
+        this.updateDraftStickerUI(false);
+    },
+
+    openManageStickers() {
+        const id = document.getElementById('editEventId').value;
+        if (!id) return;
+        window.openParentStickers('event', id);
+    },
+
+    async _updateEditStickersList(id, recId) {
+        const listEl = document.getElementById('editEventStickersList');
+        const section = document.getElementById('editEventStickersSection');
+        const manageBtn = document.getElementById('editEventManageStickersBtn');
+        const draftBtn = document.getElementById('editEventDraftStickerBtn');
+        
+        if (!listEl || !section) return;
+
+        // Clear draft inputs on open if it's a new event
+        if (!id) {
+            this.clearDraftSticker();
+            if (manageBtn) manageBtn.style.display = 'none';
+            if (draftBtn) draftBtn.style.display = 'flex';
+            section.style.display = 'block';
+            return;
+        }
+
+        if (manageBtn) manageBtn.style.display = 'block';
+        if (draftBtn) draftBtn.style.display = 'none';
+        section.style.display = 'block';
+        listEl.innerHTML = '<div style="color:var(--color-text-faint); font-size:0.8rem;">Loading...</div>';
+
+        try {
+            const stickers = await EventApi.fetchStickers(id, recId);
+            listEl.innerHTML = '';
+            if (!stickers || !stickers.length) {
+                listEl.innerHTML = '<div style="color:var(--color-text-faint); font-size:0.8rem; font-style:italic;">No stickers attached.</div>';
+                return;
+            }
+
+            stickers.forEach(s => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'mini-sticker-wrapper';
+                const sticker = StickerRenderer.createStickerElement(s, { 
+                    isWidget: true,
+                    onClick: () => window.openParentStickers('event', id)
+                });
+                wrapper.appendChild(sticker);
+                listEl.appendChild(wrapper);
+            });
+        } catch (e) {
+            listEl.innerHTML = '';
+        }
     },
 
     async save() {
@@ -65,7 +179,7 @@ export const EventService = {
         const title = document.getElementById('editEventTitle').value.trim();
         const date = document.getElementById('editEventDate').value;
         const errEl = document.getElementById('editEventError');
-        
+
         if (errEl) errEl.innerText = '';
 
         if (!title || !date) {
@@ -74,20 +188,63 @@ export const EventService = {
         }
 
         try {
-            const payload = { 
-                id, title, date, 
-                recurrence_rule: this._getRecRule(), 
-                recurrence_end: this._getRecEnd(), 
-                edit_mode: document.querySelector('input[name="edit_event_mode"]:checked')?.value || 'only', 
-                recurrence_id: document.getElementById('editEventRecId').value, 
+            const payload = {
+                id, title, date,
+                recurrence_rule: this._getRecRule(),
+                recurrence_end: this._getRecEnd(),
+                edit_mode: document.querySelector('input[name="edit_event_mode"]:checked')?.value || 'only',
+                recurrence_id: document.getElementById('editEventRecId').value,
                 color: document.getElementById('editEventColor')?.value || '',
-                stickers: this.tempStickers
+                important: document.getElementById('editEventImportant')?.checked || false,
+                done: document.getElementById('editEventDone')?.checked || false,
+                stickers: []
             };
-            
+
+            const draftText = document.getElementById('editEventStickerText')?.value;
+            if (draftText) {
+                payload.stickers.push({
+                    text: draftText,
+                    title: document.getElementById('editEventStickerTitle').value || null,
+                    color: document.getElementById('editEventStickerColor').value,
+                    type: document.getElementById('editEventStickerType').value
+                });
+            }
+
             const data = await EventApi.saveEvent(payload);
             if (data.status === 'success') {
                 ModalManager.close('editEventModal');
-                location.reload();
+                if (window.showToast) window.showToast(id ? "Event updated" : "Event created", "success");
+
+                const isNew = !id;
+                const newId = data.message.match(/ID: (\d+)/)?.[1] || id;
+
+                // Update local state for instant feedback
+                const newRecord = {
+                    id: parseInt(newId),
+                    title: title,
+                    date: date,
+                    color: payload.color,
+                    important: payload.important,
+                    done: payload.done,
+                    rule: payload.recurrence_rule,
+                    end: payload.recurrence_end,
+                    recurrence_id: payload.recurrence_id,
+                    has_stickers: (payload.stickers && payload.stickers.length > 0)
+                };
+
+                if (isNew) {
+                    window.eventRecords.push(newRecord);
+                } else {
+                    const idx = window.eventRecords.findIndex(r => r.id == id);
+                    if (idx !== -1) window.eventRecords[idx] = { ...window.eventRecords[idx], ...newRecord };
+                }
+
+                // Re-render if in calendar view, otherwise reload (for complex updates)
+                if (window.CalendarRenderer && payload.edit_mode === 'only') {
+                    CalendarRenderer.render(window.eventRecords, window.currentYear, window.currentMonth);
+                } else {
+                    setTimeout(() => location.reload(), 600);
+                }
             } else if (errEl) {
                 errEl.innerText = data.message || 'Error saving event';
             }
@@ -98,12 +255,135 @@ export const EventService = {
 
     async toggleDone(eventId) {
         try {
-            const data = await EventApi.toggleDone(eventId);
-            if (data.status === 'success') location.reload();
-            else if (window.showToast) window.showToast(data.message, 'error');
+            const resp = await fetch(`/toggle_event_done/${eventId}`, { method: 'POST' });
+            const data = await resp.json();
+
+            if (data.done !== undefined) {
+                // 1. Update global state
+                const rec = (window.eventRecords || []).find(r => r.id == eventId);
+                if (rec) rec.done = data.done;
+
+                // 2. Update UI instantly
+                const chips = document.querySelectorAll(`.event-chip[data-id="${eventId}"]`);
+                chips.forEach(chip => {
+                    if (data.done) chip.classList.add('done');
+                    else chip.classList.remove('done');
+                });
+
+                // 3. Update Detail Modal if open
+                const statusEl = document.getElementById('detailModalStatus');
+                if (statusEl) {
+                    statusEl.innerHTML = data.done ?
+                        '<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' :
+                        '<span style="color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 20px;">○ Pending</span>';
+                }
+
+                if (window.showToast) window.showToast(`Event ${data.done ? 'completed' : 'reopened'}`, 'success');
+            }
+            else if (window.showToast) window.showToast(data.message || 'Error updating status', 'error');
         } catch (e) {
             console.error("[EventService] toggleDone error:", e);
         }
+    },
+
+    showContextMenu(e, ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        const oldMenu = document.getElementById('eventContextMenu');
+        if (oldMenu) oldMenu.remove();
+
+        const menu = document.createElement('div');
+        menu.id = 'eventContextMenu';
+        menu.className = 'glass-context-menu';
+        menu.style.left = ev.clientX + 'px';
+        menu.style.top = ev.clientY + 'px';
+
+        const actions = [
+            { label: '📝 Edit Event', onClick: () => this.openEdit(e.id, e.title, e.date, e.rule || e.recurrenceRule, e.end || e.recurrenceEnd, e.recurrence_id || e.recurrenceId, e.color, e.important, e.done) },
+            { label: e.done ? '🔄 Reopen Event' : '✅ Mark Completed', onClick: () => this.toggleDone(e.id) },
+            { label: '🗑️ Delete Event', onClick: () => window.deleteRecordCustom('Event', e.id, !!e.recurrence_id), class: 'danger' }
+        ];
+
+        // Tree view for categorized events
+        if (e.color) {
+            actions.push({ label: '🌳 View Event Tree', onClick: () => window.viewEventTree(e.color) });
+        }
+
+        // Sticker overview
+        if (e.has_stickers || e.hasStickers || e.stickers_count > 0) {
+            actions.push({ label: '<div class="sticker-icon-menu" style="margin-right: 8px;"></div> View Stickers', onClick: () => window.openParentStickers('event', e.id) });
+        }
+
+        actions.forEach(act => {
+            const item = document.createElement('div');
+            item.className = 'menu-item' + (act.class ? ' ' + act.class : '');
+            item.innerHTML = act.label;
+            item.onclick = (ev) => {
+                ev.stopPropagation();
+                this._hideContextMenu();
+                act.onClick();
+            };
+            menu.appendChild(item);
+        });
+
+        document.body.appendChild(menu);
+
+        // Position menu
+        const { clientX: x, clientY: y } = ev;
+        const menuRect = menu.getBoundingClientRect();
+        let posX = x;
+        let posY = y;
+
+        if (x + menuRect.width > window.innerWidth) posX = x - menuRect.width;
+        if (y + menuRect.height > window.innerHeight) posY = y - menuRect.height;
+
+        menu.style.left = posX + 'px';
+        menu.style.top = posY + 'px';
+
+        document.addEventListener('click', () => this._hideContextMenu(), { once: true });
+    },
+
+    async viewTree(color) {
+        if (!color) return;
+        const modal = document.getElementById('eventTreeModal');
+        const body = document.getElementById('eventTreeBody');
+        const colorName = document.getElementById('treeColorName');
+        if (!modal || !body) return;
+
+        // Clear previous nodes
+        body.innerHTML = '';
+
+        if (colorName) colorName.textContent = `(${color})`;
+        body.style.setProperty('--tree-color', color);
+        ModalManager.open('eventTreeModal');
+
+        try {
+            const resp = await fetch(`/api/events/tree/${color.replace('#', '')}`);
+            const data = await resp.json();
+            if (data.status === 'success') {
+                data.data.forEach((e, index) => {
+                    const node = document.createElement('div');
+                    node.className = `tree-node ${index % 2 === 0 ? 'left' : 'right'}`;
+                    const dateStr = new Date(e.date).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    node.innerHTML = `
+                        <div class="tree-card ${e.done ? 'done' : ''}" onclick="openEditEventModal('${e.id}', '${e.title}', '${e.date}', '', '', '${e.recurrence_id || ''}', '${e.color || color}', ${e.important}, ${e.done})">
+                            <div class="tree-card-date">${dateStr}</div>
+                            <div class="tree-card-title">${e.title}</div>
+                        </div>
+                    `;
+                    body.appendChild(node);
+                });
+            }
+        } catch (err) {
+            console.error("[EventService] viewTree error:", err);
+            if (window.showToast) window.showToast("Failed to load tree", "error");
+        }
+    },
+
+    _hideContextMenu() {
+        const menu = document.getElementById('eventContextMenu');
+        if (menu) menu.remove();
     },
 
     // --- Private / Helper Methods ---
@@ -148,9 +428,12 @@ export const EventService = {
         }
     },
 
-    _resetEditState(recRule, color) {
+    _resetEditState(recRule, color, important = false) {
         const errEl = document.getElementById('editEventError');
         if (errEl) errEl.innerText = '';
+
+        const impCb = document.getElementById('editEventImportant');
+        if (impCb) impCb.checked = !!important;
 
         const endModeDate = document.getElementById('editEventEndDateMode');
         if (endModeDate) endModeDate.checked = true;
@@ -174,7 +457,46 @@ export const EventService = {
         const recModeRow = document.getElementById('editEventRecurrenceModeRow');
         if (recModeRow) recModeRow.style.display = (recRule && recRule !== 'none') ? 'block' : 'none';
 
-        if (window.initColorPicker) window.initColorPicker(color || '');
+        this.initColorPicker(color || '');
+    },
+
+    initColorPicker(selectedColor) {
+        const container = document.getElementById('editEventColorDots');
+        const input = document.getElementById('editEventColor');
+        if (!container || !input) return;
+
+        const colors = ['#4F46E5', '#10B981', '#B91C1C', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EC4899', '#1E293B'];
+        container.innerHTML = '';
+        input.value = selectedColor;
+
+        colors.forEach(c => {
+            const dot = document.createElement('div');
+            dot.className = 'color-dot' + (c === selectedColor ? ' active' : '');
+            dot.style.background = c;
+            dot.onclick = () => {
+                input.value = c;
+                container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+            };
+            container.appendChild(dot);
+        });
+
+        // Add "None" option
+        const none = document.createElement('div');
+        none.className = 'color-dot' + (!selectedColor ? ' active' : '');
+        none.style.background = '#e2e8f0';
+        none.innerHTML = '✕';
+        none.style.display = 'flex';
+        none.style.alignItems = 'center';
+        none.style.justifyContent = 'center';
+        none.style.fontSize = '12px';
+        none.style.color = '#64748b';
+        none.onclick = () => {
+            input.value = '';
+            container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            none.classList.add('active');
+        };
+        container.appendChild(none);
     },
 
     _getRecRule() {
@@ -195,14 +517,36 @@ export const EventService = {
 
     async loadDetailStickers(eventId, recId) {
         const listEl = document.getElementById('detailStickersList');
+        const emptyEl = document.getElementById('detailStickersEmpty');
         if (!listEl) return;
-        listEl.innerHTML = '<div class="loading-hint">Loading...</div>';
+
+        listEl.innerHTML = '<div class="loading-hint" style="color:var(--color-text-faint); padding:10px;">Loading stickers...</div>';
+        if (emptyEl) emptyEl.style.display = 'none';
+
         try {
             const stickers = await EventApi.fetchStickers(eventId, recId);
             listEl.innerHTML = '';
-            if (!stickers.length) document.getElementById('detailStickersEmpty').style.display = 'block';
-            else stickers.forEach(s => window.createStickerElement && listEl.appendChild(window.createStickerElement(s)));
-        } catch (e) { listEl.innerHTML = 'Error loading stickers'; }
+
+            if (!stickers || !stickers.length) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+
+            stickers.forEach(s => {
+                if (typeof window.createStickerElement === 'function') {
+                    listEl.appendChild(window.createStickerElement(s, { isWidget: false }));
+                } else {
+                    console.error("[EventService] window.createStickerElement is missing!");
+                    const errDiv = document.createElement('div');
+                    errDiv.style.cssText = "background:var(--color-error-soft); padding:8px; border-radius:8px; font-size:0.8rem; color:var(--color-error);";
+                    errDiv.textContent = s.title || s.text.substring(0, 30);
+                    listEl.appendChild(errDiv);
+                }
+            });
+        } catch (e) {
+            console.error("[EventService] loadDetailStickers failed:", e);
+            listEl.innerHTML = '<div style="color:var(--color-error); font-size:0.85rem; padding:10px;">⚠️ Failed to load stickers</div>';
+        }
     },
 
     async renderStickers(id, recId) {
@@ -227,16 +571,13 @@ export const EventService = {
         div.style.background = s.color || 'var(--color-sticker-default)';
         div.innerHTML = `
             <span class="sticker-emoji">${s.type === 'list' ? '📋' : '📝'}</span>
-            <span class="sticker-text-preview">${s.title || (s.text ? s.text.substring(0,10)+'...' : 'Sticker')}</span>
+            <span class="sticker-text-preview">${s.title || (s.text ? s.text.substring(0, 10) + '...' : 'Sticker')}</span>
             <button onclick="window.EventService.removeTempSticker(${idx})" class="btn-remove-temp">✕</button>
         `;
         return div;
     },
 
-    removeTempSticker(idx) {
-        this.tempStickers.splice(idx, 1);
-        this.renderStickers(document.getElementById('editEventId').value, document.getElementById('editEventRecId').value);
-    },
+
 
     toggleWeekdays() {
         const row = document.getElementById('editEventWeekdaysRow');
@@ -256,7 +597,7 @@ export const EventService = {
         const n = parseInt(document.getElementById('editEventRecCount')?.value) || 1;
         const startStr = document.getElementById('editEventDate')?.value;
         if (!startStr || freq === 'none') return;
-        
+
         const start = new Date(startStr);
         let end = new Date(start);
         if (freq === 'daily') end.setDate(start.getDate() + n);
@@ -264,7 +605,7 @@ export const EventService = {
         else if (freq === 'weekdays') end.setDate(start.getDate() + Math.ceil(n / 5) * 7);
         else if (freq === 'monthly') end.setMonth(start.getMonth() + n);
         else if (freq === 'yearly') end.setFullYear(start.getFullYear() + n);
-        
+
         const ds = end.toISOString().split('T')[0];
         document.getElementById('editEventRecEndFromCountLabel').innerText = 'Calculated end: ' + ds;
         document.getElementById('editEventRecEndFromCount').value = ds;
@@ -274,13 +615,24 @@ export const EventService = {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         return now.toISOString().slice(0, 16);
+    },
+
+    openAddForDay(dateStr) {
+        this.openEdit(null, '', dateStr + 'T09:00', 'none', '', '', '');
     }
 };
 
 // Global exports
 window.EventService = EventService;
 window.openEditEventModal = (...args) => EventService.openEdit(...args);
+window.closeEditEventModal = () => ModalManager.close('editEventModal');
 window.saveEventEdit = () => EventService.save();
+window.openEventDetailModal = (e) => EventService.openDetail(e);
 window.toggleEditEventWeekdays = () => EventService.toggleWeekdays();
 window.toggleEditEventEndMode = () => EventService.toggleEndMode();
 window.calcEditEventEndDateFromCount = () => EventService.calcEndDateFromCount();
+window.openAddEventForDay = (dateStr) => EventService.openAddForDay(dateStr);
+window.toggleEventDone = (id) => EventService.toggleDone(id);
+window.initColorPicker = (c) => EventService.initColorPicker(c);
+window.viewEventTree = (color) => EventService.viewTree(color);
+window.closeEventTreeModal = () => ModalManager.close('eventTreeModal');

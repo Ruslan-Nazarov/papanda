@@ -85,10 +85,20 @@ async def edit_sticker_inline(
 @router.get("/api/events/tree/{color}", response_model=schemas.SuccessResponse)
 async def get_event_tree(color: str, db: AsyncSession = Depends(get_db)):
     """Возвращает дерево событий определенного цвета."""
-    if not color.startswith("#") and len(color) in (6, 3, 8):
-        color = "#" + color
-
-    result = await db.execute(select(models.Event).where(models.Event.color == color).order_by(models.Event.date.asc()))
+    # Ensure we search both formats: #RRGGBB and RRGGBB
+    search_color = color if color.startswith("#") else "#" + color
+    raw_color = search_color.replace("#", "")
+    
+    result = await db.execute(
+        select(models.Event)
+        .where(
+            or_(
+                func.lower(models.Event.color) == search_color.lower(),
+                func.lower(models.Event.color) == raw_color.lower()
+            )
+        )
+        .order_by(models.Event.date.asc())
+    )
     events = result.scalars().all()
     
     tree_data = []
@@ -103,6 +113,9 @@ async def get_event_tree(color: str, db: AsyncSession = Depends(get_db)):
         tree_data.append({
             "id": e.id, "title": e.title, "date": e.date.isoformat(),
             "has_stickers": (stickers_res.scalar() or 0) > 0,
-            "recurrence_id": e.recurrence_id
+            "recurrence_id": e.recurrence_id,
+            "important": e.important,
+            "color": e.color,
+            "done": e.done
         })
     return schemas.SuccessResponse(message="Success", data=tree_data)

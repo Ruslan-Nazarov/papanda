@@ -49,47 +49,47 @@
 
         <div class="grid-stack" style="visibility: hidden;">
             <!-- Chronology -->
-            <div class="grid-stack-item" gs-id="chrono" gs-x="0" gs-y="0" gs-w="4" gs-h="5">
+            <div class="grid-stack-item" id="chrono" gs-id="chrono" gs-x="0" gs-y="0" gs-w="4" gs-h="5">
                 <div class="grid-stack-item-content">{% include 'partials/chrono_widget.html' %}</div>
             </div>
 
             <!-- Observations -->
-            <div class="grid-stack-item" gs-id="observation" gs-x="0" gs-y="11" gs-w="4" gs-h="10">
+            <div class="grid-stack-item" id="observation" gs-id="observation" gs-x="0" gs-y="11" gs-w="4" gs-h="10">
                 <div class="grid-stack-item-content">{% include 'widgets/observation_wrapper.html' %}</div>
             </div>
 
             <!-- Notes -->
-            <div class="grid-stack-item" gs-id="notes" gs-x="4" gs-y="0" gs-w="4" gs-h="5">
+            <div class="grid-stack-item" id="notes" gs-id="notes" gs-x="4" gs-y="0" gs-w="4" gs-h="5">
                 <div class="grid-stack-item-content">{% include 'partials/notes_widget.html' %}</div>
             </div>
 
             <!-- Schedule -->
-            <div class="grid-stack-item" gs-id="events" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
+            <div class="grid-stack-item" id="events" gs-id="events" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
                 <div class="grid-stack-item-content">{% include 'partials/schedule_widget.html' %}</div>
             </div>
 
             <!-- Tasks -->
-            <div class="grid-stack-item" gs-id="tasks" gs-x="0" gs-y="5" gs-w="4" gs-h="6">
+            <div class="grid-stack-item" id="tasks" gs-id="tasks" gs-x="0" gs-y="5" gs-w="4" gs-h="6">
                 <div class="grid-stack-item-content">{% include 'partials/tasks_widget.html' %}</div>
             </div>
 
             <!-- Habits -->
-            <div class="grid-stack-item" gs-id="habits" gs-x="4" gs-y="5" gs-w="4" gs-h="6">
+            <div class="grid-stack-item" id="habits" gs-id="habits" gs-x="4" gs-y="5" gs-w="4" gs-h="6">
                 <div class="grid-stack-item-content">{% include 'partials/habits_widget.html' %}</div>
             </div>
 
             <!-- Words -->
-            <div class="grid-stack-item" gs-id="words" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
+            <div class="grid-stack-item" id="words" gs-id="words" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
                 <div class="grid-stack-item-content">{% include 'partials/words_widget.html' %}</div>
             </div>
 
             <!-- Rules -->
-            <div class="grid-stack-item" gs-id="rules" gs-x="0" gs-y="11" gs-w="8" gs-h="4">
+            <div class="grid-stack-item" id="rules" gs-id="rules" gs-x="0" gs-y="11" gs-w="8" gs-h="4">
                 <div class="grid-stack-item-content">{% include 'widgets/rules_widget.html' %}</div>
             </div>
 
             <!-- Sticky Thoughts -->
-            <div class="grid-stack-item" gs-id="stickers" gs-x="8" gs-y="5" gs-w="4" gs-h="6">
+            <div class="grid-stack-item" id="stickers" gs-id="stickers" gs-x="8" gs-y="5" gs-w="4" gs-h="6">
                 <div class="grid-stack-item-content">{% include 'widgets/stickers_widget.html' %}</div>
             </div>
         </div>
@@ -111,6 +111,6 @@
         <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v=6"></script>
         <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=10"></script>
         <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=6"></script>
-        <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=21"></script>
+        <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=29"></script>
     </body>
 </html>

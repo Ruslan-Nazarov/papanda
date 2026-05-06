@@ -9,6 +9,11 @@ export const ModalManager = {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
+        // Dynamic Z-index management
+        const baseZIndex = 2000;
+        const newZIndex = baseZIndex + (this.activeModals.length * 10) + 5;
+        modal.style.setProperty('z-index', newZIndex, 'important');
+
         // Ensure backdrop blur is active
         modal.classList.add('active');
         modal.style.display = 'flex';

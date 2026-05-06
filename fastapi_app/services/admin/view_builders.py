@@ -97,17 +97,31 @@ class ViewBuilders:
             for r in records:
                 r.has_stickers = (r.id in ids_with or r.recurrence_id in recs_with)
 
-    async def get_habits_view(self, Model) -> List[Any]:
-        res = await self.db.execute(select(Model).order_by(Model.read.asc(), Model.start_date.desc()))
+    async def get_habits_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
+        query = select(Model)
+        if search:
+            query = query.where(Model.title.ilike(f"%{search}%"))
+        res = await self.db.execute(query.order_by(Model.read.asc(), Model.start_date.desc()))
         records = list(res.scalars().all())
         await attach_stickers_count(self.db, records, 'habit_id', models.StickyNote)
-        return records
+        return records, {"search_query": search}
 
-    async def get_tasks_view(self, Model) -> List[Any]:
-        res = await self.db.execute(select(Model).order_by(Model.done.asc(), Model.created_at.desc()))
+    async def get_tasks_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
+        query = select(Model)
+        if search:
+            query = query.where(Model.name.ilike(f"%{search}%"))
+        res = await self.db.execute(query.order_by(Model.done.asc(), Model.created_at.desc()))
         records = list(res.scalars().all())
         await attach_stickers_count(self.db, records, 'task_id', models.StickyNote)
-        return records
+        return records, {"search_query": search}
+
+    async def get_wink_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
+        query = select(Model)
+        if search:
+            query = query.where(Model.title.ilike(f"%{search}%"))
+        res = await self.db.execute(query.order_by(Model.date.desc()))
+        records = list(res.scalars().all())
+        return records, {"search_query": search}
 
     async def get_chronology_view(self, Model, search: Optional[str]) -> Tuple[List[Any], Dict[str, Any]]:
         query = select(Model)

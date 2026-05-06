@@ -1,14 +1,38 @@
 {% if model_name == 'Wink' %}
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Records</span>
+                <span style="font-size: 1.1rem; color: #9b59b6; line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 10px;"></div>
+
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Wink" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem;">
+                🔍
+            </div>
+        </div>
+    </div>
+
+    {% if search_query %}
+        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
+            <a href="{{ url_for('db_view', model_name='Wink') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
+        </div>
+    {% endif %}
+
     <div class="wink-management-view">
-        <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">😉 Leisure (Wink)</h2>
+        <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: #9b59b6;">😉</span> Leisure (Wink)
+        </h2>
         <div class="habit-grid" id="winkGrid">
             {% for row in records %}
-                <div class="habit-card" data-id="{{ row.id }}" style="border-left: 5px solid #9b59b6;">
-                    <div class="habit-title">{{ row.title }}</div>
-                    <div class="habit-date">
-                        <span>📅 Date: {{ row.date.strftime('%d.%m.%Y %H:%M') if row.date else '—' }}</span>
+                <div class="habit-card" data-id="{{ row.id }}" style="border-left: 5px solid #9b59b6; background: linear-gradient(145deg, #ffffff 0%, #fcf7ff 100%);">
+                    <div class="habit-title" style="font-weight: 700; color: var(--color-text-dark);">{{ row.title }}</div>
+                    <div class="habit-date" style="color: var(--color-text-muted); font-size: 0.85rem;">
+                        <span>📅 {{ row.date.strftime('%d.%m.%Y %H:%M') if row.date else '—' }}</span>
                     </div>
-                    <div class="habit-actions">
+                    <div class="habit-actions" style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--color-border-light);">
                         <button type="button" class="btn-action btn-edit" 
                                 onclick="openEditWinkModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.date.isoformat() if row.date else '' }}')">
                             Edit
@@ -17,12 +41,12 @@
                     </div>
                 </div>
             {% else %}
-                <div style="padding: 40px; text-align: center; color: #999; grid-column: 1 / -1;">No leisure records found.</div>
+                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1 / -1;">No leisure records found.</div>
             {% endfor %}
         </div>
         
         {% if records|length > 10 %}
-        <div class="load-more-container" id="loadMoreWinkContainer">
+        <div class="load-more-container" id="loadMoreWinkContainer" style="margin-top: 30px;">
             <button class="btn-load-more" onclick="loadMoreWink()">Show More (+10)</button>
         </div>
         {% endif %}

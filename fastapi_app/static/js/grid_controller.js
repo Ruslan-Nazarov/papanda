@@ -6,6 +6,7 @@ console.log("!!! GRID_CONTROLLER.JS LOADED !!!");
 
 const COLLAPSE_KEY = 'papanda_collapsed_widgets';
 
+
 export function getCollapsedSet() {
     try { return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]')); }
     catch (e) { return new Set(); }
@@ -66,16 +67,11 @@ export function applyCollapsedState() {
 }
 
 export function initGrid() {
-    console.log("[Grid] Starting initialization...");
     const gridStackEl = document.querySelector('.grid-stack');
-    if (!gridStackEl) {
-        console.error("[Grid] .grid-stack element not found!");
-        return null;
-    }
+    if (!gridStackEl) return null;
     
     let grid = null;
     try {
-        // 1. Core Init with explicit element
         grid = window.grid = GridStack.init({
             cellHeight: 45,
             margin: 10,
@@ -88,57 +84,62 @@ export function initGrid() {
         // 2. Restore Layout
         const savedLayout = window.P_DASHBOARD_LAYOUT;
         if (grid && savedLayout && typeof savedLayout === 'object' && Object.keys(savedLayout).length > 0) {
-            grid.batchUpdate();
-            Object.values(savedLayout).forEach(item => {
-                if (!item || !item.id) return;
-                const el = document.querySelector(`.grid-stack-item[gs-id="${item.id}"]`);
-                if (el) grid.update(el, { x: item.x, y: item.y, w: item.w, h: item.h });
-            });
-            grid.commit();
+            const items = Object.values(savedLayout).map(item => ({
+                id: item.id,
+                x: parseInt(item.x),
+                y: parseInt(item.y),
+                w: parseInt(item.w),
+                h: parseInt(item.h)
+            }));
+            grid.load(items, true); 
         }
 
         applyCollapsedState();
         
-        // Disable automatic compacting to respect user-defined gaps (float: true)
-        // grid.compact(); 
-
-        // Delay event registration to prevent saving layout during initial render
         setTimeout(() => {
             if (grid) {
-                grid.on('change', saveLayout);
-                grid.on('dragstop', saveLayout);
-                grid.on('resizestop', saveLayout);
-                console.log("[Grid] Event listeners active");
+                grid.on('change', () => saveLayout());
+                grid.on('dragstop', () => saveLayout());
+                grid.on('resizestop', () => saveLayout());
             }
         }, 1000);
 
         return grid;
     } catch (e) {
         console.error('[Grid] Critical failure:', e);
-        // Temporary alert to see the error on user's screen
-        // alert('[Grid Error] ' + e.message); 
         return null;
     } finally {
-        // Guarantee visibility regardless of success
         if (gridStackEl) gridStackEl.style.visibility = 'visible';
     }
 }
 
 export function saveLayout() {
     if (!window.grid) return;
-    let layout = window.P_DASHBOARD_LAYOUT || {};
-    window.grid.getGridItems().forEach(el => {
-        let n = el.gridstackNode;
-        if (!n) return;
-        const isCollapsed = el.classList.contains('collapsed');
-        let h = isCollapsed ? (parseInt(el.getAttribute('data-gs-orig-h')) || n.h) : n.h;
-        if (h <= 1 && !isCollapsed) h = 2;
+    
+    const savedData = window.grid.save(false); 
+    const existingLayout = window.P_DASHBOARD_LAYOUT || {};
+    let layout = {};
+    
+    savedData.forEach(item => {
+        if (!item.id) return;
         
-        // Preserve existing extra data (like border_color)
-        const existing = layout[n.id] || {};
-        layout[n.id] = { ...existing, id: n.id, x: n.x, y: n.y, w: n.w, h: h };
+        const el = document.getElementById(item.id);
+        const isCollapsed = el ? el.classList.contains('collapsed') : false;
+        let h = isCollapsed ? (parseInt(el.getAttribute('data-gs-orig-h')) || item.h) : item.h;
+        
+        // Preserve extra data like border_color from WidgetSettingsService
+        const oldItemData = existingLayout[item.id] || {};
+        
+        layout[item.id] = {
+            ...oldItemData,
+            id: item.id,
+            x: item.x,
+            y: item.y,
+            w: item.w,
+            h: h
+        };
     });
-    // Update global reference
+    
     window.P_DASHBOARD_LAYOUT = layout;
     
     fetch('/save_dashboard_layout', {

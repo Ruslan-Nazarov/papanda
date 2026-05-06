@@ -1,23 +1,23 @@
 <!-- Chronology Edit/Add Modal -->
 <div id="editChronoModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
-            <h3 id="chronoModalHeader">Chronology Entry</h3>
+            <h3><span style="color: var(--color-blue);">📅</span> Chronology Entry</h3>
         </div>
         
         <div class="modal-body">
             <input type="hidden" id="editChronoId">
             <input type="hidden" id="expandChronoId" />
             
-            <div class="form-group">
-                <label class="form-label">Target Date & Time</label>
-                <input type="datetime-local" id="editChronoDate" class="form-input">
+            <div class="form-group-premium">
+                <label><span class="icon">⏰</span> Target Date & Time</label>
+                <input type="datetime-local" id="editChronoDate">
                 <input type="date" id="expandChronoDate" style="display:none;">
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Event Description</label>
-                <textarea id="editChronoTitle" class="form-input" style="height: 350px; resize: vertical; font-size: 1.1rem; line-height: 1.6;" placeholder="Tell your story..."></textarea>
+            <div class="form-group-premium">
+                <label><span class="icon">📝</span> Event Description</label>
+                <textarea id="editChronoTitle" style="height: 400px;" placeholder="Tell your story..."></textarea>
                 <textarea id="expandChronoText" style="display:none;"></textarea>
             </div>
 
@@ -34,12 +34,12 @@
 
 <!-- Chronology View Modal (Read-Only) -->
 <div id="chronoViewModal" class="modal">
-    <div class="modal-content" style="width: 750px;">
+    <div class="modal-content" style="max-width: 850px; border-top: 6px solid var(--color-blue);">
         <div class="modal-header">
-            <h3 id="chronoViewDate" style="color: var(--color-indigo);"></h3>
+            <h3 id="chronoViewDate" style="color: var(--color-blue);"></h3>
         </div>
         <div class="modal-body">
-            <div id="chronoViewFullText" class="chrono-view-text" style="font-size: 1.15rem; line-height: 1.8; color: var(--color-text-body);"></div>
+            <div id="chronoViewFullText" class="chrono-view-text" style="font-size: 1.15rem; line-height: 1.8; color: var(--color-text-dark); background: var(--color-bg-subtle); padding: 25px; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light);"></div>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeChronoViewModal()">Close</button>

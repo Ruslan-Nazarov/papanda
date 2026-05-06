@@ -20,7 +20,8 @@ export const EventApi = {
     },
 
     async toggleDone(eventId) {
-        const resp = await fetch(`/api/events/${eventId}/toggle_done`, { method: 'POST' });
+        // Correct URL from routers/actions.py
+        const resp = await fetch(`/toggle_event_done/${eventId}`, { method: 'POST' });
         return await resp.json();
     }
 };

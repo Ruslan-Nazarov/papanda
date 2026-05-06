@@ -1,0 +1,122 @@
+<!-- Event Tree Modal (Visualizing events of same category) -->
+<div id="eventTreeModal" class="modal premium-modal">
+    <style>
+        #eventTreeModal .modal-content {
+            max-width: 800px !important;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #eventTreeBody {
+            position: relative;
+            padding: 40px 20px;
+            overflow-y: auto;
+            flex: 1;
+            background: var(--color-bg-subtle);
+            min-height: 400px;
+        }
+        /* Vertical line for the tree */
+        #eventTreeBody::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--tree-color, #4F46E5);
+            opacity: 0.3;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+        .tree-node {
+            position: relative;
+            width: 50%;
+            margin-bottom: 30px;
+            z-index: 1;
+        }
+        .tree-node.left {
+            left: 0;
+            padding-right: 40px;
+            text-align: right;
+        }
+        .tree-node.right {
+            left: 50%;
+            padding-left: 40px;
+            text-align: left;
+        }
+        /* Dot on the line */
+        .tree-node::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border: 4px solid var(--tree-color, #4F46E5);
+            border-radius: 50%;
+            z-index: 2;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .tree-node.left::after {
+            right: -8px;
+        }
+        .tree-node.right::after {
+            left: -8px;
+        }
+        .tree-card {
+            background: #fff;
+            padding: 16px 20px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            display: inline-block;
+            max-width: 90%;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--color-border-light);
+        }
+        .tree-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--tree-color, #4F46E5);
+        }
+        .tree-card.done {
+            opacity: 0.6;
+            text-decoration: line-through;
+            background: #f8fafc;
+        }
+        .tree-card-date {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--color-text-faint);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .tree-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-text-dark);
+        }
+        .loading-tree {
+            text-align: center;
+            padding: 40px;
+            color: var(--color-text-muted);
+            font-style: italic;
+        }
+    </style>
+    <div class="modal-content">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-bg-app); padding: 20px 32px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.4rem;">Category Timeline <span id="treeColorName" style="font-size: 0.9rem; font-weight: normal; font-family: monospace;"></span></h2>
+            </div>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="closeEventTreeModal()" style="border-radius: 50%; width: 40px; height: 40px;">✕</button>
+        </div>
+        
+        <div id="eventTreeBody">
+            <!-- Nodes will be injected here -->
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 32px; background: var(--color-bg-subtle);">
+            <button type="button" class="btn btn-secondary" onclick="closeEventTreeModal()" style="width: 100%; border-radius: 12px; font-weight: 700;">Close</button>
+        </div>
+    </div>
+</div>

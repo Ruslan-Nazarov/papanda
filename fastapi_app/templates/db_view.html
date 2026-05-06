@@ -15,113 +15,44 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/calendar.css') }}?v=1">
+    
     <style>
-        .sticker-icon-small {
-            width: 14px;
-            height: 14px;
-            background: var(--color-sticker-default);
-            border: 1px solid var(--color-sticker-accent);
-            border-radius: 2px;
-            box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            transform: rotate(-3deg);
-            display: inline-block;
-            flex-shrink: 0;
-        }
-
-        /* Premium Stats Counter */
-        .stats-counter {
-            display: inline-flex;
-            align-items: center;
-            gap: 15px;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--color-primary-glow);
-            padding: 10px 24px;
-            border-radius: 16px;
-            margin-bottom: 25px;
-            box-shadow: var(--shadow-lg);
-            animation: statsSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            border-left: 5px solid var(--color-primary);
-            transition: all 0.3s ease;
-            cursor: default;
-        }
-
-        .stats-counter:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(242, 153, 74, 0.15);
-            background: rgba(255, 255, 255, 0.85);
-        }
-
-        .stats-icon {
-            font-size: 1.5em;
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-warning) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stats-label {
-            font-size: 0.9em;
-            color: var(--color-text-muted);
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-
-        .stats-value {
-            font-size: 1.4em;
-            font-weight: 800;
-            color: var(--color-text-dark);
-            font-family: var(--font-base);
-            margin-left: 5px;
-        }
-
-        @keyframes statsSlideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
     </style>
+    <script>
+        window.openSearchModal = function() {
+            if (typeof ModalManager !== 'undefined') {
+                ModalManager.open('dbSearchModal');
+                setTimeout(() => {
+                    const input = document.getElementById('dbSearchInput');
+                    if (input) {
+                        input.focus();
+                        input.value = ''; // Clear previous
+                        if (typeof performAjaxSearch === 'function') performAjaxSearch(); 
+                    }
+                }, 350);
+            }
+        }
+    </script>
 </head>
-<body>
+<body style="margin: 0; background-color: var(--color-bg-app);">
 
 <div class="settings-wrapper">
     <div class="header-line">
         <h1>{{ model_name }} Management</h1>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 12px;">
             {% if model_name == 'Wink' %}
-                <button type="button" class="btn-home" style="background-color: #f2994a; color: white; border: none;" onclick="openAddWinkForDay('{{ now_iso }}')">+ Add Wink</button>
+                <button type="button" class="btn btn-primary" onclick="openAddWinkForDay('{{ now_iso }}')">
+                    <span class="icon">✨</span> Add Wink
+                </button>
             {% endif %}
-            <a href="{{ url_for('index') }}" class="btn-home">← Home</a>
-        </div>
-    </div>
-    
-    <!-- Beautiful Record Counter -->
-    <div class="stats-counter">
-        <div class="stats-icon">📊</div>
-        <div class="stats-label">
-            Total records in <span style="color: var(--color-primary); font-weight: 700;">{{ model_name }}</span>:
-            <span class="stats-value">{{ total_in_db }}</span>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <span class="icon">←</span> Dashboard
+            </a>
         </div>
     </div>
 
-    <!-- Universal Search Bar -->
-    {% if model_name in ['Event', 'Notes', 'Chronology', 'Stickers'] %}
-    <div class="search-container">
-        <form class="search-wrapper {% if search_query %}has-query{% endif %}" action="{{ url_for('db_view', model_name=model_name) }}" method="GET">
-            <button type="submit" class="search-icon-btn">🔍</button>
-            <input type="text" name="search" placeholder="Search in {{ model_name }}..." value="{{ search_query or '' }}">
-            {% if model_name == 'Notes' or model_name == 'Stickers' %}
-                <input type="hidden" name="category" value="{{ selected_category or '' }}">
-                <input type="hidden" name="sort" value="{{ sort_by or 'date' }}">
-            {% endif %}
-        </form>
-        {% if search_query %}
-            <a href="{{ url_for('db_view', model_name=model_name) }}" class="btn-clear-search" title="Clear search">✕</a>
-        {% endif %}
-    </div>
-    {% endif %}
+    <!-- Search functionality moved to dbSearchModal -->
 
     <!-- View Rendering Routing -->
     {% if model_name == 'Event' %}
@@ -208,23 +139,29 @@
 <!-- Include Modals -->
 {% include 'partials/modals/common_modals.html' %}
 {% include 'partials/modals/event_modals.html' %}
+{% if model_name == 'Event' %}
+    {% include 'partials/modals/event_color_modal.html' %}
+    {% include 'partials/modals/event_tree_modal.html' %}
+{% endif %}
 {% include 'partials/modals/note_modals.html' %}
 {% include 'partials/modals/chrono_modals.html' %}
 {% include 'partials/modals/word_modals.html' %}
 {% include 'partials/modals/other_modals.html' %}
+{% include 'partials/modals/search_modal.html' %}
 {% include 'partials/sticker_modal.html' %}
 {% include 'partials/parent_stickers_modal.html' %}
+{% include 'partials/modals/common_modals.html' %}
 
 <!-- Core JS and Initialization -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="{{ url_for('static', path='js/stickers.js') }}?v=4"></script>
-<script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=28"></script>
+<script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=4"></script>
+<script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=29"></script>
 <script>
     // Bridge variables from Jinja2 to JS
     {% if model_name == 'Event' %}
-        const currentYear = {{ current_year }};
-        const currentMonth = {{ current_month }};
-        const eventRecords = [
+        window.currentYear = {{ current_year }};
+        window.currentMonth = {{ current_month }};
+        window.eventRecords = [
             {% for e in records %}
             {
                 id: {{ e.id }},
@@ -241,6 +178,139 @@
             {% endfor %}
         ];
     {% endif %}
+
+    // Global Debugger for Search
+    window.logSearchDebug = function(msg) {
+        const log = document.getElementById('searchDebugLog');
+        if (log) {
+            const entry = document.createElement('div');
+            entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        console.log("[SearchDebug]", msg);
+    };
+
+    window.performAjaxSearch = async function() {
+        logSearchDebug("performAjaxSearch called");
+        const query = (document.getElementById('dbSearchInput')?.value || '').trim();
+        const modelName = "{{ model_name }}";
+        const resultsBox = document.getElementById('dbSearchResults');
+        const placeholder = document.getElementById('searchPlaceholder');
+        
+        if (query.length < 2) {
+            if (resultsBox) resultsBox.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'block';
+            return;
+        }
+
+        logSearchDebug("Searching for: " + query + " in " + modelName);
+        if (placeholder) {
+            placeholder.innerHTML = '<div class="search-loader"></div><div style="font-weight: 600; margin-top: 15px;">Searching...</div>';
+            placeholder.style.display = 'block';
+        }
+        if (resultsBox) resultsBox.style.display = 'none';
+
+        if (window.searchTimeout) clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(async function() {
+            try {
+                const url = '/api/db/search/' + modelName + '?search=' + encodeURIComponent(query);
+                logSearchDebug("Fetching: " + url);
+                const resp = await fetch(url);
+                logSearchDebug("HTTP status: " + resp.status);
+                
+                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                const data = await resp.json();
+                
+                if (data.status === 'success') {
+                    logSearchDebug("Results: " + (data.data ? data.data.length : 0));
+                    renderSearchItems(data.data);
+                } else {
+                    throw new Error(data.message || "Error");
+                }
+            } catch (e) {
+                logSearchDebug("FAIL: " + e.message);
+                if (placeholder) placeholder.innerHTML = '<div style="color:red; padding:20px;">⚠️ ' + e.message + '</div>';
+            }
+        }, 300);
+    };
+
+    function renderSearchItems(items) {
+        const resultsBox = document.getElementById('dbSearchResults');
+        const placeholder = document.getElementById('searchPlaceholder');
+        if (!resultsBox) return;
+
+        if (!items || items.length === 0) {
+            resultsBox.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No matches found</div>';
+        } else {
+            resultsBox.innerHTML = items.map(function(item) {
+                return '<div class="search-result-item" onclick="window.jumpToRecord(\'' + item.id + '\')">' +
+                    '<div class="search-result-info">' +
+                        '<div class="search-result-title">' + (item.title || 'Untitled') + '</div>' +
+                        '<div class="search-result-meta">' + (item.date || item.text || 'ID: ' + item.id) + '</div>' +
+                    '</div>' +
+                    '<div class="search-result-action"><span class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">View</span></div>' +
+                '</div>';
+            }).join('');
+        }
+        
+        resultsBox.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+    }
+
+    window.jumpToRecord = async function(id) {
+        logSearchDebug("Jump to: " + id);
+        const selector = '.event-chip[data-id="' + id + '"], ' +
+                         '.note-card[data-id="' + id + '"], ' +
+                         '.record-row[data-id="' + id + '"], ' +
+                         '[data-id="' + id + '"]';
+        
+        const el = document.querySelector(selector);
+        
+        if (el) {
+            logSearchDebug("Valid record found. Opening...");
+            if (typeof ModalManager !== 'undefined') ModalManager.close('dbSearchModal');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.outline = '4px solid #4F46E5';
+            el.style.boxShadow = '0 0 25px rgba(79, 70, 229, 0.4)';
+            setTimeout(function() { 
+                el.click(); 
+                logSearchDebug("Click event triggered");
+            }, 500);
+            setTimeout(function() { el.style.outline = 'none'; el.style.boxShadow = 'none'; }, 3000);
+        } else {
+            logSearchDebug("Record NOT on page. Fetching via API to open modal...");
+            if (typeof ModalManager !== 'undefined') ModalManager.close('dbSearchModal');
+            
+            // Instead of redirecting to the ugly search page, we fetch the data and open the modal
+            const modelName = "{{ model_name }}";
+            try {
+                const resp = await fetch('/api/db/get_record/' + modelName + '/' + id);
+                if (!resp.ok) throw new Error("Fetch failed");
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    if (modelName === 'Event' && window.openEventDetailModal) {
+                        window.openEventDetailModal(data.data);
+                    } else if (modelName === 'Note' && window.openNoteViewModal) {
+                        window.openNoteViewModal(data.data);
+                    } else {
+                        // Fallback for other models or if detail modal isn't ready
+                        window.location.href = '?search=' + encodeURIComponent(id);
+                    }
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (e) {
+                logSearchDebug("Failed to fetch record: " + e.message);
+                window.location.href = '?search=' + encodeURIComponent(id);
+            }
+        }
+    };
+
+    // Ready log
+    document.addEventListener('DOMContentLoaded', function() {
+        logSearchDebug("Search system ready (DOM Loaded)");
+    });
 </script>
 
 {% include 'partials/footer.html' %}

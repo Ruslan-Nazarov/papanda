@@ -1,11 +1,12 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, Any
 from fastapi import Request
 
 class SuccessResponse(BaseModel):
     """Стандартный успешный ответ API."""
     status: str = "success"
     message: Optional[str] = None
+    data: Optional[Any] = None
 
 class GenericUpdateSchema(BaseModel):
     """Универсальная схема для inline-обновления любых записей."""

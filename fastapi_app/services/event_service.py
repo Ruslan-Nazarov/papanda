@@ -209,7 +209,7 @@ class EventService(BaseService):
             date=new_dt,
             color=data.get("color"),
             important=bool(data.get("important", False)),
-            done=False,
+            done=bool(data.get("done", False)),
             recurrence_id=str(uuid.uuid4())[:8] if is_recurring else None,
             recurrence_rule=new_rec_rule,
             recurrence_end=date.fromisoformat(data["recurrence_end"]) if data.get("recurrence_end") else None
@@ -237,6 +237,7 @@ class EventService(BaseService):
             event.date = parse_date_input(str(data["date"]))
         if "color" in data: event.color = data["color"]
         if "important" in data: event.important = bool(data["important"])
+        if "done" in data: event.done = bool(data["done"])
         if "recurrence_rule" in data: 
             rule = data["recurrence_rule"]
             if rule in (None, "none", ""):
@@ -302,7 +303,7 @@ class EventService(BaseService):
             date=parse_date_input(str(data.get("date"))) or event.date,
             color=data.get("color") or event.color,
             important=bool(data.get("important", event.important)),
-            done=event.done,
+            done=bool(data.get("done", event.done)),
             recurrence_id=str(uuid.uuid4())[:8] if is_new_rec else None,
             recurrence_rule=new_rule if is_new_rec else None,
             recurrence_end=date.fromisoformat(data["recurrence_end"]) if is_new_rec and data.get("recurrence_end") else None

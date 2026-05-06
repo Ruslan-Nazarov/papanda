@@ -85,3 +85,12 @@
     color: var(--color-text-muted);
     margin-bottom: 8px;
 }
+
+.form-group-premium {
+    margin-bottom: 24px;
+    width: 100%;
+}
+
+.form-group-premium:last-child {
+    margin-bottom: 0;
+}

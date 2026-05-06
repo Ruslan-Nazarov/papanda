@@ -73,15 +73,15 @@ class AdminService:
         if model_name == 'Event':
             records, extra_ctx = await self.builders.get_events_view(Model, month, year, day, search)
         elif model_name == 'Habit':
-            records = await self.builders.get_habits_view(Model)
+            records, extra_ctx = await self.builders.get_habits_view(Model, search)
         elif model_name == 'Task':
-            records = await self.builders.get_tasks_view(Model)
+            records, extra_ctx = await self.builders.get_tasks_view(Model, search)
         elif model_name == 'Chronology':
             records, extra_ctx = await self.builders.get_chronology_view(Model, search)
         elif model_name == 'Notes':
             records, extra_ctx = await self.builders.get_notes_view(Model, category, sort, search)
         elif model_name == 'Wink':
-            records = list((await self.db.execute(select(Model).order_by(Model.date.desc()))).scalars().all())
+            records, extra_ctx = await self.builders.get_wink_view(Model, search)
         elif model_name == 'Stickers':
             records, extra_ctx = await self.builders.get_stickers_view(Model, category, sort, search, page, page_size)
         else:

@@ -57,7 +57,8 @@ window.WidgetSettings = {
 
     openColorPicker(btn) {
         const picker = document.getElementById('globalWidgetColorPicker');
-        this.activeWidget = btn.closest('.premium-card');
+        // Find the grid-stack-item which holds the canonical ID
+        this.activeWidget = btn.closest('.grid-stack-item');
         
         if (!picker || !this.activeWidget) return;
 
@@ -70,8 +71,9 @@ window.WidgetSettings = {
     applyColor(color) {
         if (!this.activeWidget) return;
         
-        const widgetId = this.activeWidget.id;
-        
+        const widgetId = this.activeWidget.id || this.activeWidget.getAttribute('gs-id');
+        if (!widgetId) return;
+
         if (color) {
             this.activeWidget.style.setProperty('--widget-border-color', color);
         } else {
@@ -87,21 +89,14 @@ window.WidgetSettings = {
     async saveColorToLayout(widgetId, color) {
         if (!window.P_DASHBOARD_LAYOUT) return;
         
-        // Find widget in layout and update color
-        let found = false;
-        for (const [id, data] of Object.entries(window.P_DASHBOARD_LAYOUT)) {
-            if (id === widgetId) {
-                data.border_color = color;
-                found = true;
-                break;
-            }
+        // Ensure the item exists in layout
+        if (!window.P_DASHBOARD_LAYOUT[widgetId]) {
+            window.P_DASHBOARD_LAYOUT[widgetId] = { id: widgetId };
         }
         
-        if (!found) {
-            window.P_DASHBOARD_LAYOUT[widgetId] = { border_color: color };
-        }
+        window.P_DASHBOARD_LAYOUT[widgetId].border_color = color;
 
-        // Trigger global layout save (throttled by the grid_controller)
+        // Trigger global layout save
         if (window.saveLayout) {
             window.saveLayout();
         }
@@ -112,7 +107,8 @@ window.WidgetSettings = {
         
         Object.entries(window.P_DASHBOARD_LAYOUT).forEach(([id, data]) => {
             if (data.border_color) {
-                const el = document.getElementById(id);
+                // Find by ID or gs-id
+                const el = document.getElementById(id) || document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
                 if (el) {
                     el.style.setProperty('--widget-border-color', data.border_color);
                 }

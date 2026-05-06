@@ -104,6 +104,44 @@
         .premium-modal .btn-save:hover {
             transform: translateY(-2px);
         }
+        .sticker-mini-pill {
+            background: #fff;
+            border: 1.5px solid var(--color-bg-app);
+            border-radius: 10px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-body);
+            box-shadow: var(--shadow-sm);
+        }
+        .sticker-mini-pill button {
+            background: none;
+            border: none;
+            color: var(--color-error);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        .color-dot:hover {
+            transform: scale(1.1);
+        }
+        .color-dot.active {
+            transform: scale(1.25);
+            box-shadow: 0 0 0 2px var(--color-primary);
+        }
     </style>
 
     <div class="modal-content" style="max-width: 600px;">
@@ -121,12 +159,49 @@
                     <label class="form-label">Title</label>
                     <input type="text" id="editEventTitle" class="form-input" placeholder="What needs to be done?" style="font-size: 1.1rem; font-weight: 600;" />
                 </div>
-                <div class="form-group" style="margin-bottom: 0; padding-top: 20px;">
+                <div class="form-group" style="margin-bottom: 0; padding-top: 20px; display: flex; gap: 16px;">
                     <label class="form-check-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; color: var(--color-primary-dark); text-transform: uppercase;">
                         <input type="checkbox" id="editEventImportant" style="accent-color: var(--color-primary); width: 20px; height: 20px;"> 
                         <span>Important ⭐</span>
                     </label>
+                    <label class="form-check-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; color: var(--color-success); text-transform: uppercase;">
+                        <input type="checkbox" id="editEventDone" style="accent-color: var(--color-success); width: 20px; height: 20px;"> 
+                        <span>Done ✓</span>
+                    </label>
                 </div>
+            </div>
+            
+            <div style="display: flex; gap: 24px; margin-bottom: 24px; align-items: center;">
+                <div style="flex: 1;">
+                    <label class="form-label">Category / Color</label>
+                    <div id="editEventColorDots" style="display: flex; gap: 10px; padding: 10px; background: var(--color-bg-subtle); border-radius: 14px; border: 1.5px solid var(--color-bg-app); width: fit-content;">
+                        <!-- Color dots injected by JS -->
+                    </div>
+                    <input type="hidden" id="editEventColor" />
+                </div>
+                <div style="flex: 1; text-align: right;">
+                     <button type="button" class="btn btn-secondary btn-sm" onclick="ModalManager.open('eventColorPaletteModal')" style="padding: 6px 14px; font-size: 0.75rem; border-radius: 10px;">🏷️ Manage Labels</button>
+                </div>
+            </div>
+
+
+            <div id="editEventStickersSection" style="margin-bottom: 24px; padding: 16px; background: var(--color-bg-subtle); border-radius: 16px; border: 1.5px solid var(--color-bg-app);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label" style="margin-bottom: 0;">Stickers</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" id="editEventManageStickersBtn" class="btn btn-secondary btn-sm" onclick="window.EventService.openManageStickers()" style="padding: 4px 12px; font-size: 0.75rem;">+ Manage Stickers</button>
+                        <button type="button" id="editEventDraftStickerBtn" class="btn btn-secondary btn-icon" onclick="window.EventService.openDraftSticker()" title="Add Sticker" style="display: flex; width: 32px; height: 32px; border-radius: 8px; justify-content: center; align-items: center;">
+                            <div class="sticker-icon-mini"></div>
+                        </button>
+                    </div>
+                </div>
+                <div id="editEventStickersList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;"></div>
+                
+                <!-- Draft Sticker Storage -->
+                <input type="hidden" id="editEventStickerText">
+                <input type="hidden" id="editEventStickerTitle">
+                <input type="hidden" id="editEventStickerColor" value="#fff9c4">
+                <input type="hidden" id="editEventStickerType" value="text">
             </div>
 
             <div id="editEventRecurrenceModeRow" class="info-box" style="display: none;">
@@ -189,7 +264,11 @@
 
                 <div id="editEventEndCountBlock" class="form-group" style="display: none;">
                     <label class="form-label">Occurrences</label>
-                    <input type="number" id="editEventRecCount" class="form-input" min="1" max="365" value="10" oninput="calcEditEventEndDateFromCount()" />
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="number" id="editEventRecCount" class="form-input" min="1" max="365" value="10" oninput="calcEditEventEndDateFromCount()" />
+                        <div id="editEventRecEndFromCountLabel" style="font-size: 0.75rem; color: var(--color-primary-dark); font-weight: 600;"></div>
+                        <input type="hidden" id="editEventRecEndFromCount" />
+                    </div>
                 </div>
             </div>
 
@@ -199,6 +278,66 @@
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeEditEventModal()" style="border-radius: 12px; padding: 12px 24px; font-weight: 600;">Cancel</button>
             <button type="button" class="btn-save" onclick="saveEventEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Modal (Read-Only View) -->
+<div id="eventDetailModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="detailModalTitle" style="margin: 0; font-size: 1.5rem; color: var(--color-text-dark);">Event Details</h2>
+            <div id="detailModalStatus"></div>
+        </div>
+        
+        <div class="modal-body" style="padding: 24px 32px;">
+            <input type="hidden" id="detailEventId" />
+            <input type="hidden" id="detailEventRecId" />
+            
+            <div style="margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); font-weight: 700; font-size: 0.85rem; margin-bottom: 8px;">
+                    📅 DATE & TIME
+                </div>
+                <div id="detailDateText" style="font-size: 1.1rem; font-weight: 600; color: var(--color-text-body);"></div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); font-weight: 700; font-size: 0.85rem; margin-bottom: 8px;">
+                        🏷️ CATEGORY
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div id="detailModalColor" style="width: 16px; height: 16px; border-radius: 50%; display: none;"></div>
+                        <div id="detailModalCategory" style="font-weight: 600; color: var(--color-text-dark);">Regular Event</div>
+                    </div>
+                </div>
+                <div id="detailModalRecurrenceRow" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); font-weight: 700; font-size: 0.85rem; margin-bottom: 8px;">
+                        🔁 RECURRENCE
+                    </div>
+                    <div id="detailModalRecRule" style="font-weight: 600; color: var(--color-text-dark);"></div>
+                    <div id="detailModalRecEndRow" style="font-size: 0.8rem; color: var(--color-text-faint); margin-top: 4px;">
+                        Until: <span id="detailModalRecEnd"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stickers Section -->
+            <div style="border-top: 2px solid var(--color-bg-app); padding-top: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="color: var(--color-text-muted); font-weight: 850; font-size: 0.75rem; letter-spacing: 0.05em;">STICKER BOARD</div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openParentStickers('event', document.getElementById('detailEventId').value)" style="padding: 4px 12px; font-size: 0.75rem;">+ Manage Stickers</button>
+                </div>
+                <div id="detailStickersList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
+                <div id="detailStickersEmpty" style="display: none; text-align: center; padding: 20px; background: var(--color-bg-subtle); border-radius: 16px; border: 2px dashed var(--color-border-light); color: var(--color-text-muted); font-style: italic; font-size: 0.9rem;">
+                    No stickers attached to this event.
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 32px; background: var(--color-bg-subtle);">
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('eventDetailModal')" style="flex: 1; border-radius: 14px; font-weight: 700;">Close</button>
+            <button type="button" id="detailModalEditBtn" class="btn btn-primary" style="flex: 1; border-radius: 14px; font-weight: 700; background: var(--color-primary); border: none;">Edit Event</button>
         </div>
     </div>
 </div>

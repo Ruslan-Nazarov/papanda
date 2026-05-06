@@ -1,11 +1,19 @@
 {% if model_name == 'Notes' %}
-    <div class="notes-management-view">
-        <form class="notes-filter" action="{{ url_for('db_view', model_name='Notes') }}" method="GET">
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <form class="notes-filter" action="{{ url_for('db_view', model_name='Notes') }}" method="GET" style="margin: 0;">
             {% if search_query %}
                 <input type="hidden" name="search" value="{{ search_query }}">
             {% endif %}
+            
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px; margin-right: 15px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Notes</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin-right: 15px;"></div>
+
             <label>Category</label>
-            <select name="category" class="filter-select">
+            <select name="category" class="filter-select" style="min-width: 120px;">
                 <option value="">All</option>
                 {% if categories %}
                     {% for cat in categories %}
@@ -13,14 +21,31 @@
                     {% endfor %}
                 {% endif %}
             </select>
+            
             <label>Sort</label>
-            <select name="sort" class="filter-select">
+            <select name="sort" class="filter-select" style="min-width: 100px;">
                 <option value="date" {% if sort_by != 'category' %}selected{% endif %}>By Date</option>
                 <option value="category" {% if sort_by == 'category' %}selected{% endif %}>By Category</option>
             </select>
+            
             <button type="submit" class="btn-filter-go">Apply</button>
-        </form>
 
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin-left: 15px; margin-right: 10px;"></div>
+
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Notes" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.1rem;">
+                🔍
+            </div>
+        </form>
+    </div>
+
+    {% if search_query %}
+        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
+            <a href="{{ url_for('db_view', model_name='Notes') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
+        </div>
+    {% endif %}
+
+    <div class="notes-management-view">
         <div class="note-grid" id="noteGrid">
             {% for row in records %}
                 <div class="note-card" data-id="{{ row.id }}" 
@@ -41,15 +66,15 @@
                     </div>
                 </div>
             {% else %}
-                <div style="padding: 40px; text-align: center; color: #999; grid-column: 1 / -1;">
-                    <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;">📝</div>
+                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1 / -1;">
+                    <div style="font-size: 3rem; margin-bottom: 15px; opacity: 0.1;">📝</div>
                     No notes found.
                 </div>
             {% endfor %}
         </div>
 
         {% if records|length > 10 %}
-        <div class="load-more-container" id="loadMoreNotesContainer">
+        <div class="load-more-container" id="loadMoreNotesContainer" style="margin-top: 30px;">
             <button class="btn-load-more" onclick="loadMoreNotesLocal()">Show More Notes (+10)</button>
         </div>
         {% endif %}

@@ -1,0 +1,92 @@
+<!-- Event Color Palette Modal -->
+<div id="eventColorPaletteModal" class="modal premium-confirm">
+    <style>
+        #eventColorPaletteModal .modal-content {
+            max-width: 500px !important;
+            border-radius: 24px;
+        }
+        .palette-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .palette-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 16px;
+            background: var(--color-bg-subtle);
+            border-radius: 16px;
+            border: 1px solid var(--color-border-light);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .palette-item:hover {
+            background: #fff;
+            box-shadow: var(--shadow-sm);
+            border-color: var(--color-primary-glow);
+        }
+        .palette-color-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .palette-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .palette-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--color-text-dark);
+        }
+        .palette-hex {
+            font-size: 0.75rem;
+            color: var(--color-text-faint);
+            font-family: monospace;
+        }
+        .palette-item .edit-icon {
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+        .palette-item:hover .edit-icon {
+            opacity: 1;
+            color: var(--color-primary);
+        }
+    </style>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                🎨 Event Color Palette
+            </h2>
+        </div>
+        <div class="modal-body" style="padding-top: 0;">
+            <p style="font-size: 0.9rem; color: var(--color-text-body); margin-bottom: 20px;">
+                Manage your event category labels here. Click any color to rename it.
+            </p>
+            <div class="palette-grid" id="modalPaletteGrid">
+                {% set colors = ['#4F46E5', '#10B981', '#B91C1C', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EC4899', '#1E293B'] %}
+                {% for c in colors %}
+                    {% set label = event_colors.get(c, '') %}
+                    <div class="palette-item" onclick="editColorLabel('{{ c }}', '{{ label|e }}')">
+                        <div class="palette-color-circle" style="background: {{ c }}; box-shadow: 0 0 15px {{ c }}44;"></div>
+                        <div class="palette-info">
+                            <span class="palette-label" id="modal-label-{{ c|replace('#','') }}">
+                                {% if label %}{{ label }}{% else %}<span style="opacity: 0.5; font-style: italic;">Unnamed</span>{% endif %}
+                            </span>
+                            <span class="palette-hex">{{ c }}</span>
+                        </div>
+                        <span class="edit-icon">✏️</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('eventColorPaletteModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>

@@ -1,7 +1,28 @@
 {% if model_name == 'Chronology' %}
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Entries</span>
+                <span style="font-size: 1.1rem; color: var(--color-blue); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 10px;"></div>
+
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Chronology" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem;">
+                🔍
+            </div>
+        </div>
+    </div>
+
+    {% if search_query %}
+        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
+            <a href="{{ url_for('db_view', model_name='Chronology') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
+        </div>
+    {% endif %}
+
     <div class="chrono-management-view">
         {% if search_query %}
-            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Search Results for "{{ search_query }}"</h2>
             <div class="chrono-grid" id="searchChronoGrid">
                 {% for row in records %}
                     <div class="chrono-card" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
@@ -16,11 +37,13 @@
                         </div>
                     </div>
                 {% else %}
-                    <div style="padding: 20px; color: #999;">No matching records found.</div>
+                    <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1/-1;">No matching records found.</div>
                 {% endfor %}
             </div>
         {% else %}
-            <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Recent (Last 7 Days)</h2>
+            <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                <span style="color: var(--color-blue);">⚡</span> Recent (Last 7 Days)
+            </h2>
             <div class="chrono-grid" id="recentChronoGrid">
                 {% set recent_chrono = records | selectattr('date', 'greaterthan', seven_days_ago) | list %}
                 {% for row in recent_chrono %}
@@ -36,11 +59,13 @@
                         </div>
                     </div>
                 {% else %}
-                    <div style="padding: 20px; color: #999;">No recent records.</div>
+                    <div style="padding: 20px 24px; color: var(--color-text-muted);">No recent records.</div>
                 {% endfor %}
             </div>
 
-            <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Archive</h2>
+            <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
+                <span style="color: var(--color-text-muted);">📦</span> Archive
+            </h2>
             <div class="chrono-grid" id="archiveChronoGrid">
                 {% set archive_chrono = records | selectattr('date', 'lessthan', seven_days_ago) | list %}
                 {% for row in archive_chrono %}
@@ -59,11 +84,11 @@
             </div>
             
             {% if archive_chrono|length > 0 %}
-            <div class="load-more-container" id="loadMoreChronoContainer">
+            <div class="load-more-container" id="loadMoreChronoContainer" style="margin-top: 30px;">
                 <button class="btn-load-more" onclick="loadMoreChrono()">Show More Archive (+10)</button>
             </div>
             {% else %}
-                <div style="padding: 20px; color: #999;">Archive is empty.</div>
+                <div style="padding: 20px 24px; color: var(--color-text-muted);">Archive is empty.</div>
             {% endif %}
         {% endif %}
     </div>

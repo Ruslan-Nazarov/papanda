@@ -1,25 +1,37 @@
 {% if model_name == 'Stickers' %}
     <style>
         .parent-badge {
-            font-size: 0.75em;
+            font-size: 0.7rem;
             background: rgba(0,0,0,0.05);
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
             margin-left: 5px;
-            color: #666;
-            font-weight: 500;
+            color: var(--color-text-muted);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         .sticker-card:hover .parent-badge {
             background: rgba(0,0,0,0.1);
         }
     </style>
-    <div class="notes-management-view">
-        <form class="notes-filter" action="{{ url_for('db_view', model_name='Stickers') }}" method="GET">
+    
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <form class="notes-filter" action="{{ url_for('db_view', model_name='Stickers') }}" method="GET" style="margin: 0;">
             {% if search_query %}
                 <input type="hidden" name="search" value="{{ search_query }}">
             {% endif %}
+            
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px; margin-right: 15px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Stickers</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin-right: 15px;"></div>
+
             <label>Category</label>
-            <select name="category" class="filter-select">
+            <select name="category" class="filter-select" style="min-width: 120px;">
                 <option value="">All</option>
                 <option value="standalone" {% if selected_category == 'standalone' %}selected{% endif %}>Standalone</option>
                 <option value="task" {% if selected_category == 'task' %}selected{% endif %}>Tasks</option>
@@ -31,27 +43,40 @@
                 <option value="text" {% if selected_category == 'text' %}selected{% endif %}>Text Only</option>
                 <option value="list" {% if selected_category == 'list' %}selected{% endif %}>Lists Only</option>
             </select>
+            
             <label>Sort</label>
-            <select name="sort" class="filter-select">
+            <select name="sort" class="filter-select" style="min-width: 100px;">
                 <option value="date" {% if sort_by != 'title' %}selected{% endif %}>By Date</option>
                 <option value="title" {% if sort_by == 'title' %}selected{% endif %}>By Title</option>
             </select>
+            
             <button type="submit" class="btn-filter-go">Apply</button>
-        </form>
 
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin-left: 15px; margin-right: 10px;"></div>
+
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Stickers" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.1rem;">
+                🔍
+            </div>
+        </form>
+    </div>
+
+    {% if search_query %}
+        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
+            <a href="{{ url_for('db_view', model_name='Stickers') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
+        </div>
+    {% endif %}
+
+    <div class="notes-management-view">
         <div class="note-grid" id="stickerGrid">
             {% for row in records %}
                 <div class="note-card sticker-card" data-id="{{ row.id }}" 
-                     data-title="{{ row.title|e if row.title else '' }}" 
-                     data-text="{{ row.text|e }}" 
-                     data-color="{{ row.color }}" 
-                     data-type="{{ row.type }}"
                      style="border-left: 5px solid {{ row.color or '#fff9c4' }};"
-                     ondblclick="openStickerModal({ id: '{{ row.id }}' })">
+                     onclick="openStickerModal({ id: '{{ row.id }}', mode: 'view' })">
                     
-                    <div class="note-cat" style="background: {{ row.color or '#fff9c4' }}33; color: #333;">
+                    <div class="note-cat" style="background: {{ row.color or '#fff9c4' }}33; color: var(--color-text-dark);">
                         {{ row.type|capitalize }} 
-                        {% if row.finished_at %}<span style="color: #999; font-size: 0.8em;">(Archived)</span>{% endif %}
+                        {% if row.finished_at %}<span style="color: var(--color-text-faint); font-size: 0.75rem; text-transform: none;">(Archived)</span>{% endif %}
                         {% if row.task_id %}
                             <span class="parent-badge" title="Task: {{ row.task.name if row.task else 'Deleted Task' }}">📋 Task</span>
                         {% elif row.habit_id %}
@@ -64,81 +89,40 @@
                     </div>
                     <div class="note-date">📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</div>
                     {% if row.title %}
-                        <div class="note-title" style="font-weight: bold; margin-bottom: 5px;">{{ row.title }}</div>
+                        <div class="note-title" style="font-weight: 700; color: var(--color-text-dark); margin-bottom: 8px;">{{ row.title }}</div>
                     {% endif %}
                     
-                    <div class="note-text sticker-content-placeholder" 
+                    <div class="note-text sticker-body-content" 
                          data-text="{{ row.text|e }}" 
                          data-type="{{ row.type }}"
-                         style="font-size: 0.95em; line-height: 1.4; color: #444;">
-                        {{ row.text.strip()[:200] }}...
+                         style="font-size: 1rem; color: var(--color-text-dark);">
+                        <!-- Hydrated by StickerRenderer -->
                     </div>
                     
                     <div class="note-actions">
-                        <button type="button" class="btn-action btn-edit" onclick="openStickerModal({ id: '{{ row.id }}' })">Edit</button>
-                        <button type="button" class="btn-action btn-archive" onclick="archiveStickerGlobal(this, '{{ row.id }}')" title="Archive (Hide from dashboard)">Archive</button>
-                        <button type="button" class="btn-action btn-del" onclick="hardDeleteStickerGlobal(this, {{ row.id }})" title="PERMANENTLY DELETE from database" style="background: #ffebee; color: #c62828;">Delete</button>
+                        <button type="button" class="btn-action btn-edit" onclick="event.stopPropagation(); openStickerModal({ id: '{{ row.id }}', mode: 'edit' })">Edit</button>
+                        <button type="button" class="btn-action btn-archive" onclick="event.stopPropagation(); archiveStickerGlobal(this, '{{ row.id }}')" title="Archive (Hide from dashboard)">Archive</button>
+                        <button type="button" class="btn-action btn-del" onclick="event.stopPropagation(); hardDeleteStickerGlobal(this, '{{ row.id }}')" title="PERMANENTLY DELETE from database" style="background: #ffebee; color: #c62828; border-color: #ffcdd2;">Delete</button>
                     </div>
                 </div>
             {% else %}
-                <div style="padding: 40px; text-align: center; color: #999; grid-column: 1 / -1;">
-                    <div style="margin-bottom: 15px; opacity: 0.3; display: flex; justify-content: center;">
-                        <div class="sticker-icon-small" style="width: 60px; height: 60px; transform: rotate(-5deg);"></div>
-                    </div>
+                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1 / -1;">
                     No stickers found.
                 </div>
             {% endfor %}
         </div>
-
-        {% if records|length > 0 %}
-        <div class="load-more-container" id="loadMoreStickersContainer">
-            <button class="btn-load-more" onclick="loadMoreStickers()">Show More Stickers (+10)</button>
-        </div>
-        {% endif %}
     </div>
 
-    <script>
-        let visibleStickersCount = 10;
+    <script type="module">
+        import { StickerRenderer } from "{{ url_for('static', path='js/modules/StickerRenderer.js') }}";
         
-        function loadMoreStickers() {
-            const grid = document.getElementById('stickerGrid');
-            if (!grid) return;
-            const cards = grid.querySelectorAll('.sticker-card');
-            const batch = 10;
-            
-            const allCards = Array.from(cards);
-            allCards.forEach((card, idx) => {
-                if (idx >= visibleStickersCount && idx < visibleStickersCount + batch) {
-                    card.style.display = 'flex';
-                }
-            });
-            
-            visibleStickersCount += batch;
-            if (visibleStickersCount >= cards.length) {
-                const btn = document.getElementById('loadMoreStickersContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            // Populate sticker content placeholders
-            const placeholders = document.querySelectorAll('.sticker-content-placeholder');
+            const placeholders = document.querySelectorAll('.sticker-body-content');
             placeholders.forEach(ph => {
                 const text = ph.dataset.text;
                 const type = ph.dataset.type;
-                if (typeof formatStickerContent === 'function') {
-                    ph.innerHTML = formatStickerContent({ text, type });
-                }
+                ph.innerHTML = StickerRenderer.formatStickerContent({ text, type });
             });
-
-            const cards = document.querySelectorAll('.sticker-card');
-            cards.forEach((card, idx) => {
-                if (idx >= 10) card.style.display = 'none';
-            });
-            if (cards.length <= 10) {
-                const btn = document.getElementById('loadMoreStickersContainer');
-                if (btn) btn.style.display = 'none';
-            }
         });
     </script>
 {% endif %}

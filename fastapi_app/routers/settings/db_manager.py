@@ -19,6 +19,97 @@ router = APIRouter(
     dependencies=[Depends(check_auth_dependency)]
 )
 
+@router.get("/api/db/search/{model_name}", name="api_db_search")
+async def api_db_search(
+    model_name: str,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    sort: Optional[str] = None,
+    page: int = 1,
+    as_service: AdminService = Depends(get_admin_service)
+):
+    """API эндпоинт для поиска (AJAX)."""
+    if not search:
+        return JSONResponse(content={"status": "success", "data": []})
+        
+    try:
+        ctx = await as_service.get_db_view_context(
+            model_name=model_name, search=search.strip(), category=category, sort=sort, page=page
+        )
+        
+        results = []
+        for r in ctx["records"]:
+            res = {"id": getattr(r, 'id', getattr(r, 'word', None))}
+            if model_name == 'Event':
+                res.update({"title": r.title, "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
+            elif model_name == 'Notes':
+                res.update({"title": r.category, "text": r.note[:100] + "..." if r.note and len(r.note) > 100 else r.note})
+            elif model_name == 'Stickers':
+                res.update({"title": r.title, "text": r.text[:100] if r.text else ""})
+            elif model_name == 'Chronology':
+                res.update({"title": r.title, "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
+            elif model_name == 'Habit':
+                res.update({"title": r.title, "text": f"Started: {r.start_date}"})
+            elif model_name == 'Task':
+                res.update({"title": r.name, "text": f"Created: {r.created_at.strftime('%d.%m.%Y')}"})
+            elif model_name == 'Wink':
+                res.update({"title": r.title, "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
+            else:
+                res.update({"title": str(r)})
+            results.append(res)
+            
+        return JSONResponse(content={"status": "success", "data": results})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+@router.get("/api/db/get_record/{model_name}/{record_id}", name="api_db_get_record")
+async def api_db_get_record(
+    model_name: str,
+    record_id: str,
+    db: AsyncSession = Depends(get_db),
+    as_service: AdminService = Depends(get_admin_service)
+):
+    """Эндпоинт для получения полной информации об одной записи (AJAX)."""
+    try:
+        Model = as_service.get_model(model_name)
+        if not Model: return JSONResponse(status_code=404, content={"status": "error", "message": "Model not found"})
+
+        pk_name = 'word' if model_name == 'WordStats' else 'id'
+        pk_val: Union[str, int] = int(record_id) if record_id.isdigit() else record_id
+        
+        res = await db.execute(select(Model).where(getattr(Model, pk_name) == pk_val))
+        r = res.scalar_one_or_none()
+        if not r: return JSONResponse(status_code=404, content={"status": "error", "message": "Record not found"})
+
+        # Формируем данные в зависимости от модели
+        data = {"id": getattr(r, pk_name)}
+        if model_name == 'Event':
+            data.update({
+                "title": r.title,
+                "date": r.date.isoformat() if r.date else None,
+                "color": r.color,
+                "important": r.important,
+                "done": r.done,
+                "recurrence_id": r.recurrence_id,
+                "rule": r.recurrence_rule,
+                "end": r.recurrence_end.isoformat() if r.recurrence_end else None
+            })
+        elif model_name == 'Note' or model_name == 'Notes':
+            data.update({
+                "category": r.category,
+                "note": r.note
+            })
+        elif model_name == 'Chronology':
+             data.update({
+                "title": r.title,
+                "date": r.date.isoformat() if r.date else None,
+                "text": r.text
+            })
+        
+        return JSONResponse(content={"status": "success", "data": data})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
 @router.get("/db_view/{model_name}", name="db_view", response_class=HTMLResponse)
 async def db_view(
     request: Request,

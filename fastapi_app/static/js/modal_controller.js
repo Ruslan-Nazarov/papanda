@@ -140,3 +140,91 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
         }
     });
 }
+
+export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = 'OK', cancelLabel = 'Cancel' }) {
+    return new Promise((resolve) => {
+        try {
+            const modal = document.getElementById('customConfirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const messageEl = document.getElementById('confirmModalMessage');
+            const footerEl = document.getElementById('confirmModalFooter');
+
+            if (!modal || !titleEl || !messageEl || !footerEl) {
+                console.warn("[customPrompt] UI elements missing, falling back to native.");
+                resolve(prompt(message, value));
+                return;
+            }
+
+            titleEl.innerText = title;
+            messageEl.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = 'prompt-container';
+            container.style.textAlign = 'left';
+
+            if (message) {
+                const msg = document.createElement('div');
+                msg.textContent = message;
+                msg.style.marginBottom = '15px';
+                msg.style.fontSize = '0.95rem';
+                msg.style.color = 'var(--color-text-body)';
+                container.appendChild(msg);
+            }
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = value;
+            input.placeholder = placeholder;
+            input.className = 'form-input-premium';
+            input.style.width = '100%';
+            
+            container.appendChild(input);
+            messageEl.appendChild(container);
+
+            footerEl.innerHTML = '';
+            
+            const btnCancel = document.createElement('button');
+            btnCancel.className = 'btn btn-secondary';
+            btnCancel.innerText = cancelLabel;
+            btnCancel.onclick = (e) => {
+                e.stopPropagation();
+                modal.style.display = 'none';
+                resolve(null);
+            };
+
+            const btnOk = document.createElement('button');
+            btnOk.className = 'btn btn-primary';
+            btnOk.innerText = okLabel;
+            
+            const submit = () => {
+                modal.style.display = 'none';
+                resolve(input.value);
+            };
+
+            btnOk.onclick = (e) => {
+                e.stopPropagation();
+                submit();
+            };
+
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submit();
+                } else if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                    resolve(null);
+                }
+            };
+
+            footerEl.appendChild(btnCancel);
+            footerEl.appendChild(btnOk);
+
+            modal.style.display = 'flex';
+            setTimeout(() => input.focus(), 100);
+        } catch (err) {
+            console.error("[customPrompt] Error:", err);
+            resolve(prompt(message, value));
+        }
+    });
+}
+

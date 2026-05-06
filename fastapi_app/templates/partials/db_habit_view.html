@@ -1,26 +1,53 @@
 {% if model_name == 'Habit' %}
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Habits</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 10px;"></div>
+
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Habits" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem;">
+                🔍
+            </div>
+        </div>
+    </div>
+
+    {% if search_query %}
+        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
+            <a href="{{ url_for('db_view', model_name='Habit') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
+        </div>
+    {% endif %}
+
     <div class="habit-management-view">
-        <h2 style="padding: 0 20px; color: #444; font-size: 1.4em;">Active Habits</h2>
+        <h2 style="padding: 0 0 20px 0; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-primary);">🔥</span> Active Habits
+        </h2>
         <div class="habit-grid" id="activeHabitsGrid">
             {% set active_habits = records | selectattr('read', 'equalto', false) | list %}
             {% for row in active_habits %}
                 <div class="habit-card active" data-id="{{ row.id }}">
                     <div class="habit-title">{{ row.title }}</div>
                     <div class="habit-date">
-                        <span>📅 Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="icon" style="font-size: 0.9rem;">📅</span> Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}
+                        </div>
                         {% if today_date and row.start_date %}
-                            <br>
-                            <span style="font-size: 0.9em; color: #666;">
-                                ⏱️ Days passed: <strong>{{ (today_date - row.start_date).days }}</strong>
-                            </span>
+                            <div style="margin-top: 8px;">
+                                <span class="premium-badge">
+                                    ⏱️ {{ (today_date - row.start_date).days }} Days Passed
+                                </span>
+                            </div>
                         {% endif %}
                     </div>
                     <div class="habit-actions">
-                        <button type="button" class="btn-action btn-edit" 
+                        <button type="button" class="btn btn-secondary btn-sm" 
                                 onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', false, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
                             Edit
                         </button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                        <button type="button" class="btn btn-error btn-sm" onclick="deleteRecordCustom('Habit', {{ row.id }})">Delete</button>
                     </div>
                 </div>
             {% else %}
@@ -28,27 +55,32 @@
             {% endfor %}
         </div>
 
-        <h2 style="padding: 20px 20px 0; color: #444; font-size: 1.4em; border-top: 1px solid #eee; margin-top: 20px;">Finished Habits</h2>
+        <h2 style="padding: 40px 0 20px 0; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; border-top: 1px solid var(--color-border-medium); margin-top: 40px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-text-muted);">🏁</span> Finished Habits
+        </h2>
         <div class="habit-grid" id="finishedHabitsGrid">
             {% set finished_habits = records | selectattr('read', 'equalto', true) | list %}
             {% for row in finished_habits %}
                 <div class="habit-card finished" data-id="{{ row.id }}">
                     <div class="habit-title">{{ row.title }}</div>
                     <div class="habit-date">
-                        <span>📅 Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="icon" style="font-size: 0.9rem;">📅</span> Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}
+                        </div>
                         {% if row.end_date and row.start_date %}
-                            <br>
-                            <span style="font-size: 0.9em; color: #666;">
-                                🏁 Duration: <strong>{{ (row.end_date - row.start_date).days }}</strong> days
-                            </span>
+                            <div style="margin-top: 8px;">
+                                <span class="premium-badge muted">
+                                    🏆 {{ (row.end_date - row.start_date).days }} Days Duration
+                                </span>
+                            </div>
                         {% endif %}
                     </div>
                     <div class="habit-actions">
-                        <button type="button" class="btn-action btn-edit" 
+                        <button type="button" class="btn btn-secondary btn-sm" 
                                 onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', true, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
                             Edit
                         </button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                        <button type="button" class="btn btn-error btn-sm" onclick="deleteRecordCustom('Habit', {{ row.id }})">Delete</button>
                     </div>
                 </div>
             {% endfor %}

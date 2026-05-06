@@ -61,8 +61,10 @@ export class StickerModal {
         this.switchType(this.state.type);
         this.setColor(this.state.color);
         
-        // If it's an existing sticker, start in View Mode
-        if (this.state.id) {
+        // Respect explicit mode, or default based on existence
+        if (options.mode) {
+            this.setMode(options.mode);
+        } else if (this.state.id) {
             this.setMode('view');
         } else {
             this.setMode('edit');
@@ -266,6 +268,25 @@ export class StickerModal {
             
             if (typeof window.updateHeaderStickerUI === 'function') {
                 window.updateHeaderStickerUI(finalText.length > 0 || finalTitle.length > 0);
+            }
+            this.close();
+            return;
+        }
+
+        // Event Editor Bridge
+        if (this.state.source === 'event_editor') {
+            const eText = document.getElementById('editEventStickerText');
+            const eTitle = document.getElementById('editEventStickerTitle');
+            const eColor = document.getElementById('editEventStickerColor');
+            const eType = document.getElementById('editEventStickerType');
+
+            if (eText) eText.value = finalText;
+            if (eTitle) eTitle.value = finalTitle;
+            if (eColor) eColor.value = this.state.color;
+            if (eType) eType.value = this.state.type;
+
+            if (window.EventService && window.EventService.updateDraftStickerUI) {
+                window.EventService.updateDraftStickerUI(finalText.length > 0 || finalTitle.length > 0);
             }
             this.close();
             return;
