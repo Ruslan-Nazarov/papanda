@@ -1,27 +1,38 @@
-<div class="card">
-    <h2>Account Management</h2>
-    <div class="settings-grid">
-        <div class="form-box">
-            <form action="{{ url_for('update_account') }}" method="post" onsubmit="confirmFormSubmit(event, 'Update Account', 'Are you sure you want to change your username? The session might be terminated.')">
-                <label>Username:</label>
-                <input type="text" name="username" value="{{ current_user_name }}" required />
-                <button type="submit" class="btn-save">Update Username</button>
-            </form>
+<div class="premium-card settings-account-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">👤</span>
+            <span>Account Management</span>
         </div>
-        <div class="form-box">
-            <form action="{{ url_for('update_account') }}" method="post">
-                <label>New Password:</label>
-                <input type="password" name="password" placeholder="Leave empty to keep current" />
-                <p style="font-size: 0.8em; color: #666; margin-top: 5px;">* Минимум 8 символов</p>
-                <button type="submit" class="btn-save">Update Password</button>
-            </form>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
         </div>
     </div>
-    <div style="margin-top: 15px; text-align: center">
-        <form action="{{ url_for('logout') }}" method="post" id="logout-form">
-            <button type="submit" class="btn-del" style="color: #ff8c00; font-weight: bold; font-size: 1.1em; background: none; border: none; cursor: pointer; text-decoration: underline;">
-                Logout from Session
-            </button>
-        </form>
+    
+    <div class="widget-body">
+        <div class="settings-grid">
+            <div class="settings-algo-form">
+                <form action="{{ url_for('update_account') }}" method="post" onsubmit="confirmFormSubmit(event, 'Update Account', 'Are you sure you want to change your username? The session might be terminated.')">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" value="{{ current_user_name }}" required class="form-input" />
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Update Username</button>
+                </form>
+            </div>
+            <div class="settings-algo-form">
+                <form action="{{ url_for('update_account') }}" method="post">
+                    <label class="form-label">New Password</label>
+                    <input type="password" name="password" placeholder="Leave empty to keep current" class="form-input" />
+                    <p style="font-size: 0.75rem; color: var(--color-text-faint); margin-top: 10px; font-weight: 600;">* At least 8 characters</p>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Update Password</button>
+                </form>
+            </div>
+        </div>
+        <div style="margin-top: 32px; text-align: center; border-top: 1px solid var(--color-border-light); padding-top: 24px;">
+            <form action="{{ url_for('logout') }}" method="post" id="logout-form">
+                <button type="submit" class="btn btn-secondary" style="color: var(--color-error); font-weight: 800; border-color: var(--color-error-soft);">
+                    Logout from Session
+                </button>
+            </form>
+        </div>
     </div>
 </div>

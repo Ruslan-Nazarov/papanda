@@ -163,14 +163,17 @@ async def history(
 @router.post("/save_dashboard_layout")
 async def save_dashboard_layout(
     request: Request, 
+    context: str = "dashboard",
     db: AsyncSession = Depends(get_db), 
     user: Any = Depends(check_auth_dependency)
 ) -> Dict[str, str]:
     """Сохранение кастомного порядка виджетов на дашборде."""
     data = await request.json()
     layout = data.get("layout", "{}")
-    await set_setting(db, "dashboard_layout", layout)
-    return {"status": "success", "message": "Layout saved"}
+    # Используем префикс context_layout для гибкости
+    setting_key = "dashboard_layout" if context == "dashboard" else f"{context}_layout"
+    await set_setting(db, setting_key, layout)
+    return {"status": "success", "message": f"Layout for {context} saved"}
 
 @router.get("/api/header/widgets", response_class=HTMLResponse)
 async def get_header_widgets(

@@ -3,11 +3,18 @@
     <head>
         <meta charset="UTF-8" />
         <title>Настройки</title>
+        <!-- GridStack CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" />
         <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
-        <link rel="stylesheet" href="{{ url_for('static', path='css/settings.css') }}?v=1" />
+        <link rel="stylesheet" href="{{ url_for('static', path='css/settings.css') }}?v=2" />
         <link rel="shortcut icon" href="{{ url_for('static', path='app_icon.ico') }}" />
+        
+        <script>
+            // Передаем макет из бэкенда
+            window.P_SETTINGS_LAYOUT = {{ settings_layout | safe }};
+        </script>
     </head>
-    <body style="margin: 0;">
+    <body style="margin: 0; background: var(--color-bg-canvas);">
         {% if request.cookies.get('papanda_mode') == 'sandbox' %}
         <div class="sandbox-banner">
             <span>🚧 SANDBOX MODE ACTIVE 🚧</span>
@@ -20,135 +27,206 @@
         <div class="settings-wrapper">
             <div class="header-line">
                 <h1>Settings</h1>
-                <div style="border: 1px solid #999; background-color: #fff9f4; padding: 5px 15px; border-radius: 4px;">
-                    <a href="{{ url_for('index') }}" style="text-decoration: none; color: #000; font-weight: bold; white-space: nowrap;">← Home</a>
+                <div style="background: white; padding: 6px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--color-border-light);">
+                    <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--color-text-dark); font-weight: 800; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                        <span>←</span> Home
+                    </a>
                 </div>
             </div>
 
-            <!-- Dictionary Sync Section -->
-            {% include 'partials/settings/dictionary_sync.html' %}
-
-            <!-- Language Display Settings -->
-            {% include 'partials/settings/language_settings.html' %}
-
-            <!-- Algorithm Settings -->
-            <div class="card">
-                <h2>Algorithm settings</h2>
-                <div class="settings-grid">
-                    <div class="form-box">
-                        <form action="{{ url_for('update_settings') }}" method="post">
-                            <label>Max Wink time, min:</label>
-                            <input type="number" name="max_duration" value="{{ max_duration }}" required />
-                            <button type="submit" class="btn-save">Save Wink</button>
-                        </form>
-                    </div>
-                    <div class="form-box">
-                        <form action="{{ url_for('update_settings') }}" method="post">
-                            <label>Word replacement interval, min:</label>
-                            <input type="number" name="max_random_minutes" value="{{ max_random_minutes }}" required />
-                            <button type="submit" class="btn-save">Save interval</button>
-                        </form>
+            <!-- GridStack Container -->
+            <div class="grid-stack">
+                
+                <!-- 1. Dictionary Sync -->
+                <div class="grid-stack-item" gs-id="set_sync" gs-w="6" gs-h="6">
+                    <div class="grid-stack-item-content">
+                        {% include 'partials/settings/dictionary_sync.html' %}
                     </div>
                 </div>
-            </div>
 
-            <!-- Account Management -->
-            {% include 'partials/settings/account_management.html' %}
-
-            <!-- Database Management -->
-            {% include 'partials/settings/database_management.html' %}
-
-            <!-- Sharing & Deep Clean -->
-            <div class="card" style="border: 2px solid #ff5252; background: #fff8f8; margin-top: 30px;">
-                <h2 style="color: #d32f2f;">Sharing Preparation (Deep Clean)</h2>
-                <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
-                    This will <b>PERMANENTLY DELETE</b> all data, including your account, words, stickers, notes and history. 
-                    <b>All backup databases (.db) and your translate.xlsx file will also be deleted.</b> 
-                    Wink and Word intervals will be reset to defaults (360/60). You will be logged out.
-                </p>
-                <div style="text-align: center;">
-                    <div style="margin-bottom: 15px;">
-                        <input type="text" id="cleanConfirmInput" placeholder="Type CLEAN to confirm" style="padding: 12px; border: 2px solid #ffcdd2; border-radius: 6px; width: 280px; text-align: center; font-weight: bold; outline: none;">
+                <!-- 2. Language Settings -->
+                <div class="grid-stack-item" gs-id="set_langs" gs-w="6" gs-h="8">
+                    <div class="grid-stack-item-content">
+                        {% include 'partials/settings/language_settings.html' %}
                     </div>
-                    <form action="{{ url_for('deep_clean') }}" method="post" id="deepCleanForm">
-                        <button type="submit" id="deepCleanBtn" class="btn-save" style="background-color: #ff5252; opacity: 0.4; cursor: not-allowed; max-width: 320px; font-weight: bold;" disabled>
-                            WIPE EVERYTHING & LOGOUT
-                        </button>
-                    </form>
                 </div>
-            </div>
 
-            <!-- Shutdown -->
-            <div class="card" style="margin-top: 30px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 12px;">
-                <h2 style="color: #666; font-size: 1.4em;">Shutdown Application</h2>
-                <p style="font-size: 0.9em; color: #888; margin-bottom: 20px;">
-                    Correctly stops the server. Recommended for the portable (.exe) version.
-                </p>
-                <div style="text-align: center;">
-                    <button type="button" onclick="confirmShutdown()" class="btn-save" style="background-color: #757575; max-width: 250px; border-radius: 8px;">
-                        STOP SERVER
-                    </button>
+                <!-- 3. Algorithm Settings -->
+                <div class="grid-stack-item" gs-id="set_algo" gs-w="6" gs-h="6">
+                    <div class="grid-stack-item-content">
+                        <div class="premium-card settings-algo-widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">⚙️</span>
+                                    <span>Algorithm Settings</span>
+                                </div>
+                                <div class="widget-actions">
+                                    <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+                                </div>
+                            </div>
+                            <div class="widget-body">
+                                <div class="settings-grid" style="gap: 32px;">
+                                    <div class="settings-algo-form">
+                                        <form action="{{ url_for('update_settings') }}" method="post">
+                                            <label class="form-label">Max Wink time (minutes):</label>
+                                            <input type="number" name="max_duration" value="{{ max_duration }}" required class="form-input" />
+                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Save Wink</button>
+                                        </form>
+                                    </div>
+                                    <div class="settings-algo-form">
+                                        <form action="{{ url_for('update_settings') }}" method="post">
+                                            <label class="form-label">Word replacement interval (minutes):</label>
+                                            <input type="number" name="max_random_minutes" value="{{ max_random_minutes }}" required class="form-input" />
+                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Save interval</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+
+                <!-- 4. Account Management -->
+                <div class="grid-stack-item" gs-id="set_account" gs-w="6" gs-h="6">
+                    <div class="grid-stack-item-content">
+                        {% include 'partials/settings/account_management.html' %}
+                    </div>
+                </div>
+
+                <!-- 5. Database Management -->
+                <div class="grid-stack-item" gs-id="set_db" gs-w="12" gs-h="10">
+                    <div class="grid-stack-item-content">
+                        {% include 'partials/settings/database_management.html' %}
+                    </div>
+                </div>
+
+                <!-- 6. Deep Clean -->
+                <div class="grid-stack-item" gs-id="set_clean" gs-w="6" gs-h="7">
+                    <div class="grid-stack-item-content">
+                        <div class="premium-card settings-clean-widget" style="border: 2px solid var(--color-error-medium);">
+                            <div class="widget-header" style="background: var(--color-error-soft);">
+                                <div class="widget-title">
+                                    <span class="widget-icon">⚠️</span>
+                                    <span style="color: var(--color-error-dark);">Danger Zone: Deep Clean</span>
+                                </div>
+                                <div class="widget-actions">
+                                    <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+                                </div>
+                            </div>
+                            <div class="widget-body">
+                                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 20px; line-height: 1.5;">
+                                    This will <b>PERMANENTLY DELETE</b> all data. All backups and excel files will be destroyed. You will be logged out.
+                                </p>
+                                <div style="text-align: center;">
+                                    <div style="margin-bottom: 15px;">
+                                        <input type="text" id="cleanConfirmInput" placeholder="Type CLEAN to confirm" class="form-input-premium" style="text-align: center; font-weight: 800; border-color: var(--color-error-soft);">
+                                    </div>
+                                    <form action="{{ url_for('deep_clean') }}" method="post" id="deepCleanForm">
+                                        <button type="submit" id="deepCleanBtn" class="btn btn-danger" style="width: 100%; opacity: 0.4; cursor: not-allowed;" disabled>
+                                            WIPE EVERYTHING & LOGOUT
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Shutdown -->
+                <div class="grid-stack-item" gs-id="set_shutdown" gs-w="6" gs-h="5">
+                    <div class="grid-stack-item-content">
+                        <div class="premium-card settings-shutdown-widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">🛑</span>
+                                    <span>Shutdown Application</span>
+                                </div>
+                                <div class="widget-actions">
+                                    <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+                                </div>
+                            </div>
+                            <div class="widget-body">
+                                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 20px;">
+                                    Correctly stops the server. Recommended for the portable version.
+                                </p>
+                                <div style="text-align: center;">
+                                    <button type="button" onclick="confirmShutdown()" class="btn btn-secondary" style="width: 100%; font-weight: 700;">
+                                        STOP SERVER
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- /grid-stack -->
+        </div> <!-- /settings-wrapper -->
 
         {% include 'partials/footer.html' %}
+        {% include 'partials/modals/common_modals.html' %}
 
-        <script>
-            function confirmFormSubmit(event, title, message) {
+        <!-- GridStack JS -->
+        <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+
+        <script type="module">
+            import { initGrid, toggleWidget } from "{{ url_for('static', path='js/grid_controller.js') }}";
+            import { customConfirm } from "{{ url_for('static', path='js/modal_controller.js') }}";
+
+            window.toggleWidget = toggleWidget;
+            window.customConfirm = customConfirm;
+
+            document.addEventListener('DOMContentLoaded', () => {
+                // Initialize Grid for Settings
+                initGrid({
+                    context: 'settings',
+                    selector: '.grid-stack'
+                });
+
+                // Deep Clean Confirm Logic
+                const cleanInput = document.getElementById('cleanConfirmInput');
+                const cleanBtn = document.getElementById('deepCleanBtn');
+                if (cleanInput && cleanBtn) {
+                    cleanInput.addEventListener('input', (e) => {
+                        const isConfirmed = e.target.value === 'CLEAN';
+                        cleanBtn.disabled = !isConfirmed;
+                        cleanBtn.style.opacity = isConfirmed ? '1' : '0.4';
+                        cleanBtn.style.cursor = isConfirmed ? 'pointer' : 'not-allowed';
+                    });
+                }
+            });
+
+            window.confirmFormSubmit = function(event, title, message) {
                 event.preventDefault();
                 const form = event.target;
-                if (typeof customConfirm === 'function') {
-                    customConfirm({
-                        title: title,
-                        message: message,
-                        buttons: [
-                            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                            { label: 'Proceed', value: true, class: 'confirm-btn-primary' }
-                        ]
-                    }).then(result => {
-                        if (result) form.submit();
-                    });
-                } else {
-                    if (confirm(message)) form.submit();
-                }
-            }
-
-            function confirmShutdown() {
-                if (typeof customConfirm === 'function') {
-                    customConfirm({
-                        title: 'Stop Server',
-                        message: 'Are you sure you want to shutdown the application server?',
-                        buttons: [
-                            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                            { label: 'Stop', value: true, class: 'confirm-btn-danger' }
-                        ]
-                    }).then(result => {
-                        if (result) {
-                            fetch('/shutdown', { method: 'POST' })
-                                .then(() => {
-                                    document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;"><h1>Server stopped</h1><p>You can close this window now.</p></div>';
-                                });
-                        }
-                    });
-                } else {
-                    if (confirm('Stop server?')) {
-                        fetch('/shutdown', { method: 'POST' });
-                    }
-                }
-            }
-
-            // Deep Clean Confirm
-            const cleanInput = document.getElementById('cleanConfirmInput');
-            const cleanBtn = document.getElementById('deepCleanBtn');
-            if (cleanInput && cleanBtn) {
-                cleanInput.addEventListener('input', (e) => {
-                    const isConfirmed = e.target.value === 'CLEAN';
-                    cleanBtn.disabled = !isConfirmed;
-                    cleanBtn.style.opacity = isConfirmed ? '1' : '0.4';
-                    cleanBtn.style.cursor = isConfirmed ? 'pointer' : 'not-allowed';
+                customConfirm({
+                    title: title,
+                    message: message,
+                    buttons: [
+                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Proceed', value: true, class: 'confirm-btn-primary' }
+                    ]
+                }).then(result => {
+                    if (result) form.submit();
                 });
-            }
+            };
+
+            window.confirmShutdown = function() {
+                customConfirm({
+                    title: 'Stop Server',
+                    message: 'Are you sure you want to shutdown the application server?',
+                    buttons: [
+                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Stop', value: true, class: 'confirm-btn-danger' }
+                    ]
+                }).then(result => {
+                    if (result) {
+                        fetch('/shutdown', { method: 'POST' })
+                            .then(() => {
+                                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;background:white;"><h1>Server stopped</h1><p>You can close this window now.</p></div>';
+                            });
+                    }
+                });
+            };
         </script>
     </body>
 </html>

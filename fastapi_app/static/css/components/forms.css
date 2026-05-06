@@ -4,7 +4,7 @@
 .form-input {
     width: 100%;
     background: var(--color-bg-white);
-    border: 2px solid var(--color-bg-app);
+    border: 2px solid var(--color-border-medium);
     border-radius: var(--radius-md);
     padding: 12px 16px;
     font-size: 0.95rem;
@@ -12,6 +12,12 @@
     font-family: inherit;
     transition: all var(--transition-base);
     box-shadow: var(--shadow-sm);
+}
+
+/* Specific for number inputs */
+input[type="number"].form-input {
+    font-weight: 700;
+    color: var(--color-primary-dark);
 }
 
 .form-input:focus {

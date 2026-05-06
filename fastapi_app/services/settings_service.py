@@ -125,10 +125,13 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
     
     await initialize_language_settings(db)
     active_langs_raw = await get_setting(db, 'active_languages', 'en,it,de')
-    active_langs = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
+    active_languages = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
     
     lang_names_raw = await get_setting(db, 'language_names', '{"en": "English", "it": "Italian", "de": "German", "ru": "Russian"}')
     lang_names = json.loads(lang_names_raw or '{}')
+    
+    # Плиточный интерфейс для настроек
+    settings_layout = await get_setting(db, "settings_layout", "{}")
     
     from ..services.word_service import WordService
     word_service = WordService(db)
@@ -148,8 +151,9 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
         "db_files": db_files,
         "current_user_name": get_current_user_from_cookie(request),
         "today_for_calendar": today,
-        "active_languages": active_langs,
+        "active_languages": active_languages,
         "all_languages": lang_names,
+        "settings_layout": settings_layout,
     }
     if import_result is not None:
         ctx["import_result"] = import_result

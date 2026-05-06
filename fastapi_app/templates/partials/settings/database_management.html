@@ -1,57 +1,76 @@
-<div class="card">
-    <h2>Managing database files</h2>
-    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #ccc;">
-        <h3 style="margin-top: 0; font-size: 1.1em;">Upload Database Backup</h3>
-        <form action="{{ url_for('upload_db') }}" method="post" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center;">
-            <input type="file" name="db_file" accept=".db" required style="flex-grow: 1; padding: 5px; border: 1px solid #ddd; background: white; border-radius: 4px;">
-            <button type="submit" class="btn-save" style="width: auto; padding: 8px 15px; margin:0;">Upload .db</button>
-        </form>
-        <p style="font-size: 0.85em; color: #666; margin-top: 8px; margin-bottom: 0;">
-            Upload a previously saved <code>papanda.db</code> file to the list below.
-        </p>
-    </div>
-
-    <table class="diag-table" style="width: 100%;">
-        {% for f in db_files %}
-        <tr>
-            <td>{{ f.name }}</td>
-            <td>{{ f.size }}</td>
-            <td style="text-align: right">
-                {% if not f.is_active %}
-                <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-                    <form action="{{ url_for('activate_db', filename=f.name) }}" method="post" onsubmit="confirmFormSubmit(event, 'Activate Database', 'Switch to this database? The current one will be backed up.')">
-                        <button type="submit" class="btn-save" style="background-color: #4caf50; padding: 3px 10px; width: auto; font-size: 0.9em; margin:0;">Activate</button>
-                    </form>
-                    <a href="{{ url_for('download_db', filename=f.name) }}" class="btn-del" style="color: #2196f3; text-decoration: none; border: 1px solid #2196f3; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">Download</a>
-                    <form action="{{ url_for('delete_db_file', filename=f.name) }}" method="post" onsubmit="confirmFormSubmit(event, 'Delete Database', 'Are you sure? This will delete the database file!')">
-                        <button type="submit" class="btn-del" style="font-size: 0.9em; padding: 2px 8px;">Delete</button>
-                    </form>
-                </div>
-                {% else %}
-                <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-                    <a href="{{ url_for('download_db', filename=f.name) }}" class="btn-del" style="color: #2196f3; text-decoration: none; border: 1px solid #2196f3; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">Download Active</a>
-                    <span style="color: green; font-weight: bold; font-size: 0.9em;">Active</span>
-                </div>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
-    {% if request.cookies.get('papanda_mode') != 'sandbox' %}
-    <div class="card" style="border: 2px solid #2196f3; background: #f0f7ff; margin-top: 30px; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.1);">
-        <h2 style="color: #1976d2;">Demo & Sandbox Mode</h2>
-        <p style="font-size: 0.95em; color: #555; line-height: 1.5;">
-            Хотите протестировать новые функции или провести демонстрацию без риска для ваших данных? Запустите <b>Песочницу</b>. 
-            Это создаст временную среду с чистой базой данных. Ваши основные данные останутся под замком и не изменятся.
-        </p>
-        <div style="text-align: center; margin-top: 20px;">
-            <form action="{{ url_for('start_sandbox') }}" method="post">
-                <button type="submit" class="btn-save btn-blue" style="max-width: 320px; font-weight: bold; padding: 12px 25px; font-size: 1.1em; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);">
-                    🚀 ЗАПУСТИТЬ ТЕСТОВУЮ ПЕСОЧНИЦУ
-                </button>
-            </form>
+<div class="premium-card settings-database-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">💾</span>
+            <span>Database Management</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
         </div>
     </div>
-    {% endif %}
+    
+    <div class="widget-body">
+        <div style="background: var(--color-bg-subtle); padding: 20px; border-radius: var(--radius-md); margin-bottom: 24px; border: 1px dashed var(--color-border-medium);">
+            <h3 style="margin-top: 0; font-size: 1rem; color: var(--color-text-dark); font-weight: 700;">Upload Database Backup</h3>
+            <form action="{{ url_for('upload_db') }}" method="post" enctype="multipart/form-data" style="display: flex; gap: 12px; align-items: center;">
+                <input type="file" name="db_file" accept=".db" required class="form-input-premium" style="flex-grow: 1; padding: 6px 12px;">
+                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Upload .db</button>
+            </form>
+            <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 10px; margin-bottom: 0;">
+                Upload a previously saved <code>papanda.db</code> file.
+            </p>
+        </div>
+
+        <div class="table-responsive">
+            <table class="diag-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Size</th>
+                        <th style="text-align: right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in db_files %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--color-text-dark);">{{ f.name }}</td>
+                        <td style="color: var(--color-text-muted); font-size: 0.85rem;">{{ f.size }}</td>
+                        <td style="text-align: right">
+                            <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                                {% if not f.is_active %}
+                                <form action="{{ url_for('activate_db', filename=f.name) }}" method="post" onsubmit="confirmFormSubmit(event, 'Activate Database', 'Switch to this database? The current one will be backed up.')">
+                                    <button type="submit" class="btn btn-sm btn-success">Activate</button>
+                                </form>
+                                <a href="{{ url_for('download_db', filename=f.name) }}" class="btn btn-sm btn-secondary" style="text-decoration: none;">Download</a>
+                                <form action="{{ url_for('delete_db_file', filename=f.name) }}" method="post" onsubmit="confirmFormSubmit(event, 'Delete Database', 'Are you sure? This will delete the database file!')">
+                                    <button type="submit" class="btn btn-sm btn-danger" style="background: transparent;">Delete</button>
+                                </form>
+                                {% else %}
+                                <a href="{{ url_for('download_db', filename=f.name) }}" class="btn btn-sm btn-secondary" style="text-decoration: none;">Download Active</a>
+                                <span class="badge-premium badge-success">ACTIVE</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if request.cookies.get('papanda_mode') != 'sandbox' %}
+        <div style="background: var(--color-primary-soft); padding: 24px; border-radius: var(--radius-lg); margin-top: 32px; border: 1px solid var(--color-primary); box-shadow: var(--shadow-sm);">
+            <h3 style="color: var(--color-primary-dark); margin-top: 0; font-size: 1.1rem; font-weight: 800;">Demo & Sandbox Mode</h3>
+            <p style="font-size: 0.9rem; color: var(--color-text-body); line-height: 1.6;">
+                Хотите протестировать новые функции или провести демонстрацию без риска для ваших данных? Запустите <b>Песочницу</b>. 
+            </p>
+            <div style="text-align: center; margin-top: 20px;">
+                <form action="{{ url_for('start_sandbox') }}" method="post">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 1rem; letter-spacing: 0.5px; box-shadow: 0 4px 12px var(--color-primary-glow);">
+                        🚀 ЗАПУСТИТЬ ТЕСТОВУЮ ПЕСОЧНИЦУ
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </div>

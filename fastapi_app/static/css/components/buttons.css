@@ -75,6 +75,36 @@
     color: var(--color-primary);
 }
 
+/* Success (Activate/Confirm) */
+.btn-success {
+    background: #e6fcf5;
+    color: var(--color-success);
+    border: 1.5px solid #c3fae8;
+}
+
+.btn-success:hover {
+    background: var(--color-success);
+    color: white;
+    border-color: var(--color-success);
+}
+
+/* Badge System */
+.badge-premium {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-success {
+    background: #e6fcf5;
+    color: var(--color-success);
+}
+
 .btn:active {
     transform: scale(0.96);
 }
