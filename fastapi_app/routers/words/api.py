@@ -43,10 +43,12 @@ async def get_random_rule(db: AsyncSession = Depends(get_db)) -> Dict[str, str]:
 
 @router.get("/get_test_words")
 async def get_test_words(
+    limit: int = 5,
+    max_known: int = 1,
     word_service: WordService = Depends(get_word_service)
 ) -> Dict[str, Any]:
-    """5 случайных слов для тестирования."""
-    result = await word_service.get_random_test_words_data(limit=5)
+    """Случайные слова для тестирования."""
+    result = await word_service.get_random_test_words_data(limit=limit, max_known=max_known)
     return {"words": result}
 
 @router.post("/mark_word_known", response_model=schemas.SuccessResponse)

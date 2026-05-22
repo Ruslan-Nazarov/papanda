@@ -179,8 +179,8 @@ class WordService:
         active = await self.langs.get_active_languages()
         return await self.stats.get_distribution_stats(active)
 
-    async def get_random_test_words_data(self, limit=5): 
-        return await self.test.get_random_test_words_data(limit)
+    async def get_random_test_words_data(self, limit=5, max_known=1): 
+        return await self.test.get_random_test_words_data(limit, max_known)
     
     async def record_test_result(self, correct, lang): 
         await self.test.record_test_result(correct, lang)

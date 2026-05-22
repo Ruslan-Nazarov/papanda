@@ -2,16 +2,16 @@
 
 .inline-editor {
     position: fixed;
-    background: var(--color-bg-white);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-xl);
+    background: #f0f9ff; /* Light Blue Theme */
+    border: 1px solid #bae6fd;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(186, 230, 253, 0.3);
     z-index: 10001;
-    width: 500px;
+    width: 600px;
     top: 15vh;
-    left: calc(50% - 250px);
+    left: calc(50% - 300px);
     min-width: 320px;
-    min-height: 400px;
+    min-height: 450px;
     max-height: 85vh;
     display: none;
     flex-direction: column;
@@ -135,14 +135,14 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    background: white;
+    background: #f0f9ff;
 }
 
 .editor-tabs {
     display: flex !important;
     flex-direction: row !important;
-    background: var(--color-bg-surface);
-    border-bottom: 2px solid var(--color-border);
+    background: #e0f2fe;
+    border-bottom: 1px solid #bae6fd;
     padding: 0 var(--spacing-3);
     width: 100%;
     flex-shrink: 0;
@@ -185,12 +185,15 @@
     display: flex;
     flex-direction: column;
     min-height: 250px;
-    background: var(--color-bg-white);
+    background: white;
     font-family: var(--font-base);
     position: relative;
     cursor: text !important;
     pointer-events: auto !important;
     z-index: 10;
+    border: 1px solid #e0f2fe;
+    margin: 10px;
+    border-radius: 12px;
 }
 
 .tiptap-editor .ProseMirror {
@@ -246,9 +249,10 @@
 .math-menu {
     display: flex;
     flex-direction: column;
-    background: var(--color-bg-surface);
-    border-bottom: 1px solid var(--color-border);
-    padding: 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 15px;
+    animation: slideDown 0.2s ease-out;
 }
 
 .math-tabs {
@@ -280,23 +284,26 @@
 }
 
 .math-symbol-btn {
-    background: var(--color-bg-white);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    padding: 4px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 8px;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 44px;
-    height: 44px;
+    min-width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .math-symbol-btn:hover {
-    border-color: var(--color-blue);
-    background: var(--color-blue-light);
-    transform: translateY(-1px);
+    border-color: #3b82f6;
+    background: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.1);
 }
 
 /* Graph UI */
@@ -366,27 +373,56 @@
 
 .shapes-toolbar {
     display: flex;
-    gap: 15px;
-    background: white;
-    padding: 10px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    flex-direction: row;
     align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 8px 15px;
+    border-radius: 12px;
+    border: 1px solid #e0f2fe;
+    flex-shrink: 0;
+}
+
+.tool-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding-right: 15px;
+    border-right: 1px solid #f1f5f9;
+}
+
+.tool-group:last-child {
+    border-right: none;
+    padding-right: 0;
 }
 
 .shape-tool {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border: 1px solid #e2e8f0;
     background: white;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 1.2em;
+    font-size: 1.1em;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s;
 }
-.shape-tool.active { background: #3b82f6; color: white; }
+
+.shape-tool:hover {
+    background: #f0f9ff;
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+}
+
+.shape-tool.active { 
+    background: #3b82f6; 
+    color: white; 
+    border-color: #2563eb;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
 
 .shapes-canvas-wrapper {
     flex: 1;
@@ -402,7 +438,9 @@
 
 canvas#shapesCanvas {
     background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
 }
 
 /* --- Editor Actions & Footer --- */
@@ -410,9 +448,9 @@ canvas#shapesCanvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid #bae6fd;
     padding: 12px 20px;
-    background: white;
+    background: #e0f2fe;
     flex-shrink: 0;
 }
 
@@ -447,29 +485,70 @@ canvas#shapesCanvas {
     display: flex; flex-direction: column; box-shadow: var(--shadow-xl);
 }
 
-/* --- Selection Context Menu --- */
-.selection-context-menu {
-    position: fixed;
-    z-index: 10000;
-    background: #1e293b;
-    border-radius: 8px;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+/* --- Floating Math Menu --- */
+.math-floating-menu {
+    background: white;
+    border: 1px solid #bae6fd;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    padding: 0;
+    width: auto;
+    max-width: 500px;
+    overflow: hidden;
+    animation: menuFadeIn 0.2s ease-out;
 }
 
-.selection-menu-btn {
-    width: 34px;
-    height: 34px;
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 1.1rem;
+.math-float-tabs {
+    display: flex;
+    background: #f0f9ff;
+    padding: 8px 15px;
+    gap: 15px;
+    border-bottom: 1px solid #e0f2fe;
+}
+
+.math-float-tab {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #64748b;
     cursor: pointer;
-    border-radius: 6px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+}
+.math-float-tab:hover { color: #3b82f6; }
+.math-float-tab.active { color: #3b82f6; }
+
+.math-float-content {
+    padding: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.math-ctx-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+
+.math-ctx-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 44px;
+    height: 44px;
+}
+.math-ctx-btn:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    transform: scale(1.05);
+}
+
+.math-ctx-btn math-field {
+    pointer-events: none;
+    font-size: 1.1rem;
 }

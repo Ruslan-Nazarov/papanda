@@ -1,16 +1,17 @@
 <!-- Custom Confirmation Modal (Shared) -->
-<div id="customConfirmModal" class="modal premium-confirm">
+<div id="customConfirmModal" class="modal premium-confirm" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 99999;">
     <style>
         .premium-confirm .modal-content {
             border-radius: 28px;
             border: none;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
             padding: 0;
             overflow: hidden;
             background: #fff;
             max-width: 420px !important;
-            height: auto !important; /* Ensure it doesn't stretch */
-            margin: auto; /* Center vertically if flex container allows */
+            width: 90%;
+            height: auto !important;
+            margin: 0; /* Remove auto margin to let flex center it */
         }
         .premium-confirm .modal-header {
             padding: 24px 32px 12px;

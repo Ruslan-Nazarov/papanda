@@ -1,119 +1,243 @@
-{% if model_name == 'Notes' %}
+{% macro render_note_card(row, is_archive=false) %}
+    <div class="note-card {% if is_archive %}archive-note{% endif %}" data-id="{{ row.id }}" 
+         {% if is_archive %}style="display: none;"{% endif %}
+         onclick='NoteService.openView({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}", {{ row.stickers_list | tojson if row.stickers_list else "[]" }})'>
+        <div class="note-header">
+            <span class="note-cat badge-premium">{{ row.category or 'General' }}</span>
+            <div class="note-actions" onclick="event.stopPropagation()">
+                <button class="btn-icon-sm" title="Edit" 
+                        onclick='event.stopPropagation(); NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}")'>
+                    ✏️
+                </button>
+                <button class="btn-icon-sm danger" title="Delete" 
+                        onclick="event.stopPropagation(); deleteRecordCustom('Notes', {{ row.id }})">
+                    🗑️
+                </button>
+            </div>
+        </div>
+        <div class="note-text">{{ row.note }}</div>
+    </div>
+{% endmacro %}
+
+<div class="notes-management-view">
+    <!-- Filter & Search Bar -->
     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-        <form class="notes-filter" action="{{ url_for('db_view', model_name='Notes') }}" method="GET" style="margin: 0;">
-            {% if search_query %}
-                <input type="hidden" name="search" value="{{ search_query }}">
-            {% endif %}
-            
-            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px; margin-right: 15px;">
-                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Notes</span>
-                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <!-- Category Selector -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Category:</span>
+                <select id="dbNoteCategoryFilter" class="form-input" style="height: 36px; padding: 0 15px; border-radius: 18px; width: 160px; font-size: 0.85rem;" onchange="filterNotesByCategory(this.value)">
+                    <option value="all">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
             </div>
 
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin-right: 15px;"></div>
+            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 5px;"></div>
 
-            <label>Category</label>
-            <select name="category" class="filter-select" style="min-width: 120px;">
-                <option value="">All</option>
-                {% if categories %}
-                    {% for cat in categories %}
-                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-                    {% endfor %}
-                {% endif %}
-            </select>
-            
-            <label>Sort</label>
-            <select name="sort" class="filter-select" style="min-width: 100px;">
-                <option value="date" {% if sort_by != 'category' %}selected{% endif %}>By Date</option>
-                <option value="category" {% if sort_by == 'category' %}selected{% endif %}>By Category</option>
-            </select>
-            
-            <button type="submit" class="btn-filter-go">Apply</button>
-
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin-left: 15px; margin-right: 10px;"></div>
-
-            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Notes" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.1rem;">
+            <!-- Search Trigger -->
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Global Search" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.1rem;">
                 🔍
             </div>
-        </form>
+            
+            <!-- Quick Search Input -->
+            <div style="position: relative;">
+                <input type="text" id="quickNoteSearch" placeholder="Filter notes..." 
+                       style="height: 36px; padding: 0 15px; border-radius: 18px; border: 1px solid var(--color-border-light); font-size: 0.85rem; width: 220px;"
+                       oninput="quickFilterNotes(this.value)">
+            </div>
+        </div>
     </div>
 
-    {% if search_query %}
-        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
-            <a href="{{ url_for('db_view', model_name='Notes') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
+    {% if search_query or selected_category %}
+        <div style="padding: 0 24px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">📊</span> Filtered by: 
+            {% if selected_category %}<span class="badge-premium">{{ selected_category }}</span>{% endif %}
+            {% if search_query %}<b style="color: var(--color-text-dark);">"{{ search_query }}"</b>{% endif %}
+            <a href="{{ url_for('db_view', model_name='Notes') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear All</a>
         </div>
     {% endif %}
 
-    <div class="notes-management-view">
-        <div class="note-grid" id="noteGrid">
-            {% for row in records %}
-                <div class="note-card" data-id="{{ row.id }}" 
-                     onclick="NoteService.openView({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }}, {{ row.stickers_list | tojson if row.stickers_list else '[]' }})">
-                    <div class="note-cat">{{ row.category or 'Uncategorized' }}</div>
-                    <div class="note-date">📅 <span class="local-time" data-utc="{{ row.created_at.isoformat() if row.created_at else '' }}">{{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}</span></div>
-                    <div class="note-text">{{ row.note }}</div>
-                    <div class="note-actions">
-                        <button type="button" class="btn-action btn-edit" 
-                            style="display: flex; align-items: center; justify-content: center; gap: 4px; opacity: {{ 1 if row.stickers_count else 0.4 }}; filter: {{ 'grayscale(0)' if row.stickers_count else 'grayscale(1)' }};"
-                            onclick="event.stopPropagation(); NoteService.openView({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }}, {{ row.stickers_list | tojson if row.stickers_list else '[]' }})" 
-                            title="Stickers"
-                        >
-                            <div class="sticker-icon-small" style="opacity: {{ 1 if row.stickers_count else 0.4 }}; filter: {{ 'grayscale(0)' if row.stickers_count else 'grayscale(1)' }};"></div>
-                        </button>
-                        <button type="button" class="btn-action btn-edit" onclick="event.stopPropagation(); NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, {{ row.category|tojson }})">Edit</button>
-                        <button type="button" class="btn-action btn-del" onclick="event.stopPropagation(); RecordService.delete('Notes', {{ row.id }})">Del</button>
-                    </div>
-                </div>
+    {% set notes_list = records if records else [] %}
+
+    <!-- Recent Notes (Top 5) -->
+    {% if not selected_category and not search_query %}
+        <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-primary);">⚡</span> Recent Notes
+        </h2>
+        <div class="notes-grid" id="recentNotesGrid">
+            {% for row in notes_list[:5] %}
+                {{ render_note_card(row) }}
             {% else %}
-                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1 / -1;">
-                    <div style="font-size: 3rem; margin-bottom: 15px; opacity: 0.1;">📝</div>
-                    No notes found.
-                </div>
+                <div style="padding: 20px 24px; color: var(--color-text-muted);">No notes available.</div>
             {% endfor %}
         </div>
 
-        {% if records|length > 10 %}
-        <div class="load-more-container" id="loadMoreNotesContainer" style="margin-top: 30px;">
-            <button class="btn-load-more" onclick="loadMoreNotesLocal()">Show More Notes (+10)</button>
+        <!-- Archive Section -->
+        <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
+            <span style="color: var(--color-text-muted);">📦</span> Archive
+        </h2>
+        <div class="notes-grid" id="archiveNotesGrid">
+            {% for row in notes_list[5:] %}
+                {{ render_note_card(row, is_archive=true) }}
+            {% endfor %}
         </div>
+
+        {% if notes_list|length > 5 %}
+            <div class="load-more-container" id="loadMoreNotesContainer" style="margin-top: 30px; display: flex; justify-content: center;">
+                <button class="btn-load-more" onclick="loadMoreNotes()" style="padding: 12px 30px; border-radius: 25px; background: var(--color-bg-white); border: 1.5px solid var(--color-border-light); font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                    Load More Archive (+10)
+                </button>
+            </div>
         {% endif %}
-    </div>
+    {% else %}
+        <!-- Filtered View -->
+        <div class="notes-grid" id="filteredNotesGrid">
+            {% for row in notes_list %}
+                {{ render_note_card(row) }}
+            {% else %}
+                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1/-1;">No matching notes found.</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
 
-    <script>
-        // Local pagination logic for notes grid
-        let visibleNotesCount = 10;
-        function loadMoreNotesLocal() {
-            const grid = document.getElementById('noteGrid');
-            if (!grid) return;
-            const cards = grid.querySelectorAll('.note-card');
-            const batch = 10;
-            
-            cards.forEach((card, idx) => {
-                if (idx >= visibleNotesCount && idx < visibleNotesCount + batch) {
-                    card.style.display = 'flex';
-                }
-            });
-            
-            visibleNotesCount += batch;
-            if (visibleNotesCount >= cards.length) {
-                const btn = document.getElementById('loadMoreNotesContainer');
-                if (btn) btn.style.display = 'none';
-            }
+<style>
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 0 20px 20px;
+}
+.note-card {
+    background: var(--color-bg-white);
+    border: 1.5px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+.note-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary-light);
+}
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.note-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-dark);
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+}
+.note-actions {
+    display: flex;
+    gap: 10px;
+}
+.btn-icon-sm {
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+}
+.btn-icon-sm:hover {
+    background: var(--color-bg-white);
+    border-color: var(--color-primary);
+    transform: scale(1.05);
+}
+.btn-icon-sm.danger:hover {
+    border-color: var(--color-error);
+    background: #fff5f5;
+    color: var(--color-error);
+}
+.btn-load-more:hover {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+</style>
+
+<script>
+    let visibleArchiveNotes = 10;
+    
+    function filterNotesByCategory(cat) {
+        if (cat === 'all') {
+            window.location.href = "{{ url_for('db_view', model_name='Notes') }}";
+        } else {
+            window.location.href = "{{ url_for('db_view', model_name='Notes') }}?category=" + encodeURIComponent(cat);
         }
+    }
 
-        // Initialize display for notes
-        document.addEventListener('DOMContentLoaded', () => {
-            const grid = document.getElementById('noteGrid');
-            if (!grid) return;
-            const cards = grid.querySelectorAll('.note-card');
-            cards.forEach((card, idx) => {
-                if (idx >= 10) card.style.display = 'none';
-            });
-            if (cards.length <= 10) {
-                const btn = document.getElementById('loadMoreNotesContainer');
-                if (btn) btn.style.display = 'none';
+    function quickFilterNotes(query) {
+        const cards = document.querySelectorAll('.note-card');
+        const q = query.toLowerCase().trim();
+        
+        cards.forEach(card => {
+            const text = card.querySelector('.note-text').textContent.toLowerCase();
+            const cat = card.querySelector('.note-cat').textContent.toLowerCase();
+            if (text.includes(q) || cat.includes(q)) {
+                card.style.display = card.classList.contains('archive-note') ? (isCardVisibleInArchive(card) ? 'flex' : 'none') : 'flex';
+            } else {
+                card.style.display = 'none';
             }
         });
-    </script>
-{% endif %}
+    }
+
+    function isCardVisibleInArchive(card) {
+        const archiveCards = Array.from(document.querySelectorAll('#archiveNotesGrid .note-card'));
+        const idx = archiveCards.indexOf(card);
+        return idx < visibleArchiveNotes;
+    }
+
+    function loadMoreNotes() {
+        const archiveCards = document.querySelectorAll('#archiveNotesGrid .note-card');
+        const batch = 10;
+        let count = 0;
+        
+        for (let i = visibleArchiveNotes; i < archiveCards.length && count < batch; i++) {
+            archiveCards[i].style.display = 'flex';
+            count++;
+            visibleArchiveNotes++;
+        }
+        
+        if (visibleArchiveNotes >= archiveCards.length) {
+            const btn = document.getElementById('loadMoreNotesContainer');
+            if (btn) btn.style.display = 'none';
+        }
+    }
+
+    // Initialize archive visibility
+    document.addEventListener('DOMContentLoaded', () => {
+        const archiveCards = document.querySelectorAll('#archiveNotesGrid .note-card');
+        archiveCards.forEach((card, idx) => {
+            if (idx < 10) card.style.display = 'flex';
+            else card.style.display = 'none';
+        });
+        
+        if (archiveCards.length <= 10) {
+            const btn = document.getElementById('loadMoreNotesContainer');
+            if (btn) btn.style.display = 'none';
+        }
+    });
+</script>

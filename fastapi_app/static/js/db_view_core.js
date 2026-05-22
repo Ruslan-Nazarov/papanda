@@ -12,6 +12,7 @@ import { NoteService } from './modules/NoteService.js';
 import { ChronoService } from './modules/ChronoService.js';
 import { TaskService } from './modules/TaskService.js';
 import { HabitService } from './modules/HabitService.js';
+import { NotificationService } from './modules/NotificationService.js';
 import { customConfirm, customChoice, customPrompt } from './modal_controller.js';
 import { applyLocalTimeGlobally } from './ui_helpers.js';
 
@@ -19,6 +20,9 @@ import { applyLocalTimeGlobally } from './ui_helpers.js';
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Global UI interactions
     UIService.init();
+    
+    // Initialize Notification System
+    NotificationService.init();
 
     // Initialize Global Modal Manager
     if (ModalManager.initGlobal) ModalManager.initGlobal();
@@ -36,6 +40,8 @@ window.EventService = EventService;
 window.NoteService = NoteService;
 window.ChronoService = ChronoService;
 window.TaskService = TaskService;
+window.NotificationService = NotificationService;
+window.showToast = (m, t) => NotificationService.show(m, t);
 // Deletion Logic
 window.deleteRecordCustom = (m, i, r) => RecordService.delete(m, i, r);
 

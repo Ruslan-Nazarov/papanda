@@ -1,33 +1,36 @@
+{% from "partials/components/inputs.html" import premium_input %}
+
 <!-- Chronology Edit/Add Modal -->
 <div id="editChronoModal" class="modal">
-    <div class="modal-content" style="max-width: 650px; border-top: 6px solid var(--color-primary);">
+    <div class="modal-content" style="max-width: 700px; border-top: 6px solid var(--color-primary);">
         <div class="modal-header">
             <h3><span style="color: var(--color-primary);">📅</span> Chronology Entry</h3>
         </div>
         
         <div class="modal-body" style="padding: 32px;">
             <input type="hidden" id="editChronoId">
-            <input type="hidden" id="expandChronoId" />
             
             <div class="form-group-premium">
                 <label class="form-label"><span class="icon">⏰</span> Target Date & Time</label>
                 <input type="datetime-local" id="editChronoDate" class="form-input">
-                <input type="date" id="expandChronoDate" style="display:none;">
             </div>
 
             <div class="form-group-premium">
                 <label class="form-label"><span class="icon">📝</span> Event Description</label>
-                <textarea id="editChronoTitle" class="form-input" style="height: 350px; resize: vertical;" placeholder="Tell your story..."></textarea>
-                <textarea id="expandChronoText" style="display:none;"></textarea>
+                {{ premium_input(
+                    type='textarea', 
+                    id='editChronoTitle', 
+                    placeholder='Tell your story...', 
+                    style='height: 350px; resize: vertical; line-height: 1.6;'
+                ) }}
             </div>
 
             <div id="editChronoError" class="form-error-text" style="color: var(--color-error); font-size: 0.85rem; font-weight: 700; margin-top: 12px;"></div>
-            <div id="expandChronoError" style="display:none;"></div>
         </div>
 
         <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 20px 32px; border-top: 1px solid var(--color-border-light);">
-            <button type="button" class="btn btn-secondary" onclick="closeEditChronoModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveChronoEdit()">Save Entry</button>
+            <button type="button" class="btn btn-secondary" onclick="ChronoService.closeEditChronoModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="ChronoService.save()">Save Entry</button>
         </div>
     </div>
 </div>
@@ -36,13 +39,13 @@
 <div id="chronoViewModal" class="modal">
     <div class="modal-content" style="max-width: 850px; border-top: 6px solid var(--color-primary);">
         <div class="modal-header">
-            <h3 id="chronoViewDate" style="color: var(--color-primary); font-weight: 800;"></h3>
+            <h3 id="chronoViewDate" style="color: var(--color-primary); font-weight: 800; margin: 0;"></h3>
         </div>
         <div class="modal-body" style="padding: 32px;">
-            <div id="chronoViewFullText" class="chrono-view-text" style="font-size: 1.1rem; line-height: 1.7; color: var(--color-text-dark); background: var(--color-bg-subtle); padding: 28px; border-radius: var(--radius-lg); border: 1.5px solid var(--color-border-light); white-space: pre-wrap; max-height: 70vh; overflow-y: auto;"></div>
+            <div id="chronoViewFullText" class="premium-note-display" style="font-size: 1.1rem; line-height: 1.7; color: var(--color-text-dark); background: var(--color-bg-subtle); padding: 28px; border-radius: var(--radius-lg); border: 1.5px solid var(--color-border-light); white-space: pre-wrap; max-height: 70vh; overflow-y: auto;"></div>
         </div>
         <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 20px 32px;">
-            <button type="button" class="btn btn-secondary" onclick="closeChronoViewModal()">Close</button>
+            <button type="button" class="btn btn-secondary" onclick="ChronoService.closeChronoViewModal()">Close</button>
         </div>
     </div>
 </div>

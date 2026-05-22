@@ -342,6 +342,40 @@ let currentIdx = 0;
 let score = 0;
 let reloadTimeout = null;
 
+// Settings
+let workoutLimit = parseInt(localStorage.getItem('workoutLimit') || '5', 10);
+let workoutMaxKnown = parseInt(localStorage.getItem('workoutMaxKnown') || '1', 10);
+
+function updateWorkoutDisplayCount() {
+    const el = document.getElementById('workout-count-display');
+    if (el) el.innerText = workoutLimit;
+}
+
+function openWorkoutSettingsModal() {
+    document.getElementById('settingWorkoutLimit').value = workoutLimit;
+    document.getElementById('settingWorkoutMaxKnown').value = workoutMaxKnown;
+    document.getElementById('workoutSettingsModal').style.display = 'block';
+}
+
+function closeWorkoutSettingsModal() {
+    document.getElementById('workoutSettingsModal').style.display = 'none';
+}
+
+function saveWorkoutSettings() {
+    const l = parseInt(document.getElementById('settingWorkoutLimit').value, 10);
+    const m = parseInt(document.getElementById('settingWorkoutMaxKnown').value, 10);
+    if (l > 0) {
+        workoutLimit = l;
+        localStorage.setItem('workoutLimit', workoutLimit);
+    }
+    if (m >= 0) {
+        workoutMaxKnown = m;
+        localStorage.setItem('workoutMaxKnown', workoutMaxKnown);
+    }
+    updateWorkoutDisplayCount();
+    closeWorkoutSettingsModal();
+}
+
 async function startKnowledgeTest() {
     if (reloadTimeout) { clearTimeout(reloadTimeout); reloadTimeout = null; }
     const oldHint = document.getElementById('reload-hint');
@@ -355,7 +389,8 @@ async function startKnowledgeTest() {
     document.getElementById('test-log').innerText = '';
 
     try {
-        const res = await fetch('/get_test_words');
+        const url = `/get_test_words?limit=${workoutLimit}&max_known=${workoutMaxKnown}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         testWords  = data.words;
@@ -535,6 +570,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (window.WS_HAS_HISTORY) updateHealthChart();
 
     // Workout buttons
+    updateWorkoutDisplayCount();
     document.getElementById('btn-start-test').addEventListener('click',  startKnowledgeTest);
     document.getElementById('btn-show-hint').addEventListener('click',   toggleHint);
     document.getElementById('btn-known').addEventListener('click',       () => recordResult(true));
@@ -552,8 +588,10 @@ window.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         const modal       = document.getElementById('editWordModal');
         const searchModal = document.getElementById('searchWordModal');
+        const settingsModal = document.getElementById('workoutSettingsModal');
         if (e.target === modal)       closeEditModal();
         if (e.target === searchModal) closeSearchModal();
+        if (e.target === settingsModal) closeWorkoutSettingsModal();
     });
 });
 
@@ -567,3 +605,6 @@ window.openWorkoutEditModal = openWorkoutEditModal;
 window.closeEditModal     = closeEditModal;
 window.saveWordEdit       = saveWordEdit;
 window.setHealthMode      = setHealthMode;
+window.openWorkoutSettingsModal = openWorkoutSettingsModal;
+window.closeWorkoutSettingsModal = closeWorkoutSettingsModal;
+window.saveWorkoutSettings = saveWorkoutSettings;

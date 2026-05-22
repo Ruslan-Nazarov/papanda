@@ -19,16 +19,16 @@ export const MathNode = Node.create({
     },
 
     parseHTML() {
-        return [{ 
+        return [{
             tag: 'math-field',
-            getAttrs: el => ({ 
-                latex: el.getAttribute('value') || el.getAttribute('latex') || el.textContent || '' 
+            getAttrs: el => ({
+                latex: el.getAttribute('value') || el.getAttribute('latex') || el.textContent || ''
             })
         }];
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['math-field', mergeAttributes(HTMLAttributes, { 
+        return ['math-field', mergeAttributes(HTMLAttributes, {
             value: HTMLAttributes.latex,
             'read-only': 'true'
         })];
@@ -48,13 +48,49 @@ export const MathNode = Node.create({
             mathField.value = node.attrs.latex;
             mathField.setAttribute('menu-helper', 'none');
             mathField.setAttribute('virtual-keyboard-toggle-visible', 'false');
-            
+
             // Гарантируем шрифты
             if (mathField.constructor.fontsDirectory === undefined) {
                 mathField.constructor.fontsDirectory = 'https://cdn.jsdelivr.net/npm/mathlive@latest/dist/fonts';
             }
 
             wrapper.appendChild(mathField);
+
+            // MathLive — Web Component с Shadow DOM. События клавиатуры НЕ всплывают
+            // через границу Shadow DOM в Light DOM. Единственный способ перехватить
+            // ввод — слушать на уровне document в capture-фазе и проверять фокус.
+            const CYRILLIC_KEY_MAP = {
+                'п': '+',
+                'м': '-',
+                'у': '\\times ',
+                'д': '\\div ',
+                'р': '=',
+                'к': '\\sqrt{}',
+                'и': '\\int ',
+                'с': '\\sum ',
+                'б': '\\infty ',
+                'ф': '\\frac{}{}',
+            };
+
+            const mathKeydownHandler = (e) => {
+                // Shadow DOM: document.activeElement указывает на math-field (host element),
+                // но проверяем также через composedPath для надёжности
+                const path = e.composedPath();
+                const isInsideThisField = path.includes(mathField) || document.activeElement === mathField;
+                if (!isInsideThisField) return;
+                const replacement = CYRILLIC_KEY_MAP[e.key];
+                if (e.altKey && replacement && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mathField.executeCommand(['insert', replacement]);
+                }
+            };
+            document.addEventListener('keydown', mathKeydownHandler, true);
+
+            // Удаляем обработчик при уничтожении NodeView (предотвращаем утечки памяти)
+            const originalDestroy = () => {
+                document.removeEventListener('keydown', mathKeydownHandler, true);
+            };
 
             // Отладка
             const log = (m) => { if (window.app && window.app.logDebug) window.app.logDebug(m); };
@@ -89,6 +125,9 @@ export const MathNode = Node.create({
                     }
 
                     return true;
+                },
+                destroy: () => {
+                    originalDestroy();
                 }
             };
         };
@@ -121,10 +160,10 @@ export const ResizableImage = Image.extend({
             const img = document.createElement('img');
             img.src = node.attrs.src;
             img.style.width = node.attrs.width;
-            
+
             const handle = document.createElement('div');
             handle.className = 'resize-handle';
-            
+
             container.appendChild(img);
             container.appendChild(handle);
 
@@ -150,7 +189,7 @@ export const ResizableImage = Image.extend({
                     container.classList.remove('resizing');
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
-                    
+
                     if (typeof getPos === 'function') {
                         editor.view.dispatch(
                             editor.view.state.tr.setNodeMarkup(getPos(), null, {
@@ -169,7 +208,7 @@ export const ResizableImage = Image.extend({
                 dom: container,
                 update: (updatedNode) => {
                     if (updatedNode.type.name !== node.type.name) return false;
-                    
+
                     if (updatedNode.attrs.src !== node.attrs.src) {
                         img.src = updatedNode.attrs.src;
                     }

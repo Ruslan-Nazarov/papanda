@@ -16,7 +16,7 @@ class WordTestService:
         self.langs = LanguageService(db)
         self.stats = WordStatsService(db)
 
-    async def get_random_test_words_data(self, limit: int = 5) -> List[Dict[str, Any]]:
+    async def get_random_test_words_data(self, limit: int = 5, max_known: int = 1) -> List[Dict[str, Any]]:
         """Prepares data for 'Brain Workout' test session."""
         try:
             # 1. Fetch word pools
@@ -24,16 +24,25 @@ class WordTestService:
             learned_pool = await self._get_words_by_status(limit * 2, learned=True)
             
             words = []
+            known_count = 0
+            
             for _ in range(limit):
-                # 20% chance to pick a learned word for reinforcement
-                if learned_pool and (not unlearned_pool or random.random() < 0.2):
+                # 20% chance to pick a learned word for reinforcement (if we haven't hit max_known)
+                if learned_pool and known_count < max_known and (not unlearned_pool or random.random() < 0.2):
                     words.append(learned_pool.pop(random.randint(0, len(learned_pool) - 1)))
+                    known_count += 1
                 elif unlearned_pool:
                     words.append(unlearned_pool.pop(random.randint(0, len(unlearned_pool) - 1)))
+                elif learned_pool and known_count < max_known:
+                    # Fallback if unlearned are exhausted
+                    words.append(learned_pool.pop(random.randint(0, len(learned_pool) - 1)))
+                    known_count += 1
             
             if not words: return []
 
             active_langs = await self.langs.get_active_languages()
+            lang_counts = await self.stats.get_knowledge_counts(active_langs)
+            
             result = []
 
             for w in words:
@@ -45,7 +54,16 @@ class WordTestService:
                        (l == 'it' and w.it) or
                        (l == 'de' and w.de)
                 ]
-                test_lang = random.choice(testable_langs) if testable_langs else active_langs[0]
+                
+                if testable_langs:
+                    weights = []
+                    for l in testable_langs:
+                        known = lang_counts.get(l, 0)
+                        weights.append(1.0 / (known + 1.0))
+                    
+                    test_lang = random.choices(testable_langs, weights=weights, k=1)[0]
+                else:
+                    test_lang = active_langs[0]
                 
                 word_to_test = self._extract_translation(w, test_lang)
 

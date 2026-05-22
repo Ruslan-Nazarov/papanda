@@ -39,15 +39,33 @@ export const ShapeTool = {
         const fabricModule = await import('fabric');
         const f = fabricModule.fabric || fabricModule;
         
+        const common = {
+            left: 100,
+            top: 100,
+            fill: 'transparent',
+            stroke: color,
+            strokeWidth: 2,
+        };
+
         let shape;
         if (type === 'rect') {
-            shape = new f.Rect({ left: 100, top: 100, fill: color, width: 60, height: 60 });
+            shape = new f.Rect({ ...common, width: 80, height: 60 });
         } else if (type === 'circle') {
-            shape = new f.Circle({ left: 100, top: 100, fill: color, radius: 30 });
+            shape = new f.Circle({ ...common, radius: 40 });
+        } else if (type === 'triangle') {
+            shape = new f.Triangle({ ...common, width: 80, height: 70 });
         } else if (type === 'line') {
             shape = new f.Line([50, 50, 150, 50], { stroke: color, strokeWidth: 3 });
+        } else if (type === 'arrow') {
+            // Линия со стрелкой (упрощенно)
+            shape = new f.Group([
+                new f.Line([0, 5, 100, 5], { stroke: color, strokeWidth: 3 }),
+                new f.Triangle({ left: 90, top: 0, width: 15, height: 15, fill: color, angle: 90 })
+            ], { left: 100, top: 100 });
+        } else if (type === 'diamond') {
+            shape = new f.Rect({ ...common, width: 60, height: 60, angle: 45 });
         } else if (type === 'text') {
-            shape = new f.IText('Текст', { left: 100, top: 100, fontSize: 20, fill: color });
+            shape = new f.IText('A', { left: 100, top: 100, fontSize: 18, fill: color, fontWeight: 'bold' });
         }
 
         if (shape) {
@@ -74,6 +92,7 @@ export const ShapeTool = {
                 attrs: { src: dataUrl, alt: 'Canvas Drawing', width: '400px' }
             })
             .createParagraphNear()
+            .focus('end')
             .run();
 
         if (onComplete) onComplete();

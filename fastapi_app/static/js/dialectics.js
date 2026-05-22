@@ -17,7 +17,8 @@ class DialecticsEngine {
             pendingSide: null, 
             isExpanded: false, 
             editingBlock: null,
-            notesList: [] 
+            notesList: [],
+            viewingNoteId: null
         };
 
         this.dom = {
@@ -266,6 +267,61 @@ class DialecticsEngine {
             i.onclick = () => this.loadNoteToEditor(n.id);
             this.dom.loadList.appendChild(i);
         });
+    }
+
+    async deleteGlobal() {
+        if (!this.state.currentNoteId) return;
+        if (confirm("Are you sure you want to delete this Dialectics?")) {
+            const ok = await DialecticsAPI.delete(this.state.currentNoteId);
+            if (ok) {
+                window.showToast("Dialectics deleted", "info");
+                location.reload();
+            }
+        }
+    }
+
+    async pinCurrent() {
+        if (!this.state.currentNoteId) {
+            window.showToast("Save first to pin", "warning");
+            return;
+        }
+        
+        const title = this.dom.title.value || "Untitled Dialectics";
+        const blocks = BlockManager.getBlocks(this.dom.canvas);
+        
+        const payload = { 
+            id: this.state.currentNoteId,
+            title, 
+            blocks,
+            is_pinned: true
+        };
+        
+        const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
+        if (res) {
+            window.showToast("Pinned successfully", "success");
+        }
+    }
+
+    showViewModal(id, title, blocks) {
+        this.state.viewingNoteId = id;
+        this.dom.viewTitle.textContent = title;
+        
+        // Render blocks into a simple view
+        let fullHtml = "";
+        blocks.forEach(b => {
+            fullHtml += `<div style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <small style="color: #94a3b8; text-transform: uppercase;">${b.side}</small>
+                <div>${b.html}</div>
+            </div>`;
+        });
+        
+        this.dom.viewBody.innerHTML = fullHtml;
+        this.dom.viewModal.style.display = 'flex';
+    }
+
+    hideViewModal() {
+        this.dom.viewModal.style.display = 'none';
+        this.state.viewingNoteId = null;
     }
 
     logDebug(msg) {

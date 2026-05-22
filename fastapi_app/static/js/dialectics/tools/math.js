@@ -4,10 +4,10 @@
 export const MathTool = {
     getSymbols() {
         return {
-            'Основные': ['+', '-', '\\times', '\\div', '=', '\\sqrt{x}', 'x^n', '\\pi', '\\infty'],
-            'Скобки': ['(x)', '[x]', '\\{x\\}', '|x|'],
-            'Анализ': ['\\int', '\\sum', '\\lim_{x \\to \\infty}', '\\frac{d}{dx}'],
-            'Разное': ['\\alpha', '\\beta', '\\gamma', '\\delta', '\\lambda']
+            'Основные': ['+', '-', '\\times', '\\div', '=', '\\pm', '\\sqrt{x}', '\\sqrt[n]{x}', 'x^n', 'x_n', '\\pi', '\\infty', '\\%'],
+            'Анализ': ['\\int', '\\int_a^b', '\\sum', '\\sum_{i=1}^n', '\\lim_{x \\to \\infty}', '\\frac{d}{dx}', '\\partial', '\\nabla', '\\Delta'],
+            'Матстатистика': ['P(A)', '\\bar{x}', '\\sigma', '\\sigma^2', '\\mu', '\\chi^2', '\\lambda', '\\rho', '\\Phi(x)', 'E(X)', 'D(X)'],
+            'Разное': ['\\alpha', '\\beta', '\\gamma', '\\delta', '\\epsilon', '\\zeta', '\\eta', '\\theta', '\\iota', '\\kappa', '\\lambda', '\\mu', '\\nu', '\\xi', '\\pi', '\\rho', '\\sigma', '\\tau', '\\phi', '\\chi', '\\psi', '\\omega']
         };
     },
 
@@ -18,6 +18,21 @@ export const MathTool = {
             // Настройка шрифтов сразу после загрузки модуля
             if (ml.MathfieldElement) {
                 ml.MathfieldElement.fontsDirectory = 'https://cdn.jsdelivr.net/npm/mathlive@latest/dist/fonts';
+                
+                // Настройка глобальных шорткатов
+                ml.MathfieldElement.inlineShortcuts = {
+                    ...ml.MathfieldElement.inlineShortcuts,
+                    "п": "+",
+                    "м": "-",
+                    "у": "\\times",
+                    "д": "\\div",
+                    "р": "=",
+                    "к": "\\sqrt{#@}",
+                    "и": "\\int",
+                    "с": "\\sum",
+                    "пч": "\\partial",
+                    "б": "\\infty"
+                };
             }
             window.mathliveLoaded = true;
             if (window.app && window.app.logDebug) window.app.logDebug("MathLive загружен.");
@@ -52,63 +67,51 @@ export const MathTool = {
         await this.initMathLive();
 
         menu.innerHTML = '';
-        menu.className = 'math-context-menu';
+        menu.className = 'math-floating-menu'; // New class for horizontal floating menu
         menu.style.display = 'flex';
+        menu.style.flexDirection = 'column';
         menu.style.position = 'fixed';
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
-        menu.style.zIndex = '10000';
+        menu.style.zIndex = '20000';
 
-        // 1. Шапка с вкладками
-        const header = document.createElement('div');
-        header.className = 'math-ctx-header';
-        
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'math-ctx-tabs';
-        
         const symbols = this.getSymbols();
         const categories = Object.keys(symbols);
         
+        // Tab Row
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'math-float-tabs';
+        
         const contentArea = document.createElement('div');
-        contentArea.className = 'math-ctx-content';
+        contentArea.className = 'math-float-content';
         
         categories.forEach((cat, index) => {
             const tab = document.createElement('div');
-            tab.className = `math-ctx-tab ${index === 0 ? 'active' : ''}`;
+            tab.className = `math-float-tab ${index === 0 ? 'active' : ''}`;
             tab.innerText = cat;
             tab.onmousedown = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                document.querySelectorAll('.math-ctx-tab').forEach(t => t.classList.remove('active'));
+                tabsContainer.querySelectorAll('.math-float-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 this.renderCtxGrid(contentArea, symbols[cat], onInsert, menu);
             };
             tabsContainer.appendChild(tab);
         });
         
-        header.appendChild(tabsContainer);
-        menu.appendChild(header);
+        menu.appendChild(tabsContainer);
         menu.appendChild(contentArea);
         
-        // Рендерим первую категорию
         this.renderCtxGrid(contentArea, symbols[categories[0]], onInsert, menu);
 
-        // 2. Кнопка копирования (если кликнули по существующей формуле)
-        const target = document.elementFromPoint(x, y);
-        const mathField = target?.closest('math-field') || 
-                         (target?.shadowRoot ? target.shadowRoot.activeElement?.closest('math-field') : null);
-        
-        if (mathField) {
-            const copyBtn = document.createElement('div');
-            copyBtn.className = 'math-ctx-copy-btn';
-            copyBtn.innerHTML = '📋 Копировать LaTeX';
-            copyBtn.onmousedown = (e) => {
-                e.preventDefault();
-                this.copyToClipboard(mathField.value);
+        // Click outside listener to close
+        const closeMenu = (e) => {
+            if (!menu.contains(e.target)) {
                 menu.style.display = 'none';
-            };
-            menu.appendChild(copyBtn);
-        }
+                document.removeEventListener('mousedown', closeMenu);
+            }
+        };
+        setTimeout(() => document.addEventListener('mousedown', closeMenu), 10);
     },
 
     renderCtxGrid(container, items, onInsert, menu) {

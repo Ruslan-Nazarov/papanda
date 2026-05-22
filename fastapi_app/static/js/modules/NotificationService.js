@@ -99,7 +99,7 @@ export const NotificationService = {
 
             footer.appendChild(cancelBtn);
             footer.appendChild(okBtn);
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
         });
     }
 };

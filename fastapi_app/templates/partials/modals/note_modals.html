@@ -1,121 +1,126 @@
-<!-- Note Edit/Add Modal (Unified) -->
+{% from "partials/components/inputs.html" import premium_input %}
+
+<!-- Edit Note Modal (Unified for DB View & General Editing) -->
 <div id="editNoteModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 700px; border-top: 6px solid var(--color-primary);">
         <div class="modal-header">
-            <h2 id="editNoteHeader">Edit Note</h2>
+            <h3><span style="color: var(--color-primary);">📝</span> Edit Note</h3>
         </div>
         
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 32px;">
             <input type="hidden" id="editNoteId">
-            <div class="form-group">
-                <label class="form-label">Category</label>
-                <div style="display: flex; gap: 12px; align-items: flex-end;">
-                    <select id="editNoteCategory" class="form-select" style="flex: 1;">
+            
+            <div class="form-group-premium">
+                <label class="form-label"><span class="icon">🏷️</span> Category</label>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <select id="editNoteCategory" class="form-input" style="flex: 1; height: 44px !important;">
                         {% if categories %}
                             {% for cat in categories %}
                                 <option value="{{ cat }}">{{ cat }}</option>
                             {% endfor %}
                         {% endif %}
                     </select>
-                    <button type="button" class="btn btn-secondary btn-icon" style="width: 44px; height: 44px;" onclick="notesWidget.showAddCategoryModal()" title="Add Category">+</button>
+                    <button type="button" class="btn btn-secondary" onclick="NoteService.showAddCategoryModal()" title="Add Category" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">+</button>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Note Content</label>
-                <textarea id="editNoteText" class="form-input" style="height: 350px; resize: vertical;"></textarea>
+
+            <div class="form-group-premium">
+                <label class="form-label"><span class="icon">✍️</span> Note Content</label>
+                {{ premium_input(
+                    type='textarea', 
+                    id='editNoteText', 
+                    placeholder='Type your note here...', 
+                    style='height: 350px; min-height: 250px; line-height: 1.6;'
+                ) }}
             </div>
 
-            <!-- Stickers Section in Edit Modal -->
-            <div id="editNoteStickersSection" style="margin-top: 16px; display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label class="form-label" style="margin: 0;">Stickers</label>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="openParentStickers('note', document.getElementById('editNoteId').value)">+ Manage Stickers</button>
+            <!-- Optional Stickers Section -->
+            <div id="editNoteStickersSection" style="margin-top: 20px; display: none; border-top: 1px solid var(--color-border-light); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="form-label" style="margin: 0; font-size: 0.85rem; color: var(--color-text-muted);">LINKED STICKERS</label>
+                    <button type="button" class="btn-text-action" onclick="openParentStickers('note', document.getElementById('editNoteId').value)" style="font-size: 0.8rem;">Manage</button>
                 </div>
-                <div id="editNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+                <div id="editNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
             </div>
-
-            <div id="editNoteError" class="form-error-text" style="color: var(--color-error); font-size: 0.85rem; font-weight: 600;"></div>
         </div>
 
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEditNoteModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveNoteEdit()">OK</button>
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 20px 32px; border-top: 1px solid var(--color-border-light);">
+            <button type="button" class="btn btn-secondary" onclick="NoteService.closeEditNoteModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="NoteService.save()">Save Changes</button>
         </div>
     </div>
 </div>
 
-<!-- Note View Modal (Read-Only) -->
+<!-- Note View Modal (DB View Read-Only) -->
 <div id="noteViewModal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
-        <div class="modal-header">
-            <h2 id="noteViewCategory">View Note</h2>
+    <div class="modal-content" style="max-width: 800px; border-top: 6px solid var(--color-primary);">
+        <div class="modal-header" style="justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;"><span style="color: var(--color-primary);">🔍</span> View Note</h3>
+            <span id="noteViewCategory" class="premium-badge">General</span>
         </div>
-        <div class="modal-body">
-            <div id="noteViewFullText" style="font-size: 1.1rem; line-height: 1.8; color: var(--color-text-body); white-space: pre-wrap;"></div>
+        
+        <div class="modal-body" style="padding: 32px;">
+            <input type="hidden" id="noteViewNoteId">
+            <div id="noteViewFullText" class="premium-note-display" style="font-size: 1.1rem; line-height: 1.7; color: var(--color-text-dark); background: var(--color-bg-subtle); padding: 28px; border-radius: var(--radius-lg); border: 1.5px solid var(--color-border-light); white-space: pre-wrap; max-height: 60vh; overflow-y: auto; margin-bottom: 24px;"></div>
             
-            <!-- Sticker Board for Notes -->
-            <div id="dbViewNoteStickerBoard" style="border-top: 2px solid var(--color-bg-app); padding-top: 24px; margin-top: 32px; display: none;">
-               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                   <span class="form-label" style="margin-bottom: 0;">Sticker Board</span>
-                   <button id="addStickerToNoteBtn" class="btn btn-primary btn-sm">+ Add Sticker</button>
-               </div>
-               <div id="dbViewNoteStickersList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 50px;"></div>
-           </div>
+            <!-- Linked Stickers Board -->
+            <div id="dbViewNoteStickerBoard" style="display: none; border-top: 1px solid var(--color-border-light); padding-top: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h4 style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted);">Linked Stickers</h4>
+                    <button type="button" id="addStickerToNoteBtn" class="btn-text-action" style="font-size: 0.85rem; color: var(--color-primary); font-weight: 600;">+ Link New</button>
+                </div>
+                <div id="dbViewNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
+            </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeNoteViewModal()">Close</button>
+
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 20px 32px;">
+            <button type="button" class="btn btn-secondary" onclick="window.closeNoteViewModal()">Close</button>
+            <button type="button" class="btn btn-primary" onclick="window.noteViewEditNote()">✎ Edit</button>
         </div>
     </div>
 </div>
 
-<!-- All Notes List Modal -->
-<div id="allNotesModal" class="modal">
-    <div class="modal-content" style="max-width: 900px; width: 90vw; background: var(--color-bg-app);">
-        <div class="modal-header" style="border-bottom: 2px solid var(--color-bg-subtle); padding-bottom: 20px; margin-bottom: 24px;">
+<!-- All Notes Search Modal (Global) -->
+<div id="allNotesModal" class="modal" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-content" style="max-width: 950px; width: 95vw; border-top: 6px solid var(--color-primary);" onclick="event.stopPropagation()">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-border-light); padding: 20px 32px;">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <h2 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 1.8rem;">📂</span> All Notes <small id="notesCountDebug" style="font-size: 0.9rem; color: var(--color-text-muted); font-weight: 400;"></small>
-                </h2>
-                <div style="flex: 1; max-width: 400px; margin: 0 32px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.5rem;">📂</span> All Notes <small id="notesCountDebug" style="font-size: 0.85rem; color: var(--color-text-muted); font-weight: 500;"></small>
+                </h3>
+                <div style="flex: 1; max-width: 450px; margin: 0 40px;">
                     <div style="position: relative;">
-                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;">🔍</span>
+                        <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); font-size: 1.1rem;">🔍</span>
                         <input type="text" id="allNotesSearchInput" 
                                oninput="notesWidget.searchInModal(this.value)" 
                                placeholder="Search content or category..." 
                                class="form-input" 
-                               style="padding-left: 40px; height: 44px; border-radius: 12px; background: var(--color-bg-subtle);">
+                               style="padding-left: 48px; height: 48px; border-radius: 14px; background: var(--color-bg-subtle); border-color: transparent;">
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-icon" onclick="document.getElementById('allNotesModal').style.display='none'" style="width: 44px; height: 44px;">×</button>
+                <button class="btn-icon-close" onclick="document.getElementById('allNotesModal').style.display='none'" style="font-size: 1.5rem; background: none; border: none; cursor: pointer; color: var(--color-text-muted);">×</button>
             </div>
         </div>
-        <div class="modal-body" style="padding: 0;">
+        <div class="modal-body" style="padding: 32px; background: var(--color-bg-subtle);">
             <div id="allNotesGrid" class="notes-search-grid" 
-                 style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; max-height: 65vh; overflow-y: auto; padding: 4px;">
-                 <!-- Cards will be injected here -->
+                 style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-height: 60vh; overflow-y: auto;">
+                 <!-- Cards injected by JS -->
             </div>
         </div>
     </div>
 </div>
 
-
-{% from "partials/components/inputs.html" import premium_input %}
-
-<!-- Add Note Category Modal (Already fixed alignment, now using macro for consistency) -->
-<!-- ... other modals ... -->
-
-<!-- Expanded Editor Modal (Dashboard) -->
+<!-- Expanded Editor Modal (Dashboard Entry) -->
 <div id="expandedNoteEditorModal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-content" style="max-width: 850px; border-top: 6px solid var(--color-primary);">
         <div class="modal-header">
-            <h2>📝 Expanded Editor</h2>
+            <h3><span style="color: var(--color-primary);">⚡</span> Expanded Editor</h3>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 32px;">
             <input type="hidden" id="expandedNoteId">
-            <div style="display: flex; gap: 12px; margin-bottom: 24px; align-items: stretch;">
+            <div style="display: flex; gap: 16px; margin-bottom: 24px; align-items: center;">
                 <div style="display: flex; gap: 8px; flex: 1;">
-                    <select id="expandedNoteCategory" class="form-select" style="flex: 1; height: 44px !important;">
+                    <select id="expandedNoteCategory" class="form-select" style="flex: 1; height: 44px !important; font-size: 0.9rem;">
                         {% if categories %}
                             {% for cat in categories %}
                                 <option value="{{ cat }}">{{ cat }}</option>
@@ -124,58 +129,54 @@
                     </select>
                     <button type="button" class="btn btn-secondary btn-icon" style="width: 44px; height: 44px !important; border: 2px solid var(--color-border-light); border-radius: 12px;" onclick="notesWidget.showAddCategoryModal()" title="Add Category">+</button>
                 </div>
-                <div class="form-check-item" style="background: var(--color-bg-subtle); padding: 0 16px; border-radius: 12px; border: 2px solid var(--color-border-light); height: 44px; display: flex; align-items: center; gap: 10px;">
+                <div class="form-check-item" style="background: white; padding: 0 16px; border-radius: 12px; border: 2px solid var(--color-border-light); height: 44px; display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" id="expandedNotePin">
-                    <label for="expandedNotePin" class="form-label" style="margin: 0; cursor: pointer; font-size: 0.75rem; font-weight: 800; color: var(--color-text-muted);">PIN TO DASHBOARD</label>
+                    <label for="expandedNotePin" class="form-label" style="margin: 0; cursor: pointer; font-size: 0.75rem; font-weight: 800;">PIN</label>
                 </div>
             </div>
-            <div class="form-group">
+            
+            <div class="form-group-premium">
                 {{ premium_input(
                     type='textarea',
                     id='expandedNoteTextarea',
-                    placeholder='Write your note here...',
-                    extra_classes='premium-editor-textarea',
-                    style='min-height: 400px; resize: vertical;'
+                    placeholder='Write your story...',
+                    style='min-height: 450px; resize: vertical; line-height: 1.6;'
                 ) }}
             </div>
 
-            <!-- Stickers Section in Expanded Editor -->
-            <div id="expandedNoteStickersSection" style="margin-top: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label class="form-label" style="margin: 0;">Stickers</label>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="notesWidget.manageStickersForNewNote()">+ Manage Stickers</button>
+            <!-- Stickers Section -->
+            <div id="expandedNoteStickersSection" style="margin-top: 24px; border-top: 1px solid var(--color-border-light); padding-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="form-label" style="margin: 0; font-size: 0.85rem; color: var(--color-text-muted);">LINKED STICKERS</label>
+                    <button type="button" class="btn-text-action" onclick="notesWidget.manageStickersForNewNote()" style="font-size: 0.85rem;">+ Manage</button>
                 </div>
-                <div id="expandedNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    <span style="color:var(--color-text-faint);font-size:0.8rem;">No stickers yet</span>
+                <div id="expandedNoteStickersList" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <span style="color: var(--color-text-faint); font-size: 0.85rem; font-style: italic;">No stickers linked</span>
                 </div>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('expandedNoteEditorModal').style.display='none'">Cancel</button>
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 20px 32px;">
+            <button class="btn btn-secondary" onclick="notesWidget.closeExpandedEditor()">Cancel</button>
             <button class="btn btn-primary" onclick="notesWidget.saveNote(true)">💾 Save Note</button>
         </div>
     </div>
 </div>
 
-<!-- Add Category Modal -->
-<div id="addCategoryModal" class="modal">
-    <div class="modal-content" style="max-width: 350px;">
+<!-- Add Category Modal (Shared Mechanics) -->
+<div id="addCategoryModal" class="modal" style="z-index: 3000;">
+    <div class="modal-content" style="max-width: 450px; border-top: 6px solid var(--color-blue);">
         <div class="modal-header">
-            <h2 style="margin: 0; text-align: left;">Add New Category</h2>
+            <h3><span style="color: var(--color-blue);">📂</span> New Category</h3>
         </div>
-        <div class="modal-body" style="text-align: left !important;">
-            <div class="form-group" style="margin-bottom: 20px; text-align: left !important;">
-                <label class="form-label" style="text-align: left !important; display: block;">Category Name</label>
-                {{ premium_input(
-                    id='newCategoryName',
-                    placeholder='Work, Home, Ideas...',
-                    style='width: 100% !important;'
-                ) }}
+        <div class="modal-body" style="padding: 32px;">
+            <div class="form-group-premium">
+                <label class="form-label">Category Name</label>
+                {{ premium_input(id='newCategoryName', placeholder='e.g. Ideas, Work, Personal...') }}
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('addCategoryModal').style.display='none'">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="notesWidget.saveNewCategory()">Save</button>
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 20px 32px;">
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('addCategoryModal')">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="notesWidget.saveNewCategory()" style="background: var(--color-blue);">Create</button>
         </div>
     </div>
 </div>

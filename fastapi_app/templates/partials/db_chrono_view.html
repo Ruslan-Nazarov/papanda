@@ -25,12 +25,12 @@
         {% if search_query %}
             <div class="chrono-grid" id="searchChronoGrid">
                 {% for row in records %}
-                    <div class="chrono-card" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                    <div class="chrono-card" data-id="{{ row.id }}" ondblclick='ChronoService.openView("{{ row.date.strftime("%d.%m.%Y %H:%M") }}", {{ row.title|tojson }})'>
                         <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
                         <div class="chrono-title">{{ row.title }}</div>
-                        <div class="chrono-actions">
+                        <div class="chrono-actions" onclick="event.stopPropagation()">
                             <button type="button" class="btn-action btn-edit" 
-                                    onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                    onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>
                                 Edit
                             </button>
                             <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
@@ -47,12 +47,12 @@
             <div class="chrono-grid" id="recentChronoGrid">
                 {% set recent_chrono = records | selectattr('date', 'greaterthan', seven_days_ago) | list %}
                 {% for row in recent_chrono %}
-                    <div class="chrono-card recent" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                    <div class="chrono-card recent" data-id="{{ row.id }}" ondblclick='ChronoService.openView("{{ row.date.strftime("%d.%m.%Y %H:%M") }}", {{ row.title|tojson }})'>
                         <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
                         <div class="chrono-title">{{ row.title }}</div>
-                        <div class="chrono-actions">
+                        <div class="chrono-actions" onclick="event.stopPropagation()">
                             <button type="button" class="btn-action btn-edit" 
-                                    onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                    onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>
                                 Edit
                             </button>
                             <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
@@ -69,12 +69,12 @@
             <div class="chrono-grid" id="archiveChronoGrid">
                 {% set archive_chrono = records | selectattr('date', 'lessthan', seven_days_ago) | list %}
                 {% for row in archive_chrono %}
-                    <div class="chrono-card old" data-id="{{ row.id }}" data-title="{{ row.title|e }}" data-date="{{ row.date.strftime('%d.%m.%Y %H:%M') }}" style="display: none;" ondblclick="viewChronoFull(this.dataset.title, this.dataset.date)">
+                    <div class="chrono-card old" data-id="{{ row.id }}" ondblclick='ChronoService.openView("{{ row.date.strftime("%d.%m.%Y %H:%M") }}", {{ row.title|tojson }})'>
                         <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
                         <div class="chrono-title">{{ row.title }}</div>
-                        <div class="chrono-actions">
+                        <div class="chrono-actions" onclick="event.stopPropagation()">
                             <button type="button" class="btn-action btn-edit" 
-                                    onclick="openEditChronoModal('{{ row.id }}', '{{ row.title|e|replace('\n', '\\n') }}', '{{ row.date.isoformat() }}')">
+                                    onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>
                                 Edit
                             </button>
                             <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
@@ -119,51 +119,6 @@
                 const btn = document.getElementById('loadMoreChronoContainer');
                 if (btn) btn.style.display = 'none';
             }
-        }
-
-        function viewChronoFull(title, date) {
-            const modal = document.getElementById('chronoViewModal');
-            document.getElementById('chronoViewDate').innerText = date;
-            document.getElementById('chronoViewFullText').innerText = title;
-            modal.style.display = 'flex';
-        }
-
-        function closeChronoViewModal() {
-            document.getElementById('chronoViewModal').style.display = 'none';
-        }
-
-        function openEditChronoModal(id, title, dateStr) {
-            document.getElementById('editChronoId').value = id;
-            document.getElementById('editChronoTitle').value = title;
-            // Handle ISO string or space-separated string
-            document.getElementById('editChronoDate').value = dateStr ? dateStr.replace(' ', 'T').substring(0, 16) : '';
-            document.getElementById('editChronoError').innerText = '';
-            document.getElementById('editChronoModal').style.display = 'flex';
-        }
-
-        function closeEditChronoModal() {
-            document.getElementById('editChronoModal').style.display = 'none';
-        }
-
-        async function saveChronoEdit() {
-            const id = document.getElementById('editChronoId').value;
-            const title = document.getElementById('editChronoTitle').value.trim();
-            const date = document.getElementById('editChronoDate').value;
-            const errEl = document.getElementById('editChronoError');
-
-            if (!title) { errEl.innerText = "Description required"; return; }
-            if (!date) { errEl.innerText = "Date required"; return; }
-
-            try {
-                const resp = await fetch('/edit_chrono_inline', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, title, date })
-                });
-                const data = await resp.json();
-                if (data.status === 'success') location.reload();
-                else errEl.innerText = data.message || "Error saving.";
-            } catch (e) { errEl.innerText = "Network error."; }
         }
     </script>
 {% endif %}

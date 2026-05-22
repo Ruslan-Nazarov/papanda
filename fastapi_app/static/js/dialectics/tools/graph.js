@@ -119,6 +119,7 @@ export const GraphTool = {
                         attrs: { src: dataUrl, alt: 'Function Graph', width: '400px' }
                     })
                     .createParagraphNear()
+                    .focus('end')
                     .run();
 
                 URL.revokeObjectURL(url);

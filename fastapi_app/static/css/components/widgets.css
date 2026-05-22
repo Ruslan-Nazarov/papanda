@@ -87,6 +87,10 @@
     border-left-color: var(--color-primary);
 }
 
+.tomorrow-item {
+    opacity: 0.7;
+}
+
 /* Row Actions (Tasks & Habits) */
 .row-actions {
     display: flex;

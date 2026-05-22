@@ -46,40 +46,61 @@ class NotesWidget {
             const res = await fetch('/api/notes/pinned');
             const notes = await res.json();
             
+            container.innerHTML = '';
             if (notes.length === 0) {
                 container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">No pinned notes yet</div>';
                 return;
             }
 
-            container.innerHTML = notes.map(n => this.renderNoteCard(n)).join('');
+            notes.forEach(n => container.appendChild(this.renderNoteCard(n)));
         } catch (e) {
             console.error("Failed to refresh notes:", e);
         }
     }
 
     renderNoteCard(n) {
-        return `
-            <div class="pinned-note-card" data-id="${n.id}">
-                <div class="note-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span class="premium-badge">${n.category || 'General'}</span>
-                    <div style="display: flex; gap: 6px;">
-                        <button class="btn-row-action pin-btn active" 
-                                onclick="notesWidget.togglePin(${n.id}, true)" 
-                                title="Unpin from dashboard">
-                            📌
-                        </button>
-                        <button class="btn-row-action del-btn" 
-                                onclick="notesWidget.deleteNote(${n.id})" 
-                                title="Delete">
-                            ×
-                        </button>
-                    </div>
-                </div>
-                <div class="premium-note-text" onclick="notesWidget.viewNote(${n.id})" style="cursor: pointer; font-weight: 400; font-size: 0.9rem; line-height: 1.4; color: var(--color-text-dark); max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
-                    ${n.note}
-                </div>
-            </div>
-        `;
+        // Returns DOM element to preserve onclick handlers (outerHTML loses them)
+        const card = document.createElement('div');
+        card.className = 'pinned-note-card';
+        card.dataset.id = n.id;
+
+        const header = document.createElement('div');
+        header.className = 'note-card-header';
+        header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;';
+
+        const badge = document.createElement('span');
+        badge.className = 'premium-badge';
+        badge.textContent = n.category || 'General';
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:6px;';
+
+        const pinBtn = document.createElement('button');
+        pinBtn.className = 'btn-row-action pin-btn active';
+        pinBtn.title = 'Unpin from dashboard';
+        pinBtn.textContent = '\uD83D\uDCCC';
+        pinBtn.onclick = () => this.togglePin(n.id, true);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-row-action del-btn';
+        delBtn.title = 'Delete';
+        delBtn.textContent = '\u00D7';
+        delBtn.onclick = () => this.deleteNote(n.id);
+
+        actions.appendChild(pinBtn);
+        actions.appendChild(delBtn);
+        header.appendChild(badge);
+        header.appendChild(actions);
+
+        const textEl = document.createElement('div');
+        textEl.className = 'premium-note-text';
+        textEl.style.cssText = 'cursor:pointer;font-weight:400;font-size:0.9rem;line-height:1.4;color:var(--color-text-dark);max-height:120px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;';
+        textEl.textContent = n.note; // safe — textContent, no XSS
+        textEl.onclick = () => this.viewNote(n.id);
+
+        card.appendChild(header);
+        card.appendChild(textEl);
+        return card; // DOM element, not outerHTML
     }
 
     async saveNote(isExpanded = false, shouldClose = true) {
@@ -99,7 +120,7 @@ class NotesWidget {
         const formData = new FormData();
         formData.append('note', ta.value);
         formData.append('category', cat ? cat.value : 'General');
-        formData.append('is_pinned', pin ? pin.checked : true);
+        formData.append('is_pinned', pin ? pin.checked : false);
 
         const url = (noteId && noteId !== 'NEW' && noteId !== '') ? `/api/notes/${noteId}/update` : '/add_note';
 
@@ -421,6 +442,10 @@ class NotesWidget {
             if (modal) {
                 document.getElementById('noteViewCategory').innerText = note.category || 'General';
                 document.getElementById('noteViewFullText').innerText = note.note;
+
+                // Store ID for Edit button
+                const idInput = document.getElementById('noteViewNoteId');
+                if (idInput) idInput.value = id;
                 
                 const stickerList = document.getElementById('dbViewNoteStickersList');
                 const stickerBoard = document.getElementById('dbViewNoteStickerBoard');
@@ -461,14 +486,35 @@ class NotesWidget {
         const mainCat = document.getElementById('regularNoteCategory');
         const expCat = document.getElementById('expandedNoteCategory');
         const expId = document.getElementById('expandedNoteId');
+        const expPin = document.getElementById('expandedNotePin');
         
         if (modal && mainTa && expTa) {
             expTa.value = mainTa.value;
             if (mainCat && expCat) expCat.value = mainCat.value;
             if (expId) expId.value = ''; // New note from widget
+            if (expPin) expPin.checked = false; // Default: not pinned
+            this.currentNoteId = null;
             modal.style.display = 'flex';
             setTimeout(() => expTa.focus(), 100);
         }
+    }
+
+    _hasUnsavedChanges() {
+        const expTa = document.getElementById('expandedNoteTextarea');
+        const expId = document.getElementById('expandedNoteId');
+        // Unsaved if textarea has text and it's a new note (no id)
+        return expTa && expTa.value.trim() && (!expId || !expId.value);
+    }
+
+    closeExpandedEditor() {
+        if (this._hasUnsavedChanges()) {
+            if (!confirm('Close without saving? Your note will be lost.')) return;
+        }
+        const modal = document.getElementById('expandedNoteEditorModal');
+        if (modal) modal.style.display = 'none';
+        const expTa = document.getElementById('expandedNoteTextarea');
+        if (expTa) expTa.value = '';
+        this.currentNoteId = null;
     }
 
 
@@ -483,7 +529,7 @@ class NotesWidget {
             }
         }
     }
-
+    
     async saveNewCategory() {
         const input = document.getElementById('newCategoryName');
         if (!input || !input.value.trim()) {
@@ -502,47 +548,47 @@ class NotesWidget {
             if (res.ok) {
                 if (typeof window.showToast === 'function') window.showToast(`✓ Category "${name}" added`, "success");
                 document.getElementById('addCategoryModal').style.display = 'none';
-                
-                // Refresh all category selects
                 this.updateCategorySelects(name);
             } else {
                 const err = await res.json();
                 if (typeof window.showToast === 'function') window.showToast(err.detail || "Error adding category", "error");
             }
         } catch (e) {
-            console.error("Failed to add category:", e);
+            console.error("[Notes] Failed to add category:", e);
         }
     }
 
     updateCategorySelects(newName) {
-        // Find all category selects and add the new option, selecting it
         const selects = ['regularNoteCategory', 'expandedNoteCategory', 'editNoteCategory'];
         selects.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 const opt = document.createElement('option');
                 opt.value = newName;
-                opt.text = newName;
-                el.add(opt);
-                el.value = newName; // Auto-select new category
+                opt.textContent = newName;
+                el.appendChild(opt);
+                el.value = newName;
             }
         });
     }
 
     async togglePin(id, currentStatus) {
         try {
-            const res = await fetch(`/api/notes/${id}/toggle-pin`, {
-                method: 'POST'
-            });
-            if (res.ok) {
-                this.loadNotes();
-                if (typeof window.showToast === 'function') {
-                    const data = await res.json();
-                    window.showToast(data.message || "Note pin status updated", "success");
-                }
+            const res = await fetch(`/api/notes/${id}/toggle-pin`, { method: 'POST' });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (typeof window.showToast === 'function') {
+                window.showToast(data.message || 'Note pin status updated', 'success');
+            }
+            this.loadNotes();
+            // Refresh allNotesModal if open
+            const allModal = document.getElementById('allNotesModal');
+            if (allModal && allModal.style.display === 'flex') {
+                const query = document.getElementById('allNotesSearchInput')?.value || '';
+                this.searchInModal(query);
             }
         } catch (e) {
-            console.error("[Notes] Failed to toggle pin:", e);
+            console.error('[Notes] Failed to toggle pin:', e);
         }
     }
 }
@@ -552,4 +598,12 @@ window.notesWidget = new NotesWidget();
 window.closeNoteViewModal = function() {
     if (window.ModalManager) window.ModalManager.close('noteViewModal');
     else document.getElementById('noteViewModal').style.display = 'none';
+};
+
+window.noteViewEditNote = function() {
+    const id = document.getElementById('noteViewNoteId')?.value;
+    if (!id) return;
+    window.closeNoteViewModal();
+    // Small delay so close animation finishes before edit modal opens
+    setTimeout(() => window.notesWidget.editNote(parseInt(id)), 150);
 };

@@ -122,37 +122,77 @@ window.refreshWords = async function () {
     try {
         const response = await fetch('/get_new_words');
         const data = await response.json();
-        const tbody = document.getElementById('words-tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
+        const container = document.getElementById('words-list');
+        if (!container) return;
+        container.innerHTML = '';
 
         const activeLangs = window.P_ACTIVE_LANGUAGES || ['en', 'it', 'de'];
         data.words.forEach(word => {
-            const tr1 = document.createElement('tr');
-            let colsHtml = '';
-            activeLangs.forEach(code => {
-                colsHtml += `<td>${(word.translations && word.translations[code]) || ''}</td>`;
-            });
-            tr1.innerHTML = colsHtml;
+            const row = document.createElement('div');
+            row.className = 'word-row';
+            row.style.cssText = 'padding: 8px 12px; border-bottom: 1px solid var(--color-bg-app); transition: all 0.2s; position: relative; cursor: pointer;';
+            row.onmouseover = function() { this.style.background='var(--color-bg-subtle)'; this.querySelector('.row-actions').style.opacity='1'; };
+            row.onmouseout = function() { this.style.background='transparent'; this.querySelector('.row-actions').style.opacity='0'; };
 
-            const tr2 = document.createElement('tr');
-            tr2.className = 'word-extra-row';
-            const meaningSpan = word.meaning
-                ? `<span class="meaning-divider"></span><span style="font-style:italic;color:#888;">${word.meaning}</span>`
-                : '';
-            const transJson = JSON.stringify(word.translations || {}).replace(/"/g, '&quot;');
-            const engSafe   = word.eng.replace(/"/g, '&quot;');
-            const ruSafe    = (word.ru || '').replace(/"/g, '&quot;');
-            const meanSafe  = (word.meaning || '').replace(/"/g, '&quot;');
-            const engJs     = word.eng.replace(/'/g, "\\'");
-            tr2.innerHTML = `
-                <td colspan="${activeLangs.length}" style="padding:4px 10px;">
-                    ${word.ru} ${meaningSpan}
-                    <span class="edit-btn" data-eng="${engSafe}" data-translations="${transJson}" data-ru="${ruSafe}" data-meaning="${meanSafe}" onclick="openEditModalFromData(this)">✎</span>
-                    <span class="edit-btn" title="Mark as fully learned" style="margin-left:10px;color:var(--color-success);" onclick="markTripletLearned('${engJs}', this)">✓</span>
-                </td>`;
-            tbody.appendChild(tr1);
-            tbody.appendChild(tr2);
+            // Main Content Grid
+            const grid = document.createElement('div');
+            grid.style.cssText = `display: grid; grid-template-columns: repeat(${activeLangs.length}, 1fr); gap: 8px;`;
+
+            // Foreign words
+            activeLangs.forEach(lang => {
+                const span = document.createElement('span');
+                span.style.cssText = 'font-weight: 850; color: var(--color-text-dark); font-size: 0.9rem; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;';
+                span.textContent = (word.translations && word.translations[lang]) || '';
+                grid.appendChild(span);
+            });
+
+            // Russian Subtext
+            const subtext = document.createElement('div');
+            subtext.style.cssText = 'grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+            const ruSpan = document.createElement('span');
+            ruSpan.style.cssText = 'font-weight: 600; color: var(--color-text-faint); font-size: 0.7rem; line-height: 1.2; opacity: 0.7;';
+            ruSpan.textContent = word.ru || '';
+            subtext.appendChild(ruSpan);
+
+            if (word.meaning) {
+                const meanSpan = document.createElement('span');
+                meanSpan.style.cssText = 'font-style: italic; color: var(--color-text-faint); font-size: 0.65rem; opacity: 0.5; margin-left: 6px;';
+                meanSpan.textContent = '— ' + word.meaning;
+                subtext.appendChild(meanSpan);
+            }
+            grid.appendChild(subtext);
+
+            // Floating actions
+            const actions = document.createElement('div');
+            actions.className = 'row-actions';
+            actions.style.cssText = 'position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; background: var(--color-bg-subtle); padding: 4px; border-radius: 6px; box-shadow: -4px 0 12px var(--color-bg-subtle);';
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-icon';
+            editBtn.style.cssText = 'width: 22px; height: 22px; font-size: 0.65rem; border: 1px solid var(--color-border-light); border-radius: 4px; background: white;';
+            editBtn.textContent = '\u270E'; // ✎
+            editBtn.dataset.eng = word.eng;
+            activeLangs.forEach(lang => {
+                editBtn.dataset[`lang${lang.charAt(0).toUpperCase() + lang.slice(1)}`] = (word.translations && word.translations[lang]) || '';
+            });
+            editBtn.dataset.ru = word.ru || '';
+            editBtn.dataset.meaning = word.meaning || '';
+            editBtn.onclick = function() { openEditModalFromData(this); };
+
+            const checkBtn = document.createElement('button');
+            checkBtn.className = 'btn-icon';
+            checkBtn.style.cssText = 'width: 22px; height: 22px; font-size: 0.65rem; border: 1px solid var(--color-border-light); border-radius: 4px; color: var(--color-success); background: white;';
+            checkBtn.textContent = '\u2713'; // ✓
+            const engJs = word.eng.replace(/'/g, "\\'");
+            checkBtn.onclick = function() { markTripletLearned(engJs, this); };
+
+            actions.appendChild(editBtn);
+            actions.appendChild(checkBtn);
+
+            row.appendChild(grid);
+            row.appendChild(actions);
+
+            container.appendChild(row);
         });
 
         const volEl = document.getElementById('volume-count');

@@ -7,6 +7,7 @@ import { fetchWithJson } from '../db_api.js';
 
 export const NoteService = {
     openEdit(id, text, category) {
+        console.log("[NoteService] Opening edit for ID:", id);
         const fields = {
             'editNoteId': id || '',
             'editNoteText': text || '',
@@ -24,10 +25,12 @@ export const NoteService = {
         const note = document.getElementById('editNoteText').value.trim();
         const category = document.getElementById('editNoteCategory').value;
         
-        if (!note) return;
+        if (!note) {
+            if (window.showToast) window.showToast('Note content cannot be empty', 'error');
+            return;
+        }
         
         try {
-            // Using the dedicated inline endpoint which expects JSON (GenericUpdateSchema)
             const r = await fetch('/edit_note_inline', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -40,10 +43,66 @@ export const NoteService = {
                 if (window.showToast) window.showToast('Note updated', 'success');
             } else {
                 console.error("[NoteService] save failed:", data.message);
+                if (window.showToast) window.showToast(data.message || 'Save failed', 'error');
             }
         } catch (e) {
             console.error("[NoteService] save error:", e);
         }
+    },
+
+    showAddCategoryModal() {
+        const modal = document.getElementById('addCategoryModal');
+        const input = document.getElementById('newCategoryName');
+        if (modal) {
+            modal.style.display = 'flex';
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 100);
+            }
+        }
+    },
+
+    async saveNewCategory() {
+        const input = document.getElementById('newCategoryName');
+        if (!input || !input.value.trim()) {
+            if (typeof window.showToast === 'function') window.showToast("Category name cannot be empty", "error");
+            return;
+        }
+
+        const name = input.value.trim();
+        try {
+            const res = await fetch('/api/notes/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            });
+
+            if (res.ok) {
+                if (typeof window.showToast === 'function') window.showToast(`✓ Category "${name}" added`, "success");
+                document.getElementById('addCategoryModal').style.display = 'none';
+                
+                this.updateCategorySelects(name);
+            } else {
+                const err = await res.json();
+                if (typeof window.showToast === 'function') window.showToast(err.detail || "Error adding category", "error");
+            }
+        } catch (e) {
+            console.error("[NoteService] Failed to add category:", e);
+        }
+    },
+
+    updateCategorySelects(newName) {
+        const selects = ['regularNoteCategory', 'expandedNoteCategory', 'editNoteCategory'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const opt = document.createElement('option');
+                opt.value = newName;
+                opt.text = newName;
+                el.add(opt);
+                el.value = newName;
+            }
+        });
     },
 
     openView(id, text, category, stickers = []) {
@@ -53,10 +112,9 @@ export const NoteService = {
         const stickersList = document.getElementById('dbViewNoteStickersList');
         const addBtn = document.getElementById('addStickerToNoteBtn');
 
-        if (viewText) viewText.innerHTML = text; // Content
+        if (viewText) viewText.innerHTML = text; 
         if (viewCat) viewCat.textContent = category || 'No Category';
 
-        // Stickers logic
         if (stickerBoard && stickersList) {
             stickerBoard.style.display = 'block';
             stickersList.innerHTML = '';
@@ -95,8 +153,15 @@ export const NoteService = {
         ModalManager.open('noteViewModal');
     },
 
+    closeEditNoteModal() {
+        ModalManager.close('editNoteModal');
+    },
+
+    closeNoteViewModal() {
+        ModalManager.close('noteViewModal');
+    },
+
     _updateRow(id, text, category) {
-        // Find the card in the grid (Note View uses cards, not table rows usually)
         const card = document.querySelector(`.note-card[data-id="${id}"]`);
         if (card) {
             const catEl = card.querySelector('.note-cat');
@@ -104,10 +169,14 @@ export const NoteService = {
             if (catEl) catEl.textContent = category || 'Uncategorized';
             if (textEl) textEl.textContent = text;
             
-            // Update the onclick handler with new data
-            // We need to re-fetch the stickers or just reload for simplicity if complex
-            // But for now, let's just reload to be safe with all the data
-            location.reload();
+            // Re-fetch or reload if complex. For now, we try to update without reload
+            // but location.reload() is safer if onclick is stale.
+            // Let's try to be smart.
+            if (card.onclick) {
+                // If it's on a card in DB view, it likely has a complex onclick.
+                // For simplicity in this turn, reload is fine to ensure all data-attributes and onclicks are fresh.
+                location.reload(); 
+            }
         } else {
             location.reload();
         }
@@ -121,3 +190,5 @@ window.closeEditNoteModal = () => ModalManager.close('editNoteModal');
 window.saveNoteEdit = () => NoteService.save();
 window.openNoteViewModal = (...args) => NoteService.openView(...args);
 window.closeNoteViewModal = () => ModalManager.close('noteViewModal');
+window.showAddCategoryModal = () => NoteService.showAddCategoryModal();
+window.saveNewCategory = () => NoteService.saveNewCategory();

@@ -32,6 +32,7 @@
                     <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
                         style="display: none;">🗑️ Delete</button>
                     <button class="btn btn-primary btn-save-note" id="btnLoadDialectics">📂 Load</button>
+                    <button class="btn btn-warning" id="btnPinNote">📌 Pin</button>
                     <button class="btn btn-success btn-save-note" id="btnSaveDialectics">💾 Save Dialectics</button>
                 </div>
             </div>
@@ -72,6 +73,17 @@
                 <div class="editor-body" id="editorBody">
                     <!-- Text Tab -->
                     <div id="editor-text" class="tab-content active">
+                        <!-- Math Menu (Formula Palette) -->
+                        <div id="mathMenu" class="math-menu" style="display: none;">
+                            <div class="math-tabs">
+                                <div class="math-tab active" data-cat="main">Main</div>
+                                <div class="math-tab" data-cat="brackets">() []</div>
+                                <div class="math-tab" data-cat="analysis">∫ ∑</div>
+                                <div class="math-tab" data-cat="misc">α β λ</div>
+                            </div>
+                            <div id="mathPalette" class="math-palette"></div>
+                        </div>
+
                         <div id="tiptap-editor" class="tiptap-editor" style="min-height: 250px; cursor: text;"></div>
                         
                         <!-- Hidden inputs for sticker metadata -->
@@ -103,10 +115,13 @@
                                     <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование">✏️</button>
                                 </div>
                                 <div class="tool-group">
-                                    <button class="shape-tool" data-shape="rect" title="Квадрат">⬜</button>
-                                    <button class="shape-tool" data-shape="circle" title="Круг">⭕</button>
-                                    <button class="shape-tool" data-shape="line" title="Линия">➖</button>
-                                    <button class="shape-tool" data-shape="text" title="Текст">T</button>
+                                    <button class="shape-tool" data-shape="rect" title="Rectangle">⬜</button>
+                                    <button class="shape-tool" data-shape="circle" title="Circle">⭕</button>
+                                    <button class="shape-tool" data-shape="triangle" title="Triangle">📐</button>
+                                    <button class="shape-tool" data-shape="diamond" title="Diamond">💎</button>
+                                    <button class="shape-tool" data-shape="line" title="Line">➖</button>
+                                    <button class="shape-tool" data-shape="arrow" title="Arrow">➡</button>
+                                    <button class="shape-tool" data-shape="text" title="Label (Vertex/Side)">T</button>
                                 </div>
                                 <div class="tool-group">
                                     <input type="color" id="shapeColor" value="#3b82f6" title="Цвет">
@@ -167,6 +182,13 @@
         </div>
     </div>
 
+    <!-- Math Context Menu -->
+    <div id="mathContextMenu" class="math-context-menu" style="display: none;"></div>
+
+    {% include 'partials/modals/note_modals.html' %}
+    {% include 'partials/sticker_modal.html' %}
+
+    <script src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
     <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
 
     {% include 'partials/footer.html' %}

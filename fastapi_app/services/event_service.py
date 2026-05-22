@@ -121,7 +121,7 @@ class EventService(BaseService):
 
         return obj.id
 
-    async def mark_event_done(self, event_id: int, event_date: Optional[str] = None) -> bool:
+    async def mark_event_done(self, event_id: int, event_date: Optional[str] = None, recurrence_id: Optional[str] = None) -> bool:
         """Помечает событие как выполненное. Использует RecurrenceManager для серий."""
         try:
             res = await self.db.execute(select(models.Event).where(models.Event.id == event_id))
@@ -129,7 +129,13 @@ class EventService(BaseService):
             
             if not event: return False
 
-            if event.recurrence_id and event_date:
+            # Если передан recurrence_id — используем его (для виртуальных экземпляров)
+            effective_rec_id = recurrence_id or event.recurrence_id
+
+            if effective_rec_id and event_date:
+                # Убеждаемся, что у event проставлен recurrence_id для RecurrenceManager
+                if not event.recurrence_id:
+                    event.recurrence_id = effective_rec_id
                 await self.recurrence.handle_completion(event, event_date)
             else:
                 event.done = True
@@ -144,6 +150,32 @@ class EventService(BaseService):
     async def toggle_event_done(self, event_id: int) -> Optional[bool]:
         """Переключает статус события (использует BaseService)."""
         return await self.toggle_boolean(models.Event, event_id, "done")
+
+    async def update_event_date(self, event_id: int, new_date: str) -> bool:
+        """Переносит событие на новую дату (today/tomorrow или ISO-строку), сохраняя время."""
+        try:
+            res = await self.db.execute(select(models.Event).where(models.Event.id == event_id))
+            event = res.scalar_one_or_none()
+            if not event: return False
+
+            now = datetime.now()
+            if new_date == 'today':
+                target = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            elif new_date == 'tomorrow':
+                target = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                target = datetime.fromisoformat(new_date)
+
+            # Сохраняем время исходного события
+            original_time = event.date.time() if isinstance(event.date, datetime) else datetime.min.time()
+            event.date = datetime.combine(target.date(), original_time)
+
+            await self.db.commit()
+            return True
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Error updating event {event_id} date: {e}")
+            return False
 
     async def delete_event(self, event_id: int, mode: Optional[str] = None, event_date: Optional[str] = None) -> bool:
         """Удаляет событие с учетом повторений (через RecurrenceManager)."""

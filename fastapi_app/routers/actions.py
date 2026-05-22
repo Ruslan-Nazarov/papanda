@@ -123,10 +123,11 @@ async def mark_event_done(
     request: Request,
     event_id: int,
     date: Optional[str] = Form(None),
+    recurrence_id: Optional[str] = Form(None),
     event_service: EventService = Depends(get_event_service),
     user: Any = Depends(check_auth_dependency),
 ) -> Any:
-    await event_service.mark_event_done(event_id, event_date=date)
+    await event_service.mark_event_done(event_id, event_date=date, recurrence_id=recurrence_id)
     if is_ajax_request(request):
         return schemas.ToggleDoneResponse(done=True, message="Event marked as done")
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)

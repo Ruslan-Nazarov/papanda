@@ -19,10 +19,11 @@ export class EditorManager {
         if (this.tiptap) return;
         const el = document.getElementById('tiptap-editor');
         if (!el) return;
-        
+
         el.addEventListener('mousedown', (e) => e.stopPropagation());
-        
+
         try {
+            this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
                 extensions: [StarterKit, MathNode, ResizableImage],
@@ -38,9 +39,35 @@ export class EditorManager {
                         },
                         contextmenu: (view, event) => {
                             event.preventDefault();
-                            MathTool.showContextMenu(event.clientX, event.clientY, (s) => this.insertMath(s));
+                            this.showMathMenu(event.clientX, event.clientY);
                             return true;
                         }
+                    },
+                    handleKeyDown: (view, event) => {
+                        // Alt + кириллица → inline LaTeX-формула (mathNode)
+                        const mathMap = {
+                            'п': '+',
+                            'м': '-',
+                            'у': '\\times',
+                            'д': '\\div',
+                            'р': '=',
+                            'и': '\\int',
+                            'с': '\\sum',
+                            'б': '\\infty',
+                            'к': '\\sqrt{}',
+                            'ф': '\\frac{}{}',
+                        };
+                        if (event.altKey && mathMap[event.key] && !event.ctrlKey && !event.metaKey) {
+                            event.preventDefault();
+                            const latex = mathMap[event.key];
+                            const nodeType = view.state.schema.nodes.mathNode;
+                            if (!nodeType) return false;
+                            const mathNode = nodeType.create({ latex });
+                            const tr = view.state.tr.replaceSelectionWith(mathNode);
+                            view.dispatch(tr);
+                            return true;
+                        }
+                        return false;
                     }
                 },
                 onSelectionUpdate: ({ editor }) => {
@@ -49,10 +76,15 @@ export class EditorManager {
                     if (btn) btn.style.display = (from !== to) ? 'inline-block' : 'none';
                 },
             });
-        } catch (e) { console.error("TipTap init error:", e); }
+            this.engine.logDebug("[EditorManager] TipTap initialized successfully.");
+        } catch (e) {
+            this.engine.logDebug(`[EditorManager] TipTap init error: ${e.message}`);
+            console.error("TipTap init error:", e);
+        }
     }
 
     async switchTab(tab) {
+        this.engine.logDebug(`[EditorManager] Switching tab to: ${tab}`);
         document.querySelectorAll('.editor-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
         document.querySelectorAll('.tab-content').forEach(el => {
             const isTarget = el.id === `editor-${tab}`;
@@ -71,13 +103,24 @@ export class EditorManager {
         }
     }
 
-    async showMathMenu() {
+    async showMathMenu(x, y) {
+        this.engine.logDebug("[EditorManager] showMathMenu called");
+
+        // If coordinates provided, it's a floating context menu
+        if (x !== undefined && y !== undefined) {
+            await MathTool.showContextMenu(x, y, (s) => this.insertMath(s));
+            return;
+        }
+
         const menu = document.getElementById('mathMenu');
-        if (menu && menu.style.display === 'flex') {
+        if (!menu) return;
+
+        if (menu.style.display === 'flex') {
             menu.style.display = 'none';
             return;
         }
-        if (menu) menu.style.display = 'flex';
+
+        menu.style.display = 'flex';
         await MathTool.initMathLive();
         this.switchMathCategory('main');
     }
@@ -92,12 +135,26 @@ export class EditorManager {
     }
 
     insertMath(latex) {
-        let active = document.activeElement;
-        if (active && active.tagName === 'MATH-FIELD' && !active.hasAttribute('read-only')) {
-            active.insert(latex);
+        this.engine.logDebug(`[EditorManager] Inserting math: ${latex}`);
+
+        if (!this.tiptap) {
+            this.engine.logDebug("[EditorManager] Error: TipTap not initialized");
             return;
         }
-        this.tiptap?.chain().focus().insertContent({ type: 'mathNode', attrs: { latex } }).run();
+
+        // 1. Принудительно возвращаем фокус редактору
+        this.tiptap.commands.focus();
+
+        // 2. Вставляем узел с формулой
+        this.tiptap.chain()
+            .focus()
+            .insertContent({
+                type: 'mathNode',
+                attrs: { latex }
+            })
+            .run();
+
+        this.engine.logDebug("[EditorManager] Math inserted successfully");
     }
 
     toggleBold() {
