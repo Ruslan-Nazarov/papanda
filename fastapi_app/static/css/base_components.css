@@ -1,5 +1,15 @@
 /* --- PAPANDA PREMIUM BASE COMPONENTS --- */
 
+body {
+    font-family: var(--font-ui);
+}
+
+/* Base Typo Utils (Keep for backward compat) */
+.font-primary { font-family: var(--font-ui) !important; }
+.font-secondary { font-family: var(--font-heading) !important; }
+.font-mono { font-family: var(--font-editor) !important; }
+.font-handwriting { font-family: var(--font-handwriting) !important; }
+
 /* --- Buttons --- */
 .btn, .btn-premium {
     padding: 12px 24px;

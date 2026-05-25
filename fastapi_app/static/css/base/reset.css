@@ -8,7 +8,7 @@
 
 html, body {
     height: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-ui);
     background-color: var(--color-bg-app);
     color: var(--color-text-dark);
     -webkit-font-smoothing: antialiased;

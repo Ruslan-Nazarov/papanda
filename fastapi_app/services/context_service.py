@@ -153,3 +153,16 @@ class ContextService:
         })
 
         return {'words': final_words, 'wink': wink_title, 'count': total_count, 'coverage': coverage, 'imw': imw}
+
+    async def remove_word_from_cache(self, eng: str) -> None:
+        """Удаляет слово из кэша текущих слов (например, когда оно выучено)."""
+        async with _get_state_lock():
+            words_str = await get_setting(self.db, 'current_words_cache', '[]')
+            try:
+                words = json.loads(words_str if words_str else '[]')
+                new_words = [w for w in words if w.get('eng') != eng]
+                await set_settings_batch(self.db, {
+                    'current_words_cache': json.dumps(new_words, ensure_ascii=False)
+                })
+            except Exception as e:
+                logger.error(f"Failed to remove word from cache: {e}")

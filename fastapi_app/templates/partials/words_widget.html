@@ -39,7 +39,7 @@
                 <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); gap: 8px;">
                     <!-- Foreign Words (Top Row) -->
                     {% for lang_code in active_languages %}
-                    <span style="font-weight: 850; color: var(--color-text-dark); font-size: 0.9rem; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;">
+                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;">
                         {{ word.translations.get(lang_code, '') }}
                     </span>
                     {% endfor %}

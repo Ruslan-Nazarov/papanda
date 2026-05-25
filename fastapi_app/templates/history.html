@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>History - Papanda</title>
-    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}">
+{% extends "base.html" %}
+
+{% block title %}History - Papanda{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <style>
         body { background-color: #FFF5EC; }
@@ -58,6 +57,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(242, 153, 74, 0.2);
+            font-family: inherit;
         }
         .header-btn-submit:hover {
             background-color: #E08E45;
@@ -163,6 +163,7 @@
             justify-content: center;
             border-top: 1px solid #f0f0f0;
             margin-top: 5px;
+            font-family: inherit;
         }
         .expand-btn:hover { text-decoration: underline; }
         .data-list li.hidden-item { display: none; }
@@ -173,9 +174,9 @@
         .sticky-thought-list { list-style: none; padding-left: 5px; margin: 5px 0 0 0; }
         .sticky-item-done { text-decoration: line-through; opacity: 0.6; }
     </style>
-</head>
-<body>
+{% endblock %}
 
+{% block content %}
 <div class="history-container">
     <a href="/" class="back-link">← Back to Dashboard</a>
 
@@ -310,7 +311,7 @@
                             {% if note.finished_at %} | Finished: {{ note.finished_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}
                         </span>
                         
-                        <div style="font-family: 'Indie Flower', cursive, sans-serif; font-size: 1.1em; color: #444;">
+                        <div style="font-family: var(--font-handwriting); font-size: 1.1em; color: #444;">
                             {% if note.type == 'list' %}
                                 {% set list_data = note.text|from_json %}
                                 <ul class="sticky-thought-list">
@@ -334,7 +335,5 @@
     </div>
 </div>
 
-    {% include 'partials/footer.html' %}
-
-</body>
-</html>
+{% include 'partials/footer.html' %}
+{% endblock %}

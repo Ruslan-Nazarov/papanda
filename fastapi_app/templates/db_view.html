@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DB: {{ model_name }} - Papanda</title>
-    <!-- Core & Modular Styles -->
+{% extends "base.html" %}
+
+{% block title %}DB: {{ model_name }} - Papanda{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=8">
     <link rel="stylesheet" href="{{ url_for('static', path='css/db_view.css') }}?v=17">
-    
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
     
     <!-- KaTeX for Math rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
@@ -17,8 +12,6 @@
 
     <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/calendar.css') }}?v=1">
     
-    <style>
-    </style>
     <script>
         window.openSearchModal = function() {
             if (typeof ModalManager !== 'undefined') {
@@ -34,9 +27,9 @@
             }
         }
     </script>
-</head>
-<body style="margin: 0; background-color: var(--color-bg-app);">
+{% endblock %}
 
+{% block content %}
 <div class="settings-wrapper">
     <div class="header-line">
         <h1>{{ model_name }} Management</h1>
@@ -153,9 +146,13 @@
 {% include 'partials/sticker_modal.html' %}
 {% include 'partials/parent_stickers_modal.html' %}
 
+{% include 'partials/footer.html' %}
+{% endblock %}
+
+{% block scripts %}
 <!-- Core JS and Initialization -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=4"></script>
+<script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=5"></script>
 <script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=29"></script>
 <script>
     // Bridge variables from Jinja2 to JS
@@ -313,8 +310,4 @@
         logSearchDebug("Search system ready (DOM Loaded)");
     });
 </script>
-
-{% include 'partials/footer.html' %}
-
-</body>
-</html>
+{% endblock %}

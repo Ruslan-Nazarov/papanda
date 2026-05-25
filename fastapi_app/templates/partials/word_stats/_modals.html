@@ -2,59 +2,73 @@
 
 {# ── Word Search Modal ──────────────────────────────────────────────────────── #}
 <div id="searchWordModal" class="modal">
-    <div class="modal-content">
-        <h3>Word Lookup</h3>
-        <hr />
-        <div>
-            <label>Search</label>
-            <input type="text" id="searchQuery" placeholder="Type a word in any language" />
+    <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
+            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Word Lookup</h2>
         </div>
-        <div id="searchResults" style="margin-top: 10px"></div>
-        <form id="searchEditForm" style="margin-top: 10px">
-            <div id="searchDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                {# Dynamic lang fields injected by JS #}
+        
+        <div class="modal-body" style="padding: 24px;">
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Search</label>
+                <input type="text" id="searchQuery" class="form-input" placeholder="Type a word in any language" />
             </div>
-            <div style="margin-top: 10px">
-                <label>Russian</label>
-                <input type="text" name="ru" id="editRu" />
-            </div>
-            <div style="margin-top: 10px">
-                <label>Meaning / Context</label>
-                <textarea name="meaning" id="editMeaning" rows="4"></textarea>
-            </div>
-            <div id="searchStats" style="margin-top: 10px; font-size: 0.9em; color: #666"></div>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeSearchModal()">Cancel</button>
-                <button type="button" id="btnDeleteWord" class="btn-cancel"
-                    style="background: #e74c3c; color: white; display: none;"
-                    onclick="deleteSearchWord()">Delete</button>
-                <button type="button" class="btn-save" onclick="saveSearchEdit()">OK</button>
-            </div>
-        </form>
+            
+            <div id="searchResults" style="margin-bottom: 24px;"></div>
+            
+            <form id="searchEditForm" style="margin: 0;">
+                <div id="searchDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    {# Dynamic lang fields injected by JS #}
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label">Russian</label>
+                    <input type="text" name="ru" id="editRu" class="form-input" />
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label">Meaning / Context</label>
+                    <textarea name="meaning" id="editMeaning" class="form-input" rows="4" style="resize: vertical;"></textarea>
+                </div>
+                
+                <div id="searchStats" style="margin-bottom: 24px; font-size: 0.9em; color: #666"></div>
+            </form>
+        </div>
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
+            <button type="button" class="btn btn-secondary" onclick="closeSearchModal()">Cancel</button>
+            <button type="button" id="btnDeleteWord" class="btn btn-danger" style="display: none;" onclick="deleteSearchWord()">Delete</button>
+            <button type="button" class="btn btn-primary" onclick="saveSearchEdit()" style="min-width: 140px;">OK</button>
+        </div>
     </div>
 </div>
 
 {# ── Word Edit Modal (Workout) ───────────────────────────────────────────────── #}
 <div id="editWordModal" class="modal">
-    <div class="modal-content">
-        <h3 id="modalWordEng">Edit Word</h3>
-        <hr />
-        <form id="editWordForm">
-            <input type="hidden" name="word_eng" id="inputWordEng" />
-            <div id="workoutDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                {# Dynamic lang fields injected by JS #}
+    <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
+            <h2 id="modalWordEng" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Edit Word</h2>
+        </div>
+        
+        <form id="editWordForm" style="margin: 0;">
+            <div class="modal-body" style="padding: 24px;">
+                <input type="hidden" name="word_eng" id="inputWordEng" />
+                
+                <div id="workoutDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    {# Dynamic lang fields injected by JS #}
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label">Russian Translation</label>
+                    <input type="text" name="new_ru" id="inputWordRu" class="form-input" />
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Meaning / Context</label>
+                    <textarea name="new_meaning" id="inputWordMeaning" class="form-input" rows="4" style="resize: vertical;"></textarea>
+                </div>
             </div>
-            <div style="margin-top: 10px">
-                <label>Russian Translation:</label>
-                <input type="text" name="new_ru" id="inputWordRu" />
-            </div>
-            <div style="margin-top: 10px">
-                <label>Meaning / Context:</label>
-                <textarea name="new_meaning" id="inputWordMeaning" rows="4"></textarea>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-                <button type="button" class="btn-save"   onclick="saveWordEdit()">OK</button>
+            <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveWordEdit()" style="min-width: 140px;">OK</button>
             </div>
         </form>
     </div>
@@ -62,14 +76,14 @@
 
 {# ── Custom Confirm Modal ────────────────────────────────────────────────────── #}
 <div id="customConfirmModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span id="confirmModalTitle">Confirmation</span>
+    <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
+            <h2 id="confirmModalTitle" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Confirmation</h2>
         </div>
-        <div class="modal-body">
-            <p id="confirmModalMessage">Are you sure?</p>
+        <div class="modal-body" style="padding: 24px;">
+            <p id="confirmModalMessage" style="margin: 0; font-size: 1rem;">Are you sure?</p>
         </div>
-        <div class="modal-footer" id="confirmModalFooter">
+        <div class="modal-footer" id="confirmModalFooter" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
             {# Buttons injected by JS #}
         </div>
     </div>

@@ -34,9 +34,18 @@ async def update_settings(
         await set_setting(db, 'max_duration', str(data.max_duration))
     if data.max_random_minutes is not None:
         await set_setting(db, 'max_random_minutes', str(data.max_random_minutes))
+    if data.theme_reading is not None:
+        await set_setting(db, 'theme_reading', data.theme_reading)
+    if data.theme_editor is not None:
+        await set_setting(db, 'theme_editor', data.theme_editor)
 
     await db.commit()
-    return RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
+    if data.theme_reading is not None:
+        response.set_cookie(key="theme_reading", value=data.theme_reading, max_age=31536000)
+    if data.theme_editor is not None:
+        response.set_cookie(key="theme_editor", value=data.theme_editor, max_age=31536000)
+    return response
 
 
 @router.post("/settings/update_languages", name="update_languages")

@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация — Papanda Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+{% extends "base.html" %}
+
+{% block title %}Регистрация — Papanda Dashboard{% endblock %}
+
+{% block extra_head %}
     <style>
         :root {
             --primary: #FF8C00;
@@ -16,9 +14,6 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Outfit', sans-serif;
             background-color: var(--bg);
             color: var(--text);
             display: flex;
@@ -26,6 +21,7 @@
             justify-content: center;
             min-height: 100vh;
             overflow: hidden;
+            font-family: var(--font-heading);
         }
 
         .bg-blob {
@@ -77,6 +73,7 @@
             font-size: 1em;
             box-sizing: border-box;
             transition: border-color 0.3s, box-shadow 0.3s;
+            font-family: inherit;
         }
         input:focus {
             outline: none;
@@ -96,6 +93,7 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             margin-top: 10px;
+            font-family: inherit;
         }
         button:hover {
             transform: translateY(-2px);
@@ -116,8 +114,9 @@
         }
         .footer-link a:hover { text-decoration: underline; }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="bg-blob blob1"></div>
     <div class="bg-blob blob2"></div>
 
@@ -155,5 +154,4 @@
             Уже есть аккаунт? <a href="/login">Войти</a>
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

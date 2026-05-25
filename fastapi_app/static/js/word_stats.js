@@ -27,13 +27,15 @@ function openSearchModal() {
     container.innerHTML = '';
 
     const engGroup = document.createElement('div');
-    engGroup.innerHTML = `<label>English</label><input type="text" name="eng" id="editEng" />`;
+    engGroup.className = 'form-group';
+    engGroup.innerHTML = `<label class="form-label">English</label><input type="text" name="eng" id="editEng" class="form-input" />`;
     container.appendChild(engGroup);
 
     activeLangs.forEach(code => {
         if (code === 'en') return;
         const group = document.createElement('div');
-        group.innerHTML = `<label>${allLangNames[code] || code.toUpperCase()}</label><input type="text" name="lang_${code}" id="edit_${code}" />`;
+        group.className = 'form-group';
+        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}</label><input type="text" name="lang_${code}" id="edit_${code}" class="form-input" />`;
         container.appendChild(group);
     });
 
@@ -147,8 +149,9 @@ function openWorkoutEditModal() {
     container.innerHTML = '';
     activeLangs.forEach(code => {
         const group = document.createElement('div');
-        group.innerHTML = `<label>${allLangNames[code] || code.toUpperCase()}:</label>`
-            + `<input type="text" name="lang_${code}" value="${(word.translations && word.translations[code] || '').replace(/"/g, '&quot;')}" />`;
+        group.className = 'form-group';
+        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}:</label>`
+            + `<input type="text" name="lang_${code}" value="${(word.translations && word.translations[code] || '').replace(/"/g, '&quot;')}" class="form-input" />`;
         container.appendChild(group);
     });
 
@@ -412,14 +415,14 @@ function showNextWord() {
     const word = testWords[currentIdx];
     document.getElementById('test-lang-header').innerText     = `Translate from ${allLangNames[word.test_lang] || word.test_lang}:`;
     document.getElementById('current-word-display').innerText = word.word_to_test || '...';
-    document.getElementById('learned-icon').style.display     = word.is_learned ? 'inline-block' : 'none';
+    document.getElementById('learned-icon').style.display     = word.is_lang_known ? 'inline-block' : 'none';
 
     let hintParts = [`🇷🇺 ${word.ru || '—'}`];
     activeLangs.forEach(code => {
         if (code !== word.test_lang) {
             const val = (word.translations && word.translations[code]) || word[code];
             if (val) {
-                const icon = code === 'en' ? '🇬🇧' : (code === 'it' ? '🇮🇹' : (code === 'de' ? '🇩🇪' : '🏳️'));
+                const icon = languageFlags[code] || '🏳️';
                 hintParts.push(`${icon} ${val}`);
             }
         }
@@ -543,15 +546,15 @@ function customConfirm({ title = 'Confirmation', message = 'Are you sure?', butt
 
         if (buttons.length === 0) {
             buttons = [
-                { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                { label: 'OK',     value: true,  class: 'confirm-btn-primary'   }
+                { label: 'Cancel', value: false, class: 'btn btn-secondary' },
+                { label: 'OK',     value: true,  class: 'btn btn-primary'   }
             ];
         }
 
         buttons.forEach(btn => {
             const button = document.createElement('button');
             button.innerText  = btn.label;
-            button.className  = 'confirm-btn ' + (btn.class || 'confirm-btn-secondary');
+            button.className  = btn.class || 'btn btn-secondary';
             button.onclick    = () => {
                 modal.style.setProperty('display', 'none', 'important');
                 resolve(btn.value);

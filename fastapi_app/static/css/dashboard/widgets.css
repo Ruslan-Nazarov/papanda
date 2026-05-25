@@ -34,7 +34,7 @@
     font-size: 1.1rem !important;
     font-weight: bold !important;
     color: var(--color-text-medium) !important;
-    font-family: var(--font-base) !important;
+    font-family: var(--font-reading) !important;
     text-transform: none !important;
     line-height: 1.2 !important;
 }

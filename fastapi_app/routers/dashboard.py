@@ -193,3 +193,80 @@ async def get_header_widgets(
         "days_passed": dash_data.get('days_passed', 0),
         "wink": ctx.get('wink', '...')
     })
+
+@router.get("/api/dashboard/widget/events", response_class=HTMLResponse)
+async def get_dashboard_events_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает обновленный HTML для виджета событий."""
+    today_dt = datetime.now()
+    today_obj = today_dt.date()
+    tomorrow_obj = today_obj + timedelta(days=1)
+    
+    start_of_today = datetime.combine(today_obj, datetime.min.time())
+    end_of_today = datetime.combine(today_obj, datetime.max.time())
+    events_today = await dashboard_service.events.get_events_for_range(start_of_today, end_of_today)
+
+    start_of_tomorrow = datetime.combine(tomorrow_obj, datetime.min.time())
+    end_of_tomorrow = datetime.combine(tomorrow_obj, datetime.max.time())
+    events_tomorrow = await dashboard_service.events.get_events_for_range(start_of_tomorrow, end_of_tomorrow)
+
+    return templates.TemplateResponse(request, "partials/schedule_widget.html", {
+        "request": request,
+        "events_today": events_today,
+        "events_tomorrow": events_tomorrow,
+        "now_utc": datetime.now(timezone.utc).replace(tzinfo=None)
+    })
+
+@router.get("/api/dashboard/widget/observations", response_class=HTMLResponse)
+async def get_dashboard_observations_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает обновленный HTML для виджета активностей."""
+    today_obj = datetime.now().date()
+    observations = await dashboard_service.observations_service.get_dashboard_observations(today_obj, limit=5)
+    return templates.TemplateResponse(request, "widgets/observation_wrapper.html", {
+        "request": request,
+        "observations": observations
+    })
+
+@router.get("/api/dashboard/widget/stickers", response_class=HTMLResponse)
+async def get_dashboard_stickers_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает обновленный HTML для виджета стикеров."""
+    stickers = await dashboard_service.sticky_notes.get_active_notes()
+    return templates.TemplateResponse(request, "widgets/stickers_widget.html", {
+        "request": request,
+        "stickers": stickers
+    })
+
+@router.get("/api/dashboard/widget/tasks", response_class=HTMLResponse)
+async def get_dashboard_tasks_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    dash_data = await dashboard_service.get_index_data()
+    return templates.TemplateResponse(request, "partials/tasks_widget.html", {
+        "request": request,
+        "tasks": dash_data['tasks']
+    })
+
+@router.get("/api/dashboard/widget/habits", response_class=HTMLResponse)
+async def get_dashboard_habits_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    dash_data = await dashboard_service.get_index_data()
+    return templates.TemplateResponse(request, "partials/habits_widget.html", {
+        "request": request,
+        "habits_all": dash_data['habits_all']
+    })

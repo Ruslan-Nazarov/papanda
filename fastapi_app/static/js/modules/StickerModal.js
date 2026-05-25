@@ -335,8 +335,14 @@ export class StickerModal {
                         // Update state to point to the new element
                         this.state.element = newEl;
                     } else {
-                    location.reload();
-                }
+                        if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
+                        else if (!this.state.parentType) location.reload();
+                    }
+                    
+                    window.dispatchEvent(new CustomEvent('stickersUpdated', { 
+                        detail: { parentType: this.state.parentType, parentId: this.state.parentId } 
+                    }));
+                    
                 if (typeof window.showToast === 'function') window.showToast('✓ Sticker updated', 'success');
             } else {
                 if (this.state.parentType && this.state.parentId) {
@@ -344,13 +350,19 @@ export class StickerModal {
                 }
                 const created = await StickerService.save(null, payload);
                 
+                // Dispatch event so any listening page can update its UI
+                window.dispatchEvent(new CustomEvent('stickersUpdated', { 
+                    detail: { parentType: this.state.parentType, parentId: this.state.parentId } 
+                }));
+                
                 // If we are in a parent context (like creating a note), 
                 // DON'T reload. Just refresh the parent UI if possible.
                 if (this.state.parentType === 'note' && window.notesWidget) {
                     console.log("[StickerModal] Refreshing parent note:", this.state.parentId);
                     window.notesWidget.editNote(this.state.parentId); 
                 } else {
-                    location.reload();
+                    if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
+                    else if (!this.state.parentType) location.reload();
                 }
             }
             if (shouldClose) this.close();

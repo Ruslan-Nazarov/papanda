@@ -92,7 +92,7 @@
     border: none;
     outline: none;
     padding: 15px 20px;
-    font-family: var(--font-base);
+    font-family: var(--font-reading);
     font-size: 1.05em;
     line-height: 1.6;
     color: var(--color-text-body);

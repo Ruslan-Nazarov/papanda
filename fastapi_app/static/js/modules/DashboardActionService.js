@@ -95,7 +95,24 @@ export const DashboardActionService = {
                 // Refresh badges immediately
                 if (window.HeaderService) window.HeaderService.refreshBadges();
 
-                setTimeout(() => location.reload(), 500);
+                // Selective refresh based on category
+                const cat = jsonData.common_category;
+                if (cat === 'event' || cat === 'important') {
+                    if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
+                } else if (cat === 'task') {
+                    if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
+                } else if (cat === 'habits') {
+                    if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
+                } else if (cat === 'note') {
+                    if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') window.notesWidget.refreshPinnedNotes();
+                } else if (cat === 'observation') {
+                    if (typeof window.refreshDashboardObservations === 'function') window.refreshDashboardObservations();
+                } else if (cat === 'sticker') {
+                    if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
+                } else {
+                    // Fallback for metadata types like wink, count until, etc. that are hardcoded in the header layout
+                    setTimeout(() => location.reload(), 500);
+                }
             } else {
                 const errorMsg = data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : (data.message || 'Error saving');
                 showToast('⚠ ' + errorMsg, 'error');

@@ -1,25 +1,25 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Настройки</title>
-        <!-- GridStack CSS -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" />
-        <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
-        <link rel="stylesheet" href="{{ url_for('static', path='css/settings.css') }}?v=2" />
-        <link rel="shortcut icon" href="{{ url_for('static', path='app_icon.ico') }}" />
-        
-        <script>
-            // Передаем макет из бэкенда
-            window.P_SETTINGS_LAYOUT = {{ settings_layout | safe }};
-        </script>
-    </head>
-    <body style="margin: 0; background: var(--color-bg-canvas);">
+{% extends "base.html" %}
+
+{% block title %}Настройки{% endblock %}
+
+{% block extra_head %}
+    <!-- GridStack CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/settings.css') }}?v=2" />
+    <script>
+        // Передаем макет из бэкенда
+        window.P_SETTINGS_LAYOUT = {{ settings_layout | safe }};
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div style="background: var(--color-bg-canvas); min-height: 100vh;">
         {% if request.cookies.get('papanda_mode') == 'sandbox' %}
         <div class="sandbox-banner">
             <span>🚧 SANDBOX MODE ACTIVE 🚧</span>
             <form action="{{ url_for('exit_sandbox') }}" method="post" style="margin: 0;">
-                <button type="submit" class="sandbox-btn-exit">Exit Sandbox</button>
+                <button type="submit" class="sandbox-btn-exit" style="font-family: inherit;">Exit Sandbox</button>
             </form>
         </div>
         {% endif %}
@@ -69,15 +69,15 @@
                                     <div class="settings-algo-form">
                                         <form action="{{ url_for('update_settings') }}" method="post">
                                             <label class="form-label">Max Wink time (minutes):</label>
-                                            <input type="number" name="max_duration" value="{{ max_duration }}" required class="form-input" />
-                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Save Wink</button>
+                                            <input type="number" name="max_duration" value="{{ max_duration }}" required class="form-input" style="font-family: inherit;" />
+                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; font-family: inherit;">Save Wink</button>
                                         </form>
                                     </div>
                                     <div class="settings-algo-form">
                                         <form action="{{ url_for('update_settings') }}" method="post">
                                             <label class="form-label">Word replacement interval (minutes):</label>
-                                            <input type="number" name="max_random_minutes" value="{{ max_random_minutes }}" required class="form-input" />
-                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Save interval</button>
+                                            <input type="number" name="max_random_minutes" value="{{ max_random_minutes }}" required class="form-input" style="font-family: inherit;" />
+                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; font-family: inherit;">Save interval</button>
                                         </form>
                                     </div>
                                 </div>
@@ -86,7 +86,14 @@
                     </div>
                 </div>
 
-                <!-- 4. Account Management -->
+                <!-- 4. Typography Settings -->
+                <div class="grid-stack-item" gs-id="set_typography" gs-w="6" gs-h="6">
+                    <div class="grid-stack-item-content">
+                        {% include 'partials/settings/typography_settings.html' %}
+                    </div>
+                </div>
+
+                <!-- 5. Account Management -->
                 <div class="grid-stack-item" gs-id="set_account" gs-w="6" gs-h="6">
                     <div class="grid-stack-item-content">
                         {% include 'partials/settings/account_management.html' %}
@@ -119,10 +126,10 @@
                                 </p>
                                 <div style="text-align: center;">
                                     <div style="margin-bottom: 15px;">
-                                        <input type="text" id="cleanConfirmInput" placeholder="Type CLEAN to confirm" class="form-input-premium" style="text-align: center; font-weight: 800; border-color: var(--color-error-soft);">
+                                        <input type="text" id="cleanConfirmInput" placeholder="Type CLEAN to confirm" class="form-input-premium" style="text-align: center; font-weight: 800; border-color: var(--color-error-soft); font-family: inherit;">
                                     </div>
                                     <form action="{{ url_for('deep_clean') }}" method="post" id="deepCleanForm">
-                                        <button type="submit" id="deepCleanBtn" class="btn btn-danger" style="width: 100%; opacity: 0.4; cursor: not-allowed;" disabled>
+                                        <button type="submit" id="deepCleanBtn" class="btn btn-danger" style="width: 100%; opacity: 0.4; cursor: not-allowed; font-family: inherit;" disabled>
                                             WIPE EVERYTHING & LOGOUT
                                         </button>
                                     </form>
@@ -150,7 +157,7 @@
                                     Correctly stops the server. Recommended for the portable version.
                                 </p>
                                 <div style="text-align: center;">
-                                    <button type="button" onclick="confirmShutdown()" class="btn btn-secondary" style="width: 100%; font-weight: 700;">
+                                    <button type="button" onclick="confirmShutdown()" class="btn btn-secondary" style="width: 100%; font-weight: 700; font-family: inherit;">
                                         STOP SERVER
                                     </button>
                                 </div>
@@ -164,69 +171,71 @@
 
         {% include 'partials/footer.html' %}
         {% include 'partials/modals/common_modals.html' %}
+    </div>
+{% endblock %}
 
-        <!-- GridStack JS -->
-        <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+{% block scripts %}
+    <!-- GridStack JS -->
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
 
-        <script type="module">
-            import { initGrid, toggleWidget } from "{{ url_for('static', path='js/grid_controller.js') }}";
-            import { customConfirm } from "{{ url_for('static', path='js/modal_controller.js') }}";
+    <script type="module">
+        import { initGrid, toggleWidget } from "{{ url_for('static', path='js/grid_controller.js') }}";
+        import { customConfirm } from "{{ url_for('static', path='js/modal_controller.js') }}";
 
-            window.toggleWidget = toggleWidget;
-            window.customConfirm = customConfirm;
+        window.toggleWidget = toggleWidget;
+        window.customConfirm = customConfirm;
 
-            document.addEventListener('DOMContentLoaded', () => {
-                // Initialize Grid for Settings
-                initGrid({
-                    context: 'settings',
-                    selector: '.grid-stack'
-                });
-
-                // Deep Clean Confirm Logic
-                const cleanInput = document.getElementById('cleanConfirmInput');
-                const cleanBtn = document.getElementById('deepCleanBtn');
-                if (cleanInput && cleanBtn) {
-                    cleanInput.addEventListener('input', (e) => {
-                        const isConfirmed = e.target.value === 'CLEAN';
-                        cleanBtn.disabled = !isConfirmed;
-                        cleanBtn.style.opacity = isConfirmed ? '1' : '0.4';
-                        cleanBtn.style.cursor = isConfirmed ? 'pointer' : 'not-allowed';
-                    });
-                }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Grid for Settings
+            initGrid({
+                context: 'settings',
+                selector: '.grid-stack'
             });
 
-            window.confirmFormSubmit = function(event, title, message) {
-                event.preventDefault();
-                const form = event.target;
-                customConfirm({
-                    title: title,
-                    message: message,
-                    buttons: [
-                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Proceed', value: true, class: 'confirm-btn-primary' }
-                    ]
-                }).then(result => {
-                    if (result) form.submit();
+            // Deep Clean Confirm Logic
+            const cleanInput = document.getElementById('cleanConfirmInput');
+            const cleanBtn = document.getElementById('deepCleanBtn');
+            if (cleanInput && cleanBtn) {
+                cleanInput.addEventListener('input', (e) => {
+                    const isConfirmed = e.target.value === 'CLEAN';
+                    cleanBtn.disabled = !isConfirmed;
+                    cleanBtn.style.opacity = isConfirmed ? '1' : '0.4';
+                    cleanBtn.style.cursor = isConfirmed ? 'pointer' : 'not-allowed';
                 });
-            };
+            }
+        });
 
-            window.confirmShutdown = function() {
-                customConfirm({
-                    title: 'Stop Server',
-                    message: 'Are you sure you want to shutdown the application server?',
-                    buttons: [
-                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Stop', value: true, class: 'confirm-btn-danger' }
-                    ]
-                }).then(result => {
-                    if (result) {
-                        fetch('/shutdown', { method: 'POST' })
-                            .then(() => {
-                                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;background:white;"><h1>Server stopped</h1><p>You can close this window now.</p></div>';
-                            });
-                    }
-                });
-            };
-        </script>
-    </body>
-</html>
+        window.confirmFormSubmit = function(event, title, message) {
+            event.preventDefault();
+            const form = event.target;
+            customConfirm({
+                title: title,
+                message: message,
+                buttons: [
+                    { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                    { label: 'Proceed', value: true, class: 'confirm-btn-primary' }
+                ]
+            }).then(result => {
+                if (result) form.submit();
+            });
+        };
+
+        window.confirmShutdown = function() {
+            customConfirm({
+                title: 'Stop Server',
+                message: 'Are you sure you want to shutdown the application server?',
+                buttons: [
+                    { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                    { label: 'Stop', value: true, class: 'confirm-btn-danger' }
+                ]
+            }).then(result => {
+                if (result) {
+                    fetch('/shutdown', { method: 'POST' })
+                        .then(() => {
+                            document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;background:white;"><h1>Server stopped</h1><p>You can close this window now.</p></div>';
+                        });
+                }
+            });
+        };
+    </script>
+{% endblock %}

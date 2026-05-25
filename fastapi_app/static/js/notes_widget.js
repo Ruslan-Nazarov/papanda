@@ -135,6 +135,10 @@ class NotesWidget {
             const result = await res.json();
             
             if (result.status === 'success') {
+                if (typeof window.showToast === 'function') {
+                    window.showToast("✓ Note saved successfully", "success");
+                }
+                
                 if (shouldClose) {
                     ta.value = '';
                     if (pin) pin.checked = false;

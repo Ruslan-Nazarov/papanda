@@ -94,7 +94,7 @@ export function initGrid(options = {}) {
                 w: parseInt(item.w),
                 h: parseInt(item.h)
             }));
-            grid.load(items, true); 
+            grid.load(items, false); 
         }
 
         applyCollapsedState(context);

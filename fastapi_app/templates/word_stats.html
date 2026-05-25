@@ -1,11 +1,9 @@
-<!doctype html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8" />
+{% block title %}Word Statistics - Papanda{% endblock %}
+
+{% block extra_head %}
     <meta name="description" content="Track your vocabulary learning progress — coverage, iMW index, brain workouts and more." />
-    <title>Word Statistics - Papanda</title>
-    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}" />
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
     <link rel="stylesheet" href="{{ url_for('static', path='css/word_stats.css') }}?v=1" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -36,9 +34,9 @@
         window.WS_HISTORY_LANG_RETENTION  = {{ history_lang_retention | tojson | safe }};
         window.WS_HAS_HISTORY             = {{ 'true' if history_labels else 'false' }};
     </script>
-</head>
+{% endblock %}
 
-<body>
+{% block content %}
     <div class="stats-container">
 
         {# ── Page Header ──────────────────────────────────────────────────────── #}
@@ -50,7 +48,7 @@
                 <p style="color: #888; margin: 5px 0 0">An overview of your vocabulary learning journey</p>
             </div>
             <button id="openSearchModalBtn"
-                style="background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 48px; height: 48px; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center;">
+                style="background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 48px; height: 48px; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; font-family: inherit;">
                 &#128269;
             </button>
         </div>
@@ -98,10 +96,9 @@
     {# ── Modals ───────────────────────────────────────────────────────────────── #}
     {% include 'partials/word_stats/_modals.html' %}
 
-    {# ── Page Script ──────────────────────────────────────────────────────────── #}
     {% include 'partials/footer.html' %}
+{% endblock %}
+
+{% block scripts %}
     <script src="{{ url_for('static', path='js/word_stats.js') }}?v=1"></script>
-
-</body>
-
-</html>
+{% endblock %}

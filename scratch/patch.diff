@@ -1,0 +1,739 @@
+﻿diff --git a/fastapi_app/routers/dashboard.py b/fastapi_app/routers/dashboard.py
+index db6574f..ad8dd3f 100644
+--- a/fastapi_app/routers/dashboard.py
++++ b/fastapi_app/routers/dashboard.py
+@@ -193,3 +193,80 @@ async def get_header_widgets(
+         "days_passed": dash_data.get('days_passed', 0),
+         "wink": ctx.get('wink', '...')
+     })
++
++@router.get("/api/dashboard/widget/events", response_class=HTMLResponse)
++async def get_dashboard_events_widget(
++    request: Request,
++    dashboard_service: DashboardService = Depends(get_dashboard_service),
++    user: Any = Depends(check_auth_dependency)
++) -> HTMLResponse:
++    """╨Т╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╜╤Л╨╣ HTML ╨┤╨╗╤П ╨▓╨╕╨┤╨╢╨╡╤В╨░ ╤Б╨╛╨▒╤Л╤В╨╕╨╣."""
++    today_dt = datetime.now()
++    today_obj = today_dt.date()
++    tomorrow_obj = today_obj + timedelta(days=1)
++    
++    start_of_today = datetime.combine(today_obj, datetime.min.time())
++    end_of_today = datetime.combine(today_obj, datetime.max.time())
++    events_today = await dashboard_service.events.get_events_for_range(start_of_today, end_of_today)
++
++    start_of_tomorrow = datetime.combine(tomorrow_obj, datetime.min.time())
++    end_of_tomorrow = datetime.combine(tomorrow_obj, datetime.max.time())
++    events_tomorrow = await dashboard_service.events.get_events_for_range(start_of_tomorrow, end_of_tomorrow)
++
++    return templates.TemplateResponse(request, "partials/schedule_widget.html", {
++        "request": request,
++        "events_today": events_today,
++        "events_tomorrow": events_tomorrow,
++        "now_utc": datetime.now(timezone.utc).replace(tzinfo=None)
++    })
++
++@router.get("/api/dashboard/widget/observations", response_class=HTMLResponse)
++async def get_dashboard_observations_widget(
++    request: Request,
++    dashboard_service: DashboardService = Depends(get_dashboard_service),
++    user: Any = Depends(check_auth_dependency)
++) -> HTMLResponse:
++    """╨Т╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╜╤Л╨╣ HTML ╨┤╨╗╤П ╨▓╨╕╨┤╨╢╨╡╤В╨░ ╨░╨║╤В╨╕╨▓╨╜╨╛╤Б╤В╨╡╨╣."""
++    today_obj = datetime.now().date()
++    observations = await dashboard_service.observations_service.get_dashboard_observations(today_obj, limit=5)
++    return templates.TemplateResponse(request, "widgets/observation_wrapper.html", {
++        "request": request,
++        "observations": observations
++    })
++
++@router.get("/api/dashboard/widget/stickers", response_class=HTMLResponse)
++async def get_dashboard_stickers_widget(
++    request: Request,
++    dashboard_service: DashboardService = Depends(get_dashboard_service),
++    user: Any = Depends(check_auth_dependency)
++) -> HTMLResponse:
++    """╨Т╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╜╤Л╨╣ HTML ╨┤╨╗╤П ╨▓╨╕╨┤╨╢╨╡╤В╨░ ╤Б╤В╨╕╨║╨╡╤А╨╛╨▓."""
++    stickers = await dashboard_service.sticky_notes.get_active_notes()
++    return templates.TemplateResponse(request, "widgets/stickers_widget.html", {
++        "request": request,
++        "stickers": stickers
++    })
++
++@router.get("/api/dashboard/widget/tasks", response_class=HTMLResponse)
++async def get_dashboard_tasks_widget(
++    request: Request,
++    dashboard_service: DashboardService = Depends(get_dashboard_service),
++    user: Any = Depends(check_auth_dependency)
++):
++    dash_data = await dashboard_service.get_index_data()
++    return templates.TemplateResponse(request, "partials/tasks_widget.html", {
++        "request": request,
++        "tasks": dash_data['tasks']
++    })
++
++@router.get("/api/dashboard/widget/habits", response_class=HTMLResponse)
++async def get_dashboard_habits_widget(
++    request: Request,
++    dashboard_service: DashboardService = Depends(get_dashboard_service),
++    user: Any = Depends(check_auth_dependency)
++):
++    dash_data = await dashboard_service.get_index_data()
++    return templates.TemplateResponse(request, "partials/habits_widget.html", {
++        "request": request,
++        "habits_all": dash_data['habits_all']
++    })
+diff --git a/fastapi_app/static/css/word_stats.css b/fastapi_app/static/css/word_stats.css
+index 47aaf0d..f76a673 100644
+--- a/fastapi_app/static/css/word_stats.css
++++ b/fastapi_app/static/css/word_stats.css
+@@ -207,21 +207,7 @@ body {
+     overflow-y: auto;
+ }
+ 
+-.modal-content h3       { margin-top: 0; color: #333; }
+-.modal-content label    { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9em; color: #666; }
+-.modal-content input,
+-.modal-content textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+-
+-.modal-actions {
+-    text-align: right;
+-    margin-top: 20px;
+-    display: flex;
+-    gap: 10px;
+-    justify-content: flex-end;
+-}
+ 
+-.btn-save   { background: var(--color-success); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
+-.btn-cancel { background: #eee; color: #333;   border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
+ 
+ /* тФАтФА Edit Button тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА */
+ .edit-btn {
+diff --git a/fastapi_app/static/js/dashboard_index.js b/fastapi_app/static/js/dashboard_index.js
+index e4a4026..9c55781 100644
+--- a/fastapi_app/static/js/dashboard_index.js
++++ b/fastapi_app/static/js/dashboard_index.js
+@@ -27,16 +27,16 @@ window.markTaskDone = async function(form, taskId) {
+     if (showToast) showToast('Task completed', 'success');
+ 
+     try {
+-        const resp = await fetch(form.action, { method: 'POST' });
+         if (resp.ok) {
+             if (window.HeaderService) window.HeaderService.refreshBadges();
++            if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
+         } else {
+             console.error('Task mark failed');
+-            location.reload();
++            if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
+         }
+     } catch (e) {
+         console.error('Error marking task done:', e);
+-        location.reload();
++        if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
+     }
+     await animationPromise;
+ };
+@@ -50,13 +50,39 @@ window.markHabitDone = async function(form, habitId) {
+ 
+     try {
+         const resp = await fetch(form.action, { method: 'POST' });
+-        if (!resp.ok) location.reload();
++        if (!resp.ok) {
++            if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
++        } else {
++            if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
++        }
+     } catch (e) {
+-        location.reload();
++        if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
+     }
+     await animationPromise;
+ };
+ 
++window.refreshDashboardTasks = async function() {
++    try {
++        const resp = await fetch('/api/dashboard/widget/tasks');
++        if (resp.ok) {
++            const html = await resp.text();
++            const wrapper = document.querySelector('#tasks .grid-stack-item-content');
++            if (wrapper) wrapper.innerHTML = html;
++        }
++    } catch (e) { console.error('Failed to refresh tasks', e); }
++};
++
++window.refreshDashboardHabits = async function() {
++    try {
++        const resp = await fetch('/api/dashboard/widget/habits');
++        if (resp.ok) {
++            const html = await resp.text();
++            const wrapper = document.querySelector('#habits .grid-stack-item-content');
++            if (wrapper) wrapper.innerHTML = html;
++        }
++    } catch (e) { console.error('Failed to refresh habits', e); }
++};
++
+ document.addEventListener('DOMContentLoaded', async function () {
+     if (window.dbLog) window.dbLog('DOMContentLoaded fired');
+     console.log("[Dashboard] Starting initialization...");
+diff --git a/fastapi_app/static/js/event_widget.js b/fastapi_app/static/js/event_widget.js
+index 00da750..b8e1fef 100644
+--- a/fastapi_app/static/js/event_widget.js
++++ b/fastapi_app/static/js/event_widget.js
+@@ -142,6 +142,7 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null)
+     try {
+         const resp = await deleteRecordApi('Event', eventId, deleteMode, eventDate);
+         if (resp.ok) {
++            if (typeof window.showToast === 'function') window.showToast("тЬУ Event deleted", "success");
+             const btn = document.querySelector(`[onclick*="'${eventId}'"]`);
+             const li = btn?.closest('li');
+             if (li) {
+@@ -151,7 +152,9 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null)
+             // Update header badges
+             if (window.HeaderService) window.HeaderService.refreshBadges();
+ 
+-            if (deleteMode !== 'only') setTimeout(() => location.reload(), 500);
++            if (deleteMode !== 'only') {
++                if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
++            }
+         }
+     } catch (err) { console.error('Error deleting event:', err); }
+ };
+@@ -163,11 +166,12 @@ window.markEventDone = async function(form, eventId) {
+         const animationPromise = animateItemRemoval(li);
+         await fetch(form.action, { method: 'POST', body: new FormData(form) });
+         await animationPromise;
++        if (typeof window.showToast === 'function') window.showToast("тЬУ Event completed", "success");
+         // Update header badges
+         if (window.HeaderService) window.HeaderService.refreshBadges();
+     } catch (e) { 
+         console.error('Error marking event done:', e); 
+-        location.reload();
++        if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
+     }
+ };
+ 
+@@ -187,10 +191,31 @@ window.saveEventEdit = async function () {
+             recurrence_end: document.getElementById('editEventRecEnd').value,
+             original_date: document.getElementById('editEventOriginalDate').value
+         });
+-        if (resp.ok) location.reload();
++        if (resp.ok) {
++            if (typeof window.showToast === 'function') window.showToast("тЬУ Event saved successfully", "success");
++            window.closeEditEventModal();
++            if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
++        }
+     } catch (e) { console.error('Error saving event:', e); }
+ };
+ 
+ export function initEventWidget() {
+     console.log("[EventWidget] Core hooks initialized");
+ }
++
++window.refreshDashboardEvents = async function() {
++    const wrapper = document.querySelector('.schedule-widget');
++    if (!wrapper) return;
++    try {
++        const response = await fetch('/api/dashboard/widget/events');
++        if (response.ok) {
++            const html = await response.text();
++            const temp = document.createElement('div');
++            temp.innerHTML = html;
++            const newWidget = temp.querySelector('.schedule-widget');
++            if (newWidget) {
++                wrapper.replaceWith(newWidget);
++            }
++        }
++    } catch (e) { console.error('Failed to refresh dashboard events', e); }
++};
+diff --git a/fastapi_app/static/js/modules/DashboardActionService.js b/fastapi_app/static/js/modules/DashboardActionService.js
+index a3c8e8e..ffcba82 100644
+--- a/fastapi_app/static/js/modules/DashboardActionService.js
++++ b/fastapi_app/static/js/modules/DashboardActionService.js
+@@ -95,7 +95,24 @@ export const DashboardActionService = {
+                 // Refresh badges immediately
+                 if (window.HeaderService) window.HeaderService.refreshBadges();
+ 
+-                setTimeout(() => location.reload(), 500);
++                // Selective refresh based on category
++                const cat = jsonData.common_category;
++                if (cat === 'event' || cat === 'important') {
++                    if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
++                } else if (cat === 'task') {
++                    if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
++                } else if (cat === 'habits') {
++                    if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
++                } else if (cat === 'note') {
++                    if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') window.notesWidget.refreshPinnedNotes();
++                } else if (cat === 'observation') {
++                    if (typeof window.refreshDashboardObservations === 'function') window.refreshDashboardObservations();
++                } else if (cat === 'sticker') {
++                    if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
++                } else {
++                    // Fallback for metadata types like wink, count until, etc. that are hardcoded in the header layout
++                    setTimeout(() => location.reload(), 500);
++                }
+             } else {
+                 const errorMsg = data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : (data.message || 'Error saving');
+                 showToast('тЪа ' + errorMsg, 'error');
+diff --git a/fastapi_app/static/js/modules/StickerModal.js b/fastapi_app/static/js/modules/StickerModal.js
+index 0fa2f51..7ae76bb 100644
+--- a/fastapi_app/static/js/modules/StickerModal.js
++++ b/fastapi_app/static/js/modules/StickerModal.js
+@@ -335,8 +335,9 @@ export class StickerModal {
+                         // Update state to point to the new element
+                         this.state.element = newEl;
+                     } else {
+-                    location.reload();
+-                }
++                        if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
++                        else location.reload();
++                    }
+                 if (typeof window.showToast === 'function') window.showToast('тЬУ Sticker updated', 'success');
+             } else {
+                 if (this.state.parentType && this.state.parentId) {
+@@ -350,7 +351,8 @@ export class StickerModal {
+                     console.log("[StickerModal] Refreshing parent note:", this.state.parentId);
+                     window.notesWidget.editNote(this.state.parentId); 
+                 } else {
+-                    location.reload();
++                    if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
++                    else location.reload();
+                 }
+             }
+             if (shouldClose) this.close();
+diff --git a/fastapi_app/static/js/note_chrono_widget.js b/fastapi_app/static/js/note_chrono_widget.js
+index e771fee..303056a 100644
+--- a/fastapi_app/static/js/note_chrono_widget.js
++++ b/fastapi_app/static/js/note_chrono_widget.js
+@@ -72,7 +72,6 @@ window.saveChronoFromModal = async function () {
+             if (t) t.value = '';
+             const d = document.querySelector('input[name="chrono_date"]');
+             if (d) d.value = window.P_CHRONO_DATE || '';
+-            setTimeout(() => location.reload(), 500);
+         } else {
+             errEl.innerText = data.message || 'Error saving.';
+         }
+@@ -91,7 +90,6 @@ window.saveQuickChrono = async function (e) {
+         if (data.status === 'success') {
+             showToast('тЬУ ' + (data.message || 'Chrono saved'), 'success');
+             form.reset();
+-            setTimeout(() => location.reload(), 500);
+         } else {
+             showToast('тЪа ' + (data.message || 'Error saving'), 'error');
+         }
+@@ -223,7 +221,9 @@ window.saveNoteFromModal = async function () {
+ 
+             const t = document.getElementById('note_textarea');
+             if (t) { t.value = ''; t.style.height = '80px'; }
+-            setTimeout(() => location.reload(), 500);
++            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
++                window.notesWidget.refreshPinnedNotes();
++            }
+         } else {
+             errEl.innerText = data.message || 'Error saving note';
+         }
+@@ -263,7 +263,9 @@ window.saveQuickNote = async function (e) {
+             document.getElementById('widgetNoteStickerText').value = '';
+             document.getElementById('widgetNoteStickerTitle').value = '';
+             window.updateNoteStickerUI(false, 'widget');
+-            setTimeout(() => location.reload(), 500);
++            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
++                window.notesWidget.refreshPinnedNotes();
++            }
+         }
+     } catch (e) { console.error(e); }
+ };
+@@ -354,7 +356,9 @@ window.pinDialectics = async function (id) {
+         const resp = await fetch(`/api/dialectics/${id}/pin`, { method: 'POST' });
+         if (resp.ok) {
+             showToast('тЬУ Dialectics pinned to Dashboard', 'success');
+-            setTimeout(() => location.reload(), 500);
++            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
++                window.notesWidget.refreshPinnedNotes();
++            }
+         }
+     } catch (e) { console.error(e); }
+ };
+@@ -364,7 +368,9 @@ window.unpinDialectics = async function (id) {
+         const resp = await fetch(`/api/dialectics/${id}/unpin`, { method: 'POST' });
+         if (resp.ok) {
+             showToast('тЬУ Dialectics unpinned', 'success');
+-            setTimeout(() => location.reload(), 500);
++            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
++                window.notesWidget.refreshPinnedNotes();
++            }
+         }
+     } catch (e) { console.error(e); }
+ };
+diff --git a/fastapi_app/static/js/notes_widget.js b/fastapi_app/static/js/notes_widget.js
+index cd631ae..51540bd 100644
+--- a/fastapi_app/static/js/notes_widget.js
++++ b/fastapi_app/static/js/notes_widget.js
+@@ -135,6 +135,10 @@ class NotesWidget {
+             const result = await res.json();
+             
+             if (result.status === 'success') {
++                if (typeof window.showToast === 'function') {
++                    window.showToast("тЬУ Note saved successfully", "success");
++                }
++                
+                 if (shouldClose) {
+                     ta.value = '';
+                     if (pin) pin.checked = false;
+diff --git a/fastapi_app/static/js/observation_widget.js b/fastapi_app/static/js/observation_widget.js
+index 4fa349a..27d6f11 100644
+--- a/fastapi_app/static/js/observation_widget.js
++++ b/fastapi_app/static/js/observation_widget.js
+@@ -184,7 +184,9 @@ async function saveObsAdd() {
+         });
+ 
+         if (response.ok) {
+-            location.reload();
++            safeShowToast('тЬУ Activity saved successfully', 'success');
++            closeObsAddModal();
++            refreshDashboardObservations();
+         } else {
+             const err = await response.json();
+             safeShowToast(err.detail || 'Save failed', 'error');
+@@ -260,7 +262,9 @@ async function saveObsEdit() {
+             body: JSON.stringify(data)
+         });
+         if (response.ok) {
+-            location.reload();
++            safeShowToast('тЬУ Activity updated successfully', 'success');
++            closeObsEditModal();
++            refreshDashboardObservations();
+         } else {
+             const err = await response.json();
+             safeShowToast(err.detail || 'Update failed', 'error');
+@@ -309,3 +313,25 @@ function closeObsOverviewModal() {
+ 
+ window.openObsOverviewModal = openObsOverviewModal;
+ window.closeObsOverviewModal = closeObsOverviewModal;
++
++async function refreshDashboardObservations() {
++    const wrapper = document.querySelector('.observation-widget .widget-body');
++    if (!wrapper) return;
++    try {
++        const response = await fetch('/api/dashboard/widget/observations');
++        if (response.ok) {
++            const html = await response.text();
++            // We only need the inner contents or we can replace the widget-body
++            // Since the endpoint returns widgets/observation_wrapper.html, we need to extract the widget-body content.
++            const temp = document.createElement('div');
++            temp.innerHTML = html;
++            const newBody = temp.querySelector('.widget-body');
++            if (newBody) {
++                wrapper.innerHTML = newBody.innerHTML;
++            }
++        }
++    } catch (e) { console.error('Failed to refresh dashboard observations', e); }
++}
++
++window.refreshDashboardObservations = refreshDashboardObservations;
++
+diff --git a/fastapi_app/static/js/stickers.js b/fastapi_app/static/js/stickers.js
+index e0b270b..c596434 100644
+--- a/fastapi_app/static/js/stickers.js
++++ b/fastapi_app/static/js/stickers.js
+@@ -96,7 +96,8 @@ async function archiveStickerGlobal(btn, id) {
+             el.style.transform = 'scale(0.9)';
+             setTimeout(() => el.remove(), 300);
+         } else {
+-            location.reload();
++            if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
++            else location.reload();
+         }
+     } catch(e) { console.error(e); }
+ }
+@@ -112,7 +113,8 @@ async function hardDeleteStickerGlobal(btn, id) {
+             el.style.opacity = '0.5';
+             setTimeout(() => el.remove(), 300);
+         } else {
+-            location.reload();
++            if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
++            else location.reload();
+         }
+     } catch(e) { console.error(e); }
+ }
+@@ -190,4 +192,37 @@ document.addEventListener('DOMContentLoaded', () => {
+     });
+ });
+ 
++async function refreshDashboardStickers() {
++    const corkboard = document.getElementById('corkboard');
++    if (!corkboard) return;
++    try {
++        const response = await fetch('/api/dashboard/widget/stickers');
++        if (response.ok) {
++            const html = await response.text();
++            const temp = document.createElement('div');
++            temp.innerHTML = html;
++            const newCorkboard = temp.querySelector('#corkboard');
++            if (newCorkboard) {
++                corkboard.innerHTML = newCorkboard.innerHTML;
++                
++                // Hydrate the new stickers
++                const placeholders = corkboard.querySelectorAll('.sticker-thought-placeholder');
++                placeholders.forEach(el => {
++                    const note = {
++                        id: el.dataset.id,
++                        text: el.dataset.text || '',
++                        title: el.dataset.title || '',
++                        color: el.dataset.color || '#fff9c4',
++                        type: el.dataset.type || 'text'
++                    };
++                    const noteDiv = StickerRenderer.createStickerElement(note);
++                    el.parentNode.replaceChild(noteDiv, el);
++                });
++            }
++        }
++    } catch (e) { console.error('Failed to refresh dashboard stickers', e); }
++}
++
++window.refreshDashboardStickers = refreshDashboardStickers;
++
+ export { StickerRenderer, StickerService, StickerModal, StickerOverview };
+diff --git a/fastapi_app/static/js/word_stats.js b/fastapi_app/static/js/word_stats.js
+index ec8238d..67332f7 100644
+--- a/fastapi_app/static/js/word_stats.js
++++ b/fastapi_app/static/js/word_stats.js
+@@ -27,13 +27,15 @@ function openSearchModal() {
+     container.innerHTML = '';
+ 
+     const engGroup = document.createElement('div');
+-    engGroup.innerHTML = `<label>English</label><input type="text" name="eng" id="editEng" />`;
++    engGroup.className = 'form-group';
++    engGroup.innerHTML = `<label class="form-label">English</label><input type="text" name="eng" id="editEng" class="form-input" />`;
+     container.appendChild(engGroup);
+ 
+     activeLangs.forEach(code => {
+         if (code === 'en') return;
+         const group = document.createElement('div');
+-        group.innerHTML = `<label>${allLangNames[code] || code.toUpperCase()}</label><input type="text" name="lang_${code}" id="edit_${code}" />`;
++        group.className = 'form-group';
++        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}</label><input type="text" name="lang_${code}" id="edit_${code}" class="form-input" />`;
+         container.appendChild(group);
+     });
+ 
+@@ -147,8 +149,9 @@ function openWorkoutEditModal() {
+     container.innerHTML = '';
+     activeLangs.forEach(code => {
+         const group = document.createElement('div');
+-        group.innerHTML = `<label>${allLangNames[code] || code.toUpperCase()}:</label>`
+-            + `<input type="text" name="lang_${code}" value="${(word.translations && word.translations[code] || '').replace(/"/g, '&quot;')}" />`;
++        group.className = 'form-group';
++        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}:</label>`
++            + `<input type="text" name="lang_${code}" value="${(word.translations && word.translations[code] || '').replace(/"/g, '&quot;')}" class="form-input" />`;
+         container.appendChild(group);
+     });
+ 
+@@ -543,15 +546,15 @@ function customConfirm({ title = 'Confirmation', message = 'Are you sure?', butt
+ 
+         if (buttons.length === 0) {
+             buttons = [
+-                { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+-                { label: 'OK',     value: true,  class: 'confirm-btn-primary'   }
++                { label: 'Cancel', value: false, class: 'btn btn-secondary' },
++                { label: 'OK',     value: true,  class: 'btn btn-primary'   }
+             ];
+         }
+ 
+         buttons.forEach(btn => {
+             const button = document.createElement('button');
+             button.innerText  = btn.label;
+-            button.className  = 'confirm-btn ' + (btn.class || 'confirm-btn-secondary');
++            button.className  = btn.class || 'btn btn-secondary';
+             button.onclick    = () => {
+                 modal.style.setProperty('display', 'none', 'important');
+                 resolve(btn.value);
+diff --git a/fastapi_app/templates/partials/word_stats/_modals.html b/fastapi_app/templates/partials/word_stats/_modals.html
+index 072a4b7..250c727 100644
+--- a/fastapi_app/templates/partials/word_stats/_modals.html
++++ b/fastapi_app/templates/partials/word_stats/_modals.html
+@@ -2,59 +2,73 @@
+ 
+ {# тФАтФА Word Search Modal тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА #}
+ <div id="searchWordModal" class="modal">
+-    <div class="modal-content">
+-        <h3>Word Lookup</h3>
+-        <hr />
+-        <div>
+-            <label>Search</label>
+-            <input type="text" id="searchQuery" placeholder="Type a word in any language" />
++    <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
++        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
++            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Word Lookup</h2>
+         </div>
+-        <div id="searchResults" style="margin-top: 10px"></div>
+-        <form id="searchEditForm" style="margin-top: 10px">
+-            <div id="searchDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+-                {# Dynamic lang fields injected by JS #}
++        
++        <div class="modal-body" style="padding: 24px;">
++            <div class="form-group" style="margin-bottom: 24px;">
++                <label class="form-label">Search</label>
++                <input type="text" id="searchQuery" class="form-input" placeholder="Type a word in any language" />
+             </div>
+-            <div style="margin-top: 10px">
+-                <label>Russian</label>
+-                <input type="text" name="ru" id="editRu" />
+-            </div>
+-            <div style="margin-top: 10px">
+-                <label>Meaning / Context</label>
+-                <textarea name="meaning" id="editMeaning" rows="4"></textarea>
+-            </div>
+-            <div id="searchStats" style="margin-top: 10px; font-size: 0.9em; color: #666"></div>
+-            <div class="modal-actions">
+-                <button type="button" class="btn-cancel" onclick="closeSearchModal()">Cancel</button>
+-                <button type="button" id="btnDeleteWord" class="btn-cancel"
+-                    style="background: #e74c3c; color: white; display: none;"
+-                    onclick="deleteSearchWord()">Delete</button>
+-                <button type="button" class="btn-save" onclick="saveSearchEdit()">OK</button>
+-            </div>
+-        </form>
++            
++            <div id="searchResults" style="margin-bottom: 24px;"></div>
++            
++            <form id="searchEditForm" style="margin: 0;">
++                <div id="searchDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
++                    {# Dynamic lang fields injected by JS #}
++                </div>
++                
++                <div class="form-group" style="margin-bottom: 24px;">
++                    <label class="form-label">Russian</label>
++                    <input type="text" name="ru" id="editRu" class="form-input" />
++                </div>
++                
++                <div class="form-group" style="margin-bottom: 24px;">
++                    <label class="form-label">Meaning / Context</label>
++                    <textarea name="meaning" id="editMeaning" class="form-input" rows="4" style="resize: vertical;"></textarea>
++                </div>
++                
++                <div id="searchStats" style="margin-bottom: 24px; font-size: 0.9em; color: #666"></div>
++            </form>
++        </div>
++        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
++            <button type="button" class="btn btn-secondary" onclick="closeSearchModal()">Cancel</button>
++            <button type="button" id="btnDeleteWord" class="btn btn-danger" style="display: none;" onclick="deleteSearchWord()">Delete</button>
++            <button type="button" class="btn btn-primary" onclick="saveSearchEdit()" style="min-width: 140px;">OK</button>
++        </div>
+     </div>
+ </div>
+ 
+ {# тФАтФА Word Edit Modal (Workout) тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА #}
+ <div id="editWordModal" class="modal">
+-    <div class="modal-content">
+-        <h3 id="modalWordEng">Edit Word</h3>
+-        <hr />
+-        <form id="editWordForm">
+-            <input type="hidden" name="word_eng" id="inputWordEng" />
+-            <div id="workoutDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+-                {# Dynamic lang fields injected by JS #}
+-            </div>
+-            <div style="margin-top: 10px">
+-                <label>Russian Translation:</label>
+-                <input type="text" name="new_ru" id="inputWordRu" />
+-            </div>
+-            <div style="margin-top: 10px">
+-                <label>Meaning / Context:</label>
+-                <textarea name="new_meaning" id="inputWordMeaning" rows="4"></textarea>
++    <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
++        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
++            <h2 id="modalWordEng" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Edit Word</h2>
++        </div>
++        
++        <form id="editWordForm" style="margin: 0;">
++            <div class="modal-body" style="padding: 24px;">
++                <input type="hidden" name="word_eng" id="inputWordEng" />
++                
++                <div id="workoutDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
++                    {# Dynamic lang fields injected by JS #}
++                </div>
++                
++                <div class="form-group" style="margin-bottom: 24px;">
++                    <label class="form-label">Russian Translation</label>
++                    <input type="text" name="new_ru" id="inputWordRu" class="form-input" />
++                </div>
++                
++                <div class="form-group" style="margin-bottom: 0;">
++                    <label class="form-label">Meaning / Context</label>
++                    <textarea name="new_meaning" id="inputWordMeaning" class="form-input" rows="4" style="resize: vertical;"></textarea>
++                </div>
+             </div>
+-            <div class="modal-actions">
+-                <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+-                <button type="button" class="btn-save"   onclick="saveWordEdit()">OK</button>
++            <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
++                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
++                <button type="button" class="btn btn-primary" onclick="saveWordEdit()" style="min-width: 140px;">OK</button>
+             </div>
+         </form>
+     </div>
+@@ -62,14 +76,14 @@
+ 
+ {# тФАтФА Custom Confirm Modal тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА #}
+ <div id="customConfirmModal" class="modal" style="display: none;">
+-    <div class="modal-content">
+-        <div class="modal-header">
+-            <span id="confirmModalTitle">Confirmation</span>
++    <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
++        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
++            <h2 id="confirmModalTitle" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Confirmation</h2>
+         </div>
+-        <div class="modal-body">
+-            <p id="confirmModalMessage">Are you sure?</p>
++        <div class="modal-body" style="padding: 24px;">
++            <p id="confirmModalMessage" style="margin: 0; font-size: 1rem;">Are you sure?</p>
+         </div>
+-        <div class="modal-footer" id="confirmModalFooter">
++        <div class="modal-footer" id="confirmModalFooter" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
+             {# Buttons injected by JS #}
+         </div>
+     </div>
+diff --git a/fastapi_app/templates/partials/word_stats/_workout.html b/fastapi_app/templates/partials/word_stats/_workout.html
+index 54608da..ea8de26 100644
+--- a/fastapi_app/templates/partials/word_stats/_workout.html
++++ b/fastapi_app/templates/partials/word_stats/_workout.html
+@@ -50,27 +50,26 @@
+     </div>
+ </div>
+ 
+-{# Settings Modal #}
+ <div id="workoutSettingsModal" class="modal" style="display: none;">
+-    <div class="modal-content" style="max-width: 350px;">
+-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+-            <h3 style="margin: 0;">Workout Settings</h3>
+-            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer;" onclick="closeWorkoutSettingsModal()">тЬХ</button>
++    <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden; background: white;">
++        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px; display: flex; justify-content: space-between; align-items: center;">
++            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Workout Settings</h2>
++            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 0; color: var(--color-text-muted);" onclick="closeWorkoutSettingsModal()">тЬХ</button>
+         </div>
+-        <div class="modal-body">
+-            <div class="form-group">
+-                <label>Words per Workout</label>
++        <div class="modal-body" style="padding: 24px;">
++            <div class="form-group" style="margin-bottom: 24px;">
++                <label class="form-label">Words per Workout</label>
+                 <input type="number" id="settingWorkoutLimit" min="1" max="50" value="5" class="form-input" />
+             </div>
+-            <div class="form-group">
+-                <label>Max Previously Learned Words</label>
++            <div class="form-group" style="margin-bottom: 0;">
++                <label class="form-label">Max Previously Learned Words</label>
+                 <input type="number" id="settingWorkoutMaxKnown" min="0" max="50" value="1" class="form-input" />
+-                <div style="font-size: 0.75em; color: #888; margin-top: 4px;">Limit how many already known words can appear for reinforcement.</div>
+-            </div>
+-            <div style="display: flex; gap: 10px; margin-top: 20px;">
+-                <button type="button" class="btn btn-secondary" onclick="closeWorkoutSettingsModal()" style="flex:1;">Cancel</button>
+-                <button type="button" class="btn btn-primary" onclick="saveWorkoutSettings()" style="flex:1;">Save</button>
++                <div style="font-size: 0.8em; color: var(--color-text-muted); margin-top: 8px;">Limit how many already known words can appear for reinforcement.</div>
+             </div>
+         </div>
++        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
++            <button type="button" class="btn btn-secondary" onclick="closeWorkoutSettingsModal()" style="flex:1;">Cancel</button>
++            <button type="button" class="btn btn-primary" onclick="saveWorkoutSettings()" style="flex:1;">Save</button>
++        </div>
+     </div>
+ </div>

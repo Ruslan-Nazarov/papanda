@@ -50,27 +50,26 @@
     </div>
 </div>
 
-{# Settings Modal #}
 <div id="workoutSettingsModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 350px;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0;">Workout Settings</h3>
-            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer;" onclick="closeWorkoutSettingsModal()">✕</button>
+    <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden; background: white;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Workout Settings</h2>
+            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 0; color: var(--color-text-muted);" onclick="closeWorkoutSettingsModal()">✕</button>
         </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Words per Workout</label>
+        <div class="modal-body" style="padding: 24px;">
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Words per Workout</label>
                 <input type="number" id="settingWorkoutLimit" min="1" max="50" value="5" class="form-input" />
             </div>
-            <div class="form-group">
-                <label>Max Previously Learned Words</label>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Max Previously Learned Words</label>
                 <input type="number" id="settingWorkoutMaxKnown" min="0" max="50" value="1" class="form-input" />
-                <div style="font-size: 0.75em; color: #888; margin-top: 4px;">Limit how many already known words can appear for reinforcement.</div>
+                <div style="font-size: 0.8em; color: var(--color-text-muted); margin-top: 8px;">Limit how many already known words can appear for reinforcement.</div>
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="button" class="btn btn-secondary" onclick="closeWorkoutSettingsModal()" style="flex:1;">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveWorkoutSettings()" style="flex:1;">Save</button>
-            </div>
+        </div>
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
+            <button type="button" class="btn btn-secondary" onclick="closeWorkoutSettingsModal()" style="flex:1;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveWorkoutSettings()" style="flex:1;">Save</button>
         </div>
     </div>
 </div>

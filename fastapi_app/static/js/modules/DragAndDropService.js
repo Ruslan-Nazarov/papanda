@@ -12,13 +12,13 @@ export const DragAndDropService = {
     },
 
     initTasks() {
-        const list = document.querySelector('.task-list');
+        const list = document.querySelector('.tasks-widget ul');
         if (!list || typeof Sortable === 'undefined') return;
         Sortable.create(list, {
             animation: 150,
             ghostClass: 'sortable-ghost',
             onEnd: () => {
-                const ids = Array.from(list.querySelectorAll('.task-item')).map(el => parseInt(el.dataset.id));
+                const ids = Array.from(list.querySelectorAll('li')).map(el => parseInt(el.dataset.id));
                 fetch('/api/dnd/reorder_tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

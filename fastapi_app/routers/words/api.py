@@ -100,10 +100,13 @@ async def reset_word_stats(word_service: WordService = Depends(get_word_service)
 async def mark_triplet_learned(
     data: schemas.TripletLearnedRequest,
     word_service: WordService = Depends(get_word_service),
+    state_manager: StateManager = Depends(get_state_manager),
 ):
     """Помечает активную тройку языков для слова как изученную."""
     word = await word_service.toggle_active_triplet_known(data.eng, data.is_learned)
     if word:
+        if data.is_learned:
+            await state_manager.remove_word_from_cache(data.eng)
         return schemas.SuccessResponse(message="Triplet status updated")
     raise HTTPException(status_code=404, detail="Word not found")
 

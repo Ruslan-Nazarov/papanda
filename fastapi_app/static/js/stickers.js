@@ -1,10 +1,10 @@
 /**
  * stickers.js - Modular Entry Point & Global Bridge
  */
-import { StickerRenderer } from './modules/StickerRenderer.js';
-import { StickerService } from './modules/StickerService.js';
-import { StickerModal } from './modules/StickerModal.js';
-import { StickerOverview } from './modules/StickerOverview.js';
+import { StickerRenderer } from './modules/StickerRenderer.js?v=2';
+import { StickerService } from './modules/StickerService.js?v=2';
+import { StickerModal } from './modules/StickerModal.js?v=2';
+import { StickerOverview } from './modules/StickerOverview.js?v=2';
 
 // Note Search Logic (Refactored to use StickerService)
 let noteSearchTimeout = null;
@@ -96,7 +96,8 @@ async function archiveStickerGlobal(btn, id) {
             el.style.transform = 'scale(0.9)';
             setTimeout(() => el.remove(), 300);
         } else {
-            location.reload();
+            if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
+            else location.reload();
         }
     } catch(e) { console.error(e); }
 }
@@ -112,7 +113,8 @@ async function hardDeleteStickerGlobal(btn, id) {
             el.style.opacity = '0.5';
             setTimeout(() => el.remove(), 300);
         } else {
-            location.reload();
+            if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
+            else location.reload();
         }
     } catch(e) { console.error(e); }
 }
@@ -189,5 +191,38 @@ document.addEventListener('DOMContentLoaded', () => {
         el.parentNode.replaceChild(noteDiv, el);
     });
 });
+
+async function refreshDashboardStickers() {
+    const corkboard = document.getElementById('corkboard');
+    if (!corkboard) return;
+    try {
+        const response = await fetch('/api/dashboard/widget/stickers');
+        if (response.ok) {
+            const html = await response.text();
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const newCorkboard = temp.querySelector('#corkboard');
+            if (newCorkboard) {
+                corkboard.innerHTML = newCorkboard.innerHTML;
+                
+                // Hydrate the new stickers
+                const placeholders = corkboard.querySelectorAll('.sticker-thought-placeholder');
+                placeholders.forEach(el => {
+                    const note = {
+                        id: el.dataset.id,
+                        text: el.dataset.text || '',
+                        title: el.dataset.title || '',
+                        color: el.dataset.color || '#fff9c4',
+                        type: el.dataset.type || 'text'
+                    };
+                    const noteDiv = StickerRenderer.createStickerElement(note);
+                    el.parentNode.replaceChild(noteDiv, el);
+                });
+            }
+        }
+    } catch (e) { console.error('Failed to refresh dashboard stickers', e); }
+}
+
+window.refreshDashboardStickers = refreshDashboardStickers;
 
 export { StickerRenderer, StickerService, StickerModal, StickerOverview };

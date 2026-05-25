@@ -57,8 +57,8 @@
             {% for s in stickers %}
             <div class="sticker-thought-placeholder" 
                  data-id="{{ s.id }}"
-                 data-text="{{ s.text|replace('"', '&quot;') }}"
-                 data-title="{{ (s.title or '')|replace('"', '&quot;') }}"
+                 data-text="{{ s.text }}"
+                 data-title="{{ s.title or '' }}"
                  data-color="{{ s.color or '#fff9c4' }}"
                  data-type="{{ s.type or 'text' }}">
             </div>

@@ -5,7 +5,7 @@ import { showToast } from './ui_helpers.js';
 import { ModalManager } from './modules/ModalManager.js';
 
 import { initEventWidget }       from './event_widget.js';
-import { initWordWidget }        from './word_widget.js';
+import { initWordWidget }        from './word_widget.js?v=2';
 import { initRecurrenceForm }    from './recurrence_form.js';
 import { initStickerWidget }     from './sticker_widget.js';
 import { initNoteChronoWidget }  from './note_chrono_widget.js';
@@ -13,6 +13,8 @@ import { initNoteChronoWidget }  from './note_chrono_widget.js';
 import { DashboardActionService } from './modules/DashboardActionService.js';
 import { DragAndDropService }     from './modules/DragAndDropService.js';
 import { HeaderService }          from './modules/HeaderService.js';
+
+window.DragAndDropService = DragAndDropService;
 
 window.toggleWidget = toggleWidget;
 window.saveLayout   = saveLayout;
@@ -27,16 +29,16 @@ window.markTaskDone = async function(form, taskId) {
     if (showToast) showToast('Task completed', 'success');
 
     try {
-        const resp = await fetch(form.action, { method: 'POST' });
         if (resp.ok) {
             if (window.HeaderService) window.HeaderService.refreshBadges();
+            if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
         } else {
             console.error('Task mark failed');
-            location.reload();
+            if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
         }
     } catch (e) {
         console.error('Error marking task done:', e);
-        location.reload();
+        if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
     }
     await animationPromise;
 };
@@ -50,11 +52,40 @@ window.markHabitDone = async function(form, habitId) {
 
     try {
         const resp = await fetch(form.action, { method: 'POST' });
-        if (!resp.ok) location.reload();
+        if (!resp.ok) {
+            if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
+        } else {
+            if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
+        }
     } catch (e) {
-        location.reload();
+        if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
     }
     await animationPromise;
+};
+
+window.refreshDashboardTasks = async function() {
+    try {
+        const resp = await fetch('/api/dashboard/widget/tasks');
+        if (resp.ok) {
+            const html = await resp.text();
+            const wrapper = document.querySelector('#tasks .grid-stack-item-content');
+            if (wrapper) {
+                wrapper.innerHTML = html;
+                if (window.DragAndDropService) window.DragAndDropService.initTasks();
+            }
+        }
+    } catch (e) { console.error('Failed to refresh tasks', e); }
+};
+
+window.refreshDashboardHabits = async function() {
+    try {
+        const resp = await fetch('/api/dashboard/widget/habits');
+        if (resp.ok) {
+            const html = await resp.text();
+            const wrapper = document.querySelector('#habits .grid-stack-item-content');
+            if (wrapper) wrapper.innerHTML = html;
+        }
+    } catch (e) { console.error('Failed to refresh habits', e); }
 };
 
 document.addEventListener('DOMContentLoaded', async function () {

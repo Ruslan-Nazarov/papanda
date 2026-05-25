@@ -142,6 +142,7 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) 
     try {
         const resp = await deleteRecordApi('Event', eventId, deleteMode, eventDate);
         if (resp.ok) {
+            if (typeof window.showToast === 'function') window.showToast("✓ Event deleted", "success");
             const btn = document.querySelector(`[onclick*="'${eventId}'"]`);
             const li = btn?.closest('li');
             if (li) {
@@ -151,7 +152,9 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) 
             // Update header badges
             if (window.HeaderService) window.HeaderService.refreshBadges();
 
-            if (deleteMode !== 'only') setTimeout(() => location.reload(), 500);
+            if (deleteMode !== 'only') {
+                if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
+            }
         }
     } catch (err) { console.error('Error deleting event:', err); }
 };
@@ -163,11 +166,12 @@ window.markEventDone = async function(form, eventId) {
         const animationPromise = animateItemRemoval(li);
         await fetch(form.action, { method: 'POST', body: new FormData(form) });
         await animationPromise;
+        if (typeof window.showToast === 'function') window.showToast("✓ Event completed", "success");
         // Update header badges
         if (window.HeaderService) window.HeaderService.refreshBadges();
     } catch (e) { 
         console.error('Error marking event done:', e); 
-        location.reload();
+        if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
     }
 };
 
@@ -187,10 +191,32 @@ window.saveEventEdit = async function () {
             recurrence_end: document.getElementById('editEventRecEnd').value,
             original_date: document.getElementById('editEventOriginalDate').value
         });
-        if (resp.ok) location.reload();
+        if (resp.ok) {
+            if (typeof window.showToast === 'function') window.showToast("✓ Event saved successfully", "success");
+            window.closeEditEventModal();
+            if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
+        }
     } catch (e) { console.error('Error saving event:', e); }
 };
 
 export function initEventWidget() {
     console.log("[EventWidget] Core hooks initialized");
 }
+
+window.refreshDashboardEvents = async function() {
+    const wrapper = document.querySelector('.schedule-widget');
+    if (!wrapper) return;
+    try {
+        const response = await fetch('/api/dashboard/widget/events');
+        if (response.ok) {
+            const html = await response.text();
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const newWidget = temp.querySelector('.schedule-widget');
+            if (newWidget) {
+                wrapper.replaceWith(newWidget);
+                if (window.DragAndDropService) window.DragAndDropService.initEvents();
+            }
+        }
+    } catch (e) { console.error('Failed to refresh dashboard events', e); }
+};

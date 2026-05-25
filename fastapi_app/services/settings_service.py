@@ -141,6 +141,10 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
         if code not in lang_names:
             lang_names[code] = code.upper()
     
+    # Theme settings
+    theme_reading = await get_setting(db, 'theme_reading', 'sans')
+    theme_editor = await get_setting(db, 'theme_editor', 'mono')
+
     ctx = {
         "request": request,
         "max_duration": max_dur,
@@ -154,6 +158,8 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
         "active_languages": active_languages,
         "all_languages": lang_names,
         "settings_layout": settings_layout,
+        "theme_reading": theme_reading,
+        "theme_editor": theme_editor,
     }
     if import_result is not None:
         ctx["import_result"] = import_result

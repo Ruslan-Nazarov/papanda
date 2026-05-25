@@ -26,3 +26,7 @@ class StateManager:
     async def get_runtime_context(self, force_update: bool = False) -> Dict[str, Any]:
         """Получает или генерирует текущий рантайм-контекст."""
         return await self.context_service.get_runtime_context(force_update)
+
+    async def remove_word_from_cache(self, eng: str) -> None:
+        """Удаляет слово из кэша текущих слов."""
+        await self.context_service.remove_word_from_cache(eng)

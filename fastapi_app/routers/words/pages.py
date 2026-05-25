@@ -51,7 +51,7 @@ async def word_stats(
         'fr': '🇫🇷', 'es': '🇪🇸', 'tr': '🇹🇷', 'kz': '🇰🇿'
     }
 
-    return templates.TemplateResponse(request, "word_stats.html", {
+    response = templates.TemplateResponse(request, "word_stats.html", {
         "request": request,
         "total_count": total_count,
         "learned_count": learned_count,
@@ -103,6 +103,8 @@ async def word_stats(
         "daily_shows_labels": [format_date(s.date) for s in daily_shows],
         "daily_shows_data": [int(s.shows_count) for s in daily_shows],
     })
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return response
 
 @router.get("/language_learning", response_class=HTMLResponse)
 async def language_learning(

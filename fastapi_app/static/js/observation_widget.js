@@ -184,7 +184,9 @@ async function saveObsAdd() {
         });
 
         if (response.ok) {
-            location.reload();
+            safeShowToast('✓ Activity saved successfully', 'success');
+            closeObsAddModal();
+            refreshDashboardObservations();
         } else {
             const err = await response.json();
             safeShowToast(err.detail || 'Save failed', 'error');
@@ -260,7 +262,9 @@ async function saveObsEdit() {
             body: JSON.stringify(data)
         });
         if (response.ok) {
-            location.reload();
+            safeShowToast('✓ Activity updated successfully', 'success');
+            closeObsEditModal();
+            refreshDashboardObservations();
         } else {
             const err = await response.json();
             safeShowToast(err.detail || 'Update failed', 'error');
@@ -309,3 +313,25 @@ function closeObsOverviewModal() {
 
 window.openObsOverviewModal = openObsOverviewModal;
 window.closeObsOverviewModal = closeObsOverviewModal;
+
+async function refreshDashboardObservations() {
+    const wrapper = document.querySelector('.observation-widget .widget-body');
+    if (!wrapper) return;
+    try {
+        const response = await fetch('/api/dashboard/widget/observations');
+        if (response.ok) {
+            const html = await response.text();
+            // We only need the inner contents or we can replace the widget-body
+            // Since the endpoint returns widgets/observation_wrapper.html, we need to extract the widget-body content.
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const newBody = temp.querySelector('.widget-body');
+            if (newBody) {
+                wrapper.innerHTML = newBody.innerHTML;
+            }
+        }
+    } catch (e) { console.error('Failed to refresh dashboard observations', e); }
+}
+
+window.refreshDashboardObservations = refreshDashboardObservations;
+

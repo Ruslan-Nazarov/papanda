@@ -72,7 +72,6 @@ window.saveChronoFromModal = async function () {
             if (t) t.value = '';
             const d = document.querySelector('input[name="chrono_date"]');
             if (d) d.value = window.P_CHRONO_DATE || '';
-            setTimeout(() => location.reload(), 500);
         } else {
             errEl.innerText = data.message || 'Error saving.';
         }
@@ -91,7 +90,6 @@ window.saveQuickChrono = async function (e) {
         if (data.status === 'success') {
             showToast('✓ ' + (data.message || 'Chrono saved'), 'success');
             form.reset();
-            setTimeout(() => location.reload(), 500);
         } else {
             showToast('⚠ ' + (data.message || 'Error saving'), 'error');
         }
@@ -223,7 +221,9 @@ window.saveNoteFromModal = async function () {
 
             const t = document.getElementById('note_textarea');
             if (t) { t.value = ''; t.style.height = '80px'; }
-            setTimeout(() => location.reload(), 500);
+            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
+                window.notesWidget.refreshPinnedNotes();
+            }
         } else {
             errEl.innerText = data.message || 'Error saving note';
         }
@@ -263,7 +263,9 @@ window.saveQuickNote = async function (e) {
             document.getElementById('widgetNoteStickerText').value = '';
             document.getElementById('widgetNoteStickerTitle').value = '';
             window.updateNoteStickerUI(false, 'widget');
-            setTimeout(() => location.reload(), 500);
+            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
+                window.notesWidget.refreshPinnedNotes();
+            }
         }
     } catch (e) { console.error(e); }
 };
@@ -354,7 +356,9 @@ window.pinDialectics = async function (id) {
         const resp = await fetch(`/api/dialectics/${id}/pin`, { method: 'POST' });
         if (resp.ok) {
             showToast('✓ Dialectics pinned to Dashboard', 'success');
-            setTimeout(() => location.reload(), 500);
+            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
+                window.notesWidget.refreshPinnedNotes();
+            }
         }
     } catch (e) { console.error(e); }
 };
@@ -364,7 +368,9 @@ window.unpinDialectics = async function (id) {
         const resp = await fetch(`/api/dialectics/${id}/unpin`, { method: 'POST' });
         if (resp.ok) {
             showToast('✓ Dialectics unpinned', 'success');
-            setTimeout(() => location.reload(), 500);
+            if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
+                window.notesWidget.refreshPinnedNotes();
+            }
         }
     } catch (e) { console.error(e); }
 };

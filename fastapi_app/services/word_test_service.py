@@ -56,12 +56,12 @@ class WordTestService:
                 ]
                 
                 if testable_langs:
-                    weights = []
-                    for l in testable_langs:
-                        known = lang_counts.get(l, 0)
-                        weights.append(1.0 / (known + 1.0))
+                    # Prefer testing languages that are not yet marked as known for this word
+                    unknown_langs = [l for l in testable_langs if not dict(w.knowledge_stats or {}).get(l)]
+                    if unknown_langs:
+                        testable_langs = unknown_langs
                     
-                    test_lang = random.choices(testable_langs, weights=weights, k=1)[0]
+                    test_lang = random.choice(testable_langs)
                 else:
                     test_lang = active_langs[0]
                 
@@ -74,6 +74,7 @@ class WordTestService:
                     "meaning": w.meaning,
                     "count": w.count,
                     "is_learned": w.is_learned,
+                    "is_lang_known": dict(w.knowledge_stats or {}).get(test_lang, False),
                     "translations": w.translations or {}
                 })
 

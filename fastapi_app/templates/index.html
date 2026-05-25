@@ -1,116 +1,116 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>{% block title %}Papanda{% endblock %}</title>
+{% extends "base.html" %}
 
-        <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}" />
-        <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=1.1" />
-        
-        <!-- KaTeX for Math rendering -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+{% block title %}Papanda{% endblock %}
 
-        <!-- DOMPurify for XSS Protection -->
-        <script src="https://cdn.jsdelivr.net/npm/purify@3.0.6/dist/purify.min.js"></script>
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=1.1" />
+    
+    <!-- KaTeX for Math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
-        <!-- GridStack.js -->
-        <link href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
-        
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.css" />
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <!-- DOMPurify for XSS Protection -->
+    <script src="https://cdn.jsdelivr.net/npm/purify@3.0.6/dist/purify.min.js"></script>
 
-        <!-- Quill.js for Rich Text Editor -->
-        <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
-        <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    </head>
-    <body style="margin: 0; background-color: var(--color-bg-app);">
-        {% if request.cookies.get('papanda_mode') == 'sandbox' %}
-        <div class="sandbox-banner" style="background: var(--color-error); color: var(--color-white); text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 20px; box-shadow: var(--shadow-md);">
-            <span>🚧 SANDBOX MODE ACTIVE - Using temporary database (sandbox_demo.db) 🚧</span>
-            <form action="{{ url_for('exit_sandbox') }}" method="post" style="margin: 0;">
-                <button type="submit" class="btn-exit-sandbox" style="background: var(--color-white); color: var(--color-error); border: none; padding: 5px 15px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; transition: opacity 0.2s;">Exit Sandbox</button>
-            </form>
-        </div>
-        {% endif %}
+    <!-- GridStack.js -->
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 
-        {% include 'widgets/header.html' %}
+    <!-- Quill.js for Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+{% endblock %}
 
-        <!-- Modals -->
-        {% include 'partials/modals/observation_modals.html' %}
-        {% include 'partials/modals/common_modals.html' %}
-        {% include 'partials/modals/event_modals.html' %}
-        {% include 'partials/modals/note_modals.html' %}
-        {% include 'partials/modals/chrono_modals.html' %}
-        {% include 'partials/modals/word_modals.html' %}
-        {% include 'partials/sticker_modal.html' %}
-        {% include 'partials/parent_stickers_modal.html' %}
+{% block content %}
+    {% if request.cookies.get('papanda_mode') == 'sandbox' %}
+    <div class="sandbox-banner" style="background: var(--color-error); color: var(--color-white); text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 20px; box-shadow: var(--shadow-md);">
+        <span>🚧 SANDBOX MODE ACTIVE - Using temporary database (sandbox_demo.db) 🚧</span>
+        <form action="{{ url_for('exit_sandbox') }}" method="post" style="margin: 0;">
+            <button type="submit" class="btn-exit-sandbox" style="background: var(--color-white); color: var(--color-error); border: none; padding: 5px 15px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; transition: opacity 0.2s;">Exit Sandbox</button>
+        </form>
+    </div>
+    {% endif %}
 
-        <div class="grid-stack" style="visibility: hidden;">
-            <!-- Chronology -->
-            <div class="grid-stack-item" id="chrono" gs-id="chrono" gs-x="0" gs-y="0" gs-w="4" gs-h="5">
-                <div class="grid-stack-item-content">{% include 'partials/chrono_widget.html' %}</div>
-            </div>
+    {% include 'widgets/header.html' %}
 
-            <!-- Observations -->
-            <div class="grid-stack-item" id="observation" gs-id="observation" gs-x="0" gs-y="11" gs-w="4" gs-h="10">
-                <div class="grid-stack-item-content">{% include 'widgets/observation_wrapper.html' %}</div>
-            </div>
+    <!-- Modals -->
+    {% include 'partials/modals/observation_modals.html' %}
+    {% include 'partials/modals/common_modals.html' %}
+    {% include 'partials/modals/event_modals.html' %}
+    {% include 'partials/modals/note_modals.html' %}
+    {% include 'partials/modals/chrono_modals.html' %}
+    {% include 'partials/modals/word_modals.html' %}
+    {% include 'partials/sticker_modal.html' %}
+    {% include 'partials/parent_stickers_modal.html' %}
 
-            <!-- Notes -->
-            <div class="grid-stack-item" id="notes" gs-id="notes" gs-x="4" gs-y="0" gs-w="4" gs-h="5">
-                <div class="grid-stack-item-content">{% include 'partials/notes_widget.html' %}</div>
-            </div>
-
-            <!-- Schedule -->
-            <div class="grid-stack-item" id="events" gs-id="events" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
-                <div class="grid-stack-item-content">{% include 'partials/schedule_widget.html' %}</div>
-            </div>
-
-            <!-- Tasks -->
-            <div class="grid-stack-item" id="tasks" gs-id="tasks" gs-x="0" gs-y="5" gs-w="4" gs-h="6">
-                <div class="grid-stack-item-content">{% include 'partials/tasks_widget.html' %}</div>
-            </div>
-
-            <!-- Habits -->
-            <div class="grid-stack-item" id="habits" gs-id="habits" gs-x="4" gs-y="5" gs-w="4" gs-h="6">
-                <div class="grid-stack-item-content">{% include 'partials/habits_widget.html' %}</div>
-            </div>
-
-            <!-- Words -->
-            <div class="grid-stack-item" id="words" gs-id="words" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
-                <div class="grid-stack-item-content">{% include 'partials/words_widget.html' %}</div>
-            </div>
-
-            <!-- Rules -->
-            <div class="grid-stack-item" id="rules" gs-id="rules" gs-x="0" gs-y="11" gs-w="8" gs-h="4">
-                <div class="grid-stack-item-content">{% include 'widgets/rules_widget.html' %}</div>
-            </div>
-
-            <!-- Sticky Thoughts -->
-            <div class="grid-stack-item" id="stickers" gs-id="stickers" gs-x="8" gs-y="5" gs-w="4" gs-h="6">
-                <div class="grid-stack-item-content">{% include 'widgets/stickers_widget.html' %}</div>
-            </div>
+    <div class="grid-stack" style="visibility: hidden;">
+        <!-- Chronology -->
+        <div class="grid-stack-item" id="chrono" gs-id="chrono" gs-x="0" gs-y="0" gs-w="4" gs-h="5">
+            <div class="grid-stack-item-content">{% include 'partials/chrono_widget.html' %}</div>
         </div>
 
-        <div id="toast">Saved successfully!</div>
+        <!-- Observations -->
+        <div class="grid-stack-item" id="observation" gs-id="observation" gs-x="0" gs-y="11" gs-w="4" gs-h="10">
+            <div class="grid-stack-item-content">{% include 'widgets/observation_wrapper.html' %}</div>
+        </div>
 
-        {% include 'partials/footer.html' %}
+        <!-- Notes -->
+        <div class="grid-stack-item" id="notes" gs-id="notes" gs-x="4" gs-y="0" gs-w="4" gs-h="5">
+            <div class="grid-stack-item-content">{% include 'partials/notes_widget.html' %}</div>
+        </div>
 
-        <script src="{{ url_for('static', path='js/services/NotificationService.js') }}"></script>
-        <script src="{{ url_for('static', path='js/services/WidgetSettingsService.js') }}"></script>
-        <script>
-            window.P_CHRONO_DATE = '{{ today_for_calendar.strftime("%Y-%m-%d") }}';
-            window.P_DASHBOARD_LAYOUT = {{ dashboard_layout|safe if dashboard_layout else '{}' }};
-            window.P_ACTIVE_LANGUAGES = {{ active_languages|tojson|safe }};
-            window.P_ALL_LANGUAGES = {{ all_languages|tojson|safe }};
-        </script>
-        
-        <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=15"></script>
-        <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v=6"></script>
-        <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=10"></script>
-        <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=6"></script>
-        <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=29"></script>
-    </body>
-</html>
+        <!-- Schedule -->
+        <div class="grid-stack-item" id="events" gs-id="events" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
+            <div class="grid-stack-item-content">{% include 'partials/schedule_widget.html' %}</div>
+        </div>
+
+        <!-- Tasks -->
+        <div class="grid-stack-item" id="tasks" gs-id="tasks" gs-x="0" gs-y="5" gs-w="4" gs-h="6">
+            <div class="grid-stack-item-content">{% include 'partials/tasks_widget.html' %}</div>
+        </div>
+
+        <!-- Habits -->
+        <div class="grid-stack-item" id="habits" gs-id="habits" gs-x="4" gs-y="5" gs-w="4" gs-h="6">
+            <div class="grid-stack-item-content">{% include 'partials/habits_widget.html' %}</div>
+        </div>
+
+        <!-- Words -->
+        <div class="grid-stack-item" id="words" gs-id="words" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
+            <div class="grid-stack-item-content">{% include 'partials/words_widget.html' %}</div>
+        </div>
+
+        <!-- Rules -->
+        <div class="grid-stack-item" id="rules" gs-id="rules" gs-x="0" gs-y="11" gs-w="8" gs-h="4">
+            <div class="grid-stack-item-content">{% include 'widgets/rules_widget.html' %}</div>
+        </div>
+
+        <!-- Sticky Thoughts -->
+        <div class="grid-stack-item" id="stickers" gs-id="stickers" gs-x="8" gs-y="5" gs-w="4" gs-h="6">
+            <div class="grid-stack-item-content">{% include 'widgets/stickers_widget.html' %}</div>
+        </div>
+    </div>
+
+    <div id="toast">Saved successfully!</div>
+
+    {% include 'partials/footer.html' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', path='js/services/NotificationService.js') }}"></script>
+    <script src="{{ url_for('static', path='js/services/WidgetSettingsService.js') }}"></script>
+    <script>
+        window.P_CHRONO_DATE = '{{ today_for_calendar.strftime("%Y-%m-%d") }}';
+        window.P_DASHBOARD_LAYOUT = {{ dashboard_layout|safe if dashboard_layout else '{}' }};
+        window.P_ACTIVE_LANGUAGES = {{ active_languages|tojson|safe }};
+        window.P_ALL_LANGUAGES = {{ all_languages|tojson|safe }};
+    </script>
+    
+    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=16"></script>
+    <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v=6"></script>
+    <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=10"></script>
+    <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=6"></script>
+    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=30"></script>
+{% endblock %}

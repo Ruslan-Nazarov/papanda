@@ -106,10 +106,13 @@ window.markTripletLearned = async function (eng, btn) {
         });
         const data = await resp.json();
         if (data.status === 'success') {
-            const extraRow = btn.closest('tr');
-            const mainRow  = extraRow?.previousElementSibling;
-            if (extraRow) extraRow.style.opacity = '0.3';
-            if (mainRow)  mainRow.style.opacity  = '0.3';
+            const row = btn.closest('.word-row');
+            if (row) {
+                row.style.opacity = '0.3';
+                // Also disable the edit button to indicate it's inactive
+                const editBtn = row.querySelector('button[onclick*="openEditModalFromData"]');
+                if (editBtn) editBtn.style.display = 'none';
+            }
             btn.style.display = 'none';
             showToast(`"${eng}" marked as learned!`);
         } else {
@@ -141,7 +144,8 @@ window.refreshWords = async function () {
             // Foreign words
             activeLangs.forEach(lang => {
                 const span = document.createElement('span');
-                span.style.cssText = 'font-weight: 850; color: var(--color-text-dark); font-size: 0.9rem; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;';
+                span.className = 'font-study';
+                span.style.cssText = 'font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;';
                 span.textContent = (word.translations && word.translations[lang]) || '';
                 grid.appendChild(span);
             });

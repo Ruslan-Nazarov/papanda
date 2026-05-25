@@ -1,17 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Dialectics - Papanda</title>
-    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}">
+{% block title %}Dialectics - Papanda{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-</head>
+{% endblock %}
 
-<body>
-
+{% block content %}
     <div class="dialectics-container">
         <a href="/" class="back-link">← Back to Dashboard</a>
 
@@ -24,16 +21,16 @@
         <div class="note-interface">
 
             <div class="note-header">
-                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Enter Dialectics Title..." style="flex: 1;">
+                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Enter Dialectics Title..." style="flex: 1; font-family: inherit;">
                 
 
 
                 <div class="header-actions">
                     <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
-                        style="display: none;">🗑️ Delete</button>
-                    <button class="btn btn-primary btn-save-note" id="btnLoadDialectics">📂 Load</button>
-                    <button class="btn btn-warning" id="btnPinNote">📌 Pin</button>
-                    <button class="btn btn-success btn-save-note" id="btnSaveDialectics">💾 Save Dialectics</button>
+                        style="display: none; font-family: inherit;">🗑️ Delete</button>
+                    <button class="btn btn-primary btn-save-note" id="btnLoadDialectics" style="font-family: inherit;">📂 Load</button>
+                    <button class="btn btn-warning" id="btnPinNote" style="font-family: inherit;">📌 Pin</button>
+                    <button class="btn btn-success btn-save-note" id="btnSaveDialectics" style="font-family: inherit;">💾 Save Dialectics</button>
                 </div>
             </div>
 
@@ -56,10 +53,10 @@
                                 <div class="sticker-icon-postit"></div>
                             </div>
                             
-                            <button id="btnMathFormula" class="editor-btn-math" title="Insert Formula">∑</button>
-                            <button id="btnBoldFormat" class="editor-btn-bold" style="display: none;" title="Make Bold">B</button>
-                            <button class="editor-btn-expand" id="btnEditorExpand" title="Expand to fullscreen">⛶</button>
-                            <button class="editor-btn-close" id="btnEditorClose" title="Close">✖</button>
+                            <button id="btnMathFormula" class="editor-btn-math" title="Insert Formula" style="font-family: inherit;">∑</button>
+                            <button id="btnBoldFormat" class="editor-btn-bold" style="display: none; font-family: inherit;" title="Make Bold">B</button>
+                            <button class="editor-btn-expand" id="btnEditorExpand" title="Expand to fullscreen" style="font-family: inherit;">⛶</button>
+                            <button class="editor-btn-close" id="btnEditorClose" title="Close" style="font-family: inherit;">✖</button>
                         </div>
                     </div>
 
@@ -96,14 +93,14 @@
                     <div id="editor-graph" class="tab-content">
                         <div class="graph-editor-ui">
                             <div class="graph-input-group">
-                                <input type="text" id="graphFuncInput" placeholder="Например: x^2 or sin(x)" class="graph-input">
-                                <button class="graph-btn-plot" id="btnGraphPlot">Построить</button>
+                                <input type="text" id="graphFuncInput" placeholder="Например: x^2 or sin(x)" class="graph-input" style="font-family: var(--font-editor);">
+                                <button class="graph-btn-plot" id="btnGraphPlot" style="font-family: inherit;">Построить</button>
                             </div>
                             
                             <div id="graphPreview" class="graph-preview">
                                 <div class="graph-placeholder-text">Введите функцию и нажмите "Построить"</div>
                             </div>
-                            <button class="graph-btn-insert" id="btnGraphInsert">Вставить в текст</button>
+                            <button class="graph-btn-insert" id="btnGraphInsert" style="font-family: inherit;">Вставить в текст</button>
                         </div>
                     </div>
                     <!-- Shapes Tab -->
@@ -111,22 +108,22 @@
                         <div class="shapes-editor-ui">
                             <div class="shapes-toolbar">
                                 <div class="tool-group">
-                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение">🖱️</button>
-                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование">✏️</button>
+                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение" style="font-family: inherit;">🖱️</button>
+                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование" style="font-family: inherit;">✏️</button>
                                 </div>
                                 <div class="tool-group">
-                                    <button class="shape-tool" data-shape="rect" title="Rectangle">⬜</button>
-                                    <button class="shape-tool" data-shape="circle" title="Circle">⭕</button>
-                                    <button class="shape-tool" data-shape="triangle" title="Triangle">📐</button>
-                                    <button class="shape-tool" data-shape="diamond" title="Diamond">💎</button>
-                                    <button class="shape-tool" data-shape="line" title="Line">➖</button>
-                                    <button class="shape-tool" data-shape="arrow" title="Arrow">➡</button>
-                                    <button class="shape-tool" data-shape="text" title="Label (Vertex/Side)">T</button>
+                                    <button class="shape-tool" data-shape="rect" title="Rectangle" style="font-family: inherit;">⬜</button>
+                                    <button class="shape-tool" data-shape="circle" title="Circle" style="font-family: inherit;">⭕</button>
+                                    <button class="shape-tool" data-shape="triangle" title="Triangle" style="font-family: inherit;">📐</button>
+                                    <button class="shape-tool" data-shape="diamond" title="Diamond" style="font-family: inherit;">💎</button>
+                                    <button class="shape-tool" data-shape="line" title="Line" style="font-family: inherit;">➖</button>
+                                    <button class="shape-tool" data-shape="arrow" title="Arrow" style="font-family: inherit;">➡</button>
+                                    <button class="shape-tool" data-shape="text" title="Label (Vertex/Side)" style="font-family: inherit;">T</button>
                                 </div>
                                 <div class="tool-group">
                                     <input type="color" id="shapeColor" value="#3b82f6" title="Цвет">
-                                    <button class="shape-tool-delete" id="btnShapeDelete" title="Удалить">🗑️</button>
-                                    <button class="shape-tool-clear" id="btnShapeClear" title="Очистить всё">🧹</button>
+                                    <button class="shape-tool-delete" id="btnShapeDelete" title="Удалить" style="font-family: inherit;">🗑️</button>
+                                    <button class="shape-tool-clear" id="btnShapeClear" title="Очистить всё" style="font-family: inherit;">🧹</button>
                                 </div>
                             </div>
                             
@@ -134,17 +131,17 @@
                                 <canvas id="shapesCanvas"></canvas>
                             </div>
 
-                            <button class="graph-btn-insert" id="btnShapesInsert">Вставить в текст</button>
+                            <button class="graph-btn-insert" id="btnShapesInsert" style="font-family: inherit;">Вставить в текст</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="editor-actions">
                     <div class="editor-word-count" id="wordCount">Editor Active</div>
-                    <div class="debug-logs" id="editorDebugLogs" style="font-family: monospace; font-size: 10px; color: #94a3b8; max-height: 40px; overflow-y: auto; flex: 1; margin: 0 15px; border-left: 1px solid #f1f5f9; padding-left: 10px;"></div>
+                    <div class="debug-logs" id="editorDebugLogs" style="font-family: var(--font-mono); font-size: 10px; color: #94a3b8; max-height: 40px; overflow-y: auto; flex: 1; margin: 0 15px; border-left: 1px solid #f1f5f9; padding-left: 10px;"></div>
                     <div>
-                        <button class="btn btn-secondary editor-btn-cancel" id="btnEditorCancel">Отмена</button>
-                        <button class="btn btn-primary editor-btn-save" id="btnEditorSave">ОК</button>
+                        <button class="btn btn-secondary editor-btn-cancel" id="btnEditorCancel" style="font-family: inherit;">Отмена</button>
+                        <button class="btn btn-primary editor-btn-save" id="btnEditorSave" style="font-family: inherit;">ОК</button>
                     </div>
                 </div>
                 <div id="editorResizeHandle" class="editor-resize-handle"></div>
@@ -161,7 +158,7 @@
             <div id="loadDialecticsList" class="load-notes-list">
                 <div style="color: #64748b; text-align: center;">Loading...</div>
             </div>
-            <button id="btnModalCancel" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
+            <button id="btnModalCancel" class="btn btn-secondary" style="margin-top: 20px; font-family: inherit;">Cancel</button>
         </div>
     </div>
 
@@ -170,14 +167,14 @@
         <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; border: 2px solid #e2e8f0;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                 <h2 id="dialecticsViewTitle" style="margin: 0; color: #1e293b;">Dialectics Title</h2>
-                <button class="btn-close-modal" onclick="document.getElementById('dialecticsViewModal').style.display='none'">×</button>
+                <button class="btn-close-modal" onclick="document.getElementById('dialecticsViewModal').style.display='none'" style="font-family: inherit;">×</button>
             </div>
             <div id="dialecticsViewBody" style="color: #475569; line-height: 1.6; font-size: 1.1em; background: #f8fafc; padding: 20px; border-radius: 10px;">
                 <!-- Content will be injected here -->
             </div>
             <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                <button id="btnViewModalEdit" class="btn btn-primary" style="background-color: #6366f1;">Edit in Canvas</button>
-                <button onclick="document.getElementById('dialecticsViewModal').style.display='none'" class="btn btn-secondary">Close</button>
+                <button id="btnViewModalEdit" class="btn btn-primary" style="background-color: #6366f1; font-family: inherit;">Edit in Canvas</button>
+                <button onclick="document.getElementById('dialecticsViewModal').style.display='none'" class="btn btn-secondary" style="font-family: inherit;">Close</button>
             </div>
         </div>
     </div>
@@ -187,11 +184,11 @@
 
     {% include 'partials/modals/note_modals.html' %}
     {% include 'partials/sticker_modal.html' %}
+{% endblock %}
 
+{% block scripts %}
     <script src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
     <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
 
     {% include 'partials/footer.html' %}
-</body>
-
-</html>
+{% endblock %}

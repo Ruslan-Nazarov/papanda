@@ -36,7 +36,6 @@ class LanguageService:
                 langs = ['en', 'it', 'de']
         
         res = list(dict.fromkeys(langs))
-        if 'en' not in res: res.append('en')
         return res
 
     async def get_all_language_names(self) -> Dict[str, str]:

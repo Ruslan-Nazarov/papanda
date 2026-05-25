@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход — Papanda Dashboard</title>
+{% extends "base.html" %}
+
+{% block title %}Вход — Papanda Dashboard{% endblock %}
+
+{% block extra_head %}
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #FFF5EC;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -19,7 +14,7 @@
         .login-card {
             background-color: white;
             padding: 40px;
-            border-radius: 15px;
+            border-radius: var(--radius-lg, 15px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 360px;
@@ -31,7 +26,7 @@
             font-size: 2.2em;
             font-weight: bold;
             margin-bottom: 25px;
-            color: #F2994A;
+            color: var(--color-primary, #F2994A);
         }
 
         h2 { font-weight: normal; margin-bottom: 20px; font-size: 1.1em; color: #555; }
@@ -42,43 +37,46 @@
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
-            border-radius: 8px;
+            border-radius: var(--radius-sm, 8px);
             font-size: 1em;
             box-sizing: border-box;
             outline: none;
+            font-family: inherit;
         }
         input:focus {
-            border-color: #F2994A;
+            border-color: var(--color-primary, #F2994A);
         }
 
         button {
             width: 100%;
             padding: 12px;
-            background-color: #F2994A;
+            background-color: var(--color-primary, #F2994A);
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm, 8px);
             color: white;
             font-weight: bold;
             font-size: 1.1em;
             cursor: pointer;
             transition: background 0.2s;
             margin-top: 10px;
+            font-family: inherit;
         }
         button:hover {
-            background-color: #E08E45;
+            background-color: var(--color-primary-dark, #E08E45);
         }
 
-        .error { color: #ff5252; margin-bottom: 15px; font-size: 0.9em; height: 1em; }
+        .error { color: var(--color-error, #ff5252); margin-bottom: 15px; font-size: 0.9em; height: 1em; }
         
         .footer-link {
             margin-top: 20px;
             font-size: 0.9em;
             color: #888;
         }
-        .footer-link a { color: #F2994A; text-decoration: none; font-weight: bold; }
+        .footer-link a { color: var(--color-primary, #F2994A); text-decoration: none; font-weight: bold; }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="login-card">
         <div class="logo">Papanda</div>
         <h2>Вход в дашборд</h2>
@@ -107,5 +105,4 @@
             Нет аккаунта? <a href="/register">Зарегистрироваться</a>
         </div>
     </div>
-</body>
-</html>
+{% endblock %}
