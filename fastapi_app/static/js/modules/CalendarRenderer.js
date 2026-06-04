@@ -5,8 +5,8 @@
 import { ModalManager } from './ModalManager.js';
 
 export const CalendarRenderer = {
-    render(records, currentYear, currentMonth) {
-        const grid = document.getElementById('calendarGrid');
+    render(records, currentYear, currentMonth, containerId = 'calendarGrid') {
+        const grid = document.getElementById(containerId);
         if (!grid) return;
 
         grid.innerHTML = '';
@@ -43,15 +43,47 @@ export const CalendarRenderer = {
             cell.className = 'calendar-cell' + (inMonth ? '' : ' other-month') + (key === todayStr ? ' today' : '');
             cell.dataset.date = key;
             
+            const dayEvents = eventMap[key] || [];
+            const count = dayEvents.length;
+            const hasUnfinished = dayEvents.some(e => !e.done);
+            const countBadge = count > 0 ? `<span style="font-size: 0.7rem; color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 700;">${count}</span>` : '';
+            const unfinishedDot = (count > 0 && hasUnfinished) ? `<span style="width: 8px; height: 8px; background-color: #FF9800; border-radius: 50%; display: inline-block; margin-left: 6px; box-shadow: 0 0 6px rgba(255, 152, 0, 0.9);" title="Has unfinished events"></span>` : '';
+
+            cell.style.cursor = 'pointer';
+            cell.onclick = () => {
+                if(window.openDayViewModal) {
+                    window.openDayViewModal(key);
+                }
+            };
+            
             cell.innerHTML = `
-                <div class="cell-date">${dayNum}</div>
-                <div class="events-container cell-body"></div>
-                <button class="cell-add" onclick="event.stopPropagation(); window.openAddEventForDay('${key}')">+</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--color-border-light); background: var(--color-bg-white); border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+                    <div style="display: flex; align-items: center;">
+                        <span class="cell-date" style="font-weight: 800; font-size: 1.1rem; color: var(--color-text-dark);">${dayNum}</span>
+                        ${countBadge}
+                        ${unfinishedDot}
+                    </div>
+                    <button class="cell-add" title="Add Event" style="background: none; border: none; font-size: 1.4rem; line-height: 0.5; cursor: pointer; color: var(--color-text-faint); transition: color 0.2s;">+</button>
+                </div>
+                <div class="events-container cell-body" style="overflow: hidden; flex: 1; padding: 4px; display: flex; flex-direction: column; gap: 2px;"></div>
             `;
 
-            const eventsContainer = cell.querySelector('.events-container');
+            const addBtn = cell.querySelector('.cell-add');
+            if (addBtn) {
+                addBtn.onclick = (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    if (window.openAddEventForDay) {
+                        window.openAddEventForDay(key);
+                    }
+                };
+            }
 
-            (eventMap[key] || []).forEach(e => {
+            const eventsContainer = cell.querySelector('.events-container');
+            const maxEvents = 4; // Show up to 4 items before truncation
+            const displayEvents = dayEvents.slice(0, maxEvents);
+
+            displayEvents.forEach(e => {
                 const chip = document.createElement('div');
                 chip.className = 'event-chip' + (e.done ? ' done' : '') + (e.important ? ' important' : '');
                 chip.dataset.id = e.id;
@@ -65,10 +97,7 @@ export const CalendarRenderer = {
                         ${e.important ? '<span title="Important">⭐</span>' : ''}
                         ${e.recurrence_id ? '<span title="Recurring">🔁</span>' : ''}
                         ${stickerIndicator}
-                        <span class="text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${e.title}</span>
-                    </div>
-                    <div class="chip-actions">
-                        <button class="three-dots" title="Menu">⋮</button>
+                        <span class="text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 0.75rem;">${e.title}</span>
                     </div>
                 `;
 
@@ -79,14 +108,15 @@ export const CalendarRenderer = {
                     window.showEventContextMenu(e, ev);
                 };
 
-                const dotsBtn = chip.querySelector('.three-dots');
-                dotsBtn.onclick = (ev) => {
-                    ev.stopPropagation();
-                    window.showEventContextMenu(e, ev);
-                };
-
                 eventsContainer.appendChild(chip);
             });
+
+            if (dayEvents.length > maxEvents) {
+                const moreChip = document.createElement('div');
+                moreChip.style.cssText = "font-size: 0.7rem; color: var(--color-text-faint); text-align: center; padding: 4px 0; font-weight: 700; margin-top: auto; border-top: 1px dashed var(--color-border-light);";
+                moreChip.textContent = `+ ${dayEvents.length - maxEvents} more`;
+                eventsContainer.appendChild(moreChip);
+            }
 
             grid.appendChild(cell);
         }
@@ -116,8 +146,14 @@ export const CalendarRenderer = {
                             if (resp.ok) {
                                 if (window.showToast) window.showToast('Event moved', 'success');
                                 // Minimal local state update
-                                const rec = eventRecords.find(r => r.id == eventId);
-                                if (rec) rec.date = newDate;
+                                if (window.eventRecords) {
+                                    const rec = window.eventRecords.find(r => r.id == eventId);
+                                    if (rec) rec.date = newDate;
+                                }
+                                // Trigger silent refresh to update counts and widgets
+                                if (window.refreshCurrentView) {
+                                    window.refreshCurrentView('Event');
+                                }
                             }
                         } catch (e) { console.error("DnD Error:", e); }
                     }

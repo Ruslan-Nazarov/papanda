@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from .sync_service import SyncService
 from .context_service import ContextService
@@ -30,3 +30,7 @@ class StateManager:
     async def remove_word_from_cache(self, eng: str) -> None:
         """Удаляет слово из кэша текущих слов."""
         await self.context_service.remove_word_from_cache(eng)
+
+    async def replace_word_in_cache(self, eng: str) -> Optional[Dict[str, Any]]:
+        """Удаляет слово из кэша и заменяет новым."""
+        return await self.context_service.replace_word_in_cache(eng)

@@ -6,6 +6,7 @@
         </div>
         <div class="widget-actions">
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Task')" title="Full View">☰</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -34,7 +35,7 @@
         <ul class="premium-list">
             {% for task in tasks %}
             <li class="premium-list-item" data-id="{{ task.id }}">
-                <span class="premium-item-name">{{ task.name }}</span>
+                <span class="premium-item-name" title="{{ task.name|e }}">{{ task.name }}</span>
                 <span class="task-meta">
                     {% if task.created_at %}
                         {% set diff = now_utc - task.created_at %}

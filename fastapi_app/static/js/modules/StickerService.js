@@ -9,8 +9,10 @@ export class StickerService {
         return await res.json();
     }
 
-    static async getByParent(parentType, parentId) {
-        const res = await fetch(`/api/stickers/${parentType}/${parentId}/`);
+    static async getByParent(parentType, parentId, secondaryId = null) {
+        let url = `/api/stickers/${parentType}/${parentId}/`;
+        if (secondaryId) url += `?recurrence_id=${secondaryId}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch parent stickers');
         return await res.json();
     }

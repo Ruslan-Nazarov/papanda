@@ -19,12 +19,13 @@
 }
 
 .widget-settings-trigger {
-    opacity: 0;
-    transition: opacity var(--transition-base);
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none;
 }
 
 .premium-card:hover .widget-settings-trigger {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .widget-header {

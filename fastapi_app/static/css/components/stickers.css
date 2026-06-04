@@ -24,10 +24,11 @@
 }
 
 .sticker-thought.large {
-    width: 200px;
-    height: 200px;
-    padding: 24px;
-    font-size: 1.1rem;
+    width: 400px;
+    min-height: 280px;
+    height: auto;
+    padding: 32px;
+    font-size: 1.25rem;
     transform: rotate(0) !important;
     margin: 0;
 }
@@ -61,10 +62,14 @@
     font-size: 0.75rem;
     color: rgba(0,0,0,0.7);
     margin: 0 0 4px 0;
-    padding-bottom: 2px;
+    padding: 2px 0 3px 0;
+    line-height: 1.6;
     border-bottom: 1px solid rgba(0,0,0,0.06);
     white-space: nowrap;
-    overflow: hidden;
+    max-width: 100%;
+    display: block;
+    overflow: clip;
+    overflow-clip-margin: 0;
     text-overflow: ellipsis;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -105,6 +110,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.sticker-thought.large .sticker-item-text {
+    white-space: normal;
+    word-break: break-word;
 }
 
 .sticker-check-icon {

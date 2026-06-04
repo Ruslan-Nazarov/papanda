@@ -24,8 +24,10 @@ export class StickerModal {
         this.state.source = options.source || (this.state.id ? 'global' : 'parent');
         this.state.parentType = options.parentType || null;
         this.state.parentId = options.parentId || null;
+        this.state.secondaryId = options.secondaryId || null;
         this.state.noteSource = options.noteSource || null;
         this.state.noteId = null;
+        this.updateAttachedNoteUI(null);
 
         const titleEl = document.getElementById('stickerDetailTitle');
         const ta = document.getElementById('stickerDetailText');
@@ -36,6 +38,27 @@ export class StickerModal {
         
         this.state.type = 'text';
         this.state.color = '#fff9c4';
+
+        // If drafting for an event, check if there's already a draft sticker and attached note
+        if (this.state.source === 'event_editor') {
+            const draftText = document.getElementById('editEventStickerText')?.value;
+            const draftTitle = document.getElementById('editEventStickerTitle')?.value;
+            this.state.type = document.getElementById('editEventStickerType')?.value || 'text';
+            this.state.color = document.getElementById('editEventStickerColor')?.value || '#fff9c4';
+            
+            if (titleEl) titleEl.value = draftTitle || '';
+            if (ta) ta.value = draftText || '';
+
+            const draftNoteId = document.getElementById('editEventStickerNoteId')?.value;
+            if (draftNoteId) {
+                this.state.noteId = parseInt(draftNoteId);
+                try {
+                    const notes = await StickerService.searchNotes();
+                    const note = notes.find(n => n.id === this.state.noteId);
+                    if (note) this.updateAttachedNoteUI(note);
+                } catch (e) { console.error(e); }
+            }
+        }
         
         if (this.state.id) {
             try {
@@ -156,12 +179,6 @@ export class StickerModal {
             if (isLarge) {
                 rendered.classList.add('interactive-preview');
                 rendered.onclick = (e) => this.handlePreviewClick(e);
-                
-                // Add Hint
-                const hint = document.createElement('div');
-                hint.className = 'sticker-interaction-hint';
-                hint.innerText = 'Click items to toggle status';
-                container.appendChild(hint);
             } else {
                 rendered.style.pointerEvents = 'none';
             }
@@ -227,16 +244,20 @@ export class StickerModal {
     static updateAttachedNoteUI(note) {
         const container = document.getElementById('stickerNoteSection');
         const contentEl = document.getElementById('attachedNoteContent');
+        const attachBtnGroup = document.getElementById('stickerAttachNoteBtnGroup');
         if (container && contentEl && note) {
             contentEl.innerHTML = `
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; font-size: 0.8rem; color: var(--color-text-dark);">${note.category || 'General'}</div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-body);">${note.note.substring(0, 80)}...</div>
+                <div style="flex: 1; text-align: left;">
+                    <div style="font-weight: 700; font-size: 0.8rem; color: var(--color-primary);">${note.category || 'General'}</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-body); line-height: 1.4;">${note.note.substring(0, 80)}...</div>
                 </div>
+                <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--color-error); padding: 4px; display: flex; align-items: center; justify-content: center;" onclick="removeNoteFromSticker()" title="Detach Note">&times;</button>
             `;
             container.style.display = 'block';
-        } else if (container) {
-            container.style.display = 'none';
+            if (attachBtnGroup) attachBtnGroup.style.display = 'none';
+        } else {
+            if (container) container.style.display = 'none';
+            if (attachBtnGroup) attachBtnGroup.style.display = 'block';
         }
     }
 
@@ -279,14 +300,17 @@ export class StickerModal {
             const eTitle = document.getElementById('editEventStickerTitle');
             const eColor = document.getElementById('editEventStickerColor');
             const eType = document.getElementById('editEventStickerType');
+            const eNoteId = document.getElementById('editEventStickerNoteId');
 
             if (eText) eText.value = finalText;
             if (eTitle) eTitle.value = finalTitle;
             if (eColor) eColor.value = this.state.color;
             if (eType) eType.value = this.state.type;
+            if (eNoteId) eNoteId.value = this.state.noteId || '';
 
             if (window.EventService && window.EventService.updateDraftStickerUI) {
-                window.EventService.updateDraftStickerUI(finalText.length > 0 || finalTitle.length > 0);
+                const hasDraft = (finalText.length > 0 || finalTitle.length > 0 || (this.state.noteId !== null && this.state.noteId !== undefined));
+                window.EventService.updateDraftStickerUI(hasDraft);
             }
             this.close();
             return;
@@ -346,8 +370,43 @@ export class StickerModal {
                 if (typeof window.showToast === 'function') window.showToast('✓ Sticker updated', 'success');
             } else {
                 if (this.state.parentType && this.state.parentId) {
-                    payload[`${this.state.parentType}_id`] = this.state.parentId;
+                    const parsedId = parseInt(this.state.parentId, 10);
+                    if (!isNaN(parsedId)) {
+                        payload[`${this.state.parentType}_id`] = parsedId;
+                    } else {
+                        payload[`${this.state.parentType}_id`] = this.state.parentId; // fallback for non-integer IDs if any
+                    }
+                    if (this.state.parentType === 'event' && this.state.secondaryId) {
+                        payload.recurrence_id = this.state.secondaryId;
+                    }
+                } else {
+                    // Fallback: If state was somehow lost, try to detect open parent modals in the DOM
+                    const detailEventId = document.getElementById('detailEventId')?.value;
+                    const editEventId = document.getElementById('editEventId')?.value;
+                    const fallbackEventId = detailEventId || editEventId;
+
+                    const editTaskId = document.getElementById('editTaskId')?.value;
+                    const editHabitId = document.getElementById('editHabitId')?.value;
+                    const editNoteId = document.getElementById('editNoteId')?.value;
+
+                    if (fallbackEventId) {
+                        payload['event_id'] = parseInt(fallbackEventId, 10);
+                        const detailRecId = document.getElementById('detailEventRecId')?.value;
+                        const editRecId = document.getElementById('editEventRecId')?.value;
+                        const fallbackRecId = detailRecId || editRecId;
+                        if (fallbackRecId) {
+                            payload['recurrence_id'] = fallbackRecId;
+                        }
+                    } else if (editTaskId) {
+                        payload['task_id'] = parseInt(editTaskId, 10);
+                    } else if (editHabitId) {
+                        payload['habit_id'] = parseInt(editHabitId, 10);
+                    } else if (editNoteId) {
+                        payload['note_id'] = parseInt(editNoteId, 10);
+                    }
                 }
+                
+                console.log("[StickerModal] Saving new sticker with payload:", payload);
                 const created = await StickerService.save(null, payload);
                 
                 // Dispatch event so any listening page can update its UI
@@ -378,5 +437,6 @@ export class StickerModal {
         this.state.element = null;
         this.state.parentType = null;
         this.state.parentId = null;
+        this.state.secondaryId = null;
     }
 }

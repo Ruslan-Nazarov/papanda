@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func, or_, delete, text
+from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
@@ -68,6 +69,7 @@ class WordService:
                 current_trans = dict(w.translations or {})
                 current_trans.update(translations)
                 w.translations = current_trans
+                flag_modified(w, 'translations')
             else:
                 w = models.WordStats(
                     word=eng, eng=eng, 
@@ -195,8 +197,9 @@ class WordService:
         return await self.stats.get_knowledge_counts(languages)
 
     async def get_fully_learned_count(self, languages: Optional[List[str]] = None):
-        # We ignore languages arg for now as it's global
-        return await self.stats.get_fully_learned_count()
+        if not languages:
+            languages = await self.langs.get_active_languages()
+        return await self.stats.get_fully_learned_count(languages)
     
     async def save_daily_snapshot(self, date_obj, coverage, imw, total, learned):
         await self.stats.save_daily_snapshot(date_obj, coverage, imw, total, learned)

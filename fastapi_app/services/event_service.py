@@ -217,7 +217,7 @@ class EventService(BaseService):
                 await self._process_inline_update(event, data)
 
             # 3. Привязка стикеров
-            await self._process_inline_stickers(event, data.get("stickers", []), data.get("recurrence_id"))
+            await self._process_inline_stickers(event, data.get("stickers", []), event.recurrence_id)
 
             await self.db.commit()
             return True, "Success", event_id

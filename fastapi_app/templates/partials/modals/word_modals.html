@@ -1,11 +1,11 @@
 <!-- Word Edit Modal -->
-<div id="editWordModal" class="modal">
+<div id="editWordModal" class="modal premium-modal">
     <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl);">
         <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
             <h2 id="modalWordEng" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em;">Edit Word</h2>
         </div>
         
-        <form action="/update_word_data" method="post" style="margin: 0;">
+        <form id="dashboardEditWordForm" onsubmit="event.preventDefault(); window.saveDashboardWordEdit();" style="margin: 0;">
             <div class="modal-body" style="padding: 24px;">
                 <input type="hidden" name="word_eng" id="inputWordEng" />
 

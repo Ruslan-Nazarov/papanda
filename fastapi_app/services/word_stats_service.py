@@ -20,26 +20,38 @@ class WordStatsService:
             coverage, imw, learned_count = 0.0, 0.0, 0
             total_lang_shows = 0
             lang_coverages: List[float] = []
+            
+            coverage_by_lang = {}
+            imw_by_lang = {}
+            learned_count_by_lang = {}
 
             if total_count > 0 and active_langs:
                 for lang in active_langs:
                     # Coverage for one language = (words with shows > 0) / total words
                     res_learned = await self.db.execute(
-                        text(f"SELECT COUNT(*) FROM word_stats WHERE (JSON_EXTRACT(show_stats, '$.{lang}') > 0 OR count > 0)")
+                        text(f"SELECT COUNT(*) FROM word_stats WHERE JSON_EXTRACT(show_stats, '$.{lang}') > 0")
                     )
                     count_learned = res_learned.scalar() or 0
-                    lang_coverages.append(count_learned / total_count)
+                    lang_cov = count_learned / total_count
+                    lang_coverages.append(lang_cov)
+                    
+                    coverage_by_lang[lang] = round(lang_cov * 100, 2)
+                    learned_count_by_lang[lang] = count_learned
                     
                     # Total shows for iMW
                     res_shows = await self.db.execute(
-                        text(f"SELECT SUM(MAX(IFNULL(JSON_EXTRACT(show_stats, '$.{lang}'), 0), IFNULL(count, 0))) FROM word_stats")
+                        text(f"SELECT SUM(IFNULL(JSON_EXTRACT(show_stats, '$.{lang}'), 0)) FROM word_stats")
                     )
-                    total_lang_shows += (res_shows.scalar() or 0)
+                    lang_shows = res_shows.scalar() or 0
+                    total_lang_shows += lang_shows
+                    
+                    lang_imw = round((lang_shows / (total_count * 80)) * 100, 2)
+                    imw_by_lang[lang] = lang_imw
 
                 coverage = round((sum(lang_coverages) / len(lang_coverages)) * 100, 2)
                 target_shows = total_count * 80 * len(active_langs)
                 imw = round((total_lang_shows / target_shows) * 100, 2) if target_shows > 0 else 0.0
-                learned_count = int(sum([c * total_count for c in lang_coverages]) / len(lang_coverages))
+                learned_count = int(sum(learned_count_by_lang.values()) / len(active_langs))
             
             # Shows today
             today = datetime.now().date()
@@ -55,12 +67,16 @@ class WordStatsService:
                 'coverage': coverage,
                 'imw': imw,
                 'shown_today': shown_today,
-                'today': today
+                'today': today,
+                'coverage_by_lang': coverage_by_lang,
+                'imw_by_lang': imw_by_lang,
+                'learned_count_by_lang': learned_count_by_lang
             }
         except Exception as e:
             logger.error(f"Error calculating metrics: {e}")
             return {
-                'total_count': 0, 'learned_count': 0, 'coverage': 0.0, 'imw': 0.0, 'shown_today': 0, 'today': datetime.now().date()
+                'total_count': 0, 'learned_count': 0, 'coverage': 0.0, 'imw': 0.0, 'shown_today': 0, 'today': datetime.now().date(),
+                'coverage_by_lang': {}, 'imw_by_lang': {}, 'learned_count_by_lang': {}
             }
 
     async def get_distribution_stats(self, active_langs: List[str]) -> Dict[str, int]:
@@ -150,10 +166,13 @@ class WordStatsService:
             logger.error(f"Error getting knowledge counts: {e}")
         return counts
 
-    async def get_fully_learned_count(self) -> int:
-        """Returns total count of fully learned words."""
+    async def get_fully_learned_count(self, active_langs: List[str]) -> int:
+        """Returns total count of fully learned words (known in all active languages)."""
+        if not active_langs:
+            return 0
         try:
-            stmt = select(func.count(models.WordStats.word)).where(models.WordStats.is_learned == True)
+            conditions = " AND ".join([f"JSON_EXTRACT(knowledge_stats, '$.{lang}') = 1" for lang in active_langs])
+            stmt = text(f"SELECT COUNT(*) FROM word_stats WHERE {conditions}")
             res = await self.db.execute(stmt)
             return res.scalar() or 0
         except Exception as e:

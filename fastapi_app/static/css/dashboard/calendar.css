@@ -105,8 +105,11 @@
 
 .event-chip.done {
     opacity: 0.6;
-    text-decoration: line-through;
     background: #f8fafc;
+}
+.event-chip.done .text {
+    text-decoration: line-through !important;
+    color: #64748b !important;
 }
 
 .event-chip.important {

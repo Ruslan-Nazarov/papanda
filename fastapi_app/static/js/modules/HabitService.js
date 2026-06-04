@@ -31,7 +31,8 @@ export const HabitService = {
             });
             if (r.ok) {
                 ModalManager.close('editHabitModal');
-                location.reload();
+                if (window.refreshCurrentView) window.refreshCurrentView('Habit');
+                else location.reload();
             }
         } catch (e) {
             console.error("[HabitService] save error:", e);

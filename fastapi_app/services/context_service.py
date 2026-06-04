@@ -86,10 +86,15 @@ class ContextService:
                 for lang in active_langs
             ]
             
-            stmt = select(models.WordStats).where(
-                or_(*lang_conditions),
-                models.WordStats.is_learned == False
-            ).order_by(func.random()).limit(3)
+            if lang_conditions:
+                stmt = select(models.WordStats).where(
+                    or_(*lang_conditions)
+                ).order_by(func.random()).limit(3)
+            else:
+                # Fallback if no active languages
+                stmt = select(models.WordStats).where(
+                    models.WordStats.is_learned == False
+                ).order_by(func.random()).limit(3)
             
             selected_res = await db.execute(stmt)
             selected = selected_res.scalars().all()
@@ -166,3 +171,81 @@ class ContextService:
                 })
             except Exception as e:
                 logger.error(f"Failed to remove word from cache: {e}")
+
+    async def replace_word_in_cache(self, eng: str) -> Optional[Dict[str, Any]]:
+        """Удаляет слово из кэша и заменяет его новым, возвращая новое слово."""
+        async with _get_state_lock():
+            words_str = await get_setting(self.db, 'current_words_cache', '[]')
+            try:
+                words = json.loads(words_str if words_str else '[]')
+                new_words = [w for w in words if w.get('eng') != eng]
+                
+                # Fetch 1 new word
+                from ..services.word_service import WordService
+                word_service = WordService(self.db)
+                active_langs = await word_service.get_active_languages()
+                lang_conditions = [
+                    text(f"JSON_EXTRACT(knowledge_stats, '$.{lang}') IS NOT 1") 
+                    for lang in active_langs
+                ]
+                # Exclude existing words
+                existing_engs = [w.get('eng') for w in new_words]
+                
+                stmt = select(models.WordStats).where(
+                    or_(*lang_conditions),
+                    models.WordStats.is_learned == False
+                )
+                if existing_engs:
+                    stmt = stmt.where(~models.WordStats.eng.in_(existing_engs))
+                    
+                stmt = stmt.order_by(func.random()).limit(1)
+                
+                res = await self.db.execute(stmt)
+                new_w = res.scalar_one_or_none()
+                
+                new_word_data = None
+                if new_w:
+                    now = datetime.now(timezone.utc)
+                    new_word_data = {
+                        'eng': new_w.eng, 
+                        'ru': new_w.ru, 
+                        'meaning': new_w.meaning, 
+                        'is_learned': new_w.is_learned,
+                        'translations': new_w.translations or {},
+                        'it': new_w.it,
+                        'de': new_w.de
+                    }
+                    new_words.append(new_word_data)
+                    
+                    # Update stats for this new word
+                    new_w.count += 1
+                    new_w.last_shown = now.replace(tzinfo=None)
+                    stats = dict(new_w.show_stats or {})
+                    active_langs_raw = await get_setting(self.db, 'active_languages', 'en,it,de')
+                    active_langs_list = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
+                    for lang in active_langs_list:
+                        stats[lang] = stats.get(lang, 0) + 1
+                    if 'en' not in stats: stats['en'] = stats.get('en', 0) + 1
+                    if 'ru' not in stats: stats['ru'] = stats.get('ru', 0) + 1
+                    new_w.show_stats = stats
+                    
+                    today_date = now.date()
+                    daily_res = await self.db.execute(
+                        select(models.WordShowsDaily).where(models.WordShowsDaily.date == today_date)
+                    )
+                    daily_row = daily_res.scalar_one_or_none()
+                    if daily_row:
+                        daily_row.shows_count += 1
+                    else:
+                        self.db.add(models.WordShowsDaily(date=today_date, shows_count=1))
+                        
+                    await self.db.commit()
+
+                await set_settings_batch(self.db, {
+                    'current_words_cache': json.dumps(new_words, ensure_ascii=False)
+                })
+                
+                return new_word_data
+            except Exception as e:
+                logger.error(f"Failed to replace word in cache: {e}")
+                return None

@@ -6,28 +6,29 @@ import { StickerModal } from './StickerModal.js';
 import { ModalManager } from './ModalManager.js';
 
 export class StickerOverview {
-    static async open(parentType, parentId) {
+    static async open(parentType, parentId, secondaryId = null) {
         try {
-            const stickers = await StickerService.getByParent(parentType, parentId);
+            const stickers = await StickerService.getByParent(parentType, parentId, secondaryId);
             
             // Set global context for this parent in the modal state
             StickerModal.state.parentType = parentType;
             StickerModal.state.parentId = parentId;
+            StickerModal.state.secondaryId = secondaryId;
 
             if (stickers.length === 0) {
                 // No stickers -> Open creation directly
-                StickerModal.open({ parentType: parentType, parentId: parentId });
+                StickerModal.open({ parentType: parentType, parentId: parentId, secondaryId: secondaryId });
             } else {
                 // Have stickers -> Open Overview
-                this.render(parentType, parentId, stickers);
+                this.render(parentType, parentId, secondaryId, stickers);
             }
         } catch (e) {
             console.error('Error fetching parent stickers:', e);
-            StickerModal.open({ parentType: parentType, parentId: parentId });
+            StickerModal.open({ parentType: parentType, parentId: parentId, secondaryId: secondaryId });
         }
     }
 
-    static render(type, id, stickers) {
+    static render(type, id, secondaryId, stickers) {
         const modal = document.getElementById('parentStickersOverviewModal');
         const list = document.getElementById('parentStickersList');
         const emptyMsg = document.getElementById('noParentStickersMessage');
@@ -81,6 +82,12 @@ export class StickerOverview {
         try {
             await StickerService.archive(id);
             btn.parentElement.remove();
+            
+            // Dispatch event to refresh widgets immediately
+            window.dispatchEvent(new CustomEvent('stickersUpdated', { 
+                detail: { parentType: StickerModal.state.parentType, parentId: StickerModal.state.parentId } 
+            }));
+
             const list = document.getElementById('parentStickersList');
             if (list && list.children.length === 0) {
                 const emptyMsg = document.getElementById('noParentStickersMessage');

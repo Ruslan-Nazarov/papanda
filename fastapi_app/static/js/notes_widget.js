@@ -161,11 +161,14 @@ class NotesWidget {
         return null;
     }
 
-    async editNote(id) {
+    async editNote(id, noteData = null) {
         try {
-            const res = await fetch(`/api/notes/${id}`);
-            if (!res.ok) throw new Error("Note not found");
-            const note = await res.json();
+            let note = noteData;
+            if (!note) {
+                const res = await fetch(`/api/notes/${id}`);
+                if (!res.ok) throw new Error("Note not found");
+                note = await res.json();
+            }
 
             // Populate Expanded Editor
             const modal = document.getElementById('expandedNoteEditorModal');
@@ -442,41 +445,35 @@ class NotesWidget {
             }
 
             const note = await res.json();
-            const modal = document.getElementById('noteViewModal');
-            if (modal) {
-                document.getElementById('noteViewCategory').innerText = note.category || 'General';
-                document.getElementById('noteViewFullText').innerText = note.note;
-
-                // Store ID for Edit button
-                const idInput = document.getElementById('noteViewNoteId');
-                if (idInput) idInput.value = id;
-                
-                const stickerList = document.getElementById('dbViewNoteStickersList');
-                const stickerBoard = document.getElementById('dbViewNoteStickerBoard');
-                if (stickerList && stickerBoard) {
-                    if (note.stickers && note.stickers.length > 0) {
-                        stickerBoard.style.display = 'block';
-                        stickerList.innerHTML = '';
-                        note.stickers.forEach(s => {
-                            // Use the official renderer for visual consistency
-                            if (typeof window.createStickerElement === 'function') {
-                                const sEl = window.createStickerElement(s, { isWidget: false });
-                                stickerList.appendChild(sEl);
-                            } else {
-                                const sDiv = document.createElement('div');
-                                sDiv.className = 'sticker-mini-preview';
-                                sDiv.style.background = s.color || '#fff9c4';
-                                sDiv.innerText = s.title || s.text.substring(0, 20) + '...';
-                                stickerList.appendChild(sDiv);
-                            }
-                        });
-                    } else {
-                        stickerBoard.style.display = 'none';
+            
+            if (typeof window.openDbCardDetail === 'function') {
+                window.openDbCardDetail({
+                    title: "Note",
+                    date: note.created_at ? window.notesWidget.formatLocalTime(note.created_at) : "",
+                    category: note.category || "General",
+                    body: note.note,
+                    onEdit: () => window.notesWidget.editNote(note.id, note),
+                    onDelete: () => { window.notesWidget.deleteNote(note.id); },
+                    onRenderExtra: (board, list) => {
+                        if (note.stickers && note.stickers.length > 0) {
+                            board.style.display = 'block';
+                            note.stickers.forEach(s => {
+                                if (typeof window.createStickerElement === 'function') {
+                                    const sEl = window.createStickerElement(s, { isWidget: false });
+                                    list.appendChild(sEl);
+                                } else {
+                                    const sDiv = document.createElement('div');
+                                    sDiv.className = 'sticker-mini-preview';
+                                    sDiv.style.background = s.color || '#fff9c4';
+                                    sDiv.innerText = s.title || s.text.substring(0, 20) + '...';
+                                    list.appendChild(sDiv);
+                                }
+                            });
+                        }
                     }
-                }
-
-                if (window.ModalManager) window.ModalManager.open('noteViewModal');
-                else modal.style.display = 'flex';
+                });
+            } else {
+                console.warn("[Notes] Centralized openDbCardDetail is missing");
             }
         } catch (e) { 
             console.error("[Notes] Exception in viewNote:", e);

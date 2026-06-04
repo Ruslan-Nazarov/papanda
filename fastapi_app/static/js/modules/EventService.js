@@ -19,8 +19,8 @@ export const EventService = {
             const important = (e.important === true || e.important === 'true');
             const done = (e.done === true || e.done === 'true');
             const recId = e.recurrence_id || e.recurrenceId || '';
-            const rule = e.rule || e.recurrenceRule || 'none';
-            const end = e.end || e.recurrenceEnd || '';
+            const rule = e.rule || e.recurrenceRule || e.recurrence_rule || 'none';
+            const end = e.end || e.recurrenceEnd || e.recurrence_end || '';
 
             const idEl = document.getElementById('detailEventId');
             if (idEl) idEl.value = id || '';
@@ -53,11 +53,14 @@ export const EventService = {
     async openEdit(id, title, dateStr, recRule, recEnd, recId, color, important = false, done = false) {
         ModalManager.close('eventDetailModal');
 
+        if (id === 'null' || id === 'None') id = null;
+        if (recId === 'null' || recId === 'None') recId = null;
+
         const fields = {
             'editEventId': id || '',
             'editEventRecId': recId || '',
             'editEventTitle': title || '',
-            'editEventDate': id ? (dateStr ? dateStr.replace(' ', 'T').slice(0, 16) : '') : this._getNowIso(),
+            'editEventDate': dateStr ? dateStr.replace(' ', 'T').slice(0, 16) : this._getNowIso(),
             'editEventRecEnd': recEnd || '',
             'editEventColor': color || '',
             'editEventImportant': !!important,
@@ -106,6 +109,7 @@ export const EventService = {
                 color: color
             }, {
                 isWidget: true,
+                onClick: () => this.openDraftSticker(),
                 onDelete: () => this.clearDraftSticker()
             });
             
@@ -120,13 +124,16 @@ export const EventService = {
     clearDraftSticker() {
         document.getElementById('editEventStickerText').value = '';
         document.getElementById('editEventStickerTitle').value = '';
+        const eNoteId = document.getElementById('editEventStickerNoteId');
+        if (eNoteId) eNoteId.value = '';
         this.updateDraftStickerUI(false);
     },
 
     openManageStickers() {
         const id = document.getElementById('editEventId').value;
+        const recId = document.getElementById('editEventRecId').value;
         if (!id) return;
-        window.openParentStickers('event', id);
+        window.openParentStickers('event', id, recId);
     },
 
     async _updateEditStickersList(id, recId) {
@@ -164,7 +171,7 @@ export const EventService = {
                 wrapper.className = 'mini-sticker-wrapper';
                 const sticker = StickerRenderer.createStickerElement(s, { 
                     isWidget: true,
-                    onClick: () => window.openParentStickers('event', id)
+                    onClick: () => window.openParentStickers('event', id, recId)
                 });
                 wrapper.appendChild(sticker);
                 listEl.appendChild(wrapper);
@@ -201,12 +208,17 @@ export const EventService = {
             };
 
             const draftText = document.getElementById('editEventStickerText')?.value;
-            if (draftText) {
+            const draftTitle = document.getElementById('editEventStickerTitle')?.value;
+            const draftNoteId = document.getElementById('editEventStickerNoteId')?.value;
+            if (draftText || draftTitle || draftNoteId) {
+                const noteIdEl = document.getElementById('editEventStickerNoteId');
                 payload.stickers.push({
-                    text: draftText,
-                    title: document.getElementById('editEventStickerTitle').value || null,
+                    text: draftText || '',
+                    title: draftTitle || null,
                     color: document.getElementById('editEventStickerColor').value,
-                    type: document.getElementById('editEventStickerType').value
+                    type: document.getElementById('editEventStickerType').value,
+                    note_id: noteIdEl && noteIdEl.value ? parseInt(noteIdEl.value) : null,
+                    apply_series: true
                 });
             }
 
@@ -232,50 +244,91 @@ export const EventService = {
                     has_stickers: (payload.stickers && payload.stickers.length > 0)
                 };
 
-                if (isNew) {
-                    window.eventRecords.push(newRecord);
-                } else {
-                    const idx = window.eventRecords.findIndex(r => r.id == id);
-                    if (idx !== -1) window.eventRecords[idx] = { ...window.eventRecords[idx], ...newRecord };
+                if (window.eventRecords) {
+                    if (isNew) {
+                        window.eventRecords.push(newRecord);
+                    } else {
+                        const idx = window.eventRecords.findIndex(r => r.id == id);
+                        if (idx !== -1) window.eventRecords[idx] = { ...window.eventRecords[idx], ...newRecord };
+                    }
                 }
 
-                // Re-render if in calendar view, otherwise reload (for complex updates)
-                if (window.CalendarRenderer && payload.edit_mode === 'only') {
-                    CalendarRenderer.render(window.eventRecords, window.currentYear, window.currentMonth);
+                if (payload.edit_mode === 'only') {
+                    // Update DOM instantly
+                    if (isNew) {
+                        this._performOptimisticAdd(newRecord);
+                    } else {
+                        this._performOptimisticEdit(newRecord);
+                    }
                 } else {
-                    setTimeout(() => location.reload(), 600);
+                    // For complex recurrence updates, just reload the view silently
+                    setTimeout(() => {
+                        if (window.refreshCurrentView) window.refreshCurrentView('Event');
+                        else location.reload();
+                    }, 300);
                 }
             } else if (errEl) {
                 errEl.innerText = data.message || 'Error saving event';
             }
         } catch (e) {
+            console.error("Save error:", e);
             if (errEl) errEl.innerText = 'Network error';
         }
     },
 
-    async toggleDone(eventId) {
+    _performOptimisticAdd(record) {
+        if (!record.date) return;
+        const key = record.date.substring(0, 10);
+        
+        // 1. Calendar Grid Cell
+        const cell = document.querySelector(`.calendar-cell[data-date="${key}"]`);
+        if (cell) {
+            const counter = cell.querySelector('.cell-date + span');
+            if (counter) {
+                const count = parseInt(counter.innerText) || 0;
+                counter.innerText = count + 1;
+            } else {
+                // If there was no counter (count 0), we can just let refreshCurrentView handle creating it
+            }
+        }
+
+        // Always fetch latest to ensure calendar state is perfect without page reload
+        if (window.refreshCurrentView) window.refreshCurrentView('Event');
+    },
+
+    _performOptimisticEdit(record) {
+        // Just refresh view silently to reflect changes everywhere
+        if (window.refreshCurrentView) window.refreshCurrentView('Event');
+    },
+
+    async toggleDone(eventId, eventDate = null, recurrenceId = null) {
         try {
-            const resp = await fetch(`/toggle_event_done/${eventId}`, { method: 'POST' });
+            let resp;
+            const rec = (window.eventRecords || []).find(r => r.id == eventId);
+            const isDone = rec ? rec.done : false;
+
+            if (recurrenceId && eventDate && !isDone) {
+                const formData = new FormData();
+                formData.append('date', eventDate.substring(0, 10));
+                formData.append('recurrence_id', recurrenceId);
+                resp = await fetch(`/mark_event_done/${eventId}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+            } else {
+                resp = await fetch(`/toggle_event_done/${eventId}`, { method: 'POST' });
+            }
             const data = await resp.json();
 
             if (data.done !== undefined) {
-                // 1. Update global state
-                const rec = (window.eventRecords || []).find(r => r.id == eventId);
-                if (rec) rec.done = data.done;
+                const record = (window.eventRecords || []).find(r => r.id == eventId);
+                if (record) record.done = data.done;
 
-                // 2. Update UI instantly
-                const chips = document.querySelectorAll(`.event-chip[data-id="${eventId}"]`);
-                chips.forEach(chip => {
-                    if (data.done) chip.classList.add('done');
-                    else chip.classList.remove('done');
-                });
-
-                // 3. Update Detail Modal if open
-                const statusEl = document.getElementById('detailModalStatus');
-                if (statusEl) {
-                    statusEl.innerHTML = data.done ?
-                        '<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' :
-                        '<span style="color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 20px;">○ Pending</span>';
+                if (window.refreshCurrentView) {
+                    window.refreshCurrentView('Event');
+                } else {
+                    location.reload();
                 }
 
                 if (window.showToast) window.showToast(`Event ${data.done ? 'completed' : 'reopened'}`, 'success');
@@ -302,7 +355,10 @@ export const EventService = {
         const actions = [
             { label: '📝 Edit Event', onClick: () => this.openEdit(e.id, e.title, e.date, e.rule || e.recurrenceRule, e.end || e.recurrenceEnd, e.recurrence_id || e.recurrenceId, e.color, e.important, e.done) },
             { label: e.done ? '🔄 Reopen Event' : '✅ Mark Completed', onClick: () => this.toggleDone(e.id) },
-            { label: '🗑️ Delete Event', onClick: () => window.deleteRecordCustom('Event', e.id, !!e.recurrence_id), class: 'danger' }
+            { label: '🗑️ Delete Event', onClick: (ev) => {
+                if (window.deleteEvent) window.deleteEvent(ev, e.id, !!(e.recurrence_id || e.recurrenceId), e.date ? e.date.substring(0, 10) : null);
+                else window.deleteRecordCustom('Event', e.id, !!(e.recurrence_id || e.recurrenceId));
+            }, class: 'danger' }
         ];
 
         // Tree view for categorized events
@@ -311,9 +367,11 @@ export const EventService = {
         }
 
         // Sticker overview
-        if (e.has_stickers || e.hasStickers || e.stickers_count > 0) {
-            actions.push({ label: '<div class="sticker-icon-menu" style="margin-right: 8px;"></div> View Stickers', onClick: () => window.openParentStickers('event', e.id) });
-        }
+        const hasStickers = e.has_stickers || e.hasStickers || e.stickers_count > 0;
+        actions.push({ 
+            label: `<div class="sticker-icon-menu" style="margin-right: 8px;"></div> ${hasStickers ? 'View Stickers' : 'Add Sticker'}`, 
+            onClick: () => window.openParentStickers('event', e.id) 
+        });
 
         actions.forEach(act => {
             const item = document.createElement('div');
@@ -414,8 +472,14 @@ export const EventService = {
         if (!row) return;
 
         if (rule && rule !== 'none') {
-            row.style.display = 'flex';
-            document.getElementById('detailModalRecRule').textContent = rule.replace('weekly:', 'Weekly: ');
+            row.style.display = 'block';
+            let displayRule = rule;
+            if (rule.startsWith('weekly:')) {
+                displayRule = rule.replace('weekly:', 'Weekly: ');
+            } else {
+                displayRule = rule.charAt(0).toUpperCase() + rule.slice(1);
+            }
+            document.getElementById('detailModalRecRule').textContent = displayRule;
             const endRow = document.getElementById('detailModalRecEndRow');
             if (end && endRow) {
                 endRow.style.display = 'block';
@@ -636,3 +700,21 @@ window.toggleEventDone = (id) => EventService.toggleDone(id);
 window.initColorPicker = (c) => EventService.initColorPicker(c);
 window.viewEventTree = (color) => EventService.viewTree(color);
 window.closeEventTreeModal = () => ModalManager.close('eventTreeModal');
+
+window.addEventListener('stickersUpdated', (e) => {
+    if (e.detail && e.detail.parentType === 'event') {
+        const id = document.getElementById('editEventId')?.value;
+        const recId = document.getElementById('editEventRecId')?.value;
+        const editModal = document.getElementById('editEventModal');
+        if (editModal && editModal.style.display !== 'none' && id && String(e.detail.parentId) === String(id)) {
+            EventService._updateEditStickersList(id, recId);
+        }
+
+        const detailModal = document.getElementById('eventDetailModal');
+        const detailId = document.getElementById('detailEventId')?.value;
+        const detailRecId = document.getElementById('detailEventRecId')?.value;
+        if (detailModal && detailModal.style.display !== 'none' && detailId && String(e.detail.parentId) === String(detailId)) {
+            EventService.loadDetailStickers(detailId, detailRecId);
+        }
+    }
+});

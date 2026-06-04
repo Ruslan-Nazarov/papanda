@@ -12,7 +12,8 @@ from ..services.state_manager import StateManager
 from ..services.settings_service import get_setting, set_setting
 from ..services.dashboard_service import DashboardService
 from ..services.history_service import HistoryService
-from ..dependencies import get_dashboard_service, get_history_service, get_sticky_note_service, get_state_manager
+from ..dependencies import get_dashboard_service, get_history_service, get_sticky_note_service, get_state_manager, get_word_service
+from ..services.word_service import WordService
 from .. import models
 from ..utils import normalize_date
 from ..config import templates
@@ -27,6 +28,7 @@ async def index(
     request: Request,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
     state_manager: StateManager = Depends(get_state_manager),
+    word_service: WordService = Depends(get_word_service),
     user: Any = Depends(check_auth_dependency)
 ) -> HTMLResponse:
     """
@@ -75,17 +77,38 @@ async def index(
     active_langs = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
     
     lang_names_raw = await get_setting(db, 'language_names', '{}')
+    event_colors_raw = await get_setting(db, 'event_colors', '{}')
     import json
     try:
         lang_names = json.loads(lang_names_raw if lang_names_raw else '{}')
     except Exception:
         lang_names = {}
 
+    try:
+        event_colors = json.loads(event_colors_raw if event_colors_raw else '{}')
+    except Exception:
+        event_colors = {}
+
+    # Получаем данные для модалки Language Learning
+    ns_res = await db.execute(select(models.Notes).where(models.Notes.category == "Language Learning System"))
+    anchor_note = ns_res.scalars().first()
+    if not anchor_note:
+        anchor_note = models.Notes(
+            category="Language Learning System", 
+            note="Системный якорь для стикеров на странице изучения языка."
+        )
+        db.add(anchor_note)
+        await db.commit()
+        await db.refresh(anchor_note)
+    
+    sentences_json = word_service.get_sentences_json()
+
     return templates.TemplateResponse(request, "index.html", {
         "request": request,
         "words": ctx['words'],
         "active_languages": active_langs,
         "all_languages": lang_names,
+        "event_colors": event_colors,
         "wink": ctx['wink'],
         "count_words_translate": ctx['count'],
         "coverage_learning_words": ctx['coverage'],
@@ -111,7 +134,9 @@ async def index(
         "stickers": dash_data.get('stickers', []),
         "observations": dash_data.get('observations', []),
         "pinned_notes": dash_data.get('pinned_notes', []),
-        "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0
+        "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0,
+        "anchor_note_id": anchor_note.id,
+        "sentences_json": sentences_json
     })
 
 @router.get("/history", response_class=HTMLResponse)
@@ -270,3 +295,32 @@ async def get_dashboard_habits_widget(
         "request": request,
         "habits_all": dash_data['habits_all']
     })
+
+@router.get("/api/analytics/wordcloud")
+async def get_word_cloud(
+    date: Optional[str] = None,
+    sources: Optional[str] = None,
+    history_service: HistoryService = Depends(get_history_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    """
+    Эндпоинт для получения частотной карты слов облака тегов за период ±15 дней от указанной даты.
+    """
+    target_d = None
+    if date:
+        from ..utils import normalize_date
+        parsed = normalize_date(date)
+        if parsed:
+            target_d = parsed.date() if isinstance(parsed, datetime) else parsed
+
+    if not target_d:
+        from datetime import timedelta
+        target_d = datetime.now().date() - timedelta(days=365)
+
+    if sources:
+        sources_list = [s.strip().lower() for s in sources.split(",") if s.strip()]
+    else:
+        sources_list = ["chronology", "calendar", "notes", "wink", "stickers", "tasks", "habits"]
+
+    return await history_service.get_word_cloud_data(target_d, sources_list)
+

@@ -3,7 +3,7 @@
 {% block title %}DB: {{ model_name }} - Papanda{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=8">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=9">
     <link rel="stylesheet" href="{{ url_for('static', path='css/db_view.css') }}?v=17">
     
     <!-- KaTeX for Math rendering -->
@@ -152,9 +152,10 @@
 {% block scripts %}
 <!-- Core JS and Initialization -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=5"></script>
-<script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=29"></script>
+<script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=17"></script>
+<script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=33"></script>
 <script>
+    window.currentDbViewModel = "{{ model_name }}";
     // Bridge variables from Jinja2 to JS
     {% if model_name == 'Event' %}
         window.currentYear = {{ current_year }};
@@ -177,137 +178,9 @@
         ];
     {% endif %}
 
-    // Global Debugger for Search
-    window.logSearchDebug = function(msg) {
-        const log = document.getElementById('searchDebugLog');
-        if (log) {
-            const entry = document.createElement('div');
-            entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
-            log.appendChild(entry);
-            log.scrollTop = log.scrollHeight;
-        }
-        console.log("[SearchDebug]", msg);
-    };
-
-    window.performAjaxSearch = async function() {
-        logSearchDebug("performAjaxSearch called");
-        const query = (document.getElementById('dbSearchInput')?.value || '').trim();
-        const modelName = "{{ model_name }}";
-        const resultsBox = document.getElementById('dbSearchResults');
-        const placeholder = document.getElementById('searchPlaceholder');
-        
-        if (query.length < 2) {
-            if (resultsBox) resultsBox.style.display = 'none';
-            if (placeholder) placeholder.style.display = 'block';
-            return;
-        }
-
-        logSearchDebug("Searching for: " + query + " in " + modelName);
-        if (placeholder) {
-            placeholder.innerHTML = '<div class="search-loader"></div><div style="font-weight: 600; margin-top: 15px;">Searching...</div>';
-            placeholder.style.display = 'block';
-        }
-        if (resultsBox) resultsBox.style.display = 'none';
-
-        if (window.searchTimeout) clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(async function() {
-            try {
-                const url = '/api/db/search/' + modelName + '?search=' + encodeURIComponent(query);
-                logSearchDebug("Fetching: " + url);
-                const resp = await fetch(url);
-                logSearchDebug("HTTP status: " + resp.status);
-                
-                if (!resp.ok) throw new Error("HTTP " + resp.status);
-                const data = await resp.json();
-                
-                if (data.status === 'success') {
-                    logSearchDebug("Results: " + (data.data ? data.data.length : 0));
-                    renderSearchItems(data.data);
-                } else {
-                    throw new Error(data.message || "Error");
-                }
-            } catch (e) {
-                logSearchDebug("FAIL: " + e.message);
-                if (placeholder) placeholder.innerHTML = '<div style="color:red; padding:20px;">⚠️ ' + e.message + '</div>';
-            }
-        }, 300);
-    };
-
-    function renderSearchItems(items) {
-        const resultsBox = document.getElementById('dbSearchResults');
-        const placeholder = document.getElementById('searchPlaceholder');
-        if (!resultsBox) return;
-
-        if (!items || items.length === 0) {
-            resultsBox.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No matches found</div>';
-        } else {
-            resultsBox.innerHTML = items.map(function(item) {
-                return '<div class="search-result-item" onclick="window.jumpToRecord(\'' + item.id + '\')">' +
-                    '<div class="search-result-info">' +
-                        '<div class="search-result-title">' + (item.title || 'Untitled') + '</div>' +
-                        '<div class="search-result-meta">' + (item.date || item.text || 'ID: ' + item.id) + '</div>' +
-                    '</div>' +
-                    '<div class="search-result-action"><span class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">View</span></div>' +
-                '</div>';
-            }).join('');
-        }
-        
-        resultsBox.style.display = 'block';
-        if (placeholder) placeholder.style.display = 'none';
-    }
-
-    window.jumpToRecord = async function(id) {
-        logSearchDebug("Jump to: " + id);
-        const selector = '.event-chip[data-id="' + id + '"], ' +
-                         '.note-card[data-id="' + id + '"], ' +
-                         '.record-row[data-id="' + id + '"], ' +
-                         '[data-id="' + id + '"]';
-        
-        const el = document.querySelector(selector);
-        
-        if (el) {
-            logSearchDebug("Valid record found. Opening...");
-            if (typeof ModalManager !== 'undefined') ModalManager.close('dbSearchModal');
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.style.outline = '4px solid #4F46E5';
-            el.style.boxShadow = '0 0 25px rgba(79, 70, 229, 0.4)';
-            setTimeout(function() { 
-                el.click(); 
-                logSearchDebug("Click event triggered");
-            }, 500);
-            setTimeout(function() { el.style.outline = 'none'; el.style.boxShadow = 'none'; }, 3000);
-        } else {
-            logSearchDebug("Record NOT on page. Fetching via API to open modal...");
-            if (typeof ModalManager !== 'undefined') ModalManager.close('dbSearchModal');
-            
-            // Instead of redirecting to the ugly search page, we fetch the data and open the modal
-            const modelName = "{{ model_name }}";
-            try {
-                const resp = await fetch('/api/db/get_record/' + modelName + '/' + id);
-                if (!resp.ok) throw new Error("Fetch failed");
-                const data = await resp.json();
-                if (data.status === 'success') {
-                    if (modelName === 'Event' && window.openEventDetailModal) {
-                        window.openEventDetailModal(data.data);
-                    } else if (modelName === 'Note' && window.openNoteViewModal) {
-                        window.openNoteViewModal(data.data);
-                    } else {
-                        // Fallback for other models or if detail modal isn't ready
-                        window.location.href = '?search=' + encodeURIComponent(id);
-                    }
-                } else {
-                    throw new Error(data.message);
-                }
-            } catch (e) {
-                logSearchDebug("Failed to fetch record: " + e.message);
-                window.location.href = '?search=' + encodeURIComponent(id);
-            }
-        }
-    };
-
     // Ready log
     document.addEventListener('DOMContentLoaded', function() {
-        logSearchDebug("Search system ready (DOM Loaded)");
+        if(window.logSearchDebug) window.logSearchDebug("Search system ready (DOM Loaded)");
     });
 </script>
 {% endblock %}

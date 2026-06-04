@@ -70,8 +70,9 @@
             </p>
             <div class="palette-grid" id="modalPaletteGrid">
                 {% set colors = ['#4F46E5', '#10B981', '#B91C1C', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EC4899', '#1E293B'] %}
+                {% set event_colors_dict = event_colors if event_colors is defined else {} %}
                 {% for c in colors %}
-                    {% set label = event_colors.get(c, '') %}
+                    {% set label = event_colors_dict.get(c, '') %}
                     <div class="palette-item" onclick="editColorLabel('{{ c }}', '{{ label|e }}')">
                         <div class="palette-color-circle" style="background: {{ c }}; box-shadow: 0 0 15px {{ c }}44;"></div>
                         <div class="palette-info">

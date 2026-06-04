@@ -1,112 +1,122 @@
-<!-- Habit Edit Modal -->
-<div id="editHabitModal" class="modal">
-    <div class="modal-content" style="width: 500px;">
-        <div class="modal-header">
-            <h2>Edit Habit</h2>
-            <span class="modal-close" onclick="closeEditHabitModal()">&times;</span>
+<!-- Habit Edit Modal — Horizontal Layout -->
+<div id="editHabitModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 900px; width: 95%; border-top: 6px solid var(--color-primary);">
+        <div class="modal-header" style="flex-shrink: 0;">
+            <h3><span style="color: var(--color-primary);">⚡</span> Edit Habit</h3>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editHabitModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         </div>
-        
+
         <div class="modal-body">
             <input type="hidden" id="editHabitId">
-            
-            <div class="form-group-premium">
-                <label class="form-label-premium">
-                    <span style="color: var(--color-primary); margin-right: 4px;">📝</span> Title
-                </label>
-                <input type="text" id="editHabitTitle" class="form-input-premium" placeholder="What habit are we tracking?">
-            </div>
+            <div class="editor-layout">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group-premium">
-                    <label class="form-label-premium">
-                        <span style="color: var(--color-primary); margin-right: 4px;">📅</span> Start Date
-                    </label>
-                    <input type="date" id="editHabitStartDate" class="form-input-premium">
+                <!-- LEFT: Dates & controls -->
+                <div class="editor-meta">
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">📅 Start Date</label>
+                        <input type="date" id="editHabitStartDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
+                    </div>
+                    <div id="editHabitEndDateGroup">
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">🏁 End Date</label>
+                        <input type="date" id="editHabitEndDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
+                    </div>
+                    <div>
+                        <label class="premium-checkbox-wrapper">
+                            <input type="checkbox" id="editHabitRead" onchange="toggleHabitEndDate()">
+                            <div class="checkbox-custom"></div>
+                            <span style="font-weight: 600; color: var(--color-text-dark); font-size: 0.9rem;">Mark as Finished</span>
+                        </label>
+                    </div>
+                    <div id="editHabitError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
                 </div>
 
-                <div class="form-group-premium" id="editHabitEndDateGroup">
-                    <label class="form-label-premium">
-                        <span style="color: var(--color-text-muted); margin-right: 4px;">🏁</span> End Date
-                    </label>
-                    <input type="date" id="editHabitEndDate" class="form-input-premium">
+                <!-- RIGHT: Habit title -->
+                <div class="editor-main" style="padding: 28px 32px;">
+                    <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">📝 Habit Title</label>
+                    <input type="text" id="editHabitTitle" class="form-input" placeholder="What habit are we tracking?"
+                        style="font-size: 1.2rem; font-weight: 600; border: none; border-bottom: 2px solid var(--color-border-light); border-radius: 0; padding: 12px 0; background: transparent; outline: none; color: var(--color-text-dark); width: 100%;">
                 </div>
             </div>
-
-            <div class="form-group-premium">
-                <label class="premium-checkbox-wrapper">
-                    <input type="checkbox" id="editHabitRead" onchange="toggleHabitEndDate()">
-                    <div class="checkbox-custom"></div>
-                    <span style="font-weight: 600; color: var(--color-text-dark);">Mark as Finished (Archive)</span>
-                </label>
-            </div>
-
-            <div id="editHabitError" style="color: var(--color-error); font-size: 0.85rem; margin-top: 10px; font-weight: 500;"></div>
         </div>
 
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEditHabitModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveHabitEdit()">Save Changes</button>
+        <div class="modal-footer" style="flex-shrink: 0;">
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editHabitModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveHabitEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">Save Changes</button>
         </div>
     </div>
 </div>
 
-<!-- Wink Edit Modal -->
-<div id="editWinkModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3><span style="color: #9b59b6;">😉</span> Edit Leisure (Wink)</h3>
+<!-- Wink Edit Modal — Horizontal Layout -->
+<div id="editWinkModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 900px; width: 95%; border-top: 6px solid var(--color-primary);">
+        <div class="modal-header" style="flex-shrink: 0;">
+            <h3><span style="color: var(--color-primary);">😉</span> Edit Leisure (Wink)</h3>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editWinkModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         </div>
+
         <div class="modal-body">
             <input type="hidden" id="editWinkId">
-            <div class="form-group-premium">
-                <label><span class="icon">✨</span> Title</label>
-                <input type="text" id="editWinkTitle" placeholder="What did you do?">
+            <div class="editor-layout">
+                <!-- LEFT: Date & time -->
+                <div class="editor-meta">
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">⏰ Date &amp; Time</label>
+                        <input type="datetime-local" id="editWinkDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
+                    </div>
+                    <div id="editWinkError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
+                </div>
+
+                <!-- RIGHT: Title -->
+                <div class="editor-main" style="padding: 28px 32px;">
+                    <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">✨ Title</label>
+                    <input type="text" id="editWinkTitle" class="form-input" placeholder="What did you do?"
+                        style="font-size: 1.2rem; font-weight: 600; border: none; border-bottom: 2px solid var(--color-border-light); border-radius: 0; padding: 12px 0; background: transparent; outline: none; color: var(--color-text-dark); width: 100%;">
+                </div>
             </div>
-            <div class="form-group-premium">
-                <label><span class="icon">⏰</span> Date & Time</label>
-                <input type="datetime-local" id="editWinkDate">
-            </div>
-            <div id="editWinkError" class="form-error-text"></div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEditWinkModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveWinkEdit()" style="background: #9b59b6; border-color: #8e44ad;">Save Changes</button>
+
+        <div class="modal-footer" style="flex-shrink: 0;">
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editWinkModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveWinkEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">Save Changes</button>
         </div>
     </div>
 </div>
 
-<!-- Task Edit Modal -->
-<div id="editTaskModal" class="modal">
-    <div class="modal-content" style="width: 500px;">
-        <div class="modal-header">
-            <h2>Edit Task</h2>
-            <span class="modal-close" onclick="closeEditTaskModal()">&times;</span>
+<!-- Task Edit Modal — Horizontal Layout -->
+<div id="editTaskModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 1100px; width: 95%; border-top: 6px solid var(--color-primary);">
+        <div class="modal-header" style="flex-shrink: 0;">
+            <h3><span style="color: var(--color-primary);">📋</span> Edit Task</h3>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editTaskModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         </div>
-        
+
         <div class="modal-body">
             <input type="hidden" id="editTaskId">
-            
-            <div class="form-group-premium">
-                <label class="form-label-premium">
-                    <span style="color: #3B82F6; margin-right: 4px;">📝</span> Task Description
-                </label>
-                <textarea id="editTaskName" class="form-input-premium" style="height: 120px; resize: vertical;" placeholder="What needs to be done?"></textarea>
-            </div>
+            <div class="editor-layout">
 
-            <div class="form-group-premium">
-                <label class="premium-checkbox-wrapper">
-                    <input type="checkbox" id="editTaskDone">
-                    <div class="checkbox-custom"></div>
-                    <span style="font-weight: 600; color: var(--color-text-dark);">Mark as Done</span>
-                </label>
-            </div>
+                <!-- LEFT: Status -->
+                <div class="editor-meta">
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">✅ Status</label>
+                        <label class="premium-checkbox-wrapper">
+                            <input type="checkbox" id="editTaskDone">
+                            <div class="checkbox-custom"></div>
+                            <span style="font-weight: 600; color: var(--color-text-dark); font-size: 0.9rem;">Mark as Done</span>
+                        </label>
+                    </div>
+                    <div id="editTaskError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
+                </div>
 
-            <div id="editTaskError" style="color: var(--color-error); font-size: 0.85rem; margin-top: 10px; font-weight: 500;"></div>
+                <!-- RIGHT: Task description -->
+                <div class="editor-main">
+                    <textarea id="editTaskName" placeholder="What needs to be done?"></textarea>
+                </div>
+            </div>
         </div>
 
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEditTaskModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveTaskEdit()">Save Changes</button>
+        <div class="modal-footer" style="flex-shrink: 0;">
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editTaskModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveTaskEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">Save Changes</button>
         </div>
     </div>
 </div>

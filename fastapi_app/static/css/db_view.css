@@ -436,6 +436,15 @@
     box-shadow: var(--shadow-sm);
     overflow: visible;
 }
+.event-chip.done {
+    opacity: 0.55;
+    background: var(--color-bg-subtle);
+    border-color: var(--color-border-light);
+}
+.event-chip.done .text {
+    text-decoration: line-through !important;
+    color: var(--color-text-muted) !important;
+}
 .event-chip:hover {
     transform: translateY(-2px) scale(1.02);
     box-shadow: var(--shadow-md);
@@ -651,83 +660,85 @@
     .calendar-cell { min-height: 90px; }
 }
 
-/* --- HABIT CARDS --- */
-.habit-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-.habit-card {
+/* --- GENERIC DB CARDS (Unified UI) --- */
+.db-card {
     background: var(--color-bg-white);
     border-radius: var(--radius-xl);
-    padding: 24px;
+    padding: 20px;
     border: 1px solid var(--color-border-medium);
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
+    cursor: pointer;
 }
 
-.habit-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--color-primary);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+.db-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: #3B82F6;
 }
 
-.habit-card.active::before {
-    opacity: 1;
+.db-card.recent, .db-card.active {
+    border-color: rgba(59, 130, 246, 0.15);
+    background: linear-gradient(145deg, #ffffff 0%, #f0f7ff 100%);
 }
 
-.habit-card.active {
-    border-color: var(--color-primary-glow);
-    background: linear-gradient(145deg, #ffffff 0%, #fffbf8 100%);
-}
-
-.habit-card.finished {
+.db-card.old, .db-card.finished, .db-card.archive-note {
     background: var(--color-bg-subtle);
-    opacity: 0.8;
+    opacity: 0.85;
     filter: grayscale(0.2);
 }
 
-.habit-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary);
-}
-
-.habit-card .habit-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--color-text-dark);
-    margin: 0;
-    line-height: 1.4;
-}
-
-.habit-card .habit-date {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.habit-card .habit-actions {
+.db-card-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     margin-top: auto;
     padding-top: 16px;
     border-top: 1px solid var(--color-border-light);
+}
+
+.db-card-date {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.db-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    margin: 0;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.db-card-text {
+    font-size: 0.95rem;
+    color: var(--color-text-dark);
+    line-height: 1.5;
+    flex-grow: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* --- DB CARDS GRID (Unified UI) --- */
+.db-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
 }
 .load-more-container {
     display: flex;
@@ -766,144 +777,9 @@
     color: var(--color-text-dark);
 }
 
-/* --- TASK CARDS --- */
-.task-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-    padding: 24px;
-}
-.task-card {
-    background: var(--color-bg-white);
-    border-radius: var(--radius-xl);
-    padding: 24px;
-    border: 1px solid var(--color-border-medium);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: all var(--transition-base);
-    position: relative;
-    overflow: hidden;
-}
 
-.task-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: #3B82F6; /* Task blue */
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
 
-.task-card.active::before {
-    opacity: 1;
-}
 
-.task-card.active {
-    border-color: rgba(59, 130, 246, 0.15);
-    background: linear-gradient(145deg, #ffffff 0%, #f8faff 100%);
-}
-
-.task-card.finished {
-    background: var(--color-bg-subtle);
-    opacity: 0.8;
-    filter: grayscale(0.2);
-}
-
-.task-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: #3B82F6;
-}
-
-.task-card .task-name {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--color-text-dark);
-    margin: 0;
-    line-height: 1.4;
-    word-break: break-word;
-}
-
-.task-card .task-date {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.task-card .task-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: auto;
-    padding-top: 16px;
-    border-top: 1px solid var(--color-border-light);
-}
-
-/* --- CHRONOLOGY CARDS --- */
-.chrono-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
-    padding: 24px;
-}
-.chrono-card {
-    background: var(--color-bg-white);
-    border-radius: var(--radius-xl);
-    padding: 24px;
-    border: 1px solid var(--color-border-medium);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    transition: all var(--transition-base);
-    position: relative;
-    overflow: hidden;
-}
-.chrono-card.recent {
-    border-left: 5px solid var(--color-blue);
-    background: linear-gradient(145deg, #ffffff 0%, #f0f7ff 100%);
-}
-.chrono-card.old {
-    background: var(--color-bg-subtle);
-    opacity: 0.85;
-}
-.chrono-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-blue);
-}
-.chrono-card .chrono-date {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.chrono-card .chrono-title {
-    font-size: 1rem;
-    color: var(--color-text-dark);
-    line-height: 1.5;
-    flex-grow: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.chrono-card .chrono-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding-top: 12px;
-    border-top: 1px solid var(--color-border-light);
-}
 
 /* Viewer Modal for Chrono Text */
 .chrono-view-text {
@@ -954,31 +830,7 @@
     transform: scale(1.05);
 }
 
-/* --- NOTE CARDS --- */
-.note-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
-    padding: 24px;
-}
-.note-card {
-    background: var(--color-bg-white);
-    border-radius: var(--radius-xl);
-    padding: 24px;
-    border: 1px solid var(--color-border-medium);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    transition: all var(--transition-base);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-.note-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
+
 .note-card .note-cat {
     font-size: 0.75rem;
     font-weight: 800;
@@ -990,10 +842,6 @@
     width: fit-content;
     margin-bottom: 4px;
 }
-.note-card .note-date {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-}
 .note-card .note-text {
     font-size: 1rem;
     color: var(--color-text-dark);
@@ -1003,14 +851,6 @@
     display: -webkit-box;
     -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
-}
-.note-card .note-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding-top: 16px;
-    border-top: 1px solid var(--color-border-light);
-    margin-top: auto;
 }
 
 /* --- STICKER CARDS --- */

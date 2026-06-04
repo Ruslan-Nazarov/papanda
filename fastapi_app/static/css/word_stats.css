@@ -186,28 +186,7 @@ body {
 }
 
 /* ── Local Modal (word_stats only) ────────────────────────────────────────── */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background: white;
-    margin: 10% auto;
-    padding: 20px;
-    width: 400px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    text-align: left;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-
+/* Removed */
 
 /* ── Edit Button ──────────────────────────────────────────────────────────── */
 .edit-btn {

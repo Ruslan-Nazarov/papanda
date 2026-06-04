@@ -5,40 +5,34 @@
                 <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Tasks</span>
                 <span style="font-size: 1.1rem; color: #3B82F6; line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
-
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 10px;"></div>
-
-            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Tasks" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem;">
-                🔍
-            </div>
         </div>
     </div>
 
-    {% if search_query %}
-        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
-            <a href="{{ url_for('db_view', model_name='Task') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
-        </div>
-    {% endif %}
-
     <div class="task-management-view">
+        {% set active_tasks = records | selectattr('done', 'equalto', false) | list %}
+        {% set finished_tasks = records | selectattr('done', 'equalto', true) | list %}
+
         <h2 style="padding: 0 0 20px 0; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
             <span style="color: #3B82F6;">📋</span> Active Tasks
         </h2>
-        <div class="task-grid" id="activeTasksGrid">
-            {% set active_tasks = records | selectattr('done', 'equalto', false) | list %}
+        <div class="db-grid" id="activeTasksGrid">
             {% for row in active_tasks %}
-                <div class="task-card active" data-id="{{ row.id }}">
-                    <div class="task-name">{{ row.name }}</div>
-                    <div class="task-date">
-                        <span class="icon" style="font-size: 0.9rem;">📅</span> Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}
+                <div class="db-card active" data-id="{{ row.id }}" {% if loop.index > 10 %}style="display: none;"{% endif %}
+                     onclick='openDbCardDetail({
+                        title: "Active Task",
+                        date: "{{ row.created_at.strftime("%d.%m.%Y %H:%M") if row.created_at else "" }}",
+                        body: {{ row.name|tojson }},
+                        onEdit: function(){ TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, false); },
+                        onDelete: function(){ deleteRecordCustom("Task", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-title">{{ row.name }}</div>
+                    <div class="db-card-date">
+                        <span style="font-size: 0.9rem;">📅</span> Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}
                     </div>
-                    <div class="task-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" 
-                                onclick="openEditTaskModal('{{ row.id }}', '{{ row.name|e }}', false)">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-error btn-sm" onclick="deleteRecordCustom('Task', {{ row.id }})">Delete</button>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, false)'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
                     </div>
                 </div>
             {% else %}
@@ -46,95 +40,44 @@
             {% endfor %}
         </div>
 
+        {% if active_tasks|length > 10 %}
+        <div class="load-more-container" id="loadMoreActiveTaskContainer">
+            <button class="btn-load-more">Show More (+10)</button>
+        </div>
+        {% endif %}
+
         <h2 style="padding: 40px 0 20px 0; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; border-top: 1px solid var(--color-border-medium); margin-top: 40px; display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-text-muted);">✅</span> Finished Tasks
         </h2>
-        <div class="task-grid" id="finishedTasksGrid">
-            {% set finished_tasks = records | selectattr('done', 'equalto', true) | list %}
+        <div class="db-grid" id="finishedTasksGrid">
             {% for row in finished_tasks %}
-                <div class="task-card finished" data-id="{{ row.id }}">
-                    <div class="task-name">{{ row.name }}</div>
-                    <div class="task-date">
-                        <span class="icon" style="font-size: 0.9rem;">📅</span> Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}
+                <div class="db-card finished" data-id="{{ row.id }}" {% if loop.index > 10 %}style="display: none;"{% endif %}
+                     onclick='openDbCardDetail({
+                        title: "Finished Task",
+                        date: "{{ row.created_at.strftime("%d.%m.%Y %H:%M") if row.created_at else "" }}",
+                        body: {{ row.name|tojson }},
+                        onEdit: function(){ TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, true); },
+                        onDelete: function(){ deleteRecordCustom("Task", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-title">{{ row.name }}</div>
+                    <div class="db-card-date">
+                        <span style="font-size: 0.9rem;">📅</span> Created: {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}
                     </div>
-                    <div class="task-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" 
-                                onclick="openEditTaskModal('{{ row.id }}', '{{ row.name|e }}', true)">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-error btn-sm" onclick="deleteRecordCustom('Task', {{ row.id }})">Delete</button>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, true)'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
                     </div>
                 </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">No finished tasks yet.</div>
             {% endfor %}
         </div>
-        
-        {% if finished_tasks|length > 0 %}
-        <div class="load-more-container" id="loadMoreTaskContainer">
-            <button class="btn-load-more" onclick="loadMoreTasks()">Show More Finished Tasks (+10)</button>
+
+        {% if finished_tasks|length > 10 %}
+        <div class="load-more-container" id="loadMoreFinishedTaskContainer">
+            <button class="btn-load-more">Show More (+10)</button>
         </div>
-        {% else %}
-            <div style="padding: 20px; color: #999;">No finished tasks yet.</div>
         {% endif %}
     </div>
-
-    <script>
-        let visibleFinishedTasks = 10;
-        document.addEventListener('DOMContentLoaded', () => {
-            const finishedCards = document.querySelectorAll('#finishedTasksGrid .task-card.finished');
-            finishedCards.forEach((card, idx) => {
-                if (idx >= 10) card.style.display = 'none';
-            });
-            if (finishedCards.length <= 10) {
-                const btn = document.getElementById('loadMoreTaskContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        });
-
-        function loadMoreTasks() {
-            const cards = document.querySelectorAll('#finishedTasksGrid .task-card.finished');
-            const batch = 10;
-            let count = 0;
-            for (let i = visibleFinishedTasks; i < cards.length && count < batch; i++) {
-                cards[i].style.display = 'flex';
-                count++;
-                visibleFinishedTasks++;
-            }
-            if (visibleFinishedTasks >= cards.length) {
-                const btn = document.getElementById('loadMoreTaskContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        }
-
-        function openEditTaskModal(id, name, done) {
-            document.getElementById('editTaskId').value = id;
-            document.getElementById('editTaskName').value = name;
-            document.getElementById('editTaskDone').checked = done === true || done === 'true';
-            document.getElementById('editTaskError').innerText = '';
-            document.getElementById('editTaskModal').style.display = 'flex';
-        }
-
-        function closeEditTaskModal() {
-            document.getElementById('editTaskModal').style.display = 'none';
-        }
-
-        async function saveTaskEdit() {
-            const id = document.getElementById('editTaskId').value;
-            const name = document.getElementById('editTaskName').value.trim();
-            const done = document.getElementById('editTaskDone').checked;
-            const errEl = document.getElementById('editTaskError');
-
-            if (!name) { errEl.innerText = "Task description required"; return; }
-
-            try {
-                const resp = await fetch('/edit_task_inline', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, name, done })
-                });
-                const data = await resp.json();
-                if (data.status === 'success') location.reload();
-                else errEl.innerText = data.message || "Error saving.";
-            } catch (e) { errEl.innerText = "Network error."; }
-        }
-    </script>
 {% endif %}

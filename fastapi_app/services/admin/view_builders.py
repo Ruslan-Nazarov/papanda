@@ -76,26 +76,10 @@ class ViewBuilders:
         return records, extra
 
     async def _attach_stickers_info(self, records: List[Any]):
-        for r in records: r.has_stickers = False
-        event_ids = [r.id for r in records]
-        rec_ids = [r.recurrence_id for r in records if r.recurrence_id]
-        
-        if event_ids or rec_ids:
-            stickers_res = await self.db.execute(
-                select(models.StickyNote.event_id, models.StickyNote.recurrence_id)
-                .where(
-                    models.StickyNote.finished_at.is_(None),
-                    or_(
-                        models.StickyNote.event_id.in_(event_ids) if event_ids else False,
-                        models.StickyNote.recurrence_id.in_(rec_ids) if rec_ids else False
-                    )
-                )
-            )
-            data = stickers_res.all()
-            ids_with = {s.event_id for s in data if s.event_id}
-            recs_with = {s.recurrence_id for s in data if s.recurrence_id}
-            for r in records:
-                r.has_stickers = (r.id in ids_with or r.recurrence_id in recs_with)
+        from ...utils import attach_event_stickers_count
+        await attach_event_stickers_count(self.db, records, models.StickyNote)
+        for r in records:
+            r.has_stickers = getattr(r, 'stickers_count', 0) > 0
 
     async def get_habits_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
         query = select(Model)

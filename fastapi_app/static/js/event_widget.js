@@ -14,12 +14,20 @@ function getModal(id) {
 }
 
 window.toggleEditEventWeekdays = function() {
+    if (window.EventService) {
+        window.EventService.toggleWeekdays();
+        return;
+    }
     const rule = document.getElementById('editEventRecRule')?.value;
     const row = document.getElementById('editEventWeekdaysRow');
     if (row) row.style.display = (rule === 'weekly') ? 'block' : 'none';
 };
 
 window.toggleEditEventEndMode = function() {
+    if (window.EventService) {
+        window.EventService.toggleEndMode();
+        return;
+    }
     const isCount = document.getElementById('editEventEndCountMode')?.checked;
     const dateBlock = document.getElementById('editEventEndDateBlock');
     const countBlock = document.getElementById('editEventEndCountBlock');
@@ -28,6 +36,10 @@ window.toggleEditEventEndMode = function() {
 };
 
 window.calcEditEventEndDateFromCount = async function() {
+    if (window.EventService) {
+        window.EventService.calcEndDateFromCount();
+        return;
+    }
     const freq = document.getElementById('editEventRecRule')?.value;
     const n = parseInt(document.getElementById('editEventRecCount')?.value) || 1;
     const startStr = document.getElementById('editEventDate')?.value;
@@ -54,11 +66,27 @@ window.handleEventEditClick = function (e, btn) {
     }
     console.log("[EventWidget] handleEventEditClick triggered", btn.dataset.eventId);
     
+    const d = btn.dataset;
+
+    if (window.EventService) {
+        window.EventService.openEdit(
+            d.eventId, 
+            d.eventTitle, 
+            d.eventDate, 
+            d.eventRule || 'none', 
+            d.eventEnd || '', 
+            d.eventRecId || '', 
+            d.eventColor || '', 
+            d.eventImportant === 'true',
+            d.eventDone === 'true'
+        );
+        return;
+    }
+    
     const modal = getModal('editEventModal');
     if (!modal) return;
 
     // Set values
-    const d = btn.dataset;
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
     
     setVal('editEventId', d.eventId);
@@ -97,8 +125,12 @@ window.handleEventEditClick = function (e, btn) {
 };
 
 window.closeEditEventModal = function() {
-    const modal = getModal('editEventModal');
-    if (modal) modal.style.display = 'none';
+    if (window.ModalManager) {
+        window.ModalManager.close('editEventModal');
+    } else {
+        const modal = getModal('editEventModal');
+        if (modal) modal.style.display = 'none';
+    }
 };
 
 window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) {
@@ -143,8 +175,14 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) 
         const resp = await deleteRecordApi('Event', eventId, deleteMode, eventDate);
         if (resp.ok) {
             if (typeof window.showToast === 'function') window.showToast("✓ Event deleted", "success");
-            const btn = document.querySelector(`[onclick*="'${eventId}'"]`);
-            const li = btn?.closest('li');
+            let li = null;
+            if (e && e.target && e.target.closest) {
+                li = e.target.closest('li');
+            }
+            if (!li) {
+                const btn = document.querySelector(`[onclick*="'${eventId}'"]`);
+                li = btn?.closest('li');
+            }
             if (li) {
                 const m = await import('./ui_helpers.js');
                 await m.animateItemRemoval(li);
@@ -152,7 +190,9 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) 
             // Update header badges
             if (window.HeaderService) window.HeaderService.refreshBadges();
 
-            if (deleteMode !== 'only') {
+            if (window.refreshCurrentView) {
+                window.refreshCurrentView('Event');
+            } else if (deleteMode !== 'only') {
                 if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
             }
         }
@@ -169,6 +209,10 @@ window.markEventDone = async function(form, eventId) {
         if (typeof window.showToast === 'function') window.showToast("✓ Event completed", "success");
         // Update header badges
         if (window.HeaderService) window.HeaderService.refreshBadges();
+        
+        if (window.refreshCurrentView) {
+            window.refreshCurrentView('Event');
+        }
     } catch (e) { 
         console.error('Error marking event done:', e); 
         if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
@@ -176,6 +220,10 @@ window.markEventDone = async function(form, eventId) {
 };
 
 window.saveEventEdit = async function () {
+    if (window.EventService) {
+        await window.EventService.save();
+        return;
+    }
     const id = document.getElementById('editEventId').value;
     const title = document.getElementById('editEventTitle').value.trim();
     const date = document.getElementById('editEventDate').value;

@@ -472,18 +472,7 @@ canvas#shapesCanvas {
 }
 
 /* --- Modals --- */
-.modal-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--color-overlay); backdrop-filter: blur(4px); z-index: 100000;
-    display: flex; justify-content: center; align-items: center;
-}
-.modal-content {
-    background: var(--color-bg-white); 
-    padding: var(--spacing-6); 
-    border-radius: var(--radius-lg); 
-    width: 450px; max-width: 95%; max-height: 85vh;
-    display: flex; flex-direction: column; box-shadow: var(--shadow-xl);
-}
+/* Legacy modal classes removed */
 
 /* --- Floating Math Menu --- */
 .math-floating-menu {

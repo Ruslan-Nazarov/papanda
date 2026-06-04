@@ -121,8 +121,10 @@
     display: block;
     width: 16px;
     height: 16px;
-    background: #FFD54F; /* Always Yellow */
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+    background: #FFC107; /* More saturated yellow-gold/amber */
+    border: 1px solid #E65100; /* Distinct border for depth */
+    border-radius: 2px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     transform: rotate(-10deg);
     position: relative;
     transition: transform 0.2s;
@@ -134,8 +136,10 @@
 }
 
 .sticker-icon-mini.inactive {
-    opacity: 0.25;
+    opacity: 0.5;
     box-shadow: none;
+    background: transparent;
+    border: 1px dashed var(--color-text-muted, #888);
 }
 
 .sticker-count {
@@ -145,8 +149,13 @@
     transform: translate(-50%, -50%) rotate(10deg);
     font-size: 9px;
     font-weight: 900;
-    color: rgba(0,0,0,0.8);
+    color: rgba(0,0,0,0.85);
     pointer-events: none;
+    line-height: 1;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Done Button (Square with Green Border) */

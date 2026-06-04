@@ -1,9 +1,16 @@
 {% macro render_sticker_card(row, is_archive=false) %}
-    <div class="note-card sticker-card {% if is_archive %}archive-sticker{% endif %}" data-id="{{ row.id }}" 
+    <div class="db-card {% if is_archive %}old archive-sticker{% else %}recent{% endif %}" data-id="{{ row.id }}" 
          style="border-left: 5px solid {{ row.color or '#fff9c4' }}; {% if is_archive %}display: none;{% endif %}"
-         onclick="openStickerModal({ id: '{{ row.id }}', mode: 'view' })">
+         onclick='openDbCardDetail({
+            title: {{ (row.title if row.title else "Sticker")|tojson }},
+            date: "{{ row.created_at.strftime("%d.%m.%Y %H:%M") if row.created_at else "" }}",
+            category: "{{ row.type|capitalize }}",
+            body: {{ row.text|tojson }},
+            onEdit: function(){ openStickerModal({ id: "{{ row.id }}", mode: "edit" }); },
+            onDelete: function(){ hardDeleteStickerGlobal(document.querySelector(".db-card[data-id=\"{{ row.id }}\"]"), "{{ row.id }}"); }
+         })'>
         
-        <div class="note-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="note-cat badge-premium" style="background: {{ row.color or '#fff9c4' }}33; color: var(--color-text-dark);">
                     {{ row.type|capitalize }}
@@ -21,30 +28,30 @@
                 {% endif %}
             </div>
 
-            <div class="note-actions" onclick="event.stopPropagation()">
-                <button class="btn-icon-sm" title="Edit" 
+            <div class="db-card-actions" style="border-top: none; padding-top: 0; margin-top: 0;" onclick="event.stopPropagation()">
+                <button type="button" class="btn-action btn-edit" title="Edit" 
                         onclick="event.stopPropagation(); openStickerModal({ id: '{{ row.id }}', mode: 'edit' })">
-                    ✏️
+                    Edit
                 </button>
-                <button class="btn-icon-sm danger" title="Delete" 
+                <button type="button" class="btn-action btn-del" title="Delete" 
                         onclick="event.stopPropagation(); hardDeleteStickerGlobal(this, '{{ row.id }}')">
-                    🗑️
+                    Del
                 </button>
             </div>
         </div>
 
-        <div class="note-date" style="margin: 8px 0; font-size: 0.8rem; color: var(--color-text-muted);">
+        <div class="db-card-date">
             📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}
         </div>
 
         {% if row.title %}
-            <div class="note-title" style="font-weight: 700; color: var(--color-text-dark); margin-bottom: 8px; font-size: 1.1rem;">{{ row.title }}</div>
+            <div class="db-card-title">{{ row.title }}</div>
         {% endif %}
         
-        <div class="note-text sticker-body-content" 
+        <div class="sticker-body-content" 
              data-text="{{ row.text|e }}" 
              data-type="{{ row.type }}"
-             style="font-size: 0.95rem; line-height: 1.5; color: var(--color-text-dark); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
+             style="font-family: var(--font-handwriting); font-size: 1.1rem; line-height: 1.5; color: var(--color-text-body); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
             <!-- Hydrated by StickerRenderer -->
         </div>
     </div>
@@ -55,6 +62,14 @@
     <!-- Filter & Search Bar -->
     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
         <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <!-- Stats Counter -->
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Stickers</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 30px; background: var(--color-border-light); margin: 0 5px;"></div>
+
             <!-- Category/Type Selector -->
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Filter:</span>
@@ -67,20 +82,6 @@
                     <option value="event" {% if selected_category == 'event' %}selected{% endif %}>Linked to Events</option>
                     <option value="finished" {% if selected_category == 'finished' %}selected{% endif %}>Only Archived</option>
                 </select>
-            </div>
-
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 5px;"></div>
-
-            <!-- Search Trigger -->
-            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Global Search" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.1rem;">
-                🔍
-            </div>
-            
-            <!-- Quick Search Input -->
-            <div style="position: relative;">
-                <input type="text" id="quickStickerSearch" placeholder="Filter stickers..." 
-                       style="height: 36px; padding: 0 15px; border-radius: 18px; border: 1px solid var(--color-border-light); font-size: 0.85rem; width: 200px;"
-                       oninput="quickFilterStickers(this.value)">
             </div>
         </div>
     </div>
@@ -100,8 +101,8 @@
         <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-primary);">⚡</span> Recent Stickers
         </h2>
-        <div class="notes-grid" id="recentStickersGrid">
-            {% for row in sticker_list[:5] %}
+        <div class="db-grid" id="recentStickersGrid">
+            {% for row in sticker_list[:10] %}
                 {{ render_sticker_card(row) }}
             {% else %}
                 <div style="padding: 20px 24px; color: var(--color-text-muted);">No stickers available.</div>
@@ -111,21 +112,19 @@
         <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
             <span style="color: var(--color-text-muted);">📦</span> Archive
         </h2>
-        <div class="notes-grid" id="archiveStickersGrid">
-            {% for row in sticker_list[5:] %}
+        <div class="db-grid" id="archiveStickersGrid">
+            {% for row in sticker_list[10:] %}
                 {{ render_sticker_card(row, is_archive=true) }}
             {% endfor %}
         </div>
 
-        {% if sticker_list|length > 5 %}
-            <div class="load-more-container" id="loadMoreStickersContainer" style="margin-top: 30px; display: flex; justify-content: center;">
-                <button class="btn-load-more" onclick="loadMoreStickers()" style="padding: 12px 30px; border-radius: 25px; background: var(--color-bg-white); border: 1.5px solid var(--color-border-light); font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                    Load More Archive (+10)
-                </button>
+        {% if sticker_list|length > 10 %}
+            <div class="load-more-container" id="loadMoreStickersContainer">
+                <button class="btn-load-more">Show More (+10)</button>
             </div>
         {% endif %}
     {% else %}
-        <div class="notes-grid" id="filteredStickersGrid">
+        <div class="db-grid" id="filteredStickersGrid">
             {% for row in sticker_list %}
                 {{ render_sticker_card(row) }}
             {% else %}
@@ -136,29 +135,6 @@
 </div>
 
 <style>
-.notes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    padding: 0 20px 20px;
-}
-.note-card {
-    background: var(--color-bg-white);
-    border: 1.5px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-sm);
-    position: relative;
-}
-.note-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary-light);
-}
 .parent-badge-premium {
     font-size: 0.75rem;
     background: var(--color-bg-subtle);
@@ -181,36 +157,6 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.note-actions {
-    display: flex;
-    gap: 10px;
-}
-.btn-icon-sm {
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border-light);
-    border-radius: 10px;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 1.1rem;
-}
-.btn-icon-sm:hover {
-    background: var(--color-bg-white);
-    border-color: var(--color-primary);
-}
-.btn-icon-sm.danger:hover {
-    border-color: var(--color-error);
-    background: #fff5f5;
-}
-.btn-load-more:hover {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-}
 </style>
 
 <script type="module">
@@ -225,56 +171,16 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        hydrateStickers();
-        
-        // Archive management
-        const archiveCards = document.querySelectorAll('#archiveStickersGrid .sticker-card');
-        archiveCards.forEach((card, idx) => {
-            if (idx < 10) card.style.display = 'flex';
-            else card.style.display = 'none';
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            hydrateStickers();
         });
-        
-        if (archiveCards.length <= 10) {
-            const btn = document.getElementById('loadMoreStickersContainer');
-            if (btn) btn.style.display = 'none';
-        }
-    });
-
-    // Make functions global for inline onclick
-    window.loadMoreStickers = function() {
-        const archiveCards = document.querySelectorAll('#archiveStickersGrid .sticker-card');
-        const batch = 10;
-        let count = 0;
-        let visibleCount = Array.from(archiveCards).filter(c => c.style.display !== 'none').length;
-        
-        for (let i = visibleCount; i < archiveCards.length && count < batch; i++) {
-            archiveCards[i].style.display = 'flex';
-            count++;
-        }
-        
-        if (visibleCount + count >= archiveCards.length) {
-            const btn = document.getElementById('loadMoreStickersContainer');
-            if (btn) btn.style.display = 'none';
-        }
-    };
+    } else {
+        hydrateStickers();
+    }
 
     window.filterStickers = function(val) {
         window.location.href = "{{ url_for('db_view', model_name='Stickers') }}?category=" + encodeURIComponent(val);
-    };
-
-    window.quickFilterStickers = function(query) {
-        const cards = document.querySelectorAll('.sticker-card');
-        const q = query.toLowerCase().trim();
-        
-        cards.forEach(card => {
-            const text = card.textContent.toLowerCase();
-            if (text.includes(q)) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
-            }
-        });
     };
 </script>
 {% endif %}

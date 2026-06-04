@@ -5,49 +5,39 @@
                 <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Habits</span>
                 <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
-
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 10px;"></div>
-
-            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Habits" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem;">
-                🔍
-            </div>
         </div>
     </div>
 
-    {% if search_query %}
-        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
-            <a href="{{ url_for('db_view', model_name='Habit') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
-        </div>
-    {% endif %}
-
     <div class="habit-management-view">
+        {% set active_habits = records | selectattr('read', 'equalto', false) | list %}
+        {% set finished_habits = records | selectattr('read', 'equalto', true) | list %}
+
         <h2 style="padding: 0 0 20px 0; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-primary);">🔥</span> Active Habits
         </h2>
-        <div class="habit-grid" id="activeHabitsGrid">
-            {% set active_habits = records | selectattr('read', 'equalto', false) | list %}
+        <div class="db-grid" id="activeHabitsGrid">
             {% for row in active_habits %}
-                <div class="habit-card active" data-id="{{ row.id }}">
-                    <div class="habit-title">{{ row.title }}</div>
-                    <div class="habit-date">
+                <div class="db-card active" data-id="{{ row.id }}" {% if loop.index > 10 %}style="display: none;"{% endif %}
+                     onclick='openDbCardDetail({
+                        title: "Active Habit",
+                        date: "{{ row.start_date.strftime("%d.%m.%Y") if row.start_date else "" }}",
+                        body: {{ row.title|tojson }},
+                        onEdit: function(){ openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", false, "{{ row.end_date.isoformat() if row.end_date else '' }}"); },
+                        onDelete: function(){ deleteRecordCustom("Habit", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-title">{{ row.title }}</div>
+                    <div class="db-card-date" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <span class="icon" style="font-size: 0.9rem;">📅</span> Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}
+                            <span style="font-size: 0.9rem;">📅</span> Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}
                         </div>
                         {% if today_date and row.start_date %}
-                            <div style="margin-top: 8px;">
-                                <span class="premium-badge">
-                                    ⏱️ {{ (today_date - row.start_date).days }} Days Passed
-                                </span>
-                            </div>
+                        <span class="premium-badge">⏱️ {{ (today_date - row.start_date).days }} Days Passed</span>
                         {% endif %}
                     </div>
-                    <div class="habit-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" 
-                                onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', false, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-error btn-sm" onclick="deleteRecordCustom('Habit', {{ row.id }})">Delete</button>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", false, "{{ row.end_date.isoformat() if row.end_date else '' }}")'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
                     </div>
                 </div>
             {% else %}
@@ -55,114 +45,49 @@
             {% endfor %}
         </div>
 
+        {% if active_habits|length > 10 %}
+        <div class="load-more-container" id="loadMoreActiveHabitContainer">
+            <button class="btn-load-more">Show More (+10)</button>
+        </div>
+        {% endif %}
+
         <h2 style="padding: 40px 0 20px 0; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; border-top: 1px solid var(--color-border-medium); margin-top: 40px; display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-text-muted);">🏁</span> Finished Habits
         </h2>
-        <div class="habit-grid" id="finishedHabitsGrid">
-            {% set finished_habits = records | selectattr('read', 'equalto', true) | list %}
+        <div class="db-grid" id="finishedHabitsGrid">
             {% for row in finished_habits %}
-                <div class="habit-card finished" data-id="{{ row.id }}">
-                    <div class="habit-title">{{ row.title }}</div>
-                    <div class="habit-date">
+                <div class="db-card finished" data-id="{{ row.id }}" {% if loop.index > 10 %}style="display: none;"{% endif %}
+                     onclick='openDbCardDetail({
+                        title: "Finished Habit",
+                        date: "{{ row.start_date.strftime("%d.%m.%Y") if row.start_date else "" }}",
+                        body: {{ row.title|tojson }},
+                        onEdit: function(){ openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", true, "{{ row.end_date.isoformat() if row.end_date else '' }}"); },
+                        onDelete: function(){ deleteRecordCustom("Habit", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-title">{{ row.title }}</div>
+                    <div class="db-card-date" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <span class="icon" style="font-size: 0.9rem;">📅</span> Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}
+                            <span style="font-size: 0.9rem;">📅</span> Started: {{ row.start_date.strftime('%d.%m.%Y') if row.start_date else '—' }}
                         </div>
                         {% if row.end_date and row.start_date %}
-                            <div style="margin-top: 8px;">
-                                <span class="premium-badge muted">
-                                    🏆 {{ (row.end_date - row.start_date).days }} Days Duration
-                                </span>
-                            </div>
+                        <span class="premium-badge muted">🏆 {{ (row.end_date - row.start_date).days }} Days Duration</span>
                         {% endif %}
                     </div>
-                    <div class="habit-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" 
-                                onclick="openEditHabitModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.start_date.isoformat() if row.start_date else '' }}', true, '{{ row.end_date.isoformat() if row.end_date else '' }}')">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-error btn-sm" onclick="deleteRecordCustom('Habit', {{ row.id }})">Delete</button>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", true, "{{ row.end_date.isoformat() if row.end_date else '' }}")'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
                     </div>
                 </div>
+            {% else %}
+                <div style="padding: 20px; color: #999;">No finished habits yet.</div>
             {% endfor %}
         </div>
-        
-        {% if finished_habits|length > 0 %}
-        <div class="load-more-container" id="loadMoreHabitContainer">
-            <button class="btn-load-more" onclick="loadMoreHabits()">Show More Finished Habits (+10)</button>
+
+        {% if finished_habits|length > 10 %}
+        <div class="load-more-container" id="loadMoreFinishedHabitContainer">
+            <button class="btn-load-more">Show More (+10)</button>
         </div>
-        {% else %}
-            <div style="padding: 20px; color: #999;">No finished habits yet.</div>
         {% endif %}
     </div>
-
-    <script>
-        let visibleFinishedHabits = 10;
-        document.addEventListener('DOMContentLoaded', () => {
-            const finishedCards = document.querySelectorAll('#finishedHabitsGrid .habit-card.finished');
-            finishedCards.forEach((card, idx) => {
-                if (idx >= 10) card.style.display = 'none';
-            });
-            if (finishedCards.length <= 10) {
-                const btn = document.getElementById('loadMoreHabitContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        });
-
-        function loadMoreHabits() {
-            const cards = document.querySelectorAll('#finishedHabitsGrid .habit-card.finished');
-            const batch = 10;
-            let count = 0;
-            for (let i = visibleFinishedHabits; i < cards.length && count < batch; i++) {
-                cards[i].style.display = 'flex';
-                count++;
-                visibleFinishedHabits++;
-            }
-            if (visibleFinishedHabits >= cards.length) {
-                const btn = document.getElementById('loadMoreHabitContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        }
-
-        function openEditHabitModal(id, title, start, finished, end) {
-            document.getElementById('editHabitId').value = id;
-            document.getElementById('editHabitTitle').value = title;
-            document.getElementById('editHabitStartDate').value = start ? start.substring(0, 10) : '';
-            document.getElementById('editHabitEndDate').value = end ? end.substring(0, 10) : '';
-            document.getElementById('editHabitRead').checked = finished === true || finished === 'true';
-            document.getElementById('editHabitError').innerText = '';
-            toggleHabitEndDate();
-            document.getElementById('editHabitModal').style.display = 'flex';
-        }
-
-        function toggleHabitEndDate() {
-            const isFinished = document.getElementById('editHabitRead').checked;
-            document.getElementById('editHabitEndDateGroup').style.display = isFinished ? 'block' : 'none';
-        }
-
-        function closeEditHabitModal() {
-            document.getElementById('editHabitModal').style.display = 'none';
-        }
-
-        async function saveHabitEdit() {
-            const id = document.getElementById('editHabitId').value;
-            const title = document.getElementById('editHabitTitle').value.trim();
-            const start = document.getElementById('editHabitStartDate').value;
-            const end = document.getElementById('editHabitEndDate').value;
-            const finished = document.getElementById('editHabitRead').checked;
-            const errEl = document.getElementById('editHabitError');
-
-            if (!title) { errEl.innerText = "Title required"; return; }
-
-            try {
-                const resp = await fetch('/edit_habit_inline', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, title, start_date: start, end_date: finished ? end : null, read: finished })
-                });
-                const data = await resp.json();
-                if (data.status === 'success') location.reload();
-                else errEl.innerText = data.message || "Error saving.";
-            } catch (e) { errEl.innerText = "Network error."; }
-        }
-    </script>
 {% endif %}

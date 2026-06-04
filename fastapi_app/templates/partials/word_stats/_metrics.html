@@ -10,21 +10,36 @@
         </div>
     </div>
 
-    <div class="metric-card card-coverage card-relative">
+    <div class="metric-card card-coverage card-relative" style="padding-bottom: 30px;">
         <span class="help-trigger" onclick="showHelp(event, 'Percentage of words you have encountered at least once.')">?</span>
         <span class="metric-label">Coverage</span>
-        <span class="metric-value">{{ coverage }}%</span>
-        <span style="font-size: 0.85em; color: #888">{{ learned_count }} words seen avg.</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+            {% for lang_code in active_languages %}
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9em;">
+                <span>{{ language_flags.get(lang_code, lang_code|upper) }} {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+                <strong>{{ coverage_by_lang.get(lang_code, 0) }}%</strong>
+            </div>
+            <div style="font-size: 0.75em; color: #888; text-align: right; margin-top: -4px; margin-bottom: 4px;">
+                {{ learned_count_by_lang.get(lang_code, 0) }} words seen
+            </div>
+            {% endfor %}
+        </div>
         <div class="progress-bar-container">
             <div class="progress-bar" style="width: {{ coverage }}%; background: lightgreen;"></div>
         </div>
     </div>
 
-    <div class="metric-card card-imw card-relative">
+    <div class="metric-card card-imw card-relative" style="padding-bottom: 30px;">
         <span class="help-trigger" onclick="showHelp(event, 'Intelligent Memory Weight. Shows how close you are to the target of 80 repetitions per word.')">?</span>
         <span class="metric-label">iMW Index</span>
-        <span class="metric-value">{{ imw }}%</span>
-        <span style="font-size: 0.85em; color: #888">Target: 80 shows/word</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+            {% for lang_code in active_languages %}
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9em;">
+                <span>{{ language_flags.get(lang_code, lang_code|upper) }} {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+                <strong>{{ imw_by_lang.get(lang_code, 0) }}%</strong>
+            </div>
+            {% endfor %}
+        </div>
         <div class="progress-bar-container">
             <div class="progress-bar" style="width: {{ imw }}%; background: #5D9CEC;"></div>
         </div>

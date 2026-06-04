@@ -79,26 +79,26 @@ class WordTestService:
                 })
 
             # Record that these words were shown
-            await self.record_word_shows(words)
+            words_with_langs = [(w, res["test_lang"]) for w, res in zip(words, result)]
+            await self.record_word_shows(words_with_langs)
             return result
         except Exception as e:
             logger.error(f"Error preparing test data: {e}")
             return []
 
-    async def record_word_shows(self, words: List[models.WordStats]) -> bool:
+    async def record_word_shows(self, words_with_langs: List[tuple[models.WordStats, str]]) -> bool:
         """Increments show counts for words and updates dashboard cache metrics."""
-        if not words: return True
+        if not words_with_langs: return True
         now = datetime.now()
         try:
             active_langs = await self.langs.get_active_languages()
-            active_langs_for_stats = list(set(active_langs + ['ru', 'en']))
-
-            for w in words:
+            for w, test_lang in words_with_langs:
                 w.count += 1
                 w.last_shown = now.replace(tzinfo=None)
                 stats = dict(w.show_stats or {})
-                for lang in active_langs_for_stats:
-                    stats[lang] = stats.get(lang, 0) + 1
+                # Also increment English by default as base language if it's the test source?
+                # Actually, only increment the specific test language to be accurate.
+                stats[test_lang] = stats.get(test_lang, 0) + 1
                 w.show_stats = stats
             
             # Update daily global counter
@@ -106,9 +106,9 @@ class WordTestService:
             daily_res = await self.db.execute(select(models.WordShowsDaily).where(models.WordShowsDaily.date == today))
             daily_row = daily_res.scalar_one_or_none()
             if daily_row:
-                daily_row.shows_count += len(words)
+                daily_row.shows_count += len(words_with_langs)
             else:
-                self.db.add(models.WordShowsDaily(date=today, shows_count=len(words)))
+                self.db.add(models.WordShowsDaily(date=today, shows_count=len(words_with_langs)))
                 
             # Update Dashboard settings cache
             metrics = await self.stats.get_current_metrics(active_langs)

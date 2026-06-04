@@ -175,10 +175,12 @@ export const NoteService = {
             if (card.onclick) {
                 // If it's on a card in DB view, it likely has a complex onclick.
                 // For simplicity in this turn, reload is fine to ensure all data-attributes and onclicks are fresh.
-                location.reload(); 
+                if (window.refreshCurrentView) window.refreshCurrentView('Notes');
+                else location.reload();
             }
         } else {
-            location.reload();
+            if (window.refreshCurrentView) window.refreshCurrentView('Notes');
+            else location.reload();
         }
     }
 };

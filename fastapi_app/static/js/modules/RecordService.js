@@ -66,17 +66,36 @@ export const RecordService = {
                 wrapper.style.transition = 'opacity 0.3s ease-out';
                 wrapper.style.opacity = '0';
             }
-            setTimeout(() => location.reload(), 300);
+            setTimeout(() => {
+                if (window.refreshCurrentView) window.refreshCurrentView(modelName);
+                else location.reload();
+            }, 300);
             return;
         }
 
-        const eventCard = document.querySelector(`[data-id="${recordId}"]`);
+        const elements = document.querySelectorAll(`[data-id="${recordId}"]`);
         const tableBtns = document.querySelectorAll(`button[onclick*="'${recordId}'"]`);
         
         let found = false;
-        if (eventCard) {
-            eventCard.classList.add('fade-out');
-            setTimeout(() => eventCard.remove(), 300);
+        
+        if (elements.length > 0) {
+            elements.forEach(el => {
+                const isChip = el.classList.contains('event-chip');
+                const cell = el.closest('.calendar-cell');
+                
+                el.classList.add('fade-out');
+                setTimeout(() => {
+                    el.remove();
+                    // Update cell counter if this was a calendar chip
+                    if (isChip && cell) {
+                        const counter = cell.querySelector('.cell-date + span');
+                        if (counter) {
+                            const currentCount = parseInt(counter.innerText) || 0;
+                            if (currentCount > 0) counter.innerText = currentCount - 1;
+                        }
+                    }
+                }, 300);
+            });
             found = true;
         } 
         
@@ -90,9 +109,16 @@ export const RecordService = {
                 }
             });
         }
+
+        // Remove from memory
+        if (modelName === 'Event' && window.eventRecords) {
+            window.eventRecords = window.eventRecords.filter(r => r.id != recordId);
+            if (window.refreshDayViewModalIfOpen) window.refreshDayViewModalIfOpen();
+        }
         
         if (!found) {
-            location.reload();
+            if (window.refreshCurrentView) window.refreshCurrentView(modelName);
+            else location.reload();
         } else {
             if (window.showToast) window.showToast(`${modelName} deleted`, 'success');
         }

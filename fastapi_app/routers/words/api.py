@@ -75,6 +75,7 @@ async def record_test_result(
 async def update_word_data(
     data: schemas.WordUpdateSchema = Depends(schemas.WordUpdateSchema.as_form),
     word_service: WordService = Depends(get_word_service),
+    state_manager: StateManager = Depends(get_state_manager),
 ) -> RedirectResponse:
     """Обновляет все данные слова."""
     new_translations = {}
@@ -88,6 +89,8 @@ async def update_word_data(
     new_translations['en'] = data.word_eng
     
     await word_service.update_word_full_dynamic(data.word_eng, new_translations, data.new_meaning)
+    # Принудительно сбрасываем кеш слов, чтобы страница показала обновлённые данные
+    await state_manager.get_runtime_context(force_update=True)
     return RedirectResponse("/?saved=1", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.post("/reset_word_stats", response_model=schemas.SuccessResponse)
@@ -96,7 +99,7 @@ async def reset_word_stats(word_service: WordService = Depends(get_word_service)
     await word_service.reset_all_stats()
     return schemas.SuccessResponse(message="Stats reset")
 
-@router.post("/mark_triplet_learned", response_model=schemas.SuccessResponse)
+@router.post("/mark_triplet_learned")
 async def mark_triplet_learned(
     data: schemas.TripletLearnedRequest,
     word_service: WordService = Depends(get_word_service),
@@ -105,9 +108,10 @@ async def mark_triplet_learned(
     """Помечает активную тройку языков для слова как изученную."""
     word = await word_service.toggle_active_triplet_known(data.eng, data.is_learned)
     if word:
+        new_word = None
         if data.is_learned:
-            await state_manager.remove_word_from_cache(data.eng)
-        return schemas.SuccessResponse(message="Triplet status updated")
+            new_word = await state_manager.replace_word_in_cache(data.eng)
+        return {"status": "success", "message": "Triplet status updated", "new_word": new_word}
     raise HTTPException(status_code=404, detail="Word not found")
 
 @router.get("/word_lookup")

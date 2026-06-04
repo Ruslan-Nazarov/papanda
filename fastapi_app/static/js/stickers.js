@@ -1,10 +1,10 @@
 /**
  * stickers.js - Modular Entry Point & Global Bridge
  */
-import { StickerRenderer } from './modules/StickerRenderer.js?v=2';
-import { StickerService } from './modules/StickerService.js?v=2';
-import { StickerModal } from './modules/StickerModal.js?v=2';
-import { StickerOverview } from './modules/StickerOverview.js?v=2';
+import { StickerRenderer } from './modules/StickerRenderer.js';
+import { StickerService } from './modules/StickerService.js';
+import { StickerModal } from './modules/StickerModal.js';
+import { StickerOverview } from './modules/StickerOverview.js';
 
 // Note Search Logic (Refactored to use StickerService)
 let noteSearchTimeout = null;
@@ -90,14 +90,23 @@ async function archiveStickerGlobal(btn, id) {
     if (!confirmed) return;
     try {
         await StickerService.archive(id);
-        const el = btn.closest('.sticker-thought') || btn.closest('.note-card');
+        
+        // Dispatch event for parent if this was a parent-attached sticker
+        if (StickerModal.state.parentType && StickerModal.state.parentId) {
+            window.dispatchEvent(new CustomEvent('stickersUpdated', { 
+                detail: { parentType: StickerModal.state.parentType, parentId: StickerModal.state.parentId } 
+            }));
+        }
+
+        const el = btn ? (btn.closest('.sticker-thought') || btn.closest('.note-card')) : null;
         if (el) {
             el.style.opacity = '0.5';
             el.style.transform = 'scale(0.9)';
             setTimeout(() => el.remove(), 300);
         } else {
             if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
-            else location.reload();
+            if (window.refreshCurrentView) window.refreshCurrentView('Stickers');
+            else if (!StickerModal.state.parentType) location.reload();
         }
     } catch(e) { console.error(e); }
 }
@@ -107,14 +116,23 @@ async function hardDeleteStickerGlobal(btn, id) {
     if (!confirmed) return;
     try {
         await StickerService.hardDelete(id);
-        const el = btn.closest('.note-card') || btn.closest('.sticker-thought');
+        
+        // Dispatch event for parent if this was a parent-attached sticker
+        if (StickerModal.state.parentType && StickerModal.state.parentId) {
+            window.dispatchEvent(new CustomEvent('stickersUpdated', { 
+                detail: { parentType: StickerModal.state.parentType, parentId: StickerModal.state.parentId } 
+            }));
+        }
+
+        const el = btn ? (btn.closest('.note-card') || btn.closest('.sticker-thought')) : null;
         if (el) {
             el.style.backgroundColor = 'var(--color-error-light)';
             el.style.opacity = '0.5';
             setTimeout(() => el.remove(), 300);
         } else {
             if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
-            else location.reload();
+            if (window.refreshCurrentView) window.refreshCurrentView('Stickers');
+            else if (!StickerModal.state.parentType) location.reload();
         }
     } catch(e) { console.error(e); }
 }
@@ -136,12 +154,12 @@ window.deleteStickerFromModal = () => {
 };
 
 
-window.openParentStickers = (type, id) => StickerOverview.open(type, id);
+window.openParentStickers = (type, id, secondaryId = null) => StickerOverview.open(type, id, secondaryId);
 window.closeParentStickersOverview = () => StickerOverview.close();
 window.archiveStickerInOverview = (btn, id) => StickerOverview.archive(btn, id);
 window.createNewStickerForCurrentParent = () => {
     StickerOverview.close();
-    StickerModal.open({ parentType: StickerModal.state.parentType, parentId: StickerModal.state.parentId });
+    StickerModal.open({ parentType: StickerModal.state.parentType, parentId: StickerModal.state.parentId, secondaryId: StickerModal.state.secondaryId });
 };
 
 window.openNoteSelectionModal = () => {
@@ -157,8 +175,15 @@ window.closeNoteSelectionModal = () => {
 window.searchNotesForSticker = searchNotesForSticker;
 window.attachNoteToSticker = attachNoteToSticker;
 window.removeNoteFromSticker = () => {
-    StickerModal.state.noteId = -1;
-    document.getElementById('modalStickerAttachedNoteContainer').style.display = 'none';
+    StickerModal.state.noteId = null;
+    const container = document.getElementById('stickerNoteSection');
+    if (container) container.style.display = 'none';
+    const attachBtnGroup = document.getElementById('stickerAttachNoteBtnGroup');
+    if (attachBtnGroup) attachBtnGroup.style.display = 'block';
+    
+    // Legacy support
+    const legacy = document.getElementById('modalStickerAttachedNoteContainer');
+    if (legacy) legacy.style.display = 'none';
 };
 window.expandNoteOnSticker = expandNoteOnSticker;
 

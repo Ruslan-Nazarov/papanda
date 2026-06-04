@@ -1,21 +1,22 @@
 {% macro render_note_card(row, is_archive=false) %}
-    <div class="note-card {% if is_archive %}archive-note{% endif %}" data-id="{{ row.id }}" 
+    <div class="db-card {% if is_archive %}old archive-note{% else %}recent{% endif %}" data-id="{{ row.id }}" 
          {% if is_archive %}style="display: none;"{% endif %}
-         onclick='NoteService.openView({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}", {{ row.stickers_list | tojson if row.stickers_list else "[]" }})'>
-        <div class="note-header">
-            <span class="note-cat badge-premium">{{ row.category or 'General' }}</span>
-            <div class="note-actions" onclick="event.stopPropagation()">
-                <button class="btn-icon-sm" title="Edit" 
-                        onclick='event.stopPropagation(); NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}")'>
-                    ✏️
-                </button>
-                <button class="btn-icon-sm danger" title="Delete" 
-                        onclick="event.stopPropagation(); deleteRecordCustom('Notes', {{ row.id }})">
-                    🗑️
-                </button>
-            </div>
+         onclick='openDbCardDetail({
+            title: "Note",
+            date: "",
+            category: "{{ row.category|e }}",
+            body: {{ row.note|tojson }},
+            onEdit: function(){ NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}"); },
+            onDelete: function(){ deleteRecordCustom("Notes", {{ row.id }}); }
+         })'>
+        <span class="note-cat badge-premium">{{ row.category or 'General' }}</span>
+        <div class="db-card-text">{{ row.note }}</div>
+        <div class="db-card-actions" onclick="event.stopPropagation()">
+            <button type="button" class="btn-action btn-edit" 
+                    onclick='NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}")'>Edit</button>
+            <button type="button" class="btn-action btn-del" 
+                    onclick="deleteRecordCustom('Notes', {{ row.id }})">Del</button>
         </div>
-        <div class="note-text">{{ row.note }}</div>
     </div>
 {% endmacro %}
 
@@ -23,6 +24,14 @@
     <!-- Filter & Search Bar -->
     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
         <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <!-- Stats Counter -->
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Notes</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+            
+            <div style="width: 1px; height: 30px; background: var(--color-border-light); margin: 0 5px;"></div>
+
             <!-- Category Selector -->
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Category:</span>
@@ -32,20 +41,6 @@
                         <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
                     {% endfor %}
                 </select>
-            </div>
-
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 5px;"></div>
-
-            <!-- Search Trigger -->
-            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Global Search" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.1rem;">
-                🔍
-            </div>
-            
-            <!-- Quick Search Input -->
-            <div style="position: relative;">
-                <input type="text" id="quickNoteSearch" placeholder="Filter notes..." 
-                       style="height: 36px; padding: 0 15px; border-radius: 18px; border: 1px solid var(--color-border-light); font-size: 0.85rem; width: 220px;"
-                       oninput="quickFilterNotes(this.value)">
             </div>
         </div>
     </div>
@@ -61,13 +56,13 @@
 
     {% set notes_list = records if records else [] %}
 
-    <!-- Recent Notes (Top 5) -->
+    <!-- Recent Notes (Top 10) -->
     {% if not selected_category and not search_query %}
         <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-primary);">⚡</span> Recent Notes
         </h2>
-        <div class="notes-grid" id="recentNotesGrid">
-            {% for row in notes_list[:5] %}
+        <div class="db-grid" id="recentNotesGrid">
+            {% for row in notes_list[:10] %}
                 {{ render_note_card(row) }}
             {% else %}
                 <div style="padding: 20px 24px; color: var(--color-text-muted);">No notes available.</div>
@@ -78,22 +73,20 @@
         <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
             <span style="color: var(--color-text-muted);">📦</span> Archive
         </h2>
-        <div class="notes-grid" id="archiveNotesGrid">
-            {% for row in notes_list[5:] %}
+        <div class="db-grid" id="archiveNotesGrid">
+            {% for row in notes_list[10:] %}
                 {{ render_note_card(row, is_archive=true) }}
             {% endfor %}
         </div>
 
-        {% if notes_list|length > 5 %}
-            <div class="load-more-container" id="loadMoreNotesContainer" style="margin-top: 30px; display: flex; justify-content: center;">
-                <button class="btn-load-more" onclick="loadMoreNotes()" style="padding: 12px 30px; border-radius: 25px; background: var(--color-bg-white); border: 1.5px solid var(--color-border-light); font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                    Load More Archive (+10)
-                </button>
+        {% if notes_list|length > 10 %}
+            <div class="load-more-container" id="loadMoreNotesContainer">
+                <button class="btn-load-more">Show More (+10)</button>
             </div>
         {% endif %}
     {% else %}
         <!-- Filtered View -->
-        <div class="notes-grid" id="filteredNotesGrid">
+        <div class="db-grid" id="filteredNotesGrid">
             {% for row in notes_list %}
                 {{ render_note_card(row) }}
             {% else %}
@@ -103,141 +96,14 @@
     {% endif %}
 </div>
 
-<style>
-.notes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    padding: 0 20px 20px;
-}
-.note-card {
-    background: var(--color-bg-white);
-    border: 1.5px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    box-shadow: var(--shadow-sm);
-    position: relative;
-    overflow: hidden;
-}
-.note-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary-light);
-}
-.note-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.note-text {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--color-text-dark);
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    white-space: pre-wrap;
-}
-.note-actions {
-    display: flex;
-    gap: 10px;
-}
-.btn-icon-sm {
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border-light);
-    border-radius: 10px;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 1.1rem;
-}
-.btn-icon-sm:hover {
-    background: var(--color-bg-white);
-    border-color: var(--color-primary);
-    transform: scale(1.05);
-}
-.btn-icon-sm.danger:hover {
-    border-color: var(--color-error);
-    background: #fff5f5;
-    color: var(--color-error);
-}
-.btn-load-more:hover {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-}
-</style>
-
 <script>
-    let visibleArchiveNotes = 10;
-    
     function filterNotesByCategory(cat) {
-        if (cat === 'all') {
-            window.location.href = "{{ url_for('db_view', model_name='Notes') }}";
-        } else {
-            window.location.href = "{{ url_for('db_view', model_name='Notes') }}?category=" + encodeURIComponent(cat);
-        }
-    }
-
-    function quickFilterNotes(query) {
-        const cards = document.querySelectorAll('.note-card');
-        const q = query.toLowerCase().trim();
-        
-        cards.forEach(card => {
-            const text = card.querySelector('.note-text').textContent.toLowerCase();
-            const cat = card.querySelector('.note-cat').textContent.toLowerCase();
-            if (text.includes(q) || cat.includes(q)) {
-                card.style.display = card.classList.contains('archive-note') ? (isCardVisibleInArchive(card) ? 'flex' : 'none') : 'flex';
-            } else {
-                card.style.display = 'none';
-            }
+        // Client-side filter by category
+        const allCards = document.querySelectorAll('.note-card[data-id]');
+        allCards.forEach(card => {
+            const cardCat = card.querySelector('.note-cat');
+            const match = cat === 'all' || (cardCat && cardCat.textContent.trim() === cat);
+            card.style.display = match ? '' : 'none';
         });
     }
-
-    function isCardVisibleInArchive(card) {
-        const archiveCards = Array.from(document.querySelectorAll('#archiveNotesGrid .note-card'));
-        const idx = archiveCards.indexOf(card);
-        return idx < visibleArchiveNotes;
-    }
-
-    function loadMoreNotes() {
-        const archiveCards = document.querySelectorAll('#archiveNotesGrid .note-card');
-        const batch = 10;
-        let count = 0;
-        
-        for (let i = visibleArchiveNotes; i < archiveCards.length && count < batch; i++) {
-            archiveCards[i].style.display = 'flex';
-            count++;
-            visibleArchiveNotes++;
-        }
-        
-        if (visibleArchiveNotes >= archiveCards.length) {
-            const btn = document.getElementById('loadMoreNotesContainer');
-            if (btn) btn.style.display = 'none';
-        }
-    }
-
-    // Initialize archive visibility
-    document.addEventListener('DOMContentLoaded', () => {
-        const archiveCards = document.querySelectorAll('#archiveNotesGrid .note-card');
-        archiveCards.forEach((card, idx) => {
-            if (idx < 10) card.style.display = 'flex';
-            else card.style.display = 'none';
-        });
-        
-        if (archiveCards.length <= 10) {
-            const btn = document.getElementById('loadMoreNotesContainer');
-            if (btn) btn.style.display = 'none';
-        }
-    });
 </script>

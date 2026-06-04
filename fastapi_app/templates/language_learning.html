@@ -3,562 +3,695 @@
 {% block title %}Language Learning - Papanda{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    
-    <style>
-        body {
-            background-color: #fff5ec;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
-        .learning-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            box-sizing: border-box;
-            flex: 1;
-        }
+<style>
+    body {
+        background-color: #fff5ec;
+        margin: 0;
+        padding: 0;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
 
-        .header-layout {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
+    .learning-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        box-sizing: border-box;
+        flex: 1;
+    }
 
-        .title-block {
-            flex: 0 0 350px;
-        }
+    .header-layout {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
 
-        .sticker-canvas-wrapper {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            background: rgba(0,0,0,0.03);
-            border-radius: 20px;
-            padding: 6px;
-            border: 1px solid rgba(0,0,0,0.05);
-            min-height: 130px;
-            overflow: hidden;
-        }
+    .title-block {
+        flex: 0 0 350px;
+    }
 
-        .sticker-canvas {
-            display: flex;
-            flex-direction: row;
-            overflow-x: auto;
-            gap: 15px;
-            padding: 5px;
-            width: 100%;
-            scroll-behavior: smooth;
-        }
+    .sticker-canvas-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 20px;
+        padding: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        min-height: 130px;
+        overflow: hidden;
+    }
 
-        .sticker-canvas::-webkit-scrollbar {
-            height: 6px;
-        }
+    .sticker-canvas {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 5px;
+        width: 100%;
+        scroll-behavior: smooth;
+    }
 
-        .sticker-canvas::-webkit-scrollbar-thumb {
-            background: #e0e0e0;
-            border-radius: 10px;
-        }
+    .sticker-canvas::-webkit-scrollbar {
+        height: 6px;
+    }
 
-        .add-sticker-btn {
-            flex-shrink: 0;
-            width: 80px;
-            height: 110px;
-            border: 2px dashed #bdc3c7;
-            border-radius: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.8em;
-            color: #bdc3c7;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-right: 10px;
-            font-family: var(--font-heading);
-        }
+    .sticker-canvas::-webkit-scrollbar-thumb {
+        background: #e0e0e0;
+        border-radius: 10px;
+    }
 
-        .add-sticker-btn:hover {
-            border-color: #7f8c8d;
-            color: #7f8c8d;
-            background: rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
+    .add-sticker-btn {
+        flex-shrink: 0;
+        width: 80px;
+        height: 110px;
+        border: 2px dashed #bdc3c7;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.8em;
+        color: #bdc3c7;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-right: 10px;
+        font-family: var(--font-heading);
+    }
 
-        /* Compact stickers for horizontal view */
-        .sticker-canvas .sticker-thought {
-            flex-shrink: 0;
-            width: 140px !important;
-            height: 110px !important;
-            margin: 0 !important;
-            font-size: 0.85em;
-            position: relative;
-            transform: rotate(0deg) !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+    .add-sticker-btn:hover {
+        border-color: #7f8c8d;
+        color: #7f8c8d;
+        background: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #888;
-            text-decoration: none;
-            margin-bottom: 30px;
-            font-weight: 600;
-            transition: color 0.2s;
-        }
+    /* Compact stickers for horizontal view */
+    .sticker-canvas .sticker-thought {
+        flex-shrink: 0;
+        width: 140px !important;
+        height: 110px !important;
+        margin: 0 !important;
+        font-size: 0.85em;
+        position: relative;
+        transform: rotate(0deg) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        overflow: hidden;
+    }
 
-        .learning-card {
-            background: white;
-            padding: 50px 40px;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f0e0d0;
-            margin-bottom: 40px;
-            text-align: center;
-        }
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #888;
+        text-decoration: none;
+        margin-bottom: 30px;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
 
-        .sentence-display {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            gap: 15px;
-            min-height: 220px;
-            margin: 40px 0;
-            flex-wrap: wrap;
-            padding: 20px;
-            background: #fafafa;
-            border-radius: 20px;
-            border: 1px dashed #eee;
-            position: relative;
-        }
+    .learning-card {
+        background: white;
+        padding: 50px 40px;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f0e0d0;
+        margin-bottom: 40px;
+        text-align: center;
+    }
 
-        .word-slot {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            min-width: 60px;
-            transition: all 0.3s;
-        }
+    .sentence-display {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 15px;
+        min-height: 220px;
+        margin: 40px 0;
+        flex-wrap: wrap;
+        padding: 20px;
+        background: #fafafa;
+        border-radius: 20px;
+        border: 1px dashed #eee;
+        position: relative;
+    }
 
-        .word-label {
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: #95a5a6;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #eee;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+    .word-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        min-width: 60px;
+        transition: all 0.3s;
+    }
 
-        .word-slot.visible .word-label {
-            opacity: 1;
-        }
+    .word-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: #95a5a6;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #eee;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
 
-        .word-box {
-            font-size: 2rem;
-            font-weight: 700;
-            padding: 8px 16px;
-            border-radius: 12px;
-            background: white;
-            color: #2c3e50;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border-bottom: 4px solid #dfe6e9;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            white-space: nowrap;
-        }
+    .word-slot.visible .word-label {
+        opacity: 1;
+    }
 
-        .word-slot.visible .word-box {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .word-box {
+        font-size: 2rem;
+        font-weight: 700;
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: white;
+        color: #2c3e50;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        border-bottom: 4px solid #dfe6e9;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        white-space: nowrap;
+    }
 
-        /* Part highlighting */
-        .word-part { display: inline-block; }
-        .word-part.ending { color: #e74c3c; font-weight: 800; }
-        .word-part.suffix { color: #2980b9; }
+    .word-slot.visible .word-box {
+        opacity: 1;
+        transform: translateY(0);
+    }
 
-        .word-translation {
-            font-size: 0.85rem;
-            color: #7f8c8d;
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 0.3s;
-            max-width: 120px;
-            text-align: center;
-            line-height: 1.2;
-        }
+    /* Part highlighting */
+    .word-part {
+        display: inline-block;
+    }
 
-        .show-translation .word-slot.visible .word-translation {
-            opacity: 1;
-        }
+    .word-part.ending {
+        color: #e74c3c;
+        font-weight: 800;
+    }
 
-        /* Flash Mode: Only words, no labels or translations */
-        .flash-mode .word-label,
-        .flash-mode .word-translation {
-            display: none !important;
-        }
-        
-        .flash-mode .word-box {
-            border-bottom-color: transparent !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            opacity: 1 !important;
-            transform: none !important;
-        }
+    .word-part.suffix {
+        color: #2980b9;
+    }
 
-        .flash-mode .word-part {
-            color: inherit !important;
-            font-weight: inherit !important;
-        }
+    .word-translation {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        font-weight: 500;
+        opacity: 0;
+        transition: opacity 0.3s;
+        max-width: 120px;
+        text-align: center;
+        line-height: 1.2;
+    }
 
-        /* Role-based Colors */
-        .role-Predicate .word-box { border-color: #ff7675; }
-        .role-Subject .word-box { border-color: #74b9ff; }
-        .role-Attribute_Subject .word-box { border-color: #55efc4; }
-        .role-Attribute_Object .word-box { border-color: #55efc4; }
-        .role-Object .word-box { border-color: #a29bfe; }
-        .role-Circumstance .word-box { border-color: #ffeaa7; }
+    .show-translation .word-slot.visible .word-translation {
+        opacity: 1;
+    }
 
-        .role-Predicate .word-label { color: #d63031; background: #fff5f5; }
-        .role-Subject .word-label { color: #0984e3; background: #f0f7ff; }
-        .role-Attribute_Subject .word-label { color: #00b894; background: #f0fffb; }
-        .role-Attribute_Object .word-label { color: #00b894; background: #f0fffb; }
-        .role-Object .word-label { color: #6c5ce7; background: #f5f3ff; }
-        .role-Circumstance .word-label { color: #e67e22; background: #fffcf0; }
+    /* Flash Mode: Only words, no labels or translations */
+    .flash-mode .word-label,
+    .flash-mode .word-translation {
+        display: none !important;
+    }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
-        }
+    .flash-mode .word-box {
+        border-bottom-color: transparent !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
 
-        .btn-action {
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-        }
+    .flash-mode .word-part {
+        color: inherit !important;
+        font-weight: inherit !important;
+    }
 
-        .btn-run { background: #2c3e50; color: white; }
-        .btn-run:hover { background: #34495e; transform: scale(1.05); }
+    /* Role-based Colors */
+    .role-Predicate .word-box {
+        border-color: #ff7675;
+    }
 
-        .btn-toggle { background: #fdfaf7; color: #f2994a; border: 1px solid #f2994a; }
-        .btn-toggle.active { background: #f2994a; color: white; }
+    .role-Subject .word-box {
+        border-color: #74b9ff;
+    }
 
-        .lang-selector {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
+    .role-Attribute_Subject .word-box {
+        border-color: #55efc4;
+    }
 
-        .lang-btn {
-            padding: 8px 20px;
-            border: 2px solid #ddd;
-            background: white;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            font-family: inherit;
-        }
+    .role-Attribute_Object .word-box {
+        border-color: #55efc4;
+    }
 
-        .lang-btn.active {
-            border-color: #f2994a;
-            color: #f2994a;
-        }
+    .role-Object .word-box {
+        border-color: #a29bfe;
+    }
 
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 40px;
-            font-size: 0.8rem;
-            color: #888;
-        }
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-    </style>
+    .role-Circumstance .word-box,
+    .role-Adverbial .word-box {
+        border-color: #ffeaa7;
+    }
+
+    .role-Predicate .word-label {
+        color: #d63031;
+        background: #fff5f5;
+    }
+
+    .role-Subject .word-label {
+        color: #0984e3;
+        background: #f0f7ff;
+    }
+
+    .role-Attribute_Subject .word-label {
+        color: #00b894;
+        background: #f0fffb;
+    }
+
+    .role-Attribute_Object .word-label {
+        color: #00b894;
+        background: #f0fffb;
+    }
+
+    .role-Object .word-label {
+        color: #6c5ce7;
+        background: #f5f3ff;
+    }
+
+    .role-Circumstance .word-label,
+    .role-Adverbial .word-label {
+        color: #e67e22;
+        background: #fffcf0;
+    }
+
+    .controls {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn-action {
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: inherit;
+    }
+
+    .btn-run {
+        background: #2c3e50;
+        color: white;
+    }
+
+    .btn-run:hover {
+        background: #34495e;
+        transform: scale(1.05);
+    }
+
+    .btn-toggle {
+        background: #fdfaf7;
+        color: #f2994a;
+        border: 1px solid #f2994a;
+    }
+
+    .btn-toggle.active {
+        background: #f2994a;
+        color: white;
+    }
+
+    .lang-selector {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+
+    .lang-btn {
+        padding: 8px 20px;
+        border: 2px solid #ddd;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: inherit;
+    }
+
+    .lang-btn.active {
+        border-color: #f2994a;
+        color: #f2994a;
+    }
+
+    .legend {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 40px;
+        font-size: 0.8rem;
+        color: #888;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-    <div class="learning-container">
-        <a href="/" class="back-link">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Back to Dashboard
-        </a>
+<div class="learning-container">
+    <a href="/" class="back-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Dashboard
+    </a>
 
-        <div class="header-layout">
-            <div class="title-block">
-                <h1>Sentence Trainer</h1>
-                <p>Learn structural logic word by word.</p>
-            </div>
-            
-            <div class="sticker-canvas-wrapper">
-                <div class="add-sticker-btn" onclick="openParentStickers('note', {{ anchor_note_id }})" title="Добавить заметку">+</div>
-                <div id="languageStickersCanvas" class="sticker-canvas"></div>
-            </div>
+    <div class="header-layout">
+        <div class="title-block">
+            <h1 style="margin-top: 0; margin-bottom: 10px;">Sentence Trainer</h1>
+            <p style="margin: 0; display: flex; align-items: center; gap: 15px;">
+                <span style="color: #666;">Learn structural logic word by word.</span>
+            </p>
         </div>
 
-        <div class="learning-card">
-            <div id="lang-selector" class="lang-selector">
-                <!-- Buttons dynamically generated -->
-            </div>
-
-            <div id="sentence-display" class="sentence-display" onclick="handleDisplayClick()">
-                <!-- Words injected here -->
-            </div>
-
-            <div class="controls">
-                <button class="btn-action btn-run" onclick="runFlash()">
-                    <span>▶</span> Запустить
-                </button>
-                <button id="toggle-translation" class="btn-action btn-toggle" onclick="toggleTranslation()">
-                    👁 Перевод
-                </button>
-                <button class="btn-action" style="background: #eee;" onclick="nextSentence()">
-                    Next ➜
-                </button>
-            </div>
-
-            <div class="legend">
-                <div class="legend-item"><span class="dot" style="background: #ff7675;"></span> Predicate</div>
-                <div class="legend-item"><span class="dot" style="background: #74b9ff;"></span> Subject</div>
-                <div class="legend-item"><span class="dot" style="background: #55efc4;"></span> Attributes</div>
-                <div class="legend-item"><span class="dot" style="background: #a29bfe;"></span> Object</div>
-                <div class="legend-item"><span class="dot" style="background: #ffeaa7;"></span> Circumstance</div>
-            </div>
+        <div class="sticker-canvas-wrapper">
+            <div class="add-sticker-btn" onclick="openParentStickers('note', {{ anchor_note_id }})"
+                title="Добавить заметку">+</div>
+            <div id="languageStickersCanvas" class="sticker-canvas"></div>
         </div>
     </div>
 
-    {% include 'partials/sticker_modal.html' %}
-    {% include 'partials/parent_stickers_modal.html' %}
+    <div class="learning-card" style="position: relative;">
+        <span id="sentence-progress"
+            style="position: absolute; top: 40px; right: 40px; font-size: 0.85em; background: #f5f5f5; border: 1px solid #eee; padding: 6px 14px; border-radius: 12px; color: #888; font-weight: 600; display: none; white-space: nowrap;"></span>
+
+        <div id="lang-selector" class="lang-selector">
+            <!-- Buttons dynamically generated -->
+        </div>
+
+        <div id="sentence-display" class="sentence-display" onclick="handleDisplayClick()">
+            <!-- Words injected here -->
+        </div>
+
+        <div class="controls">
+            <button class="btn-action btn-run" onclick="runFlash()">
+                <span>▶</span> Запустить
+            </button>
+            <button id="toggle-translation" class="btn-action btn-toggle" onclick="toggleTranslation()">
+                👁 Перевод
+            </button>
+            <button class="btn-action" style="background: #eee;" onclick="nextSentence()">
+                Next ➜
+            </button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><span class="dot" style="background: #ff7675;"></span> Predicate</div>
+            <div class="legend-item"><span class="dot" style="background: #74b9ff;"></span> Subject</div>
+            <div class="legend-item"><span class="dot" style="background: #55efc4;"></span> Attributes</div>
+            <div class="legend-item"><span class="dot" style="background: #a29bfe;"></span> Object</div>
+            <div class="legend-item"><span class="dot" style="background: #ffeaa7;"></span> Circumstance</div>
+        </div>
+    </div>
+</div>
+
+{% include 'partials/sticker_modal.html' %}
+{% include 'partials/parent_stickers_modal.html' %}
 {% endblock %}
 
 {% block scripts %}
-    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=6"></script>
+<script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=17"></script>
 
-    <script id="sentences-data" type="application/json">
+<script id="sentences-data" type="application/json">
         {{ sentences_json | safe }}
     </script>
 
-    <script type="module">
-        import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "{{ url_for('static', path='js/stickers.js') }}?v=6";
-        
-        // Expose to window for inline HTML onclicks
-        window.openParentStickers = (type, id) => StickerOverview.open(type, id);
-        window.openStickerModal = (params) => StickerModal.open(params);
-        window.toggleTranslation = toggleTranslation;
-        window.runFlash = runFlash;
-        window.nextSentence = nextSentence;
-        window.setLanguage = setLanguage;
-        window.handleDisplayClick = handleDisplayClick;
+<script type="module">
+    import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "{{ url_for('static', path='js/stickers.js') }}?v=17";
 
-        const anchorNoteId = {{ anchor_note_id | default(0) }};
-        const dataElement = document.getElementById('sentences-data');
-        let rawSentences = [];
-        try {
-            rawSentences = dataElement ? JSON.parse(dataElement.textContent) : [];
-        } catch (e) {
-            console.error("Failed to parse sentences JSON:", e);
-        }
-        
-        let currentLang = 'English';
-        let currentSentenceIndex = 0;
-        let activeSentences = [];
-        let currentStepIndex = -1; // -1: hidden, 0: Step 1, etc.
-        let isFlashActive = false;
+    // Expose to window for inline HTML onclicks
+    window.openParentStickers = (type, id) => StickerOverview.open(type, id);
+    window.openStickerModal = (params) => StickerModal.open(params);
+    window.toggleTranslation = toggleTranslation;
+    window.runFlash = runFlash;
+    window.nextSentence = nextSentence;
+    window.setLanguage = setLanguage;
+    window.handleDisplayClick = handleDisplayClick;
 
-        // Strict Order: Predicate -> Subject -> Attribute_Subject -> Object -> Attribute_Object -> Adverbial
-        const roleOrder = ['Predicate', 'Subject', 'Attribute_Subject', 'Object', 'Attribute_Object', 'Adverbial'];
+    window.P_ACTIVE_LANGUAGES = {{ active_languages | tojson | safe }};
+    window.P_ALL_LANGUAGES = {{ all_languages | default ({}) | tojson | safe }};
 
-        function setLanguage(lang, btn) {
-            currentLang = lang;
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            
-            activeSentences = rawSentences.filter(s => s.language === lang);
-            currentSentenceIndex = 0;
-            renderCurrentSentence();
-        }
+    const anchorNoteId = {{ anchor_note_id | default (0) }};
+    const dataElement = document.getElementById('sentences-data');
+    let rawSentences = [];
+    try {
+        rawSentences = dataElement ? JSON.parse(dataElement.textContent) : [];
+    } catch (e) {
+        console.error("Failed to parse sentences JSON:", e);
+    }
 
-        function renderCurrentSentence() {
-            const display = document.getElementById('sentence-display');
-            if (!display) return;
-            display.innerHTML = '';
-            currentStepIndex = -1;
-            
-            if (activeSentences.length === 0) {
-                display.innerHTML = '<div style="color: #bdc3c7;">Нет предложений для этого языка.</div>';
-                return;
-            }
+    let currentLang = 'English';
+    let currentSentenceIndex = 0;
+    let activeSentences = [];
+    let currentStepIndex = -1; // -1: hidden, 0: Step 1, etc.
+    let isFlashActive = false;
 
-            const s = activeSentences[currentSentenceIndex];
-            s.words.forEach((w) => {
-                const slot = document.createElement('div');
-                slot.className = `word-slot role-${w.role}`;
-                slot.dataset.role = w.role;
-                
-                const label = document.createElement('div');
-                label.className = 'word-label';
-                label.innerText = w.label;
-                
-                const box = document.createElement('div');
-                box.className = 'word-box';
-                
-                if (w.parts && w.parts.length > 0) {
-                    w.parts.forEach((p, pIdx) => {
-                        const span = document.createElement('span');
-                        span.className = 'word-part' + (pIdx > 0 ? (pIdx === 1 ? ' ending' : ' suffix') : '');
-                        span.innerText = p;
-                        box.appendChild(span);
-                    });
-                } else {
-                    box.innerText = w.text;
-                }
-                
-                const trans = document.createElement('div');
-                trans.className = 'word-translation';
-                trans.innerText = w.translation;
-                
-                slot.appendChild(label);
-                slot.appendChild(box);
-                slot.appendChild(trans);
-                display.appendChild(slot);
-            });
+    // Strict Order: Predicate -> Subject -> Attribute_Subject -> Object -> Attribute_Object -> Adverbial
+    const roleOrder = ['Predicate', 'Subject', 'Attribute_Subject', 'Object', 'Attribute_Object', 'Adverbial'];
+
+    function setLanguage(lang, btn) {
+        currentLang = lang;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        activeSentences = rawSentences.filter(s => s.language === lang);
+        currentSentenceIndex = 0;
+        renderCurrentSentence();
+    }
+
+    function renderCurrentSentence() {
+        const display = document.getElementById('sentence-display');
+        if (!display) return;
+        display.innerHTML = '';
+        currentStepIndex = -1;
+
+        if (activeSentences.length === 0) {
+            display.innerHTML = '<div style="color: #bdc3c7;">Нет предложений для этого языка.</div>';
+            return;
         }
 
-        async function runFlash() {
-            if (activeSentences.length === 0) return;
-            
-            isFlashActive = true;
-            const display = document.getElementById('sentence-display');
-            display.classList.add('flash-mode');
-            
-            document.querySelectorAll('.word-slot').forEach(s => s.classList.add('visible'));
-            currentStepIndex = -2; // Special state: All visible (Flash phase)
-        }
+        const s = activeSentences[currentSentenceIndex];
+        s.words.forEach((w, idx) => {
+            const slot = document.createElement('div');
+            slot.className = `word-slot role-${w.role}`;
+            slot.dataset.role = w.role;
 
-        function handleDisplayClick() {
-            if (activeSentences.length === 0) return;
-            const display = document.getElementById('sentence-display');
+            const label = document.createElement('div');
+            label.className = 'word-label';
+            label.innerText = w.label;
 
-            // Если сейчас активна "Вспышка" (все показано), то по клику всё скрываем
-            if (currentStepIndex === -2) {
-                document.querySelectorAll('.word-slot').forEach(s => s.classList.remove('visible'));
-                display.classList.remove('flash-mode');
-                currentStepIndex = -1; // Переходим в состояние "Всё скрыто"
-                isFlashActive = false;
-                return;
-            }
+            const box = document.createElement('div');
+            box.className = 'word-box';
 
-            currentStepIndex++;
-            if (currentStepIndex >= roleOrder.length) return;
-            
-            const targetRole = roleOrder[currentStepIndex];
-            const slots = document.querySelectorAll(`.word-slot[data-role="${targetRole}"]`);
-            
-            if (slots.length === 0) {
-                handleDisplayClick(); // Пропускаем пустые роли в последовательности
-            } else {
-                slots.forEach(s => s.classList.add('visible'));
-            }
-        }
-
-        function toggleTranslation() {
-            const display = document.getElementById('sentence-display');
-            display.classList.toggle('show-translation');
-            document.getElementById('toggle-translation').classList.toggle('active');
-        }
-
-        function nextSentence() {
-            currentSentenceIndex = (currentSentenceIndex + 1) % activeSentences.length;
-            renderCurrentSentence();
-        }
-
-        async function loadLanguageStickers() {
-            console.log("Loading stickers for anchor:", anchorNoteId);
-            if (!anchorNoteId || anchorNoteId === 0) {
-                console.warn("Anchor Note ID is missing or 0");
-                return;
-            }
-            const canvas = document.getElementById('languageStickersCanvas');
-            if (!canvas) return;
-            
-            try {
-                const stickers = await StickerService.getByParent('note', anchorNoteId);
-                console.log("Stickers fetched:", stickers.length);
-                canvas.innerHTML = '';
-                if (!stickers || stickers.length === 0) {
-                    canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
-                    return;
-                }
-                stickers.forEach(s => {
-                    const el = StickerRenderer.createStickerElement(s, { isWidget: true });
-                    canvas.appendChild(el);
+            if (w.parts && w.parts.length > 0) {
+                w.parts.forEach((p, pIdx) => {
+                    const span = document.createElement('span');
+                    span.className = 'word-part' + (pIdx > 0 ? (pIdx === 1 ? ' ending' : ' suffix') : '');
+                    let textToSet = p;
+                    if (pIdx === 0 && w.text && w.text.length > 0 && textToSet.length > 0) {
+                        const firstChar = w.text.charAt(0);
+                        if (firstChar === firstChar.toUpperCase() && firstChar !== firstChar.toLowerCase()) {
+                            textToSet = textToSet.charAt(0).toUpperCase() + textToSet.slice(1);
+                        } else if (firstChar === firstChar.toLowerCase() && firstChar !== firstChar.toUpperCase()) {
+                            textToSet = textToSet.charAt(0).toLowerCase() + textToSet.slice(1);
+                        }
+                    }
+                    span.innerText = textToSet;
+                    box.appendChild(span);
                 });
-            } catch (err) {
-                console.error("Stickers load error:", err);
-                canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Ошибка загрузки заметок</div>';
+            } else {
+                box.innerText = w.text || '';
             }
-        }
 
-        function initLanguages() {
-            const selector = document.getElementById('lang-selector');
-            if (!selector || rawSentences.length === 0) return;
+            const trans = document.createElement('div');
+            trans.className = 'word-translation';
+            trans.innerText = w.translation;
 
-            const languages = [...new Set(rawSentences.map(s => s.language))];
-            selector.innerHTML = '';
-            
-            languages.forEach((lang, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'lang-btn' + (idx === 0 ? ' active' : '');
-                btn.innerText = lang;
-                btn.onclick = (e) => setLanguage(lang, e.target);
-                selector.appendChild(btn);
-            });
-
-            if (languages.length > 0) {
-                setLanguage(languages[0]);
-            }
-        }
-
-        // Module script runs after DOM is parsed, but we use DOMContentLoaded for extra safety
-        document.addEventListener('DOMContentLoaded', () => {
-            initLanguages();
-            loadLanguageStickers();
-            
-            window.addEventListener('stickersUpdated', (e) => {
-                if (e.detail.parentType === 'note' && e.detail.parentId == anchorNoteId) {
-                    loadLanguageStickers();
-                }
-            });
+            slot.appendChild(label);
+            slot.appendChild(box);
+            slot.appendChild(trans);
+            display.appendChild(slot);
         });
-    </script>
-    
-    {% include 'partials/footer.html' %}
+
+        // Update counter
+        const progressSpan = document.getElementById('sentence-progress');
+        if (progressSpan) {
+            progressSpan.innerText = `Sentence ${currentSentenceIndex + 1} / ${activeSentences.length}`;
+            progressSpan.style.display = 'inline-block';
+        }
+    }
+
+    async function runFlash() {
+        if (activeSentences.length === 0) return;
+
+        isFlashActive = true;
+        const display = document.getElementById('sentence-display');
+        display.classList.add('flash-mode');
+
+        document.querySelectorAll('.word-slot').forEach(s => s.classList.add('visible'));
+        currentStepIndex = -2; // Special state: All visible (Flash phase)
+    }
+
+    function handleDisplayClick() {
+        if (activeSentences.length === 0) return;
+        const display = document.getElementById('sentence-display');
+
+        // Если сейчас активна "Вспышка" (все показано), то по клику всё скрываем
+        if (currentStepIndex === -2) {
+            document.querySelectorAll('.word-slot').forEach(s => s.classList.remove('visible'));
+            display.classList.remove('flash-mode');
+            currentStepIndex = -1; // Переходим в состояние "Всё скрыто"
+            isFlashActive = false;
+            return;
+        }
+
+        currentStepIndex++;
+        if (currentStepIndex >= roleOrder.length) return;
+
+        const targetRole = roleOrder[currentStepIndex];
+        const slots = document.querySelectorAll(`.word-slot[data-role="${targetRole}"]`);
+
+        if (slots.length === 0) {
+            handleDisplayClick(); // Пропускаем пустые роли в последовательности
+        } else {
+            slots.forEach(s => s.classList.add('visible'));
+        }
+    }
+
+    function toggleTranslation() {
+        const display = document.getElementById('sentence-display');
+        display.classList.toggle('show-translation');
+        document.getElementById('toggle-translation').classList.toggle('active');
+    }
+
+    function nextSentence() {
+        currentSentenceIndex = (currentSentenceIndex + 1) % activeSentences.length;
+        renderCurrentSentence();
+    }
+
+    async function loadLanguageStickers() {
+        console.log("Loading stickers for anchor:", anchorNoteId);
+        if (!anchorNoteId || anchorNoteId === 0) {
+            console.warn("Anchor Note ID is missing or 0");
+            return;
+        }
+        const canvas = document.getElementById('languageStickersCanvas');
+        if (!canvas) return;
+
+        try {
+            const stickers = await StickerService.getByParent('note', anchorNoteId);
+            console.log("Stickers fetched:", stickers.length);
+            canvas.innerHTML = '';
+            if (!stickers || stickers.length === 0) {
+                canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
+                return;
+            }
+            stickers.forEach(s => {
+                const el = StickerRenderer.createStickerElement(s, { isWidget: true });
+                canvas.appendChild(el);
+            });
+        } catch (err) {
+            console.error("Stickers load error:", err);
+            canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Ошибка загрузки заметок</div>';
+        }
+    }
+
+    function isLanguageActive(langName) {
+        const activeCodes = window.P_ACTIVE_LANGUAGES || window.DASHBOARD_ACTIVE_LANGS || ['en', 'it', 'de'];
+        const normName = langName.toLowerCase();
+
+        const mapping = {
+            'en': ['english'],
+            'de': ['deutsch', 'german'],
+            'it': ['italiano', 'italian'],
+            'fr': ['français', 'french'],
+            'es': ['español', 'spanish'],
+            'kz': ['қазақша', 'kazakh', 'kz'],
+            'kk': ['қазақша', 'kazakh', 'kk'],
+            'la': ['latina', 'latin']
+        };
+
+        return activeCodes.some(code => {
+            const lowerCode = code.toLowerCase();
+            if (normName.includes(lowerCode)) return true;
+            const aliases = mapping[lowerCode] || [];
+            return aliases.some(alias => normName.includes(alias) || alias.includes(normName));
+        });
+    }
+
+    function initLanguages() {
+        const selector = document.getElementById('lang-selector');
+        if (!selector || rawSentences.length === 0) return;
+
+        let languages = [...new Set(rawSentences.map(s => s.language))]
+            .filter(lang => isLanguageActive(lang));
+
+        if (languages.length === 0) {
+            languages = [...new Set(rawSentences.map(s => s.language))];
+        }
+        selector.innerHTML = '';
+
+        languages.forEach((lang, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'lang-btn' + (idx === 0 ? ' active' : '');
+            btn.innerText = lang;
+            btn.onclick = (e) => setLanguage(lang, e.target);
+            selector.appendChild(btn);
+        });
+
+        if (languages.length > 0) {
+            setLanguage(languages[0]);
+        }
+    }
+
+    // Module script runs after DOM is parsed, but we use DOMContentLoaded for extra safety
+    document.addEventListener('DOMContentLoaded', () => {
+        initLanguages();
+        loadLanguageStickers();
+
+        window.addEventListener('stickersUpdated', (e) => {
+            if (e.detail.parentType === 'note' && e.detail.parentId == anchorNoteId) {
+                loadLanguageStickers();
+            }
+        });
+    });
+</script>
+
+{% include 'partials/footer.html' %}
 {% endblock %}

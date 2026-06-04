@@ -227,17 +227,17 @@ async def attach_event_stickers_count(db, events: list, sticky_model: type) -> N
     if not events:
         return
         
-    from sqlalchemy import select, func, or_
+    from sqlalchemy import select, func
     
-    physical_ids = [e.id for e in events if hasattr(e, 'id') and not getattr(e, '_is_virtual', False)]
+    event_ids = [e.id for e in events if hasattr(e, 'id')]
     series_ids = [e.recurrence_id for e in events if getattr(e, 'recurrence_id', None)]
     
-    # 1. Считаем стикеры по event_id (конкретные экземпляры)
+    # 1. Считаем стикеры по event_id (конкретные экземпляры или шаблоны)
     e_map = {}
-    if physical_ids:
+    if event_ids:
         e_res = await db.execute(
             select(sticky_model.event_id, func.count(sticky_model.id))
-            .where(sticky_model.event_id.in_(physical_ids), sticky_model.finished_at.is_(None))
+            .where(sticky_model.event_id.in_(event_ids), sticky_model.finished_at.is_(None))
             .group_by(sticky_model.event_id)
         )
         e_map = dict(e_res.all())
@@ -255,7 +255,7 @@ async def attach_event_stickers_count(db, events: list, sticky_model: type) -> N
     # 3. Суммируем
     for ev in events:
         count = 0
-        if not getattr(ev, '_is_virtual', False):
+        if hasattr(ev, 'id'):
             count += e_map.get(ev.id, 0)
         if ev.recurrence_id:
             count += r_map.get(ev.recurrence_id, 0)

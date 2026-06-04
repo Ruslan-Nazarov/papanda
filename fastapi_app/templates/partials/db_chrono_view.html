@@ -5,120 +5,63 @@
                 <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Entries</span>
                 <span style="font-size: 1.1rem; color: var(--color-blue); line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
-
-            <div style="width: 1px; height: 24px; background: var(--color-border-medium); margin: 0 10px;"></div>
-
-            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Search Chronology" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-white); border-radius: 50%; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem;">
-                🔍
-            </div>
         </div>
     </div>
 
-    {% if search_query %}
-        <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
-            <a href="{{ url_for('db_view', model_name='Chronology') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
-        </div>
-    {% endif %}
-
-    <div class="chrono-management-view">
-        {% if search_query %}
-            <div class="chrono-grid" id="searchChronoGrid">
-                {% for row in records %}
-                    <div class="chrono-card" data-id="{{ row.id }}" ondblclick='ChronoService.openView("{{ row.date.strftime("%d.%m.%Y %H:%M") }}", {{ row.title|tojson }})'>
-                        <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
-                        <div class="chrono-title">{{ row.title }}</div>
-                        <div class="chrono-actions" onclick="event.stopPropagation()">
-                            <button type="button" class="btn-action btn-edit" 
-                                    onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>
-                                Edit
-                            </button>
-                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
-                        </div>
+    <div class="chrono-management-view" id="chronoManagementView">
+        <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-blue);">⚡</span> Recent
+        </h2>
+        <div class="db-grid" id="recentChronoGrid">
+            {% for row in records[:10] %}
+                <div class="db-card recent" data-id="{{ row.id }}"
+                     onclick='openDbCardDetail({
+                        title: "Chronology Entry",
+                        date: "{{ row.date.strftime("%d.%m.%Y %H:%M") }}",
+                        body: {{ row.title|tojson }},
+                        onEdit: function(){ ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}"); },
+                        onDelete: function(){ deleteRecordCustom("Chronology", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                    <div class="db-card-text">{{ row.title }}</div>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
                     </div>
-                {% else %}
-                    <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1/-1;">No matching records found.</div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                <span style="color: var(--color-blue);">⚡</span> Recent (Last 7 Days)
-            </h2>
-            <div class="chrono-grid" id="recentChronoGrid">
-                {% set recent_chrono = records | selectattr('date', 'greaterthan', seven_days_ago) | list %}
-                {% for row in recent_chrono %}
-                    <div class="chrono-card recent" data-id="{{ row.id }}" ondblclick='ChronoService.openView("{{ row.date.strftime("%d.%m.%Y %H:%M") }}", {{ row.title|tojson }})'>
-                        <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
-                        <div class="chrono-title">{{ row.title }}</div>
-                        <div class="chrono-actions" onclick="event.stopPropagation()">
-                            <button type="button" class="btn-action btn-edit" 
-                                    onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>
-                                Edit
-                            </button>
-                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
-                        </div>
-                    </div>
-                {% else %}
-                    <div style="padding: 20px 24px; color: var(--color-text-muted);">No recent records.</div>
-                {% endfor %}
-            </div>
-
-            <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
-                <span style="color: var(--color-text-muted);">📦</span> Archive
-            </h2>
-            <div class="chrono-grid" id="archiveChronoGrid">
-                {% set archive_chrono = records | selectattr('date', 'lessthan', seven_days_ago) | list %}
-                {% for row in archive_chrono %}
-                    <div class="chrono-card old" data-id="{{ row.id }}" ondblclick='ChronoService.openView("{{ row.date.strftime("%d.%m.%Y %H:%M") }}", {{ row.title|tojson }})'>
-                        <div class="chrono-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
-                        <div class="chrono-title">{{ row.title }}</div>
-                        <div class="chrono-actions" onclick="event.stopPropagation()">
-                            <button type="button" class="btn-action btn-edit" 
-                                    onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>
-                                Edit
-                            </button>
-                            <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            
-            {% if archive_chrono|length > 0 %}
-            <div class="load-more-container" id="loadMoreChronoContainer" style="margin-top: 30px;">
-                <button class="btn-load-more" onclick="loadMoreChrono()">Show More Archive (+10)</button>
-            </div>
+                </div>
             {% else %}
-                <div style="padding: 20px 24px; color: var(--color-text-muted);">Archive is empty.</div>
-            {% endif %}
+                <div style="padding: 20px 24px; color: var(--color-text-muted);">No records yet.</div>
+            {% endfor %}
+        </div>
+
+        {% if records|length > 10 %}
+        <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
+            <span style="color: var(--color-text-muted);">📦</span> Archive
+        </h2>
+        <div class="db-grid" id="archiveChronoGrid">
+            {% for row in records[10:] %}
+                <div class="db-card old" data-id="{{ row.id }}" {% if loop.index > 10 %}style="display: none;"{% endif %}
+                     onclick='openDbCardDetail({
+                        title: "Chronology Entry",
+                        date: "{{ row.date.strftime("%d.%m.%Y %H:%M") }}",
+                        body: {{ row.title|tojson }},
+                        onEdit: function(){ ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}"); },
+                        onDelete: function(){ deleteRecordCustom("Chronology", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                    <div class="db-card-text">{{ row.title }}</div>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="load-more-container" id="loadMoreChronoContainer" style="margin-top: 30px;">
+            <button class="btn-load-more">Show More (+10)</button>
+        </div>
         {% endif %}
     </div>
-
-    <script>
-        let visibleArchiveChrono = 10;
-        document.addEventListener('DOMContentLoaded', () => {
-            const archiveCards = document.querySelectorAll('#archiveChronoGrid .chrono-card.old');
-            archiveCards.forEach((card, idx) => {
-                if (idx >= 10) card.style.display = 'none';
-            });
-            if (archiveCards.length <= 10) {
-                const btn = document.getElementById('loadMoreChronoContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        });
-
-        function loadMoreChrono() {
-            const cards = document.querySelectorAll('#archiveChronoGrid .chrono-card.old');
-            const batch = 10;
-            let count = 0;
-            for (let i = visibleArchiveChrono; i < cards.length && count < batch; i++) {
-                cards[i].style.display = 'flex';
-                count++;
-                visibleArchiveChrono++;
-            }
-            if (visibleArchiveChrono >= cards.length) {
-                const btn = document.getElementById('loadMoreChronoContainer');
-                if (btn) btn.style.display = 'none';
-            }
-        }
-    </script>
 {% endif %}

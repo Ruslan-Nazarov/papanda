@@ -12,14 +12,14 @@ from ...config import templates
 
 router = APIRouter()
 
-@router.get("/word_stats", response_class=HTMLResponse)
-async def word_stats(
+@router.get("/api/words/stats_modal", response_class=HTMLResponse)
+async def word_stats_modal(
     request: Request,
     db: AsyncSession = Depends(get_db),
     word_service: WordService = Depends(get_word_service),
     user: Any = Depends(check_auth_dependency),
 ) -> HTMLResponse:
-    """Детальная страница статистики слов с графиками."""
+    """API endpoint to load the word stats modal content."""
     metrics = await word_service.get_current_metrics()
     total_count = metrics['total_count']
     learned_count = metrics['learned_count']
@@ -27,6 +27,9 @@ async def word_stats(
     imw = metrics['imw']
     shown_today = metrics['shown_today']
     today = metrics['today']
+    coverage_by_lang = metrics.get('coverage_by_lang', {})
+    imw_by_lang = metrics.get('imw_by_lang', {})
+    learned_count_by_lang = metrics.get('learned_count_by_lang', {})
 
     active_langs = await word_service.get_active_languages()
     lang_names = await word_service.get_all_language_names()
@@ -47,11 +50,11 @@ async def word_stats(
         return d.strftime("%d.%m")
 
     language_flags = {
-        'en': '🇺🇸', 'it': '🇮🇹', 'de': '🇩🇪', 'ru': '🇷🇺', 
+        'en': '🇬🇧', 'it': '🇮🇹', 'de': '🇩🇪', 'ru': '🇷🇺', 
         'fr': '🇫🇷', 'es': '🇪🇸', 'tr': '🇹🇷', 'kz': '🇰🇿'
     }
 
-    response = templates.TemplateResponse(request, "word_stats.html", {
+    response = templates.TemplateResponse(request, "partials/modals/_word_stats_content.html", {
         "request": request,
         "total_count": total_count,
         "learned_count": learned_count,
@@ -63,6 +66,9 @@ async def word_stats(
         "coverage": coverage,
         "imw": imw,
         "shown_today": shown_today,
+        "coverage_by_lang": coverage_by_lang,
+        "imw_by_lang": imw_by_lang,
+        "learned_count_by_lang": learned_count_by_lang,
         "today_for_calendar": today,
         "distribution": dist,
         "history_labels": [format_date(s.date) for s in history_snapshots],

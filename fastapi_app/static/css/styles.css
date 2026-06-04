@@ -10,7 +10,7 @@
 @import 'components/forms.css';
 @import 'components/buttons.css';
 @import 'components/cards.css';
-@import 'components/modals.css';
+@import 'components/modals.css?v=2';
 @import 'components/stickers.css';
 
 /* 3. Layout & Widgets */

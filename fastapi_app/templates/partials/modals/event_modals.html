@@ -1,148 +1,5 @@
 <!-- Edit Event Modal -->
 <div id="editEventModal" class="modal premium-modal">
-    <style>
-        .premium-modal .modal-content {
-            border-radius: 24px;
-            border: none;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-            padding: 0;
-            overflow: hidden;
-            background: #fff;
-        }
-        .premium-modal .modal-header {
-            padding: 24px 32px;
-            background: var(--color-bg-subtle);
-            border-bottom: 1px solid var(--color-bg-app);
-        }
-        .premium-modal .modal-header h2 {
-            margin: 0;
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--color-text-dark);
-            letter-spacing: -0.02em;
-        }
-        .premium-modal .modal-body {
-            padding: 32px;
-        }
-        .premium-modal .form-label {
-            font-size: 0.7rem;
-            font-weight: 850;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--color-text-muted);
-            margin-bottom: 8px;
-            display: block;
-        }
-        .premium-modal .form-input, .premium-modal .form-select {
-            border-radius: 12px;
-            border: 1.5px solid var(--color-bg-app);
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            background: var(--color-bg-subtle);
-            width: 100%;
-        }
-        .premium-modal .form-input:focus {
-            border-color: var(--color-primary);
-            background: #fff;
-            box-shadow: 0 0 0 4px var(--color-primary-soft);
-        }
-        .premium-modal .info-box {
-            background: var(--color-primary-soft);
-            border: 1px solid var(--color-primary-glow);
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-        }
-        .premium-modal .weekday-pill {
-            display: flex;
-            gap: 6px;
-            justify-content: space-between;
-            background: var(--color-bg-subtle);
-            padding: 8px;
-            border-radius: 12px;
-        }
-        .premium-modal .day-checkbox {
-            display: none;
-        }
-        .premium-modal .day-label {
-            flex: 1;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 700;
-            transition: all 0.2s;
-            color: var(--color-text-muted);
-        }
-        .premium-modal .day-checkbox:checked + .day-label {
-            background: var(--color-primary);
-            color: #fff;
-            box-shadow: 0 4px 10px var(--color-primary-soft);
-        }
-        .premium-modal .modal-footer {
-            padding: 20px 32px;
-            background: var(--color-bg-subtle);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            border-top: 1px solid var(--color-bg-app);
-        }
-        .premium-modal .btn-save {
-            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-            color: #fff;
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-weight: 700;
-            border: none;
-            box-shadow: 0 4px 15px var(--color-primary-soft);
-            transition: transform 0.2s;
-        }
-        .premium-modal .btn-save:hover {
-            transform: translateY(-2px);
-        }
-        .sticker-mini-pill {
-            background: #fff;
-            border: 1.5px solid var(--color-bg-app);
-            border-radius: 10px;
-            padding: 6px 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--color-text-body);
-            box-shadow: var(--shadow-sm);
-        }
-        .sticker-mini-pill button {
-            background: none;
-            border: none;
-            color: var(--color-error);
-            font-size: 1.1rem;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-        .color-dot {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.2s;
-        }
-        .color-dot:hover {
-            transform: scale(1.1);
-        }
-        .color-dot.active {
-            transform: scale(1.25);
-            box-shadow: 0 0 0 2px var(--color-primary);
-        }
-    </style>
 
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
@@ -202,6 +59,7 @@
                 <input type="hidden" id="editEventStickerTitle">
                 <input type="hidden" id="editEventStickerColor" value="#fff9c4">
                 <input type="hidden" id="editEventStickerType" value="text">
+                <input type="hidden" id="editEventStickerNoteId">
             </div>
 
             <div id="editEventRecurrenceModeRow" class="info-box" style="display: none;">
@@ -326,7 +184,7 @@
             <div style="border-top: 2px solid var(--color-bg-app); padding-top: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div style="color: var(--color-text-muted); font-weight: 850; font-size: 0.75rem; letter-spacing: 0.05em;">STICKER BOARD</div>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="openParentStickers('event', document.getElementById('detailEventId').value)" style="padding: 4px 12px; font-size: 0.75rem;">+ Manage Stickers</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openParentStickers('event', document.getElementById('detailEventId').value, document.getElementById('detailEventRecId').value)" style="padding: 4px 12px; font-size: 0.75rem;">+ Manage Stickers</button>
                 </div>
                 <div id="detailStickersList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
                 <div id="detailStickersEmpty" style="display: none; text-align: center; padding: 20px; background: var(--color-bg-subtle); border-radius: 16px; border: 2px dashed var(--color-border-light); color: var(--color-text-muted); font-style: italic; font-size: 0.9rem;">

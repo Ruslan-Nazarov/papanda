@@ -24,7 +24,8 @@ export const TaskService = {
             const r = await fetchWithJson(`/edit_record/Task/${id}`, { name, done });
             if (r.ok) {
                 ModalManager.close('editTaskModal');
-                location.reload(); // Tasks often change position or list, so reload is safer
+                if (window.refreshCurrentView) window.refreshCurrentView('Task');
+                else location.reload(); // Tasks often change position or list, so reload is safer
             }
         } catch (e) {
             console.error("[TaskService] save error:", e);

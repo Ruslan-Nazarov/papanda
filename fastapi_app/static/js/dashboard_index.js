@@ -5,7 +5,7 @@ import { showToast } from './ui_helpers.js';
 import { ModalManager } from './modules/ModalManager.js';
 
 import { initEventWidget }       from './event_widget.js';
-import { initWordWidget }        from './word_widget.js?v=2';
+import { initWordWidget }        from './word_widget.js?v=5';
 import { initRecurrenceForm }    from './recurrence_form.js';
 import { initStickerWidget }     from './sticker_widget.js';
 import { initNoteChronoWidget }  from './note_chrono_widget.js';
@@ -112,4 +112,21 @@ document.addEventListener('DOMContentLoaded', async function () {
     DragAndDropService.init();
     HeaderService.init();
     ModalManager.initGlobal();
+
+    // Listen for stickers updating to refresh respective dashboard widgets in real-time
+    window.addEventListener('stickersUpdated', async (e) => {
+        const parentType = e.detail?.parentType;
+        console.log(`[Dashboard] stickersUpdated event received for parentType: ${parentType}`);
+        if (parentType === 'event') {
+            if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
+            if (typeof window.loadCalendarData === 'function') {
+                await window.loadCalendarData();
+            }
+            if (typeof window.refreshDayViewModalIfOpen === 'function') window.refreshDayViewModalIfOpen();
+        } else if (parentType === 'task') {
+            if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
+        } else if (parentType === 'habit') {
+            if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
+        }
+    });
 });

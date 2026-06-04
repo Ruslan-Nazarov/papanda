@@ -32,7 +32,30 @@ class StickerUpdate(BaseModel):
     type: Optional[str] = None
     note_id: Optional[int] = None
 
+@router.get("/debug_info")
+async def debug_info(db_session: Any = Depends(get_db)):
+    from sqlalchemy import select
+    from ..models import Event, StickyNote
+    
+    events_res = await db_session.execute(select(Event))
+    events = events_res.scalars().all()
+    events_data = [{
+        "id": e.id, "title": e.title, "date": str(e.date), 
+        "recurrence_id": e.recurrence_id, "done": e.done
+    } for e in events]
+    
+    stickers_res = await db_session.execute(select(StickyNote))
+    stickers = stickers_res.scalars().all()
+    stickers_data = [{
+        "id": s.id, "title": s.title, "text": s.text, 
+        "event_id": s.event_id, "recurrence_id": s.recurrence_id, 
+        "finished_at": str(s.finished_at) if s.finished_at else None
+    } for s in stickers]
+    
+    return {"events": events_data, "stickers": stickers_data}
+
 @router.get("/notes_search", response_model=List[NoteView])
+
 async def search_notes_for_stickers(
     query: Optional[str] = None,
     db_session: Any = Depends(get_db),
@@ -182,3 +205,4 @@ async def reorder_stickers(
     """Изменяет порядок отображения стикеров."""
     await service.reorder_notes(note_ids)
     return {"status": "success"}
+

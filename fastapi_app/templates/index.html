@@ -4,6 +4,9 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=1.1" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/word_stats.css') }}?v=1" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/db_view.css') }}?v=18" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- KaTeX for Math rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
@@ -43,8 +46,17 @@
     {% include 'partials/modals/note_modals.html' %}
     {% include 'partials/modals/chrono_modals.html' %}
     {% include 'partials/modals/word_modals.html' %}
+    {% include 'partials/modals/other_modals.html' %}
+    {% include 'partials/modals/search_modal.html' %}
     {% include 'partials/sticker_modal.html' %}
     {% include 'partials/parent_stickers_modal.html' %}
+    {% include 'partials/modals/_language_learning_modal.html' %}
+    {% include 'partials/modals/_word_stats_modal.html' %}
+    {% include 'partials/modals/_db_view_modal.html' %}
+    {% include 'partials/modals/_calendar_modal.html' %}
+    {% include 'partials/modals/event_color_modal.html' %}
+    {% include 'partials/modals/event_tree_modal.html' %}
+    {% include 'partials/modals/_word_cloud_modal.html' %}
 
     <div class="grid-stack" style="visibility: hidden;">
         <!-- Chronology -->
@@ -108,9 +120,12 @@
         window.P_ALL_LANGUAGES = {{ all_languages|tojson|safe }};
     </script>
     
-    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=16"></script>
+    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=17"></script>
+    <script type="module" src="{{ url_for('static', path='js/language_learning.js') }}?v=1"></script>
+    <script src="{{ url_for('static', path='js/word_stats.js') }}?v=5"></script>
     <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v=6"></script>
     <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=10"></script>
     <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=6"></script>
-    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=30"></script>
+    <script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=31"></script>
+    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=33"></script>
 {% endblock %}

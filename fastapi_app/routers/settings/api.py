@@ -119,3 +119,180 @@ async def get_event_tree(color: str, db: AsyncSession = Depends(get_db)):
             "done": e.done
         })
     return schemas.SuccessResponse(message="Success", data=tree_data)
+
+@router.get("/api/events/month", response_class=JSONResponse)
+async def get_events_for_month(
+    year: int, month: int, 
+    as_service: AdminService = Depends(get_admin_service)
+):
+    """Returns a JSON list of events for the specified month to be used in the standalone modal."""
+    ctx = await as_service.get_db_view_context(
+        model_name='Event', month=month, year=year
+    )
+    records = ctx.get('records', [])
+    data = []
+    for row in records:
+        data.append({
+            "id": row.id,
+            "title": row.title or "",
+            "date": row.date.isoformat() if row.date else "",
+            "recurrence_rule": row.recurrence_rule or "",
+            "recurrence_end": row.recurrence_end.isoformat() if row.recurrence_end else "",
+            "recurrence_id": row.recurrence_id or "",
+            "color": row.color or "",
+            "important": bool(row.important),
+            "done": bool(row.done),
+            "has_stickers": bool(getattr(row, "has_stickers", False)),
+            "stickers_count": int(getattr(row, "stickers_count", 0))
+        })
+    return {"events": data}
+
+import json
+import re
+from ...config import settings
+
+@router.post("/import_sentences")
+async def import_sentences(request: Request):
+    """Импортирует JSON с предложениями и добавляет в sentence.json"""
+    try:
+        new_sentences = await request.json()
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"message": f"Invalid JSON format: {str(e)}"})
+        
+    if not isinstance(new_sentences, list):
+        return JSONResponse(status_code=400, content={"message": "JSON must be an array of sentences."})
+        
+    sentence_file = settings.resources_dir / "sentence.json"
+    
+    existing_sentences = []
+    if sentence_file.exists():
+        try:
+            with open(sentence_file, "r", encoding="utf-8") as f:
+                existing_sentences = json.load(f)
+        except Exception as e:
+            return JSONResponse(status_code=500, content={"message": f"Failed to read existing sentence.json: {str(e)}"})
+            
+    existing_ids = {s.get("id") for s in existing_sentences if "id" in s}
+    
+    ALLOWED_ROLES = {
+        "Subject", "Predicate", "Object",
+        "Attribute_Subject", "Attribute_Object",
+        "Adverbial", "Conjunction"
+    }
+    PUNCTUATION = set(".,!?;:\"'—–-")
+    
+    errors = []
+    valid_sentences = []
+    
+    for i, s in enumerate(new_sentences):
+        prefix = f"[{s.get('id', f'index {i}')}]"
+        
+        # Check required fields
+        missing = [f for f in ("id", "language", "sentence", "words") if f not in s]
+        if missing:
+            errors.append(f"{prefix} Missing fields: {', '.join(missing)}")
+            continue
+            
+        sid = s["id"]
+        if sid in existing_ids:
+            errors.append(f"{prefix} ID already exists in sentence.json")
+            continue
+            
+        if not re.match(r"^[a-z]{2}_\d+$", sid):
+            errors.append(f"{prefix} Invalid id format (expected e.g., kz_1)")
+            continue
+            
+        if not isinstance(s.get("words"), list) or not s["words"]:
+            errors.append(f"{prefix} 'words' is empty or not an array")
+            continue
+            
+        word_errors = False
+        for j, w in enumerate(s["words"]):
+            wp = f"{prefix} word[{j}] '{w.get('text', '?')}'"
+            
+            missing_w = [f for f in ("text", "dictionary_word", "role", "label", "parts", "translation") if f not in w]
+            if missing_w:
+                errors.append(f"{wp} Missing fields: {', '.join(missing_w)}")
+                word_errors = True
+                
+            if w.get("role") not in ALLOWED_ROLES:
+                errors.append(f"{wp} Invalid role '{w.get('role')}'")
+                word_errors = True
+                
+            text = w.get("text", "")
+            if text and text[-1] in PUNCTUATION and len(text) > 1:
+                errors.append(f"{wp} Text contains trailing punctuation '{text}'")
+                word_errors = True
+                
+            if not isinstance(w.get("parts"), list) or not w["parts"]:
+                errors.append(f"{wp} 'parts' must be a non-empty array of strings")
+                word_errors = True
+                
+        if not word_errors:
+            valid_sentences.append(s)
+            existing_ids.add(sid) # Prevent duplicates in the same batch
+
+    if errors:
+        return JSONResponse(status_code=400, content={"message": "Validation failed", "errors": errors[:20]}) # Limit errors output
+        
+    if not valid_sentences:
+        return JSONResponse(status_code=400, content={"message": "No valid new sentences to add."})
+        
+    merged = existing_sentences + valid_sentences
+    
+    try:
+        with open(sentence_file, "w", encoding="utf-8") as f:
+            json.dump(merged, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": f"Failed to save sentence.json: {str(e)}"})
+        
+    return {"message": "Success", "added_count": len(valid_sentences), "total_count": len(merged)}
+
+@router.get("/api/sentences")
+async def get_sentences():
+    """Возвращает все предложения из sentence.json"""
+    sentence_file = settings.resources_dir / "sentence.json"
+    if not sentence_file.exists():
+        return {"sentences": []}
+    
+    try:
+        with open(sentence_file, "r", encoding="utf-8") as f:
+            sentences = json.load(f)
+        return {"sentences": sentences}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": str(e)})
+
+@router.delete("/api/sentences")
+async def delete_sentences(request: Request):
+    """Удаляет предложения на основе переданных фильтров"""
+    data = await request.json()
+    action = data.get("action")
+    
+    sentence_file = settings.resources_dir / "sentence.json"
+    if not sentence_file.exists():
+        return {"message": "No sentences found."}
+        
+    try:
+        with open(sentence_file, "r", encoding="utf-8") as f:
+            sentences = json.load(f)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": f"Failed to read file: {str(e)}"})
+        
+    if action == "delete_all":
+        sentences = []
+    elif action == "delete_language":
+        lang = data.get("language")
+        sentences = [s for s in sentences if s.get("language") != lang]
+    elif action == "delete_ids":
+        ids_to_delete = set(data.get("ids", []))
+        sentences = [s for s in sentences if s.get("id") not in ids_to_delete]
+    else:
+        return JSONResponse(status_code=400, content={"message": "Invalid action"})
+        
+    try:
+        with open(sentence_file, "w", encoding="utf-8") as f:
+            json.dump(sentences, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": f"Failed to save file: {str(e)}"})
+        
+    return {"message": "Success", "remaining_count": len(sentences)}

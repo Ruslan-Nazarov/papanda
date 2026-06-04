@@ -11,40 +11,19 @@
  *   window.WS_HISTORY_LANG_SUCCESS, window.WS_HISTORY_LANG_RETENTION, window.WS_HAS_HISTORY
  */
 
-const activeLangs   = window.WS_ACTIVE_LANGS   || [];
-const allLangNames  = window.WS_ALL_LANG_NAMES  || {};
-const languageFlags = window.WS_LANGUAGE_FLAGS  || {};
+const activeLangs   = window.WS_ACTIVE_LANGS   || window.P_ACTIVE_LANGUAGES || window.DASHBOARD_ACTIVE_LANGS || [];
+const allLangNames  = window.WS_ALL_LANG_NAMES || window.P_ALL_LANGUAGES || window.DASHBOARD_ALL_LANGUAGES || {};
+const languageFlags = window.WS_LANGUAGE_FLAGS || window.P_LANGUAGE_FLAGS || window.DASHBOARD_LANGUAGE_FLAGS || { en: '🇬🇧', ru: '🇷🇺', it: '🇮🇹', de: '🇩🇪', kk: '🇰🇿', zh: '🇨🇳' };
 
 // ── Search Modal ──────────────────────────────────────────────────────────────
 
 let searchSelected = null;
 
-function openSearchModal() {
+function openDictionarySearch() {
     document.getElementById('searchQuery').value = '';
     document.getElementById('searchResults').innerHTML = '';
-
-    const container = document.getElementById('searchDynamicLangs');
-    container.innerHTML = '';
-
-    const engGroup = document.createElement('div');
-    engGroup.className = 'form-group';
-    engGroup.innerHTML = `<label class="form-label">English</label><input type="text" name="eng" id="editEng" class="form-input" />`;
-    container.appendChild(engGroup);
-
-    activeLangs.forEach(code => {
-        if (code === 'en') return;
-        const group = document.createElement('div');
-        group.className = 'form-group';
-        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}</label><input type="text" name="lang_${code}" id="edit_${code}" class="form-input" />`;
-        container.appendChild(group);
-    });
-
-    document.getElementById('editRu').value = '';
-    document.getElementById('editMeaning').value = '';
-    document.getElementById('searchStats').innerText = '';
-    document.getElementById('btnDeleteWord').style.display = 'none';
     searchSelected = null;
-    document.getElementById('searchWordModal').style.display = 'block';
+    document.getElementById('searchWordModal').style.display = 'flex';
     setTimeout(() => document.getElementById('searchQuery').focus(), 50);
 }
 
@@ -54,7 +33,11 @@ function closeSearchModal() {
 
 async function searchWord() {
     const q = document.getElementById('searchQuery').value.trim();
-    if (!q) { document.getElementById('searchResults').innerHTML = ''; return; }
+    if (!q) { 
+        document.getElementById('searchResults').innerHTML = ''; 
+        document.getElementById('searchWordCard').style.display = 'none';
+        return; 
+    }
 
     const res = await fetch(`/word_lookup?q=${encodeURIComponent(q)}`);
     if (!res.ok) return;
@@ -63,25 +46,45 @@ async function searchWord() {
     container.innerHTML = '';
 
     if (!data.results || data.results.length === 0) {
-        document.getElementById('editEng').value = q;
-        document.getElementById('searchStats').innerText = 'Not found. Fill the form to add.';
-        document.getElementById('btnDeleteWord').style.display = 'none';
+        container.innerHTML = '<div style="color: var(--color-text-faint); font-size: 0.85rem; padding: 8px 0;">No words found in your dictionary.</div>';
         return;
     }
 
     data.results.forEach(w => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px;border:1px solid #eee;border-radius:6px;background:#f8f9fa;margin-bottom:6px;cursor:pointer;';
-        let label = w.eng || '';
+        btn.style.cssText = 'display:flex;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--color-border-light);border-radius:8px;background:white;margin-bottom:6px;cursor:pointer;gap:8px;align-items:center;transition:background 0.15s;';
+        btn.onmouseover = () => btn.style.background = 'var(--color-bg-subtle)';
+        btn.onmouseout  = () => btn.style.background = 'white';
+
+        const engSpan = document.createElement('span');
+        engSpan.style.cssText = 'font-weight: 700; color: var(--color-text-dark); font-size: 0.95rem; flex-shrink: 0;';
+        engSpan.textContent = w.eng || '';
+
+        const transSpan = document.createElement('span');
+        transSpan.style.cssText = 'font-size: 0.82rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        const parts = [];
         activeLangs.forEach(code => {
-            if (code !== 'en' && w[code]) {
-                label += ` | ${languageFlags[code] || ''} ${w[code]}`;
+            if (code.toLowerCase() !== 'en' && w[code]) {
+                const lowerCode = code.toLowerCase();
+                const flag = languageFlags[code] || languageFlags[lowerCode] || window.P_LANGUAGE_FLAGS?.[lowerCode] || window.DASHBOARD_LANGUAGE_FLAGS?.[lowerCode] || '';
+                parts.push(flag ? `${flag} ${w[code]}` : w[code]);
             }
         });
-        if (w.ru) label += ` | 🇷🇺 ${w.ru}`;
-        if (w.is_learned || w.has_any_knowledge) label += ' ✅';
-        btn.innerText = label;
+        if (w.ru && !activeLangs.map(l => l.toLowerCase()).includes('ru')) {
+            parts.push(`🇷🇺 ${w.ru}`);
+        }
+        transSpan.textContent = parts.join(' · ');
+
+        const badge = w.is_learned ? document.createElement('span') : null;
+        if (badge) {
+            badge.textContent = '✅';
+            badge.style.cssText = 'margin-left: auto; flex-shrink: 0; font-size: 0.85rem;';
+        }
+
+        btn.appendChild(engSpan);
+        btn.appendChild(transSpan);
+        if (badge) btn.appendChild(badge);
         btn.onclick = () => selectSearchResult(w);
         container.appendChild(btn);
     });
@@ -89,102 +92,122 @@ async function searchWord() {
 
 function selectSearchResult(w) {
     searchSelected = w;
-    document.getElementById('editEng').value = w.eng || '';
+    closeSearchModal();
+    
+    // Build translations object
+    const trans = w.translations || {};
     activeLangs.forEach(code => {
-        if (code === 'en') return;
-        const el = document.getElementById(`edit_${code}`);
-        if (el) el.value = w[code] || '';
+        if (w[code]) trans[code] = w[code];
     });
-    document.getElementById('editRu').value = w.ru || '';
-    document.getElementById('editMeaning').value = w.meaning || '';
-    const flags = [
-        w.is_known_en ? 'EN known' : '',
-        w.is_known_it ? 'IT known' : '',
-        w.is_known_de ? 'DE known' : '',
-        w.is_learned  ? 'Learned'  : ''
-    ].filter(Boolean).join(' • ');
-    const last = w.last_shown ? new Date(w.last_shown).toLocaleString() : '—';
-    document.getElementById('searchStats').innerText = `Shows: ${w.count || 0} • ${flags} • Last: ${last}`;
-    document.getElementById('btnDeleteWord').style.display = 'inline-block';
-}
-
-async function saveSearchEdit() {
-    const form = document.getElementById('searchEditForm');
-    const fd = new FormData(form);
-    const res = await fetch('/upsert_word', { method: 'POST', body: fd });
-    if (res.ok) {
-        const data = await res.json();
-        selectSearchResult(data.word);
-        alert('Saved');
-    } else {
-        alert('Error');
-    }
+    
+    document.getElementById('wsModalWordEng').innerText = 'Edit: ' + w.eng;
+    document.getElementById('wsInputWordEng').value = w.eng;
+    
+    const container = document.getElementById('wsWorkoutDynamicLangs');
+    container.innerHTML = '';
+    activeLangs.forEach(code => {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        const val = (trans[code] || '').toString().replace(/"/g, '&quot;');
+        const langName = allLangNames[code] || allLangNames[code.toLowerCase()] || code.toUpperCase();
+        group.innerHTML = `<label class="form-label">${langName}:</label>`
+            + `<input type="text" name="lang_${code}" value="${val}" class="form-input" />`;
+        container.appendChild(group);
+    });
+    
+    document.getElementById('wsInputWordRu').value = w.ru || '';
+    document.getElementById('wsInputWordMeaning').value = w.meaning || '';
+    
+    // Show delete button when editing from search
+    document.getElementById('btnDeleteWordModal').style.display = 'block';
+    
+    document.getElementById('wordStatsEditModal').style.display = 'flex';
 }
 
 async function deleteSearchWord() {
     if (!searchSelected || !searchSelected.eng) return;
     const confirmed = await customConfirm({
         title: 'Delete Word',
-        message: `Delete "${searchSelected.eng}" entirely from database?`,
+        message: `Delete "${searchSelected.eng}" entirely from dictionary?`,
         buttons: [
             { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-            { label: 'Delete Entirely', value: true, class: 'confirm-btn-danger' }
+            { label: 'Delete', value: true, class: 'confirm-btn-danger' }
         ]
     });
     if (!confirmed) return;
     const res = await fetch(`/delete_word?eng=${encodeURIComponent(searchSelected.eng)}`, { method: 'DELETE' });
-    if (res.ok) { alert('Deleted'); openSearchModal(); }
+    if (res.ok) { 
+        closeEditModal();
+        openDictionarySearch(); 
+    }
     else { alert('Error deleting word'); }
 }
+
 
 // ── Edit Modal (Workout) ──────────────────────────────────────────────────────
 
 function openWorkoutEditModal() {
     if (!testWords || currentIdx >= testWords.length) return;
     const word = testWords[currentIdx];
-    document.getElementById('modalWordEng').innerText = 'Edit: ' + word.eng;
-    document.getElementById('inputWordEng').value = word.eng;
+    document.getElementById('wsModalWordEng').innerText = 'Edit: ' + word.eng;
+    document.getElementById('wsInputWordEng').value = word.eng;
 
-    const container = document.getElementById('workoutDynamicLangs');
+    const container = document.getElementById('wsWorkoutDynamicLangs');
     container.innerHTML = '';
     activeLangs.forEach(code => {
         const group = document.createElement('div');
         group.className = 'form-group';
-        group.innerHTML = `<label class="form-label">${allLangNames[code] || code.toUpperCase()}:</label>`
+        const langName = allLangNames[code] || allLangNames[code.toLowerCase()] || code.toUpperCase();
+        group.innerHTML = `<label class="form-label">${langName}:</label>`
             + `<input type="text" name="lang_${code}" value="${(word.translations && word.translations[code] || '').replace(/"/g, '&quot;')}" class="form-input" />`;
         container.appendChild(group);
     });
 
-    document.getElementById('inputWordRu').value = word.ru || '';
-    document.getElementById('inputWordMeaning').value = word.meaning || '';
-    document.getElementById('editWordModal').style.display = 'block';
+    document.getElementById('wsInputWordRu').value = word.ru || '';
+    document.getElementById('wsInputWordMeaning').value = word.meaning || '';
+    
+    // Hide delete button when editing from workout
+    document.getElementById('btnDeleteWordModal').style.display = 'none';
+    
+    document.getElementById('wordStatsEditModal').style.display = 'flex';
 }
 
-function closeEditModal() {
-    document.getElementById('editWordModal').style.display = 'none';
-}
+window.closeWordStatsEdit = function() {
+    document.getElementById('wordStatsEditModal').style.display = 'none';
+};
 
-async function saveWordEdit() {
+window.saveWordStatsEdit = async function() {
     const formData = new FormData(document.getElementById('editWordForm'));
     try {
         const response = await fetch('/update_word_data', { method: 'POST', body: formData });
         if (response.ok) {
-            const word = testWords[currentIdx];
-            if (!word.translations) word.translations = {};
-            activeLangs.forEach(code => {
-                const val = formData.get(`lang_${code}`);
-                word.translations[code] = val;
-                if (code === 'it') word.it = val;
-                if (code === 'de') word.de = val;
-            });
-            word.ru      = formData.get('new_ru');
-            word.meaning = formData.get('new_meaning');
-            if (word.test_lang) {
-                const newVal = formData.get(`lang_${word.test_lang}`);
-                if (newVal) word.word_to_test = newVal;
+            // Update the testWords cache if we are in the middle of a test
+            if (typeof testWords !== 'undefined' && testWords && currentIdx < testWords.length) {
+                const word = testWords[currentIdx];
+                if (word) {
+                    if (!word.translations) word.translations = {};
+                    activeLangs.forEach(code => {
+                        const val = formData.get(`lang_${code}`);
+                        word.translations[code] = val;
+                        if (code === 'it') word.it = val;
+                        if (code === 'de') word.de = val;
+                    });
+                    word.ru      = formData.get('new_ru');
+                    word.meaning = formData.get('new_meaning');
+                    if (word.test_lang) {
+                        const newVal = formData.get(`lang_${word.test_lang}`);
+                        if (newVal) word.word_to_test = newVal;
+                    }
+                    if (typeof showNextWord === 'function') {
+                        showNextWord();
+                    }
+                }
+            } else if (typeof searchSelected !== 'undefined' && searchSelected) {
+                // Update search card if needed
+                const ruField = document.getElementById('searchCardRu');
+                if (ruField) ruField.textContent = formData.get('new_ru') ? `🇷🇺 ${formData.get('new_ru')}` : '';
             }
-            showNextWord();
-            closeEditModal();
+            window.closeWordStatsEdit();
         } else {
             alert('Error saving changes');
         }
@@ -192,13 +215,34 @@ async function saveWordEdit() {
         console.error('Save failed', e);
         alert('Network error');
     }
-}
+};
+
+window.deleteSearchWord = async function() {
+    if (!searchSelected) return;
+    if (!confirm(`Are you sure you want to delete "${searchSelected.eng}"?`)) return;
+    try {
+        const res = await fetch('/delete_word_data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eng: searchSelected.eng })
+        });
+        if (res.ok) {
+            window.closeWordStatsEdit();
+        } else {
+            alert('Delete failed');
+        }
+    } catch (e) {
+        alert('Network error');
+    }
+};
 
 // ── Charts ────────────────────────────────────────────────────────────────────
 
 function initCharts() {
     // 1. Distribution Chart
-    const distCtx = document.getElementById('distChart').getContext('2d');
+    const distCanvas = document.getElementById('distChart');
+    if (!distCanvas) return; // not loaded yet
+    const distCtx = distCanvas.getContext('2d');
     new Chart(distCtx, {
         type: 'bar',
         data: {
@@ -324,7 +368,9 @@ function updateHealthChart() {
         else delete healthChart.options.scales.y.max;
         healthChart.update();
     } else {
-        const ctx = document.getElementById('healthChart').getContext('2d');
+        const hcCanvas = document.getElementById('healthChart');
+        if (!hcCanvas) return;
+        const ctx = hcCanvas.getContext('2d');
         healthChart = new Chart(ctx, {
             type: 'line',
             data: { labels: window.WS_HISTORY_LABELS, datasets },
@@ -569,27 +615,31 @@ function customConfirm({ title = 'Confirmation', message = 'Are you sure?', butt
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', () => {
-    initCharts();
-    if (window.WS_HAS_HISTORY) updateHealthChart();
+    // We do NOT init charts here anymore because they are initialized dynamically
+    // when the word stats modal is opened.
 
     // Workout buttons
     updateWorkoutDisplayCount();
-    document.getElementById('btn-start-test').addEventListener('click',  startKnowledgeTest);
-    document.getElementById('btn-show-hint').addEventListener('click',   toggleHint);
-    document.getElementById('btn-known').addEventListener('click',       () => recordResult(true));
-    document.getElementById('btn-unknown').addEventListener('click',     () => recordResult(false));
-    document.getElementById('btn-try-again').addEventListener('click',   startKnowledgeTest);
-    document.getElementById('btn-reset-progress').addEventListener('click', resetAllProgress);
 
-    // Search
-    const openBtn = document.getElementById('openSearchModalBtn');
-    if (openBtn) openBtn.addEventListener('click', openSearchModal);
-    const q = document.getElementById('searchQuery');
-    if (q) q.addEventListener('input', searchWord);
+    // Attach events using event delegation or check if element exists, 
+    // since some elements might be dynamically loaded in the modal
+    document.addEventListener('click', (e) => {
+        if(e.target.closest('#btn-start-test')) startKnowledgeTest();
+        if(e.target.closest('#btn-show-hint')) toggleHint();
+        if(e.target.closest('#btn-known')) recordResult(true);
+        if(e.target.closest('#btn-unknown')) recordResult(false);
+        if(e.target.closest('#btn-try-again')) startKnowledgeTest();
+        if(e.target.closest('#btn-reset-progress')) resetAllProgress();
+        if(e.target.closest('#openSearchModalBtn')) openDictionarySearch();
+    });
+
+    document.addEventListener('input', (e) => {
+        if(e.target.closest('#searchQuery')) searchWord();
+    });
 
     // Backdrop click-to-close
     window.addEventListener('click', (e) => {
-        const modal       = document.getElementById('editWordModal');
+        const modal       = document.getElementById('wordStatsEditModal');
         const searchModal = document.getElementById('searchWordModal');
         const settingsModal = document.getElementById('workoutSettingsModal');
         if (e.target === modal)       closeEditModal();
@@ -600,14 +650,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Expose functions called from HTML inline onclick attributes
 window.showHelp           = showHelp;
-window.openSearchModal    = openSearchModal;
-window.saveSearchEdit     = saveSearchEdit;
+window.openDictionarySearch = openDictionarySearch;
 window.closeSearchModal   = closeSearchModal;
 window.deleteSearchWord   = deleteSearchWord;
 window.openWorkoutEditModal = openWorkoutEditModal;
 window.closeEditModal     = closeEditModal;
-window.saveWordEdit       = saveWordEdit;
 window.setHealthMode      = setHealthMode;
 window.openWorkoutSettingsModal = openWorkoutSettingsModal;
 window.closeWorkoutSettingsModal = closeWorkoutSettingsModal;
 window.saveWorkoutSettings = saveWorkoutSettings;
+window.toggleHint          = toggleHint;
+window.startKnowledgeTest  = startKnowledgeTest;
+window.recordResult        = recordResult;

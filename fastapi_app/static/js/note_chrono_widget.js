@@ -17,69 +17,16 @@ window.openChronoExpandModal = function (id = null, text = '', date = '') {
         widgetDate += 'T00:00';
     }
 
-    document.getElementById('editChronoId').value = id || '';
-    document.getElementById('editChronoTitle').value = widgetText;
-    document.getElementById('editChronoDate').value = widgetDate;
-    
-    document.getElementById('chronoModalHeader').innerText = id ? 'Edit Chronology Entry' : 'Add Chronology Entry';
-    document.getElementById('editChronoError').innerText = '';
-    document.getElementById('editChronoModal').style.display = 'flex';
-};
-
-window.closeChronoExpandModal = function (sync = true) {
-    if (sync === true) {
-        const id = document.getElementById('editChronoId').value;
-        if (!id) {
-            const modalText = document.getElementById('editChronoTitle').value;
-            const t = document.querySelector('textarea[name="chrono_text"]');
-            if (t) t.value = modalText;
-        }
-    }
-    document.getElementById('editChronoModal').style.display = 'none';
-};
-
-window.closeEditChronoModal = () => window.closeChronoExpandModal(true);
-window.saveChronoEdit = () => window.saveChronoFromModal();
-
-window.saveChronoFromModal = async function () {
-    const id   = document.getElementById('editChronoId').value;
-    const text = document.getElementById('editChronoTitle').value.trim();
-    const date = document.getElementById('editChronoDate').value;
-    const errEl = document.getElementById('editChronoError');
-
-    if (!text) { errEl.innerText = 'Text cannot be empty'; return; }
-
-    try {
-        let resp;
-        if (id) {
-            resp = await fetch('/edit_chrono_json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, text, date })
-            });
-        } else {
-            const formData = new FormData();
-            formData.append('chrono_text', text);
-            formData.append('chrono_date', date);
-            resp = await fetch('/submit_chrono_json', { method: 'POST', body: formData });
-        }
-
-        const data = await resp.json();
-        if (data.status === 'success') {
-            showToast('✓ ' + (data.message || 'Saved'), 'success');
-            window.closeChronoExpandModal(false);
-            const t = document.querySelector('textarea[name="chrono_text"]');
-            if (t) t.value = '';
-            const d = document.querySelector('input[name="chrono_date"]');
-            if (d) d.value = window.P_CHRONO_DATE || '';
-        } else {
-            errEl.innerText = data.message || 'Error saving.';
-        }
-    } catch (e) {
-        errEl.innerText = 'Network error.';
-        console.error(e);
+    // Call the centralized ChronoService
+    if (window.ChronoService) {
+        window.ChronoService.openEdit(id || '', widgetText, widgetDate);
+    } else {
+        console.error("ChronoService not found");
     }
 };
+
+// Removed redundant save/close logic (now handled in ChronoService.js)
+
 
 window.saveQuickChrono = async function (e) {
     if (e) e.preventDefault();

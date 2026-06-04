@@ -26,11 +26,12 @@ export class StickerRenderer {
                         if (s.isWidget && index >= 2) return;
 
                         const isDone = item.done === true || item.done === 'true';
-                        let itemText = item.text || '';
-                        itemText = this.renderStickerMath(itemText);
+                        let originalText = item.text || '';
+                        let itemText = this.renderStickerMath(originalText);
+                        let safeTitle = originalText.replace(/"/g, '&quot;');
                         
                         html += `
-                            <li class="sticker-list-item ${isDone ? 'done' : ''}" data-index="${index}">
+                            <li class="sticker-list-item ${isDone ? 'done' : ''}" data-index="${index}" title="${safeTitle}">
                                 <span class="sticker-check-icon">${isDone ? '✓' : ''}</span>
                                 <span class="sticker-item-text">${itemText}</span>
                             </li>`;
