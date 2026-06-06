@@ -4,7 +4,12 @@ name: Build Papanda Mac
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - "v*"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -48,3 +53,13 @@ jobs:
       with:
         name: Papanda-Mac-App
         path: dist/Papanda-Mac.zip
+
+    # ШАГ 7: Создаём GitHub Release и прикрепляем .zip (только при пуше тега)
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/Papanda-Mac.zip
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
