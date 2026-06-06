@@ -1,0 +1,6536 @@
+[
+  {
+    "id": "kz_1",
+    "language": "Қазақша",
+    "sentence": "Кішкентай ұл жаңа кітап оқыды.",
+    "words": [
+      {
+        "text": "Кішкентай",
+        "is_in_my_dict": true,
+        "dictionary_word": "кішкентай",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "кішкентай"
+        ],
+        "translation": "маленький"
+      },
+      {
+        "text": "ұл",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұл",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ұл"
+        ],
+        "translation": "сын"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новый"
+      },
+      {
+        "text": "кітап",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "оқыды",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "оқы",
+          "ды"
+        ],
+        "translation": "прочитал"
+      }
+    ]
+  },
+  {
+    "id": "kz_2",
+    "language": "Қазақша",
+    "sentence": "Әке үлкен үй салды ма?",
+    "words": [
+      {
+        "text": "Әке",
+        "is_in_my_dict": true,
+        "dictionary_word": "әке",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әке"
+        ],
+        "translation": "отец"
+      },
+      {
+        "text": "үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большой"
+      },
+      {
+        "text": "үй",
+        "is_in_my_dict": true,
+        "dictionary_word": "үй",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "үй"
+        ],
+        "translation": "дом"
+      },
+      {
+        "text": "салды",
+        "is_in_my_dict": true,
+        "dictionary_word": "салу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сал",
+          "ды"
+        ],
+        "translation": "построил"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_3",
+    "language": "Қазақша",
+    "sentence": "Жақсы дос жаман хат жазбады.",
+    "words": [
+      {
+        "text": "Жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хороший"
+      },
+      {
+        "text": "дос",
+        "is_in_my_dict": true,
+        "dictionary_word": "дос",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дос"
+        ],
+        "translation": "друг"
+      },
+      {
+        "text": "жаман",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаман",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаман"
+        ],
+        "translation": "плохое"
+      },
+      {
+        "text": "хат",
+        "is_in_my_dict": true,
+        "dictionary_word": "хат",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "хат"
+        ],
+        "translation": "письмо"
+      },
+      {
+        "text": "жазбады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жазу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "жаз",
+          "ба",
+          "ды"
+        ],
+        "translation": "не написал"
+      }
+    ]
+  },
+  {
+    "id": "kz_4",
+    "language": "Қазақша",
+    "sentence": "Қыз барды дүкенге.",
+    "words": [
+      {
+        "text": "Қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "барды",
+        "is_in_my_dict": true,
+        "dictionary_word": "бару",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бар",
+          "ды"
+        ],
+        "translation": "пошла"
+      },
+      {
+        "text": "дүкенге",
+        "is_in_my_dict": true,
+        "dictionary_word": "дүкен",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "дүкен",
+          "ге"
+        ],
+        "translation": "в магазин"
+      }
+    ]
+  },
+  {
+    "id": "kz_5",
+    "language": "Қазақша",
+    "sentence": "Кеше адам тамақ жеді.",
+    "words": [
+      {
+        "text": "Кеше",
+        "is_in_my_dict": true,
+        "dictionary_word": "кеше",
+        "role": "Adverbial",
+        "label": "Time",
+        "parts": [
+          "кеше"
+        ],
+        "translation": "вчера"
+      },
+      {
+        "text": "адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "жеу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "же",
+          "ді"
+        ],
+        "translation": "ел"
+      }
+    ]
+  },
+  {
+    "id": "kz_6",
+    "language": "Қазақша",
+    "sentence": "Қыз ит көрді және ұл кітап оқыды.",
+    "words": [
+      {
+        "text": "Қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "ит",
+        "is_in_my_dict": true,
+        "dictionary_word": "ит",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ит"
+        ],
+        "translation": "собаку"
+      },
+      {
+        "text": "көрді",
+        "is_in_my_dict": true,
+        "dictionary_word": "көру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "көр",
+          "ді"
+        ],
+        "translation": "увидела"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "ұл",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұл",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ұл"
+        ],
+        "translation": "сын"
+      },
+      {
+        "text": "кітап",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "оқыды",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "оқы",
+          "ды"
+        ],
+        "translation": "прочитал"
+      }
+    ]
+  },
+  {
+    "id": "kz_7",
+    "language": "Қазақша",
+    "sentence": "Әке жұмыс істемеді, өйткені ол ауру болды.",
+    "words": [
+      {
+        "text": "Әке",
+        "is_in_my_dict": true,
+        "dictionary_word": "әке",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әке"
+        ],
+        "translation": "отец"
+      },
+      {
+        "text": "жұмыс",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмыс",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жұмыс"
+        ],
+        "translation": "работу"
+      },
+      {
+        "text": "істемеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "істеу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "істе",
+          "ме",
+          "ді"
+        ],
+        "translation": "не делал"
+      },
+      {
+        "text": "өйткені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "өйткені"
+        ],
+        "translation": "потому что"
+      },
+      {
+        "text": "ол",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "ол"
+        ],
+        "translation": "он/она"
+      },
+      {
+        "text": "ауру",
+        "is_in_my_dict": true,
+        "dictionary_word": "ауру",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "ауру"
+        ],
+        "translation": "больной"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      }
+    ]
+  },
+  {
+    "id": "kz_8",
+    "language": "Қазақша",
+    "sentence": "Адам хат жазды, бірақ қыз оқымады.",
+    "words": [
+      {
+        "text": "Адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "хат",
+        "is_in_my_dict": true,
+        "dictionary_word": "хат",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "хат"
+        ],
+        "translation": "письмо"
+      },
+      {
+        "text": "жазды",
+        "is_in_my_dict": true,
+        "dictionary_word": "жазу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жаз",
+          "ды"
+        ],
+        "translation": "написал"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "оқымады",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "оқы",
+          "ма",
+          "ды"
+        ],
+        "translation": "не прочитала"
+      }
+    ]
+  },
+  {
+    "id": "kz_9",
+    "language": "Қазақша",
+    "sentence": "Егер жұмыс жақсы болса, біз қалаға барамыз.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "жұмыс",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмыс",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жұмыс"
+        ],
+        "translation": "работа"
+      },
+      {
+        "text": "жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хорошая"
+      },
+      {
+        "text": "болса",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бол",
+          "са"
+        ],
+        "translation": "будет"
+      },
+      {
+        "text": "біз",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "біз"
+        ],
+        "translation": "мы"
+      },
+      {
+        "text": "қалаға",
+        "is_in_my_dict": true,
+        "dictionary_word": "қала",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "қала",
+          "ға"
+        ],
+        "translation": "в город"
+      },
+      {
+        "text": "барамыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "бару",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бар",
+          "а",
+          "мыз"
+        ],
+        "translation": "пойдем"
+      }
+    ]
+  },
+  {
+    "id": "kz_10",
+    "language": "Қазақша",
+    "sentence": "Кітап оқыған адам үйге келді.",
+    "words": [
+      {
+        "text": "Кітап",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "оқыған",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Attribute_Subject",
+        "label": "Participle",
+        "parts": [
+          "оқы",
+          "ған"
+        ],
+        "translation": "прочитавший"
+      },
+      {
+        "text": "адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "үйге",
+        "is_in_my_dict": true,
+        "dictionary_word": "үй",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "үй",
+          "ге"
+        ],
+        "translation": "домой"
+      },
+      {
+        "text": "келді",
+        "is_in_my_dict": true,
+        "dictionary_word": "келу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "кел",
+          "ді"
+        ],
+        "translation": "пришел"
+      }
+    ]
+  },
+  {
+    "id": "kz_11",
+    "language": "Қазақша",
+    "sentence": "Жұмысшы ауыр көйлек киді.",
+    "words": [
+      {
+        "text": "Жұмысшы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмысшы",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жұмысшы"
+        ],
+        "translation": "рабочий"
+      },
+      {
+        "text": "ауыр",
+        "is_in_my_dict": true,
+        "dictionary_word": "ауыр",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "ауыр"
+        ],
+        "translation": "тяжелую"
+      },
+      {
+        "text": "көйлек",
+        "is_in_my_dict": true,
+        "dictionary_word": "көйлек",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "көйлек"
+        ],
+        "translation": "рубашку"
+      },
+      {
+        "text": "киді",
+        "is_in_my_dict": true,
+        "dictionary_word": "кию",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ки",
+          "ді"
+        ],
+        "translation": "надел"
+      }
+    ]
+  },
+  {
+    "id": "kz_12",
+    "language": "Қазақша",
+    "sentence": "Әйел әмиян тапты ма?",
+    "words": [
+      {
+        "text": "Әйел",
+        "is_in_my_dict": true,
+        "dictionary_word": "әйел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әйел"
+        ],
+        "translation": "женщина"
+      },
+      {
+        "text": "әмиян",
+        "is_in_my_dict": true,
+        "dictionary_word": "әмиян",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "әмиян"
+        ],
+        "translation": "кошелек"
+      },
+      {
+        "text": "тапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "табу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тап",
+          "ты"
+        ],
+        "translation": "нашла"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_13",
+    "language": "Қазақша",
+    "sentence": "Бала нан жемеді.",
+    "words": [
+      {
+        "text": "Бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "нан",
+        "is_in_my_dict": true,
+        "dictionary_word": "нан",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "нан"
+        ],
+        "translation": "хлеб"
+      },
+      {
+        "text": "жемеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "жеу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "же",
+          "ме",
+          "ді"
+        ],
+        "translation": "не ел"
+      }
+    ]
+  },
+  {
+    "id": "kz_14",
+    "language": "Қазақша",
+    "sentence": "Күшті жел болды.",
+    "words": [
+      {
+        "text": "Күшті",
+        "is_in_my_dict": true,
+        "dictionary_word": "күшті",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "күшті"
+        ],
+        "translation": "сильный"
+      },
+      {
+        "text": "жел",
+        "is_in_my_dict": true,
+        "dictionary_word": "жел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жел"
+        ],
+        "translation": "ветер"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      }
+    ]
+  },
+  {
+    "id": "kz_15",
+    "language": "Қазақша",
+    "sentence": "Ит мысықты көрді.",
+    "words": [
+      {
+        "text": "Ит",
+        "is_in_my_dict": true,
+        "dictionary_word": "ит",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ит"
+        ],
+        "translation": "собака"
+      },
+      {
+        "text": "мысықты",
+        "is_in_my_dict": true,
+        "dictionary_word": "мысық",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "мысық",
+          "ты"
+        ],
+        "translation": "кота"
+      },
+      {
+        "text": "көрді",
+        "is_in_my_dict": true,
+        "dictionary_word": "көру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "көр",
+          "ді"
+        ],
+        "translation": "увидела"
+      }
+    ]
+  },
+  {
+    "id": "kz_16",
+    "language": "Қазақша",
+    "sentence": "Кеше жаңбыр болды, сондықтан көше ылғалды.",
+    "words": [
+      {
+        "text": "Кеше",
+        "is_in_my_dict": true,
+        "dictionary_word": "кеше",
+        "role": "Adverbial",
+        "label": "Time",
+        "parts": [
+          "кеше"
+        ],
+        "translation": "вчера"
+      },
+      {
+        "text": "жаңбыр",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңбыр",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жаңбыр"
+        ],
+        "translation": "дождь"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "көше",
+        "is_in_my_dict": true,
+        "dictionary_word": "көше",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "көше"
+        ],
+        "translation": "улица"
+      },
+      {
+        "text": "ылғалды",
+        "is_in_my_dict": true,
+        "dictionary_word": "ылғалды",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "ылғалды"
+        ],
+        "translation": "влажная"
+      }
+    ]
+  },
+  {
+    "id": "kz_17",
+    "language": "Қазақша",
+    "sentence": "Мен ұйқышыл болдым, бірақ қатты шу мені оятты.",
+    "words": [
+      {
+        "text": "Мен",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "мен"
+        ],
+        "translation": "я"
+      },
+      {
+        "text": "ұйқышыл",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұйқышыл",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "ұйқышыл"
+        ],
+        "translation": "сонный"
+      },
+      {
+        "text": "болдым",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бол",
+          "ды",
+          "м"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "қатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "қатты",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "қатты"
+        ],
+        "translation": "громкий"
+      },
+      {
+        "text": "шу",
+        "is_in_my_dict": true,
+        "dictionary_word": "шу",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "шу"
+        ],
+        "translation": "шум"
+      },
+      {
+        "text": "мені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Object",
+        "label": "Pronoun",
+        "parts": [
+          "мен",
+          "і"
+        ],
+        "translation": "меня"
+      },
+      {
+        "text": "оятты",
+        "is_in_my_dict": true,
+        "dictionary_word": "ояту",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "оят",
+          "ты"
+        ],
+        "translation": "разбудил"
+      }
+    ]
+  },
+  {
+    "id": "kz_18",
+    "language": "Қазақша",
+    "sentence": "Мұғалім сұрақ сұрады, және студент жауап берді.",
+    "words": [
+      {
+        "text": "Мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "сұрақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "сұрақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "сұрақ"
+        ],
+        "translation": "вопрос"
+      },
+      {
+        "text": "сұрады",
+        "is_in_my_dict": true,
+        "dictionary_word": "сұрау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сұра",
+          "ды"
+        ],
+        "translation": "спросил"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "жауап",
+        "is_in_my_dict": true,
+        "dictionary_word": "жауап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жауап"
+        ],
+        "translation": "ответ"
+      },
+      {
+        "text": "берді",
+        "is_in_my_dict": true,
+        "dictionary_word": "беру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бер",
+          "ді"
+        ],
+        "translation": "дал"
+      }
+    ]
+  },
+  {
+    "id": "kz_19",
+    "language": "Қазақша",
+    "sentence": "Егер күн жылы болса, біз саябаққа барамыз.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "күн",
+        "is_in_my_dict": true,
+        "dictionary_word": "күн",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күн"
+        ],
+        "translation": "день/солнце"
+      },
+      {
+        "text": "жылы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылы",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жылы"
+        ],
+        "translation": "теплый"
+      },
+      {
+        "text": "болса",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бол",
+          "са"
+        ],
+        "translation": "будет"
+      },
+      {
+        "text": "біз",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "біз"
+        ],
+        "translation": "мы"
+      },
+      {
+        "text": "саябаққа",
+        "is_in_my_dict": true,
+        "dictionary_word": "саябақ",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "саябақ",
+          "қа"
+        ],
+        "translation": "в парк"
+      },
+      {
+        "text": "барамыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "бару",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бар",
+          "а",
+          "мыз"
+        ],
+        "translation": "пойдем"
+      }
+    ]
+  },
+  {
+    "id": "kz_20",
+    "language": "Қазақша",
+    "sentence": "Көшеде жүгірген бала тиын тапты.",
+    "words": [
+      {
+        "text": "Көшеде",
+        "is_in_my_dict": true,
+        "dictionary_word": "көше",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "көше",
+          "де"
+        ],
+        "translation": "на улице"
+      },
+      {
+        "text": "жүгірген",
+        "is_in_my_dict": true,
+        "dictionary_word": "жүгіру",
+        "role": "Attribute_Subject",
+        "label": "Participle",
+        "parts": [
+          "жүгір",
+          "ген"
+        ],
+        "translation": "бежавший"
+      },
+      {
+        "text": "бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "тиын",
+        "is_in_my_dict": true,
+        "dictionary_word": "тиын",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тиын"
+        ],
+        "translation": "монету"
+      },
+      {
+        "text": "тапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "табу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тап",
+          "ты"
+        ],
+        "translation": "нашел"
+      }
+    ]
+  },
+  {
+    "id": "kz_21",
+    "language": "Қазақша",
+    "sentence": "Үлкен ағаш өсті.",
+    "words": [
+      {
+        "text": "Үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большое"
+      },
+      {
+        "text": "ағаш",
+        "is_in_my_dict": true,
+        "dictionary_word": "ағаш",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ағаш"
+        ],
+        "translation": "дерево"
+      },
+      {
+        "text": "өсті",
+        "is_in_my_dict": true,
+        "dictionary_word": "өсу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "өс",
+          "ті"
+        ],
+        "translation": "выросло"
+      }
+    ]
+  },
+  {
+    "id": "kz_22",
+    "language": "Қазақша",
+    "sentence": "Дәрігер ауруханада жұмыс істеді ме?",
+    "words": [
+      {
+        "text": "Дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "ауруханада",
+        "is_in_my_dict": true,
+        "dictionary_word": "аурухана",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "аурухана",
+          "да"
+        ],
+        "translation": "в больнице"
+      },
+      {
+        "text": "жұмыс",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмыс",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жұмыс"
+        ],
+        "translation": "работу"
+      },
+      {
+        "text": "істеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "істеу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "істе",
+          "ді"
+        ],
+        "translation": "делал"
+      },
+      {
+        "text": "ме",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ме"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_23",
+    "language": "Қазақша",
+    "sentence": "Қара мысық секірмеді.",
+    "words": [
+      {
+        "text": "Қара",
+        "is_in_my_dict": true,
+        "dictionary_word": "қара",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "қара"
+        ],
+        "translation": "черный"
+      },
+      {
+        "text": "мысық",
+        "is_in_my_dict": true,
+        "dictionary_word": "мысық",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мысық"
+        ],
+        "translation": "кот"
+      },
+      {
+        "text": "секірмеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "секіру",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "секір",
+          "ме",
+          "ді"
+        ],
+        "translation": "не прыгнул"
+      }
+    ]
+  },
+  {
+    "id": "kz_24",
+    "language": "Қазақша",
+    "sentence": "Таза суды құйды ол.",
+    "words": [
+      {
+        "text": "Таза",
+        "is_in_my_dict": true,
+        "dictionary_word": "таза",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "таза"
+        ],
+        "translation": "чистую"
+      },
+      {
+        "text": "суды",
+        "is_in_my_dict": true,
+        "dictionary_word": "су",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "су",
+          "ды"
+        ],
+        "translation": "воду"
+      },
+      {
+        "text": "құйды",
+        "is_in_my_dict": true,
+        "dictionary_word": "құю",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "құй",
+          "ды"
+        ],
+        "translation": "налил"
+      },
+      {
+        "text": "ол",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "ол"
+        ],
+        "translation": "он/она"
+      }
+    ]
+  },
+  {
+    "id": "kz_25",
+    "language": "Қазақша",
+    "sentence": "Мұғалім мектепке келді.",
+    "words": [
+      {
+        "text": "Мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "мектепке",
+        "is_in_my_dict": true,
+        "dictionary_word": "мектеп",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "мектеп",
+          "ке"
+        ],
+        "translation": "в школу"
+      },
+      {
+        "text": "келді",
+        "is_in_my_dict": true,
+        "dictionary_word": "келу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "кел",
+          "ді"
+        ],
+        "translation": "пришел"
+      }
+    ]
+  },
+  {
+    "id": "kz_26",
+    "language": "Қазақша",
+    "sentence": "Адам машинаны қалады, бірақ ақша жоқ болды.",
+    "words": [
+      {
+        "text": "Адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "машинаны",
+        "is_in_my_dict": true,
+        "dictionary_word": "машина",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "машина",
+          "ны"
+        ],
+        "translation": "машину"
+      },
+      {
+        "text": "қалады",
+        "is_in_my_dict": true,
+        "dictionary_word": "қалау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "қала",
+          "ды"
+        ],
+        "translation": "хотел"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "ақша",
+        "is_in_my_dict": true,
+        "dictionary_word": "ақша",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ақша"
+        ],
+        "translation": "деньги"
+      },
+      {
+        "text": "жоқ",
+        "is_in_my_dict": true,
+        "dictionary_word": "жоқ",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жоқ"
+        ],
+        "translation": "отсутствующий"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "были"
+      }
+    ]
+  },
+  {
+    "id": "kz_27",
+    "language": "Қазақша",
+    "sentence": "Қыз жылады, өйткені ойыншық бұзылды.",
+    "words": [
+      {
+        "text": "Қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "жылады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жыла",
+          "ды"
+        ],
+        "translation": "плакала"
+      },
+      {
+        "text": "өйткені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "өйткені"
+        ],
+        "translation": "потому что"
+      },
+      {
+        "text": "ойыншық",
+        "is_in_my_dict": true,
+        "dictionary_word": "ойыншық",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ойыншық"
+        ],
+        "translation": "игрушка"
+      },
+      {
+        "text": "бұзылды",
+        "is_in_my_dict": true,
+        "dictionary_word": "бұзылу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бұзыл",
+          "ды"
+        ],
+        "translation": "сломалась"
+      }
+    ]
+  },
+  {
+    "id": "kz_28",
+    "language": "Қазақша",
+    "sentence": "Жаңбыр тоқтады, және күн жылы болды.",
+    "words": [
+      {
+        "text": "Жаңбыр",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңбыр",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жаңбыр"
+        ],
+        "translation": "дождь"
+      },
+      {
+        "text": "тоқтады",
+        "is_in_my_dict": true,
+        "dictionary_word": "тоқтау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тоқта",
+          "ды"
+        ],
+        "translation": "остановился"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "күн",
+        "is_in_my_dict": true,
+        "dictionary_word": "күн",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күн"
+        ],
+        "translation": "день"
+      },
+      {
+        "text": "жылы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылы",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жылы"
+        ],
+        "translation": "теплый"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      }
+    ]
+  },
+  {
+    "id": "kz_29",
+    "language": "Қазақша",
+    "sentence": "Егер қонақ келсе, ана тамақ жасайды.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "қонақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "қонақ",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қонақ"
+        ],
+        "translation": "гость"
+      },
+      {
+        "text": "келсе",
+        "is_in_my_dict": true,
+        "dictionary_word": "келу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "кел",
+          "се"
+        ],
+        "translation": "придет"
+      },
+      {
+        "text": "ана",
+        "is_in_my_dict": true,
+        "dictionary_word": "ана",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ана"
+        ],
+        "translation": "мать"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жасайды",
+        "is_in_my_dict": true,
+        "dictionary_word": "жасау",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "жаса",
+          "й",
+          "ды"
+        ],
+        "translation": "приготовит"
+      }
+    ]
+  },
+  {
+    "id": "kz_30",
+    "language": "Қазақша",
+    "sentence": "Кітапты оқып, бала отырды.",
+    "words": [
+      {
+        "text": "Кітапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап",
+          "ты"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "оқып",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Adverbial",
+        "label": "Gerund",
+        "parts": [
+          "оқы",
+          "п"
+        ],
+        "translation": "прочитав"
+      },
+      {
+        "text": "бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "отырды",
+        "is_in_my_dict": true,
+        "dictionary_word": "отыру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "отыр",
+          "ды"
+        ],
+        "translation": "сел"
+      }
+    ]
+  },
+  {
+    "id": "kz_31",
+    "language": "Қазақша",
+    "sentence": "Жұмысшы жаңа көпір салды.",
+    "words": [
+      {
+        "text": "Жұмысшы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмысшы",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жұмысшы"
+        ],
+        "translation": "рабочий"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новый"
+      },
+      {
+        "text": "көпір",
+        "is_in_my_dict": true,
+        "dictionary_word": "көпір",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "көпір"
+        ],
+        "translation": "мост"
+      },
+      {
+        "text": "салды",
+        "is_in_my_dict": true,
+        "dictionary_word": "салу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сал",
+          "ды"
+        ],
+        "translation": "построил"
+      }
+    ]
+  },
+  {
+    "id": "kz_32",
+    "language": "Қазақша",
+    "sentence": "Дүкен арзан киімдер сатты ма?",
+    "words": [
+      {
+        "text": "Дүкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "дүкен",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дүкен"
+        ],
+        "translation": "магазин"
+      },
+      {
+        "text": "арзан",
+        "is_in_my_dict": true,
+        "dictionary_word": "арзан",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "арзан"
+        ],
+        "translation": "дешевую"
+      },
+      {
+        "text": "киімдер",
+        "is_in_my_dict": true,
+        "dictionary_word": "киімдер",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "киімдер"
+        ],
+        "translation": "одежду"
+      },
+      {
+        "text": "сатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "сату",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сат",
+          "ты"
+        ],
+        "translation": "продал"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_33",
+    "language": "Қазақша",
+    "sentence": "Көрші ескі көлікті сатпады.",
+    "words": [
+      {
+        "text": "Көрші",
+        "is_in_my_dict": true,
+        "dictionary_word": "көрші",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "көрші"
+        ],
+        "translation": "сосед"
+      },
+      {
+        "text": "ескі",
+        "is_in_my_dict": true,
+        "dictionary_word": "ескі",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "ескі"
+        ],
+        "translation": "старую"
+      },
+      {
+        "text": "көлікті",
+        "is_in_my_dict": true,
+        "dictionary_word": "көлік",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "көлік",
+          "ті"
+        ],
+        "translation": "машину"
+      },
+      {
+        "text": "сатпады",
+        "is_in_my_dict": true,
+        "dictionary_word": "сату",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "сат",
+          "па",
+          "ды"
+        ],
+        "translation": "не продал"
+      }
+    ]
+  },
+  {
+    "id": "kz_34",
+    "language": "Қазақша",
+    "sentence": "Кеше машина жылдам жүрді.",
+    "words": [
+      {
+        "text": "Кеше",
+        "is_in_my_dict": true,
+        "dictionary_word": "кеше",
+        "role": "Adverbial",
+        "label": "Time",
+        "parts": [
+          "кеше"
+        ],
+        "translation": "вчера"
+      },
+      {
+        "text": "машина",
+        "is_in_my_dict": true,
+        "dictionary_word": "машина",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "машина"
+        ],
+        "translation": "машина"
+      },
+      {
+        "text": "жылдам",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылдам",
+        "role": "Adverbial",
+        "label": "Adverb",
+        "parts": [
+          "жылдам"
+        ],
+        "translation": "быстро"
+      },
+      {
+        "text": "жүрді",
+        "is_in_my_dict": true,
+        "dictionary_word": "жүру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жүр",
+          "ді"
+        ],
+        "translation": "ехала"
+      }
+    ]
+  },
+  {
+    "id": "kz_35",
+    "language": "Қазақша",
+    "sentence": "Студент жаңа кітап ашты.",
+    "words": [
+      {
+        "text": "Студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новую"
+      },
+      {
+        "text": "кітап",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "ашты",
+        "is_in_my_dict": true,
+        "dictionary_word": "ашу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "аш",
+          "ты"
+        ],
+        "translation": "открыл"
+      }
+    ]
+  },
+  {
+    "id": "kz_36",
+    "language": "Қазақша",
+    "sentence": "Дүкен ашылды, және көрші тамақ алды.",
+    "words": [
+      {
+        "text": "Дүкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "дүкен",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дүкен"
+        ],
+        "translation": "магазин"
+      },
+      {
+        "text": "ашылды",
+        "is_in_my_dict": true,
+        "dictionary_word": "ашу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "аш",
+          "ыл",
+          "ды"
+        ],
+        "translation": "открылся"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "көрші",
+        "is_in_my_dict": true,
+        "dictionary_word": "көрші",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "көрші"
+        ],
+        "translation": "сосед"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "алды",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ал",
+          "ды"
+        ],
+        "translation": "взял (купил)"
+      }
+    ]
+  },
+  {
+    "id": "kz_37",
+    "language": "Қазақша",
+    "sentence": "Көлік қымбат болды, бірақ адам оны алды.",
+    "words": [
+      {
+        "text": "Көлік",
+        "is_in_my_dict": true,
+        "dictionary_word": "көлік",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "көлік"
+        ],
+        "translation": "машина"
+      },
+      {
+        "text": "қымбат",
+        "is_in_my_dict": true,
+        "dictionary_word": "қымбат",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "қымбат"
+        ],
+        "translation": "дорогой"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "была"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "оны",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Object",
+        "label": "Pronoun",
+        "parts": [
+          "оны"
+        ],
+        "translation": "ее"
+      },
+      {
+        "text": "алды",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ал",
+          "ды"
+        ],
+        "translation": "купил"
+      }
+    ]
+  },
+  {
+    "id": "kz_38",
+    "language": "Қазақша",
+    "sentence": "Күз салқын болды, сондықтан құс ұшты.",
+    "words": [
+      {
+        "text": "Күз",
+        "is_in_my_dict": true,
+        "dictionary_word": "күз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күз"
+        ],
+        "translation": "осень"
+      },
+      {
+        "text": "салқын",
+        "is_in_my_dict": true,
+        "dictionary_word": "салқын",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "салқын"
+        ],
+        "translation": "прохладной"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "была"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "құс",
+        "is_in_my_dict": true,
+        "dictionary_word": "құс",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "құс"
+        ],
+        "translation": "птица"
+      },
+      {
+        "text": "ұшты",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұшу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ұш",
+          "ты"
+        ],
+        "translation": "улетела"
+      }
+    ]
+  },
+  {
+    "id": "kz_39",
+    "language": "Қазақша",
+    "sentence": "Егер баға арзан болса, мен киімдер аламын.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "баға",
+        "is_in_my_dict": true,
+        "dictionary_word": "баға",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "баға"
+        ],
+        "translation": "цена"
+      },
+      {
+        "text": "арзан",
+        "is_in_my_dict": true,
+        "dictionary_word": "арзан",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "арзан"
+        ],
+        "translation": "дешевой"
+      },
+      {
+        "text": "болса",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бол",
+          "са"
+        ],
+        "translation": "будет"
+      },
+      {
+        "text": "мен",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "мен"
+        ],
+        "translation": "я"
+      },
+      {
+        "text": "киімдер",
+        "is_in_my_dict": true,
+        "dictionary_word": "киімдер",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "киімдер"
+        ],
+        "translation": "одежду"
+      },
+      {
+        "text": "аламын",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "ал",
+          "а",
+          "мын"
+        ],
+        "translation": "возьму"
+      }
+    ]
+  },
+  {
+    "id": "kz_40",
+    "language": "Қазақша",
+    "sentence": "Шаршаған жұмысшы үлкен ағаш астында жатты.",
+    "words": [
+      {
+        "text": "Шаршаған",
+        "is_in_my_dict": true,
+        "dictionary_word": "шаршаған",
+        "role": "Attribute_Subject",
+        "label": "Participle",
+        "parts": [
+          "шарша",
+          "ған"
+        ],
+        "translation": "уставший"
+      },
+      {
+        "text": "жұмысшы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмысшы",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жұмысшы"
+        ],
+        "translation": "рабочий"
+      },
+      {
+        "text": "үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большим"
+      },
+      {
+        "text": "ағаш",
+        "is_in_my_dict": true,
+        "dictionary_word": "ағаш",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "ағаш"
+        ],
+        "translation": "деревом"
+      },
+      {
+        "text": "астында",
+        "is_in_my_dict": true,
+        "dictionary_word": "астында",
+        "role": "Adverbial",
+        "label": "Postposition",
+        "parts": [
+          "асты",
+          "нда"
+        ],
+        "translation": "под"
+      },
+      {
+        "text": "жатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "жату",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жат",
+          "ты"
+        ],
+        "translation": "лежал"
+      }
+    ]
+  },
+  {
+    "id": "kz_41",
+    "language": "Қазақша",
+    "sentence": "Ұры ақша ұрлады.",
+    "words": [
+      {
+        "text": "Ұры",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұры",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ұры"
+        ],
+        "translation": "вор"
+      },
+      {
+        "text": "ақша",
+        "is_in_my_dict": true,
+        "dictionary_word": "ақша",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ақша"
+        ],
+        "translation": "деньги"
+      },
+      {
+        "text": "ұрлады",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұрлау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ұрла",
+          "ды"
+        ],
+        "translation": "украл"
+      }
+    ]
+  },
+  {
+    "id": "kz_42",
+    "language": "Қазақша",
+    "sentence": "Фермер картоп сатты ма?",
+    "words": [
+      {
+        "text": "Фермер",
+        "is_in_my_dict": true,
+        "dictionary_word": "фермер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "фермер"
+        ],
+        "translation": "фермер"
+      },
+      {
+        "text": "картоп",
+        "is_in_my_dict": true,
+        "dictionary_word": "картоп",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "картоп"
+        ],
+        "translation": "картофель"
+      },
+      {
+        "text": "сатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "сату",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сат",
+          "ты"
+        ],
+        "translation": "продал"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_43",
+    "language": "Қазақша",
+    "sentence": "Дәрігер пациентті емдемеді.",
+    "words": [
+      {
+        "text": "Дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "пациентті",
+        "is_in_my_dict": true,
+        "dictionary_word": "пациент",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "пациент",
+          "ті"
+        ],
+        "translation": "пациента"
+      },
+      {
+        "text": "емдемеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "емдеу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "емде",
+          "ме",
+          "ді"
+        ],
+        "translation": "не лечил"
+      }
+    ]
+  },
+  {
+    "id": "kz_44",
+    "language": "Қазақша",
+    "sentence": "Жас сарбаз жеңіс әкелді.",
+    "words": [
+      {
+        "text": "Жас",
+        "is_in_my_dict": true,
+        "dictionary_word": "жас",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жас"
+        ],
+        "translation": "молодой"
+      },
+      {
+        "text": "сарбаз",
+        "is_in_my_dict": true,
+        "dictionary_word": "сарбаз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "сарбаз"
+        ],
+        "translation": "солдат"
+      },
+      {
+        "text": "жеңіс",
+        "is_in_my_dict": true,
+        "dictionary_word": "жеңіс",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жеңіс"
+        ],
+        "translation": "победу"
+      },
+      {
+        "text": "әкелді",
+        "is_in_my_dict": true,
+        "dictionary_word": "әкелу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "әкел",
+          "ді"
+        ],
+        "translation": "принес"
+      }
+    ]
+  },
+  {
+    "id": "kz_45",
+    "language": "Қазақша",
+    "sentence": "Бүгін мұғалім мектепке келді.",
+    "words": [
+      {
+        "text": "Бүгін",
+        "is_in_my_dict": true,
+        "dictionary_word": "бүгін",
+        "role": "Adverbial",
+        "label": "Time",
+        "parts": [
+          "бүгін"
+        ],
+        "translation": "сегодня"
+      },
+      {
+        "text": "мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "мектепке",
+        "is_in_my_dict": true,
+        "dictionary_word": "мектеп",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "мектеп",
+          "ке"
+        ],
+        "translation": "в школу"
+      },
+      {
+        "text": "келді",
+        "is_in_my_dict": true,
+        "dictionary_word": "келу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "кел",
+          "ді"
+        ],
+        "translation": "пришел"
+      }
+    ]
+  },
+  {
+    "id": "kz_46",
+    "language": "Қазақша",
+    "sentence": "Күн жылы болды, және қар балқыды.",
+    "words": [
+      {
+        "text": "Күн",
+        "is_in_my_dict": true,
+        "dictionary_word": "күн",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күн"
+        ],
+        "translation": "день"
+      },
+      {
+        "text": "жылы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылы",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жылы"
+        ],
+        "translation": "теплый"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "қар",
+        "is_in_my_dict": true,
+        "dictionary_word": "қар",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қар"
+        ],
+        "translation": "снег"
+      },
+      {
+        "text": "балқыды",
+        "is_in_my_dict": true,
+        "dictionary_word": "балқу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "балқы",
+          "ды"
+        ],
+        "translation": "растаял"
+      }
+    ]
+  },
+  {
+    "id": "kz_47",
+    "language": "Қазақша",
+    "sentence": "Бала жылады, өйткені ит тістеді.",
+    "words": [
+      {
+        "text": "Бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "жылады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жыла",
+          "ды"
+        ],
+        "translation": "плакал"
+      },
+      {
+        "text": "өйткені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "өйткені"
+        ],
+        "translation": "потому что"
+      },
+      {
+        "text": "ит",
+        "is_in_my_dict": true,
+        "dictionary_word": "ит",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ит"
+        ],
+        "translation": "собака"
+      },
+      {
+        "text": "тістеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "тістеу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тісте",
+          "ді"
+        ],
+        "translation": "укусила"
+      }
+    ]
+  },
+  {
+    "id": "kz_48",
+    "language": "Қазақша",
+    "sentence": "Емтихан жақын болды, сондықтан студент уайымдады.",
+    "words": [
+      {
+        "text": "Емтихан",
+        "is_in_my_dict": true,
+        "dictionary_word": "емтихан",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "емтихан"
+        ],
+        "translation": "экзамен"
+      },
+      {
+        "text": "жақын",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақын",
+        "role": "Predicate",
+        "label": "Adverb",
+        "parts": [
+          "жақын"
+        ],
+        "translation": "около (близко)"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "уайымдады",
+        "is_in_my_dict": true,
+        "dictionary_word": "уайымдау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "уайымда",
+          "ды"
+        ],
+        "translation": "волновался"
+      }
+    ]
+  },
+  {
+    "id": "kz_49",
+    "language": "Қазақша",
+    "sentence": "Егер жел қатты болса, кеме қалады.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "жел",
+        "is_in_my_dict": true,
+        "dictionary_word": "жел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жел"
+        ],
+        "translation": "ветер"
+      },
+      {
+        "text": "қатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "қатты",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "қатты"
+        ],
+        "translation": "сильным (жестким)"
+      },
+      {
+        "text": "болса",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бол",
+          "са"
+        ],
+        "translation": "будет"
+      },
+      {
+        "text": "кеме",
+        "is_in_my_dict": true,
+        "dictionary_word": "кеме",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "кеме"
+        ],
+        "translation": "корабль"
+      },
+      {
+        "text": "қалады",
+        "is_in_my_dict": true,
+        "dictionary_word": "қалу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "қал",
+          "а",
+          "ды"
+        ],
+        "translation": "останется"
+      }
+    ]
+  },
+  {
+    "id": "kz_50",
+    "language": "Қазақша",
+    "sentence": "Хатты жазып, қыз күлімсіреді.",
+    "words": [
+      {
+        "text": "Хатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "хат",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "хат",
+          "ты"
+        ],
+        "translation": "письмо"
+      },
+      {
+        "text": "жазып",
+        "is_in_my_dict": true,
+        "dictionary_word": "жазу",
+        "role": "Adverbial",
+        "label": "Gerund",
+        "parts": [
+          "жаз",
+          "ып"
+        ],
+        "translation": "написав"
+      },
+      {
+        "text": "қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "күлімсіреді",
+        "is_in_my_dict": true,
+        "dictionary_word": "күлімсіреу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "күлімсіре",
+          "ді"
+        ],
+        "translation": "улыбнулась"
+      }
+    ]
+  },
+  {
+    "id": "kz_51",
+    "language": "Қазақша",
+    "sentence": "Машина көпірден өтті.",
+    "words": [
+      {
+        "text": "Машина",
+        "is_in_my_dict": true,
+        "dictionary_word": "машина",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "машина"
+        ],
+        "translation": "машина"
+      },
+      {
+        "text": "көпірден",
+        "is_in_my_dict": true,
+        "dictionary_word": "көпір",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "көпір",
+          "ден"
+        ],
+        "translation": "через мост"
+      },
+      {
+        "text": "өтті",
+        "is_in_my_dict": true,
+        "dictionary_word": "өту",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "өт",
+          "ті"
+        ],
+        "translation": "прошла"
+      }
+    ]
+  },
+  {
+    "id": "kz_52",
+    "language": "Қазақша",
+    "sentence": "Жұмысшы терезені жапты ма?",
+    "words": [
+      {
+        "text": "Жұмысшы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмысшы",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жұмысшы"
+        ],
+        "translation": "рабочий"
+      },
+      {
+        "text": "терезеңі",
+        "is_in_my_dict": true,
+        "dictionary_word": "терезе",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "терезе",
+          "ні"
+        ],
+        "translation": "окно"
+      },
+      {
+        "text": "жапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "жабу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жап",
+          "ты"
+        ],
+        "translation": "закрыл"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_53",
+    "language": "Қазақша",
+    "sentence": "Ол дәмді ет жемеді.",
+    "words": [
+      {
+        "text": "Ол",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "ол"
+        ],
+        "translation": "он/она"
+      },
+      {
+        "text": "дәмді",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәмді",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "дәмді"
+        ],
+        "translation": "вкусное"
+      },
+      {
+        "text": "ет",
+        "is_in_my_dict": true,
+        "dictionary_word": "ет",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ет"
+        ],
+        "translation": "мясо"
+      },
+      {
+        "text": "жемеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "жеу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "же",
+          "ме",
+          "ді"
+        ],
+        "translation": "не ел"
+      }
+    ]
+  },
+  {
+    "id": "kz_54",
+    "language": "Қазақша",
+    "sentence": "Таза су ыстық болды.",
+    "words": [
+      {
+        "text": "Таза",
+        "is_in_my_dict": true,
+        "dictionary_word": "таза",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "таза"
+        ],
+        "translation": "чистая"
+      },
+      {
+        "text": "су",
+        "is_in_my_dict": true,
+        "dictionary_word": "су",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "су"
+        ],
+        "translation": "вода"
+      },
+      {
+        "text": "ыстық",
+        "is_in_my_dict": true,
+        "dictionary_word": "ыстық",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "ыстық"
+        ],
+        "translation": "горячей"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "была"
+      }
+    ]
+  },
+  {
+    "id": "kz_55",
+    "language": "Қазақша",
+    "sentence": "Дәрігер жаңа дәрі берді.",
+    "words": [
+      {
+        "text": "Дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новое"
+      },
+      {
+        "text": "дәрі",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрі",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "дәрі"
+        ],
+        "translation": "лекарство"
+      },
+      {
+        "text": "берді",
+        "is_in_my_dict": true,
+        "dictionary_word": "беру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бер",
+          "ді"
+        ],
+        "translation": "дал"
+      }
+    ]
+  },
+  {
+    "id": "kz_56",
+    "language": "Қазақша",
+    "sentence": "Мұғалім сөйледі, және студент тыңдады.",
+    "words": [
+      {
+        "text": "Мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "сөйледі",
+        "is_in_my_dict": true,
+        "dictionary_word": "сөйлеу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сөйле",
+          "ді"
+        ],
+        "translation": "говорил"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "тыңдады",
+        "is_in_my_dict": true,
+        "dictionary_word": "тыңдау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тыңда",
+          "ды"
+        ],
+        "translation": "слушал"
+      }
+    ]
+  },
+  {
+    "id": "kz_57",
+    "language": "Қазақша",
+    "sentence": "Әйел дәрігерге барды, өйткені ол ауру болды.",
+    "words": [
+      {
+        "text": "Әйел",
+        "is_in_my_dict": true,
+        "dictionary_word": "әйел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әйел"
+        ],
+        "translation": "женщина"
+      },
+      {
+        "text": "дәрігерге",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "дәрігер",
+          "ге"
+        ],
+        "translation": "к врачу"
+      },
+      {
+        "text": "барды",
+        "is_in_my_dict": true,
+        "dictionary_word": "бару",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бар",
+          "ды"
+        ],
+        "translation": "пошла"
+      },
+      {
+        "text": "өйткені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "өйткені"
+        ],
+        "translation": "потому что"
+      },
+      {
+        "text": "ол",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "ол"
+        ],
+        "translation": "она"
+      },
+      {
+        "text": "ауру",
+        "is_in_my_dict": true,
+        "dictionary_word": "ауру",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "ауру"
+        ],
+        "translation": "больной"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "была"
+      }
+    ]
+  },
+  {
+    "id": "kz_58",
+    "language": "Қазақша",
+    "sentence": "Дүкен жұмыс істемеді, сондықтан ақша қалды.",
+    "words": [
+      {
+        "text": "Дүкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "дүкен",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дүкен"
+        ],
+        "translation": "магазин"
+      },
+      {
+        "text": "жұмыс",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмыс",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жұмыс"
+        ],
+        "translation": "работу"
+      },
+      {
+        "text": "істемеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "істеу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "істе",
+          "ме",
+          "ді"
+        ],
+        "translation": "не делал"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "ақша",
+        "is_in_my_dict": true,
+        "dictionary_word": "ақша",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ақша"
+        ],
+        "translation": "деньги"
+      },
+      {
+        "text": "қалды",
+        "is_in_my_dict": true,
+        "dictionary_word": "қалу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "қал",
+          "ды"
+        ],
+        "translation": "остались"
+      }
+    ]
+  },
+  {
+    "id": "kz_59",
+    "language": "Қазақша",
+    "sentence": "Егер емтихан қиын болса, студент жылайды.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "емтихан",
+        "is_in_my_dict": true,
+        "dictionary_word": "емтихан",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "емтихан"
+        ],
+        "translation": "экзамен"
+      },
+      {
+        "text": "қиын",
+        "is_in_my_dict": true,
+        "dictionary_word": "қиын",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "қиын"
+        ],
+        "translation": "трудным"
+      },
+      {
+        "text": "болса",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бол",
+          "са"
+        ],
+        "translation": "будет"
+      },
+      {
+        "text": "студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "жылайды",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылау",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "жыла",
+          "й",
+          "ды"
+        ],
+        "translation": "плачет"
+      }
+    ]
+  },
+  {
+    "id": "kz_60",
+    "language": "Қазақша",
+    "sentence": "Сурет салған суретші ақша алды.",
+    "words": [
+      {
+        "text": "Сурет",
+        "is_in_my_dict": true,
+        "dictionary_word": "сурет",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "сурет"
+        ],
+        "translation": "картину"
+      },
+      {
+        "text": "салған",
+        "is_in_my_dict": true,
+        "dictionary_word": "салу",
+        "role": "Attribute_Subject",
+        "label": "Participle",
+        "parts": [
+          "сал",
+          "ған"
+        ],
+        "translation": "нарисовавший"
+      },
+      {
+        "text": "суретші",
+        "is_in_my_dict": true,
+        "dictionary_word": "суретші",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "суретші"
+        ],
+        "translation": "художник"
+      },
+      {
+        "text": "ақша",
+        "is_in_my_dict": true,
+        "dictionary_word": "ақша",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ақша"
+        ],
+        "translation": "деньги"
+      },
+      {
+        "text": "алды",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ал",
+          "ды"
+        ],
+        "translation": "получил"
+      }
+    ]
+  },
+  {
+    "id": "kz_61",
+    "language": "Қазақша",
+    "sentence": "Кішкентай құс ағашта отырды.",
+    "words": [
+      {
+        "text": "Кішкентай",
+        "is_in_my_dict": true,
+        "dictionary_word": "кішкентай",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "кішкентай"
+        ],
+        "translation": "маленькая"
+      },
+      {
+        "text": "құс",
+        "is_in_my_dict": true,
+        "dictionary_word": "құс",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "құс"
+        ],
+        "translation": "птица"
+      },
+      {
+        "text": "ағашта",
+        "is_in_my_dict": true,
+        "dictionary_word": "ағаш",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "ағаш",
+          "та"
+        ],
+        "translation": "на дереве"
+      },
+      {
+        "text": "отырды",
+        "is_in_my_dict": true,
+        "dictionary_word": "отыру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "отыр",
+          "ды"
+        ],
+        "translation": "сидела"
+      }
+    ]
+  },
+  {
+    "id": "kz_62",
+    "language": "Қазақша",
+    "sentence": "Әйел дәмді тамақ жасады ма?",
+    "words": [
+      {
+        "text": "Әйел",
+        "is_in_my_dict": true,
+        "dictionary_word": "әйел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әйел"
+        ],
+        "translation": "женщина"
+      },
+      {
+        "text": "дәмді",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәмді",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "дәмді"
+        ],
+        "translation": "вкусную"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жасады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жасау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жаса",
+          "ды"
+        ],
+        "translation": "приготовила"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_63",
+    "language": "Қазақша",
+    "sentence": "Үлкен балық секірмеді.",
+    "words": [
+      {
+        "text": "Үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большая"
+      },
+      {
+        "text": "балық",
+        "is_in_my_dict": true,
+        "dictionary_word": "балық",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "балық"
+        ],
+        "translation": "рыба"
+      },
+      {
+        "text": "секірмеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "секіру",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "секір",
+          "ме",
+          "ді"
+        ],
+        "translation": "не прыгнула"
+      }
+    ]
+  },
+  {
+    "id": "kz_64",
+    "language": "Қазақша",
+    "sentence": "Жас студент кітапты ашты.",
+    "words": [
+      {
+        "text": "Жас",
+        "is_in_my_dict": true,
+        "dictionary_word": "жас",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жас"
+        ],
+        "translation": "молодой"
+      },
+      {
+        "text": "студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "кітапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап",
+          "ты"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "ашты",
+        "is_in_my_dict": true,
+        "dictionary_word": "ашу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "аш",
+          "ты"
+        ],
+        "translation": "открыл"
+      }
+    ]
+  },
+  {
+    "id": "kz_65",
+    "language": "Қазақша",
+    "sentence": "Кеше фермер қалаға барды.",
+    "words": [
+      {
+        "text": "Кеше",
+        "is_in_my_dict": true,
+        "dictionary_word": "кеше",
+        "role": "Adverbial",
+        "label": "Time",
+        "parts": [
+          "кеше"
+        ],
+        "translation": "вчера"
+      },
+      {
+        "text": "фермер",
+        "is_in_my_dict": true,
+        "dictionary_word": "фермер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "фермер"
+        ],
+        "translation": "фермер"
+      },
+      {
+        "text": "қалаға",
+        "is_in_my_dict": true,
+        "dictionary_word": "қала",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "қала",
+          "ға"
+        ],
+        "translation": "в город"
+      },
+      {
+        "text": "барды",
+        "is_in_my_dict": true,
+        "dictionary_word": "бару",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бар",
+          "ды"
+        ],
+        "translation": "поехал"
+      }
+    ]
+  },
+  {
+    "id": "kz_66",
+    "language": "Қазақша",
+    "sentence": "Қыз тамақ жеді, және бала су құйды.",
+    "words": [
+      {
+        "text": "Қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "жеу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "же",
+          "ді"
+        ],
+        "translation": "ела"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "су",
+        "is_in_my_dict": true,
+        "dictionary_word": "су",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "су"
+        ],
+        "translation": "воду"
+      },
+      {
+        "text": "құйды",
+        "is_in_my_dict": true,
+        "dictionary_word": "құю",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "құй",
+          "ды"
+        ],
+        "translation": "налил"
+      }
+    ]
+  },
+  {
+    "id": "kz_67",
+    "language": "Қазақша",
+    "sentence": "Емтихан қиын болды, бірақ студент жақсы жазды.",
+    "words": [
+      {
+        "text": "Емтихан",
+        "is_in_my_dict": true,
+        "dictionary_word": "емтихан",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "емтихан"
+        ],
+        "translation": "экзамен"
+      },
+      {
+        "text": "қиын",
+        "is_in_my_dict": true,
+        "dictionary_word": "қиын",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "қиын"
+        ],
+        "translation": "трудным"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "студент",
+        "is_in_my_dict": true,
+        "dictionary_word": "студент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "студент"
+        ],
+        "translation": "студент"
+      },
+      {
+        "text": "жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Adverbial",
+        "label": "Adverb",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хорошо"
+      },
+      {
+        "text": "жазды",
+        "is_in_my_dict": true,
+        "dictionary_word": "жазу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жаз",
+          "ды"
+        ],
+        "translation": "написал"
+      }
+    ]
+  },
+  {
+    "id": "kz_68",
+    "language": "Қазақша",
+    "sentence": "Күн салқын болды, сондықтан әйел көйлек киді.",
+    "words": [
+      {
+        "text": "Күн",
+        "is_in_my_dict": true,
+        "dictionary_word": "күн",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күн"
+        ],
+        "translation": "день"
+      },
+      {
+        "text": "салқын",
+        "is_in_my_dict": true,
+        "dictionary_word": "салқын",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "салқын"
+        ],
+        "translation": "прохладным"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "әйел",
+        "is_in_my_dict": true,
+        "dictionary_word": "әйел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әйел"
+        ],
+        "translation": "женщина"
+      },
+      {
+        "text": "көйлек",
+        "is_in_my_dict": true,
+        "dictionary_word": "көйлек",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "көйлек"
+        ],
+        "translation": "рубашку"
+      },
+      {
+        "text": "киді",
+        "is_in_my_dict": true,
+        "dictionary_word": "кию",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ки",
+          "ді"
+        ],
+        "translation": "надела"
+      }
+    ]
+  },
+  {
+    "id": "kz_69",
+    "language": "Қазақша",
+    "sentence": "Егер дәрігер келсе, пациент жақсы болады.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "келсе",
+        "is_in_my_dict": true,
+        "dictionary_word": "келу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "кел",
+          "се"
+        ],
+        "translation": "придет"
+      },
+      {
+        "text": "пациент",
+        "is_in_my_dict": true,
+        "dictionary_word": "пациент",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "пациент"
+        ],
+        "translation": "пациент"
+      },
+      {
+        "text": "жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хорошо"
+      },
+      {
+        "text": "болады",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "а",
+          "ды"
+        ],
+        "translation": "будет"
+      }
+    ]
+  },
+  {
+    "id": "kz_70",
+    "language": "Қазақша",
+    "sentence": "Терезені ашып, мұғалім мектепке кірді.",
+    "words": [
+      {
+        "text": "Терезені",
+        "is_in_my_dict": true,
+        "dictionary_word": "терезе",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "терезе",
+          "ні"
+        ],
+        "translation": "окно"
+      },
+      {
+        "text": "ашып",
+        "is_in_my_dict": true,
+        "dictionary_word": "ашу",
+        "role": "Adverbial",
+        "label": "Gerund",
+        "parts": [
+          "аш",
+          "ып"
+        ],
+        "translation": "открыв"
+      },
+      {
+        "text": "мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "мектепке",
+        "is_in_my_dict": true,
+        "dictionary_word": "мектеп",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "мектеп",
+          "ке"
+        ],
+        "translation": "в школу"
+      },
+      {
+        "text": "кірді",
+        "is_in_my_dict": true,
+        "dictionary_word": "кіру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "кір",
+          "ді"
+        ],
+        "translation": "вошел"
+      }
+    ]
+  },
+  {
+    "id": "kz_71",
+    "language": "Қазақша",
+    "sentence": "Жақсы адам сыйлық тапты.",
+    "words": [
+      {
+        "text": "Жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хороший"
+      },
+      {
+        "text": "адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "сыйлық",
+        "is_in_my_dict": true,
+        "dictionary_word": "сыйлық",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "сыйлық"
+        ],
+        "translation": "подарок"
+      },
+      {
+        "text": "тапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "табу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тап",
+          "ты"
+        ],
+        "translation": "нашел"
+      }
+    ]
+  },
+  {
+    "id": "kz_72",
+    "language": "Қазақша",
+    "sentence": "Дәрігер жаман дәрі берді ме?",
+    "words": [
+      {
+        "text": "Дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "жаман",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаман",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаман"
+        ],
+        "translation": "плохое"
+      },
+      {
+        "text": "дәрі",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрі",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "дәрі"
+        ],
+        "translation": "лекарство"
+      },
+      {
+        "text": "берді",
+        "is_in_my_dict": true,
+        "dictionary_word": "беру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бер",
+          "ді"
+        ],
+        "translation": "дал"
+      },
+      {
+        "text": "ме",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ме"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_73",
+    "language": "Қазақша",
+    "sentence": "Жас қыз терезені жаппады.",
+    "words": [
+      {
+        "text": "Жас",
+        "is_in_my_dict": true,
+        "dictionary_word": "жас",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "жас"
+        ],
+        "translation": "молодая"
+      },
+      {
+        "text": "қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "терезені",
+        "is_in_my_dict": true,
+        "dictionary_word": "терезе",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "терезе",
+          "ні"
+        ],
+        "translation": "окно"
+      },
+      {
+        "text": "жаппады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жабу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "жап",
+          "па",
+          "ды"
+        ],
+        "translation": "не закрыла"
+      }
+    ]
+  },
+  {
+    "id": "kz_74",
+    "language": "Қазақша",
+    "sentence": "Күшті жел болды, сондықтан үлкен ағаш құлады.",
+    "words": [
+      {
+        "text": "Күшті",
+        "is_in_my_dict": true,
+        "dictionary_word": "күшті",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "күшті"
+        ],
+        "translation": "сильный"
+      },
+      {
+        "text": "жел",
+        "is_in_my_dict": true,
+        "dictionary_word": "жел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жел"
+        ],
+        "translation": "ветер"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большое"
+      },
+      {
+        "text": "ағаш",
+        "is_in_my_dict": true,
+        "dictionary_word": "ағаш",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ағаш"
+        ],
+        "translation": "дерево"
+      },
+      {
+        "text": "құлады",
+        "is_in_my_dict": true,
+        "dictionary_word": "құлау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "құла",
+          "ды"
+        ],
+        "translation": "упало"
+      }
+    ]
+  },
+  {
+    "id": "kz_75",
+    "language": "Қазақша",
+    "sentence": "Ұры ақша ұрлады, бірақ күзетші оны тапты.",
+    "words": [
+      {
+        "text": "Ұры",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұры",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ұры"
+        ],
+        "translation": "вор"
+      },
+      {
+        "text": "ақша",
+        "is_in_my_dict": true,
+        "dictionary_word": "ақша",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ақша"
+        ],
+        "translation": "деньги"
+      },
+      {
+        "text": "ұрлады",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұрлау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ұрла",
+          "ды"
+        ],
+        "translation": "украл"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "күзетші",
+        "is_in_my_dict": true,
+        "dictionary_word": "күзетші",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күзетші"
+        ],
+        "translation": "охранник"
+      },
+      {
+        "text": "оны",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Object",
+        "label": "Pronoun",
+        "parts": [
+          "оны"
+        ],
+        "translation": "его"
+      },
+      {
+        "text": "тапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "табу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тап",
+          "ты"
+        ],
+        "translation": "нашел"
+      }
+    ]
+  },
+  {
+    "id": "kz_76",
+    "language": "Қазақша",
+    "sentence": "Егер күн суық болса, мен қалың пальто киемін.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "күн",
+        "is_in_my_dict": true,
+        "dictionary_word": "күн",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күн"
+        ],
+        "translation": "день"
+      },
+      {
+        "text": "суық",
+        "is_in_my_dict": true,
+        "dictionary_word": "суық",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "суық"
+        ],
+        "translation": "холодным"
+      },
+      {
+        "text": "болса",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "бол",
+          "са"
+        ],
+        "translation": "будет"
+      },
+      {
+        "text": "мен",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "мен"
+        ],
+        "translation": "я"
+      },
+      {
+        "text": "қалың",
+        "is_in_my_dict": true,
+        "dictionary_word": "қалың",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "қалың"
+        ],
+        "translation": "толстое"
+      },
+      {
+        "text": "пальто",
+        "is_in_my_dict": true,
+        "dictionary_word": "пальто",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "пальто"
+        ],
+        "translation": "пальто"
+      },
+      {
+        "text": "киемін",
+        "is_in_my_dict": true,
+        "dictionary_word": "кию",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "ки",
+          "е",
+          "мін"
+        ],
+        "translation": "надену"
+      }
+    ]
+  },
+  {
+    "id": "kz_77",
+    "language": "Қазақша",
+    "sentence": "Терезені ашқан адам қатты жел сезінді.",
+    "words": [
+      {
+        "text": "Терезені",
+        "is_in_my_dict": true,
+        "dictionary_word": "терезе",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "терезе",
+          "ні"
+        ],
+        "translation": "окно"
+      },
+      {
+        "text": "ашқан",
+        "is_in_my_dict": true,
+        "dictionary_word": "ашу",
+        "role": "Attribute_Subject",
+        "label": "Participle",
+        "parts": [
+          "аш",
+          "қан"
+        ],
+        "translation": "открывший"
+      },
+      {
+        "text": "адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "қатты",
+        "is_in_my_dict": true,
+        "dictionary_word": "қатты",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "қатты"
+        ],
+        "translation": "сильный"
+      },
+      {
+        "text": "жел",
+        "is_in_my_dict": true,
+        "dictionary_word": "жел",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жел"
+        ],
+        "translation": "ветер"
+      },
+      {
+        "text": "сезінді",
+        "is_in_my_dict": true,
+        "dictionary_word": "сезіну",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "сезін",
+          "ді"
+        ],
+        "translation": "почувствовал"
+      }
+    ]
+  },
+  {
+    "id": "kz_78",
+    "language": "Қазақша",
+    "sentence": "Қасқыр орманға қашты.",
+    "words": [
+      {
+        "text": "Қасқыр",
+        "is_in_my_dict": true,
+        "dictionary_word": "қасқыр",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қасқыр"
+        ],
+        "translation": "волк"
+      },
+      {
+        "text": "орманға",
+        "is_in_my_dict": true,
+        "dictionary_word": "орман",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "орман",
+          "ға"
+        ],
+        "translation": "в лес"
+      },
+      {
+        "text": "қашты",
+        "is_in_my_dict": true,
+        "dictionary_word": "қашу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "қаш",
+          "ты"
+        ],
+        "translation": "убежал"
+      }
+    ]
+  },
+  {
+    "id": "kz_79",
+    "language": "Қазақша",
+    "sentence": "Ана тамақ жасады, және қыз үстелді дайындады.",
+    "words": [
+      {
+        "text": "Ана",
+        "is_in_my_dict": true,
+        "dictionary_word": "ана",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ана"
+        ],
+        "translation": "мать"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жасады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жасау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жаса",
+          "ды"
+        ],
+        "translation": "приготовила"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "үстелді",
+        "is_in_my_dict": true,
+        "dictionary_word": "үстел",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "үстел",
+          "ді"
+        ],
+        "translation": "стол"
+      },
+      {
+        "text": "дайындады",
+        "is_in_my_dict": true,
+        "dictionary_word": "дайындау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "дайында",
+          "ды"
+        ],
+        "translation": "подготовила"
+      }
+    ]
+  },
+  {
+    "id": "kz_80",
+    "language": "Қазақша",
+    "sentence": "Әнді тыңдап, ол үйде отырды.",
+    "words": [
+      {
+        "text": "Әнді",
+        "is_in_my_dict": true,
+        "dictionary_word": "ән",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ән",
+          "ді"
+        ],
+        "translation": "песню"
+      },
+      {
+        "text": "тыңдап",
+        "is_in_my_dict": true,
+        "dictionary_word": "тыңдау",
+        "role": "Adverbial",
+        "label": "Gerund",
+        "parts": [
+          "тыңда",
+          "п"
+        ],
+        "translation": "слушая"
+      },
+      {
+        "text": "ол",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "ол"
+        ],
+        "translation": "он/она"
+      },
+      {
+        "text": "үйде",
+        "is_in_my_dict": true,
+        "dictionary_word": "үй",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "үй",
+          "де"
+        ],
+        "translation": "дома"
+      },
+      {
+        "text": "отырды",
+        "is_in_my_dict": true,
+        "dictionary_word": "отыру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "отыр",
+          "ды"
+        ],
+        "translation": "сидел"
+      }
+    ]
+  },
+  {
+    "id": "kz_81",
+    "language": "Қазақша",
+    "sentence": "Мұғалім жаңа кітап алды.",
+    "words": [
+      {
+        "text": "Мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новую"
+      },
+      {
+        "text": "кітап",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "алды",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ал",
+          "ды"
+        ],
+        "translation": "получил"
+      }
+    ]
+  },
+  {
+    "id": "kz_82",
+    "language": "Қазақша",
+    "sentence": "Сен жаңа кітапты алдың ба?",
+    "words": [
+      {
+        "text": "Сен",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "сен"
+        ],
+        "translation": "ты"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новую"
+      },
+      {
+        "text": "кітапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап",
+          "ты"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "алдың",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ал",
+          "ды",
+          "ң"
+        ],
+        "translation": "получил"
+      },
+      {
+        "text": "ба",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ба"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_83",
+    "language": "Қазақша",
+    "sentence": "Бала лас суды құймады.",
+    "words": [
+      {
+        "text": "Бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "лас",
+        "is_in_my_dict": true,
+        "dictionary_word": "лас",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "лас"
+        ],
+        "translation": "грязную"
+      },
+      {
+        "text": "суды",
+        "is_in_my_dict": true,
+        "dictionary_word": "су",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "су",
+          "ды"
+        ],
+        "translation": "воду"
+      },
+      {
+        "text": "құймады",
+        "is_in_my_dict": true,
+        "dictionary_word": "құю",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "құй",
+          "ма",
+          "ды"
+        ],
+        "translation": "не налил"
+      }
+    ]
+  },
+  {
+    "id": "kz_84",
+    "language": "Қазақша",
+    "sentence": "Терезені ашты дәрігер.",
+    "words": [
+      {
+        "text": "Терезені",
+        "is_in_my_dict": true,
+        "dictionary_word": "терезе",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "терезе",
+          "ні"
+        ],
+        "translation": "окно"
+      },
+      {
+        "text": "ашты",
+        "is_in_my_dict": true,
+        "dictionary_word": "ашу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "аш",
+          "ты"
+        ],
+        "translation": "открыл"
+      },
+      {
+        "text": "дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      }
+    ]
+  },
+  {
+    "id": "kz_85",
+    "language": "Қазақша",
+    "sentence": "Әке таза көйлек киді.",
+    "words": [
+      {
+        "text": "Әке",
+        "is_in_my_dict": true,
+        "dictionary_word": "әке",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әке"
+        ],
+        "translation": "отец"
+      },
+      {
+        "text": "таза",
+        "is_in_my_dict": true,
+        "dictionary_word": "таза",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "таза"
+        ],
+        "translation": "чистую"
+      },
+      {
+        "text": "көйлек",
+        "is_in_my_dict": true,
+        "dictionary_word": "көйлек",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "көйлек"
+        ],
+        "translation": "рубашку"
+      },
+      {
+        "text": "киді",
+        "is_in_my_dict": true,
+        "dictionary_word": "кию",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ки",
+          "ді"
+        ],
+        "translation": "надел"
+      }
+    ]
+  },
+  {
+    "id": "kz_86",
+    "language": "Қазақша",
+    "sentence": "Ана тамақ жасады, және әке хат жазды.",
+    "words": [
+      {
+        "text": "Ана",
+        "is_in_my_dict": true,
+        "dictionary_word": "ана",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ана"
+        ],
+        "translation": "мать"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жасады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жасау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жаса",
+          "ды"
+        ],
+        "translation": "сделала"
+      },
+      {
+        "text": "және",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "және"
+        ],
+        "translation": "и"
+      },
+      {
+        "text": "әке",
+        "is_in_my_dict": true,
+        "dictionary_word": "әке",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әке"
+        ],
+        "translation": "отец"
+      },
+      {
+        "text": "хат",
+        "is_in_my_dict": true,
+        "dictionary_word": "хат",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "хат"
+        ],
+        "translation": "письмо"
+      },
+      {
+        "text": "жазды",
+        "is_in_my_dict": true,
+        "dictionary_word": "жазу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жаз",
+          "ды"
+        ],
+        "translation": "написал"
+      }
+    ]
+  },
+  {
+    "id": "kz_87",
+    "language": "Қазақша",
+    "sentence": "Жұмысшы жұмыс істеді, бірақ ақша алмады.",
+    "words": [
+      {
+        "text": "Жұмысшы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмысшы",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "жұмысшы"
+        ],
+        "translation": "рабочий"
+      },
+      {
+        "text": "жұмыс",
+        "is_in_my_dict": true,
+        "dictionary_word": "жұмыс",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "жұмыс"
+        ],
+        "translation": "работу"
+      },
+      {
+        "text": "істеді",
+        "is_in_my_dict": true,
+        "dictionary_word": "істеу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "істе",
+          "ді"
+        ],
+        "translation": "делал"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "ақша",
+        "is_in_my_dict": true,
+        "dictionary_word": "ақша",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ақша"
+        ],
+        "translation": "деньги"
+      },
+      {
+        "text": "алмады",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "ал",
+          "ма",
+          "ды"
+        ],
+        "translation": "не получил"
+      }
+    ]
+  },
+  {
+    "id": "kz_88",
+    "language": "Қазақша",
+    "sentence": "Қыз жылады, өйткені дәрігер ауруды тапты.",
+    "words": [
+      {
+        "text": "Қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "жылады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жыла",
+          "ды"
+        ],
+        "translation": "плакала"
+      },
+      {
+        "text": "өйткені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "өйткені"
+        ],
+        "translation": "потому что"
+      },
+      {
+        "text": "дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "ауруды",
+        "is_in_my_dict": true,
+        "dictionary_word": "ауру",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "ауру",
+          "ды"
+        ],
+        "translation": "болезнь"
+      },
+      {
+        "text": "тапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "табу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "тап",
+          "ты"
+        ],
+        "translation": "нашел"
+      }
+    ]
+  },
+  {
+    "id": "kz_89",
+    "language": "Қазақша",
+    "sentence": "Егер сен жақсы оқысаң, үлкен сыйлық аласың.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "сен",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "сен"
+        ],
+        "translation": "ты"
+      },
+      {
+        "text": "жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Adverbial",
+        "label": "Adverb",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хорошо"
+      },
+      {
+        "text": "оқысаң",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "оқы",
+          "са",
+          "ң"
+        ],
+        "translation": "будешь читать (учиться)"
+      },
+      {
+        "text": "үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большой"
+      },
+      {
+        "text": "сыйлық",
+        "is_in_my_dict": true,
+        "dictionary_word": "сыйлық",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "сыйлық"
+        ],
+        "translation": "подарок"
+      },
+      {
+        "text": "аласың",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "ал",
+          "а",
+          "сың"
+        ],
+        "translation": "получишь"
+      }
+    ]
+  },
+  {
+    "id": "kz_90",
+    "language": "Қазақша",
+    "sentence": "Көшеге шығып, бала жүгірді.",
+    "words": [
+      {
+        "text": "Көшеге",
+        "is_in_my_dict": true,
+        "dictionary_word": "көше",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "көше",
+          "ге"
+        ],
+        "translation": "на улицу"
+      },
+      {
+        "text": "шығып",
+        "is_in_my_dict": true,
+        "dictionary_word": "шығу",
+        "role": "Adverbial",
+        "label": "Gerund",
+        "parts": [
+          "шығ",
+          "ып"
+        ],
+        "translation": "выйдя"
+      },
+      {
+        "text": "бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "жүгірді",
+        "is_in_my_dict": true,
+        "dictionary_word": "жүгіру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жүгір",
+          "ді"
+        ],
+        "translation": "бежал"
+      }
+    ]
+  },
+  {
+    "id": "kz_91",
+    "language": "Қазақша",
+    "sentence": "Машина жаңа көпірден өтті.",
+    "words": [
+      {
+        "text": "Машина",
+        "is_in_my_dict": true,
+        "dictionary_word": "машина",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "машина"
+        ],
+        "translation": "машина"
+      },
+      {
+        "text": "жаңа",
+        "is_in_my_dict": true,
+        "dictionary_word": "жаңа",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "жаңа"
+        ],
+        "translation": "новый"
+      },
+      {
+        "text": "көпірден",
+        "is_in_my_dict": true,
+        "dictionary_word": "көпір",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "көпір",
+          "ден"
+        ],
+        "translation": "через мост"
+      },
+      {
+        "text": "өтті",
+        "is_in_my_dict": true,
+        "dictionary_word": "өту",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "өт",
+          "ті"
+        ],
+        "translation": "проехала"
+      }
+    ]
+  },
+  {
+    "id": "kz_92",
+    "language": "Қазақша",
+    "sentence": "Әйел дүкеннен дәмді нан алды ма?",
+    "words": [
+      {
+        "text": "Әйел",
+        "is_in_my_dict": true,
+        "dictionary_word": "әйел",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әйел"
+        ],
+        "translation": "женщина"
+      },
+      {
+        "text": "дүкеннен",
+        "is_in_my_dict": true,
+        "dictionary_word": "дүкен",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "дүкен",
+          "нен"
+        ],
+        "translation": "из магазина"
+      },
+      {
+        "text": "дәмді",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәмді",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "дәмді"
+        ],
+        "translation": "вкусный"
+      },
+      {
+        "text": "нан",
+        "is_in_my_dict": true,
+        "dictionary_word": "нан",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "нан"
+        ],
+        "translation": "хлеб"
+      },
+      {
+        "text": "алды",
+        "is_in_my_dict": true,
+        "dictionary_word": "алу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ал",
+          "ды"
+        ],
+        "translation": "взяла"
+      },
+      {
+        "text": "ма",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Predicate",
+        "label": "Particle",
+        "parts": [
+          "ма"
+        ],
+        "translation": "(вопрос)"
+      }
+    ]
+  },
+  {
+    "id": "kz_93",
+    "language": "Қазақша",
+    "sentence": "Мұғалім ескі кітапты оқымады.",
+    "words": [
+      {
+        "text": "Мұғалім",
+        "is_in_my_dict": true,
+        "dictionary_word": "мұғалім",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "мұғалім"
+        ],
+        "translation": "учитель"
+      },
+      {
+        "text": "ескі",
+        "is_in_my_dict": true,
+        "dictionary_word": "ескі",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "ескі"
+        ],
+        "translation": "старую"
+      },
+      {
+        "text": "кітапты",
+        "is_in_my_dict": true,
+        "dictionary_word": "кітап",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "кітап",
+          "ты"
+        ],
+        "translation": "книгу"
+      },
+      {
+        "text": "оқымады",
+        "is_in_my_dict": true,
+        "dictionary_word": "оқу",
+        "role": "Predicate",
+        "label": "Verb (Neg)",
+        "parts": [
+          "оқы",
+          "ма",
+          "ды"
+        ],
+        "translation": "не читал"
+      }
+    ]
+  },
+  {
+    "id": "kz_94",
+    "language": "Қазақша",
+    "sentence": "Бала жылады, өйткені үлкен ит секірді.",
+    "words": [
+      {
+        "text": "Бала",
+        "is_in_my_dict": true,
+        "dictionary_word": "бала",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "бала"
+        ],
+        "translation": "ребенок"
+      },
+      {
+        "text": "жылады",
+        "is_in_my_dict": true,
+        "dictionary_word": "жылау",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "жыла",
+          "ды"
+        ],
+        "translation": "заплакал"
+      },
+      {
+        "text": "өйткені",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "өйткені"
+        ],
+        "translation": "потому что"
+      },
+      {
+        "text": "үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большая"
+      },
+      {
+        "text": "ит",
+        "is_in_my_dict": true,
+        "dictionary_word": "ит",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "ит"
+        ],
+        "translation": "собака"
+      },
+      {
+        "text": "секірді",
+        "is_in_my_dict": true,
+        "dictionary_word": "секіру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "секір",
+          "ді"
+        ],
+        "translation": "прыгнула"
+      }
+    ]
+  },
+  {
+    "id": "kz_95",
+    "language": "Қазақша",
+    "sentence": "Дәрігер келді, бірақ ауру адам үйде қалды.",
+    "words": [
+      {
+        "text": "Дәрігер",
+        "is_in_my_dict": true,
+        "dictionary_word": "дәрігер",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "дәрігер"
+        ],
+        "translation": "врач"
+      },
+      {
+        "text": "келді",
+        "is_in_my_dict": true,
+        "dictionary_word": "келу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "кел",
+          "ді"
+        ],
+        "translation": "пришел"
+      },
+      {
+        "text": "бірақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "бірақ",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "бірақ"
+        ],
+        "translation": "но"
+      },
+      {
+        "text": "ауру",
+        "is_in_my_dict": true,
+        "dictionary_word": "ауру",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "ауру"
+        ],
+        "translation": "больной"
+      },
+      {
+        "text": "адам",
+        "is_in_my_dict": true,
+        "dictionary_word": "адам",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "адам"
+        ],
+        "translation": "человек"
+      },
+      {
+        "text": "үйде",
+        "is_in_my_dict": true,
+        "dictionary_word": "үй",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "үй",
+          "де"
+        ],
+        "translation": "дома"
+      },
+      {
+        "text": "қалды",
+        "is_in_my_dict": true,
+        "dictionary_word": "қалу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "қал",
+          "ды"
+        ],
+        "translation": "остался"
+      }
+    ]
+  },
+  {
+    "id": "kz_96",
+    "language": "Қазақша",
+    "sentence": "Күн суық болды, сондықтан қыз қалың пальто киді.",
+    "words": [
+      {
+        "text": "Күн",
+        "is_in_my_dict": true,
+        "dictionary_word": "күн",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "күн"
+        ],
+        "translation": "день"
+      },
+      {
+        "text": "суық",
+        "is_in_my_dict": true,
+        "dictionary_word": "суық",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "суық"
+        ],
+        "translation": "холодным"
+      },
+      {
+        "text": "болды",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "ды"
+        ],
+        "translation": "был"
+      },
+      {
+        "text": "сондықтан",
+        "is_in_my_dict": true,
+        "dictionary_word": "сондықтан",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "сондықтан"
+        ],
+        "translation": "поэтому"
+      },
+      {
+        "text": "қыз",
+        "is_in_my_dict": true,
+        "dictionary_word": "қыз",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қыз"
+        ],
+        "translation": "девочка"
+      },
+      {
+        "text": "қалың",
+        "is_in_my_dict": true,
+        "dictionary_word": "қалың",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "қалың"
+        ],
+        "translation": "толстое"
+      },
+      {
+        "text": "пальто",
+        "is_in_my_dict": true,
+        "dictionary_word": "пальто",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "пальто"
+        ],
+        "translation": "пальто"
+      },
+      {
+        "text": "киді",
+        "is_in_my_dict": true,
+        "dictionary_word": "кию",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ки",
+          "ді"
+        ],
+        "translation": "надела"
+      }
+    ]
+  },
+  {
+    "id": "kz_97",
+    "language": "Қазақша",
+    "sentence": "Егер сен таза тамақ жесең, жақсы боласың.",
+    "words": [
+      {
+        "text": "Егер",
+        "is_in_my_dict": true,
+        "dictionary_word": "егер",
+        "role": "Conjunction",
+        "label": "Conjunction",
+        "parts": [
+          "егер"
+        ],
+        "translation": "если"
+      },
+      {
+        "text": "сен",
+        "is_in_my_dict": false,
+        "dictionary_word": null,
+        "role": "Subject",
+        "label": "Pronoun",
+        "parts": [
+          "сен"
+        ],
+        "translation": "ты"
+      },
+      {
+        "text": "таза",
+        "is_in_my_dict": true,
+        "dictionary_word": "таза",
+        "role": "Attribute_Object",
+        "label": "Adjective",
+        "parts": [
+          "таза"
+        ],
+        "translation": "чистую"
+      },
+      {
+        "text": "тамақ",
+        "is_in_my_dict": true,
+        "dictionary_word": "тамақ",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "тамақ"
+        ],
+        "translation": "еду"
+      },
+      {
+        "text": "жесең",
+        "is_in_my_dict": true,
+        "dictionary_word": "жеу",
+        "role": "Predicate",
+        "label": "Verb",
+        "parts": [
+          "же",
+          "се",
+          "ң"
+        ],
+        "translation": "съешь"
+      },
+      {
+        "text": "жақсы",
+        "is_in_my_dict": true,
+        "dictionary_word": "жақсы",
+        "role": "Predicate",
+        "label": "Adjective",
+        "parts": [
+          "жақсы"
+        ],
+        "translation": "хорошим"
+      },
+      {
+        "text": "боласың",
+        "is_in_my_dict": true,
+        "dictionary_word": "болу",
+        "role": "Predicate",
+        "label": "Auxiliary",
+        "parts": [
+          "бол",
+          "а",
+          "сың"
+        ],
+        "translation": "будешь"
+      }
+    ]
+  },
+  {
+    "id": "kz_98",
+    "language": "Қазақша",
+    "sentence": "Көшеде жүгірген қасқыр орманға кірді.",
+    "words": [
+      {
+        "text": "Көшеде",
+        "is_in_my_dict": true,
+        "dictionary_word": "көше",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "көше",
+          "де"
+        ],
+        "translation": "на улице"
+      },
+      {
+        "text": "жүгірген",
+        "is_in_my_dict": true,
+        "dictionary_word": "жүгіру",
+        "role": "Attribute_Subject",
+        "label": "Participle",
+        "parts": [
+          "жүгір",
+          "ген"
+        ],
+        "translation": "бежавший"
+      },
+      {
+        "text": "қасқыр",
+        "is_in_my_dict": true,
+        "dictionary_word": "қасқыр",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "қасқыр"
+        ],
+        "translation": "волк"
+      },
+      {
+        "text": "орманға",
+        "is_in_my_dict": true,
+        "dictionary_word": "орман",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "орман",
+          "ға"
+        ],
+        "translation": "в лес"
+      },
+      {
+        "text": "кірді",
+        "is_in_my_dict": true,
+        "dictionary_word": "кіру",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "кір",
+          "ді"
+        ],
+        "translation": "вошел"
+      }
+    ]
+  },
+  {
+    "id": "kz_99",
+    "language": "Қазақша",
+    "sentence": "Әке хат жазып, үстелге қойды.",
+    "words": [
+      {
+        "text": "Әке",
+        "is_in_my_dict": true,
+        "dictionary_word": "әке",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "әке"
+        ],
+        "translation": "отец"
+      },
+      {
+        "text": "хат",
+        "is_in_my_dict": true,
+        "dictionary_word": "хат",
+        "role": "Object",
+        "label": "Object",
+        "parts": [
+          "хат"
+        ],
+        "translation": "письмо"
+      },
+      {
+        "text": "жазып",
+        "is_in_my_dict": true,
+        "dictionary_word": "жазу",
+        "role": "Adverbial",
+        "label": "Gerund",
+        "parts": [
+          "жаз",
+          "ып"
+        ],
+        "translation": "написав"
+      },
+      {
+        "text": "үстелге",
+        "is_in_my_dict": true,
+        "dictionary_word": "үстел",
+        "role": "Adverbial",
+        "label": "Place",
+        "parts": [
+          "үстел",
+          "ге"
+        ],
+        "translation": "на стол"
+      },
+      {
+        "text": "қойды",
+        "is_in_my_dict": true,
+        "dictionary_word": "қою",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "қой",
+          "ды"
+        ],
+        "translation": "положил"
+      }
+    ]
+  },
+  {
+    "id": "kz_100",
+    "language": "Қазақша",
+    "sentence": "Үлкен құс көктемде ұшты.",
+    "words": [
+      {
+        "text": "Үлкен",
+        "is_in_my_dict": true,
+        "dictionary_word": "үлкен",
+        "role": "Attribute_Subject",
+        "label": "Adjective",
+        "parts": [
+          "үлкен"
+        ],
+        "translation": "большая"
+      },
+      {
+        "text": "құс",
+        "is_in_my_dict": true,
+        "dictionary_word": "құс",
+        "role": "Subject",
+        "label": "Subject",
+        "parts": [
+          "құс"
+        ],
+        "translation": "птица"
+      },
+      {
+        "text": "көктемде",
+        "is_in_my_dict": true,
+        "dictionary_word": "көктем",
+        "role": "Adverbial",
+        "label": "Time",
+        "parts": [
+          "көктем",
+          "де"
+        ],
+        "translation": "весной"
+      },
+      {
+        "text": "ұшты",
+        "is_in_my_dict": true,
+        "dictionary_word": "ұшу",
+        "role": "Predicate",
+        "label": "Verb (Past)",
+        "parts": [
+          "ұш",
+          "ты"
+        ],
+        "translation": "улетела"
+      }
+    ]
+  }
+]
