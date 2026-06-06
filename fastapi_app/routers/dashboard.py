@@ -2,16 +2,18 @@ from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
+from typing import Optional, List, Dict, Any, Union
 
 from datetime import datetime, date, timedelta, timezone
 
 from ..database import get_db
 from ..services.auth import check_auth_dependency
-from ..services.state_manager import get_runtime_context
+from ..services.state_manager import StateManager
 from ..services.settings_service import get_setting, set_setting
 from ..services.dashboard_service import DashboardService
 from ..services.history_service import HistoryService
-from ..dependencies import get_dashboard_service, get_history_service, get_sticky_note_service
+from ..dependencies import get_dashboard_service, get_history_service, get_sticky_note_service, get_state_manager, get_word_service
+from ..services.word_service import WordService
 from .. import models
 from ..utils import normalize_date
 from ..config import templates
@@ -25,134 +27,300 @@ router = APIRouter(
 async def index(
     request: Request,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency)
-):
+    state_manager: StateManager = Depends(get_state_manager),
+    word_service: WordService = Depends(get_word_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """
+    Главная страница приложения (Dashboard).
+    Отображает текущие задачи, события, привычки и слова для изучения.
+    """
+    db = dashboard_service.db
+    # Генерируем контекст для слов и винк
+    ctx = await state_manager.get_runtime_context()
+    today_obj = datetime.now()
+    today_actual = today_obj.date()            # актуальная дата (для шапки)
+    today_for_calendar = today_actual - timedelta(days=1)  # вчера (для Chronology)
+
+    dash_data = await dashboard_service.get_index_data()
+    dashboard_map = await dashboard_service.get_dashboard_settings()
+
+    one_thing, one_thing_date, one_thing_replacement = "...", 0, "..."
+
+    if 'one_thing' in dashboard_map:
+        item = dashboard_map['one_thing']
+        one_thing = item.title
+        d_obj = normalize_date(item.date)
+        if d_obj:
+            if isinstance(d_obj, datetime):
+                d_obj = d_obj.date()
+            one_thing_date = (today_obj.date() - d_obj).days
+    if 'replacement' in dashboard_map:
+        one_thing_replacement = dashboard_map['replacement'].title
+
+    # Правила
+    random_rule: Union[models.LanguageRule, Dict[str, str]] = {"language": "Info", "rule_ru": "Нет правил", "rule_en": "No rules available"}
     try:
-        db = dashboard_service.db
-        # Генерируем экземпляры повторяющихся событий
-        await dashboard_service.expand_recurrence_events()
-        ctx = await get_runtime_context(db)
-        today_obj = datetime.now()
-        today_actual = today_obj.date()            # актуальная дата (для шапки)
-        today_for_calendar = today_actual - timedelta(days=1)  # вчера (для Chronology)
-
-        dash_data = await dashboard_service.get_index_data()
-        dashboard_map = await dashboard_service.get_dashboard_settings()
-
-        one_thing, one_thing_date, one_thing_replacement = "...", 0, "..."
-
-        if 'one_thing' in dashboard_map:
-            item = dashboard_map['one_thing']
-            one_thing = item.title
-            d_obj = normalize_date(item.date)
-            if d_obj:
-                if isinstance(d_obj, datetime):
-                    d_obj = d_obj.date()
-                one_thing_date = (today_obj.date() - d_obj).days
-
-        if 'replacement' in dashboard_map:
-            one_thing_replacement = dashboard_map['replacement'].title
-
-        # Правила
-        random_rule = {"language": "Info", "rule_ru": "Нет правил", "rule_en": "No rules available"}
-        try:
-            rule_res = await db.execute(select(models.LanguageRule).order_by(func.random()).limit(1))
-            rule_obj = rule_res.scalar_one_or_none()
-            if rule_obj: random_rule = rule_obj
-        except Exception as e:
-            logger.warning(f"Failed to fetch random rule: {e}")
-
-        categories_res = await db.execute(select(models.NoteCategory))
-        categories = [c.name for c in categories_res.scalars().all()]
-        layout_json = await get_setting(db, "dashboard_layout", "{}")
-
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "words": ctx['words'],
-            "wink": ctx['wink'],
-            "count_words_translate": ctx['count'],
-            "coverage_learning_words": ctx['coverage'],
-            "iMW": ctx['imw'],
-            "events_today": dash_data['events_today'],
-            "events_tomorrow": dash_data['events_tomorrow'],
-            "date_important": dash_data.get('date_important', []),
-            "habits_all": dash_data['habits_all'],
-            "tasks": dash_data['tasks'],
-            "title_until": dash_data.get('title_until', '...'),
-            "days_remaining": dash_data.get('days_remaining', 0),
-            "title_after": dash_data.get('title_after', '...'),
-            "days_passed": dash_data.get('days_passed', 0),
-            "one_thing": one_thing,
-            "one_thing_date": one_thing_date,
-            "one_thing_replacement": one_thing_replacement,
-            "random_rule": random_rule,
-            "categories": categories,
-            "dashboard_layout": layout_json,
-            "today_for_calendar": today_for_calendar,
-            "today_actual": today_actual,
-            "now_utc": datetime.now(timezone.utc).replace(tzinfo=None),
-            "stickers": dash_data.get('stickers', []),
-            "observations": dash_data.get('observations', []),
-            "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0
-        })
+        rule_res = await db.execute(select(models.LanguageRule).order_by(func.random()).limit(1))
+        rule_obj = rule_res.scalar_one_or_none()
+        if rule_obj: 
+            random_rule = rule_obj
     except Exception as e:
-        logger.error(f"Error in dashboard index: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        logger.warning(f"Failed to fetch random rule: {e}")
+
+    categories_res = await db.execute(select(models.NoteCategory))
+    categories = [c.name for c in categories_res.scalars().all()]
+    layout_json = await get_setting(db, "dashboard_layout", "{}")
+
+    # Получаем активные языки для динамической отрисовки заголовков виджета
+    active_langs_raw = await get_setting(db, 'active_languages', 'en,it,de')
+    active_langs = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
+    
+    lang_names_raw = await get_setting(db, 'language_names', '{}')
+    event_colors_raw = await get_setting(db, 'event_colors', '{}')
+    import json
+    try:
+        lang_names = json.loads(lang_names_raw if lang_names_raw else '{}')
+    except Exception:
+        lang_names = {}
+
+    try:
+        event_colors = json.loads(event_colors_raw if event_colors_raw else '{}')
+    except Exception:
+        event_colors = {}
+
+    # Получаем данные для модалки Language Learning
+    ns_res = await db.execute(select(models.Notes).where(models.Notes.category == "Language Learning System"))
+    anchor_note = ns_res.scalars().first()
+    if not anchor_note:
+        anchor_note = models.Notes(
+            category="Language Learning System", 
+            note="Системный якорь для стикеров на странице изучения языка."
+        )
+        db.add(anchor_note)
+        await db.commit()
+        await db.refresh(anchor_note)
+    
+    sentences_json = word_service.get_sentences_json()
+
+    return templates.TemplateResponse(request, "index.html", {
+        "request": request,
+        "words": ctx['words'],
+        "active_languages": active_langs,
+        "all_languages": lang_names,
+        "event_colors": event_colors,
+        "wink": ctx['wink'],
+        "count_words_translate": ctx['count'],
+        "coverage_learning_words": ctx['coverage'],
+        "iMW": ctx['imw'],
+        "events_today": dash_data['events_today'],
+        "events_tomorrow": dash_data['events_tomorrow'],
+        "date_important": dash_data.get('date_important', []),
+        "habits_all": dash_data['habits_all'],
+        "tasks": dash_data['tasks'],
+        "title_until": dash_data.get('title_until', '...'),
+        "days_remaining": dash_data.get('days_remaining', 0),
+        "title_after": dash_data.get('title_after', '...'),
+        "days_passed": dash_data.get('days_passed', 0),
+        "one_thing": one_thing,
+        "one_thing_date": one_thing_date,
+        "one_thing_replacement": one_thing_replacement,
+        "random_rule": random_rule,
+        "categories": categories,
+        "dashboard_layout": layout_json,
+        "today_for_calendar": today_for_calendar,
+        "today_actual": today_actual,
+        "now_utc": datetime.now(timezone.utc).replace(tzinfo=None),
+        "stickers": dash_data.get('stickers', []),
+        "observations": dash_data.get('observations', []),
+        "pinned_notes": dash_data.get('pinned_notes', []),
+        "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0,
+        "anchor_note_id": anchor_note.id,
+        "sentences_json": sentences_json
+    })
 
 @router.get("/history", response_class=HTMLResponse)
 async def history(
     request: Request,
-    date_str: str = None,
+    date_str: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    user=Depends(check_auth_dependency)
-):
-    try:
-        today_date = datetime.now().date()
-        current_year = today_date.year
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """
+    Страница истории/архива (History).
+    Позволяет просматривать данные за прошлые даты или за "этот же день" в другие годы.
+    """
+    today_date = datetime.now().date()
 
-        if date_str:
-            try:
-                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                is_today_in_history = (target_date == today_date)
-            except ValueError:
-                target_date = today_date
-                is_today_in_history = True
-        else:
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            is_today_in_history = (target_date == today_date)
+        except ValueError:
             target_date = today_date
             is_today_in_history = True
+    else:
+        target_date = today_date
+        is_today_in_history = True
 
-        history_service = await get_history_service(db)
-        
-        # Получаем данные через HistoryService
-        events, chronology, notes, wink = await history_service.get_history_for_date(target_date, is_today_in_history)
+    history_service = await get_history_service(db)
+    
+    # Получаем данные через HistoryService
+    events, chronology, notes, wink = await history_service.get_history_for_date(target_date, is_today_in_history)
 
-        # Стикеры для истории
-        sticker_service = await get_sticky_note_service(db)
-        history_stickers = await sticker_service.get_notes_for_date(target_date)
+    # Стикеры для истории
+    sticker_service = await get_sticky_note_service(db)
+    history_stickers = await sticker_service.get_notes_for_date(target_date)
 
-        return templates.TemplateResponse("history.html", {
-            "request": request,
-            "target_date": target_date,
-            "events": events,
-            "chronology": chronology,
-            "notes": notes,
-            "wink": wink,
-            "stickers": history_stickers,
-            "is_today_in_history": is_today_in_history,
-            "is_fallback": False, # Теперь fallback индивидуальный для каждого виджета
-            "today_for_calendar": today_date,
-        })
-    except Exception as e:
-        logger.error(f"Error in history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    return templates.TemplateResponse(request, "history.html", {
+        "request": request,
+        "target_date": target_date,
+        "events": events,
+        "chronology": chronology,
+        "notes": notes,
+        "wink": wink,
+        "stickers": history_stickers,
+        "is_today_in_history": is_today_in_history,
+        "is_fallback": False,
+        "today_for_calendar": today_date,
+    })
 
 @router.post("/save_dashboard_layout")
-async def save_dashboard_layout(request: Request, db: AsyncSession = Depends(get_db), user=Depends(check_auth_dependency)):
-    try:
-        data = await request.json()
-        layout = data.get("layout", "{}")
-        await set_setting(db, "dashboard_layout", layout)
-        return {"status": "success"}
-    except Exception as e:
-        logger.error(f"Error saving dashboard layout: {e}")
-        return {"status": "error", "message": str(e)}
+async def save_dashboard_layout(
+    request: Request, 
+    context: str = "dashboard",
+    db: AsyncSession = Depends(get_db), 
+    user: Any = Depends(check_auth_dependency)
+) -> Dict[str, str]:
+    """Сохранение кастомного порядка виджетов на дашборде."""
+    data = await request.json()
+    layout = data.get("layout", "{}")
+    # Используем префикс context_layout для гибкости
+    setting_key = "dashboard_layout" if context == "dashboard" else f"{context}_layout"
+    await set_setting(db, setting_key, layout)
+    return {"status": "success", "message": f"Layout for {context} saved"}
+
+@router.get("/api/header/widgets", response_class=HTMLResponse)
+async def get_header_widgets(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    state_manager: StateManager = Depends(get_state_manager),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает свежий HTML для виджетов в шапке."""
+    dash_data = await dashboard_service.get_index_data()
+    ctx = await state_manager.get_runtime_context()
+    return templates.TemplateResponse(request, "partials/header_info_widgets.html", {
+        "date_important": dash_data.get('date_important', []),
+        "title_until": dash_data.get('title_until', '...'),
+        "days_remaining": dash_data.get('days_remaining', 0),
+        "title_after": dash_data.get('title_after', '...'),
+        "days_passed": dash_data.get('days_passed', 0),
+        "wink": ctx.get('wink', '...')
+    })
+
+@router.get("/api/dashboard/widget/events", response_class=HTMLResponse)
+async def get_dashboard_events_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает обновленный HTML для виджета событий."""
+    today_dt = datetime.now()
+    today_obj = today_dt.date()
+    tomorrow_obj = today_obj + timedelta(days=1)
+    
+    start_of_today = datetime.combine(today_obj, datetime.min.time())
+    end_of_today = datetime.combine(today_obj, datetime.max.time())
+    events_today = await dashboard_service.events.get_events_for_range(start_of_today, end_of_today)
+
+    start_of_tomorrow = datetime.combine(tomorrow_obj, datetime.min.time())
+    end_of_tomorrow = datetime.combine(tomorrow_obj, datetime.max.time())
+    events_tomorrow = await dashboard_service.events.get_events_for_range(start_of_tomorrow, end_of_tomorrow)
+
+    return templates.TemplateResponse(request, "partials/schedule_widget.html", {
+        "request": request,
+        "events_today": events_today,
+        "events_tomorrow": events_tomorrow,
+        "now_utc": datetime.now(timezone.utc).replace(tzinfo=None)
+    })
+
+@router.get("/api/dashboard/widget/observations", response_class=HTMLResponse)
+async def get_dashboard_observations_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает обновленный HTML для виджета активностей."""
+    today_obj = datetime.now().date()
+    observations = await dashboard_service.observations_service.get_dashboard_observations(today_obj, limit=5)
+    return templates.TemplateResponse(request, "widgets/observation_wrapper.html", {
+        "request": request,
+        "observations": observations
+    })
+
+@router.get("/api/dashboard/widget/stickers", response_class=HTMLResponse)
+async def get_dashboard_stickers_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+) -> HTMLResponse:
+    """Возвращает обновленный HTML для виджета стикеров."""
+    stickers = await dashboard_service.sticky_notes.get_active_notes()
+    return templates.TemplateResponse(request, "widgets/stickers_widget.html", {
+        "request": request,
+        "stickers": stickers
+    })
+
+@router.get("/api/dashboard/widget/tasks", response_class=HTMLResponse)
+async def get_dashboard_tasks_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    dash_data = await dashboard_service.get_index_data()
+    return templates.TemplateResponse(request, "partials/tasks_widget.html", {
+        "request": request,
+        "tasks": dash_data['tasks']
+    })
+
+@router.get("/api/dashboard/widget/habits", response_class=HTMLResponse)
+async def get_dashboard_habits_widget(
+    request: Request,
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    dash_data = await dashboard_service.get_index_data()
+    return templates.TemplateResponse(request, "partials/habits_widget.html", {
+        "request": request,
+        "habits_all": dash_data['habits_all']
+    })
+
+@router.get("/api/analytics/wordcloud")
+async def get_word_cloud(
+    date: Optional[str] = None,
+    sources: Optional[str] = None,
+    history_service: HistoryService = Depends(get_history_service),
+    user: Any = Depends(check_auth_dependency)
+):
+    """
+    Эндпоинт для получения частотной карты слов облака тегов за период ±15 дней от указанной даты.
+    """
+    target_d = None
+    if date:
+        from ..utils import normalize_date
+        parsed = normalize_date(date)
+        if parsed:
+            target_d = parsed.date() if isinstance(parsed, datetime) else parsed
+
+    if not target_d:
+        from datetime import timedelta
+        target_d = datetime.now().date() - timedelta(days=365)
+
+    if sources:
+        sources_list = [s.strip().lower() for s in sources.split(",") if s.strip()]
+    else:
+        sources_list = ["chronology", "calendar", "notes", "wink", "stickers", "tasks", "habits"]
+
+    return await history_service.get_word_cloud_data(target_d, sources_list)
+

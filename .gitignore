@@ -5,6 +5,8 @@ instance/
 # Данные приложения (база, ресурсы)
 data/
 logs/
+*.log
+*.db
 
 # Python
 __pycache__/
@@ -45,3 +47,11 @@ $RECYCLE.BIN/
 
 # Прочее
 nul
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Рабочие файлы AI-ассистента (Antigravity IDE)
+.agents/
+fastapi_app/brain/

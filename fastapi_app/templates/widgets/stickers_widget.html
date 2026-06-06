@@ -1,0 +1,70 @@
+{% from "partials/components/inputs.html" import premium_input %}
+
+<div class="premium-card stickers-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <div class="sticker-icon-mini"></div>
+            <span>Stickers</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Stickers')" title="Full View">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
+        </div>
+    </div>
+    
+    <div class="widget-body">
+        <!-- Quick Creation Zone -->
+        <div class="sticker-editor-box">
+            <div class="editor-row">
+                <div class="editor-col-main">
+                    <label class="highlight-label">Quick Thought</label>
+                    {{ premium_input(
+                        id='stickerTitleInput',
+                        placeholder='Title (optional)...'
+                    ) }}
+                </div>
+                <div class="editor-col-mode">
+                    <label class="highlight-label">Mode</label>
+                    <div class="sticker-type-segmented">
+                        <div id="type-text-quick" class="type-segment active" onclick="toggleStickerMode('text')">📝</div>
+                        <div id="type-list-quick" class="type-segment" onclick="toggleStickerMode('list')">✅</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-main-row">
+                {{ premium_input(
+                    type='textarea',
+                    id='stickerInput',
+                    placeholder='Write something...',
+                    rows=3
+                ) }}
+                <button type="button" class="btn btn-primary" onclick="addSticker()" style="height: 48px; min-width: 60px;">OK</button>
+            </div>
+
+            <div class="editor-footer-row">
+                <div class="color-picker-grid" id="stickerColorPicker">
+                    {% for color in ['#fff9c4', '#f8bbd0', '#bbdefb', '#c8e6c9', '#e1bee7', '#ffe0b2', '#b2dfdb', '#ffffff'] %}
+                    <div class="color-swatch {% if loop.first %}active{% endif %}" data-color="{{ color }}" style="background: {{ color }};" onclick="this.classList.add('active')"></div>
+                    {% endfor %}
+                </div>
+                <span class="editor-hint">Ctrl+Enter to save</span>
+            </div>
+        </div>
+
+        <div class="corkboard" id="corkboard">
+            <!-- Stickers rendered via JS -->
+            {% for s in stickers %}
+            <div class="sticker-thought-placeholder" 
+                 data-id="{{ s.id }}"
+                 data-text="{{ s.text }}"
+                 data-title="{{ s.title or '' }}"
+                 data-color="{{ s.color or '#fff9c4' }}"
+                 data-type="{{ s.type or 'text' }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+

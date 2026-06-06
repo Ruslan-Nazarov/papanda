@@ -1,0 +1,159 @@
+<!-- Observation Add Modal -->
+<div id="obsAddModal" class="modal premium-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Activity</h2>
+            <button type="button" class="modal-close" onclick="closeObsAddModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="editor-layout">
+                <!-- LEFT PANEL: Settings -->
+                <div class="editor-meta">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Category</label>
+                        <select id="obsAddCategory" class="form-select" onchange="handleObsCategoryChange('add')">
+                            <option value="task">For Task (Right Side)</option>
+                            <option value="other">Other (Left Side)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Time Mode</label>
+                        <select id="obsAddTimeMode" class="form-select" onchange="handleTimeModeChange('add')">
+                            <option value="exact" selected>Exact Time</option>
+                            <option value="none">Anytime</option>
+                        </select>
+                    </div>
+
+                    <div id="obsAddTaskGroup" class="form-group" style="display: none; margin-bottom: 0;">
+                        <label class="form-label">Link to Task</label>
+                        <select id="obsAddTaskSelect" class="form-select">
+                            <option value="">-- Select a Task --</option>
+                        </select>
+                    </div>
+
+                    <div id="obsAddStartTimeGroup" class="form-group">
+                        <label class="form-label">Scheduled Time</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <select id="obsAddStartHour" class="form-select" style="flex: 1; padding-right: 32px;"></select>
+                            <span style="font-weight: 800; color: var(--color-text-faint);">:</span>
+                            <select id="obsAddStartMin" class="form-select" style="flex: 1; padding-right: 32px;"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Active Days</label>
+                        <div class="obs-weekdays-add" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                                <div class="weekday-circle-edit" data-day="{{ i }}" onclick="toggleAddDay(this)">{{ letter }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: Main Content -->
+                <div class="editor-main" style="padding: 28px 32px;">
+                    <div class="form-group">
+                        <label class="form-label">Activity Title</label>
+                        <textarea id="obsAddText" class="dashboard-textarea" placeholder="What are you doing?" rows="6" style="width: 100%; resize: vertical; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 16px; font-size: 1rem;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeObsAddModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveObsAdd()">Add Activity</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Observation Edit Modal -->
+<div id="obsEditModal" class="modal premium-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Activity</h2>
+            <button type="button" class="modal-close" onclick="closeObsEditModal()">✕</button>
+        </div>
+        
+        <input type="hidden" id="obsEditId">
+
+        <div class="modal-body">
+            <div class="editor-layout">
+                <!-- LEFT PANEL: Settings -->
+                <div class="editor-meta">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Category</label>
+                        <select id="obsEditCategory" class="form-select" onchange="handleObsCategoryChange('edit')">
+                            <option value="task">For Task (Right Side)</option>
+                            <option value="other">Other (Left Side)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Time Mode</label>
+                        <select id="obsEditTimeMode" class="form-select" onchange="handleTimeModeChange('edit')">
+                            <option value="exact">Exact Time</option>
+                            <option value="none">Anytime</option>
+                        </select>
+                    </div>
+
+                    <div id="obsEditTaskGroup" class="form-group" style="display: none; margin-bottom: 0;">
+                        <label class="form-label">Link to Task</label>
+                        <select id="obsEditTaskSelect" class="form-select">
+                            <option value="">-- Select a Task --</option>
+                        </select>
+                    </div>
+
+                    <div id="obsEditStartTimeGroup" class="form-group">
+                        <label class="form-label">Scheduled Time</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <select id="obsEditStartHour" class="form-select" style="flex: 1; padding-right: 32px;"></select>
+                            <span style="font-weight: 800; color: var(--color-text-faint);">:</span>
+                            <select id="obsEditStartMin" class="form-select" style="flex: 1; padding-right: 32px;"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Active Days</label>
+                        <div class="obs-weekdays-edit" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
+                                <div class="weekday-circle-edit" data-day="{{ i }}" onclick="toggleEditDay(this)">{{ letter }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: Main Content -->
+                <div class="editor-main" style="padding: 28px 32px;">
+                    <div class="form-group">
+                        <label class="form-label">Activity Title</label>
+                        <textarea id="obsEditText" class="dashboard-textarea" rows="6" style="width: 100%; resize: vertical; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 16px; font-size: 1rem;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeObsEditModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveObsEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Observation Overview Modal (Full Tree) -->
+<div id="obsOverviewModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="position: sticky; top: 0; background: var(--color-bg-app); z-index: 10; padding: 24px;">
+            <h2 style="margin: 0;">🌲 Full Activity Tree</h2>
+            <button type="button" class="modal-close" onclick="closeObsOverviewModal()">✕</button>
+        </div>
+
+        <div class="modal-body" id="obsOverviewBody" style="padding: 24px;">
+            <!-- Full tree content will be injected here -->
+            <div class="loading-spinner">Loading full tree...</div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,172 @@
+<div class="premium-card settings-languages-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">🌐</span>
+            <span>Language Display Settings</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+        </div>
+    </div>
+    
+    <div class="widget-body">
+        <p style="margin-top: 0; color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px;">
+            Drag to reorder. Select <b>up to 3</b> to display as columns in the Words widget:
+        </p>
+        
+        <form action="{{ url_for('update_languages') }}" method="post" id="langForm" onsubmit="prepareLangSubmit()">
+            <input type="hidden" name="active_order" id="activeOrderInput">
+            
+            <div id="sortableLangs" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                {# First show active languages in their saved order #}
+                {% for code in active_languages %}
+                    {% if code in all_languages and code != 'ru' %}
+                    <div class="lang-item active-lang" data-code="{{ code }}">
+                        <span class="drag-handle">⠿</span>
+                        <input type="checkbox" class="lang-check" value="{{ code }}" checked onchange="checkLimit(this)">
+                        <div class="lang-item-content">
+                            <input type="text" name="name_{{ code }}" value="{{ all_languages[code] }}" placeholder="{{ code|upper }}" class="form-input-premium lang-name-input">
+                            <span class="lang-code-badge">{{ code }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                
+                {# Then show the rest #}
+                {% for code, name in all_languages.items() %}
+                    {% if code != 'ru' and code not in active_languages %}
+                    <div class="lang-item" data-code="{{ code }}">
+                        <span class="drag-handle">⠿</span>
+                        <input type="checkbox" class="lang-check" value="{{ code }}" onchange="checkLimit(this)">
+                        <div class="lang-item-content">
+                            <input type="text" name="name_{{ code }}" value="{{ name }}" placeholder="{{ code|upper }}" class="form-input-premium lang-name-input">
+                            <span class="lang-code-badge">{{ code }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="saveLangsBtn" style="width: 100%;">
+                Update Column Languages
+            </button>
+        </form>
+        <p id="langWarning" style="color: var(--color-error); font-size: 0.8rem; margin-top: 12px; font-weight: 600; display: none; text-align: center;">
+            * You can select maximum 3 foreign languages. Drag to change their order!
+        </p>
+    </div>
+</div>
+
+<style>
+    .lang-item {
+        display: flex; 
+        align-items: center; 
+        gap: 16px; 
+        background: var(--color-bg-subtle); 
+        padding: 12px 16px; 
+        border-radius: var(--radius-md); 
+        border: 1px solid var(--color-border-light); 
+        cursor: grab;
+        transition: all 0.2s ease;
+        opacity: 0.7;
+    }
+    .lang-item.active-lang {
+        background: white;
+        border-color: var(--color-primary-soft);
+        box-shadow: var(--shadow-sm);
+        opacity: 1;
+    }
+    .lang-item:hover {
+        border-color: var(--color-primary-medium);
+        transform: translateX(4px);
+    }
+    .drag-handle {
+        color: var(--color-text-muted);
+        font-size: 1.2rem;
+        user-select: none;
+    }
+    .lang-check {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--color-primary);
+    }
+    .lang-item-content {
+        flex-grow: 1; 
+        display: flex; 
+        align-items: center; 
+        gap: 12px;
+    }
+    .lang-name-input {
+        padding: 4px 10px !important;
+        font-weight: 700;
+        width: 160px !important;
+        font-size: 0.9rem !important;
+    }
+    .lang-code-badge {
+        color: var(--color-text-muted);
+        font-size: 0.8rem;
+        background: var(--color-bg-subtle);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: var(--font-editor);
+        text-transform: uppercase;
+    }
+    .sortable-ghost {
+        opacity: 0.4;
+        background: var(--color-primary-soft) !important;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    // Initialize Sortable
+    (function() {
+        const el = document.getElementById('sortableLangs');
+        if (el) {
+            Sortable.create(el, {
+                animation: 200,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    // Update order visually if needed or just wait for submit
+                }
+            });
+        }
+    })();
+
+    function checkLimit(checkbox) {
+        const checkboxes = document.querySelectorAll('.lang-check');
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const warning = document.getElementById('langWarning');
+        const saveBtn = document.getElementById('saveLangsBtn');
+        
+        const item = checkbox.closest('.lang-item');
+        if (checkbox.checked) {
+            if (checkedCount > 3) {
+                checkbox.checked = false;
+                warning.style.display = 'block';
+                return;
+            }
+            item.classList.add('active-lang');
+            warning.style.display = 'none';
+        } else {
+            item.classList.remove('active-lang');
+        }
+        
+        saveBtn.disabled = (checkedCount === 0);
+        saveBtn.style.opacity = (checkedCount === 0) ? '0.5' : '1';
+    }
+
+    function prepareLangSubmit() {
+        const activeCodes = [];
+        const items = document.querySelectorAll('.lang-item');
+        items.forEach(item => {
+            const cb = item.querySelector('.lang-check');
+            if (cb.checked) {
+                activeCodes.push(cb.value);
+            }
+        });
+        document.getElementById('activeOrderInput').value = activeCodes.join(',');
+    }
+</script>

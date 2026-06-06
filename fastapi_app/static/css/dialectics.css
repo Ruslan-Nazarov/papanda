@@ -1,0 +1,9 @@
+@import 'base_components.css';
+@import 'dialectics/animations.css';
+@import 'dialectics/core.css';
+@import 'dialectics/blocks.css';
+@import 'dialectics/editor.css';
+@import 'dialectics/dashboard.css';
+
+/* Entry point for Dialectics styles. 
+   Decomposed into smaller modules for better maintainability. */

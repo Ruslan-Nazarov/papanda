@@ -24,35 +24,34 @@ async def test_submit_chrono_json_success(auth_client):
         "chrono_text": "Test AJAX Chronology Entry",
         "chrono_date": "2026-04-11"
     }
-    # Используем multipart/form-data как в браузере (через FormData)
     resp = await auth_client.post("/submit_chrono_json", data=payload)
-    
+
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "success"
-    assert "id" in data
+    # SuccessResponse не содержит 'id' — только status/message/data
     assert data["message"] == "Хронология успешно сохранена"
 
 @pytest.mark.anyio
 async def test_add_note_json_success(auth_client, db_session):
     """Проверяет успешное сохранение заметки через JSON эндпоинт."""
     from fastapi_app import models
-    # Создаем категорию, так как она нужна для автоматического выбора если не передана
     cat = models.NoteCategory(name="personal")
     db_session.add(cat)
     await db_session.commit()
-    
+
     payload = {
         "note": "Test AJAX Note",
         "category": "personal"
     }
     resp = await auth_client.post("/add_note", data=payload)
-    
+
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "success"
+    # Роутер возвращает "Note saved" (английский текст) и id записи
+    assert data["message"] == "Note saved"
     assert "id" in data
-    assert "успешно сохранена" in data["message"]
 
 @pytest.mark.anyio
 async def test_submit_chrono_unauthorized(client):

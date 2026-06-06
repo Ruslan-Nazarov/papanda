@@ -1,0 +1,103 @@
+/* --- PREMIUM CARD & WIDGET CONTAINERS --- */
+
+.premium-card {
+    background: var(--color-bg-white);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--widget-border-color, var(--glass-border));
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition-base), border-color 0.4s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.premium-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.widget-settings-trigger {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none;
+}
+
+.premium-card:hover .widget-settings-trigger {
+    opacity: 1 !important;
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    cursor: move; /* Drag handle indicator */
+    user-select: none; /* Prevent accidental text selection while dragging */
+}
+
+.widget-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--widget-title-size);
+    font-weight: var(--widget-title-weight);
+    color: var(--color-text-dark);
+}
+
+.widget-icon {
+    font-size: 1.5rem;
+}
+
+.widget-body {
+    flex: 1;
+    overflow-y: auto;
+    user-select: text !important;
+}
+
+/* --- COLLAPSED STATE GLOBAL FIX --- */
+.grid-stack-item.collapsed .premium-card {
+    min-height: 50px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    justify-content: center;
+}
+
+.grid-stack-item.collapsed .premium-card .widget-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.grid-stack-item.collapsed .premium-card .widget-body {
+    display: none !important;
+}
+
+/* Helper for lists inside cards */
+.premium-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.premium-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-bg-app);
+    transition: all var(--transition-fast);
+    position: relative;
+    border-left: 3px solid transparent; /* Hidden left accent */
+}
+
+.premium-list-item:nth-child(even) {
+    background: rgba(0, 0, 0, 0.015); /* Very subtle zebra striping */
+}
+
+.premium-list-item:hover {
+    background: var(--color-bg-subtle);
+    border-left-color: var(--color-primary); /* Accent bar on hover */
+    padding-left: 16px;
+}

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Dialectics - Papanda{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="dialectics-container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+
+        <div class="page-intro">
+            <h1>🧠 Dialectics</h1>
+            <p>Your intelligent dialogue-based knowledge base</p>
+        </div>
+
+        <!-- Main Dialectics Interface -->
+        <div class="note-interface">
+
+            <div class="note-header">
+                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Enter Dialectics Title..." style="flex: 1; font-family: inherit;">
+                
+
+
+                <div class="header-actions">
+                    <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
+                        style="display: none; font-family: inherit;">🗑️ Delete</button>
+                    <button class="btn btn-primary btn-save-note" id="btnLoadDialectics" style="font-family: inherit;">📂 Load</button>
+                    <button class="btn btn-warning" id="btnPinNote" style="font-family: inherit;">📌 Pin</button>
+                    <button class="btn btn-success btn-save-note" id="btnSaveDialectics" style="font-family: inherit;">💾 Save Dialectics</button>
+                </div>
+            </div>
+
+            <div class="dialectics-canvas" id="dialecticsCanvas">
+                <div class="canvas-divider" id="canvasDivider"></div>
+                <!-- Блоки будут вставляться сюда -->
+            </div>
+
+            <!-- Backdrop for expanded mode -->
+            <div id="expandedBackdrop" class="expanded-backdrop"></div>
+
+            <!-- Inline Editor Popover -->
+            <div id="inlineEditor" class="inline-editor">
+
+                    <div class="editor-drag-handle" id="editorDragHandle">
+                        <span class="editor-title">Dialectics Editor</span>
+                        <div class="editor-header-controls" style="display: flex; align-items: center; gap: 8px;">
+                            <!-- Standard Yellow Sticker Button -->
+                            <div class="note-sticker-btn mini-header" id="dialecticsStickerBtn" title="Add Sticker" onclick="event.stopPropagation(); window.openNoteStickerModal('dialectics')" style="cursor: pointer; transform: scale(0.9); margin-right: 5px;">
+                                <div class="sticker-icon-postit"></div>
+                            </div>
+                            
+                            <button id="btnMathFormula" class="editor-btn-math" title="Insert Formula" style="font-family: inherit;">∑</button>
+                            <button id="btnBoldFormat" class="editor-btn-bold" style="display: none; font-family: inherit;" title="Make Bold">B</button>
+                            <button class="editor-btn-expand" id="btnEditorExpand" title="Expand to fullscreen" style="font-family: inherit;">⛶</button>
+                            <button class="editor-btn-close" id="btnEditorClose" title="Close" style="font-family: inherit;">✖</button>
+                        </div>
+                    </div>
+
+                <!-- Tabs Header -->
+                <div class="editor-tabs" id="editorTabs">
+                    <div class="editor-tab active" id="tab-text" data-tab="text">Текст</div>
+                    <div class="editor-tab" id="tab-graph" data-tab="graph">Графики</div>
+                    <div class="editor-tab" id="tab-shapes" data-tab="shapes">Фигуры</div>
+                </div>
+
+                <div class="editor-body" id="editorBody">
+                    <!-- Text Tab -->
+                    <div id="editor-text" class="tab-content active">
+                        <!-- Math Menu (Formula Palette) -->
+                        <div id="mathMenu" class="math-menu" style="display: none;">
+                            <div class="math-tabs">
+                                <div class="math-tab active" data-cat="main">Main</div>
+                                <div class="math-tab" data-cat="brackets">() []</div>
+                                <div class="math-tab" data-cat="analysis">∫ ∑</div>
+                                <div class="math-tab" data-cat="misc">α β λ</div>
+                            </div>
+                            <div id="mathPalette" class="math-palette"></div>
+                        </div>
+
+                        <div id="tiptap-editor" class="tiptap-editor" style="min-height: 250px; cursor: text;"></div>
+                        
+                        <!-- Hidden inputs for sticker metadata -->
+                        <input type="hidden" id="dialecticsStickerText">
+                        <input type="hidden" id="dialecticsStickerTitle">
+                        <input type="hidden" id="dialecticsStickerColor" value="#fff9c4">
+                        <input type="hidden" id="dialecticsStickerType" value="text">
+                    </div>
+                    <!-- Graph Tab -->
+                    <div id="editor-graph" class="tab-content">
+                        <div class="graph-editor-ui">
+                            <div class="graph-input-group">
+                                <input type="text" id="graphFuncInput" placeholder="Например: x^2 or sin(x)" class="graph-input" style="font-family: var(--font-editor);">
+                                <button class="graph-btn-plot" id="btnGraphPlot" style="font-family: inherit;">Построить</button>
+                            </div>
+                            
+                            <div id="graphPreview" class="graph-preview">
+                                <div class="graph-placeholder-text">Введите функцию и нажмите "Построить"</div>
+                            </div>
+                            <button class="graph-btn-insert" id="btnGraphInsert" style="font-family: inherit;">Вставить в текст</button>
+                        </div>
+                    </div>
+                    <!-- Shapes Tab -->
+                    <div id="editor-shapes" class="tab-content">
+                        <div class="shapes-editor-ui">
+                            <div class="shapes-toolbar">
+                                <div class="tool-group">
+                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение" style="font-family: inherit;">🖱️</button>
+                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование" style="font-family: inherit;">✏️</button>
+                                </div>
+                                <div class="tool-group">
+                                    <button class="shape-tool" data-shape="rect" title="Rectangle" style="font-family: inherit;">⬜</button>
+                                    <button class="shape-tool" data-shape="circle" title="Circle" style="font-family: inherit;">⭕</button>
+                                    <button class="shape-tool" data-shape="triangle" title="Triangle" style="font-family: inherit;">📐</button>
+                                    <button class="shape-tool" data-shape="diamond" title="Diamond" style="font-family: inherit;">💎</button>
+                                    <button class="shape-tool" data-shape="line" title="Line" style="font-family: inherit;">➖</button>
+                                    <button class="shape-tool" data-shape="arrow" title="Arrow" style="font-family: inherit;">➡</button>
+                                    <button class="shape-tool" data-shape="text" title="Label (Vertex/Side)" style="font-family: inherit;">T</button>
+                                </div>
+                                <div class="tool-group">
+                                    <input type="color" id="shapeColor" value="#3b82f6" title="Цвет">
+                                    <button class="shape-tool-delete" id="btnShapeDelete" title="Удалить" style="font-family: inherit;">🗑️</button>
+                                    <button class="shape-tool-clear" id="btnShapeClear" title="Очистить всё" style="font-family: inherit;">🧹</button>
+                                </div>
+                            </div>
+                            
+                            <div class="shapes-canvas-wrapper" id="shapesCanvasWrapper">
+                                <canvas id="shapesCanvas"></canvas>
+                            </div>
+
+                            <button class="graph-btn-insert" id="btnShapesInsert" style="font-family: inherit;">Вставить в текст</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-actions">
+                    <div class="editor-word-count" id="wordCount">Editor Active</div>
+                    <div class="debug-logs" id="editorDebugLogs" style="font-family: var(--font-mono); font-size: 10px; color: #94a3b8; max-height: 40px; overflow-y: auto; flex: 1; margin: 0 15px; border-left: 1px solid #f1f5f9; padding-left: 10px;"></div>
+                    <div>
+                        <button class="btn btn-secondary editor-btn-cancel" id="btnEditorCancel" style="font-family: inherit;">Отмена</button>
+                        <button class="btn btn-primary editor-btn-save" id="btnEditorSave" style="font-family: inherit;">ОК</button>
+                    </div>
+                </div>
+                <div id="editorResizeHandle" class="editor-resize-handle"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Load Dialectics Modal -->
+    <div id="loadDialecticsModal" class="modal premium-modal" style="display: none;">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Load Dialectics</h3>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 15px;">
+            <div id="loadDialecticsList" class="load-notes-list">
+                <div style="color: #64748b; text-align: center;">Loading...</div>
+            </div>
+            <button id="btnModalCancel" class="btn btn-secondary" style="margin-top: 20px; font-family: inherit;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Dialectics View Modal -->
+    <div id="dialecticsViewModal" class="modal premium-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; border: 2px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <h2 id="dialecticsViewTitle" style="margin: 0; color: #1e293b;">Dialectics Title</h2>
+                <button class="btn-close-modal" onclick="document.getElementById('dialecticsViewModal').style.display='none'" style="font-family: inherit;">×</button>
+            </div>
+            <div id="dialecticsViewBody" style="color: #475569; line-height: 1.6; font-size: 1.1em; background: #f8fafc; padding: 20px; border-radius: 10px;">
+                <!-- Content will be injected here -->
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="btnViewModalEdit" class="btn btn-primary" style="background-color: #6366f1; font-family: inherit;">Edit in Canvas</button>
+                <button onclick="document.getElementById('dialecticsViewModal').style.display='none'" class="btn btn-secondary" style="font-family: inherit;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Math Context Menu -->
+    <div id="mathContextMenu" class="math-context-menu" style="display: none;"></div>
+
+    {% include 'partials/modals/note_modals.html' %}
+    {% include 'partials/sticker_modal.html' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
+    <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
+
+    {% include 'partials/footer.html' %}
+{% endblock %}

@@ -1,0 +1,170 @@
+{% if search_query %}
+    <div style="padding: 0 20px 20px; color: #666; font-style: italic;">
+        Search results for: "{{ search_query }}"
+    </div>
+    <div class="card">
+        <div class="table-container">
+            <table class="db-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th style="text-align: center; width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in records %}
+                    <tr>
+                        <td>{{ row.date.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td style="{% if row.done %}text-decoration: line-through; opacity: 0.6;{% endif %}">
+                            {% if row.important %}<span title="Important Event" style="margin-right: 4px; color: #F2D14A;">⭐</span>{% endif %}
+                            {% if row.recurrence_id %}<span title="Recurring Event" style="margin-right: 4px; color: #F2994A;">🔁</span>{% endif %}
+                            {{ row.title }}
+                        </td>
+                        <td>
+                            <div style="display: flex; justify-content: center; gap: 8px; align-items: center;">
+                                <button class="btn-action" 
+                                        style="background: #f0f9ff; color: #0369a1; padding: 6px 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;"
+                                        data-id="{{ row.id }}"
+                                        data-title="{{ (row.title or "")|e }}"
+                                        data-date="{{ (row.date or "") }}"
+                                        data-rule="{{ (row.recurrence_rule or "")|e }}"
+                                        data-end="{{ (row.recurrence_end or "") }}"
+                                        data-recurrence-id="{{ row.recurrence_id or '' }}"
+                                        data-color="{{ row.color or '' }}"
+                                        data-important="{{ 'true' if row.important else 'false' }}"
+                                        data-done="{{ 'true' if row.done else 'false' }}"
+                                        data-has-stickers="{{ 'true' if row.has_stickers else 'false' }}"
+                                        onclick="openEventDetailModal(this.dataset)">
+                                    View
+                                </button>
+                                <button class="btn-action" 
+                                        style="background: #f1f5f9; color: #64748b; width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; font-size: 1.2rem;"
+                                        title="Actions"
+                                        onclick="event.stopPropagation(); window.showEventContextMenu({
+                                            id: {{ row.id }},
+                                            title: {{ (row.title or '')|tojson }},
+                                            date: {{ (row.date.isoformat() if row.date else '')|tojson }},
+                                            rule: {{ (row.recurrence_rule or '')|tojson }},
+                                            end: {{ (row.recurrence_end.isoformat() if row.recurrence_end else '')|tojson }},
+                                            recurrence_id: {{ (row.recurrence_id or '')|tojson }},
+                                            color: {{ (row.color or '')|tojson }},
+                                            done: {{ 'true' if row.done else 'false' }},
+                                            has_stickers: {{ 'true' if row.has_stickers else 'false' }}
+                                        }, event)">
+                                    ⋮
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px; color: #999;">No events found matching your search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <!-- Filter bar -->
+    <!-- Minimalist Navigation Bar -->
+    <div style="display: flex; justify-content: center;">
+        <form class="filter-bar" id="eventFilterForm" action="{{ url_for('db_view', model_name='Event') }}" method="GET">
+            {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
+            
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; margin-left: 8px; margin-right: 12px; gap: 8px;">
+                <span style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Events</span>
+                <span style="font-size: 1rem; color: var(--color-primary-dark); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 16px; background: var(--color-border-light); margin: 0 12px 0 4px;"></div>
+
+            <a href="{{ url_for('db_view', model_name='Event') }}?month={{ prev_month }}&year={{ prev_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Prev Month">
+                ‹
+            </a>
+            
+            <select name="month" class="filter-select" onchange="this.form.submit()">
+                {% for m_val, m_name in months %}
+                    <option value="{{ m_val }}" {% if m_val == current_month %}selected{% endif %}>{{ m_name }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="year" class="filter-select" onchange="this.form.submit()">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+            
+            <a href="{{ url_for('db_view', model_name='Event') }}?month={{ next_month }}&year={{ next_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Next Month">
+                ›
+            </a>
+
+            <div style="width: 1px; height: 20px; background: var(--color-border-light); margin: 0 8px;"></div>
+
+            <div class="btn-palette-trigger" onclick="openSearchModal()" title="Open Search Modal">
+                🔍
+            </div>
+
+            <div class="btn-palette-trigger" onclick="document.getElementById('eventColorPaletteModal').style.display='flex'" title="Event Color Palette">
+                🎨
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="calendar-wrapper">
+            <div class="calendar-header">
+                <div class="calendar-day-header">Mon</div>
+                <div class="calendar-day-header">Tue</div>
+                <div class="calendar-day-header">Wed</div>
+                <div class="calendar-day-header">Thu</div>
+                <div class="calendar-day-header">Fri</div>
+                <div class="calendar-day-header">Sat</div>
+                <div class="calendar-day-header">Sun</div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof CalendarRenderer !== 'undefined' && typeof eventRecords !== 'undefined') {
+            CalendarRenderer.render(eventRecords, {{ current_year }}, {{ current_month }});
+        }
+    });
+
+    async function editColorLabel(color, currentLabel) {
+        const newLabel = await customPrompt({
+            title: 'Edit Color Label',
+            message: `Enter a label for this color (${color}):`,
+            value: currentLabel || "",
+            placeholder: 'e.g. Work, Family, etc.'
+        });
+        
+        if (newLabel !== null) {
+            let cleanColor = color.replace('#', '');
+            fetch('/settings/update_event_color', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ color: color, label: newLabel })
+            }).then(res => res.json()).then(data => {
+                if (data.status === 'success') {
+                    const targets = [
+                        document.getElementById('label-' + cleanColor),
+                        document.getElementById('modal-label-' + cleanColor)
+                    ];
+                    targets.forEach(el => {
+                        if (!el) return;
+                        el.textContent = newLabel.trim() === "" ? "Unnamed" : newLabel.trim();
+                        const parent = el.closest('[data-raw-label]');
+                        if (parent) parent.setAttribute('data-raw-label', newLabel.trim());
+                    });
+                } else {
+                    if (window.showToast) window.showToast("Error: " + data.message, 'error');
+                }
+            }).catch(err => console.error(err));
+        }
+    }
+</script>

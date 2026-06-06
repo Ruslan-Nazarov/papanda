@@ -1,0 +1,137 @@
+<style>
+    /* Word Stats Modal Shell */
+    #wordStatsModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1050;
+        display: none; /* hidden by default */
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+    }
+
+    #wordStatsModal .modal-content-wrapper {
+        background-color: #fdfaf7;
+        color: #333;
+        width: 95%;
+        max-width: 1200px;
+        max-height: 90vh;
+        border-radius: 28px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    #wordStatsModal .close-modal-btn {
+        position: absolute;
+        top: 20px;
+        right: 25px;
+        font-size: 24px;
+        color: #888;
+        cursor: pointer;
+        transition: color 0.2s;
+        z-index: 10;
+        background: rgba(255,255,255,0.7);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    #wordStatsModal .close-modal-btn:hover {
+        color: #333;
+        background: #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Loading Spinner */
+    .word-stats-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 100px 0;
+        color: #f2994a;
+    }
+    .word-stats-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(242, 153, 74, 0.2);
+        border-top-color: #f2994a;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+
+<div id="wordStatsModal" onclick="if(event.target===this) closeWordStatsModal()">
+    <div class="modal-content-wrapper">
+        <div class="close-modal-btn" onclick="closeWordStatsModal()" title="Close" style="right: 25px;">✕</div>
+        <div class="close-modal-btn" id="wordStatsSearchBtn" onclick="openDictionarySearch()" title="Search my words" style="right: 72px; font-size: 20px;">🔍</div>
+        <div id="wordStatsModalContent">
+            <div class="word-stats-loader">
+                <div class="word-stats-spinner"></div>
+                <h2>Loading your stats...</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openWordStatsModal() {
+        document.getElementById('wordStatsModal').style.display = 'flex';
+        const contentDiv = document.getElementById('wordStatsModalContent');
+        
+        // Show loader
+        contentDiv.innerHTML = `
+            <div class="word-stats-loader">
+                <div class="word-stats-spinner"></div>
+                <h2>Loading your stats...</h2>
+            </div>
+        `;
+
+        // Fetch data
+        fetch('/api/words/stats_modal')
+            .then(res => res.text())
+            .then(html => {
+                contentDiv.innerHTML = html;
+                
+                // Execute inline scripts to set window.WS_* variables
+                const scripts = contentDiv.querySelectorAll('script');
+                scripts.forEach(s => {
+                    if (s.src && s.src.includes('chart.js')) return; // ignore external chartjs if already loaded
+                    const newScript = document.createElement('script');
+                    if (s.src) newScript.src = s.src;
+                    else newScript.textContent = s.textContent;
+                    document.body.appendChild(newScript);
+                    newScript.parentNode.removeChild(newScript);
+                });
+
+                // Call init functions from word_stats.js
+                if (typeof window.initCharts === 'function') {
+                    window.initCharts();
+                }
+                if (window.WS_HAS_HISTORY && typeof window.updateHealthChart === 'function') {
+                    window.updateHealthChart();
+                }
+                if (typeof window.updateWorkoutDisplayCount === 'function') {
+                    window.updateWorkoutDisplayCount();
+                }
+            })
+            .catch(err => {
+                contentDiv.innerHTML = `<div style="padding: 50px; text-align: center; color: red;">Failed to load stats: ${err}</div>`;
+            });
+    }
+
+    function closeWordStatsModal() {
+        document.getElementById('wordStatsModal').style.display = 'none';
+    }
+</script>

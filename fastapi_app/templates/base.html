@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Papanda{% endblock %}</title>
+
+    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}" />
+    
+    <!-- Centralized Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&family=Indie+Flower&display=swap" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="theme-reading-{{ request.cookies.get('theme_reading', 'sans') }} theme-editor-{{ request.cookies.get('theme_editor', 'mono') }}" style="margin: 0; background-color: var(--color-bg-app);">
+    {% block content %}{% endblock %}
+    
+    {% block scripts %}{% endblock %}
+    
+    <!-- Auto-shutdown mechanism: keeps a WebSocket open to tell the server the app is active -->
+    <script>
+        (function() {
+            let ws;
+            function connect() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/ping`;
+                ws = new WebSocket(wsUrl);
+                ws.onclose = () => {
+                    // Try to reconnect if the socket drops but the window is still open
+                    setTimeout(connect, 3000);
+                };
+            }
+            // Connect after a short delay to prioritize page load
+            setTimeout(connect, 1000);
+        })();
+    </script>
+</body>
+</html>

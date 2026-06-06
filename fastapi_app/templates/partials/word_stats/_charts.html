@@ -1,0 +1,45 @@
+{# partials/word_stats/_charts.html — Chart.js visualizations #}
+
+<div class="charts-grid">
+    {# Distribution by Knowledge Level #}
+    <div class="chart-card card-relative">
+        <span class="help-trigger" onclick="showHelp(event, 'Groups words by knowledge depth. 0 shows = discovery, 50+ = mastery.')">?</span>
+        <h3>Distribution by Knowledge Level</h3>
+        <div style="position: relative; height: 250px">
+            <canvas id="distChart"></canvas>
+        </div>
+    </div>
+
+    {# Knowledge by Language #}
+    <div class="chart-card card-relative">
+        <span class="help-trigger" onclick="showHelp(event, 'A breakdown of words marked as known vs unknown for each active language.')">?</span>
+        <h3>Knowledge by Language</h3>
+        <div style="position: relative; height: 250px">
+            <canvas id="knowledgePieChart"></canvas>
+        </div>
+    </div>
+
+    {# Brain Workout Efficiency — full width #}
+    <div class="chart-card card-relative" style="grid-column: 1 / -1">
+        <span class="help-trigger" onclick="showHelp(event, 'Your success rate in Brain Workout sessions. Toggle between absolute count and percentage accuracy.')">?</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0">Brain Workout Efficiency</h3>
+            <div class="chart-toggle-group">
+                <button id="toggle-abs" class="toggle-btn active" onclick="setHealthMode('abs')">Absolute</button>
+                <button id="toggle-pct" class="toggle-btn"        onclick="setHealthMode('pct')">Percentage (%)</button>
+            </div>
+        </div>
+        <div style="position: relative; height: 300px">
+            <canvas id="healthChart"></canvas>
+        </div>
+    </div>
+
+    {# Daily word shows — full width #}
+    <div class="chart-card card-relative" style="grid-column: 1 / -1">
+        <span class="help-trigger" onclick="showHelp(event, 'Shows how many words were displayed each day over the last 30 days.')">?</span>
+        <h3>Words Shown Per Day (Last 30 days)</h3>
+        <div style="position: relative; height: 200px">
+            <canvas id="dailyShowsChart"></canvas>
+        </div>
+    </div>
+</div>

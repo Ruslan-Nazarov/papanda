@@ -1,0 +1,433 @@
+/* --- PAPANDA Widgets & Notifications --- */
+
+/* Info Widget for Header */
+.info-widget {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    box-shadow: var(--shadow-sm);
+    line-height: 1.1;
+    overflow: hidden;
+    flex-shrink: 0;
+    text-align: left;
+}
+.info-widget-title {
+    font-size: 0.62em;
+    color: var(--color-text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.info-widget-value {
+    font-size: 1.15em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.info-widget-value-sm { font-size: 0.85em; font-weight: 600; white-space: nowrap; }
+.info-widget-subtext { font-size: 0.7em; font-weight: 500; color: var(--color-text-faint); }
+
+.info-widget-orange { border-left: 3px solid var(--color-primary); min-width: 70px; max-width: 120px; }
+.info-widget-green { border-left: 3px solid var(--color-success); min-width: 70px; max-width: 120px; }
+.info-widget-amber { border-left: 3px solid var(--color-warning); }
+.info-widget-purple { border-left: 3px solid var(--color-purple); max-width: 220px; }
+
+/* Unified Header Actions */
+.widget-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: auto;
+}
+
+.btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: var(--color-bg-subtle);
+    border-color: var(--color-border-medium);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.premium-list-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-light);
+    transition: all 0.2s ease;
+    position: relative;
+    border-left: 3px solid transparent;
+}
+
+.premium-list-item:hover {
+    padding-left: 16px; /* Shift effect */
+    background: var(--color-bg-subtle);
+    border-left-color: var(--color-primary);
+}
+
+.tomorrow-item {
+    opacity: 0.7;
+}
+
+/* Row Actions (Tasks & Habits) */
+.row-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.premium-list-item:hover .row-actions {
+    opacity: 1;
+}
+
+/* Sticker Button (Yellow Note) */
+.btn-row-action {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.sticker-icon-mini {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background: #FFC107; /* More saturated yellow-gold/amber */
+    border: 1px solid #E65100; /* Distinct border for depth */
+    border-radius: 2px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    transform: rotate(-10deg);
+    position: relative;
+    transition: transform 0.2s;
+    margin: auto;
+}
+
+.btn-row-action:hover .sticker-icon-mini {
+    transform: rotate(0deg) scale(1.2);
+}
+
+.sticker-icon-mini.inactive {
+    opacity: 0.5;
+    box-shadow: none;
+    background: transparent;
+    border: 1px dashed var(--color-text-muted, #888);
+}
+
+.sticker-count {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(10deg);
+    font-size: 9px;
+    font-weight: 900;
+    color: rgba(0,0,0,0.85);
+    pointer-events: none;
+    line-height: 1;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Done Button (Square with Green Border) */
+.btn-row-action.done {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #27AE60;
+    border-radius: 4px;
+    background: white;
+    color: #27AE60;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-row-action.done:hover {
+    background: #27AE60;
+    color: white;
+}
+
+/* Badges & Meta */
+.premium-badge {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.premium-item-name {
+    font-weight: 400 !important; /* Force normal weight */
+    font-size: 0.95rem;
+    color: var(--color-text-dark);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-meta {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-text-faint);
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+/* Toast Notification */
+#toast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: var(--color-success);
+    color: #fff;
+    text-align: center;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    font-size: 17px;
+    opacity: 0;
+    transition: opacity 0.5s, bottom 0.5s;
+}
+#toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+#toast.success { background-color: var(--color-success); }
+#toast.error { background-color: var(--color-error); }
+
+/* Observation Tree Styles (Preserved) */
+.observation-tree-container {
+    position: relative;
+    padding: 20px 0;
+    width: 100%;
+}
+
+.observation-tree-container::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-primary);
+    transform: translateX(-50%);
+}
+
+.tree-item {
+    display: flex;
+    margin-bottom: 30px;
+    position: relative;
+    width: 100%;
+}
+
+.tree-item.left {
+    justify-content: flex-end;
+    padding-right: 50%;
+}
+
+.tree-item.right {
+    justify-content: flex-start;
+    padding-left: 50%;
+}
+
+.tree-marker {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 3px solid var(--color-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    box-shadow: 0 0 5px rgba(242, 153, 74, 0.3);
+}
+
+.tree-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0 25px;
+    width: 100%;
+}
+
+.tree-item.left .tree-content {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.tree-item.right .tree-content {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.tree-time {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    margin-bottom: 4px;
+}
+
+.tree-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow-sm);
+    min-width: 160px;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.tree-item.right .tree-card {
+    border-left: 4px solid var(--color-primary);
+}
+
+.tree-category {
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: 3px;
+}
+
+.tree-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.tree-footer {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.tree-weekdays {
+    display: flex;
+    gap: 4px;
+}
+
+.day-dot {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-bg-app);
+    border: 1px solid var(--color-border-faint);
+}
+
+.day-dot.active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+
+.btn-tree-edit {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+/* Weekday Circles in Modals */
+.weekday-circle-edit {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #FFFFFF !important;
+    border: 2px solid #E2E8F0 !important;
+    color: #94A3B8 !important;
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+.weekday-circle-edit.active {
+    background: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(242, 153, 74, 0.4) !important;
+}
+
+.form-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-color: #FFFFFF !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23F2994A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 16px !important;
+    border: 2px solid #F1F5F9 !important;
+    border-radius: 12px !important;
+    padding: 10px 40px 10px 12px !important;
+    font-size: 0.95rem !important;
+    color: #1E293B !important;
+    cursor: pointer !important;
+}
+
+.form-select:focus {
+    border-color: var(--color-primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(242, 153, 74, 0.15) !important;
+}
+
+/* Modal Form Layout Polish */
+.observation-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.observation-modal-full {
+    grid-column: span 2;
+}

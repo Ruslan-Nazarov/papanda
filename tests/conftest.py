@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.pool import StaticPool
 
 from fastapi_app.main import app
-from fastapi_app.database import Base, get_db
+from fastapi_app.database import Base, get_db, get_main_db
 from fastapi_app import models  # Ensure all models are registered
 
 # Use in-memory SQLite for tests
@@ -46,6 +46,7 @@ async def client(db_session):
             pass
     
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_main_db] = override_get_db
     # Используем ASGITransport для асинхронных тестов
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:

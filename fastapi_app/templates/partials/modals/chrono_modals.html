@@ -1,0 +1,56 @@
+{% from "partials/components/inputs.html" import premium_input %}
+
+<!-- Chronology Edit/Add Modal — Horizontal Layout -->
+<div id="editChronoModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 1100px; width: 95%;">
+        <div class="modal-header" style="flex-shrink: 0;">
+            <h3 id="chronoModalHeader"><span style="color: var(--color-primary);">📅</span> Chronology Entry</h3>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editChronoModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="editChronoId">
+            <div class="editor-layout">
+
+                <!-- LEFT: Meta panel -->
+                <div class="editor-meta">
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">⏰ Date &amp; Time</label>
+                        <input type="datetime-local" id="editChronoDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
+                    </div>
+                    <div id="editChronoError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
+                </div>
+
+                <!-- RIGHT: Main editor -->
+                <div class="editor-main">
+                    {{ premium_input(
+                        type='textarea',
+                        id='editChronoTitle',
+                        placeholder='Tell your story...'
+                    ) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="flex-shrink: 0;">
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editChronoModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="ChronoService.save()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); border: none;">Save Entry</button>
+        </div>
+    </div>
+</div>
+
+<!-- Chronology View Modal (Read-Only) -->
+<div id="chronoViewModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 850px;">
+        <div class="modal-header">
+            <h2 id="chronoViewDate" style="color: var(--color-primary);"></h2>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="closeChronoViewModal()" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="chronoViewFullText" class="premium-note-display" style="font-size: 1.1rem; line-height: 1.7; color: var(--color-text-dark); background: var(--color-bg-subtle); padding: 28px; border-radius: var(--radius-lg); border: 1.5px solid var(--color-border-light); white-space: pre-wrap; max-height: 65vh; overflow-y: auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeChronoViewModal()" style="flex: 1; border-radius: 14px; font-weight: 700; padding: 12px;">Close</button>
+        </div>
+    </div>
+</div>

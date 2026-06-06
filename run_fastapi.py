@@ -29,9 +29,8 @@ if __name__ == "__main__":
     
     if IS_FROZEN:
         import sys
-        # В режиме --noconsole sys.stdout и sys.stderr равны None.
-        # Это ломает uvicorn (DefaultFormatter.isatty).
-        # Перенаправляем их в никуда, чтобы избежать ошибок.
+        # В режиме без консоли stdout/stderr равны None, что ломает uvicorn (isatty)
+        # Мы перенаправляем их в devnull
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
         reload = False

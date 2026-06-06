@@ -1,0 +1,395 @@
+<!-- Word Cloud Modal (Standard App Style Integration) -->
+<div id="wordCloudModal" class="modal premium-modal">
+    <style>
+        #wordCloudModal .modal-content {
+            max-width: 850px !important;
+            border-radius: 28px !important;
+        }
+
+        .word-cloud-body {
+            padding: 24px !important;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+        /* Cloud Display Area (Top Position) */
+        .cloud-display-card {
+            background: var(--color-bg-subtle);
+            border: 1.5px solid var(--color-border-medium);
+            border-radius: 20px;
+            min-height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 35px;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+            position: relative;
+        }
+
+        .cloud-tags-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 24px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* Artistic Tags with Random Rotation and Micro-transitions */
+        .word-tag {
+            display: inline-block;
+            cursor: pointer;
+            font-weight: 800;
+            line-height: 1.2;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            user-select: none;
+            text-transform: capitalize;
+            letter-spacing: -0.01em;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), text-shadow 0.3s, background 0.2s, border-color 0.2s;
+        }
+        .word-tag:hover {
+            transform: scale(1.24) rotate(0deg) !important;
+            background: #fff;
+            border-color: var(--color-primary-glow);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+            z-index: 10;
+        }
+
+        /* Bottom Controls layout (Compact side-by-side columns for technical info) */
+        .cloud-bottom-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            border-top: 1.5px solid var(--color-bg-app);
+            padding-top: 20px;
+        }
+
+        .cloud-panel-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .cloud-label-sm {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .src-pill-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: var(--color-bg-subtle);
+            border: 1px solid var(--color-border-light);
+            font-size: 0.75rem;
+            font-weight: 750;
+            color: var(--color-text-medium);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+        }
+        .src-pill-label:hover {
+            background: var(--color-bg-app);
+            border-color: var(--color-text-faint);
+            color: var(--color-text-dark);
+        }
+        .src-checkbox:checked + .src-pill-label {
+            background: var(--color-primary-soft);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .src-count-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            font-size: 0.65rem;
+            font-weight: 900;
+            color: var(--color-text-muted);
+        }
+        .src-checkbox:checked + .src-pill-label .src-count-badge {
+            background: rgba(227, 27, 109, 0.1);
+            color: var(--color-primary);
+        }
+
+        /* Loading Spinner */
+        .cloud-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+        }
+        .cloud-spinner {
+            width: 36px;
+            height: 36px;
+            border: 4px solid var(--color-primary-glow);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: cloud-spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes cloud-spin { 100% { transform: rotate(360deg); } }
+    </style>
+
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>☁️ Облако значимых слов</h2>
+            <button type="button" class="modal-close" onclick="closeWordCloudModal()">✕</button>
+        </div>
+
+        <div class="modal-body word-cloud-body">
+            <!-- 1. Cloud Output Area (Top Section) -->
+            <div class="cloud-display-card">
+                <div id="cloudLoader" class="cloud-loader">
+                    <div class="cloud-spinner"></div>
+                    <div style="font-weight: 750; font-size: 0.9rem;">Анализ значимых понятий...</div>
+                </div>
+                <div id="cloudTags" class="cloud-tags-wrapper" style="display: none;">
+                    <!-- Tags rendered here -->
+                </div>
+                <div id="cloudPlaceholder" style="display: none; text-align: center; opacity: 0.6;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🍃</div>
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--color-text-dark); margin-bottom: 4px;">Облако пусто</h3>
+                    <p style="font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted);">Не найдено значимых слов в выбранном диапазоне дат.</p>
+                </div>
+            </div>
+
+            <!-- 2. Bottom Controls & Stats (Two Compact Columns) -->
+            <div class="cloud-bottom-layout">
+                <!-- Left Column: Period Badge and Navigation -->
+                <div class="cloud-panel-col">
+                    <div class="cloud-label-sm">Период анализа (31 день)</div>
+                    <div id="cloudRangeBadge" style="font-size: 0.82rem; font-weight: 850; color: var(--color-primary); margin-bottom: 10px;">
+                        Загрузка...
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button class="btn btn-secondary btn-sm" onclick="shiftWordCloudDate(-15)" style="padding: 6px 12px; font-size: 0.72rem; border-radius: 8px; font-weight: 750;">◀ -15 дней</button>
+                        <input type="date" id="cloudDatePicker" class="form-input" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 8px; border: 1.5px solid var(--color-border-light); width: auto; font-weight: 750; height: 28px; box-sizing: border-box;" onchange="onWordCloudDateChanged(this.value)">
+                        <button class="btn btn-secondary btn-sm" onclick="shiftWordCloudDate(15)" style="padding: 6px 12px; font-size: 0.72rem; border-radius: 8px; font-weight: 750;">+15 дней ▶</button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Merged checklist and stats pills -->
+                <div class="cloud-panel-col">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div class="cloud-label-sm" style="margin-bottom: 0;">Источники и записи</div>
+                        <div style="font-size: 0.7rem; font-weight: 800; color: var(--color-text-dark);">Слов обработано: <span id="statTotalWords" style="color: var(--color-primary); font-weight: 900;">0</span></div>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        <input type="checkbox" id="srcChrono" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcChrono" class="src-pill-label">📓 Хрон. <span id="statChrono" class="src-count-badge">0</span></label>
+
+                        <input type="checkbox" id="srcCalendar" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcCalendar" class="src-pill-label">📅 Событ. <span id="statCalendar" class="src-count-badge">0</span></label>
+
+                        <input type="checkbox" id="srcNotes" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcNotes" class="src-pill-label">📝 Замет. <span id="statNotes" class="src-count-badge">0</span></label>
+
+                        <input type="checkbox" id="srcWink" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcWink" class="src-pill-label">😉 Винк <span id="statWink" class="src-count-badge">0</span></label>
+
+                        <input type="checkbox" id="srcStickers" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcStickers" class="src-pill-label">📌 Стик. <span id="statStickers" class="src-count-badge">0</span></label>
+
+                        <input type="checkbox" id="srcTasks" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcTasks" class="src-pill-label">☑️ Задач. <span id="statTasks" class="src-count-badge">0</span></label>
+
+                        <input type="checkbox" id="srcHabits" class="src-checkbox" checked onchange="fetchWordCloud()" style="display: none;">
+                        <label for="srcHabits" class="src-pill-label">🔁 Прив. <span id="statHabits" class="src-count-badge">0</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize targetDate state to one year ago
+    const initDate = new Date();
+    initDate.setFullYear(initDate.getFullYear() - 1);
+    window.wordCloudState = {
+        targetDate: initDate.toISOString().split('T')[0]
+    };
+
+    function openWordCloudModal() {
+        if (typeof ModalManager !== 'undefined') {
+            const dateOneYearAgo = new Date();
+            dateOneYearAgo.setFullYear(dateOneYearAgo.getFullYear() - 1);
+            const dateOneYearAgoStr = dateOneYearAgo.toISOString().split('T')[0];
+            
+            window.wordCloudState.targetDate = dateOneYearAgoStr;
+            document.getElementById('cloudDatePicker').value = dateOneYearAgoStr;
+
+            ModalManager.open('wordCloudModal');
+            fetchWordCloud();
+        }
+    }
+
+    function closeWordCloudModal() {
+        if (typeof ModalManager !== 'undefined') {
+            ModalManager.close('wordCloudModal');
+        }
+    }
+
+    function shiftWordCloudDate(days) {
+        const current = new Date(window.wordCloudState.targetDate);
+        current.setDate(current.getDate() + days);
+        const newDateStr = current.toISOString().split('T')[0];
+        
+        window.wordCloudState.targetDate = newDateStr;
+        document.getElementById('cloudDatePicker').value = newDateStr;
+        
+        fetchWordCloud();
+    }
+
+    function onWordCloudDateChanged(value) {
+        if (value) {
+            window.wordCloudState.targetDate = value;
+            fetchWordCloud();
+        }
+    }
+
+    async function fetchWordCloud() {
+        const loader = document.getElementById('cloudLoader');
+        const tagsWrapper = document.getElementById('cloudTags');
+        const placeholder = document.getElementById('cloudPlaceholder');
+        const rangeBadge = document.getElementById('cloudRangeBadge');
+
+        loader.style.display = 'flex';
+        tagsWrapper.style.display = 'none';
+        placeholder.style.display = 'none';
+
+        const sources = [];
+        if (document.getElementById('srcChrono').checked) sources.push('chronology');
+        if (document.getElementById('srcCalendar').checked) sources.push('calendar');
+        if (document.getElementById('srcNotes').checked) sources.push('notes');
+        if (document.getElementById('srcWink').checked) sources.push('wink');
+        if (document.getElementById('srcStickers').checked) sources.push('stickers');
+        if (document.getElementById('srcTasks').checked) sources.push('tasks');
+        if (document.getElementById('srcHabits').checked) sources.push('habits');
+
+        const dateStr = window.wordCloudState.targetDate;
+
+        try {
+            const url = `/api/analytics/wordcloud?date=${dateStr}&sources=${sources.join(',')}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to load cloud');
+            
+            const data = await response.json();
+
+            const formatRussianDate = (dStr) => {
+                const parts = dStr.split('-');
+                return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            };
+            rangeBadge.textContent = `${formatRussianDate(data.start_date)} — ${formatRussianDate(data.end_date)}`;
+
+            // Update compact pill stats
+            document.getElementById('statTotalWords').textContent = data.total_words;
+            document.getElementById('statChrono').textContent = data.counts_by_source.chronology;
+            document.getElementById('statCalendar').textContent = data.counts_by_source.calendar;
+            document.getElementById('statNotes').textContent = data.counts_by_source.notes;
+            document.getElementById('statWink').textContent = data.counts_by_source.wink;
+            document.getElementById('statStickers').textContent = data.counts_by_source.stickers;
+            document.getElementById('statTasks').textContent = data.counts_by_source.tasks;
+            document.getElementById('statHabits').textContent = data.counts_by_source.habits;
+
+            tagsWrapper.innerHTML = '';
+            loader.style.display = 'none';
+
+            if (!data.words || data.words.length === 0) {
+                placeholder.style.display = 'block';
+                return;
+            }
+
+            const maxCount = Math.max(...data.words.map(w => w.count));
+
+            // Shuffling to make it a natural, randomized visual word cloud rather than a list
+            const shuffledWords = [...data.words].sort(() => Math.random() - 0.5);
+
+            shuffledWords.forEach(item => {
+                const ratio = item.count / maxCount;
+                const fontSize = 0.85 + (ratio * 1.55); // Dynamic size mapping
+                
+                let color = 'var(--color-text-body)';
+                let shadowColor = 'rgba(0,0,0,0.04)';
+                if (ratio > 0.75) {
+                    color = '#e31b6d';
+                    shadowColor = 'rgba(227, 27, 109, 0.18)';
+                } else if (ratio > 0.45) {
+                    color = '#f2994a';
+                    shadowColor = 'rgba(242, 153, 74, 0.18)';
+                } else if (ratio > 0.25) {
+                    color = '#27ae60';
+                    shadowColor = 'rgba(39, 174, 96, 0.12)';
+                } else if (ratio > 0.1) {
+                    color = '#2f80ed';
+                    shadowColor = 'rgba(47, 128, 237, 0.12)';
+                } else {
+                    color = '#8b8ba7';
+                    shadowColor = 'rgba(139, 139, 167, 0.08)';
+                }
+
+                const tag = document.createElement('span');
+                tag.className = 'word-tag';
+                tag.style.fontSize = `${fontSize}rem`;
+                tag.style.color = color;
+                tag.style.textShadow = `0 4px 8px ${shadowColor}`;
+                tag.textContent = item.word;
+                tag.title = `Встречается: ${item.count} раз`;
+                
+                // Add a very slight random rotation (-6 to +6 degrees) to 30% of tags to form a beautiful, natural cloud
+                const rotations = [0, 0, 0, -5, 5, -3, 3, 0, 0];
+                const randRot = rotations[Math.floor(Math.random() * rotations.length)];
+                if (randRot !== 0) {
+                    tag.style.transform = `rotate(${randRot}deg)`;
+                }
+
+                tag.onclick = () => {
+                    triggerSearchFromCloud(item.word);
+                };
+
+                tagsWrapper.appendChild(tag);
+            });
+
+            tagsWrapper.style.display = 'flex';
+        } catch (err) {
+            console.error('Error fetching word cloud:', err);
+            loader.style.display = 'none';
+            placeholder.style.display = 'block';
+            placeholder.querySelector('h3').textContent = 'Ошибка загрузки';
+            placeholder.querySelector('p').textContent = 'Не удалось загрузить облако тегов.';
+        }
+    }
+
+    function triggerSearchFromCloud(word) {
+        closeWordCloudModal();
+        if (typeof ModalManager !== 'undefined') {
+            ModalManager.open('dbSearchModal');
+            setTimeout(() => {
+                const input = document.getElementById('dbSearchInput');
+                if (input) {
+                    input.focus();
+                    input.value = word;
+                    if (typeof window.performAjaxSearch === 'function') {
+                        window.performAjaxSearch();
+                    }
+                }
+            }, 350);
+        }
+    }
+</script>

@@ -1,0 +1,110 @@
+<div class="header-container">
+    <div class="header-main">
+        <form method="post" action="/submit_form" id="common_form" class="header-form">
+            <div class="form-input-group">
+                <input list="suggestions" type="text" name="common_text" required placeholder="To do, save or plan..." class="form-input header-main-input" />
+                <datalist id="suggestions"></datalist>
+                
+                <input type="date" name="common_date" required id="common_date" class="form-input header-date-input" value="{{ today_actual.strftime('%Y-%m-%d') }}" />
+
+                <!-- Recurrence Wrapper -->
+                <div class="recurrence-wrapper">
+                    <button type="button" class="btn btn-secondary btn-icon" id="recurrenceToggle" title="Recurrence settings">🔁</button>
+                    <div class="recurrence-glass-menu" id="recurrenceMenu">
+                        <div class="form-group">
+                            <label class="form-label">Repeat Pattern</label>
+                            <select id="repeatSelect" class="form-select">
+                                <option value="none">Once</option>
+                                <option value="daily">Every day</option>
+                                <option value="weekly">Every week</option>
+                                <option value="weekdays">Weekdays (M-F)</option>
+                                <option value="monthly">Every month</option>
+                                <option value="yearly">Every year</option>
+                            </select>
+                        </div>
+
+                        <div id="weekdayRow" class="weekday-row-compact" style="display: none; margin-bottom: 20px;">
+                            {% for day in [('mon', 'M'), ('tue', 'T'), ('wed', 'W'), ('thu', 'T'), ('fri', 'F'), ('sat', 'S'), ('sun', 'S')] %}
+                            <label class="day-pill-item">
+                                <input type="checkbox" name="wd_{{ day[0] }}" value="{{ day[0] }}" />
+                                <span>{{ day[1] }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+
+                        <input type="hidden" name="repeat" id="repeatHidden" value="none" />
+
+                        <div class="form-group">
+                            <label class="form-label">End Condition</label>
+                            <div class="custom-radio-group" style="display: flex; gap: 12px; background: var(--color-bg-app); padding: 6px; border-radius: 12px; margin-bottom: 16px;">
+                                <label style="flex: 1; cursor: pointer;">
+                                    <input type="radio" name="rec_end_mode" value="date" id="recEndDate" checked style="display: none;">
+                                    <span class="radio-tab" style="display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;">Date</span>
+                                </label>
+                                <label style="flex: 1; cursor: pointer;">
+                                    <input type="radio" name="rec_end_mode" value="count" id="recEndCount" style="display: none;">
+                                    <span class="radio-tab" style="display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;">Count</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="endDateBlock" class="form-group">
+                            <label class="form-label">Until date</label>
+                            <input type="date" name="repeat_end" id="repeatEnd" class="form-input" />
+                        </div>
+
+                        <div id="endCountBlock" class="form-group" style="display: none">
+                            <label class="form-label">Times</label>
+                            <input type="number" id="repeatCount" min="1" max="365" value="10" class="form-input" />
+                            <input type="hidden" name="repeat_end" id="repeatEndFromCount" />
+                        </div>
+
+                        <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                            <button type="button" onclick="closeRecurrence()" class="btn btn-primary">Apply Changes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <select name="common_category" class="form-select header-cat-select" onchange="if(typeof syncCategoryStickerVisibility==='function') syncCategoryStickerVisibility()">
+                    <option value="event">📅 Event</option>
+                    <option value="important">⭐ Important</option>
+                    <option value="task">✅ Task</option>
+                    <option value="habits">🔄 Habit</option>
+                    <option value="wink">😉 Wink</option>
+                    <option value="count until">⏳ Count Until</option>
+                    <option value="count after">⌛ Count After</option>
+                    <option value="one_thing">🎯 One Thing</option>
+                    <option value="replacement">🔀 Replacement</option>
+                </select>
+
+                <div id="headerStickerBtn" class="btn btn-secondary btn-icon" title="Add Sticker" onclick="openHeaderStickerModal()">
+                    <div class="sticker-icon-mini"></div>
+                </div>
+
+                <div class="recurrence-wrapper">
+                    <button id="headerColorBtn" type="button" class="btn btn-secondary btn-icon" title="Set Event Color" onclick="toggleHeaderColorPicker(event)">
+                        <div id="headerColorIndicator" style="width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid white; box-shadow: var(--shadow-sm); background: var(--color-text-faint);"></div>
+                    </button>
+                    <div id="headerColorPickerPopup" class="color-picker-glass-popup">
+                        <div class="btn btn-secondary btn-sm" onclick="setHeaderColor('', this)" title="No Color">/</div>
+                        {% for color in ['#4F46E5', '#10B981', '#B91C1C', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EC4899', '#1E293B'] %}
+                        <div style="background:{{ color }}; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: var(--shadow-sm);" data-color="{{ color }}" onclick="setHeaderColor('{{ color }}', this)"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <input type="hidden" name="common_color" id="headerCommonColor" value="">
+                <input type="hidden" name="sticker_text" id="headerStickerText">
+                <input type="hidden" name="sticker_title" id="headerStickerTitle">
+                <input type="hidden" name="sticker_color" id="headerStickerColor" value="#fff9c4">
+                <input type="hidden" name="sticker_type" id="headerStickerType" value="text">
+
+                <button type="submit" class="btn btn-primary header-submit" style="padding: 0 24px; height: 44px;">OK</button>
+            </div>
+        </form>
+
+        <div class="header-info-widgets">
+            {% include 'partials/header_info_widgets.html' %}
+        </div>
+    </div>
+</div>

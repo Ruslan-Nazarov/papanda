@@ -1,0 +1,105 @@
+/* --- Dashboard Notes Widget Specifics --- */
+
+.notes-widget .widget-body {
+    padding: 16px;
+}
+
+.quick-note-area {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1.5px solid var(--color-border-light);
+}
+
+/* Pinned Notes Grid */
+.pinned-notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.pinned-note-card {
+    background: var(--color-bg-white);
+    border: 1.5px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    position: relative;
+    transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+    box-shadow: var(--shadow-sm);
+}
+
+.pinned-note-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary-glow);
+}
+
+.pinned-note-card .row-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.pinned-note-card:hover .row-actions {
+    opacity: 1;
+}
+
+.premium-note-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Specific button style for the widget buttons */
+.btn-row-action {
+    color: var(--color-text-faint);
+    transition: color 0.2s;
+}
+
+.btn-row-action:hover {
+    color: var(--color-primary);
+}
+
+/* corkboard / stickers compatibility */
+.note-sticker-btn {
+    width: 28px; height: 28px;
+    display: flex !important;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    background: var(--color-bg-white);
+    border: 1.5px solid var(--color-border-light);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Editor Mini Stickers */
+#expandedNoteStickersList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0;
+    min-height: 40px;
+}
+
+.editor-mini-sticker-wrapper {
+    transform: scale(0.75);
+    transform-origin: top left;
+    width: 135px; /* (180 * 0.75) */
+    height: 135px;
+    margin-right: -25px;
+    margin-bottom: -35px;
+}
+
+.editor-mini-sticker-wrapper .sticker-thought {
+    margin: 0 !important;
+    cursor: pointer !important;
+}
+
+.editor-mini-sticker-wrapper:hover {
+    transform: scale(0.8);
+    z-index: 10;
+}

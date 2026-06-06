@@ -1,0 +1,37 @@
+<!-- Reusable Sticker Editor Component -->
+<div class="sticker-editor-box" id="{{ editor_id|default('globalStickerEditor') }}">
+    <div class="form-group" style="margin-bottom: 12px;">
+        <input type="text" 
+               id="{{ editor_id|default('global') }}StickerTitle" 
+               class="form-input" 
+               placeholder="Title (optional)..." 
+               style="padding: 10px 14px; font-size: 0.9rem;">
+    </div>
+    
+    <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <button type="button" 
+                class="btn btn-secondary sticker-type-toggle" 
+                onclick="toggleStickerMode('{{ editor_id|default('global') }}')"
+                style="height: 44px; width: 44px; padding: 0; flex-shrink: 0;">📝</button>
+        
+        <textarea id="{{ editor_id|default('global') }}StickerText" 
+                  class="form-input" 
+                  placeholder="Thought on your mind..." 
+                  style="flex: 1; height: 44px; min-height: 44px; padding: 10px 14px; font-size: 0.9rem; resize: none;"></textarea>
+        
+        <button type="button" 
+                class="btn btn-primary" 
+                onclick="saveSticker('{{ editor_id|default('global') }}')"
+                style="height: 44px; padding: 0 20px; flex-shrink: 0;">OK</button>
+    </div>
+
+    <div class="color-picker" id="{{ editor_id|default('global') }}ColorPicker" style="margin-top: 12px; justify-content: flex-start;">
+        {% for color in ['#fff9c4', '#f8bbd0', '#bbdefb', '#c8e6c9', '#e1bee7', '#ffe0b2', '#b2dfdb', '#f5f5f5'] %}
+        <div class="color-dot {% if loop.first %}active{% endif %}" 
+             data-color="{{ color }}" 
+             style="background: {{ color }}"
+             onclick="selectStickerColor('{{ editor_id|default('global') }}', '{{ color }}', this)"></div>
+        {% endfor %}
+    </div>
+    <input type="hidden" id="{{ editor_id|default('global') }}SelectedColor" value="#fff9c4">
+</div>

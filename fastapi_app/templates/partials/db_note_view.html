@@ -1,0 +1,109 @@
+{% macro render_note_card(row, is_archive=false) %}
+    <div class="db-card {% if is_archive %}old archive-note{% else %}recent{% endif %}" data-id="{{ row.id }}" 
+         {% if is_archive %}style="display: none;"{% endif %}
+         onclick='openDbCardDetail({
+            title: "Note",
+            date: "",
+            category: "{{ row.category|e }}",
+            body: {{ row.note|tojson }},
+            onEdit: function(){ NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}"); },
+            onDelete: function(){ deleteRecordCustom("Notes", {{ row.id }}); }
+         })'>
+        <span class="note-cat badge-premium">{{ row.category or 'General' }}</span>
+        <div class="db-card-text">{{ row.note }}</div>
+        <div class="db-card-actions" onclick="event.stopPropagation()">
+            <button type="button" class="btn-action btn-edit" 
+                    onclick='NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}")'>Edit</button>
+            <button type="button" class="btn-action btn-del" 
+                    onclick="deleteRecordCustom('Notes', {{ row.id }})">Del</button>
+        </div>
+    </div>
+{% endmacro %}
+
+<div class="notes-management-view">
+    <!-- Filter & Search Bar -->
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <!-- Stats Counter -->
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Notes</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+            
+            <div style="width: 1px; height: 30px; background: var(--color-border-light); margin: 0 5px;"></div>
+
+            <!-- Category Selector -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Category:</span>
+                <select id="dbNoteCategoryFilter" class="form-input" style="height: 36px; padding: 0 15px; border-radius: 18px; width: 160px; font-size: 0.85rem;" onchange="filterNotesByCategory(this.value)">
+                    <option value="all">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    {% if search_query or selected_category %}
+        <div style="padding: 0 24px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">📊</span> Filtered by: 
+            {% if selected_category %}<span class="badge-premium">{{ selected_category }}</span>{% endif %}
+            {% if search_query %}<b style="color: var(--color-text-dark);">"{{ search_query }}"</b>{% endif %}
+            <a href="{{ url_for('db_view', model_name='Notes') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear All</a>
+        </div>
+    {% endif %}
+
+    {% set notes_list = records if records else [] %}
+
+    <!-- Recent Notes (Top 10) -->
+    {% if not selected_category and not search_query %}
+        <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-primary);">⚡</span> Recent Notes
+        </h2>
+        <div class="db-grid" id="recentNotesGrid">
+            {% for row in notes_list[:10] %}
+                {{ render_note_card(row) }}
+            {% else %}
+                <div style="padding: 20px 24px; color: var(--color-text-muted);">No notes available.</div>
+            {% endfor %}
+        </div>
+
+        <!-- Archive Section -->
+        <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
+            <span style="color: var(--color-text-muted);">📦</span> Archive
+        </h2>
+        <div class="db-grid" id="archiveNotesGrid">
+            {% for row in notes_list[10:] %}
+                {{ render_note_card(row, is_archive=true) }}
+            {% endfor %}
+        </div>
+
+        {% if notes_list|length > 10 %}
+            <div class="load-more-container" id="loadMoreNotesContainer">
+                <button class="btn-load-more">Show More (+10)</button>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Filtered View -->
+        <div class="db-grid" id="filteredNotesGrid">
+            {% for row in notes_list %}
+                {{ render_note_card(row) }}
+            {% else %}
+                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1/-1;">No matching notes found.</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function filterNotesByCategory(cat) {
+        // Client-side filter by category
+        const allCards = document.querySelectorAll('.note-card[data-id]');
+        allCards.forEach(card => {
+            const cardCat = card.querySelector('.note-cat');
+            const match = cat === 'all' || (cardCat && cardCat.textContent.trim() === cat);
+            card.style.display = match ? '' : 'none';
+        });
+    }
+</script>

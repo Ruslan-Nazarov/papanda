@@ -1,155 +1,77 @@
-                    <div class="section note-section">
-                        <div class="widget-header">
-                            <h1 class="widget-title">
-                                <span class="drag-handle">⠿</span>Notes
-                            </h1>
-                            <div style="display: flex; gap: 5px; align-items: center;">
-                                <button type="button" title="Open full editor" onclick="openNoteExpandModal()"
-                                    style="background: none; border: none; cursor: pointer; font-size: 1.1em; color: #888; padding: 2px 6px; border-radius: 4px; transition: background 0.2s;"
-                                    onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='none'"
-                                >⤢</button>
-                                <button
-                                    type="button"
-                                    class="collapse-btn collapse-btn-toggle"
-                                    onclick="toggleWidget(this)"
-                                    title="Свернуть / развернуть"
-                                >
-                                    ▾
-                                </button>
-                            </div>
-                        </div>
-                        <div class="widget-body">
-                            <form
-                                method="post"
-                                action="/add_note"
-                                class="form-common"
-                            >
-                                <div
-                                    style="
-                                        display: flex;
-                                        gap: 5px;
-                                        align-items: center;
-                                        flex-wrap: wrap;
-                                    "
-                                >
-                                    <select
-                                        name="category"
-                                        required
-                                        style="flex-grow: 1"
-                                    >
-                                        {% for category in categories %}
-                                        <option value="{{ category }}">
-                                            {{ category }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onclick="showAddCategory()"
-                                        title="New Category"
-                                        style="
-                                            padding: 5px 10px;
-                                            border: 1px solid #ddd;
-                                            border-radius: 5px;
-                                            cursor: pointer;
-                                        "
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            </form>
+{% from "partials/components/inputs.html" import premium_input %}
 
-                            <form
-                                id="addCategoryForm"
-                                method="post"
-                                action="/settings/categories/edit"
-                                style="
-                                    display: none;
-                                    margin-top: 10px;
-                                    padding: 10px;
-                                    background: #f0f8ff;
-                                    border-radius: 5px;
-                                    border: 1px dashed #add8e6;
-                                "
-                            >
-                                <div
-                                    style="
-                                        display: flex;
-                                        gap: 5px;
-                                        flex-wrap: wrap;
-                                    "
-                                >
-                                    <input
-                                        type="text"
-                                        name="new_category"
-                                        placeholder="Category name..."
-                                        style="
-                                            flex-grow: 1;
-                                            height: 30px;
-                                            padding: 0 10px;
-                                            border: 1px solid #ddd;
-                                            border-radius: 5px;
-                                        "
-                                    />
-                                    <button
-                                        type="submit"
-                                        style="
-                                            background: #add8e6;
-                                            border: none;
-                                            padding: 0 15px;
-                                            border-radius: 5px;
-                                            cursor: pointer;
-                                        "
-                                    >
-                                        Add
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onclick="hideAddCategory()"
-                                        style="
-                                            background: #eee;
-                                            border: none;
-                                            padding: 0 10px;
-                                            border-radius: 5px;
-                                            cursor: pointer;
-                                        "
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                            </form>
+<div class="premium-card notes-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">📓</span>
+            <span>Notes</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Notes')" title="Full View">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="notesWidget.showExpandedEditor()" title="Expanded Editor">↗</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="notesWidget.showAllNotesModal()" title="All Notes">📂</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
+        </div>
+    </div>
 
-                            <form
-                                method="post"
-                                action="/add_note"
-                                class="form-common"
-                                style="margin-top: 10px"
-                            >
-                                <textarea
-                                    name="note"
-                                    required
-                                    placeholder="Type your note here..."
-                                    style="height: 70px"
-                                ></textarea>
-                                <!-- Category is selected above; we store it here so the backend receives it with note -->
-                                <input
-                                    type="hidden"
-                                    name="category"
-                                    id="note_category_hidden"
-                                    value="{{ categories[0] if categories else 'default' }}"
-                                />
-                                <button
-                                    type="submit"
-                                    class="form-button"
-                                    style="
-                                        background-color: lightblue;
-                                        width: 100%;
-                                        max-width: none;
-                                        margin-top: 10px;
-                                    "
-                                >
-                                    Add Note
-                                </button>
-                            </form>
-                        </div>
+    <div class="widget-body">
+        <div class="quick-note-area">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: stretch;">
+                <div style="display: flex; gap: 8px; flex: 1;">
+                    <select id="regularNoteCategory" class="form-select" style="flex: 1; height: 44px !important; font-size: 0.9rem;">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-secondary btn-icon" style="width: 44px; height: 44px !important; border: 2px solid var(--color-border-light); border-radius: 12px;" onclick="notesWidget.showAddCategoryModal()" title="Add Category">+</button>
+                </div>
+                <div class="form-check-item" style="background: white; padding: 0 16px; border-radius: 12px; border: 2px solid var(--color-border-light); height: 44px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="regularNotePin">
+                    <label for="regularNotePin" class="form-label" style="margin: 0; cursor: pointer; font-size: 0.75rem; font-weight: 800;">PIN</label>
+                </div>
+            </div>
+            
+            {{ premium_input(
+                type='textarea',
+                id='regularNoteTextarea',
+                placeholder='Quick note... (Ctrl+Enter to save)',
+                onkeydown="if(event.ctrlKey && event.key === 'Enter') notesWidget.saveNote()"
+            ) }}
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                <button class="btn btn-primary btn-sm" onclick="notesWidget.saveNote()">💾 Save Note</button>
+            </div>
+        </div>
+
+        <!-- Pinned Notes Grid -->
+        <div id="pinned-notes-list" class="pinned-notes-grid">
+            {% for note in pinned_notes %}
+            <div class="pinned-note-card" data-id="{{ note.id }}">
+                <div class="note-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span class="premium-badge">{{ note.category or 'General' }}</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-row-action pin-btn active" 
+                                onclick="notesWidget.togglePin({{ note.id }}, true)" 
+                                title="Unpin from dashboard">
+                            📌
+                        </button>
+                        <button class="btn-row-action del-btn" 
+                                onclick="notesWidget.deleteNote({{ note.id }})" 
+                                title="Delete">
+                            ×
+                        </button>
                     </div>
+                </div>
+                <div class="premium-note-text" onclick="notesWidget.viewNote({{ note.id }})" style="cursor: pointer; font-weight: 400; font-size: 0.9rem; line-height: 1.4; color: var(--color-text-dark); max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
+                    {{ note.note }}
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1/-1; text-align: center; color: var(--color-text-faint); padding: 40px 20px; font-style: italic; background: var(--color-bg-white); border-radius: var(--radius-md); border: 1.5px dashed var(--color-border-light);">
+                No pinned notes yet
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

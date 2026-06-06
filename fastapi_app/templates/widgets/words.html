@@ -1,0 +1,49 @@
+<div class="premium-card" id="widget-words">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">📖</span>
+            <span>Words</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/language_learning'" title="Full Library">📚</button>
+        </div>
+    </div>
+
+    <div class="widget-content">
+        <!-- Word Stats (Mini) -->
+        <div class="word-stats-banner" style="display: flex; justify-content: space-around; background: var(--color-bg-subtle); padding: 12px; border-radius: var(--radius-md); margin-bottom: 20px;">
+            <div class="stat-item" style="text-align: center;">
+                <div class="stat-label" style="font-size: 0.6rem; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase;">Total</div>
+                <div class="stat-value" id="wordStatTotal" style="font-size: 1.1rem; font-weight: 800; color: var(--color-primary);">{{ word_stats.total }}</div>
+            </div>
+            <div class="stat-item" style="text-align: center;">
+                <div class="stat-label" style="font-size: 0.6rem; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase;">Learned</div>
+                <div class="stat-value" id="wordStatLearned" style="font-size: 1.1rem; font-weight: 800; color: var(--color-success);">{{ word_stats.learned }}</div>
+            </div>
+        </div>
+
+        <!-- Quick Search/Add -->
+        <div class="form-group" style="position: relative;">
+            <input type="text" 
+                   id="wordSearchInput" 
+                   class="form-input" 
+                   placeholder="Search or add word..." 
+                   autocomplete="off"
+                   oninput="handleWordSearch(this.value)">
+            <div id="wordSearchResults" class="search-dropdown" style="display: none;"></div>
+        </div>
+
+        <!-- Recent Words List -->
+        <div id="recentWordsList" class="word-list-compact" style="margin-top: 16px;">
+            {% for word in recent_words %}
+                <div class="premium-list-item" onclick="openWordEdit('{{ word.eng }}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; color: var(--color-text-dark);">{{ word.eng }}</span>
+                        <span style="font-size: 0.85rem; color: var(--color-text-muted);">{{ word.ru }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

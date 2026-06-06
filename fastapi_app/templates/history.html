@@ -1,13 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>History - Papanda</title>
-    <link rel="shortcut icon" href="{{ url_for('static', path='logo.ico') }}">
+{% extends "base.html" %}
+
+{% block title %}History - Papanda{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <style>
         body { background-color: #FFF5EC; }
         .history-container {
+            width: 100%;
+            box-sizing: border-box;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -56,6 +57,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(242, 153, 74, 0.2);
+            font-family: inherit;
         }
         .header-btn-submit:hover {
             background-color: #E08E45;
@@ -161,6 +163,7 @@
             justify-content: center;
             border-top: 1px solid #f0f0f0;
             margin-top: 5px;
+            font-family: inherit;
         }
         .expand-btn:hover { text-decoration: underline; }
         .data-list li.hidden-item { display: none; }
@@ -171,9 +174,9 @@
         .sticky-thought-list { list-style: none; padding-left: 5px; margin: 5px 0 0 0; }
         .sticky-item-done { text-decoration: line-through; opacity: 0.6; }
     </style>
-</head>
-<body>
+{% endblock %}
 
+{% block content %}
 <div class="history-container">
     <a href="/" class="back-link">← Back to Dashboard</a>
 
@@ -268,7 +271,7 @@
 
         <!-- Wink -->
         <div class="history-card card-wink">
-            <h2>Leisure (Wink)</h2>
+            <h2>😉 Leisure (Wink)</h2>
             <ul class="data-list">
                 {% for item in wink %}
                     <li class="data-item {% if loop.index > 1 %}hidden-item{% endif %}">
@@ -308,7 +311,7 @@
                             {% if note.finished_at %} | Finished: {{ note.finished_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}
                         </span>
                         
-                        <div style="font-family: 'Indie Flower', cursive, sans-serif; font-size: 1.1em; color: #444;">
+                        <div style="font-family: var(--font-handwriting); font-size: 1.1em; color: #444;">
                             {% if note.type == 'list' %}
                                 {% set list_data = note.text|from_json %}
                                 <ul class="sticky-thought-list">
@@ -332,23 +335,5 @@
     </div>
 </div>
 
-<div class="footer">
-    <div class="footer-container">
-        <div class="footer-nav main-nav">
-            <a href="/word_stats" class="footer-btn">📊 Stats</a>
-            <a href="/history" class="footer-btn active">📅 History</a>
-            <a href="/settings" class="footer-btn">⚙️ Settings</a>
-        </div>
-        <div class="footer-nav data-nav">
-            <a href="/db_view/Event" class="footer-btn">Events</a>
-            <a href="/db_view/Habit" class="footer-btn">Habits</a>
-            <a href="/db_view/Task" class="footer-btn">Tasks</a>
-            <a href="/db_view/Chronology" class="footer-btn">Chrono</a>
-            <a href="/db_view/Notes" class="footer-btn">Notes</a>
-            <a href="/db_view/Wink" class="footer-btn">Wink</a>
-        </div>
-        <div class="footer-version">papanda version 0.5.1 (est. 21.11.2023; last update 18.12.2025)</div>
-    </div>
-</div>
-</body>
-</html>
+{% include 'partials/footer.html' %}
+{% endblock %}

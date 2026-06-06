@@ -1,0 +1,67 @@
+{% if model_name == 'Chronology' %}
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Entries</span>
+                <span style="font-size: 1.1rem; color: var(--color-blue); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chrono-management-view" id="chronoManagementView">
+        <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-blue);">⚡</span> Recent
+        </h2>
+        <div class="db-grid" id="recentChronoGrid">
+            {% for row in records[:10] %}
+                <div class="db-card recent" data-id="{{ row.id }}"
+                     onclick='openDbCardDetail({
+                        title: "Chronology Entry",
+                        date: "{{ row.date.strftime("%d.%m.%Y %H:%M") }}",
+                        body: {{ row.title|tojson }},
+                        onEdit: function(){ ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}"); },
+                        onDelete: function(){ deleteRecordCustom("Chronology", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                    <div class="db-card-text">{{ row.title }}</div>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% else %}
+                <div style="padding: 20px 24px; color: var(--color-text-muted);">No records yet.</div>
+            {% endfor %}
+        </div>
+
+        {% if records|length > 10 %}
+        <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
+            <span style="color: var(--color-text-muted);">📦</span> Archive
+        </h2>
+        <div class="db-grid" id="archiveChronoGrid">
+            {% for row in records[10:] %}
+                <div class="db-card old" data-id="{{ row.id }}" {% if loop.index > 10 %}style="display: none;"{% endif %}
+                     onclick='openDbCardDetail({
+                        title: "Chronology Entry",
+                        date: "{{ row.date.strftime("%d.%m.%Y %H:%M") }}",
+                        body: {{ row.title|tojson }},
+                        onEdit: function(){ ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}"); },
+                        onDelete: function(){ deleteRecordCustom("Chronology", {{ row.id }}); }
+                     })'>
+                    <div class="db-card-date">📅 {{ row.date.strftime('%d.%m.%Y %H:%M') }}</div>
+                    <div class="db-card-text">{{ row.title }}</div>
+                    <div class="db-card-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-action btn-edit"
+                                onclick='ChronoService.openEdit("{{ row.id }}", {{ row.title|tojson }}, "{{ row.date.isoformat() }}")'>Edit</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Chronology', {{ row.id }})">Del</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="load-more-container" id="loadMoreChronoContainer" style="margin-top: 30px;">
+            <button class="btn-load-more">Show More (+10)</button>
+        </div>
+        {% endif %}
+    </div>
+{% endif %}

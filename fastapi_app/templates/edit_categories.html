@@ -1,11 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Editing categories</title>
+{% extends "base.html" %}
+
+{% block title %}Editing categories{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <style>
-        .page-container { 
+        .page-container {
+            width: 100%;
+            box-sizing: border-box; 
             max-width: 800px; 
             margin: 50px auto; 
             padding: 20px; 
@@ -29,7 +31,7 @@
             box-sizing: border-box; 
             border: 1px solid #aaa; 
             border-radius: 4px;
-            font-family: monospace; 
+            font-family: var(--font-editor); 
             font-size: 14px;
         }
         
@@ -47,8 +49,9 @@
             padding: 8px 0;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="page-container">
         <div class="section-header">
             <h2>Editing note categories</h2>
@@ -63,28 +66,11 @@
                 <a href="{{ url_for('index') }}" class="back-link">
                     ← Back to Dashboard
                 </a>
-                <button type="submit" class="form-button" style="background-color: #90EE90; border: none; padding: 10px 20px;">
+                <button type="submit" class="form-button" style="background-color: #90EE90; border: none; padding: 10px 20px; font-family: inherit;">
                     Save changes
                 </button>
             </div>
         </form>
     </div>
-    <div class="footer">
-        <div class="footer-container">
-            <div class="footer-version">papanda version 0.5.1 (est. 21.11.2023; last update 18.12.2025)</div>
-            <div class="footer-nav">
-                <a href="/word_stats" class="footer-btn">Stats</a>
-                <a href="/history" class="footer-btn">History</a>
-                <a href="/settings" class="footer-btn">Settings</a>
-                <span class="footer-sep">|</span>
-                <a href="/db_view/Event" class="footer-btn">Event</a>
-                <a href="/db_view/Habit" class="footer-btn">Habits</a>
-                <a href="/db_view/Task" class="footer-btn">Task</a>
-                <a href="/db_view/Chronology" class="footer-btn">Chronology</a>
-                <a href="/db_view/Notes" class="footer-btn">Notes</a>
-                <a href="/db_view/Wink" class="footer-btn">Wink</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+{% include 'partials/footer.html' %}
+{% endblock %}

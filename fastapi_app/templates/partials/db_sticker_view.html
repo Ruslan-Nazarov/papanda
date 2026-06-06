@@ -1,0 +1,186 @@
+{% macro render_sticker_card(row, is_archive=false) %}
+    <div class="db-card {% if is_archive %}old archive-sticker{% else %}recent{% endif %}" data-id="{{ row.id }}" 
+         style="border-left: 5px solid {{ row.color or '#fff9c4' }}; {% if is_archive %}display: none;{% endif %}"
+         onclick='openDbCardDetail({
+            title: {{ (row.title if row.title else "Sticker")|tojson }},
+            date: "{{ row.created_at.strftime("%d.%m.%Y %H:%M") if row.created_at else "" }}",
+            category: "{{ row.type|capitalize }}",
+            body: {{ row.text|tojson }},
+            onEdit: function(){ openStickerModal({ id: "{{ row.id }}", mode: "edit" }); },
+            onDelete: function(){ hardDeleteStickerGlobal(document.querySelector(".db-card[data-id=\"{{ row.id }}\"]"), "{{ row.id }}"); }
+         })'>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="note-cat badge-premium" style="background: {{ row.color or '#fff9c4' }}33; color: var(--color-text-dark);">
+                    {{ row.type|capitalize }}
+                </span>
+                {% if row.finished_at %}<span class="premium-badge-archive">Archived</span>{% endif %}
+                
+                {% if row.task_id %}
+                    <span class="parent-badge-premium" title="Task: {{ row.task.name if row.task else 'Deleted Task' }}">📋 Task</span>
+                {% elif row.habit_id %}
+                    <span class="parent-badge-premium" title="Habit: {{ row.habit.title if row.habit else 'Deleted Habit' }}">🔄 Habit</span>
+                {% elif row.note_id %}
+                    <span class="parent-badge-premium" title="Note: {{ row.note.category if row.note else 'Deleted Note' }}">📝 Note</span>
+                {% elif row.event_id or row.recurrence_id %}
+                    <span class="parent-badge-premium" title="Event: {{ row.event.title if row.event else 'Recurring/Deleted' }}">📅 Event</span>
+                {% endif %}
+            </div>
+
+            <div class="db-card-actions" style="border-top: none; padding-top: 0; margin-top: 0;" onclick="event.stopPropagation()">
+                <button type="button" class="btn-action btn-edit" title="Edit" 
+                        onclick="event.stopPropagation(); openStickerModal({ id: '{{ row.id }}', mode: 'edit' })">
+                    Edit
+                </button>
+                <button type="button" class="btn-action btn-del" title="Delete" 
+                        onclick="event.stopPropagation(); hardDeleteStickerGlobal(this, '{{ row.id }}')">
+                    Del
+                </button>
+            </div>
+        </div>
+
+        <div class="db-card-date">
+            📅 {{ row.created_at.strftime('%d.%m.%Y %H:%M') if row.created_at else '—' }}
+        </div>
+
+        {% if row.title %}
+            <div class="db-card-title">{{ row.title }}</div>
+        {% endif %}
+        
+        <div class="sticker-body-content" 
+             data-text="{{ row.text|e }}" 
+             data-type="{{ row.type }}"
+             style="font-family: var(--font-handwriting); font-size: 1.1rem; line-height: 1.5; color: var(--color-text-body); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
+            <!-- Hydrated by StickerRenderer -->
+        </div>
+    </div>
+{% endmacro %}
+
+{% if model_name == 'Stickers' %}
+<div class="stickers-management-view">
+    <!-- Filter & Search Bar -->
+    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
+            <!-- Stats Counter -->
+            <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Stickers</span>
+                <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
+            </div>
+
+            <div style="width: 1px; height: 30px; background: var(--color-border-light); margin: 0 5px;"></div>
+
+            <!-- Category/Type Selector -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Filter:</span>
+                <select id="dbStickerFilter" class="form-input" style="height: 36px; padding: 0 15px; border-radius: 18px; width: 160px; font-size: 0.85rem;" onchange="filterStickers(this.value)">
+                    <option value="">All Stickers</option>
+                    <option value="standalone" {% if selected_category == 'standalone' %}selected{% endif %}>Standalone</option>
+                    <option value="task" {% if selected_category == 'task' %}selected{% endif %}>Linked to Tasks</option>
+                    <option value="habit" {% if selected_category == 'habit' %}selected{% endif %}>Linked to Habits</option>
+                    <option value="note" {% if selected_category == 'note' %}selected{% endif %}>Linked to Notes</option>
+                    <option value="event" {% if selected_category == 'event' %}selected{% endif %}>Linked to Events</option>
+                    <option value="finished" {% if selected_category == 'finished' %}selected{% endif %}>Only Archived</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    {% if search_query or selected_category %}
+        <div style="padding: 0 24px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-style: normal;">📊</span> Filtered by: 
+            {% if selected_category %}<span class="badge-premium">{{ selected_category }}</span>{% endif %}
+            {% if search_query %}<b style="color: var(--color-text-dark);">"{{ search_query }}"</b>{% endif %}
+            <a href="{{ url_for('db_view', model_name='Stickers') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear All</a>
+        </div>
+    {% endif %}
+
+    {% set sticker_list = records if records else [] %}
+
+    {% if not selected_category and not search_query %}
+        <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-primary);">⚡</span> Recent Stickers
+        </h2>
+        <div class="db-grid" id="recentStickersGrid">
+            {% for row in sticker_list[:10] %}
+                {{ render_sticker_card(row) }}
+            {% else %}
+                <div style="padding: 20px 24px; color: var(--color-text-muted);">No stickers available.</div>
+            {% endfor %}
+        </div>
+
+        <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
+            <span style="color: var(--color-text-muted);">📦</span> Archive
+        </h2>
+        <div class="db-grid" id="archiveStickersGrid">
+            {% for row in sticker_list[10:] %}
+                {{ render_sticker_card(row, is_archive=true) }}
+            {% endfor %}
+        </div>
+
+        {% if sticker_list|length > 10 %}
+            <div class="load-more-container" id="loadMoreStickersContainer">
+                <button class="btn-load-more">Show More (+10)</button>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="db-grid" id="filteredStickersGrid">
+            {% for row in sticker_list %}
+                {{ render_sticker_card(row) }}
+            {% else %}
+                <div style="padding: 40px; text-align: center; color: var(--color-text-muted); grid-column: 1/-1;">No matching stickers found.</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.parent-badge-premium {
+    font-size: 0.75rem;
+    background: var(--color-bg-subtle);
+    padding: 4px 10px;
+    border-radius: 8px;
+    color: var(--color-text-muted);
+    font-weight: 700;
+    border: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.premium-badge-archive {
+    font-size: 0.7rem;
+    background: #fff5f5;
+    color: var(--color-error);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+</style>
+
+<script type="module">
+    import { StickerRenderer } from "{{ url_for('static', path='js/modules/StickerRenderer.js') }}";
+    
+    function hydrateStickers() {
+        const placeholders = document.querySelectorAll('.sticker-body-content');
+        placeholders.forEach(ph => {
+            const text = ph.dataset.text;
+            const type = ph.dataset.type;
+            ph.innerHTML = StickerRenderer.formatStickerContent({ text, type });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            hydrateStickers();
+        });
+    } else {
+        hydrateStickers();
+    }
+
+    window.filterStickers = function(val) {
+        window.location.href = "{{ url_for('db_view', model_name='Stickers') }}?category=" + encodeURIComponent(val);
+    };
+</script>
+{% endif %}

@@ -4,6 +4,9 @@ from datetime import datetime, timezone
 from ..database import Base
 
 class Observation(Base):
+    """
+    Модель наблюдения или периодической задачи.
+    """
     __tablename__ = 'observations'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     text: Mapped[str] = mapped_column(String(500))
@@ -13,8 +16,12 @@ class Observation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     end_time: Mapped[str | None] = mapped_column(String(10), nullable=True)
     no_time: Mapped[bool] = mapped_column(Boolean, default=False)
+    task_id: Mapped[int | None] = mapped_column(ForeignKey('task.id', ondelete='SET NULL'), nullable=True)
 
 class ObservationLog(Base):
+    """
+    Лог выполнения (отметки выполнения) для наблюдений.
+    """
     __tablename__ = 'observation_logs'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     observation_id: Mapped[int] = mapped_column(ForeignKey('observations.id', ondelete='CASCADE'), index=True)

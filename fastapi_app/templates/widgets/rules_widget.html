@@ -1,0 +1,23 @@
+<div class="premium-card rules-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">🔤</span>
+            <span>Language Rules</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="refreshRule()" title="Refresh">↻</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleRule()" title="Translate">⇄</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
+        </div>
+    </div>
+    <div class="widget-body">
+        <div id="rule-lang" class="badge-label" style="background: var(--color-primary-soft); color: var(--color-primary); margin-bottom: 12px; font-weight: 850;">
+            {{ random_rule.language }}
+        </div>
+        <div style="font-size: 1rem; color: var(--color-text-dark); line-height: 1.6; font-weight: 500;">
+            <div id="rule-ru">{{ random_rule.rule_ru }}</div>
+            <div id="rule-en" style="display: none">{{ random_rule.rule_en }}</div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,498 @@
+<!-- Dedicated Standalone Calendar Modal (Floating Minimalist Style) -->
+<style>
+    /* Option 3 Specific Overrides */
+    #fullCalendarModal .modal-content {
+        width: 95%; 
+        max-width: 1400px; 
+        height: 90vh;
+        overflow: hidden;
+    }
+    
+    #fullCalendarModal .modal-body {
+        position: relative;
+        padding: 0 !important;
+        display: flex;
+        flex-direction: column;
+        background: var(--color-bg-page);
+    }
+
+    #fullCalendarModal .calendar-wrapper {
+        padding: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #fullCalendarModal .calendar-header {
+        background: var(--color-bg-white);
+        padding: 12px 0;
+        border-bottom: 1px solid var(--color-border-light);
+        z-index: 10;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    #fullCalendarModal .calendar-day-header {
+        text-align: center;
+        font-weight: 700;
+        color: var(--color-text-medium);
+    }
+
+    #fullCalendarModal .calendar-grid {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    #fullCalendarModal .calendar-cell {
+        background: var(--color-bg-white);
+        border: 1px solid var(--color-border-medium); /* More visible border */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04); /* Adjusted shadow */
+        border-radius: var(--radius-lg);
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+
+    #fullCalendarModal .calendar-cell:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+        border-color: var(--color-primary-glow);
+        z-index: 5;
+    }
+
+    #fullCalendarModal .calendar-cell.today {
+        border: 2px solid var(--color-primary);
+        box-shadow: 0 8px 25px var(--color-primary-glow);
+    }
+
+    /* Clean up the + button */
+    #fullCalendarModal .cell-add {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: var(--color-primary-soft);
+        color: var(--color-primary);
+        border: none;
+    }
+
+    #fullCalendarModal .calendar-cell:hover .cell-add {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Floating Toolbar */
+    .floating-calendar-toolbar {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 8px 12px;
+        border-radius: 100px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(255,255,255,0.4);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 100;
+        animation: floatUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes floatUp {
+        from { opacity: 0; transform: translate(-50%, 20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    .floating-calendar-toolbar .filter-select {
+        background: transparent;
+        border: none;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--color-text-dark);
+        padding: 4px 8px;
+        cursor: pointer;
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        text-align: center;
+    }
+    
+    .floating-calendar-toolbar .filter-select:hover {
+        background: var(--color-bg-subtle);
+        border-radius: var(--radius-md);
+    }
+
+    .floating-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-bg-white);
+        border: none;
+        color: var(--color-text-medium);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1.2rem;
+    }
+
+    .floating-btn:hover {
+        background: var(--color-primary-soft);
+        color: var(--color-primary);
+        transform: scale(1.1);
+    }
+
+    .floating-divider {
+        width: 1px;
+        height: 24px;
+        background: var(--color-border-medium);
+        margin: 0 8px;
+    }
+
+</style>
+
+<div id="fullCalendarModal" class="modal premium-modal" style="display: none;">
+    <div class="modal-content">
+        <!-- Header -->
+        <div class="modal-header" style="border-bottom: none; padding-bottom: 0 !important; background: var(--color-bg-page);">
+            <h2 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.8rem;">📅</span> Full Calendar
+            </h2>
+            <button class="modal-close" onclick="closeFullCalendarModal()" title="Close">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+            
+            <!-- Loader -->
+            <div id="calendarModalLoader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; flex-direction: column; color: var(--color-text-muted); background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 50;">
+                <div class="spinner" style="width: 50px; height: 50px; border: 4px solid var(--color-border-light); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
+                <div style="font-weight: 600; letter-spacing: 1px;">SYNCING...</div>
+            </div>
+            
+            <!-- Calendar Content -->
+            <div id="calendarModalContent" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+                <div class="calendar-wrapper">
+                    <div class="calendar-header">
+                        <div class="calendar-day-header">Mon</div>
+                        <div class="calendar-day-header">Tue</div>
+                        <div class="calendar-day-header">Wed</div>
+                        <div class="calendar-day-header">Thu</div>
+                        <div class="calendar-day-header">Fri</div>
+                        <div class="calendar-day-header">Sat</div>
+                        <div class="calendar-day-header">Sun</div>
+                    </div>
+                    <!-- Calendar grid rendered by CalendarRenderer -->
+                    <div id="modalCalendarGrid" class="calendar-grid" style="flex: 1; overflow-y: auto; padding-bottom: 100px;"></div>
+                </div>
+            </div>
+
+            <!-- Floating Action Bar -->
+            <div class="floating-calendar-toolbar">
+                <button class="floating-btn" title="Previous Month" onclick="changeCalendarMonth(-1)">‹</button>
+                
+                <div style="display: flex; align-items: center; padding: 0 10px;">
+                    <select id="calendarModalMonth" class="filter-select" onchange="loadCalendarData()">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="calendarModalYear" class="filter-select" onchange="loadCalendarData()"></select>
+                </div>
+                
+                <button class="floating-btn" title="Next Month" onclick="changeCalendarMonth(1)">›</button>
+                
+                <div class="floating-divider"></div>
+                
+                <button type="button" class="btn btn-primary" style="border-radius: 20px; padding: 8px 20px; font-weight: 800; margin: 0 4px;" onclick="resetCalendarToToday(true)">TODAY</button>
+                
+                <div class="floating-divider"></div>
+
+                <button class="floating-btn" title="Search Events" onclick="openSearchModal()">🔍</button>
+                <button class="floating-btn" title="Color Palette" onclick="if (window.ModalManager) window.ModalManager.open('eventColorPaletteModal'); else { const m = document.getElementById('eventColorPaletteModal'); if (m) m.style.display='flex'; }" type="button">🎨</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Day View Modal -->
+<div id="dayViewModal" class="modal premium-modal" style="display: none; z-index: 1050;">
+    <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-border-light); padding: 20px 24px;">
+            <h2 id="dayViewModalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.5rem;">📅</span> <span id="dayViewModalDateText">Events</span>
+            </h2>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-icon" id="dayViewModalAddBtn" title="Add Event" style="background: var(--color-bg-subtle);">+</button>
+                <button class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--color-text-muted);" onclick="closeDayViewModal()">&times;</button>
+            </div>
+        </div>
+        <div class="modal-body" style="padding: 24px; max-height: 60vh; overflow-y: auto; background: var(--color-bg-page);">
+            <div id="dayViewModalEventsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var _calendarModalCurrentYear = new Date().getFullYear();
+    var _calendarModalCurrentMonth = new Date().getMonth() + 1; // 1-12
+
+    window.currentDayViewDateStr = null;
+
+    window.refreshDayViewModalIfOpen = function() {
+        if (window.currentDayViewDateStr && document.getElementById('dayViewModal').style.display !== 'none') {
+            window.openDayViewModal(window.currentDayViewDateStr);
+        }
+    };
+
+    window.openDayViewModal = function(dateStr) {
+        window.currentDayViewDateStr = dateStr;
+        const dayEvents = (window.eventRecords || []).filter(e => {
+            if (!e.date) return false;
+            return e.date.substring(0, 10) === dateStr;
+        });
+
+        const modal = document.getElementById('dayViewModal');
+        if (!modal) return;
+
+        // Format date string for display (e.g., "27 May 2026")
+        const dateObj = new Date(dateStr);
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('dayViewModalDateText').textContent = dateObj.toLocaleDateString('en-GB', options);
+
+        // Setup add button
+        const addBtn = document.getElementById('dayViewModalAddBtn');
+        addBtn.onclick = () => window.openAddEventForDay(dateStr);
+
+        const listContainer = document.getElementById('dayViewModalEventsList');
+        listContainer.innerHTML = '';
+
+        if (dayEvents.length === 0) {
+            listContainer.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--color-text-muted); background: var(--color-bg-white); border-radius: var(--radius-lg); border: 1px dashed var(--color-border-medium);">No events scheduled for this day.</div>';
+        } else {
+            const ul = document.createElement('ul');
+            ul.className = 'premium-list';
+            dayEvents.forEach(e => {
+                const li = document.createElement('li');
+                li.className = 'premium-list-item' + (e.done ? ' done' : '');
+                li.dataset.id = e.id;
+                li.style.cursor = 'pointer';
+                li.style.background = 'var(--color-bg-white)';
+                li.style.marginBottom = '8px';
+                if (e.color) {
+                    li.style.borderLeft = `4px solid ${e.color}`;
+                }
+                
+                // Name span
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'premium-item-name';
+                nameSpan.style.display = 'flex';
+                nameSpan.style.alignItems = 'center';
+                nameSpan.style.gap = '8px';
+                
+                nameSpan.innerHTML = `
+                    ${e.important ? '<span title="Important">⭐</span> ' : ''}
+                    <span style="font-weight: 600; font-size: 0.95rem; text-decoration: ${e.done ? 'line-through' : 'none'}; color: ${e.done ? 'var(--color-text-muted)' : 'inherit'};">${e.title}</span>
+                    ${e.recurrence_id ? '<span style="color: var(--color-primary); font-size: 0.8em; margin-left: 4px;">🔁</span>' : ''}
+                `;
+                
+                li.appendChild(nameSpan);
+
+                // Actions div
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'row-actions';
+                
+                // Stickers Action
+                const stickersBtn = document.createElement('button');
+                stickersBtn.className = 'btn-row-action';
+                stickersBtn.title = 'Stickers';
+                const hasStickers = e.has_stickers || e.hasStickers || (e.stickers_count > 0);
+                stickersBtn.innerHTML = `<div class="sticker-icon-mini ${!hasStickers ? 'inactive' : ''}">${hasStickers ? `<span class="sticker-count">${e.stickers_count || 1}</span>` : ''}</div>`;
+                stickersBtn.onclick = (ev) => {
+                    ev.stopPropagation();
+                    window.openParentStickers('event', e.id, e.recurrence_id || e.recurrenceId);
+                };
+                actionsDiv.appendChild(stickersBtn);
+
+                // Complete Action
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'btn-row-action done';
+                doneBtn.title = e.done ? 'Reopen event' : 'Complete event';
+                doneBtn.innerHTML = e.done ? '↺' : '✓';
+                doneBtn.onclick = (ev) => {
+                    ev.stopPropagation();
+                    if (window.EventService) window.EventService.toggleDone(e.id, e.date, e.recurrence_id || e.recurrenceId);
+                };
+                actionsDiv.appendChild(doneBtn);
+
+                // Edit Action
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-row-action';
+                editBtn.title = 'Edit';
+                editBtn.innerHTML = '✎';
+                editBtn.onclick = (ev) => {
+                    ev.stopPropagation();
+                    window.openEditEventModal(e.id, e.title, e.date, e.rule || e.recurrenceRule || e.recurrence_rule, e.end || e.recurrenceEnd || e.recurrence_end, e.recurrence_id || e.recurrenceId, e.color, e.important, e.done);
+                };
+                actionsDiv.appendChild(editBtn);
+
+                // Delete Action
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-row-action';
+                deleteBtn.title = 'Delete';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.onclick = (ev) => {
+                    ev.stopPropagation();
+                    if (window.deleteEvent) window.deleteEvent(ev, e.id, !!(e.recurrence_id || e.recurrenceId), e.date.substring(0, 10));
+                    else if (window.deleteRecordCustom) window.deleteRecordCustom('Event', e.id, !!(e.recurrence_id || e.recurrenceId));
+                };
+                actionsDiv.appendChild(deleteBtn);
+
+                li.appendChild(actionsDiv);
+
+                li.onclick = (ev) => {
+                    window.openEventDetailModal(e);
+                };
+                
+                ul.appendChild(li);
+            });
+            listContainer.appendChild(ul);
+        }
+
+        if (window.ModalManager) {
+            ModalManager.open('dayViewModal');
+        } else {
+            modal.style.display = 'flex';
+        }
+    };
+
+    window.closeDayViewModal = function() {
+        if (window.ModalManager) {
+            ModalManager.close('dayViewModal');
+        } else {
+            document.getElementById('dayViewModal').style.display = 'none';
+        }
+    };
+
+    window.populateCalendarYears = function() {
+        const yearSelect = document.getElementById('calendarModalYear');
+        if(!yearSelect) return;
+        yearSelect.innerHTML = '';
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            yearSelect.appendChild(opt);
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        window.populateCalendarYears();
+    });
+
+    window.openFullCalendarModal = function() {
+        const modal = document.getElementById('fullCalendarModal');
+        if (window.ModalManager) {
+            ModalManager.open('fullCalendarModal');
+        } else {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Sync selects with current state
+        document.getElementById('calendarModalMonth').value = _calendarModalCurrentMonth;
+        document.getElementById('calendarModalYear').value = _calendarModalCurrentYear;
+        
+        // Always attempt to scroll to today on initial open
+        loadCalendarData(true);
+    };
+
+    window.closeFullCalendarModal = function() {
+        if (window.ModalManager) {
+            ModalManager.close('fullCalendarModal');
+        } else {
+            document.getElementById('fullCalendarModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    };
+
+    window.changeCalendarMonth = function(delta) {
+        _calendarModalCurrentMonth += delta;
+        if (_calendarModalCurrentMonth < 1) {
+            _calendarModalCurrentMonth = 12;
+            _calendarModalCurrentYear--;
+        } else if (_calendarModalCurrentMonth > 12) {
+            _calendarModalCurrentMonth = 1;
+            _calendarModalCurrentYear++;
+        }
+        
+        document.getElementById('calendarModalMonth').value = _calendarModalCurrentMonth;
+        document.getElementById('calendarModalYear').value = _calendarModalCurrentYear;
+        loadCalendarData();
+    };
+
+    window.resetCalendarToToday = function(forceScroll = true) {
+        const today = new Date();
+        _calendarModalCurrentYear = today.getFullYear();
+        _calendarModalCurrentMonth = today.getMonth() + 1;
+        document.getElementById('calendarModalMonth').value = _calendarModalCurrentMonth;
+        document.getElementById('calendarModalYear').value = _calendarModalCurrentYear;
+        loadCalendarData(forceScroll);
+    };
+
+    window.loadCalendarData = async function(scrollToToday = false) {
+        _calendarModalCurrentMonth = parseInt(document.getElementById('calendarModalMonth').value);
+        _calendarModalCurrentYear = parseInt(document.getElementById('calendarModalYear').value);
+
+        const loader = document.getElementById('calendarModalLoader');
+        
+        if (loader) loader.style.display = 'flex';
+
+        try {
+            const response = await fetch(`/api/events/month?year=${_calendarModalCurrentYear}&month=${_calendarModalCurrentMonth}&_t=${Date.now()}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            
+            if (typeof CalendarRenderer !== 'undefined') {
+                window.eventRecords = data.events;
+                window.currentYear = _calendarModalCurrentYear;
+                window.currentMonth = _calendarModalCurrentMonth;
+                CalendarRenderer.render(data.events, _calendarModalCurrentYear, _calendarModalCurrentMonth, 'modalCalendarGrid');
+                
+                // Auto-scroll to today if requested
+                if (scrollToToday) {
+                    setTimeout(() => {
+                        const grid = document.getElementById('modalCalendarGrid');
+                        if (!grid) return;
+                        const todayCell = grid.querySelector('.calendar-cell.today');
+                        if (todayCell) {
+                            todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100); // slight delay to ensure DOM is fully painted
+                }
+            } else {
+                console.error("CalendarRenderer is not loaded.");
+            }
+        } catch (error) {
+            console.error('Error loading calendar data:', error);
+            if (window.showToast) window.showToast("Failed to load events.", 'error');
+        } finally {
+            if (loader) loader.style.display = 'none';
+        }
+    };
+
+</script>

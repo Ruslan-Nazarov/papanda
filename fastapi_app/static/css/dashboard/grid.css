@@ -1,0 +1,52 @@
+/* --- Dashboard GridStack & Layout --- */
+
+.grid-stack {
+    background-color: transparent !important;
+    padding: 10px;
+}
+
+.grid-stack-item-content {
+    background-color: var(--color-bg-white) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid var(--color-border) !important;
+    overflow: hidden !important;
+}
+
+/* Border Colors based on widget type */
+.grid-stack-item[gs-id="chrono"] .grid-stack-item-content,
+.grid-stack-item[gs-id="words"] .grid-stack-item-content {
+    border-color: var(--color-success-light) !important;
+}
+.grid-stack-item[gs-id="notes"] .grid-stack-item-content {
+    border-color: var(--color-border-medium) !important;
+}
+.grid-stack-item[gs-id="events"] .grid-stack-item-content {
+    border-color: var(--color-blue-light) !important;
+}
+.grid-stack-item[gs-id="tasks"] .grid-stack-item-content {
+    border-color: var(--color-indigo-light) !important;
+}
+.grid-stack-item[gs-id="habits"] .grid-stack-item-content {
+    border-color: var(--color-error-light) !important;
+}
+
+.drag-handle {
+    cursor: move;
+    color: var(--color-border-medium);
+    margin-right: var(--spacing-2);
+    font-size: var(--text-sm);
+}
+
+/* SortableJS Styles */
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: var(--color-bg-subtle) !important;
+}
+.task-item, .events-today li, .events-tomorrow li {
+    cursor: grab;
+    user-select: none;
+}
+.task-item:active, .events-today li:active, .events-tomorrow li:active {
+    cursor: grabbing;
+}

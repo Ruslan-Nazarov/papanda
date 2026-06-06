@@ -3,7 +3,8 @@ echo === Papanda Executable Bundler ===
 echo.
 
 echo Cleaning up previous builds...
-rmdir /s /q build dist 2>nul
+rmdir /s /q build 2>nul
+del /q dist\Papanda.exe 2>nul
 del /q Papanda.spec 2>nul
 
 echo.
@@ -48,6 +49,7 @@ pyinstaller --onefile --noconsole ^
     --exclude-module PySide6 ^
     --add-data "fastapi_app/templates;fastapi_app/templates" ^
     --add-data "fastapi_app/static;fastapi_app/static" ^
+    --add-data "data/resources;data/resources" ^
     --name Papanda ^
     run_fastapi.py
 

@@ -1,0 +1,45 @@
+<div class="premium-card" id="widget-stickers">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">📌</span>
+            <span>Sticky Thoughts</span>
+        </div>
+        <div class="widget-actions">
+            <span class="dropdown-arrow" style="cursor: pointer; opacity: 0.5;">▼</span>
+        </div>
+    </div>
+
+    <div class="widget-content">
+        <!-- Unified Sticker Editor -->
+        {% set editor_id = 'dashboard' %}
+        {% include 'partials/components/sticker_editor.html' %}
+
+        <!-- Stickers Grid -->
+        <div id="dashboardStickersList" class="corkboard">
+            {% if stickers %}
+                {% for sticker in stickers %}
+                    <div class="sticker-thought-placeholder" 
+                         style="background-color: {{ sticker.color }};" 
+                         onclick="openStickerDetail('{{ sticker.id }}')">
+                        <button class="sticker-delete-btn" onclick="event.stopPropagation(); deleteSticker('{{ sticker.id }}')">&times;</button>
+                        <div class="sticker-content">
+                            {% if sticker.title %}<div class="sticker-title-text">{{ sticker.title }}</div>{% endif %}
+                            <div class="sticker-body-text">
+                                {% if sticker.type == 'list' %}
+                                    <ul class="sticker-list-preview">
+                                        {% for item in sticker.text.split('\n')[:2] %}
+                                            <li>{{ item[:20] }}{% if item|length > 20 %}...{% endif %}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    {{ sticker.text[:60] }}{% if sticker.text|length > 60 %}...{% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="sticker-date-text">{{ sticker.created_at.strftime('%d.%m.%y') }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>

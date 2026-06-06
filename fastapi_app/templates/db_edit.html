@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit {{ model_name }}</title>
+{% extends "base.html" %}
+
+{% block title %}Edit {{ model_name }}{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <style>
         .settings-wrapper {
@@ -53,6 +53,7 @@
             width: 100%;
             box-sizing: border-box;
             transition: border-color 0.2s;
+            font-family: inherit;
         }
 
         .form-row input:focus {
@@ -71,6 +72,7 @@
             cursor: pointer;
             transition: background 0.2s;
             margin-top: 10px;
+            font-family: inherit;
         }
         .btn-save:hover { background-color: #219150; }
 
@@ -86,9 +88,9 @@
         }
         .btn-cancel:hover { background-color: #f2994a; color: white; border-color: #f2994a; }
     </style>
-</head>
-<body>
+{% endblock %}
 
+{% block content %}
 <div class="settings-wrapper">
     <div class="header-line">
         <h1>Edit: {{ model_name }}</h1>
@@ -113,24 +115,4 @@
         </form>
     </div>
 </div>
-
-<div class="footer">
-    <div class="footer-container">
-        <div class="footer-nav main-nav">
-            <a href="/word_stats" class="footer-btn">📊 Words</a>
-            <a href="/history" class="footer-btn">📅 History</a>
-            <a href="/settings" class="footer-btn">⚙️ Settings</a>
-        </div>
-        <div class="footer-nav data-nav">
-            <a href="/db_view/Event" class="footer-btn">Events</a>
-            <a href="/db_view/Habit" class="footer-btn">Habits</a>
-            <a href="/db_view/Task" class="footer-btn">Tasks</a>
-            <a href="/db_view/Chronology" class="footer-btn">Chrono</a>
-            <a href="/db_view/Notes" class="footer-btn">Notes</a>
-            <a href="/db_view/Wink" class="footer-btn">Wink</a>
-        </div>
-        <div class="footer-version">papanda version 0.5.1 (est. 21.11.2023; last update 18.12.2025)</div>
-    </div>
-</div>
-</body>
-</html>
+{% endblock %}

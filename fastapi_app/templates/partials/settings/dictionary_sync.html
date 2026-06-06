@@ -1,0 +1,119 @@
+<div class="premium-card settings-sync-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">🔄</span>
+            <span>Dictionary Synchronization</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+        </div>
+    </div>
+    
+    <div class="widget-body">
+        <div style="background: var(--color-bg-subtle); padding: 24px; border-radius: var(--radius-md); margin-bottom: 24px; text-align: center; border: 1.5px dashed var(--color-border-medium);">
+            <form action="{{ url_for('import_excel') }}" method="post" style="margin-bottom: 20px">
+                <label class="form-label" style="margin-bottom: 16px; font-size: 0.9rem;">Import words from <b>translate.xlsx</b></label>
+                <button type="submit" class="btn btn-primary" style="width: 100%; max-width: 320px;">
+                    Import to Database
+                </button>
+            </form>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 8px;">
+                <a href="{{ url_for('export_excel', model_name='WordStats') }}" class="btn btn-success" style="text-decoration: none; padding: 10px 20px; font-size: 0.85rem;">
+                    <span>📊</span> Export Excel
+                </a>
+            </div>
+            <p style="font-size: 0.7rem; color: var(--color-text-faint); margin-top: 12px; font-weight: 500;">
+                * This will synchronize the word list and translations with your Excel file.
+            </p>
+        </div>
+
+        {% if import_result %}
+        <div style="background: {% if import_result.success %}#f0fff4{% else %}#fff5f5{% endif %}; 
+                    border: 1.5px solid {% if import_result.success %}var(--color-success){% else %}var(--color-error){% endif %}; 
+                    padding: 24px; border-radius: var(--radius-lg); margin-top: 24px; box-shadow: var(--shadow-sm);">
+            <h3 style="margin-top: 0; font-size: 1rem; color: var(--color-text-dark); font-weight: 800;">Import Results</h3>
+            <p style="font-weight: 800; color: {% if import_result.success %}var(--color-success){% else %}var(--color-error){% endif %}; font-size: 0.95rem;">{{ import_result.message }}</p>
+            
+            {% if import_result.counts %}
+            <div class="sync-stat-grid">
+                <div class="sync-stat-card">
+                    <div class="sync-stat-label">NEW</div>
+                    <div class="sync-stat-value" style="color: var(--color-success);">{{ import_result.counts.new }}</div>
+                </div>
+                <div class="sync-stat-card">
+                    <div class="sync-stat-label">SKIPPED</div>
+                    <div class="sync-stat-value">{{ import_result.counts.skipped }}</div>
+                </div>
+                <div class="sync-stat-card">
+                    <div class="sync-stat-label">CONFLICTS</div>
+                    <div class="sync-stat-value" style="color: var(--color-warning);">{{ import_result.counts.conflicts }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if import_result.conflicts_list %}
+            <h4 style="margin-top: 32px; color: var(--color-text-dark); border-bottom: 2px solid var(--color-border-light); padding-bottom: 12px; font-weight: 800; font-size: 1.1rem;">Sync Conflicts</h4>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 20px;">Choose the authoritative source for each discrepancy.</p>
+
+            <form action="/settings/sync_conflicts" method="post" id="syncForm">
+                <div style="margin-bottom: 20px; display: flex; gap: 12px;">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAll('to_db')">All to DB</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAll('to_file')">All to File</button>
+                </div>
+
+                <div class="table-responsive" style="border: 1.5px solid var(--color-border-light); border-radius: var(--radius-md); overflow: hidden;">
+                    <table class="diag-table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th>Word</th>
+                                <th>Diffs (DB vs File)</th>
+                                <th style="width: 140px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for conflict in import_result.conflicts_list %}
+                            <tr>
+                                <td style="font-weight: 800; color: var(--color-text-dark);">{{ conflict.word }}</td>
+                                <td style="font-size: 0.85rem; line-height: 1.6;">
+                                    {% for field, diff in conflict.field_diffs.items() %}
+                                    <div style="margin-bottom: 6px;">
+                                        <span style="color: var(--color-text-muted); font-weight: 700;">{{ field|capitalize }}:</span>
+                                        <span style="color: var(--color-error); background: #fff5f5; padding: 2px 4px; border-radius: 4px;">{{ diff.db }}</span> ➔
+                                        <span style="color: var(--color-success); background: #f0fff4; padding: 2px 4px; border-radius: 4px;">{{ diff.file }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="ignore" checked> <span>Keep</span></label>
+                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="to_db" class="radio-to-db"> <span>To DB</span></label>
+                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="to_file" class="radio-to-file"> <span>To File</span></label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 32px; text-align: center">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; max-width: 400px; padding: 16px;">
+                        Apply Synchronization
+                    </button>
+                    <p style="font-size: 0.75rem; color: var(--color-text-faint); margin-top: 12px; font-weight: 600;">* Warning: Excel must be closed to save changes back to file.</p>
+                </div>
+            </form>
+
+            <script>
+                function selectAll(val) {
+                    if (val === "to_db") {
+                        document.querySelectorAll(".radio-to-db").forEach((el) => (el.checked = true));
+                    } else if (val === "to_file") {
+                        document.querySelectorAll(".radio-to-file").forEach((el) => (el.checked = true));
+                    }
+                }
+            </script>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>

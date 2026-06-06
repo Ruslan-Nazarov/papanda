@@ -1,0 +1,29 @@
+<div id="parentStickersOverviewModal" class="modal premium-modal" style="z-index: 1000004 !important;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <div style="display: flex; flex-direction: column;">
+                <h3 id="parentStickersOverviewTitle" style="margin: 0; font-size: 1.25rem;">Associated Stickers</h3>
+                <span id="parentStickersOverviewSubtitle" style="font-size: 0.7em; font-weight: normal; color: var(--color-text-muted);">Manage thoughts for this item</span>
+            </div>
+            <button class="modal-close" onclick="closeParentStickersOverview()">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 24px !important;">
+            <div id="parentStickersList" class="parent-stickers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <!-- Stickers will be injected here -->
+            </div>
+            
+            <div id="noParentStickersMessage" style="display: none; text-align: center; padding: 40px; color: var(--color-text-muted);">
+                <div style="font-size: 3em; margin-bottom: 10px; opacity: 0.3;">📋</div>
+                <p>No stickers found for this item.</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeParentStickersOverview()">Close</button>
+            <button type="button" class="btn btn-primary" onclick="createNewStickerForCurrentParent()">
+                <span style="font-size: 1.2em;">+</span> Add New Sticker
+            </button>
+        </div>
+    </div>
+</div>
+
+

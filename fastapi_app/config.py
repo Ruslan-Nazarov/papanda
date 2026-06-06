@@ -1,18 +1,20 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 
 import secrets
 import json
-
 import sys
 
-# Корень проекта (папка papanda v 0.5 experiment)
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Корень проекта (папка papanda v 0.6 experiment)
+BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 # Логика для работы в скомпилированном (.exe) виде через PyInstaller
-IS_FROZEN = getattr(sys, 'frozen', False)
+IS_FROZEN: bool = getattr(sys, 'frozen', False)
+
+INTERNAL_ROOT: Path
+USER_DATA_ROOT: Path
 
 if IS_FROZEN:
     # Если запущено как .exe, код и шаблоны лежат во временной папке _MEIPASS
@@ -24,22 +26,14 @@ else:
     USER_DATA_ROOT = BASE_DIR
 
 # Шаблоны Jinja2
-templates = Jinja2Templates(directory=str(INTERNAL_ROOT / "fastapi_app" / "templates"))
+templates: Jinja2Templates = Jinja2Templates(directory=str(INTERNAL_ROOT / "fastapi_app" / "templates"))
+templates.env.filters['from_json'] = json.loads
 
-def from_json_safe(value):
-    """Безопасно преобразует строку JSON в объект."""
-    if isinstance(value, str):
-        try:
-            return json.loads(value)
-        except:
-            return value
-    return value
-
-templates.env.filters['from_json'] = from_json_safe
-
-def ensure_secret_key():
-    """Проверяет наличие SECRET_KEY в .env и генерирует его, если файла нет или ключ отсутствует."""
-    # .env файл всегда ищем рядом с исполняемым файлом/в корне проекта
+def ensure_secret_key() -> None:
+    """
+    Проверяет наличие SECRET_KEY в .env и генерирует его, если файла нет или ключ отсутствует.
+    .env файл всегда ищем рядом с исполняемым файлом или в корне проекта.
+    """
     env_path = USER_DATA_ROOT / ".env"
     has_key = False
     
@@ -54,16 +48,19 @@ def ensure_secret_key():
             f.write(f"\nSECRET_KEY={new_key}\n")
         print("[SETUP] Автоматически сгенерирован новый SECRET_KEY и сохранен в .env")
 
-def reset_secret_key():
-    """Принудительно генерирует новый SECRET_KEY и перезаписывает .env файл."""
+def reset_secret_key() -> None:
+    """
+    Принудительно генерирует новый SECRET_KEY и перезаписывает .env файл.
+    Используется для сброса безопасности сессий.
+    """
     env_path = USER_DATA_ROOT / ".env"
     new_key = secrets.token_hex(32)
     
-    lines = []
+    lines: List[str] = []
     if env_path.exists():
         lines = env_path.read_text(encoding='utf-8').splitlines()
     
-    new_lines = []
+    new_lines: List[str] = []
     found = False
     for line in lines:
         if line.startswith("SECRET_KEY="):
@@ -83,20 +80,22 @@ ensure_secret_key()
 
 class Settings(BaseSettings):
     """
-    Класс настроек приложения. 
+    Класс настроек приложения, использующий Pydantic Settings.
     Автоматически загружает переменные из .env или переменных окружения.
     """
-    # Секретный ключ (обязательный)
+    
+    # Секретный ключ (обязательный для сессий и безопасности)
     secret_key: str
     
-    # Пути (можно переопределить через .env)
+    # Путь к папке данных (по умолчанию 'data' в корне или рядом с exe)
     data_dir: Path = USER_DATA_ROOT / "data"
+    
+    # URL базы данных (если не задан, формируется автоматически из db_path)
     database_url: Optional[str] = None
     
-    # Настройки логирования
+    # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     log_level: str = "INFO"
     
-    # Настройки для загрузки из .env
     model_config = SettingsConfigDict(
         env_file=str(USER_DATA_ROOT / ".env"),
         env_file_encoding='utf-8',
@@ -105,26 +104,30 @@ class Settings(BaseSettings):
 
     @property
     def db_dir(self) -> Path:
+        """Путь к директории с базами данных."""
         return self.data_dir / "db"
 
     @property
     def resources_dir(self) -> Path:
+        """Путь к директории с ресурсами (Excel и т.д.)."""
         return self.data_dir / "resources"
 
     @property
     def excel_path(self) -> Path:
+        """Путь к основному Excel-файлу со словами."""
         return self.resources_dir / "translate.xlsx"
-
-
 
     @property
     def db_path(self) -> Path:
+        """Полный путь к файлу основной базы данных SQLite."""
         return self.db_dir / "papanda.db"
-
-
 
     @property
     def final_database_url(self) -> str:
+        """
+        Возвращает итоговый URL подключения к БД.
+        Приоритет: 1) database_url из .env, 2) авто-сгенерированный sqlite+aiosqlite URL.
+        """
         if self.database_url:
             return self.database_url
         return f"sqlite+aiosqlite:///{self.db_path}"
@@ -132,14 +135,27 @@ class Settings(BaseSettings):
 # Создаем глобальный объект настроек
 try:
     settings = Settings()
-    # Обеспечиваем наличие папок данных
-    settings.db_dir.mkdir(parents=True, exist_ok=True)
-    settings.resources_dir.mkdir(parents=True, exist_ok=True)
 except Exception as e:
-    print(f"[CRITICAL] Ошибка конфигурации или создания папок: {e}")
-    # Не бросаем ошибку здесь, чтобы logger мог инициализироваться и записать её
-    settings = None
+    print(f"[CRITICAL] Ошибка конфигурации: {e}")
+    # В реальном приложении здесь должен быть sys.exit(1)
+    raise e
 
-# Запускаем проверку секретного ключа (теперь безопасно)
-if settings:
-    ensure_secret_key()
+import shutil
+
+# Обеспечиваем наличие папок
+for d in [settings.db_dir, settings.resources_dir]:
+    d.mkdir(parents=True, exist_ok=True)
+
+# Инициализируем ресурсы по умолчанию (для запуска из голого .exe)
+internal_resources = INTERNAL_ROOT / "data" / "resources"
+if internal_resources.exists() and internal_resources != settings.resources_dir:
+    for internal_file in internal_resources.iterdir():
+        if internal_file.is_file():
+            user_file = settings.resources_dir / internal_file.name
+            if not user_file.exists():
+                try:
+                    shutil.copy2(internal_file, user_file)
+                    print(f"[SETUP] Распакован базовый файл: {internal_file.name}")
+                except Exception as e:
+                    print(f"[ERROR] Не удалось скопировать {internal_file.name}: {e}")
+

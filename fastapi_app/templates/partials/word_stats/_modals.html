@@ -1,0 +1,65 @@
+{# ── Word Search Modal ──────────────────────────────────────────────────────── #}
+<div id="searchWordModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 560px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 20px 24px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.2rem;">🔍</span>
+            <h2 style="font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0;">My Dictionary</h2>
+            <button type="button" onclick="closeSearchModal()" style="margin-left: auto; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--color-text-muted); line-height: 1;">✕</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 16px 24px 24px;">
+            <div style="position: relative; margin-bottom: 16px;">
+                <input type="text" id="searchQuery" class="form-input" 
+                       placeholder="Search in any language..." 
+                       style="padding-left: 36px; border-radius: 24px;" />
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; pointer-events: none;">🔍</span>
+            </div>
+            
+            <div id="searchResults" style="max-height: 300px; overflow-y: auto; margin-bottom: 12px;"></div>
+            
+            {# Selected word card removed #}
+        </div>
+
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 12px 24px; display: flex; justify-content: flex-end; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
+            <button type="button" class="btn btn-secondary" onclick="closeSearchModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+
+{# ── Word Edit Modal (Workout) ───────────────────────────────────────────────── #}
+<div id="wordStatsEditModal" class="modal premium-modal">
+    <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl); padding: 0; overflow: hidden;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
+            <h2 id="wsModalWordEng" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Edit Word</h2>
+        </div>
+        
+        <form id="editWordForm" style="margin: 0;">
+            <div class="modal-body" style="padding: 24px;">
+                <input type="hidden" name="word_eng" id="wsInputWordEng" />
+                
+                <div id="wsWorkoutDynamicLangs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    {# Dynamic lang fields injected by JS #}
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label">Russian Translation</label>
+                    <input type="text" name="new_ru" id="wsInputWordRu" class="form-input" />
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Meaning / Context</label>
+                    <textarea name="new_meaning" id="wsInputWordMeaning" class="form-input" rows="4" style="resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: space-between; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
+                <button type="button" id="btnDeleteWordModal" class="btn btn-danger" style="display: none; min-width: 100px;" onclick="deleteSearchWord()">🗑 Delete</button>
+                <div style="display: flex; gap: 12px; margin-left: auto;">
+                    <button type="button" class="btn btn-secondary" onclick="closeWordStatsEdit()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveWordStatsEdit()" style="min-width: 140px;">OK</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+

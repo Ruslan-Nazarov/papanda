@@ -1,320 +1,174 @@
-from fastapi import APIRouter, Request, Depends, Form, status
+from fastapi import APIRouter, Request, Depends, Form, status, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, date
 import json
+from typing import Optional, List, Dict, Any, Union, Tuple
 
 from ..database import get_db
 from ..services.auth import check_auth_dependency
 from ..services.dashboard_service import DashboardService
-from ..dependencies import get_dashboard_service
+from ..services.event_service import EventService
+from ..services.task_service import TaskService
+from ..services.habit_service import HabitService
+from ..services.chronology_service import ChronologyService
+
+from ..dependencies import (
+    get_dashboard_service, get_event_service, 
+    get_task_service, get_habit_service, get_chronology_service
+)
 from ..logger import logger
+from ..utils import parse_date_input, is_ajax_request
+from .. import schemas
+from pydantic import ValidationError
 
 router = APIRouter(
     tags=["actions"]
 )
 
+async def _process_form_submission(data: schemas.UniversalFormSchema, dashboard_service: DashboardService) -> Union[int, str, None]:
+    """Обработка через DashboardService (Facade)."""
+    dt = parse_date_input(data.common_date)
+    if isinstance(dt, date) and not isinstance(dt, datetime):
+        dt = datetime.combine(dt, datetime.min.time())
 
-from ..utils import parse_date_input
+    sticker_data = {
+        "text": data.sticker_text,
+        "title": data.sticker_title,
+        "color": data.sticker_color,
+        "type": data.sticker_type,
+        "apply_series": data.sticker_apply_series
+    }
 
-async def _extract_form_data(request: Request):
-    """Вспомогательная функция для сбора данных из Form, JSON или QueryString."""
-    text = date_val = cat = None
-    repeat = "none"
-    repeat_end = ""
-
-    # 1. Пробуем FormData
-    try:
-        form = await request.form()
-        text = form.get("common_text")
-        date_val = form.get("common_date")
-        cat = form.get("common_category")
-        repeat = form.get("repeat", "none")
-        repeat_end = form.get("repeat_end", "")
-    except Exception:
-        pass
-
-    # 2. Если пусто, пробуем JSON
-    if not text or not cat:
-        try:
-            payload = await request.json()
-            text = text or payload.get("common_text")
-            date_val = date_val or payload.get("common_date")
-            cat = cat or payload.get("common_category")
-            repeat = payload.get("repeat", repeat)
-            repeat_end = repeat_end or payload.get("repeat_end", "")
-        except Exception:
-            pass
-            
-    return text, date_val, cat, repeat, repeat_end
+    return await dashboard_service.submit_form(
+        data.common_category, data.common_text, dt, 
+        data.repeat, data.repeat_end, 
+        sticker_data=sticker_data, color=data.common_color
+    )
 
 
 @router.post("/submit_form")
 async def submit_form(
-    request: Request,
+    data: schemas.UniversalFormSchema = Depends(schemas.UniversalFormSchema.as_form),
     dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
-):
-    """Универсальная форма добавления: события, задачи, привычки, досуг, dashboard-элементы."""
-    common_text, common_date, common_category, repeat, repeat_end = await _extract_form_data(request)
-
-    if not common_text or not common_category or not common_date:
-        logger.info("Missing required fields in submit_form")
-        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Используем общую утилиту для дат
-    dt = parse_date_input(common_date)
-    if isinstance(dt, date) and not isinstance(dt, datetime):
-        dt = datetime.combine(dt, datetime.min.time())
-
-    await dashboard_service.submit_form(common_category, common_text, dt, repeat, repeat_end)
-    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+    user: Any = Depends(check_auth_dependency),
+) -> RedirectResponse:
+    """Обработка стандартной HTML-формы."""
+    await _process_form_submission(data, dashboard_service)
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/submit_form_json")
+@router.post("/submit_form_json", response_model=schemas.SuccessResponse)
 async def submit_form_json(
-    request: Request,
+    data: schemas.UniversalFormSchema,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
+    user: Any = Depends(check_auth_dependency),
 ):
-    """
-    JSON версия submit_form с гарантией сохранения (через перечитывание из БД).
-    ✅ Возвращает {status: 'success', id: ID} или {status: 'error', message: '...'}
-    """
-    common_text, common_date, common_category, repeat, repeat_end = await _extract_form_data(request)
-
-    if not common_text or not common_category or not common_date:
-        logger.info("Missing required fields in submit_form_json")
-        return JSONResponse(
-            status_code=400,
-            content={"status": "error", "message": "Заполните все поля: текст, дата, категория"}
-        )
-
-    try:
-        dt = parse_date_input(common_date)
-        if isinstance(dt, date) and not isinstance(dt, datetime):
-            dt = datetime.combine(dt, datetime.min.time())
-            
-        # ✅ Сохраняем и получаем ID (с проверкой через перечитывание)
-        created_id = await dashboard_service.submit_form(common_category, common_text, dt, repeat, repeat_end)
-
-        if created_id:
-            logger.info(f"Successfully saved {common_category}: id={created_id}")
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "id": created_id,
-                    "message": "Данные успешно сохранены"
-                }
-            )
-        else:
-            logger.warning(f"Could not verify saved {common_category}")
-            return JSONResponse(
-                status_code=500,
-                content={"status": "error", "message": "Ошибка при проверке сохранения"}
-            )
-    except Exception as e:
-        logger.error(f"Error in submit_form_json: {e}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": "Ошибка при сохранении данных"}
-        )
+    """Обработка JSON-запроса с автоматической валидацией Pydantic."""
+    created_id = await _process_form_submission(data, dashboard_service)
+    if created_id:
+        return schemas.SuccessResponse(message=f"Данные успешно сохранены. ID: {created_id}")
+    raise HTTPException(status_code=500, detail="Ошибка при сохранении")
 
 
 @router.post("/submit_chrono")
 async def submit_chrono(
-    chrono_text: str = Form(..., min_length=1, max_length=10000),
-    chrono_date: str = Form(..., min_length=10, max_length=10),
-    dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
-):
-    dt = parse_date_input(chrono_date)
-    if isinstance(dt, date) and not isinstance(dt, datetime):
-        dt = datetime.combine(dt, datetime.min.time())
-        
-    await dashboard_service.add_chronology(chrono_text, dt)
+    data: schemas.ChronoCreate = Depends(schemas.ChronoCreate.as_form),
+    chronology_service: ChronologyService = Depends(get_chronology_service),
+    user: Any = Depends(check_auth_dependency),
+) -> RedirectResponse:
+    await chronology_service.add_chronology(data.text, data.date)
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/submit_chrono_json")
+@router.post("/submit_chrono_json", response_model=schemas.SuccessResponse)
 async def submit_chrono_json(
-    chrono_text: str = Form(..., min_length=1, max_length=10000),
-    chrono_date: str = Form(..., min_length=10, max_length=10),
-    dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
+    data: schemas.ChronoCreate = Depends(schemas.ChronoCreate.as_form),
+    chronology_service: ChronologyService = Depends(get_chronology_service),
+    user: Any = Depends(check_auth_dependency),
 ):
-    """
-    JSON версия submit_chrono с гарантией сохранения.
-    ✅ Возвращает {status: 'success', id: ID} или {status: 'error', message: '...'}
-    """
-    try:
-        dt = parse_date_input(chrono_date)
-        if isinstance(dt, date) and not isinstance(dt, datetime):
-            dt = datetime.combine(dt, datetime.min.time())
-
-        # ✅ Сохраняем и получаем ID (с проверкой через перечитывание)
-        created_id = await dashboard_service.add_chronology(chrono_text, dt)
-
-        if created_id:
-            logger.info(f"Successfully saved chronology: id={created_id}")
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "id": created_id,
-                    "message": "Хронология успешно сохранена"
-                }
-            )
-        else:
-            logger.warning("Could not verify saved chronology")
-            return JSONResponse(
-                status_code=500,
-                content={"status": "error", "message": "Ошибка при проверке сохранения"}
-            )
-    except Exception as e:
-        logger.error(f"Error in submit_chrono_json: {e}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": "Ошибка при сохранении хронологии"}
-        )
+    created_id = await chronology_service.add_chronology(data.text, data.date)
+    if created_id:
+        return schemas.SuccessResponse(message="Хронология успешно сохранена")
+    raise HTTPException(status_code=500, detail="Ошибка при сохранении")
 
 
-@router.post("/edit_chrono_json")
+@router.post("/edit_chrono_json", response_model=schemas.SuccessResponse)
 async def edit_chrono_json(
-    request: Request,
-    dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
+    data: schemas.ChronoView,
+    chronology_service: ChronologyService = Depends(get_chronology_service),
+    user: Any = Depends(check_auth_dependency),
 ):
-    """
-    JSON версия обновления хронологии.
-    """
-    try:
-        data = await request.json()
-        chrono_id = data.get("id")
-        text = data.get("text")
-        date_str = data.get("date")
-
-        if not chrono_id or not text or not date_str:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Необходимы ID, текст и дата"}
-            )
-
-        dt = parse_date_input(date_str)
-        if isinstance(dt, date) and not isinstance(dt, datetime):
-            dt = datetime.combine(dt, datetime.min.time())
-
-        success = await dashboard_service.update_chronology(int(chrono_id), text, dt)
-
-        if success:
-            return {"status": "success"}
-        else:
-            return JSONResponse(status_code=404, content={"status": "error", "message": "Запись не найдена"})
-    except Exception as e:
-        logger.error(f"Error in edit_chrono_json: {e}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": "Ошибка при обновлении хронологии"}
-        )
+    success = await chronology_service.update_chronology(data.id, data.text, data.date)
+    if success:
+        return schemas.SuccessResponse(message="Chronology updated")
+    raise HTTPException(status_code=404, detail="Запись не найдена")
 
 
-@router.post("/mark_done/{task_id}")
+@router.post("/mark_done/{task_id}", response_model=schemas.ToggleDoneResponse)
 async def mark_task_done(
+    request: Request,
     task_id: int,
-    dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
-):
-    await dashboard_service.mark_task_done(task_id)
+    task_service: TaskService = Depends(get_task_service),
+    user: Any = Depends(check_auth_dependency),
+) -> Any:
+    await task_service.mark_task_done(task_id)
+    if is_ajax_request(request):
+        return schemas.ToggleDoneResponse(done=True, message="Task marked as done")
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/mark_event_done/{event_id}")
+@router.post("/mark_event_done/{event_id}", response_model=schemas.ToggleDoneResponse)
 async def mark_event_done(
+    request: Request,
     event_id: int,
-    dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
-):
-    await dashboard_service.mark_event_done(event_id)
+    date: Optional[str] = Form(None),
+    recurrence_id: Optional[str] = Form(None),
+    event_service: EventService = Depends(get_event_service),
+    user: Any = Depends(check_auth_dependency),
+) -> Any:
+    await event_service.mark_event_done(event_id, event_date=date, recurrence_id=recurrence_id)
+    if is_ajax_request(request):
+        return schemas.ToggleDoneResponse(done=True, message="Event marked as done")
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/mark_as_done/{habit_id}")
+@router.post("/toggle_event_done/{event_id}", response_model=schemas.ToggleDoneResponse)
+async def toggle_event_done(
+    event_id: int,
+    event_service: EventService = Depends(get_event_service),
+    user: Any = Depends(check_auth_dependency),
+):
+    new_status = await event_service.toggle_event_done(event_id)
+    if new_status is not None:
+        return schemas.ToggleDoneResponse(done=new_status)
+    raise HTTPException(status_code=404, detail="Event not found")
+
+
+@router.post("/mark_as_done/{habit_id}", response_model=schemas.ToggleDoneResponse)
 async def mark_habit_done(
+    request: Request,
     habit_id: int,
-    dashboard_service: DashboardService = Depends(get_dashboard_service),
-    user=Depends(check_auth_dependency),
-):
-    await dashboard_service.mark_habit_done(habit_id)
+    habit_service: HabitService = Depends(get_habit_service),
+    user: Any = Depends(check_auth_dependency),
+) -> Any:
+    await habit_service.mark_habit_done(habit_id)
+    if is_ajax_request(request):
+        return schemas.ToggleDoneResponse(done=True, message="Habit marked as done")
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/delete_event/{event_id}")
+@router.post("/delete_event/{event_id}", response_model=schemas.SuccessResponse)
 async def delete_event(
     request: Request,
     event_id: int,
-    delete_future: bool = Form(False),
-    delete_mode: str | None = Form(None),  # 'only' | 'this_and_future' | 'future_only'
-    db: AsyncSession = Depends(get_db),
-    user=Depends(check_auth_dependency),
-):
-    from .. import models
-    from sqlalchemy import delete, select
-    
-    # 1. Находим событие, которое хотим удалить
-    event_res = await db.execute(select(models.Event).where(models.Event.id == event_id))
-    event = event_res.scalar_one_or_none()
-    
-    if event:
-        # Унифицированная логика удаления:
-        # - delete_mode == 'all'             -> удалить все экземпляры серии
-        # - delete_mode == 'this_and_future' -> удалить текущую и все будущие
-        # - delete_mode == 'future_only'     -> оставить текущую, удалить только будущие
-        # - иначе                            -> удалить только текущую
-        mode = (delete_mode or "").strip().lower()
-
-        # Если удаляемый объект был "шаблоном" (имел recurrence_rule),
-        # и мы удаляем ТОЛЬКО его, нужно передать правило следующему экземпляру.
-        if mode not in ("this_and_future", "future_only", "all") and event.recurrence_rule and event.recurrence_id:
-            next_event_res = await db.execute(
-                select(models.Event)
-                .where(models.Event.recurrence_id == event.recurrence_id, models.Event.id != event.id)
-                .order_by(models.Event.date.asc())
-                .limit(1)
-            )
-            next_event = next_event_res.scalar_one_or_none()
-            if next_event:
-                next_event.recurrence_rule = event.recurrence_rule
-                next_event.recurrence_end = event.recurrence_end
-
-        if mode == "all" and event.recurrence_id:
-            await db.execute(
-                delete(models.Event).where(
-                    models.Event.recurrence_id == event.recurrence_id
-                )
-            )
-        elif mode == "this_and_future" and event.recurrence_id:
-            await db.execute(
-                delete(models.Event).where(
-                    models.Event.recurrence_id == event.recurrence_id,
-                    models.Event.date >= event.date
-                )
-            )
-        elif mode == "future_only" and event.recurrence_id:
-            await db.execute(
-                delete(models.Event).where(
-                    models.Event.recurrence_id == event.recurrence_id,
-                    models.Event.date > event.date
-                )
-            )
-        else:
-            await db.execute(delete(models.Event).where(models.Event.id == event_id))
-        
-        await db.commit()
-        
-    # Возвращаем JSON если это AJAX-запрос
-    if "application/json" in request.headers.get("accept", "") or "XMLHttpRequest" == request.headers.get("X-Requested-With"):
-        return {"status": "success"}
-    
+    delete_mode: Optional[str] = Form(None),
+    event_date: Optional[str] = Form(None),
+    event_service: EventService = Depends(get_event_service),
+    user: Any = Depends(check_auth_dependency),
+) -> Any:
+    await event_service.delete_event(event_id, delete_mode, event_date)
+    if is_ajax_request(request) or delete_mode is not None:
+        return schemas.SuccessResponse(message="Event deleted")
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 

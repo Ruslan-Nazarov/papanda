@@ -4,6 +4,9 @@ from datetime import datetime, date, timezone
 from ..database import Base
 
 class Task(Base):
+    """
+    Модель задачи из списка дел.
+    """
     __tablename__ = 'task'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
@@ -12,6 +15,9 @@ class Task(Base):
     position: Mapped[int] = mapped_column(Integer, default=0, index=True)
 
 class Habit(Base):
+    """
+    Модель привычки для трекинга.
+    """
     __tablename__ = 'habits'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255))
@@ -20,6 +26,9 @@ class Habit(Base):
     read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
 
 class HabitsDone(Base):
+    """
+    Модель для хранения статистики выполненных привычек (архив или счетчик).
+    """
     __tablename__ = 'habits_done'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     countdays: Mapped[int] = mapped_column(Integer)

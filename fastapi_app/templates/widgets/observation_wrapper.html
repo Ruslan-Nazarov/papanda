@@ -1,0 +1,17 @@
+<div class="premium-card observation-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">🌲</span>
+            <span>Live Observation</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openObsOverviewModal()" title="Tree Overview">🌳</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openObsAddModal()" title="Add Activity">+</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
+        </div>
+    </div>
+    <div class="widget-body" style="padding: 0;">
+        {% include 'observation_widget.html' %}
+    </div>
+</div>
