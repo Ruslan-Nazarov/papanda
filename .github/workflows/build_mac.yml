@@ -21,26 +21,29 @@ jobs:
       with:
         python-version: "3.12"
 
-    # ШАГ 3: Установка библиотек (ИСПРАВЛЕНО)
-    # Мы ставим библиотеки вручную, чтобы гарантировать наличие Flask и отсутствие мусора.
+    # ШАГ 3: Установка библиотек
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        
-        # 1. Основные библиотеки приложения (как на Windows)
-        pip install Flask Flask-SQLAlchemy SQLAlchemy openpyxl pywebview Pillow
-        
-        # 2. Специфичные библиотеки для macOS (нужны для pywebview)
-        pip install pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-WebKit
-        
-        # 3. Сборщик
+        pip install -r requirements.txt
         pip install pyinstaller
 
     # ШАГ 4: Сборка
     - name: Build with PyInstaller
       run: |
-        # Используем тот же spec файл
-        pyinstaller Papanda.spec
+        # В macOS разделитель для add-data это двоеточие (:)
+        pyinstaller --onefile --noconsole \
+          --hidden-import aiosqlite \
+          --hidden-import jinja2 \
+          --hidden-import email_validator \
+          --hidden-import passlib.handlers.bcrypt \
+          --hidden-import cryptography \
+          --exclude-module tkinter \
+          --add-data "fastapi_app/templates:fastapi_app/templates" \
+          --add-data "fastapi_app/static:fastapi_app/static" \
+          --add-data "data/resources:data/resources" \
+          --name Papanda \
+          run_fastapi.py
 
     # ШАГ 5: Архивация
     # macOS создает папку .app, которую нельзя просто так скачать.

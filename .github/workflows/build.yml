@@ -64,6 +64,7 @@ jobs:
             --exclude-module PyQt6 `
             --add-data "fastapi_app/templates;fastapi_app/templates" `
             --add-data "fastapi_app/static;fastapi_app/static" `
+            --add-data "data/resources;data/resources" `
             --name Papanda `
             run_fastapi.py
 
