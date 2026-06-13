@@ -138,6 +138,9 @@ export const MathNode = Node.create({
  * ResizableImage - Расширение для изображений с возможностью изменения размера
  */
 export const ResizableImage = Image.extend({
+    draggable: true,
+    inline: false,
+    group: 'block',
     addAttributes() {
         return {
             ...this.parent?.(),
@@ -149,6 +152,14 @@ export const ResizableImage = Image.extend({
                     style: `width: ${attributes.width}; height: auto; cursor: pointer;`,
                 }),
             },
+            fabricData: {
+                default: null,
+                parseHTML: element => element.getAttribute('data-fabric'),
+                renderHTML: attributes => {
+                    if (!attributes.fabricData) return {};
+                    return { 'data-fabric': attributes.fabricData };
+                }
+            }
         };
     },
     addNodeView() {
@@ -156,6 +167,9 @@ export const ResizableImage = Image.extend({
             const container = document.createElement('div');
             container.className = 'resizable-image-container';
             container.contentEditable = 'false';
+            container.style.display = 'block';
+            container.draggable = true;
+            container.setAttribute('data-drag-handle', '');
 
             const img = document.createElement('img');
             img.src = node.attrs.src;
@@ -166,6 +180,23 @@ export const ResizableImage = Image.extend({
 
             container.appendChild(img);
             container.appendChild(handle);
+
+            img.ondblclick = () => {
+                if (node.attrs.fabricData && window.app && window.app.editor) {
+                    window.app.editor.switchTab('shapes');
+                    const c = window.app.editor.fabricCanvas;
+                    if (c) {
+                        try {
+                            const jsonStr = decodeURIComponent(atob(node.attrs.fabricData));
+                            c.loadFromJSON(jsonStr, () => {
+                                c.renderAll();
+                            });
+                        } catch (e) {
+                            console.error("Failed to parse fabricData", e);
+                        }
+                    }
+                }
+            };
 
             let isResizing = false;
             let startX, startWidth;
@@ -219,8 +250,8 @@ export const ResizableImage = Image.extend({
                 },
                 ignoreMutation: () => true,
                 stopEvent: (event) => {
-                    // Разрешаем события внутри контейнера (например, клик по ручке)
-                    return container.contains(event.target);
+                    // Разрешаем события внутри контейнера для ручки изменения размера
+                    return handle.contains(event.target);
                 }
             };
         };

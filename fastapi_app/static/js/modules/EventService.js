@@ -3,11 +3,27 @@
  */
 
 import { ModalManager } from './ModalManager.js';
-import { EventApi } from './EventApi.js';
+
 import { StickerRenderer } from './StickerRenderer.js';
 
 export const EventService = {
     tempStickers: [],
+
+    async fetchStickers(eventId, recId = null) {
+        let url = `/api/stickers/event/${eventId}/`;
+        if (recId) url += `?recurrence_id=${recId}`;
+        const resp = await fetch(url);
+        return await resp.json();
+    },
+
+    async saveEvent(payload) {
+        const resp = await fetch('/edit_event_inline', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return await resp.json();
+    },
 
     async openDetail(e) {
         try {
@@ -159,7 +175,7 @@ export const EventService = {
         listEl.innerHTML = '<div style="color:var(--color-text-faint); font-size:0.8rem;">Loading...</div>';
 
         try {
-            const stickers = await EventApi.fetchStickers(id, recId);
+            const stickers = await this.fetchStickers(id, recId);
             listEl.innerHTML = '';
             if (!stickers || !stickers.length) {
                 listEl.innerHTML = '<div style="color:var(--color-text-faint); font-size:0.8rem; font-style:italic;">No stickers attached.</div>';
@@ -222,7 +238,7 @@ export const EventService = {
                 });
             }
 
-            const data = await EventApi.saveEvent(payload);
+            const data = await this.saveEvent(payload);
             if (data.status === 'success') {
                 ModalManager.close('editEventModal');
                 if (window.showToast) window.showToast(id ? "Event updated" : "Event created", "success");
@@ -588,7 +604,7 @@ export const EventService = {
         if (emptyEl) emptyEl.style.display = 'none';
 
         try {
-            const stickers = await EventApi.fetchStickers(eventId, recId);
+            const stickers = await this.fetchStickers(eventId, recId);
             listEl.innerHTML = '';
 
             if (!stickers || !stickers.length) {
@@ -623,7 +639,7 @@ export const EventService = {
         }
         listEl.innerHTML = 'Loading...';
         try {
-            const stickers = await EventApi.fetchStickers(id, recId);
+            const stickers = await this.fetchStickers(id, recId);
             listEl.innerHTML = '';
             stickers.forEach(s => window.createStickerElement && listEl.appendChild(window.createStickerElement(s)));
         } catch (e) { listEl.innerHTML = 'Error loading stickers'; }

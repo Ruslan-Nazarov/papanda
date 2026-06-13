@@ -9,12 +9,16 @@
              data-no-time="{{ 'true' if obs['no_time'] else 'false' }}"
              data-done-days='{{ obs["done_days"] | tojson }}'>
             
+            {% if not obs['no_time'] %}
             <div class="tree-marker"></div>
+            {% endif %}
             
             <div class="tree-content">
                 <div class="tree-time">
                     {% if not obs['no_time'] %}
                         {{ obs['created_at'].strftime('%H:%M') }}
+                    {% else %}
+                        Anytime
                     {% endif %}
                 </div>
 

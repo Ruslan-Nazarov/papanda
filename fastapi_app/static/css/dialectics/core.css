@@ -25,6 +25,8 @@
     background: var(--color-bg-white);
     color: var(--color-text-body);
     position: relative;
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
 .note-header {
@@ -63,8 +65,8 @@
 .canvas-divider {
     position: absolute;
     top: 0; bottom: 0; left: 50%;
-    width: 1px;
-    background: var(--color-border-medium);
+    width: 2px;
+    background: #cbd5e1; /* visible slate color */
     transform: translateX(-50%);
     pointer-events: none;
     z-index: 1;

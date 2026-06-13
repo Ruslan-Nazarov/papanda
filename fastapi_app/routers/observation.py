@@ -71,11 +71,7 @@ async def create_observation(
     
     obs = models.Observation(
         text=text,
-        priority=int(data.get("priority", 1)),
-        is_main=bool(data.get("is_main", False)),
-        status=data.get("status", "periodic"),
         created_at=created_at,
-        end_time=data.get("end_time"),
         no_time=no_time_val,
         task_id=data.get("task_id")
     )
@@ -130,16 +126,6 @@ async def update_observation(
     
     if "text" in data:
         obs.text = data["text"]
-    if "priority" in data:
-        obs.priority = int(data["priority"])
-    if "is_main" in data:
-        obs.is_main = bool(data["is_main"])
-        if obs.is_main:
-            obs.priority = 5
-    if "status" in data:
-        obs.status = data["status"]
-    if "end_time" in data:
-        obs.end_time = data["end_time"]
     if "no_time" in data:
         obs.no_time = bool(data["no_time"])
         if obs.no_time:
@@ -205,24 +191,7 @@ async def delete_observation(
     await db.commit()
     return {"status": "success"}
 
-@router.post("/{obs_id}/log")
-async def log_observation(
-    obs_id: int,
-    db: AsyncSession = Depends(get_db),
-    user: Any = Depends(check_auth_dependency)
-) -> Dict[str, str]:
-    """Регистрирует выполнение наблюдения (выставляя время "сейчас")."""
-    obs_res = await db.execute(select(models.Observation).where(models.Observation.id == obs_id))
-    if not obs_res.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Observation not found")
-    
-    log = models.ObservationLog(
-        observation_id=obs_id,
-        done_at=datetime.now()
-    )
-    db.add(log)
-    await db.commit()
-    return {"status": "success"}
+
 
 @router.get("/full-tree")
 async def get_full_tree(

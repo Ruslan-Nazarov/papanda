@@ -7,6 +7,44 @@ import { BlockManager } from './dialectics/BlockManager.js';
 import { CanvasManager } from './dialectics/CanvasManager.js';
 import { EditorManager } from './dialectics/EditorManager.js';
 import { MathTool } from './dialectics/tools/math.js';
+import { customConfirm } from './modal_controller.js';
+
+// --- Debug Console Interceptor ---
+const debugEl = document.getElementById('debugLogContent');
+if (debugEl) {
+    const origLog = console.log;
+    const origErr = console.error;
+    const origWarn = console.warn;
+    
+    function logToScreen(type, args) {
+        const msg = Array.from(args).map(a => {
+            if (a instanceof Error) return a.message + '\\n' + a.stack;
+            return typeof a === 'object' ? JSON.stringify(a) : a;
+        }).join(' ');
+        
+        const line = document.createElement('div');
+        line.style.color = type === 'error' ? '#ff5555' : type === 'warn' ? '#ffff55' : '#55ff55';
+        line.style.marginBottom = '4px';
+        line.style.borderBottom = '1px solid #333';
+        line.style.paddingBottom = '4px';
+        line.style.wordBreak = 'break-all';
+        line.textContent = `[${type.toUpperCase()}] ${msg}`;
+        debugEl.prepend(line);
+    }
+
+    console.log = function() { logToScreen('log', arguments); origLog.apply(console, arguments); };
+    console.error = function() { logToScreen('error', arguments); origErr.apply(console, arguments); };
+    console.warn = function() { logToScreen('warn', arguments); origWarn.apply(console, arguments); };
+    
+    window.addEventListener('error', function(e) {
+        console.error('Global Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('Unhandled Rejection: ', e.reason);
+    });
+    console.log("Debug console initialized");
+}
+// ---------------------------------
 
 class DialecticsEngine {
     constructor() {
@@ -18,7 +56,8 @@ class DialecticsEngine {
             isExpanded: false, 
             editingBlock: null,
             notesList: [],
-            viewingNoteId: null
+            viewingNoteId: null,
+            insertAfterIndex: null   // null = append at end, number = insert after that index
         };
 
         this.dom = {
@@ -33,7 +72,7 @@ class DialecticsEngine {
             viewModal: document.getElementById('dialecticsViewModal'),
             viewTitle: document.getElementById('dialecticsViewTitle'),
             viewBody: document.getElementById('dialecticsViewBody'),
-            debug: document.getElementById('editorDebugLogs'),
+            debug: document.getElementById('debugLogContent'),
             dashboardTextarea: document.getElementById('dashboard-note-editor')
         };
 
@@ -61,14 +100,25 @@ class DialecticsEngine {
         
         if (this.dom.editor.classList.contains('embedded') && this.dom.dashboardTextarea) {
             this.setupDashboardTextarea();
+            this._revealInterface();
         } else {
             const params = new URLSearchParams(window.location.search);
-            const noteId = params.get('id');
-            if (noteId) this.loadNoteToEditor(noteId);
+            const noteId = params.get('id') || localStorage.getItem('dialectics_last_note_id');
+            if (noteId) {
+                await this.loadNoteToEditor(noteId);
+            } else {
+                this._revealInterface();
+            }
         }
         
         await this.editor.switchTab('text');
     }
+
+    _revealInterface() {
+        const iface = document.querySelector('.note-interface');
+        if (iface) iface.style.opacity = '1';
+    }
+
 
     _bindEvents() {
         DialecticsUI.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state);
@@ -90,7 +140,30 @@ class DialecticsEngine {
         bind('btnPinNote', this.pinCurrent);
         bind('btnEditorClose', this.close);
         bind('btnEditorExpand', this.toggleExpand);
-        bind('btnLoadDialectics', this.showLoadModal);
+        bind('btnLoadDialectics', () => {
+            if (this.state.isDirty) {
+                customConfirm("У вас есть несохраненные изменения. Все равно продолжить?", () => {
+                    this.state.isDirty = false;
+                    this.showLoadModal();
+                });
+            } else {
+                this.showLoadModal();
+                const searchInput = document.getElementById('dialecticsSearchInput');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+            }
+        });
+        
+        const searchInput = document.getElementById('dialecticsSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.searchNotes(e.target.value));
+        }
+
+
+
+        bind('btnExampleDialectics', this.loadExample);
         
         bind('btnViewModalEdit', () => {
             this.hideViewModal();
@@ -121,9 +194,14 @@ class DialecticsEngine {
 
         bind('btnGraphPlot', () => this.editor.plotGraph());
         bind('btnGraphInsert', () => this.editor.insertGraphToNote());
+        bind('btnShapeUndo', () => this.editor.undoShape());
         bind('btnShapeDelete', () => this.editor.deleteSelectedShape());
+        bind('btnShapeGrid', () => this.editor.toggleShapeGrid());
+        bind('btnShapeCopy', () => this.editor.copySelectedShape());
         bind('btnShapeClear', () => this.editor.clearShapes());
         bind('btnShapesInsert', () => this.editor.insertShapesToNote());
+        bind('btnShapeGroup', () => this.editor.groupSelected());
+        bind('btnObjectList', () => this.editor.toggleObjectListPanel());
 
         document.querySelectorAll('.shape-tool[data-tool]').forEach(btn => {
             btn.addEventListener('click', () => this.editor.setShapeTool(btn.dataset.tool));
@@ -131,6 +209,22 @@ class DialecticsEngine {
         document.querySelectorAll('.shape-tool[data-shape]').forEach(btn => {
             btn.addEventListener('click', () => this.editor.addShape(btn.dataset.shape));
         });
+
+        const colorPicker = document.getElementById('shapeColor');
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                this.editor.applyColorToSelected(e.target.value);
+            });
+        }
+        
+        const fillPicker = document.getElementById('shapeFillColor');
+        if (fillPicker) {
+            fillPicker.addEventListener('input', (e) => {
+                this.editor.applyFillToSelected(e.target.value + '33');
+            });
+        }
+        
+        bind('btnToggleFill', () => this.editor.toggleFillForSelected());
     }
 
     // --- Core Logic ---
@@ -170,11 +264,50 @@ class DialecticsEngine {
             this.dom.editor.classList.toggle('expanded', this.state.isExpanded);
             if (this.dom.backdrop) DialecticsUI.toggleDisplay(this.dom.backdrop, this.state.isExpanded);
         }
+        // Resize Fabric.js canvas to match new wrapper dimensions after transition
+        setTimeout(() => {
+            const wrapper = document.getElementById('shapesCanvasWrapper');
+            const fabricCanvas = this.editor && this.editor.fabricCanvas;
+            if (wrapper && fabricCanvas) {
+                const newW = wrapper.clientWidth;
+                const newH = wrapper.clientHeight;
+                if (newW > 10 && newH > 10) {
+                    fabricCanvas.setWidth(newW);
+                    fabricCanvas.setHeight(newH);
+                    fabricCanvas.calcOffset();
+                    fabricCanvas.renderAll();
+                }
+            }
+        }, 320); // wait for CSS transition to finish
+    }
+
+    // Returns the standard callbacks object for BlockManager.render
+    _blockCallbacks() {
+        return {
+            onEdit: (b) => { this.state.editingBlock = b; this.openEdit(b); },
+            onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
+            onDelete: () => { this.saveGlobal(); }
+        };
+    }
+
+    // Open editor to insert a new block after a specific index
+    openInsertAfter(side, index) {
+        this.state.editingBlock = null;
+        this.state.pendingSide = side;
+        this.state.insertAfterIndex = index;
+        this.open();
     }
 
     async saveGlobal() {
         const title = this.dom.title.value || "Untitled Dialectics";
         const html = this.editor.getHTML();
+        console.log("TipTap HTML Output -> length:", html.length);
+        console.log("HTML preview:", html.substring(0, 150) + "...");
+        if (html.includes("data-fabric")) {
+            console.log("HTML CONTAINS data-fabric attribute. Matches:", html.match(/data-fabric="[^"]+"/g)?.length || 0);
+        } else {
+            console.error("HTML DOES NOT CONTAIN data-fabric attribute!");
+        }
         
         if (this.state.editingBlock) {
             const inner = this.state.editingBlock.querySelector('.dialectics-content-inner');
@@ -182,9 +315,20 @@ class DialecticsEngine {
         } else if (this.state.pendingSide) {
             if (html !== '<p></p>' && html.trim() !== '') {
                 const currentBlocks = BlockManager.getBlocks(this.dom.canvas);
-                BlockManager.render(this.dom.canvas, [...currentBlocks, { side: this.state.pendingSide, html }], {
-                    onEdit: (b) => { this.state.editingBlock = b; this.openEdit(b); }
-                });
+                const newBlock = { side: this.state.pendingSide, html };
+                let newBlocks;
+                if (this.state.insertAfterIndex !== null) {
+                    // Insert after the specified index
+                    newBlocks = [
+                        ...currentBlocks.slice(0, this.state.insertAfterIndex + 1),
+                        newBlock,
+                        ...currentBlocks.slice(this.state.insertAfterIndex + 1)
+                    ];
+                } else {
+                    newBlocks = [...currentBlocks, newBlock];
+                }
+                this.state.insertAfterIndex = null;
+                BlockManager.render(this.dom.canvas, newBlocks, this._blockCallbacks());
             }
         }
 
@@ -197,6 +341,9 @@ class DialecticsEngine {
             sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
             sticker_type: document.getElementById('dialecticsStickerType')?.value || "text"
         };
+        if (this.state.currentNoteId) {
+            payload.id = Number(this.state.currentNoteId);
+        }
         
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
@@ -220,6 +367,9 @@ class DialecticsEngine {
             sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
             sticker_type: document.getElementById('dialecticsStickerType')?.value || "text"
         };
+        if (this.state.currentNoteId) {
+            payload.id = this.state.currentNoteId;
+        }
         
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
@@ -233,15 +383,36 @@ class DialecticsEngine {
         const n = await DialecticsAPI.get(id);
         if (n) {
             this.state.currentNoteId = n.id;
+            localStorage.setItem('dialectics_last_note_id', n.id);
             this.dom.title.value = n.title;
             const blocks = typeof n.content_json === 'string' ? JSON.parse(n.content_json) : n.content_json;
             
-            BlockManager.render(this.dom.canvas, blocks, {
-                onEdit: (b) => { this.state.editingBlock = b; this.openEdit(b); }
-            });
+            BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
             
+            this._revealInterface();
             this.hideLoadModal();
             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
+        } else {
+            // Note not found (e.g. deleted), clear stored id and show empty
+            localStorage.removeItem('dialectics_last_note_id');
+            this._revealInterface();
+        }
+    }
+
+    async loadExample() {
+        DialecticsUI.setLoading(this.dom.canvas); // Optional loading state
+        const notes = await DialecticsAPI.list("Пример конспекта");
+        const exampleNote = notes.find(n => n.title === "Пример конспекта");
+
+        if (exampleNote) {
+            await this.loadNoteToEditor(exampleNote.id);
+            window.showToast("Открыт существующий пример конспекта", "info");
+        } else {
+            this.state.currentNoteId = null;
+            this.dom.title.value = "Пример конспекта";
+            BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
+            if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
+            window.showToast("Открыт новый пример конспекта (пока пустой)", "info");
         }
     }
 
@@ -259,12 +430,64 @@ class DialecticsEngine {
     }
 
     renderNotesList(notes) {
-        this.dom.loadList.innerHTML = notes.length ? '' : 'No entries found';
+        this.dom.loadList.innerHTML = notes.length ? '' : '<div style="color: #64748b; text-align: center; padding: 20px;">Ничего не найдено</div>';
         notes.forEach(n => {
             const i = document.createElement('div');
             i.className = 'load-note-item';
-            i.innerHTML = `<strong>${n.title}</strong><br><small>${new Date(n.updated_at).toLocaleDateString()}</small>`;
+            
+            const d = new Date(n.updated_at || n.created_at);
+            let dateStr = "";
+            if (d.getFullYear() > 1970) {
+                dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+            
+            const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Закреплено">📌</span>' : '';
+            
+            i.innerHTML = `
+                <div class="load-note-item-content" style="flex: 1;">
+                    <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${pinnedIcon}<strong>${n.title}</strong></div>
+                    <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">${dateStr}</div>
+                </div>
+                <button class="load-note-item-delete" title="Удалить">🗑️</button>
+            `;
+            // Inline styles will be enhanced by CSS if needed, but these ensure it looks ok immediately
+            
             i.onclick = () => this.loadNoteToEditor(n.id);
+            
+            const delBtn = i.querySelector('.load-note-item-delete');
+            delBtn.onclick = async (e) => {
+                e.stopPropagation();
+                
+                const confirmed = await customConfirm({
+                    title: 'Подтверждение удаления',
+                    message: `Удалить диалектику "${n.title}"?`,
+                    icon: '🗑️',
+                    buttons: [
+                        { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Удалить', value: true, class: 'confirm-btn-danger' }
+                    ]
+                });
+                    
+                if (confirmed) {
+                    const ok = await DialecticsAPI.delete(n.id);
+                    if (ok) {
+                        window.showToast("Запись удалена", "info");
+                        // Remove visually without reloading to avoid flicker
+                        i.remove();
+                        if (this.dom.loadList.children.length === 0) {
+                            this.dom.loadList.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Ничего не найдено</div>';
+                        }
+                        if (this.state.currentNoteId === n.id) {
+                            this.close();
+                            this.dom.title.value = "Untitled Dialectics";
+                            BlockManager.render(this.dom.canvas, []);
+                            this.state.currentNoteId = null;
+                            if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
+                        }
+                    }
+                }
+            };
+            
             this.dom.loadList.appendChild(i);
         });
     }

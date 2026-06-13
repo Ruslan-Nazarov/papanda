@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-import json
+from sqlalchemy import select, func
 from typing import List, Any, Optional
 from .. import models, schemas
 
@@ -38,8 +37,8 @@ async def save_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Dialectics:
     """Сохраняет новую запись 'Диалектики'."""
-    # Convert blocks back to standard dicts before dumping
-    content_json = json.dumps([b.model_dump() for b in data.blocks], ensure_ascii=False)
+    # Convert blocks back to standard dicts
+    content_json = [b.model_dump() for b in data.blocks]
     new_note = Dialectics(
         title=data.title or "Untitled Dialectics",
         content_json=content_json,
@@ -51,14 +50,13 @@ async def save_dialectics(
 
     # Handle sticker
     if data.sticker_text or data.sticker_title:
-        s_data = {
-            "text": data.sticker_text or "",
-            "title": data.sticker_title,
-            "color": data.sticker_color or "#fff9c4",
-            "type": data.sticker_type or "text",
-            "dialectics_id": new_note.id
-        }
-        await sns.create_note(s_data)
+        await sns.upsert_for_dialectics(
+            dialectics_id=new_note.id,
+            text=data.sticker_text or "",
+            title=data.sticker_title,
+            color=data.sticker_color or "#fff9c4",
+            type=data.sticker_type or "text"
+        )
 
     return new_note
 
@@ -72,7 +70,7 @@ async def list_dialectics(
     query = select(Dialectics)
     if search:
         query = query.where(Dialectics.title.ilike(f"%{search}%"))
-    result = await db.execute(query.order_by(Dialectics.updated_at.desc()))
+    result = await db.execute(query.order_by(func.coalesce(Dialectics.updated_at, Dialectics.created_at).desc()))
     return result.scalars().all()
 
 @router.get("/api/dialectics/{id}", response_model=DialecticsView)
@@ -87,7 +85,7 @@ async def get_dialectics(
         raise HTTPException(status_code=404, detail="Entry not found")
     return note
 
-@router.put("/api/dialectics/{id}", response_model=DialecticsView)
+@router.patch("/api/dialectics/{id}", response_model=DialecticsView)
 async def update_dialectics(
     id: int,
     data: DialecticsUpdate,
@@ -100,8 +98,8 @@ async def update_dialectics(
     if not note:
         raise HTTPException(status_code=404, detail="Entry not found")
     
-    # Convert blocks back to standard dicts before dumping
-    content_json = json.dumps([b.model_dump() for b in data.blocks], ensure_ascii=False)
+    # Use list for JSON column
+    content_json = [b.model_dump() for b in data.blocks]
     
     note.title = data.title
     note.content_json = content_json
@@ -114,31 +112,13 @@ async def update_dialectics(
 
     # Handle sticker
     if data.sticker_text or data.sticker_title:
-        # Check if sticker already exists for this dialectics record
-        result = await db.execute(select(models.StickyNote).where(
-            models.StickyNote.dialectics_id == note.id,
-            models.StickyNote.finished_at.is_(None)
-        ).limit(1))
-        existing_sticker = result.scalar_one_or_none()
-        
-        s_payload = {
-            "text": data.sticker_text or "",
-            "title": data.sticker_title,
-            "color": data.sticker_color or "#fff9c4",
-            "type": data.sticker_type or "text",
-            "dialectics_id": note.id
-        }
-        
-        if existing_sticker:
-            await sns.update_note(
-                existing_sticker.id, 
-                text=s_payload["text"], 
-                title=s_payload["title"], 
-                color=s_payload["color"], 
-                note_type=s_payload["type"]
-            )
-        else:
-            await sns.create_note(s_payload)
+        await sns.upsert_for_dialectics(
+            dialectics_id=note.id,
+            text=data.sticker_text or "",
+            title=data.sticker_title,
+            color=data.sticker_color or "#fff9c4",
+            type=data.sticker_type or "text"
+        )
 
     return note
 

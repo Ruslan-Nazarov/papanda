@@ -2,22 +2,49 @@
 
 .inline-editor {
     position: fixed;
-    background: #f0f9ff; /* Light Blue Theme */
+    background: #f0f9ff;
     border: 1px solid #bae6fd;
     border-radius: 20px;
     box-shadow: 0 20px 50px rgba(186, 230, 253, 0.3);
     z-index: 10001;
     width: 600px;
-    top: 15vh;
+    height: 80vh;
+    top: 10vh;
     left: calc(50% - 300px);
     min-width: 320px;
     min-height: 450px;
-    max-height: 85vh;
+    max-height: 80vh;
     display: none;
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.inline-editor.expanded {
+    top: 2vh !important;
+    left: 2vw !important;
+    width: 96vw !important;
+    height: 96vh !important;
+    max-height: 96vh;
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+}
+
+.inline-editor.expanded .shapes-canvas-wrapper {
+    min-height: 0;
+    height: 100%;
+}
+
+.inline-editor.expanded .editor-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.inline-editor.expanded .tab-content {
+    flex: 1;
+    min-height: 0;
 }
 
 .editor-drag-handle {
@@ -176,6 +203,7 @@
     min-height: 0;
     background: var(--color-bg-white);
     border-top: 1px solid var(--color-border-light);
+    overflow: hidden;
 }
 .tab-content.active { display: flex; }
 
@@ -312,7 +340,7 @@
     flex-direction: column;
     padding: 20px;
     gap: 16px;
-    height: 100%;
+    min-height: 100%;
 }
 
 .graph-input-group {
@@ -367,20 +395,22 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    gap: 15px;
+    gap: 10px;
     padding: 10px;
+    overflow: hidden;
 }
 
 .shapes-toolbar {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
     background: white;
     padding: 8px 15px;
     border-radius: 12px;
     border: 1px solid #e0f2fe;
     flex-shrink: 0;
+    flex-wrap: wrap; /* Fix overflow */
 }
 
 .tool-group {
@@ -388,7 +418,7 @@
     flex-direction: row;
     align-items: center;
     gap: 8px;
-    padding-right: 15px;
+    padding-right: 12px;
     border-right: 1px solid #f1f5f9;
 }
 
@@ -404,16 +434,22 @@
     background: white;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 1.1em;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    color: #475569; /* SVG default color */
+}
+
+.shape-tool svg {
+    width: 18px;
+    height: 18px;
 }
 
 .shape-tool:hover {
     background: #f0f9ff;
     border-color: #3b82f6;
+    color: #2563eb;
     transform: translateY(-1px);
 }
 
@@ -422,6 +458,20 @@
     color: white; 
     border-color: #2563eb;
     box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.shape-color-picker {
+    width: 36px;
+    height: 36px;
+    padding: 2px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.shape-color-picker:hover {
+    border-color: #3b82f6;
 }
 
 .shapes-canvas-wrapper {

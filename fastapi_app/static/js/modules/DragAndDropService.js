@@ -2,7 +2,7 @@
  * DragAndDropService.js - Manages Sortable.js instances on the dashboard.
  */
 
-import { showToast } from '../ui_helpers.js';
+import { showToast } from './NotificationService.js';
 
 export const DragAndDropService = {
     init() {

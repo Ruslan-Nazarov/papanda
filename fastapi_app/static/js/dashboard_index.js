@@ -1,36 +1,36 @@
 import { customConfirm, customChoice } from './modal_controller.js';
 import { deleteRecordApi, fetchWithJson } from './db_api.js';
 import { toggleWidget, initGrid, saveLayout } from './grid_controller.js';
-import { showToast } from './ui_helpers.js';
+import { NotificationService, showToast } from './modules/NotificationService.js';
 import { ModalManager } from './modules/ModalManager.js';
 
-import { initEventWidget }       from './event_widget.js';
-import { initWordWidget }        from './word_widget.js?v=5';
-import { initRecurrenceForm }    from './recurrence_form.js';
-import { initStickerWidget }     from './sticker_widget.js';
-import { initNoteChronoWidget }  from './note_chrono_widget.js';
+import { initEventWidget } from './event_widget.js';
+import { initWordWidget } from './word_widget.js?v=5';
+import { initRecurrenceForm } from './recurrence_form.js';
+import { initStickerWidget } from './sticker_widget.js';
+import { initNoteChronoWidget } from './note_chrono_widget.js';
 
 import { DashboardActionService } from './modules/DashboardActionService.js';
-import { DragAndDropService }     from './modules/DragAndDropService.js';
-import { HeaderService }          from './modules/HeaderService.js';
+import { DragAndDropService } from './modules/DragAndDropService.js';
+import { HeaderService } from './modules/HeaderService.js';
 
 window.DragAndDropService = DragAndDropService;
 
 window.toggleWidget = toggleWidget;
-window.saveLayout   = saveLayout;
-window.showToast    = showToast;
+window.saveLayout = saveLayout;
 
-window.markTaskDone = async function(form, taskId) {
+
+window.markTaskDone = async function (form, taskId) {
     const li = form.closest('li');
-    const { animateItemRemoval, showToast } = await import('./ui_helpers.js');
-    
-    // Animate immediately
-    const animationPromise = animateItemRemoval(li);
-    if (showToast) showToast('Task completed', 'success');
+    const { animateItemRemoval } = await import('./ui_helpers.js');
 
     try {
+        const resp = await fetch(form.action, { method: 'POST', headers: { 'Accept': 'application/json' } });
         if (resp.ok) {
+            const animationPromise = animateItemRemoval(li);
+            if (showToast) showToast('Task completed', 'success');
             if (window.HeaderService) window.HeaderService.refreshBadges();
+            await animationPromise;
             if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
         } else {
             console.error('Task mark failed');
@@ -40,13 +40,12 @@ window.markTaskDone = async function(form, taskId) {
         console.error('Error marking task done:', e);
         if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
     }
-    await animationPromise;
 };
 
-window.markHabitDone = async function(form, habitId) {
+window.markHabitDone = async function (form, habitId) {
     const li = form.closest('li');
-    const { animateItemRemoval, showToast } = await import('./ui_helpers.js');
-    
+    const { animateItemRemoval } = await import('./ui_helpers.js');
+
     const animationPromise = animateItemRemoval(li);
     if (showToast) showToast('Habit completed for today!', 'success');
 
@@ -63,7 +62,7 @@ window.markHabitDone = async function(form, habitId) {
     await animationPromise;
 };
 
-window.refreshDashboardTasks = async function() {
+window.refreshDashboardTasks = async function () {
     try {
         const resp = await fetch('/api/dashboard/widget/tasks');
         if (resp.ok) {
@@ -77,7 +76,7 @@ window.refreshDashboardTasks = async function() {
     } catch (e) { console.error('Failed to refresh tasks', e); }
 };
 
-window.refreshDashboardHabits = async function() {
+window.refreshDashboardHabits = async function () {
     try {
         const resp = await fetch('/api/dashboard/widget/habits');
         if (resp.ok) {

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Text, DateTime
+from sqlalchemy import String, Text, DateTime, JSON
 from sqlalchemy.sql import func
 from datetime import datetime
 from ..database import Base
@@ -12,7 +12,7 @@ class Dialectics(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String, index=True, default="Untitled Dialectics")
-    content_json: Mapped[str] = mapped_column(Text, default="[]")
+    content_json: Mapped[list | dict] = mapped_column(JSON, default=list)
     is_pinned: Mapped[bool] = mapped_column(default=False)
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

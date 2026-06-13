@@ -105,4 +105,5 @@ export const NotificationService = {
 };
 
 window.NotificationService = NotificationService;
-window.showToast = (msg, type) => NotificationService.show(msg, type);
+export const showToast = (msg, type) => NotificationService.show(msg, type);
+window.showToast = showToast;

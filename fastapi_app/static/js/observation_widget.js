@@ -108,6 +108,7 @@ async function deleteObs(id) {
         if (response.ok) {
             document.querySelector(`.tree-item[data-id="${id}"]`)?.remove();
             safeShowToast('✓ Removed', 'success');
+            if (typeof closeObsEditModal === 'function') closeObsEditModal();
         }
     } catch (e) { console.error(e); }
 }
@@ -328,10 +329,74 @@ async function refreshDashboardObservations() {
             const newBody = temp.querySelector('.widget-body');
             if (newBody) {
                 wrapper.innerHTML = newBody.innerHTML;
+                setTimeout(scrollToCurrentTime, 100);
             }
         }
     } catch (e) { console.error('Failed to refresh dashboard observations', e); }
 }
 
 window.refreshDashboardObservations = refreshDashboardObservations;
+
+function scrollToCurrentTime() {
+    const container = document.querySelector('.observation-tree-container');
+    if (!container) return;
+
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    const items = Array.from(document.querySelectorAll('.observation-widget .tree-item[data-no-time="false"]'));
+    if (items.length === 0) return;
+
+    let targetItem = null;
+    let firstFutureItem = null;
+
+    for (const item of items) {
+        const timeStr = item.dataset.time;
+        if (!timeStr) continue;
+        const [h, m] = timeStr.split(':').map(Number);
+        const itemMins = h * 60 + m;
+        
+        if (itemMins <= currentMins) {
+            targetItem = item;
+        } else if (!firstFutureItem) {
+            firstFutureItem = item;
+        }
+    }
+
+    if (!targetItem) {
+        targetItem = firstFutureItem;
+    }
+
+    if (targetItem) {
+        // Only scroll the widget container, not the whole page
+        const scrollContainer = targetItem.closest('.widget-body') || container;
+        if (scrollContainer) {
+            const itemTop = targetItem.offsetTop;
+            const containerHeight = scrollContainer.clientHeight;
+            const itemHeight = targetItem.clientHeight;
+            
+            scrollContainer.scrollTo({
+                top: itemTop - (containerHeight / 2) + (itemHeight / 2),
+                behavior: 'smooth'
+            });
+        }
+        
+        const card = targetItem.querySelector('.tree-card');
+        if (card) {
+            card.style.transition = 'box-shadow 0.5s ease';
+            card.style.boxShadow = '0 0 0 2px var(--color-primary)';
+            setTimeout(() => {
+                card.style.boxShadow = '';
+            }, 2000);
+        }
+    }
+}
+
+window.scrollToCurrentTime = scrollToCurrentTime;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(scrollToCurrentTime, 500));
+} else {
+    setTimeout(scrollToCurrentTime, 500);
+}
 

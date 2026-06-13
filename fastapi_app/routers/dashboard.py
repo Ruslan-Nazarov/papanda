@@ -253,7 +253,7 @@ async def get_dashboard_observations_widget(
 ) -> HTMLResponse:
     """Возвращает обновленный HTML для виджета активностей."""
     today_obj = datetime.now().date()
-    observations = await dashboard_service.observations_service.get_dashboard_observations(today_obj, limit=5)
+    observations = await dashboard_service.observations_service.get_dashboard_observations(today_obj)
     return templates.TemplateResponse(request, "widgets/observation_wrapper.html", {
         "request": request,
         "observations": observations

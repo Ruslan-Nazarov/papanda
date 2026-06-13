@@ -13,6 +13,20 @@ from ..config import settings, BASE_DIR, reset_secret_key
 from .. import models
 from ..logger import logger
 
+
+def _validate_db_filename(filename: str) -> Path:
+    """
+    Проверяет, что filename является безопасным именем .db-файла
+    внутри db_dir (защита от path traversal).
+    """
+    safe_name = os.path.basename(filename)
+    if not safe_name.endswith(".db"):
+        raise ValueError("Only .db files are allowed")
+    resolved = (settings.db_dir / safe_name).resolve()
+    if not str(resolved).startswith(str(settings.db_dir.resolve())):
+        raise ValueError(f"Invalid filename: {filename}")
+    return resolved
+
 class MaintenanceService:
     """
     Сервис для обслуживания базы данных, управления бэкапами и очистки системы.
@@ -140,8 +154,9 @@ class MaintenanceService:
         from ..database import get_engine
         await get_engine("default").dispose() # Закрываем соединения
         
+        # Защита от path traversal
+        target_db = _validate_db_filename(filename)
         current_db = settings.db_path
-        target_db = settings.db_dir / filename
         
         if not target_db.exists():
             raise FileNotFoundError(f"Target database {filename} not found")
@@ -159,8 +174,11 @@ class MaintenanceService:
         conn = sqlite3.connect(str(current_db))
         cursor = conn.cursor()
         
+        # Экранируем одиночные кавычки в пути для ATTACH (target_db уже провалидирован)
+        safe_path_str = str(target_db).replace("'", "''")
+        
         try:
-            cursor.execute(f"ATTACH DATABASE '{str(target_db)}' AS backup_db")
+            cursor.execute(f"ATTACH DATABASE '{safe_path_str}' AS backup_db")
             for table in tables_to_sync:
                 # Проверяем наличие таблицы в обеих базах
                 cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
@@ -184,10 +202,12 @@ class MaintenanceService:
         """
         Удаляет файл бэкапа из директории БД.
         """
-        if filename == settings.db_path.name:
+        # Защита от path traversal
+        file_path = _validate_db_filename(filename)
+        
+        if str(file_path) == str(settings.db_path.resolve()):
             raise ValueError("Cannot delete active database")
         
-        file_path = settings.db_dir / filename
         if file_path.exists():
             os.remove(file_path)
             logger.info(f"Backup deleted: {filename}")

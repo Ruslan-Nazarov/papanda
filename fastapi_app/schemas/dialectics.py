@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Any
 
 class DialecticsBlock(BaseModel):
     """Блок содержимого 'Диалектики'."""
@@ -36,7 +36,7 @@ class DialecticsView(BaseModel):
     """Схема для отображения 'Диалектики'."""
     id: int
     title: str
-    content_json: str
+    content_json: Any
     is_pinned: bool
     created_at: datetime
     updated_at: Optional[datetime] = None

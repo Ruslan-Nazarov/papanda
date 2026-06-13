@@ -59,6 +59,30 @@ class StickyNoteService:
         await self.db.commit()
         return await self.get_note(note.id)
 
+    async def upsert_for_dialectics(self, dialectics_id: int, text: str, title: Optional[str] = None, color: Optional[str] = "#fff9c4", type: Optional[str] = "text") -> models.StickyNote:
+        """Создает или обновляет стикер для записи диалектики."""
+        result = await self.db.execute(select(models.StickyNote).where(
+            models.StickyNote.dialectics_id == dialectics_id,
+            models.StickyNote.finished_at.is_(None)
+        ).limit(1))
+        existing_sticker = result.scalar_one_or_none()
+        
+        if existing_sticker:
+            existing_sticker.text = text
+            existing_sticker.title = title
+            existing_sticker.color = color
+            existing_sticker.type = type
+            await self.db.commit()
+            return existing_sticker
+        else:
+            return await self.create_note(
+                text=text,
+                title=title,
+                color=color,
+                type=type,
+                dialectics_id=dialectics_id
+            )
+
     async def get_note(self, note_id: int) -> Optional[models.StickyNote]:
         """Возвращает стикер по ID с подгруженными связями."""
         result = await self.db.execute(

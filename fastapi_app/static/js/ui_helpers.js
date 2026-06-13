@@ -3,16 +3,6 @@
  * Reusable UI logic, toast notifications, date calculations.
  */
 
-export function showToast(message, type = 'success', duration = 3000) {
-    const toast = document.getElementById('toast');
-    if (!toast) { 
-        if (type === 'error') alert(message); 
-        return; 
-    }
-    toast.textContent = message;
-    toast.className = `${type} show`;
-    setTimeout(() => { toast.className = (toast.className || '').replace('show', '').trim(); }, duration);
-}
 
 /**
  * Smoothly animates the removal of a DOM element (fade out + shrink)

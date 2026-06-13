@@ -1,5 +1,6 @@
 @echo off
 setlocal
+cd /d "%~dp0"
 title Papanda (FastAPI Edition)
 
 echo ==================================================

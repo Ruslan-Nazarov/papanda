@@ -46,11 +46,7 @@ class ObservationService:
                     observations_data.append({
                         "id": obs.id,
                         "text": obs.text,
-                        "priority": obs.priority,
-                        "is_main": obs.is_main,
-                        "status": getattr(obs, "status", "periodic"),
                         "created_at": obs.created_at,
-                        "end_time": obs.end_time,
                         "no_time": obs.no_time,
                         "task_id": obs.task_id,
                         "done_days": logs_by_obs.get(obs.id, [])
@@ -59,18 +55,3 @@ class ObservationService:
         except Exception as e:
             logger.error(f"Error fetching observation data: {e}", exc_info=True)
             return []
-
-    async def log_observation(self, observation_id: int, done_at: Optional[datetime] = None) -> bool:
-        """Logs a completion for an observation."""
-        try:
-            log = models.ObservationLog(
-                observation_id=observation_id,
-                done_at=done_at or datetime.now()
-            )
-            self.db.add(log)
-            await self.db.commit()
-            return True
-        except Exception as e:
-            await self.db.rollback()
-            logger.error(f"Error logging observation {observation_id}: {e}")
-            return False

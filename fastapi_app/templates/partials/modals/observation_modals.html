@@ -26,9 +26,9 @@
                         </select>
                     </div>
 
-                    <div id="obsAddTaskGroup" class="form-group" style="display: none; margin-bottom: 0;">
+                    <div id="obsAddTaskGroup" class="form-group" style="display: none; margin-bottom: 0; max-width: 100%;">
                         <label class="form-label">Link to Task</label>
-                        <select id="obsAddTaskSelect" class="form-select">
+                        <select id="obsAddTaskSelect" class="form-select" style="max-width: 100%; text-overflow: ellipsis;">
                             <option value="">-- Select a Task --</option>
                         </select>
                     </div>
@@ -100,9 +100,9 @@
                         </select>
                     </div>
 
-                    <div id="obsEditTaskGroup" class="form-group" style="display: none; margin-bottom: 0;">
+                    <div id="obsEditTaskGroup" class="form-group" style="display: none; margin-bottom: 0; max-width: 100%;">
                         <label class="form-label">Link to Task</label>
-                        <select id="obsEditTaskSelect" class="form-select">
+                        <select id="obsEditTaskSelect" class="form-select" style="max-width: 100%; text-overflow: ellipsis;">
                             <option value="">-- Select a Task --</option>
                         </select>
                     </div>
@@ -136,9 +136,12 @@
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeObsEditModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveObsEdit()">Save Changes</button>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
+            <button type="button" class="btn btn-danger" onclick="deleteObs(document.getElementById('obsEditId').value)">Delete</button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary" onclick="closeObsEditModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveObsEdit()">Save Changes</button>
+            </div>
         </div>
     </div>
 </div>

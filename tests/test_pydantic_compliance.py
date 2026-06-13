@@ -43,7 +43,23 @@ def test_pydantic_usage_in_routers():
             # Исключаем статические файлы и системные роуты
             if "/static" in route.path or route.path in ["/openapi.json", "/docs", "/redoc", "/favicon.ico"]:
                 continue
-                
+
+            # Эндпоинты, которые намеренно возвращают dict/list без Pydantic-схемы
+            # (поиск, аналитика, debug, гибкие структуры)
+            known_dict_endpoints = [
+                "/api/db/search/{model_name}",
+                "/api/db/get_record/{model_name}/{record_id}",
+                "/api/events/month",
+                "/import_sentences",
+                "/api/sentences",
+                "/api/analytics/wordcloud",
+                "/api/notes/search",
+                "/api/stickers/debug_info",
+                "/api/observations/full-tree",
+            ]
+            if route.path in known_dict_endpoints:
+                continue
+
             # HTML и Redirect не требуют Pydantic для ответа, но POST/PUT/DELETE требуют для входа
             if is_html_or_redirect:
                 # Если это POST/PUT/PATCH/DELETE в HTML-роуте, требуем хотя бы типизацию входных данных

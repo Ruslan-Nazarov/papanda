@@ -2,7 +2,7 @@
  * DashboardActionService.js - Handles optimistic UI updates and AJAX form submissions.
  */
 
-import { showToast } from '../ui_helpers.js';
+import { showToast } from './NotificationService.js';
 
 export const DashboardActionService = {
     init() {

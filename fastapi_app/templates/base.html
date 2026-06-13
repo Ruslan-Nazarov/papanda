@@ -18,5 +18,23 @@
     {% block content %}{% endblock %}
     
     {% block scripts %}{% endblock %}
+    
+    <!-- Auto-shutdown mechanism: keeps a WebSocket open to tell the server the app is active -->
+    <script>
+        (function() {
+            let ws;
+            function connect() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/ping`;
+                ws = new WebSocket(wsUrl);
+                ws.onclose = () => {
+                    // Try to reconnect if the socket drops but the window is still open
+                    setTimeout(connect, 3000);
+                };
+            }
+            // Connect after a short delay to prioritize page load
+            setTimeout(connect, 1000);
+        })();
+    </script>
 </body>
 </html>

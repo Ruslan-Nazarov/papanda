@@ -12,9 +12,11 @@
     <div class="dialectics-container">
         <a href="/" class="back-link">← Back to Dashboard</a>
 
-        <div class="page-intro">
-            <h1>🧠 Dialectics</h1>
-            <p>Your intelligent dialogue-based knowledge base</p>
+        <div class="page-intro" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <h1 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                🐱 Dialectics
+            </h1>
+            <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #f97316; background: #fff7ed; padding: 4px 12px; border-radius: 20px; border: 1px solid #fed7aa; display: inline-flex; align-items: center; font-weight: 700;">Project Laos</span>
         </div>
 
         <!-- Main Dialectics Interface -->
@@ -26,11 +28,12 @@
 
 
                 <div class="header-actions">
+                    <button class="btn btn-info" id="btnExampleDialectics" style="font-family: inherit;">📖 Пример</button>
                     <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
                         style="display: none; font-family: inherit;">🗑️ Delete</button>
                     <button class="btn btn-primary btn-save-note" id="btnLoadDialectics" style="font-family: inherit;">📂 Load</button>
-                    <button class="btn btn-warning" id="btnPinNote" style="font-family: inherit;">📌 Pin</button>
                     <button class="btn btn-success btn-save-note" id="btnSaveDialectics" style="font-family: inherit;">💾 Save Dialectics</button>
+
                 </div>
             </div>
 
@@ -108,27 +111,90 @@
                         <div class="shapes-editor-ui">
                             <div class="shapes-toolbar">
                                 <div class="tool-group">
-                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение" style="font-family: inherit;">🖱️</button>
-                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование" style="font-family: inherit;">✏️</button>
+                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+                                    </button>
+                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                    </button>
                                 </div>
                                 <div class="tool-group">
-                                    <button class="shape-tool" data-shape="rect" title="Rectangle" style="font-family: inherit;">⬜</button>
-                                    <button class="shape-tool" data-shape="circle" title="Circle" style="font-family: inherit;">⭕</button>
-                                    <button class="shape-tool" data-shape="triangle" title="Triangle" style="font-family: inherit;">📐</button>
-                                    <button class="shape-tool" data-shape="diamond" title="Diamond" style="font-family: inherit;">💎</button>
-                                    <button class="shape-tool" data-shape="line" title="Line" style="font-family: inherit;">➖</button>
-                                    <button class="shape-tool" data-shape="arrow" title="Arrow" style="font-family: inherit;">➡</button>
-                                    <button class="shape-tool" data-shape="text" title="Label (Vertex/Side)" style="font-family: inherit;">T</button>
+                                    <button class="shape-tool" data-shape="rect" title="Прямоугольник">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="circle" title="Круг">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="triangle" title="Равнобедренный треугольник">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 21h20L12 3Z"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="right-triangle" title="Прямоугольный треугольник">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21 3 3 21 21Z"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="diamond" title="Ромб">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 12l9 9 9-9Z"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="line" title="Линия">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="arrow" title="Стрелка">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                    </button>
+                                    <button class="shape-tool" data-shape="text" title="Текст">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/></svg>
+                                    </button>
                                 </div>
-                                <div class="tool-group">
-                                    <input type="color" id="shapeColor" value="#3b82f6" title="Цвет">
-                                    <button class="shape-tool-delete" id="btnShapeDelete" title="Удалить" style="font-family: inherit;">🗑️</button>
-                                    <button class="shape-tool-clear" id="btnShapeClear" title="Очистить всё" style="font-family: inherit;">🧹</button>
+                                <div class="tool-group" style="display: flex; align-items: center; gap: 4px;">
+                                    <input type="color" id="shapeColor" value="#3b82f6" title="Цвет контура" class="shape-color-picker">
+                                    <input type="color" id="shapeFillColor" value="#3b82f6" title="Цвет заливки (если прозрачный — нажмите кнопку рядом)" class="shape-color-picker">
+                                    <button class="shape-tool" id="btnToggleFill" title="Убрать заливку" style="padding: 2px; width: 24px; height: 24px; display:flex; align-items:center; justify-content:center; border: 1px solid #ccc; border-radius:4px; background: white; cursor:pointer;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+                                    </button>
+                                    <button class="shape-tool-grid shape-tool" id="btnShapeGrid" title="Сетка (вкл/выкл)">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                                    </button>
+                                    <button class="shape-tool-copy shape-tool" id="btnShapeCopy" title="Копировать выделенное">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                    </button>
+                                    <button class="shape-tool shape-tool" id="btnShapeGroup" title="Группировать / Разгруппировать (🔒)" style="font-size:16px;">🔒</button>
+                                    <button class="shape-tool shape-tool" id="btnObjectList" title="Список объектов" style="font-size:14px; font-weight:700; letter-spacing:-1px;">⊞</button>
+                                    <button class="shape-tool-undo shape-tool" id="btnShapeUndo" title="Отменить последнее действие">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                                    </button>
+                                    <button class="shape-tool-delete shape-tool" id="btnShapeDelete" title="Удалить выделенное">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
+                                    <button class="shape-tool-clear shape-tool" id="btnShapeClear" title="Очистить холст">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+                                    </button>
                                 </div>
                             </div>
                             
-                            <div class="shapes-canvas-wrapper" id="shapesCanvasWrapper">
+                            <div class="shapes-canvas-wrapper" id="shapesCanvasWrapper" style="position: relative;">
                                 <canvas id="shapesCanvas"></canvas>
+                                <div id="shapeDimBadge" style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; pointer-events: none; z-index: 10;"></div>
+
+                                <!-- Objects List Panel -->
+                                <div id="objectListPanel" style="display:none; position:absolute; top:8px; left:8px; width:160px; max-height:70%; background:white; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:20; overflow:hidden; flex-direction:column;">
+                                    <div style="padding:8px 10px; background:#f0f9ff; border-bottom:1px solid #bae6fd; font-size:11px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:0.5px; display:flex; justify-content:space-between; align-items:center;">
+                                        <span>Объекты</span>
+                                        <button onclick="document.getElementById('objectListPanel').style.display='none'" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;line-height:1;">×</button>
+                                    </div>
+                                    <div id="objectListItems" style="overflow-y:auto; max-height:220px; padding:4px;"></div>
+                                </div>
+
+                                <!-- Parametric Shape Dialog -->
+                                <div id="shapeParamDialog" style="display:none; position:absolute; inset:0; background:rgba(15,23,42,0.55); z-index:50; align-items:center; justify-content:center; border-radius:8px;">
+                                    <div style="background:#fff; border-radius:12px; padding:20px 24px; min-width:260px; box-shadow:0 8px 32px rgba(0,0,0,0.2); font-family:inherit;">
+                                        <div style="font-size:15px; font-weight:600; color:#1e293b; margin-bottom:16px;" id="shapeParamTitle">Параметры фигуры</div>
+                                        <div id="shapeParamFields"></div>
+                                        <div style="display:flex; gap:8px; margin-top:16px;">
+                                            <button id="shapeParamCancel" style="flex:1; padding:8px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:pointer; font-size:13px; color:#64748b;">Отмена</button>
+                                            <button id="shapeParamBuild" style="flex:1; padding:8px; border:none; border-radius:8px; background:#3b82f6; cursor:pointer; font-size:13px; color:white; font-weight:600;">Построить</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /Parametric Shape Dialog -->
                             </div>
 
                             <button class="graph-btn-insert" id="btnShapesInsert" style="font-family: inherit;">Вставить в текст</button>
@@ -151,14 +217,21 @@
     </div>
 
     <!-- Load Dialectics Modal -->
-    <div id="loadDialecticsModal" class="modal premium-modal" style="display: none;">
-        <div class="modal-content">
-            <h3 style="margin-top: 0;">Load Dialectics</h3>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 15px;">
-            <div id="loadDialecticsList" class="load-notes-list">
-                <div style="color: #64748b; text-align: center;">Loading...</div>
+    <div id="loadDialecticsModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin-top: 0;"><span class="modal-icon">📂</span> Load Dialectics</h2>
+                <button class="modal-close" onclick="document.getElementById('loadDialecticsModal').style.display='none'">&times;</button>
             </div>
-            <button id="btnModalCancel" class="btn btn-secondary" style="margin-top: 20px; font-family: inherit;">Cancel</button>
+            <div class="modal-body" style="padding: 20px;">
+                <input type="text" id="dialecticsSearchInput" class="form-input" placeholder="Поиск по названию..." style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                <div id="loadDialecticsList" class="load-notes-list" style="max-height: 400px; overflow-y: auto;">
+                    <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('loadDialecticsModal').style.display='none'" style="font-family: inherit;">Закрыть</button>
+            </div>
         </div>
     </div>
 
@@ -182,8 +255,20 @@
     <!-- Math Context Menu -->
     <div id="mathContextMenu" class="math-context-menu" style="display: none;"></div>
 
+    <!-- Global Debug Console -->
+    <div id="globalDebugConsole" onmousedown="event.stopPropagation()" style="position: fixed; bottom: 10px; right: 10px; width: 400px; height: 250px; background: rgba(0,0,0,0.85); color: #0f0; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 10000; padding: 8px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; user-select: text !important; pointer-events: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 5px;">
+            <strong>🛠 Dialectics Debug Console</strong>
+            <button onclick="document.getElementById('debugLogContent').innerHTML=''" style="background: #444; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 2px 8px;">Clear</button>
+        </div>
+        <div id="debugLogContent" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; user-select: text !important;"></div>
+    </div>
+
+
+
     {% include 'partials/modals/note_modals.html' %}
     {% include 'partials/sticker_modal.html' %}
+    {% include 'partials/modals/common_modals.html' %}
 {% endblock %}
 
 {% block scripts %}

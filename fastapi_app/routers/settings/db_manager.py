@@ -90,8 +90,8 @@ async def api_db_search(
         return JSONResponse(content={"status": "success", "data": results})
     except Exception as e:
         from ...logger import logger
-        logger.error(f"Global search error: {e}")
-        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+        logger.error(f"Global search error: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"status": "error", "message": "Internal server error"})
 
 @router.get("/api/db/get_record/{model_name}/{record_id}", name="api_db_get_record")
 async def api_db_get_record(
@@ -139,7 +139,9 @@ async def api_db_get_record(
         
         return JSONResponse(content={"status": "success", "data": data})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+        from ...logger import logger
+        logger.error(f"DB record error for {model_name}/{record_id}: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"status": "error", "message": "Internal server error"})
 
 @router.get("/db_view/{model_name}", name="db_view", response_class=HTMLResponse)
 async def db_view(

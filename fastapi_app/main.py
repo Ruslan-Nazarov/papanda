@@ -3,7 +3,7 @@
 Здесь ТОЛЬКО инициализация. Вся логика — в папке routers/.
 """
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
@@ -15,7 +15,7 @@ from typing import Any, Callable
 from .exceptions import PapandaError
 from . import models
 from .database import get_engine
-from .routers import settings as settings_router, auth as auth_router, admin
+from .routers import settings as settings_router, auth as auth_router
 from .routers import dashboard, words, notes, actions, dnd, stickers, observation, dialectics
 from .config import settings, BASE_DIR, templates, INTERNAL_ROOT
 from .services.auth import get_current_user_from_cookie
@@ -39,6 +39,10 @@ async def lifespan(app: FastAPI):
     # Очистка ресурсов при выключении (опционально)
     # await get_engine("default").dispose()
     pass
+
+import mimetypes
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
 
 # Настройка приложения
 app = FastAPI(
@@ -167,7 +171,6 @@ app.mount(
 # --- Подключаем все роутеры ---
 app.include_router(auth_router.router)       # /login, /register, /logout
 app.include_router(settings_router.router)   # /settings
-app.include_router(admin.router)             # /db_view
 
 # Модульные роутеры (Service Layer)
 app.include_router(dashboard.router)         # /, /history, /save_dashboard_layout
@@ -178,3 +181,60 @@ app.include_router(dnd.router)               # /api/dnd/...
 app.include_router(stickers.router)          # /api/stickers/...
 app.include_router(observation.router)       # /api/observations/...
 app.include_router(dialectics.router)       # /dialectics
+
+import asyncio
+import os
+import signal
+
+active_connections = 0
+shutdown_task = None
+
+@app.websocket("/ws/ping")
+async def websocket_ping(websocket: WebSocket):
+    global active_connections, shutdown_task
+    await websocket.accept()
+    active_connections += 1
+    
+    if shutdown_task and not shutdown_task.done():
+        shutdown_task.cancel()
+        
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        pass
+    finally:
+        active_connections -= 1
+        if active_connections <= 0:
+            shutdown_task = asyncio.create_task(delayed_shutdown())
+
+async def delayed_shutdown():
+    await asyncio.sleep(15) # 15 секунд грейс-период на загрузку страниц
+    if active_connections <= 0:
+        logger.info("Все вкладки браузера закрыты. Автоматически завершаем работу сервера...")
+        import platform
+        import os
+        import signal
+        
+        pid = os.getpid()
+        if platform.system() == "Windows":
+            parent_pid = os.getppid()
+            try:
+                import subprocess
+                # Проверяем, является ли родительский процесс тоже python.exe (например, uvicorn reloader)
+                output = subprocess.check_output(
+                    f'tasklist /fi "PID eq {parent_pid}" /nh /fo csv', 
+                    shell=True
+                ).decode('utf-8', errors='ignore')
+                
+                if 'python' in output.lower():
+                    # Тихо убиваем родительский reloader без вызова сторонних утилит
+                    os.kill(parent_pid, signal.SIGTERM)
+            except Exception as e:
+                logger.error(f"Не удалось завершить родительский процесс: {e}")
+                
+            # Затем завершаем текущий процесс с кодом 0 (чистый выход)
+            # Это крайне важно для PyInstaller, чтобы загрузчик удалил временные файлы
+            os._exit(0)
+        else:
+            os._exit(0)

@@ -33,6 +33,29 @@ export const MathTool = {
                     "пч": "\\partial",
                     "б": "\\infty"
                 };
+
+                // Добавляем отдельную вкладку для латиницы в виртуальную клавиатуру
+                if (window.mathVirtualKeyboard) {
+                    const latinLayout = {
+                        label: 'Lat',
+                        tooltip: 'Латинский алфавит',
+                        layers: [{
+                            rows: [
+                                [
+                                    { latex: "a" }, { latex: "b" }, { latex: "c" }, { latex: "d" }, { latex: "e" }, { latex: "f" }, { latex: "g" }, { latex: "h" }, { latex: "i" }, { latex: "j" }
+                                ],
+                                [
+                                    { latex: "k" }, { latex: "l" }, { latex: "m" }, { latex: "n" }, { latex: "o" }, { latex: "p" }, { latex: "q" }, { latex: "r" }, { latex: "s" }, { latex: "t" }
+                                ],
+                                [
+                                    { latex: "u" }, { latex: "v" }, { latex: "w" }, { latex: "x" }, { latex: "y" }, { latex: "z" },
+                                    "[left]", "[right]", "[backspace]"
+                                ]
+                            ]
+                        }]
+                    };
+                    window.mathVirtualKeyboard.layouts = ['numeric', 'symbols', 'functions', 'alphabetic', latinLayout];
+                }
             }
             window.mathliveLoaded = true;
             if (window.app && window.app.logDebug) window.app.logDebug("MathLive загружен.");

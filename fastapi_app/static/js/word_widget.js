@@ -4,7 +4,7 @@
  */
 
 import { customConfirm } from './modal_controller.js';
-import { showToast } from './ui_helpers.js';
+import { showToast } from './modules/NotificationService.js';
 
 // ─── Private helpers ─────────────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@
  */
 
 // window.createStickerElement and window.openStickerModal are provided by stickers.js (standard script)
-import { showToast } from './ui_helpers.js';
+import { showToast } from './modules/NotificationService.js';
 
 // ─── Private state ────────────────────────────────────────────────────────────
 

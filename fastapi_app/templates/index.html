@@ -105,13 +105,12 @@
         </div>
     </div>
 
-    <div id="toast">Saved successfully!</div>
+
 
     {% include 'partials/footer.html' %}
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', path='js/services/NotificationService.js') }}"></script>
     <script src="{{ url_for('static', path='js/services/WidgetSettingsService.js') }}"></script>
     <script>
         window.P_CHRONO_DATE = '{{ today_for_calendar.strftime("%Y-%m-%d") }}';

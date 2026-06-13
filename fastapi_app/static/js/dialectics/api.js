@@ -13,7 +13,7 @@ export const DialecticsAPI = {
     },
     async save(payload, id = null) {
         const url = id ? `/api/dialectics/${id}` : '/api/dialectics/save';
-        const method = id ? 'PUT' : 'POST';
+        const method = id ? 'PATCH' : 'POST';
         const res = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },

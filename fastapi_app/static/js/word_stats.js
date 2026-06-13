@@ -137,7 +137,7 @@ async function deleteSearchWord() {
     if (!confirmed) return;
     const res = await fetch(`/delete_word?eng=${encodeURIComponent(searchSelected.eng)}`, { method: 'DELETE' });
     if (res.ok) { 
-        closeEditModal();
+        window.closeWordStatsEdit();
         openDictionarySearch(); 
     }
     else { alert('Error deleting word'); }
@@ -642,7 +642,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const modal       = document.getElementById('wordStatsEditModal');
         const searchModal = document.getElementById('searchWordModal');
         const settingsModal = document.getElementById('workoutSettingsModal');
-        if (e.target === modal)       closeEditModal();
+        if (e.target === modal)       window.closeWordStatsEdit();
         if (e.target === searchModal) closeSearchModal();
         if (e.target === settingsModal) closeWorkoutSettingsModal();
     });
@@ -654,7 +654,7 @@ window.openDictionarySearch = openDictionarySearch;
 window.closeSearchModal   = closeSearchModal;
 window.deleteSearchWord   = deleteSearchWord;
 window.openWorkoutEditModal = openWorkoutEditModal;
-window.closeEditModal     = closeEditModal;
+window.closeEditModal     = window.closeWordStatsEdit;
 window.setHealthMode      = setHealthMode;
 window.openWorkoutSettingsModal = openWorkoutSettingsModal;
 window.closeWorkoutSettingsModal = closeWorkoutSettingsModal;
