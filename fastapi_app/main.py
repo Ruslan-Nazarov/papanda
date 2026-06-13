@@ -119,10 +119,15 @@ async def global_exception_handler(request: Request, exc: Exception) -> Any:
     """Обработка всех необработанных исключений."""
     logger.error(f"Global Exception: {str(exc)}", exc_info=True)
     if "text/html" in request.headers.get("accept", ""):
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "detail": "Произошла внутренняя ошибка сервера. Пожалуйста, попробуйте позже."
-        }, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return templates.TemplateResponse(
+    request=request,
+    name="error.html",
+    context={
+        "request": request,
+        "detail": "Произошла внутренняя ошибка сервера. Пожалуйста, попробуйте позже."
+    },
+    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal Server Error"}
