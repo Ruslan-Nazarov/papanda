@@ -119,100 +119,13 @@
     align-self: center;
     background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
     width: 70%;
-    text-align: center;
+    text-align: left;
 }
 
 .block-center::before {
     background: linear-gradient(180deg, #22c55e, #4ade80);
 }
 
-/* --- Math & Formula Nodes --- */
-math-field.math-node {
-    display: inline-block;
-    vertical-align: middle;
-    padding: 0 4px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    background: transparent;
-    font-size: 1.1em;
-    outline: none;
-    transition: all 0.2s;
-    min-width: 30px;
-    min-height: 1.2em;
-}
-
-math-field.math-node:hover {
-    border-color: var(--color-border);
-    background: var(--color-bg-surface);
-}
-
-math-field.math-node:focus-within {
-    border-color: var(--color-blue);
-    background: var(--color-blue-light);
-    box-shadow: 0 0 0 2px var(--color-blue-glow);
-}
-
-.smart-formula {
-    padding: var(--spacing-4);
-    background: var(--color-bg-white);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    margin: var(--spacing-3) 0;
-    display: block;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-}
-
-.smart-formula:hover {
-    border-color: var(--color-blue);
-    box-shadow: var(--shadow-md);
-}
-
-.smart-formula math-field {
-    pointer-events: none;
-    border: none;
-    background: transparent;
-    font-size: 1.4em;
-}
-
-/* --- Rendered Graph Block --- */
-.smart-graph {
-    cursor: grab;
-    margin: 10px;
-    border-radius: 8px;
-    border: 2px solid transparent;
-    transition: border-color 0.2s;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    display: inline-block;
-    max-width: 100%;
-}
-
-.smart-graph:hover {
-    border-color: var(--color-blue);
-}
-
-.smart-graph img {
-    border-radius: 6px;
-    max-width: 100%;
-}
-
-/* --- Interaction Fixes --- */
-.math-node-wrapper {
-    display: inline-block;
-    vertical-align: middle;
-    pointer-events: none !important;
-}
-
-.math-node-wrapper math-field {
-    pointer-events: all !important;
-    user-select: all !important;
-}
-
-.math-node-wrapper math-field:focus-within {
-    border-color: #3b82f6;
-    background: #f0f7ff;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 

@@ -296,31 +296,3 @@ async def get_dashboard_habits_widget(
         "habits_all": dash_data['habits_all']
     })
 
-@router.get("/api/analytics/wordcloud")
-async def get_word_cloud(
-    date: Optional[str] = None,
-    sources: Optional[str] = None,
-    history_service: HistoryService = Depends(get_history_service),
-    user: Any = Depends(check_auth_dependency)
-):
-    """
-    Эндпоинт для получения частотной карты слов облака тегов за период ±15 дней от указанной даты.
-    """
-    target_d = None
-    if date:
-        from ..utils import normalize_date
-        parsed = normalize_date(date)
-        if parsed:
-            target_d = parsed.date() if isinstance(parsed, datetime) else parsed
-
-    if not target_d:
-        from datetime import timedelta
-        target_d = datetime.now().date() - timedelta(days=365)
-
-    if sources:
-        sources_list = [s.strip().lower() for s in sources.split(",") if s.strip()]
-    else:
-        sources_list = ["chronology", "calendar", "notes", "wink", "stickers", "tasks", "habits"]
-
-    return await history_service.get_word_cloud_data(target_d, sources_list)
-

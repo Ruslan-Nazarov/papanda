@@ -16,7 +16,7 @@ from .exceptions import PapandaError
 from . import models
 from .database import get_engine
 from .routers import settings as settings_router, auth as auth_router
-from .routers import dashboard, words, notes, actions, dnd, stickers, observation, dialectics
+from .routers import dashboard, words, notes, actions, dnd, stickers, observation, dialectics, ai
 from .config import settings, BASE_DIR, templates, INTERNAL_ROOT
 from .services.auth import get_current_user_from_cookie
 from .logger import logger
@@ -181,6 +181,7 @@ app.include_router(dnd.router)               # /api/dnd/...
 app.include_router(stickers.router)          # /api/stickers/...
 app.include_router(observation.router)       # /api/observations/...
 app.include_router(dialectics.router)       # /dialectics
+app.include_router(ai.router)               # /api/ai/...
 
 import asyncio
 import os

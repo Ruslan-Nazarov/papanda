@@ -5,6 +5,8 @@
 {% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
+    <link rel="stylesheet" href="{{ url_for('static', path='dist/papanda-smart-notes.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 {% endblock %}
 
@@ -14,9 +16,9 @@
 
         <div class="page-intro" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
             <h1 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 12px;">
-                🐱 Dialectics
+                Dialectics
             </h1>
-            <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #f97316; background: #fff7ed; padding: 4px 12px; border-radius: 20px; border: 1px solid #fed7aa; display: inline-flex; align-items: center; font-weight: 700;">Project Laos</span>
+            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; display: inline-flex; align-items: center; font-weight: 600;">Project Laos</span>
         </div>
 
         <!-- Main Dialectics Interface -->
@@ -28,6 +30,7 @@
 
 
                 <div class="header-actions">
+                    <button class="btn btn-info" id="btnGlobalParser" style="font-family: inherit; background-color: #8b5cf6; border-color: #8b5cf6;">🧮 Парсер</button>
                     <button class="btn btn-info" id="btnExampleDialectics" style="font-family: inherit;">📖 Пример</button>
                     <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
                         style="display: none; font-family: inherit;">🗑️ Delete</button>
@@ -73,13 +76,14 @@
                 <div class="editor-body" id="editorBody">
                     <!-- Text Tab -->
                     <div id="editor-text" class="tab-content active">
-                        <!-- Math Menu (Formula Palette) -->
                         <div id="mathMenu" class="math-menu" style="display: none;">
                             <div class="math-tabs">
                                 <div class="math-tab active" data-cat="main">Main</div>
                                 <div class="math-tab" data-cat="brackets">() []</div>
                                 <div class="math-tab" data-cat="analysis">∫ ∑</div>
-                                <div class="math-tab" data-cat="misc">α β λ</div>
+                                <div class="math-tab" data-cat="indices">x&#8341;</div>
+                                <div class="math-tab" data-cat="latin">A B C</div>
+                                <div class="math-tab" data-cat="greek">α β λ</div>
                             </div>
                             <div id="mathPalette" class="math-palette"></div>
                         </div>
@@ -252,14 +256,26 @@
         </div>
     </div>
 
-    <!-- Math Context Menu -->
-    <div id="mathContextMenu" class="math-context-menu" style="display: none;"></div>
+
 
     <!-- Global Debug Console -->
-    <div id="globalDebugConsole" onmousedown="event.stopPropagation()" style="position: fixed; bottom: 10px; right: 10px; width: 400px; height: 250px; background: rgba(0,0,0,0.85); color: #0f0; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 10000; padding: 8px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; user-select: text !important; pointer-events: auto;">
+    <div id="globalDebugConsole" onmousedown="event.stopPropagation()" style="position: fixed; bottom: 10px; right: 10px; width: 400px; height: 250px; background: rgba(0,0,0,0.85); color: #0f0; font-family: monospace; font-size: 11px; z-index: 10000; padding: 8px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; user-select: text !important; pointer-events: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 5px;">
             <strong>🛠 Dialectics Debug Console</strong>
-            <button onclick="document.getElementById('debugLogContent').innerHTML=''" style="background: #444; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 2px 8px;">Clear</button>
+            <div style="display: flex; gap: 6px;">
+                <button onclick="
+                    const c = document.getElementById('globalDebugConsole');
+                    const el = document.getElementById('debugLogContent');
+                    if(el.style.display === 'none') {
+                        el.style.display = 'flex';
+                        c.style.height = '250px';
+                    } else {
+                        el.style.display = 'none';
+                        c.style.height = 'auto';
+                    }
+                " style="background: #444; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 2px 8px; font-weight: bold;">_</button>
+                <button onclick="document.getElementById('debugLogContent').innerHTML=''" style="background: #444; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 2px 8px;">Clear</button>
+            </div>
         </div>
         <div id="debugLogContent" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; user-select: text !important;"></div>
     </div>

@@ -6,8 +6,7 @@ import { DialecticsUI } from './dialectics/ui_utils.js';
 import { BlockManager } from './dialectics/BlockManager.js';
 import { CanvasManager } from './dialectics/CanvasManager.js';
 import { EditorManager } from './dialectics/EditorManager.js';
-import { MathTool } from './dialectics/tools/math.js';
-import { customConfirm } from './modal_controller.js';
+import { customConfirm, customChoice, customPrompt } from './modal_controller.js';
 
 // --- Debug Console Interceptor ---
 const debugEl = document.getElementById('debugLogContent');
@@ -15,13 +14,13 @@ if (debugEl) {
     const origLog = console.log;
     const origErr = console.error;
     const origWarn = console.warn;
-    
+
     function logToScreen(type, args) {
         const msg = Array.from(args).map(a => {
             if (a instanceof Error) return a.message + '\\n' + a.stack;
             return typeof a === 'object' ? JSON.stringify(a) : a;
         }).join(' ');
-        
+
         const line = document.createElement('div');
         line.style.color = type === 'error' ? '#ff5555' : type === 'warn' ? '#ffff55' : '#55ff55';
         line.style.marginBottom = '4px';
@@ -32,14 +31,14 @@ if (debugEl) {
         debugEl.prepend(line);
     }
 
-    console.log = function() { logToScreen('log', arguments); origLog.apply(console, arguments); };
-    console.error = function() { logToScreen('error', arguments); origErr.apply(console, arguments); };
-    console.warn = function() { logToScreen('warn', arguments); origWarn.apply(console, arguments); };
-    
-    window.addEventListener('error', function(e) {
+    console.log = function () { logToScreen('log', arguments); origLog.apply(console, arguments); };
+    console.error = function () { logToScreen('error', arguments); origErr.apply(console, arguments); };
+    console.warn = function () { logToScreen('warn', arguments); origWarn.apply(console, arguments); };
+
+    window.addEventListener('error', function (e) {
         console.error('Global Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
     });
-    window.addEventListener('unhandledrejection', function(e) {
+    window.addEventListener('unhandledrejection', function (e) {
         console.error('Unhandled Rejection: ', e.reason);
     });
     console.log("Debug console initialized");
@@ -49,11 +48,11 @@ if (debugEl) {
 class DialecticsEngine {
     constructor() {
         window.showToast = window.showToast || ((msg) => console.log("Toast:", msg));
-        
-        this.state = { 
-            currentNoteId: null, 
-            pendingSide: null, 
-            isExpanded: false, 
+
+        this.state = {
+            currentNoteId: null,
+            pendingSide: null,
+            isExpanded: false,
             editingBlock: null,
             notesList: [],
             viewingNoteId: null,
@@ -61,13 +60,13 @@ class DialecticsEngine {
         };
 
         this.dom = {
-            canvas: document.getElementById('dialecticsCanvas'), 
+            canvas: document.getElementById('dialecticsCanvas'),
             editor: document.getElementById('inlineEditor'),
-            title: document.getElementById('globalDialecticsTitle'), 
-            deleteBtn: document.getElementById('btnDeleteDialectics'), 
-            backdrop: document.getElementById('expandedBackdrop'), 
+            title: document.getElementById('globalDialecticsTitle'),
+            deleteBtn: document.getElementById('btnDeleteDialectics'),
+            backdrop: document.getElementById('expandedBackdrop'),
             dragHandle: document.getElementById('editorDragHandle'),
-            loadModal: document.getElementById('loadDialecticsModal'), 
+            loadModal: document.getElementById('loadDialecticsModal'),
             loadList: document.getElementById('loadDialecticsList'),
             viewModal: document.getElementById('dialecticsViewModal'),
             viewTitle: document.getElementById('dialecticsViewTitle'),
@@ -85,32 +84,26 @@ class DialecticsEngine {
 
     async init() {
         this.logDebug("Engine init...");
-        
-        try {
-            await MathTool.initMathLive();
-        } catch (e) {
-            console.error("MathLive preload failed:", e);
-        }
-        
-        if (window.MathfieldElement) {
-            window.MathfieldElement.fontsDirectory = 'https://cdn.jsdelivr.net/npm/mathlive@latest/dist/fonts';
-        }
-        
+
         this._bindEvents();
-        
+
         if (this.dom.editor.classList.contains('embedded') && this.dom.dashboardTextarea) {
             this.setupDashboardTextarea();
             this._revealInterface();
         } else {
             const params = new URLSearchParams(window.location.search);
-            const noteId = params.get('id') || localStorage.getItem('dialectics_last_note_id');
+            const noteId = params.get('id');
             if (noteId) {
                 await this.loadNoteToEditor(noteId);
             } else {
+                this.state.currentNoteId = null;
+                if (this.dom.title) this.dom.title.value = "";
+                if (this.dom.canvas) BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
+                if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
                 this._revealInterface();
             }
         }
-        
+
         await this.editor.switchTab('text');
     }
 
@@ -123,14 +116,14 @@ class DialecticsEngine {
     _bindEvents() {
         DialecticsUI.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state);
         DialecticsUI.setupResizable(this.dom.editor, document.getElementById('editorResizeHandle'));
-        
+
         const bind = (id, fn) => document.getElementById(id)?.addEventListener('click', fn.bind(this));
-        
+
         bind('btnDeleteDialectics', this.deleteGlobal);
         bind('btnSaveDialectics', this.saveGlobal);
         bind('btnMathFormula', () => this.editor.showMathMenu()); // Need to add showMathMenu to EditorManager or keep here
         bind('btnBoldFormat', () => this.editor.toggleBold());
-        
+
         if (this.dom.editor.classList.contains('embedded')) {
             bind('btnEditorSave', this.saveAndPin);
         } else {
@@ -155,7 +148,7 @@ class DialecticsEngine {
                 }
             }
         });
-        
+
         const searchInput = document.getElementById('dialecticsSearchInput');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.searchNotes(e.target.value));
@@ -163,8 +156,9 @@ class DialecticsEngine {
 
 
 
+        bind('btnGlobalParser', this.runGlobalParser);
         bind('btnExampleDialectics', this.loadExample);
-        
+
         bind('btnViewModalEdit', () => {
             this.hideViewModal();
             this.loadNoteToEditor(this.state.viewingNoteId);
@@ -216,14 +210,14 @@ class DialecticsEngine {
                 this.editor.applyColorToSelected(e.target.value);
             });
         }
-        
+
         const fillPicker = document.getElementById('shapeFillColor');
         if (fillPicker) {
             fillPicker.addEventListener('input', (e) => {
                 this.editor.applyFillToSelected(e.target.value + '33');
             });
         }
-        
+
         bind('btnToggleFill', () => this.editor.toggleFillForSelected());
     }
 
@@ -234,12 +228,12 @@ class DialecticsEngine {
         }
         this.editor.switchTab('text');
         this.editor.setContent(content);
-        
+
         if (!this.editor.tiptap && this.dom.dashboardTextarea) {
             const temp = document.createElement('div');
             temp.innerHTML = content;
             this.dom.dashboardTextarea.value = temp.innerText || temp.textContent || "";
-            this.dom.dashboardTextarea.dispatchEvent(new Event('input')); 
+            this.dom.dashboardTextarea.dispatchEvent(new Event('input'));
         }
     }
 
@@ -286,7 +280,8 @@ class DialecticsEngine {
         return {
             onEdit: (b) => { this.state.editingBlock = b; this.openEdit(b); },
             onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
-            onDelete: () => { this.saveGlobal(); }
+            onDelete: () => { this.saveGlobal(); },
+            onAI: (b) => { this.runAI(b); }
         };
     }
 
@@ -298,20 +293,250 @@ class DialecticsEngine {
         this.open();
     }
 
+    async runAI(block) {
+        const inner = block.querySelector('.dialectics-content-inner');
+        if (!inner) return;
+        const processText = inner.innerText || inner.textContent;
+
+        window.showToast("🤖 AI анализирует процесс...", "info");
+
+        try {
+            const res = await fetch('/api/ai/dialectics/opposites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ process_a: processText })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'API Error');
+            }
+
+            const data = await res.json();
+
+            // Format result safely
+            const safeResult = data.result.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const formattedResult = `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${safeResult}</div>`;
+
+            customConfirm({
+                title: 'Результат анализа',
+                message: formattedResult,
+                icon: '🤖',
+                buttons: [
+                    { label: 'Закрыть', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+
+        } catch (error) {
+            console.error(error);
+            customConfirm({
+                title: 'Ошибка AI',
+                message: `<div style="color: red;">${error.message}</div>`,
+                buttons: [
+                    { label: 'Закрыть', value: true, class: 'confirm-btn-secondary' }
+                ]
+            });
+        }
+    }
+
+    async runGlobalParser() {
+        const formula = prompt("Введите математическую формулу для диалектического парсинга:");
+        if (!formula || !formula.trim()) return;
+
+        window.showToast("🧮 AI парсит формулу...", "info");
+
+        try {
+            const res = await fetch('/api/ai/dialectics/parser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ formula: formula.trim() })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'API Error');
+            }
+
+            const data = await res.json();
+
+            // Parse JSON response
+            let parsed;
+            try {
+                parsed = JSON.parse(data.result);
+            } catch (e) {
+                // Sometimes LLM wraps JSON in markdown blocks
+                const match = data.result.match(/```(?:json)?\n([\s\S]*?)\n```/);
+                if (match) {
+                    parsed = JSON.parse(match[1]);
+                } else {
+                    throw new Error("Не удалось распарсить JSON ответ от ИИ.");
+                }
+            }
+
+            // Create formatted HTML for the parsed JSON
+            const formatBlock = (title, content, bgColor) => `
+                <div style="background: ${bgColor}; border: 1px solid rgba(0,0,0,0.05); padding: 12px 16px; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: rgba(0,0,0,0.5); margin-bottom: 6px;">${title}</div>
+                    <div style="font-size: 0.95rem; line-height: 1.5; color: #1e293b;">${content || '—'}</div>
+                </div>
+            `;
+
+            const htmlContent = `
+                <div style="text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+                    <h3 style="margin-top: 0; color: #4338ca; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px;">
+                        Анализ формулы: <span style="font-family: monospace; background: #e0e7ff; padding: 2px 6px; border-radius: 4px;">${formula}</span>
+                    </h3>
+                    ${formatBlock("Предшествующая операция", parsed.predecessor, "#f8fafc")}
+                    ${formatBlock("Кризис усложнения записи", parsed.crisis_of_notation, "#fef2f2")}
+                    ${formatBlock("Снятие (Разрешение)", parsed.resolution, "#f0fdf4")}
+                </div>
+            `;
+
+            customConfirm({
+                title: 'Результат Парсера',
+                message: htmlContent,
+                icon: '🧮',
+                buttons: [
+                    { label: 'Закрыть', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+
+        } catch (error) {
+            console.error(error);
+            customConfirm({
+                title: 'Ошибка Парсера',
+                message: `<div style="color: red;">${error.message}</div>`,
+                buttons: [
+                    { label: 'Закрыть', value: true, class: 'confirm-btn-secondary' }
+                ]
+            });
+        }
+    }
+
+    async startTextMathDictation() {
+        const text = await customPrompt({
+            title: '✍ Опишите формулу словами',
+            message: 'Например: "корень из x в квадрате плюс y в квадрате"',
+            placeholder: 'Ваш текст...'
+        });
+        if (!text || !text.trim()) return;
+
+        window.showToast("⏳ ИИ генерирует формулу...", "info");
+
+        try {
+            const res = await fetch('/api/ai/dialectics/text-math', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text.trim() })
+            });
+
+            if (!res.ok) throw new Error(await res.text());
+
+            const data = await res.json();
+            const latex = data.latex;
+
+            // Insert into TipTap
+            if (this.editor && this.editor.tiptap) {
+                this.editor.tiptap.chain().focus().insertContent({
+                    type: 'mathNode',
+                    attrs: { latex: latex }
+                }).run();
+                window.showToast("✅ Формула добавлена", "success");
+            }
+        } catch (error) {
+            console.error(error);
+            window.showToast("❌ Ошибка генерации формулы", "error");
+        }
+    }
+
+    async startVoiceMathDictation() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks = [];
+            let isCancelled = false;
+
+            mediaRecorder.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener("stop", async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                stream.getTracks().forEach(track => track.stop());
+
+                if (isCancelled) {
+                    window.showToast("Запись отменена", "info");
+                    return;
+                }
+
+                window.showToast("⏳ Распознавание и генерация LaTeX...", "info");
+
+                const formData = new FormData();
+                // append file
+                formData.append("file", audioBlob, "voice-math.webm");
+
+                try {
+                    const res = await fetch('/api/ai/dialectics/voice-math', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!res.ok) throw new Error(await res.text());
+
+                    const data = await res.json();
+                    const latex = data.latex;
+
+                    console.log("Transcribed text:", data.transcribed_text);
+
+                    // Insert into TipTap
+                    if (this.editor && this.editor.tiptap) {
+                        this.editor.tiptap.chain().focus().insertContent({
+                            type: 'mathNode',
+                            attrs: { latex: latex }
+                        }).run();
+                        window.showToast("✅ Формула добавлена", "success");
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    window.showToast("❌ Ошибка обработки аудио", "error");
+                }
+            });
+
+            mediaRecorder.start();
+
+            // Show toast indicating recording
+            customConfirm({
+                title: '🎙 Запись',
+                message: '<div style="text-align: center; color: red; font-weight: bold; animation: pulse 1.5s infinite;">Идет запись аудио... Говорите формулу.</div>',
+                buttons: [
+                    { label: 'Остановить и распознать', value: true, class: 'confirm-btn-primary' },
+                    { label: 'Отмена', value: false, class: 'confirm-btn-secondary' }
+                ]
+            }).then((val) => {
+                if (val === false) isCancelled = true;
+                // Stop recording when user clicks any button
+                if (mediaRecorder.state === "recording") {
+                    mediaRecorder.stop();
+                }
+            });
+
+        } catch (err) {
+            console.error("Microphone access denied or error:", err);
+            window.showToast("❌ Нет доступа к микрофону", "error");
+        }
+    }
+
     async saveGlobal() {
         const title = this.dom.title.value || "Untitled Dialectics";
         const html = this.editor.getHTML();
         console.log("TipTap HTML Output -> length:", html.length);
-        console.log("HTML preview:", html.substring(0, 150) + "...");
-        if (html.includes("data-fabric")) {
-            console.log("HTML CONTAINS data-fabric attribute. Matches:", html.match(/data-fabric="[^"]+"/g)?.length || 0);
-        } else {
-            console.error("HTML DOES NOT CONTAIN data-fabric attribute!");
-        }
-        
         if (this.state.editingBlock) {
             const inner = this.state.editingBlock.querySelector('.dialectics-content-inner');
-            if (inner) inner.innerHTML = html;
+            if (inner) {
+                inner.innerHTML = html;
+                BlockManager.renderMath(inner);
+            }
         } else if (this.state.pendingSide) {
             if (html !== '<p></p>' && html.trim() !== '') {
                 const currentBlocks = BlockManager.getBlocks(this.dom.canvas);
@@ -333,8 +558,8 @@ class DialecticsEngine {
         }
 
         const blocks = BlockManager.getBlocks(this.dom.canvas);
-        const payload = { 
-            title, 
+        const payload = {
+            title,
             blocks,
             sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
             sticker_title: document.getElementById('dialecticsStickerTitle')?.value || "",
@@ -344,7 +569,7 @@ class DialecticsEngine {
         if (this.state.currentNoteId) {
             payload.id = Number(this.state.currentNoteId);
         }
-        
+
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
             this.state.currentNoteId = res.id;
@@ -357,9 +582,9 @@ class DialecticsEngine {
     async saveAndPin() {
         const title = this.dom.title.value || "Untitled Dialectics";
         let html = this.editor.getHTML() || (this.dom.dashboardTextarea?.value.replace(/\n/g, '<br>') || "");
-        
-        const payload = { 
-            title, 
+
+        const payload = {
+            title,
             blocks: [{ side: 'left', html }],
             is_pinned: true,
             sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
@@ -370,7 +595,7 @@ class DialecticsEngine {
         if (this.state.currentNoteId) {
             payload.id = this.state.currentNoteId;
         }
-        
+
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
             window.showToast("✓ Saved and pinned", "success");
@@ -386,9 +611,9 @@ class DialecticsEngine {
             localStorage.setItem('dialectics_last_note_id', n.id);
             this.dom.title.value = n.title;
             const blocks = typeof n.content_json === 'string' ? JSON.parse(n.content_json) : n.content_json;
-            
+
             BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
-            
+
             this._revealInterface();
             this.hideLoadModal();
             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
@@ -434,15 +659,15 @@ class DialecticsEngine {
         notes.forEach(n => {
             const i = document.createElement('div');
             i.className = 'load-note-item';
-            
+
             const d = new Date(n.updated_at || n.created_at);
             let dateStr = "";
             if (d.getFullYear() > 1970) {
-                dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
-            
+
             const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Закреплено">📌</span>' : '';
-            
+
             i.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
                     <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${pinnedIcon}<strong>${n.title}</strong></div>
@@ -451,13 +676,13 @@ class DialecticsEngine {
                 <button class="load-note-item-delete" title="Удалить">🗑️</button>
             `;
             // Inline styles will be enhanced by CSS if needed, but these ensure it looks ok immediately
-            
+
             i.onclick = () => this.loadNoteToEditor(n.id);
-            
+
             const delBtn = i.querySelector('.load-note-item-delete');
             delBtn.onclick = async (e) => {
                 e.stopPropagation();
-                
+
                 const confirmed = await customConfirm({
                     title: 'Подтверждение удаления',
                     message: `Удалить диалектику "${n.title}"?`,
@@ -467,7 +692,7 @@ class DialecticsEngine {
                         { label: 'Удалить', value: true, class: 'confirm-btn-danger' }
                     ]
                 });
-                    
+
                 if (confirmed) {
                     const ok = await DialecticsAPI.delete(n.id);
                     if (ok) {
@@ -487,7 +712,7 @@ class DialecticsEngine {
                     }
                 }
             };
-            
+
             this.dom.loadList.appendChild(i);
         });
     }
@@ -508,17 +733,17 @@ class DialecticsEngine {
             window.showToast("Save first to pin", "warning");
             return;
         }
-        
+
         const title = this.dom.title.value || "Untitled Dialectics";
         const blocks = BlockManager.getBlocks(this.dom.canvas);
-        
-        const payload = { 
+
+        const payload = {
             id: this.state.currentNoteId,
-            title, 
+            title,
             blocks,
             is_pinned: true
         };
-        
+
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
             window.showToast("Pinned successfully", "success");
@@ -528,7 +753,7 @@ class DialecticsEngine {
     showViewModal(id, title, blocks) {
         this.state.viewingNoteId = id;
         this.dom.viewTitle.textContent = title;
-        
+
         // Render blocks into a simple view
         let fullHtml = "";
         blocks.forEach(b => {
@@ -537,7 +762,7 @@ class DialecticsEngine {
                 <div>${b.html}</div>
             </div>`;
         });
-        
+
         this.dom.viewBody.innerHTML = fullHtml;
         this.dom.viewModal.style.display = 'flex';
     }

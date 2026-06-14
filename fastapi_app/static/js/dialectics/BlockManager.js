@@ -2,8 +2,24 @@
  * BlockManager.js - Управление блоками на холсте Диалектики
  */
 import { customConfirm } from '../modal_controller.js';
+import katex from 'katex';
 
 export const BlockManager = {
+    renderMath(element) {
+        const mathNodes = element.querySelectorAll('span[data-type="mathNode"]');
+        mathNodes.forEach(node => {
+            const latex = node.getAttribute('latex');
+            if (latex) {
+                try {
+                    katex.render(latex, node, { throwOnError: false });
+                } catch(e) {
+                    node.textContent = latex;
+                    node.style.color = 'red';
+                }
+            }
+        });
+    },
+
     render(container, blocks, callbacks) {
         if (!container) return;
         const divider = document.getElementById('canvasDivider');
@@ -39,10 +55,18 @@ export const BlockManager = {
             el.innerHTML = `
                 <div class="block-actions">
                     <button class="btn-block-edit">✎ Edit</button>
+                    <button class="btn-block-ai" style="color: var(--color-indigo);">🤖 AI</button>
                     <button class="btn-block-del">× Delete</button>
                 </div>
                 <div class="dialectics-content-inner">${b.html}</div>
             `;
+            
+            this.renderMath(el);
+
+            el.querySelector('.btn-block-ai').onclick = (e) => {
+                e.stopPropagation();
+                if (callbacks.onAI) callbacks.onAI(el);
+            };
             el.querySelector('.btn-block-edit').onclick = (e) => {
                 e.stopPropagation();
                 callbacks.onEdit(el);
@@ -67,6 +91,9 @@ export const BlockManager = {
                     if (callbacks.onDelete) callbacks.onDelete();
                 }
             };
+            
+            // Математика удалена
+
             container.appendChild(el);
 
             if (callbacks.onInsertAfter) {

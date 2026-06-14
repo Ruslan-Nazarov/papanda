@@ -222,6 +222,7 @@
     border: 1px solid #e0f2fe;
     margin: 10px;
     border-radius: 12px;
+    overflow-y: auto;
 }
 
 .tiptap-editor .ProseMirror {
@@ -230,6 +231,7 @@
     outline: none !important;
     min-height: 200px;
     cursor: text !important;
+    overflow-y: auto;
 }
 
 .tiptap-editor.focused {

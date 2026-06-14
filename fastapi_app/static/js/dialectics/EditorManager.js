@@ -3,8 +3,7 @@
  */
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { MathNode, ResizableImage } from './editor_setup.js';
-import { MathTool } from './tools/math.js';
+import { ResizableImage, MathNode } from './editor_setup.js';
 import { GraphTool } from './tools/graph.js';
 import { ShapeTool } from './tools/shapes.js';
 
@@ -21,12 +20,25 @@ export class EditorManager {
         if (!el) return;
 
         el.addEventListener('mousedown', (e) => e.stopPropagation());
+        
+        // Custom context menu for math
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.engine.logDebug(`[EditorManager] Right-click detected at ${e.clientX}, ${e.clientY}`);
+            try {
+                this.showMathMenu(e.clientX, e.clientY);
+                this.engine.logDebug(`[EditorManager] Menu rendered successfully`);
+            } catch (err) {
+                this.engine.logDebug(`[EditorManager] Error showing menu: ${err.message}`);
+                console.error(err);
+            }
+        }, true);
 
         try {
             this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
-                extensions: [StarterKit, MathNode, ResizableImage],
+                extensions: [StarterKit, ResizableImage, MathNode],
                 content: '<p></p>',
                 autofocus: 'end',
                 onFocus: () => el.classList.add('focused'),
@@ -36,11 +48,6 @@ export class EditorManager {
                         mousedown: (view, event) => {
                             event.stopPropagation();
                             return false;
-                        },
-                        contextmenu: (view, event) => {
-                            event.preventDefault();
-                            this.showMathMenu(event.clientX, event.clientY);
-                            return true;
                         }
                     },
                     handleKeyDown: (view, event) => {
@@ -130,58 +137,69 @@ export class EditorManager {
         }
     }
 
-    async showMathMenu(x, y) {
-        this.engine.logDebug("[EditorManager] showMathMenu called");
+    showMathMenu(x, y) {
+        const existing = document.getElementById('mathContextMenu');
+        if (existing) existing.remove();
 
-        // If coordinates provided, it's a floating context menu
-        if (x !== undefined && y !== undefined) {
-            await MathTool.showContextMenu(x, y, (s) => this.insertMath(s));
-            return;
-        }
-
-        const menu = document.getElementById('mathMenu');
-        if (!menu) return;
-
-        if (menu.style.display === 'flex') {
-            menu.style.display = 'none';
-            return;
-        }
-
+        const menu = document.createElement('div');
+        menu.id = 'mathContextMenu';
+        menu.style.position = 'fixed';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        menu.style.background = 'white';
+        menu.style.border = '1px solid #e2e8f0';
+        menu.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+        menu.style.borderRadius = '8px';
+        menu.style.padding = '8px 0';
+        menu.style.zIndex = '999999'; // Very high z-index
         menu.style.display = 'flex';
-        await MathTool.initMathLive();
-        this.switchMathCategory('main');
-    }
+        menu.style.flexDirection = 'column';
+        menu.style.minWidth = '200px';
 
-    switchMathCategory(cat) {
-        MathTool.renderPalette(
-            document.getElementById('mathPalette'),
-            cat,
-            (s) => this.insertMath(s),
-            (c) => this.switchMathCategory(c)
-        );
-    }
+        const btnStyle = `
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: #334155;
+            transition: background 0.2s;
+        `;
 
-    insertMath(latex) {
-        this.engine.logDebug(`[EditorManager] Inserting math: ${latex}`);
+        const btnVoice = document.createElement('button');
+        btnVoice.innerHTML = '🎙 Диктовать формулу';
+        btnVoice.style.cssText = btnStyle;
+        btnVoice.onmouseover = () => btnVoice.style.background = '#f1f5f9';
+        btnVoice.onmouseout = () => btnVoice.style.background = 'transparent';
+        btnVoice.onclick = () => {
+            menu.remove();
+            this.engine.startVoiceMathDictation();
+        };
 
-        if (!this.tiptap) {
-            this.engine.logDebug("[EditorManager] Error: TipTap not initialized");
-            return;
-        }
+        const btnText = document.createElement('button');
+        btnText.innerHTML = '✍ Написать формулу текстом';
+        btnText.style.cssText = btnStyle;
+        btnText.onmouseover = () => btnText.style.background = '#f1f5f9';
+        btnText.onmouseout = () => btnText.style.background = 'transparent';
+        btnText.onclick = () => {
+            menu.remove();
+            this.engine.startTextMathDictation();
+        };
 
-        // 1. Принудительно возвращаем фокус редактору
-        this.tiptap.commands.focus();
+        menu.appendChild(btnVoice);
+        menu.appendChild(btnText);
+        document.body.appendChild(menu);
 
-        // 2. Вставляем узел с формулой
-        this.tiptap.chain()
-            .focus()
-            .insertContent({
-                type: 'mathNode',
-                attrs: { latex }
-            })
-            .run();
-
-        this.engine.logDebug("[EditorManager] Math inserted successfully");
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 10);
     }
 
     toggleBold() {

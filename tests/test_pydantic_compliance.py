@@ -52,7 +52,6 @@ def test_pydantic_usage_in_routers():
                 "/api/events/month",
                 "/import_sentences",
                 "/api/sentences",
-                "/api/analytics/wordcloud",
                 "/api/notes/search",
                 "/api/stickers/debug_info",
                 "/api/observations/full-tree",

@@ -3,140 +3,9 @@
  */
 import { Node, mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
+import katex from 'katex';
+import { customPrompt, customLatexPrompt } from '../modal_controller.js';
 
-/**
- * MathNode - Атомарный узел для формул MathLive.
- * Реализовано с интеллектуальным обновлением для сохранения позиции курсора.
- */
-export const MathNode = Node.create({
-    name: 'mathNode',
-    group: 'inline',
-    inline: true,
-    atom: true,
-
-    addAttributes() {
-        return { latex: { default: '' } };
-    },
-
-    parseHTML() {
-        return [{
-            tag: 'math-field',
-            getAttrs: el => ({
-                latex: el.getAttribute('value') || el.getAttribute('latex') || el.textContent || ''
-            })
-        }];
-    },
-
-    renderHTML({ HTMLAttributes }) {
-        return ['math-field', mergeAttributes(HTMLAttributes, {
-            value: HTMLAttributes.latex,
-            'read-only': 'true'
-        })];
-    },
-
-    addNodeView() {
-        return ({ node, getPos, editor }) => {
-            // 1. Создаем обертку для защиты от ProseMirror
-            const wrapper = document.createElement('span');
-            wrapper.className = 'math-node-wrapper';
-            wrapper.contentEditable = 'false';
-            wrapper.style.display = 'inline-block';
-            wrapper.style.verticalAlign = 'middle';
-
-            // 2. Создаем и настраиваем MathLive
-            const mathField = document.createElement('math-field');
-            mathField.value = node.attrs.latex;
-            mathField.setAttribute('menu-helper', 'none');
-            mathField.setAttribute('virtual-keyboard-toggle-visible', 'false');
-
-            // Гарантируем шрифты
-            if (mathField.constructor.fontsDirectory === undefined) {
-                mathField.constructor.fontsDirectory = 'https://cdn.jsdelivr.net/npm/mathlive@latest/dist/fonts';
-            }
-
-            wrapper.appendChild(mathField);
-
-            // MathLive — Web Component с Shadow DOM. События клавиатуры НЕ всплывают
-            // через границу Shadow DOM в Light DOM. Единственный способ перехватить
-            // ввод — слушать на уровне document в capture-фазе и проверять фокус.
-            const CYRILLIC_KEY_MAP = {
-                'п': '+',
-                'м': '-',
-                'у': '\\times ',
-                'д': '\\div ',
-                'р': '=',
-                'к': '\\sqrt{}',
-                'и': '\\int ',
-                'с': '\\sum ',
-                'б': '\\infty ',
-                'ф': '\\frac{}{}',
-            };
-
-            const mathKeydownHandler = (e) => {
-                // Shadow DOM: document.activeElement указывает на math-field (host element),
-                // но проверяем также через composedPath для надёжности
-                const path = e.composedPath();
-                const isInsideThisField = path.includes(mathField) || document.activeElement === mathField;
-                if (!isInsideThisField) return;
-                const replacement = CYRILLIC_KEY_MAP[e.key];
-                if (e.altKey && replacement && !e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    mathField.executeCommand(['insert', replacement]);
-                }
-            };
-            document.addEventListener('keydown', mathKeydownHandler, true);
-
-            // Удаляем обработчик при уничтожении NodeView (предотвращаем утечки памяти)
-            const originalDestroy = () => {
-                document.removeEventListener('keydown', mathKeydownHandler, true);
-            };
-
-            // Отладка
-            const log = (m) => { if (window.app && window.app.logDebug) window.app.logDebug(m); };
-
-            // 3. Обработчик ввода: MathLive -> TipTap
-            mathField.oninput = () => {
-                if (typeof getPos === 'function') {
-                    editor.view.dispatch(
-                        editor.view.state.tr.setNodeMarkup(getPos(), null, {
-                            latex: mathField.value
-                        })
-                    );
-                }
-            };
-
-            // 4. Объект NodeView
-            return {
-                dom: wrapper,
-                // Пропускаем все события внутрь обертки
-                stopEvent: (event) => wrapper.contains(event.target),
-                // Игнорируем внутренние мутации shadow DOM
-                ignoreMutation: () => true,
-                // Интеллектуальное обновление без сброса каретки
-                update: (updatedNode) => {
-                    if (updatedNode.type.name !== node.type.name) return false;
-
-                    // Обновляем value только если поле НЕ в фокусе.
-                    // Это критически важно для сохранения позиции каретки при вводе.
-                    if (document.activeElement !== mathField && mathField.value !== updatedNode.attrs.latex) {
-                        log("[MathNode] Внешнее обновление (Undo/Redo)");
-                        mathField.value = updatedNode.attrs.latex;
-                    }
-
-                    return true;
-                },
-                destroy: () => {
-                    originalDestroy();
-                }
-            };
-        };
-    }
-});
-
-/**
- * ResizableImage - Расширение для изображений с возможностью изменения размера
- */
 export const ResizableImage = Image.extend({
     draggable: true,
     inline: false,
@@ -253,6 +122,74 @@ export const ResizableImage = Image.extend({
                     // Разрешаем события внутри контейнера для ручки изменения размера
                     return handle.contains(event.target);
                 }
+            };
+        };
+    },
+});
+
+export const MathNode = Node.create({
+    name: 'mathNode',
+    group: 'inline',
+    inline: true,
+    atom: true,
+
+    addAttributes() {
+        return {
+            latex: {
+                default: ''
+            }
+        };
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: 'span[data-type="mathNode"]',
+            },
+        ];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'mathNode' })];
+    },
+
+    addNodeView() {
+        return ({ node, getPos, editor }) => {
+            const dom = document.createElement('span');
+            dom.classList.add('math-node');
+            dom.setAttribute('data-type', 'mathNode');
+            
+            try {
+                katex.render(node.attrs.latex, dom, {
+                    throwOnError: false,
+                    displayMode: false
+                });
+            } catch (err) {
+                dom.textContent = node.attrs.latex;
+                dom.style.color = 'red';
+            }
+            
+            dom.ondblclick = async (e) => {
+                e.stopPropagation();
+                const newLatex = await customLatexPrompt({
+                    title: '✍ Редактировать формулу (LaTeX)',
+                    value: node.attrs.latex,
+                    okLabel: 'Сохранить',
+                    cancelLabel: 'Отмена'
+                });
+                
+                if (newLatex !== null && typeof getPos === 'function') {
+                    editor.view.dispatch(
+                        editor.view.state.tr.setNodeMarkup(getPos(), null, {
+                            ...node.attrs,
+                            latex: newLatex,
+                        })
+                    );
+                }
+            };
+            
+            return {
+                dom,
             };
         };
     },
