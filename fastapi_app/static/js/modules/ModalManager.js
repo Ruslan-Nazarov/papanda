@@ -54,6 +54,10 @@ export const ModalManager = {
         // Close on click outside
         window.addEventListener('mousedown', (e) => {
             if (e.target.classList.contains('modal')) {
+                if (e.target.dataset.preventOutsideClick === 'true') {
+                    // Do nothing, preventing accidental close
+                    return;
+                }
                 this.close(e.target.id);
             }
         });

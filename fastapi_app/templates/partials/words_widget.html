@@ -15,7 +15,7 @@
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
             <!-- Tabs -->
             <button type="button" class="btn btn-secondary btn-icon tab-btn active" id="tab-btn-list" onclick="switchWordsTab('list')" style="background: var(--color-bg-subtle);" title="List">📋</button>
-            <button type="button" class="btn btn-secondary btn-icon tab-btn" id="tab-btn-workout" onclick="switchWordsTab('workout')" title="Brain Workout">🧠</button>
+            <button type="button" class="btn btn-secondary btn-icon tab-btn" id="tab-btn-workout" onclick="switchWordsTab('workout')" title="Recognition">👀</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="openLanguageLearningModal()" style="background: var(--color-bg-subtle); margin-left: 5px;" title="Sentence Trainer">🎓</button>
             
             <!-- Removed old full library link -->
@@ -54,7 +54,7 @@
                 <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); gap: 8px;">
                     <!-- Foreign Words (Top Row) -->
                     {% for lang_code in active_languages %}
-                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;">
+                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;" oncontextmenu="event.preventDefault(); this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';">
                         {{ word.translations.get(lang_code, '') }}
                     </span>
                     {% endfor %}
@@ -93,8 +93,8 @@
         <div id="words-tab-workout" style="display: none; padding: 10px;">
             <div id="test-start-view" style="text-align: center; padding: 10px 0;">
                 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px;">
-                    <p style="font-size: 0.85rem; color: var(--color-text-body); margin: 0;">Ready for a <span id="workout-count-display">5</span>-word challenge?</p>
-                    <span class="edit-btn" style="cursor: pointer; font-size: 0.8em; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" onclick="openWorkoutSettingsModalWidget()" title="Workout Settings">⚙️</span>
+                    <p style="font-size: 0.85rem; color: var(--color-text-body); margin: 0;">Ready for a <span id="workout-count-display">5</span>-word recognition?</p>
+                    <span class="edit-btn" style="cursor: pointer; font-size: 0.8em; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" onclick="openWorkoutSettingsModalWidget()" title="Recognition Settings">⚙️</span>
                 </div>
                 <button id="btn-start-test" onclick="startKnowledgeTest()" style="background: #9b59b6; color: white; border: none; padding: 6px 20px; font-size: 0.9rem; border-radius: 20px; cursor: pointer; font-weight: bold;">Start Test</button>
                 <div id="test-log" style="margin-top: 8px; color: #c00; min-height: 16px; font-size: 0.75rem;"></div>
@@ -114,12 +114,13 @@
                     <button id="btn-show-hint" onclick="toggleHint()" style="background: white; border: 1px solid var(--color-border-light); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Hint</button>
                     <button id="btn-known" onclick="recordResult(true)" style="background: #27ae60; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">I Know This</button>
                     <button id="btn-unknown" onclick="recordResult(false)" style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Don't Know</button>
+                    <button id="btn-learn-triplet" onclick="if(window.markWorkoutTripletLearnedWidget) window.markWorkoutTripletLearnedWidget()" style="background: white; color: var(--color-success); border: 1px solid var(--color-success); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Mark all translations as learned">✓ All</button>
                 </div>
             </div>
 
             <div id="test-finish-view" style="display: none; text-align: center; padding: 10px 0;">
                 <div style="font-size: 2em; margin-bottom: 8px">🏆</div>
-                <h4 style="margin: 0; color: var(--color-text-dark); font-size: 1rem;">Workout Complete!</h4>
+                <h4 style="margin: 0; color: var(--color-text-dark); font-size: 1rem;">Recognition Complete!</h4>
                 <p id="test-result-summary" style="font-size: 0.85rem; color: var(--color-text-body); margin-top: 6px;">You knew 0 out of 5 words.</p>
                 <div style="display: flex; gap: 8px; justify-content: center; margin-top: 12px;">
                     <button id="btn-try-again" style="background: none; border: 1px solid #9b59b6; color: #9b59b6; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Try Again</button>
@@ -131,16 +132,16 @@
     </div>
 </div>
 
-<!-- Brain Workout Settings Modal (Widget Version) -->
+<!-- Recognition Settings Modal (Widget Version) -->
 <div id="workoutSettingsModalWidget" class="modal premium-modal" style="display: none; z-index: 1050;">
     <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden; background: white;">
         <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Brain Workout Settings</h2>
+            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Recognition Settings</h2>
             <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 0; color: var(--color-text-muted);" onclick="closeWorkoutSettingsModalWidget()">✕</button>
         </div>
         <div class="modal-body" style="padding: 24px;">
             <div class="form-group" style="margin-bottom: 24px;">
-                <label class="form-label">Words per Workout</label>
+                <label class="form-label">Words per Session</label>
                 <input type="number" id="settingWorkoutLimitWidget" min="1" max="50" value="5" class="form-input" />
             </div>
             <div class="form-group" style="margin-bottom: 0;">

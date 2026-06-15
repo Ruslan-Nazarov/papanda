@@ -9,8 +9,8 @@ import { showToast } from './modules/NotificationService.js';
 // ─── Chronology ───────────────────────────────────────────────────────────────
 
 window.openChronoExpandModal = function (id = null, text = '', date = '') {
-    const widgetText = text || document.querySelector('textarea[name="chrono_text"]')?.value || '';
-    let widgetDate = date || document.querySelector('input[name="chrono_date"]')?.value || '';
+    const widgetText = text || document.getElementById('chronoWidgetText')?.value || '';
+    let widgetDate = date || document.getElementById('chronoWidgetDate')?.value || '';
 
     // If we only have a date (YYYY-MM-DD), append T00:00 for datetime-local compatibility
     if (widgetDate && widgetDate.length === 10) {
@@ -36,7 +36,12 @@ window.saveQuickChrono = async function (e) {
         const data = await response.json();
         if (data.status === 'success') {
             showToast('✓ ' + (data.message || 'Chrono saved'), 'success');
-            form.reset();
+            
+            const wText = document.getElementById('chronoWidgetText');
+            if (wText) wText.value = '';
+            
+            // Re-fetch chronology list
+            if (window.refreshCurrentView) window.refreshCurrentView('Chronology');
         } else {
             showToast('⚠ ' + (data.message || 'Error saving'), 'error');
         }

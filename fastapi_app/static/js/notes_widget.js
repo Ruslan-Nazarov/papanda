@@ -1,3 +1,6 @@
+import { ModalManager } from './modules/ModalManager.js';
+import { EditorSync } from './modules/EditorSync.js';
+
 /**
  * notes_widget.js - AJAX Controller for Regular Notes
  */
@@ -139,19 +142,32 @@ class NotesWidget {
                     window.showToast("✓ Note saved successfully", "success");
                 }
                 
-                if (shouldClose) {
-                    ta.value = '';
-                    if (pin) pin.checked = false;
-                    if (idInput) idInput.value = '';
-                    
-                    if (isExpanded) {
+                const savedId = result.id || noteId;
+                if (idInput) idInput.value = savedId;
+                
+                if (isExpanded) {
+                    if (shouldClose) {
                         const modal = document.getElementById('expandedNoteEditorModal');
                         if (modal) modal.style.display = 'none';
                     }
+                    
+                    // Clear the Quick Note widget so it's ready for a new note
+                    const regularTa = document.getElementById('regularNoteTextarea');
+                    if (regularTa) regularTa.value = '';
+                    
+                    const regularPin = document.getElementById('regularNotePin');
+                    if (regularPin) regularPin.checked = false;
+                } else {
+                    // Saved from regular widget, clear it
+                    const regularTa = document.getElementById('regularNoteTextarea');
+                    if (regularTa) regularTa.value = '';
+                    
+                    const regularPin = document.getElementById('regularNotePin');
+                    if (regularPin) regularPin.checked = false;
                 }
 
                 this.refreshPinnedNotes();
-                return result.id || noteId; 
+                return savedId;
             } else {
                 if (typeof window.showToast === 'function') window.showToast("Error: " + result.message, "error");
             }
@@ -484,16 +500,22 @@ class NotesWidget {
         const modal = document.getElementById('expandedNoteEditorModal');
         const mainTa = document.getElementById('regularNoteTextarea');
         const expTa = document.getElementById('expandedNoteTextarea');
-        const mainCat = document.getElementById('regularNoteCategory');
-        const expCat = document.getElementById('expandedNoteCategory');
-        const expId = document.getElementById('expandedNoteId');
-        const expPin = document.getElementById('expandedNotePin');
         
         if (modal && mainTa && expTa) {
             expTa.value = mainTa.value;
+            
+            const mainCat = document.getElementById('regularNoteCategory');
+            const expCat = document.getElementById('expandedNoteCategory');
             if (mainCat && expCat) expCat.value = mainCat.value;
-            if (expId) expId.value = ''; // New note from widget
-            if (expPin) expPin.checked = false; // Default: not pinned
+            
+            const mainPin = document.getElementById('regularNotePin');
+            const expPin = document.getElementById('expandedNotePin');
+            if (mainPin && expPin) expPin.checked = mainPin.checked;
+            
+            // Clean up the expanded note ID so it knows it's a new note
+            const expId = document.getElementById('expandedNoteId');
+            if (expId) expId.value = '';
+            
             this.currentNoteId = null;
             modal.style.display = 'flex';
             setTimeout(() => expTa.focus(), 100);
@@ -508,15 +530,29 @@ class NotesWidget {
     }
 
     closeExpandedEditor() {
-        if (this._hasUnsavedChanges()) {
-            if (!confirm('Close without saving? Your note will be lost.')) return;
-        }
         const modal = document.getElementById('expandedNoteEditorModal');
         if (modal) modal.style.display = 'none';
-        const expTa = document.getElementById('expandedNoteTextarea');
-        if (expTa) expTa.value = '';
+
+        // Only sync back if this was a NEW note.
+        // If it was an existing note (this.currentNoteId exists), we shouldn't overwrite the quick note area!
+        if (!this.currentNoteId) {
+            const expTa = document.getElementById('expandedNoteTextarea');
+            const regularTa = document.getElementById('regularNoteTextarea');
+            if (expTa && regularTa) regularTa.value = expTa.value;
+            
+            const expCat = document.getElementById('expandedNoteCategory');
+            const regularCat = document.getElementById('regularNoteCategory');
+            if (expCat && regularCat) regularCat.value = expCat.value;
+            
+            const expPin = document.getElementById('expandedNotePin');
+            const regularPin = document.getElementById('regularNotePin');
+            if (expPin && regularPin) regularPin.checked = expPin.checked;
+        }
+
         this.currentNoteId = null;
     }
+
+
 
 
     showAddCategoryModal() {

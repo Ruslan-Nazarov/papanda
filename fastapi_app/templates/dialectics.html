@@ -11,36 +11,38 @@
 {% endblock %}
 
 {% block content %}
-    <div class="dialectics-container">
-        <a href="/" class="back-link">← Back to Dashboard</a>
+    <div class="dialectics-container" style="position: relative;">
 
-        <div class="page-intro" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <h1 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 12px;">
-                Dialectics
-            </h1>
-            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; display: inline-flex; align-items: center; font-weight: 600;">Project Laos</span>
-        </div>
-
-        <!-- Main Dialectics Interface -->
-        <div class="note-interface">
-
-            <div class="note-header">
-                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Enter Dialectics Title..." style="flex: 1; font-family: inherit;">
-                
-
-
-                <div class="header-actions">
-                    <button class="btn btn-info" id="btnGlobalParser" style="font-family: inherit; background-color: #8b5cf6; border-color: #8b5cf6;">🧮 Парсер</button>
-                    <button class="btn btn-info" id="btnExampleDialectics" style="font-family: inherit;">📖 Пример</button>
-                    <button class="btn btn-danger btn-delete-note" id="btnDeleteDialectics"
-                        style="display: none; font-family: inherit;">🗑️ Delete</button>
-                    <button class="btn btn-primary btn-save-note" id="btnLoadDialectics" style="font-family: inherit;">📂 Load</button>
-                    <button class="btn btn-success btn-save-note" id="btnSaveDialectics" style="font-family: inherit;">💾 Save Dialectics</button>
-
+        <div class="app-top-header">
+            <div class="app-branding">
+                <span class="branding-title">Dialectics</span>
+            </div>
+            
+            <div class="title-and-relations">
+                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Note topic..." style="font-family: inherit; color: #ea580c; font-weight: 700;">
+                <a href="/" class="badge-relations" style="text-decoration: none;">🏠 Dashboard</a>
+                <button class="badge-relations" title="Manage relations">🔗 Relations</button>
+                <div class="dialectics-menu-dropdown" style="position: relative;">
+                    <button class="badge-relations" id="dialecticsMenuBtn" onclick="toggleDialecticsMenu()" title="Tools menu">⋮ Menu</button>
+                    <div class="dialectics-menu-content" id="dialecticsMenuContent" style="display: none;">
+                        <button class="dropdown-item" id="btnNewDialectics" title="Create new note">📄 New</button>
+                        <button class="dropdown-item" id="btnGlobalParser" title="AI Formula Parser">✨ Parser</button>
+                        <button class="dropdown-item" id="btnExampleDialectics" title="Open example">📖 Example</button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" id="btnLoadDialectics">📂 Open</button>
+                        <button class="dropdown-item" id="btnPrevDialectics">↩️ Previous</button>
+                        <button class="dropdown-item" id="btnSaveDialectics" style="color: #2563eb; font-weight: 600;">💾 Save</button>
+                        <button class="dropdown-item" id="btnDeleteDialectics" style="display: none; color: #ef4444;">🗑️ Delete</button>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="dialectics-canvas" id="dialecticsCanvas">
+        <div class="dialectics-main-layout">
+            <!-- Main Dialectics Interface -->
+            <div class="note-interface">
+
+                <div class="dialectics-canvas" id="dialecticsCanvas">
                 <div class="canvas-divider" id="canvasDivider"></div>
                 <!-- Блоки будут вставляться сюда -->
             </div>
@@ -55,11 +57,9 @@
                         <span class="editor-title">Dialectics Editor</span>
                         <div class="editor-header-controls" style="display: flex; align-items: center; gap: 8px;">
                             <!-- Standard Yellow Sticker Button -->
-                            <div class="note-sticker-btn mini-header" id="dialecticsStickerBtn" title="Add Sticker" onclick="event.stopPropagation(); window.openNoteStickerModal('dialectics')" style="cursor: pointer; transform: scale(0.9); margin-right: 5px;">
-                                <div class="sticker-icon-postit"></div>
+                            <div id="dialecticsStickerBtn" class="btn btn-secondary btn-icon" title="Add Sticker" onclick="event.stopPropagation(); if(window.app && window.app.state.currentNoteId) { let blockId = window.app.state.editingBlock ? window.app.state.editingBlock.dataset.blockId : null; window.openParentStickers('dialectics', window.app.state.currentNoteId, blockId); } else window.showToast('Save the note first', 'error');" style="transform: scale(0.85); margin-right: 5px; cursor: pointer;">
+                                <div class="sticker-icon-mini"></div>
                             </div>
-                            
-                            <button id="btnMathFormula" class="editor-btn-math" title="Insert Formula" style="font-family: inherit;">∑</button>
                             <button id="btnBoldFormat" class="editor-btn-bold" style="display: none; font-family: inherit;" title="Make Bold">B</button>
                             <button class="editor-btn-expand" id="btnEditorExpand" title="Expand to fullscreen" style="font-family: inherit;">⛶</button>
                             <button class="editor-btn-close" id="btnEditorClose" title="Close" style="font-family: inherit;">✖</button>
@@ -68,9 +68,9 @@
 
                 <!-- Tabs Header -->
                 <div class="editor-tabs" id="editorTabs">
-                    <div class="editor-tab active" id="tab-text" data-tab="text">Текст</div>
-                    <div class="editor-tab" id="tab-graph" data-tab="graph">Графики</div>
-                    <div class="editor-tab" id="tab-shapes" data-tab="shapes">Фигуры</div>
+                    <div class="editor-tab active" id="tab-text" data-tab="text">Text</div>
+                    <div class="editor-tab" id="tab-graph" data-tab="graph">Graphs</div>
+                    <div class="editor-tab" id="tab-shapes" data-tab="shapes">Shapes</div>
                 </div>
 
                 <div class="editor-body" id="editorBody">
@@ -100,14 +100,14 @@
                     <div id="editor-graph" class="tab-content">
                         <div class="graph-editor-ui">
                             <div class="graph-input-group">
-                                <input type="text" id="graphFuncInput" placeholder="Например: x^2 or sin(x)" class="graph-input" style="font-family: var(--font-editor);">
-                                <button class="graph-btn-plot" id="btnGraphPlot" style="font-family: inherit;">Построить</button>
+                                <input type="text" id="graphFuncInput" placeholder="For example: x^2 or sin(x)" class="graph-input" style="font-family: var(--font-editor);">
+                                <button class="graph-btn-plot" id="btnGraphPlot" style="font-family: inherit;">Plot</button>
                             </div>
                             
                             <div id="graphPreview" class="graph-preview">
-                                <div class="graph-placeholder-text">Введите функцию и нажмите "Построить"</div>
+                                <div class="graph-placeholder-text">Enter function and click "Plot"</div>
                             </div>
-                            <button class="graph-btn-insert" id="btnGraphInsert" style="font-family: inherit;">Вставить в текст</button>
+                            <button class="graph-btn-insert" id="btnGraphInsert" style="font-family: inherit;">Insert to text</button>
                         </div>
                     </div>
                     <!-- Shapes Tab -->
@@ -115,60 +115,60 @@
                         <div class="shapes-editor-ui">
                             <div class="shapes-toolbar">
                                 <div class="tool-group">
-                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Выделение">
+                                    <button class="shape-tool active" id="tool-select" data-tool="select" title="Select">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
                                     </button>
-                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Рисование">
+                                    <button class="shape-tool" id="tool-draw" data-tool="draw" title="Draw">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                     </button>
                                 </div>
                                 <div class="tool-group">
-                                    <button class="shape-tool" data-shape="rect" title="Прямоугольник">
+                                    <button class="shape-tool" data-shape="rect" title="Rectangle">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="circle" title="Круг">
+                                    <button class="shape-tool" data-shape="circle" title="Circle">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="triangle" title="Равнобедренный треугольник">
+                                    <button class="shape-tool" data-shape="triangle" title="Isosceles Triangle">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 21h20L12 3Z"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="right-triangle" title="Прямоугольный треугольник">
+                                    <button class="shape-tool" data-shape="right-triangle" title="Right Triangle">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21 3 3 21 21Z"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="diamond" title="Ромб">
+                                    <button class="shape-tool" data-shape="diamond" title="Diamond">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 12l9 9 9-9Z"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="line" title="Линия">
+                                    <button class="shape-tool" data-shape="line" title="Line">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="arrow" title="Стрелка">
+                                    <button class="shape-tool" data-shape="arrow" title="Arrow">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                                     </button>
-                                    <button class="shape-tool" data-shape="text" title="Текст">
+                                    <button class="shape-tool" data-shape="text" title="Text">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/></svg>
                                     </button>
                                 </div>
                                 <div class="tool-group" style="display: flex; align-items: center; gap: 4px;">
-                                    <input type="color" id="shapeColor" value="#3b82f6" title="Цвет контура" class="shape-color-picker">
-                                    <input type="color" id="shapeFillColor" value="#3b82f6" title="Цвет заливки (если прозрачный — нажмите кнопку рядом)" class="shape-color-picker">
-                                    <button class="shape-tool" id="btnToggleFill" title="Убрать заливку" style="padding: 2px; width: 24px; height: 24px; display:flex; align-items:center; justify-content:center; border: 1px solid #ccc; border-radius:4px; background: white; cursor:pointer;">
+                                    <input type="color" id="shapeColor" value="#3b82f6" title="Stroke color" class="shape-color-picker">
+                                    <input type="color" id="shapeFillColor" value="#3b82f6" title="Fill color (if transparent — click the button next to it)" class="shape-color-picker">
+                                    <button class="shape-tool" id="btnToggleFill" title="Remove fill" style="padding: 2px; width: 24px; height: 24px; display:flex; align-items:center; justify-content:center; border: 1px solid #ccc; border-radius:4px; background: white; cursor:pointer;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line></svg>
                                     </button>
-                                    <button class="shape-tool-grid shape-tool" id="btnShapeGrid" title="Сетка (вкл/выкл)">
+                                    <button class="shape-tool-grid shape-tool" id="btnShapeGrid" title="Grid (on/off)">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
                                     </button>
-                                    <button class="shape-tool-copy shape-tool" id="btnShapeCopy" title="Копировать выделенное">
+                                    <button class="shape-tool-copy shape-tool" id="btnShapeCopy" title="Copy selected">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     </button>
-                                    <button class="shape-tool shape-tool" id="btnShapeGroup" title="Группировать / Разгруппировать (🔒)" style="font-size:16px;">🔒</button>
-                                    <button class="shape-tool shape-tool" id="btnObjectList" title="Список объектов" style="font-size:14px; font-weight:700; letter-spacing:-1px;">⊞</button>
-                                    <button class="shape-tool-undo shape-tool" id="btnShapeUndo" title="Отменить последнее действие">
+                                    <button class="shape-tool shape-tool" id="btnShapeGroup" title="Group / Ungroup (🔒)" style="font-size:16px;">🔒</button>
+                                    <button class="shape-tool shape-tool" id="btnObjectList" title="Objects list" style="font-size:14px; font-weight:700; letter-spacing:-1px;">⊞</button>
+                                    <button class="shape-tool-undo shape-tool" id="btnShapeUndo" title="Undo last action">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
                                     </button>
-                                    <button class="shape-tool-delete shape-tool" id="btnShapeDelete" title="Удалить выделенное">
+                                    <button class="shape-tool-delete shape-tool" id="btnShapeDelete" title="Delete selected">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                     </button>
-                                    <button class="shape-tool-clear shape-tool" id="btnShapeClear" title="Очистить холст">
+                                    <button class="shape-tool-clear shape-tool" id="btnShapeClear" title="Clear canvas">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
                                     </button>
                                 </div>
@@ -181,7 +181,7 @@
                                 <!-- Objects List Panel -->
                                 <div id="objectListPanel" style="display:none; position:absolute; top:8px; left:8px; width:160px; max-height:70%; background:white; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:20; overflow:hidden; flex-direction:column;">
                                     <div style="padding:8px 10px; background:#f0f9ff; border-bottom:1px solid #bae6fd; font-size:11px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:0.5px; display:flex; justify-content:space-between; align-items:center;">
-                                        <span>Объекты</span>
+                                        <span>Objects</span>
                                         <button onclick="document.getElementById('objectListPanel').style.display='none'" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;line-height:1;">×</button>
                                     </div>
                                     <div id="objectListItems" style="overflow-y:auto; max-height:220px; padding:4px;"></div>
@@ -190,34 +190,32 @@
                                 <!-- Parametric Shape Dialog -->
                                 <div id="shapeParamDialog" style="display:none; position:absolute; inset:0; background:rgba(15,23,42,0.55); z-index:50; align-items:center; justify-content:center; border-radius:8px;">
                                     <div style="background:#fff; border-radius:12px; padding:20px 24px; min-width:260px; box-shadow:0 8px 32px rgba(0,0,0,0.2); font-family:inherit;">
-                                        <div style="font-size:15px; font-weight:600; color:#1e293b; margin-bottom:16px;" id="shapeParamTitle">Параметры фигуры</div>
+                                        <div style="font-size:15px; font-weight:600; color:#1e293b; margin-bottom:16px;" id="shapeParamTitle">Shape parameters</div>
                                         <div id="shapeParamFields"></div>
                                         <div style="display:flex; gap:8px; margin-top:16px;">
-                                            <button id="shapeParamCancel" style="flex:1; padding:8px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:pointer; font-size:13px; color:#64748b;">Отмена</button>
-                                            <button id="shapeParamBuild" style="flex:1; padding:8px; border:none; border-radius:8px; background:#3b82f6; cursor:pointer; font-size:13px; color:white; font-weight:600;">Построить</button>
+                                            <button id="shapeParamCancel" style="flex:1; padding:8px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:pointer; font-size:13px; color:#64748b;">Cancel</button>
+                                            <button id="shapeParamBuild" style="flex:1; padding:8px; border:none; border-radius:8px; background:#3b82f6; cursor:pointer; font-size:13px; color:white; font-weight:600;">Build</button>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- /Parametric Shape Dialog -->
                             </div>
 
-                            <button class="graph-btn-insert" id="btnShapesInsert" style="font-family: inherit;">Вставить в текст</button>
+                            <button class="graph-btn-insert" id="btnShapesInsert" style="font-family: inherit;">Insert to text</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="editor-actions">
                     <div class="editor-word-count" id="wordCount">Editor Active</div>
-                    <div class="debug-logs" id="editorDebugLogs" style="font-family: var(--font-mono); font-size: 10px; color: #94a3b8; max-height: 40px; overflow-y: auto; flex: 1; margin: 0 15px; border-left: 1px solid #f1f5f9; padding-left: 10px;"></div>
                     <div>
-                        <button class="btn btn-secondary editor-btn-cancel" id="btnEditorCancel" style="font-family: inherit;">Отмена</button>
-                        <button class="btn btn-primary editor-btn-save" id="btnEditorSave" style="font-family: inherit;">ОК</button>
+                        <button class="btn btn-primary editor-btn-save" id="btnEditorSave" style="font-family: inherit;">OK</button>
                     </div>
                 </div>
                 <div id="editorResizeHandle" class="editor-resize-handle"></div>
             </div>
-
         </div>
+        <div style="position: absolute; bottom: -25px; right: 0px; font-size: 14px; color: #cbd5e1; font-weight: 600; opacity: 0.6; pointer-events: none; letter-spacing: 0.5px; font-family: inherit;">made for Laos</div>
     </div>
 
     <!-- Load Dialectics Modal -->
@@ -228,67 +226,49 @@
                 <button class="modal-close" onclick="document.getElementById('loadDialecticsModal').style.display='none'">&times;</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
-                <input type="text" id="dialecticsSearchInput" class="form-input" placeholder="Поиск по названию..." style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                <input type="text" id="dialecticsSearchInput" class="form-input" placeholder="Search by title..." style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
                 <div id="loadDialecticsList" class="load-notes-list" style="max-height: 400px; overflow-y: auto;">
-                    <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка...</div>
+                    <div style="color: #64748b; text-align: center; padding: 20px;">Loading...</div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('loadDialecticsModal').style.display='none'" style="font-family: inherit;">Закрыть</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Dialectics View Modal -->
-    <div id="dialecticsViewModal" class="modal premium-modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; border: 2px solid #e2e8f0;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                <h2 id="dialecticsViewTitle" style="margin: 0; color: #1e293b;">Dialectics Title</h2>
-                <button class="btn-close-modal" onclick="document.getElementById('dialecticsViewModal').style.display='none'" style="font-family: inherit;">×</button>
-            </div>
-            <div id="dialecticsViewBody" style="color: #475569; line-height: 1.6; font-size: 1.1em; background: #f8fafc; padding: 20px; border-radius: 10px;">
-                <!-- Content will be injected here -->
-            </div>
-            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                <button id="btnViewModalEdit" class="btn btn-primary" style="background-color: #6366f1; font-family: inherit;">Edit in Canvas</button>
-                <button onclick="document.getElementById('dialecticsViewModal').style.display='none'" class="btn btn-secondary" style="font-family: inherit;">Close</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('loadDialecticsModal').style.display='none'" style="font-family: inherit;">Close</button>
             </div>
         </div>
     </div>
 
 
 
-    <!-- Global Debug Console -->
-    <div id="globalDebugConsole" onmousedown="event.stopPropagation()" style="position: fixed; bottom: 10px; right: 10px; width: 400px; height: 250px; background: rgba(0,0,0,0.85); color: #0f0; font-family: monospace; font-size: 11px; z-index: 10000; padding: 8px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; user-select: text !important; pointer-events: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 5px;">
-            <strong>🛠 Dialectics Debug Console</strong>
-            <div style="display: flex; gap: 6px;">
-                <button onclick="
-                    const c = document.getElementById('globalDebugConsole');
-                    const el = document.getElementById('debugLogContent');
-                    if(el.style.display === 'none') {
-                        el.style.display = 'flex';
-                        c.style.height = '250px';
-                    } else {
-                        el.style.display = 'none';
-                        c.style.height = 'auto';
-                    }
-                " style="background: #444; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 2px 8px; font-weight: bold;">_</button>
-                <button onclick="document.getElementById('debugLogContent').innerHTML=''" style="background: #444; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 2px 8px;">Clear</button>
-            </div>
-        </div>
-        <div id="debugLogContent" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; user-select: text !important;"></div>
-    </div>
+
 
 
 
     {% include 'partials/modals/note_modals.html' %}
     {% include 'partials/sticker_modal.html' %}
+    {% include 'partials/parent_stickers_modal.html' %}
     {% include 'partials/modals/common_modals.html' %}
 {% endblock %}
 
 {% block scripts %}
+    <script>
+        function toggleDialecticsMenu() {
+            const menu = document.getElementById('dialecticsMenuContent');
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'flex';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.dialectics-menu-dropdown');
+            const menu = document.getElementById('dialecticsMenuContent');
+            if (dropdown && !dropdown.contains(e.target) && menu) {
+                menu.style.display = 'none';
+            }
+        });
+    </script>
     <script src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
+    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v={{ range(1, 9999) | random }}"></script>
     <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
 
     {% include 'partials/footer.html' %}

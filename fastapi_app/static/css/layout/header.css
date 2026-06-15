@@ -281,3 +281,30 @@
     border-color: var(--color-primary-glow) !important;
     box-shadow: 0 0 0 4px var(--color-primary-soft);
 }
+
+.dialectics-glitch-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    color: var(--color-text-dark, #333);
+    border: 1px solid var(--color-border-medium, #e5e7eb);
+    text-decoration: none;
+    padding: 8px 24px;
+    border-radius: 12px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+
+.dialectics-glitch-btn span {
+    /* text-shadow removed */
+}
+
+.dialectics-glitch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(17, 21, 32, 0.3);
+}

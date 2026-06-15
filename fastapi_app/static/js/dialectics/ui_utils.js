@@ -6,7 +6,7 @@ export const DialecticsUI = {
         if (!el) return;
         el.style.display = show ? (flex ? 'flex' : 'block') : 'none';
     },
-    setLoading(container, text = 'Загрузка...') {
+    setLoading(container, text = 'Loading...') {
         container.innerHTML = `<div style="color: #64748b; text-align: center; padding: 20px;">${text}</div>`;
     },
     setupDraggable(el, handle, state) {

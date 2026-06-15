@@ -50,7 +50,10 @@ function openEditModal(eng, translations, ru, meaning) {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
+let currentEditingRow = null;
+
 window.openEditModalFromData = function (btn) {
+    currentEditingRow = btn.closest('.word-row');
     const d = btn.dataset;
     let translations = {};
     
@@ -86,10 +89,10 @@ window.saveDashboardWordEdit = async function() {
     if (!form) return;
     const formData = new FormData(form);
     try {
-        const response = await fetch('/update_word_data', { method: 'POST', body: formData });
+        const response = await fetch('/upsert_word', { method: 'POST', body: formData });
         if (response.ok) {
             // Update the testWords cache if we are in the middle of a test
-            if (testWords && testWords.length > 0 && currentIdx < testWords.length) {
+            if (typeof testWords !== 'undefined' && testWords && testWords.length > 0 && typeof currentIdx !== 'undefined' && currentIdx < testWords.length) {
                 const word = testWords[currentIdx];
                 if (word && word.eng === formData.get('word_eng')) {
                     if (!word.translations) word.translations = {};
@@ -110,7 +113,25 @@ window.saveDashboardWordEdit = async function() {
                     }
                 }
             }
-            if (typeof window.refreshWords === 'function') {
+
+            const eng = formData.get('word_eng');
+            if (currentEditingRow) {
+                try {
+                    const lookupResp = await fetch(`/word_lookup?q=${encodeURIComponent(eng)}`);
+                    const lookupData = await lookupResp.json();
+                    const updatedWord = lookupData.results && lookupData.results.find(w => w.eng === eng);
+                    if (updatedWord) {
+                        const newRow = createWordRow(updatedWord);
+                        currentEditingRow.replaceWith(newRow);
+                        currentEditingRow = null;
+                    } else if (typeof window.refreshWords === 'function') {
+                        await window.refreshWords();
+                    }
+                } catch (e) {
+                    console.error("Failed to update row individually", e);
+                    if (typeof window.refreshWords === 'function') await window.refreshWords();
+                }
+            } else if (typeof window.refreshWords === 'function') {
                 await window.refreshWords();
             }
             window.closeEditModal();
@@ -179,7 +200,11 @@ function createWordRow(word) {
         const span = document.createElement('span');
         span.className = 'font-study';
         span.style.cssText = 'font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;';
-        span.textContent = (word.translations && word.translations[lang]) || '';
+        span.textContent = (word.translations && word.translations[lang]) || word[lang] || '';
+        span.oncontextmenu = function(e) {
+            e.preventDefault();
+            this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';
+        };
         grid.appendChild(span);
     });
 
@@ -210,7 +235,7 @@ function createWordRow(word) {
     editBtn.textContent = '\u270E'; // ✎
     editBtn.dataset.eng = word.eng;
     activeLangs.forEach(lang => {
-        editBtn.dataset[`lang${lang.charAt(0).toUpperCase() + lang.slice(1)}`] = (word.translations && word.translations[lang]) || '';
+        editBtn.dataset[`lang${lang.charAt(0).toUpperCase() + lang.slice(1)}`] = (word.translations && word.translations[lang]) || word[lang] || '';
     });
     editBtn.dataset.ru = word.ru || '';
     editBtn.dataset.meaning = word.meaning || '';
@@ -362,6 +387,11 @@ window.startKnowledgeTestWidget = async function() {
     document.getElementById('test-progress').style.display    = 'block';
     document.getElementById('workout-edit-trigger').style.display = 'inline-block';
     document.getElementById('test-log').innerText = '';
+    
+    // Clear previous state before fetch
+    document.getElementById('current-word-display').innerText = 'Loading...';
+    document.getElementById('test-lang-header').innerText = 'Translate this:';
+    document.getElementById('current-translation-display').style.visibility = 'hidden';
 
     try {
         const url = `/get_test_words?limit=${workoutLimit}&max_known=${workoutMaxKnown}`;
@@ -463,6 +493,32 @@ window.recordResultWidget = async function(isKnown) {
     showNextWordWidget();
 };
 
+window.markWorkoutTripletLearnedWidget = async function() {
+    if (testWords.length === 0 || currentIdx >= testWords.length) return;
+    const word = testWords[currentIdx];
+    const btn = document.getElementById('btn-learn-triplet');
+    try {
+        if (btn) btn.style.opacity = '0.5';
+        const resp = await fetch('/mark_triplet_learned', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eng: word.eng, is_learned: true })
+        });
+        const data = await resp.json();
+        if (data.status === 'success') {
+            showToast(`"${word.eng}" triplet marked as learned!`);
+            // Auto advance
+            await window.recordResultWidget(true);
+        } else {
+            showToast('Error: ' + (data.message || 'Unknown error'), 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    } finally {
+        if (btn) btn.style.opacity = '1';
+    }
+};
+
 window.finishTestWidget = function() {
     document.getElementById('test-active-view').style.display  = 'none';
     document.getElementById('test-progress').style.display     = 'none';
@@ -489,7 +545,9 @@ export function initWordWidget() {
             document.getElementById('btn-show-hint').addEventListener('click', window.toggleHintWidget);
             document.getElementById('btn-known').addEventListener('click', () => window.recordResultWidget(true));
             document.getElementById('btn-unknown').addEventListener('click', () => window.recordResultWidget(false));
-            document.getElementById('btn-try-again').addEventListener('click', window.resetTestWidget);
+            const btnLearnTriplet = document.getElementById('btn-learn-triplet');
+            if (btnLearnTriplet) btnLearnTriplet.addEventListener('click', window.markWorkoutTripletLearnedWidget);
+            document.getElementById('btn-try-again').addEventListener('click', window.startKnowledgeTestWidget);
             window.updateWorkoutDisplayCountWidget();
         }
         if (typeof window.applySentenceDots === 'function') window.applySentenceDots();
@@ -502,8 +560,10 @@ window.applySentenceDots = function() {
     try {
         const rawSentences = JSON.parse(dataElement.textContent);
         const dictWordsMap = {};
+        const sentenceObjMap = {};
         
         rawSentences.forEach(s => {
+            sentenceObjMap[s.id] = s;
             s.words.forEach(w => {
                 if (w.is_in_my_dict && w.dictionary_word) {
                     const key = w.dictionary_word.toLowerCase().trim();
@@ -520,13 +580,21 @@ window.applySentenceDots = function() {
             const txt = span.innerText.replace(/[\n\r]+|[\s]{2,}/g, ' ').trim().toLowerCase();
             if (txt && dictWordsMap[txt]) {
                 const sentenceId = dictWordsMap[txt][0];
+                const sentence = sentenceObjMap[sentenceId];
+                
                 span.dataset.sentenceDotApplied = '1';
                 span.style.position = 'relative';
                 span.style.cursor = 'pointer';
+                
+                const sentenceText = sentence ? (sentence.original_text || sentence.text || sentence.words.map(w => w.text).join(' ')) : '';
+                if (sentenceText) {
+                    span.title = sentenceText;
+                }
+                
                 const dot = document.createElement('span');
                 dot.className = 'sentence-dot';
                 dot.style.cssText = 'display:inline-block; width:6px; height:6px; background:#f1c40f; border-radius:50%; vertical-align:super; margin-left:2px; box-shadow: 0 0 4px #f1c40f;';
-                dot.title = 'Open Sentence Trainer';
+                // Leave dot title for debugging/hint if needed, or remove it so span.title takes over
                 span.appendChild(dot);
                 
                 span.onclick = (e) => {

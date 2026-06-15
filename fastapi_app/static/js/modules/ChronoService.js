@@ -1,3 +1,6 @@
+import { ModalManager } from './ModalManager.js';
+import { EditorSync } from './EditorSync.js';
+
 export const ChronoService = {
     openEdit(id, title, date) {
         console.log("[ChronoService] Opening edit for ID:", id);
@@ -53,10 +56,12 @@ export const ChronoService = {
                 ModalManager.close('editChronoModal');
                 if (window.showToast) window.showToast('✓ ' + (data.message || 'Saved'), 'success');
                 
-                // Clear inputs if it was a new creation so it doesn't pollute the widget
+                const wText = document.getElementById('chronoWidgetText');
+                if (wText) wText.value = '';
+                
                 if (!id) {
-                    const wText = document.querySelector('textarea[name="chrono_text"]');
-                    if (wText) wText.value = '';
+                    // Force refresh chronology view if it was a new record
+                    if (window.refreshCurrentView) window.refreshCurrentView('Chronology');
                 } else {
                     this._updateRow(id, title, date);
                 }
@@ -79,6 +84,19 @@ export const ChronoService = {
 
     closeEditChronoModal() {
         ModalManager.close('editChronoModal');
+        
+        // Only sync back if it was a NEW record
+        if (!this.currentId) {
+            const expTa = document.getElementById('editChronoTitle');
+            const wText = document.getElementById('chronoWidgetText');
+            if (expTa && wText) wText.value = expTa.value;
+            
+            const expDate = document.getElementById('editChronoDate');
+            const wDate = document.getElementById('chronoWidgetDate');
+            if (expDate && wDate) wDate.value = expDate.value;
+        }
+
+        this.currentId = null;
     },
 
     closeChronoViewModal() {

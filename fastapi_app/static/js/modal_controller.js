@@ -141,7 +141,7 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
     });
 }
 
-export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = 'OK', cancelLabel = 'Cancel' }) {
+export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = 'OK', cancelLabel = 'Cancel', watermark = '' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
@@ -179,6 +179,30 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
             input.style.width = '100%';
             
             container.appendChild(input);
+
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.position = 'relative';
+                const existingWm = modalContent.querySelectorAll('.modal-watermark');
+                existingWm.forEach(el => el.remove());
+                
+                if (watermark) {
+                    const wm = document.createElement('div');
+                    wm.className = 'modal-watermark';
+                    wm.textContent = watermark;
+                    wm.style.position = 'absolute';
+                    wm.style.bottom = '5px';
+                    wm.style.left = '20px';
+                    wm.style.fontSize = '14px';
+                    wm.style.color = '#cbd5e1';
+                    wm.style.fontWeight = '600';
+                    wm.style.opacity = '0.6';
+                    wm.style.pointerEvents = 'none';
+                    wm.style.letterSpacing = '0.5px';
+                    modalContent.appendChild(wm);
+                }
+            }
+
             messageEl.appendChild(container);
 
             footerEl.innerHTML = '';
@@ -228,7 +252,7 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
     });
 }
 
-export function customLatexPrompt({ title = 'Редактировать формулу (LaTeX)', value = '', okLabel = 'Сохранить', cancelLabel = 'Отмена' }) {
+export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', okLabel = 'Save', cancelLabel = 'Cancel' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
@@ -260,7 +284,7 @@ export function customLatexPrompt({ title = 'Редактировать форм
 
             const searchInput = document.createElement('input');
             searchInput.type = 'text';
-            searchInput.placeholder = '🔍 Поиск символа (например: дробь, интеграл, альфа)...';
+            searchInput.placeholder = '🔍 Search symbol (e.g. fraction, integral, alpha)...';
             searchInput.className = 'form-input-premium';
             searchInput.style.width = '100%';
             searchInput.style.fontSize = '0.85rem';
@@ -278,24 +302,24 @@ export function customLatexPrompt({ title = 'Редактировать форм
             symbolsGrid.style.background = '#f8fafc';
 
             const commonSymbols = [
-                { name: 'Дробь', code: '\\frac{}{}', tags: ['дробь', 'деление', 'fraction'] },
-                { name: 'Корень', code: '\\sqrt{}', tags: ['корень', 'квадратный', 'root', 'sqrt'] },
-                { name: 'Степень', code: '^{}', tags: ['степень', 'индекс', 'верхний', 'power'] },
-                { name: 'Нижний индекс', code: '_{}', tags: ['индекс', 'нижний', 'subscript'] },
-                { name: 'Интеграл', code: '\\int', tags: ['интеграл', 'integral'] },
-                { name: 'Сумма', code: '\\sum_{i=1}^{n}', tags: ['сумма', 'sum'] },
-                { name: 'Бесконечность', code: '\\infty', tags: ['бесконечность', 'infinity'] },
-                { name: 'Умножение', code: '\\cdot', tags: ['умножение', 'точка', 'dot'] },
-                { name: 'Крест (умн.)', code: '\\times', tags: ['умножение', 'крест', 'times'] },
-                { name: 'Меньше или равно', code: '\\le', tags: ['меньше', 'равно', 'le', 'leq'] },
-                { name: 'Больше или равно', code: '\\ge', tags: ['больше', 'равно', 'ge', 'geq'] },
-                { name: 'Не равно', code: '\\neq', tags: ['не равно', 'neq'] },
-                { name: 'Приблизительно', code: '\\approx', tags: ['приблизительно', 'approx'] },
-                { name: 'Принадлежит', code: '\\in', tags: ['принадлежит', 'in'] },
-                { name: 'Альфа', code: '\\alpha', tags: ['альфа', 'alpha', 'буква'] },
-                { name: 'Бета', code: '\\beta', tags: ['бета', 'beta', 'буква'] },
-                { name: 'Пи', code: '\\pi', tags: ['пи', 'pi', 'буква'] },
-                { name: 'Большие скобки', code: '\\left( \\right)', tags: ['скобки', 'круглые'] }
+                { name: 'Fraction', code: '\\frac{}{}', tags: ['fraction', 'division'] },
+                { name: 'Root', code: '\\sqrt{}', tags: ['root', 'square', 'sqrt'] },
+                { name: 'Power', code: '^{}', tags: ['power', 'index', 'upper'] },
+                { name: 'Subscript', code: '_{}', tags: ['index', 'lower', 'subscript'] },
+                { name: 'Integral', code: '\\int', tags: ['integral'] },
+                { name: 'Sum', code: '\\sum_{i=1}^{n}', tags: ['sum'] },
+                { name: 'Infinity', code: '\\infty', tags: ['infinity'] },
+                { name: 'Multiplication', code: '\\cdot', tags: ['multiplication', 'dot'] },
+                { name: 'Cross (mult.)', code: '\\times', tags: ['multiplication', 'cross', 'times'] },
+                { name: 'Less or equal', code: '\\le', tags: ['less', 'equal', 'le', 'leq'] },
+                { name: 'Greater or equal', code: '\\ge', tags: ['greater', 'equal', 'ge', 'geq'] },
+                { name: 'Not equal', code: '\\neq', tags: ['not equal', 'neq'] },
+                { name: 'Approximately', code: '\\approx', tags: ['approximately', 'approx'] },
+                { name: 'Belongs', code: '\\in', tags: ['belongs', 'in'] },
+                { name: 'Alpha', code: '\\alpha', tags: ['alpha', 'letter'] },
+                { name: 'Beta', code: '\\beta', tags: ['beta', 'letter'] },
+                { name: 'Pi', code: '\\pi', tags: ['pi', 'letter'] },
+                { name: 'Large brackets', code: '\\left( \\right)', tags: ['brackets', 'round'] }
             ];
 
             const renderSymbols = (query = '') => {
@@ -308,7 +332,7 @@ export function customLatexPrompt({ title = 'Редактировать форм
                 );
 
                 if (filtered.length === 0) {
-                    symbolsGrid.innerHTML = '<div style="font-size:0.8rem; color:#64748b; padding:8px; grid-column: 1 / -1; text-align:center;">Ничего не найдено</div>';
+                    symbolsGrid.innerHTML = '<div style="font-size:0.8rem; color:#64748b; padding:8px; grid-column: 1 / -1; text-align:center;">Nothing found</div>';
                     return;
                 }
 

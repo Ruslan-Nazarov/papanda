@@ -21,6 +21,7 @@ class StickyNoteCreate(StickyNoteBase):
     habit_id: Optional[int] = None
     note_id: Optional[int] = None
     dialectics_id: Optional[int] = None
+    dialectics_block_id: Optional[str] = None
 
 class StickyNoteView(StickyNoteBase):
     """Схема для отображения стикера."""
@@ -34,4 +35,5 @@ class StickyNoteView(StickyNoteBase):
     habit_id: Optional[int] = None
     note_id: Optional[int] = None
     dialectics_id: Optional[int] = None
+    dialectics_block_id: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)

@@ -45,6 +45,7 @@ class StickyNote(Base):
     habit_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("habits.id"), nullable=True)
     note_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("notes.id"), nullable=True)
     dialectics_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("dialectics.id"), nullable=True)
+    dialectics_block_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Relationships
     event = relationship("Event", backref="stickers", lazy="select", viewonly=True, foreign_keys=[event_id])

@@ -4,6 +4,7 @@ from typing import Optional, List, Any
 
 class DialecticsBlock(BaseModel):
     """Блок содержимого 'Диалектики'."""
+    id: Optional[str] = None
     side: str
     html: str
 

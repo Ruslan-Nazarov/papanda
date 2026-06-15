@@ -49,7 +49,7 @@ export const ShapeTool = {
                     const len = Math.round(Math.sqrt(w*w + h*h));
                     let angle = Math.round(obj.angle % 360);
                     if (angle < 0) angle += 360;
-                    text = `Длина: ${len} | Угол: ${angle}°`;
+                    text = `Length: ${len} | Angle: ${angle}°`;
                 } else if (obj.type === 'circle') {
                     const r = Math.round(obj.radius * obj.scaleX);
                     text = `R: ${r}`;
@@ -58,7 +58,7 @@ export const ShapeTool = {
                     const h = Math.round(obj.height * obj.scaleY);
                     let angle = Math.round(obj.angle % 360);
                     if (angle < 0) angle += 360;
-                    text = `Ш: ${w} В: ${h} | Угол: ${angle}°`;
+                    text = `W: ${w} H: ${h} | Angle: ${angle}°`;
                 }
                 
                 if (text) {
@@ -161,49 +161,49 @@ export const ShapeTool = {
 
     _paramDefs: {
         'right-triangle': {
-            title: 'Прямоугольный треугольник',
+            title: 'Right Triangle',
             fields: [
-                { key: 'a', label: 'Катет a (вертикальный)', default: 100, min: 10, max: 500 },
-                { key: 'b', label: 'Катет b (горизонтальный)', default: 100, min: 10, max: 500 },
+                { key: 'a', label: 'Leg a (vertical)', default: 100, min: 10, max: 500 },
+                { key: 'b', label: 'Leg b (horizontal)', default: 100, min: 10, max: 500 },
             ]
         },
         'triangle': {
-            title: 'Равнобедренный треугольник',
+            title: 'Isosceles Triangle',
             fields: [
-                { key: 'base', label: 'Основание', default: 120, min: 10, max: 500 },
-                { key: 'height', label: 'Высота', default: 100, min: 10, max: 500 },
+                { key: 'base', label: 'Base', default: 120, min: 10, max: 500 },
+                { key: 'height', label: 'Height', default: 100, min: 10, max: 500 },
             ]
         },
         'rect': {
-            title: 'Прямоугольник',
+            title: 'Rectangle',
             fields: [
-                { key: 'width', label: 'Ширина', default: 120, min: 10, max: 500 },
-                { key: 'height', label: 'Высота', default: 80, min: 10, max: 500 },
+                { key: 'width', label: 'Width', default: 120, min: 10, max: 500 },
+                { key: 'height', label: 'Height', default: 80, min: 10, max: 500 },
             ]
         },
         'circle': {
-            title: 'Окружность',
+            title: 'Circle',
             fields: [
-                { key: 'radius', label: 'Радиус', default: 50, min: 5, max: 250 },
+                { key: 'radius', label: 'Radius', default: 50, min: 5, max: 250 },
             ]
         },
         'line': {
-            title: 'Отрезок',
+            title: 'Line Segment',
             fields: [
-                { key: 'length', label: 'Длина', default: 100, min: 5, max: 500 },
-                { key: 'angle', label: 'Угол (°) — 0 = горизонтально', default: 0, min: -360, max: 360 },
+                { key: 'length', label: 'Length', default: 100, min: 5, max: 500 },
+                { key: 'angle', label: 'Angle (°) — 0 = horizontal', default: 0, min: -360, max: 360 },
             ]
         },
         'diamond': {
-            title: 'Ромб',
+            title: 'Rhombus',
             fields: [
-                { key: 'side', label: 'Сторона', default: 80, min: 10, max: 400 },
+                { key: 'side', label: 'Side', default: 80, min: 10, max: 400 },
             ]
         },
         'arrow': {
-            title: 'Стрелка',
+            title: 'Arrow',
             fields: [
-                { key: 'length', label: 'Длина', default: 100, min: 20, max: 500 },
+                { key: 'length', label: 'Length', default: 100, min: 20, max: 500 },
             ]
         },
     },
@@ -214,7 +214,7 @@ export const ShapeTool = {
         if (type === 'text') {
             const fabricModule = await import('fabric');
             const f = fabricModule.fabric || fabricModule;
-            const shape = new f.IText('Текст', { 
+            const shape = new f.IText('Text', { 
                 left: 100, top: 100, fontSize: 24, fill: '#1f2937', 
                 fontWeight: 'bold', fontFamily: 'serif', fontStyle: 'italic', 
                 originX: 'center', originY: 'center' 
@@ -256,11 +256,11 @@ export const ShapeTool = {
                 <div id="shapeParamFields"></div>
                 <div style="margin-top:15px; display:flex; align-items:center; gap:8px;">
                     <input type="checkbox" id="shapeParamFill" style="width:16px; height:16px; cursor:pointer;">
-                    <label for="shapeParamFill" style="font-size:14px; color:#475569; cursor:pointer; user-select:none;">С заливкой</label>
+                    <label for="shapeParamFill" style="font-size:14px; color:#475569; cursor:pointer; user-select:none;">With fill</label>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button id="shapeParamCancel" style="padding:8px 12px; border:none; background:#f1f5f9; color:#475569; border-radius:6px; cursor:pointer;">Отмена</button>
-                    <button id="shapeParamBuild" style="padding:8px 12px; border:none; background:#3b82f6; color:white; border-radius:6px; cursor:pointer;">Создать</button>
+                    <button id="shapeParamCancel" style="padding:8px 12px; border:none; background:#f1f5f9; color:#475569; border-radius:6px; cursor:pointer;">Cancel</button>
+                    <button id="shapeParamBuild" style="padding:8px 12px; border:none; background:#3b82f6; color:white; border-radius:6px; cursor:pointer;">Create</button>
                 </div>
             </div>
         `;

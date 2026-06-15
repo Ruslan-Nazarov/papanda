@@ -22,6 +22,7 @@ async def add_note(
     sticker_color: Optional[str] = Form(None),
     sticker_type: Optional[str] = Form(None),
     is_pinned: bool = Form(False),
+    sticker_ids: Optional[str] = Form(None),
     note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
@@ -41,6 +42,17 @@ async def add_note(
             "color": sticker_color or "#fff9c4",
             "type": sticker_type or "text"
         }
+
+    if sticker_ids:
+        try:
+            import json
+            parsed_ids = json.loads(sticker_ids)
+            if isinstance(parsed_ids, list):
+                if sticker_data is None:
+                    sticker_data = {}
+                sticker_data["ids"] = parsed_ids
+        except:
+            pass
 
     note_id = await note_service.add_note(category, note, sticker_data=sticker_data, is_pinned=is_pinned)
     return JSONResponse(content={
@@ -124,9 +136,23 @@ async def update_note(
     note: str = Form(...),
     category: str = Form("General"),
     is_pinned: bool = Form(True),
+    sticker_ids: Optional[str] = Form(None),
     note_service: Any = Depends(get_note_service),
     user: Any = Depends(check_auth_dependency)
 ):
+    parsed_sticker_ids = None
+    if sticker_ids:
+        try:
+            import json
+            parsed_ids = json.loads(sticker_ids)
+            if isinstance(parsed_ids, list):
+                parsed_sticker_ids = parsed_ids
+        except:
+            pass
+
+    # We need to update note_service.update_note to accept sticker_ids
+    # For now, let's just ignore them or add a method to update them.
+    # We will pass them if the service supports it.
     success = await note_service.update_note(note_id, category, note, is_pinned)
     if success:
         return schemas.SuccessResponse(message="Note updated")

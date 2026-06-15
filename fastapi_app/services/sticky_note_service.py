@@ -53,7 +53,8 @@ class StickyNoteService:
             task_id=data.get("task_id"),
             habit_id=data.get("habit_id"),
             note_id=data.get("note_id"),
-            dialectics_id=data.get("dialectics_id")
+            dialectics_id=data.get("dialectics_id"),
+            dialectics_block_id=data.get("dialectics_block_id")
         )
         self.db.add(note)
         await self.db.commit()
@@ -92,7 +93,7 @@ class StickyNoteService:
         )
         return result.scalar_one_or_none()
 
-    async def update_note(self, note_id: int, text: Optional[str] = None, title: Optional[str] = None, color: Optional[str] = None, note_type: Optional[str] = None, note_id_link: Optional[int] = None) -> Optional[models.StickyNote]:
+    async def update_note(self, note_id: int, text: Optional[str] = None, title: Optional[str] = None, color: Optional[str] = None, note_type: Optional[str] = None, note_id_link: Optional[int] = None, dialectics_id: Optional[int] = None, dialectics_block_id: Optional[str] = None) -> Optional[models.StickyNote]:
         """Обновляет текст, заголовок, цвет, тип или привязанную заметку стикера."""
         note = await self.db.get(models.StickyNote, note_id)
         if note:
@@ -101,6 +102,8 @@ class StickyNoteService:
             if color is not None: note.color = color
             if note_type is not None: note.type = note_type
             if note_id_link is not None: note.note_id = note_id_link if note_id_link > 0 else None
+            if dialectics_id is not None: note.dialectics_id = dialectics_id if dialectics_id > 0 else None
+            if dialectics_block_id is not None: note.dialectics_block_id = dialectics_block_id
             await self.db.commit()
             return await self.get_note(note_id)
         return None
@@ -178,6 +181,18 @@ class StickyNoteService:
             )
             .order_by(models.StickyNote.created_at.asc())
         )
+        return result.scalars().all()
+
+    async def get_notes_for_dialectics(self, dialectics_id: int, block_id: Optional[str] = None) -> List[models.StickyNote]:
+        """Возвращает стикеры, привязанные к модулю Диалектики."""
+        query = select(models.StickyNote).options(selectinload(models.StickyNote.note)).where(
+            models.StickyNote.finished_at.is_(None),
+            models.StickyNote.dialectics_id == dialectics_id
+        )
+        if block_id:
+            query = query.where(models.StickyNote.dialectics_block_id == block_id)
+        
+        result = await self.db.execute(query.order_by(models.StickyNote.created_at.asc()))
         return result.scalars().all()
 
     async def get_notes_for_date(self, target_date: date) -> List[models.StickyNote]:

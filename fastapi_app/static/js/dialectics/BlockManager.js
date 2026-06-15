@@ -34,7 +34,7 @@ export const BlockManager = {
                 const wrap = document.createElement('div');
                 wrap.className = `insert-wrap insert-wrap--${side}`;
                 const isCenter = side === 'center';
-                wrap.innerHTML = `<button class="btn-insert-block ${isCenter ? 'btn-insert-square' : 'btn-insert-round'}" title="${isCenter ? 'Добавить обобщение' : 'Добавить блок'}">+</button>`;
+                wrap.innerHTML = `<button class="btn-insert-block ${isCenter ? 'btn-insert-square' : 'btn-insert-round'}" title="${isCenter ? 'Add summary' : 'Add block'}">+</button>`;
                 wrap.querySelector('button').onclick = (e) => {
                     e.stopPropagation();
                     callbacks.onInsertAfter(side, targetIndex - 1);
@@ -50,13 +50,16 @@ export const BlockManager = {
         }
 
         blocks.forEach((b, index) => {
+            if (!b.id) b.id = 'block_' + Math.random().toString(36).substring(2, 9);
             const el = document.createElement('div');
-            el.className = `dialectics-block block-${b.side}`;
+            el.className = `dialectics-block block-${b.side || 'left'}`;
+            el.dataset.blockId = b.id;
             el.innerHTML = `
-                <div class="block-actions">
-                    <button class="btn-block-edit">✎ Edit</button>
-                    <button class="btn-block-ai" style="color: var(--color-indigo);">🤖 AI</button>
-                    <button class="btn-block-del">× Delete</button>
+                <div class="dialectics-block-actions">
+                    <button class="btn-block-edit" title="Edit">✎</button>
+                    <button class="btn-block-ai" title="Ask AI">✨</button>
+                    <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div></button>
+                    <button class="btn-block-del" title="Delete">🗑️</button>
                 </div>
                 <div class="dialectics-content-inner">${b.html}</div>
             `;
@@ -71,15 +74,23 @@ export const BlockManager = {
                 e.stopPropagation();
                 callbacks.onEdit(el);
             };
+            el.querySelector('.btn-block-sticker').onclick = (e) => {
+                e.stopPropagation();
+                if(window.app && window.app.state.currentNoteId) {
+                    window.openParentStickers('dialectics', window.app.state.currentNoteId, b.id);
+                } else {
+                    if(window.showToast) window.showToast('Save the note first', 'error');
+                }
+            };
             el.querySelector('.btn-block-del').onclick = async (e) => {
                 e.stopPropagation();
                 const confirmed = await customConfirm({
-                    title: 'Удалить блок',
-                    message: 'Вы уверены, что хотите удалить этот блок?',
+                    title: 'Delete block',
+                    message: 'Are you sure you want to delete this block?',
                     icon: '🗑️',
                     buttons: [
-                        { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Удалить', value: true, class: 'confirm-btn-danger' }
+                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Delete', value: true, class: 'confirm-btn-danger' }
                     ]
                 });
                 if (confirmed) {
@@ -109,6 +120,7 @@ export const BlockManager = {
             const inner = b.querySelector('.dialectics-content-inner');
             if (inner) {
                 blocks.push({
+                    id: b.dataset.blockId || ('block_' + Math.random().toString(36).substring(2, 9)),
                     side: b.classList.contains('block-left') ? 'left' : 
                           b.classList.contains('block-center') ? 'center' : 'right',
                     html: inner.innerHTML

@@ -37,7 +37,10 @@ class ViewBuilders:
                 physical_map[(ev.recurrence_id, d_key)] = ev
         
         # Шаблоны и виртуальные события
-        tmpl_res = await self.db.execute(select(Model).where(Model.recurrence_rule.isnot(None)))
+        tmpl_query = select(Model).where(Model.recurrence_rule.isnot(None))
+        if search:
+            tmpl_query = tmpl_query.where(Model.title.ilike(f"%{search}%"))
+        tmpl_res = await self.db.execute(tmpl_query)
         templates = tmpl_res.scalars().all()
         
         exc_res = await self.db.execute(select(models.RecurrenceException))

@@ -398,12 +398,10 @@
             <p style="margin: 0; display: flex; align-items: center; gap: 15px;">
                 <span style="color: #666;">Learn structural logic word by word.</span>
             </p>
-        </div>
-
-        <div class="sticker-canvas-wrapper">
-            <div class="add-sticker-btn" onclick="openParentStickers('note', {{ anchor_note_id }})"
-                title="Добавить заметку">+</div>
-            <div id="languageStickersCanvas" class="sticker-canvas"></div>
+                <div class="sticker-canvas-wrapper">
+                    <div class="add-sticker-btn" onclick="window.openLanguageStickerModal()" title="Добавить заметку">+</div>
+                    <div id="languageStickersCanvas" class="sticker-canvas"></div>
+                </div>
         </div>
     </div>
 
@@ -458,6 +456,16 @@
     // Expose to window for inline HTML onclicks
     window.openParentStickers = (type, id) => StickerOverview.open(type, id);
     window.openStickerModal = (params) => StickerModal.open(params);
+    
+    window.openLanguageStickerModal = function() {
+        const anchorNoteId = window.LANG_ANCHORS ? window.LANG_ANCHORS[currentLang] : null;
+        if (anchorNoteId) {
+            openParentStickers('note', anchorNoteId);
+        } else {
+            console.warn("No anchor note ID found for language:", currentLang);
+        }
+    };
+
     window.toggleTranslation = toggleTranslation;
     window.runFlash = runFlash;
     window.nextSentence = nextSentence;
@@ -466,8 +474,9 @@
 
     window.P_ACTIVE_LANGUAGES = {{ active_languages | tojson | safe }};
     window.P_ALL_LANGUAGES = {{ all_languages | default ({}) | tojson | safe }};
+    // Initialize stickers
+    window.LANG_ANCHORS = {{ lang_anchors_json | default('{}') | safe }};
 
-    const anchorNoteId = {{ anchor_note_id | default (0) }};
     const dataElement = document.getElementById('sentences-data');
     let rawSentences = [];
     try {
@@ -493,6 +502,7 @@
         activeSentences = rawSentences.filter(s => s.language === lang);
         currentSentenceIndex = 0;
         renderCurrentSentence();
+        loadLanguageStickers();
     }
 
     function renderCurrentSentence() {
@@ -555,6 +565,8 @@
             progressSpan.innerText = `Sentence ${currentSentenceIndex + 1} / ${activeSentences.length}`;
             progressSpan.style.display = 'inline-block';
         }
+
+        runFlash();
     }
 
     async function runFlash() {
@@ -578,7 +590,7 @@
             display.classList.remove('flash-mode');
             currentStepIndex = -1; // Переходим в состояние "Всё скрыто"
             isFlashActive = false;
-            return;
+            // Переходим сразу к первому элементу (без return)
         }
 
         currentStepIndex++;
@@ -606,9 +618,12 @@
     }
 
     async function loadLanguageStickers() {
+        const anchorNoteId = window.LANG_ANCHORS ? window.LANG_ANCHORS[currentLang] : null;
         console.log("Loading stickers for anchor:", anchorNoteId);
         if (!anchorNoteId || anchorNoteId === 0) {
             console.warn("Anchor Note ID is missing or 0");
+            const canvas = document.getElementById('languageStickersCanvas');
+            if (canvas) canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
             return;
         }
         const canvas = document.getElementById('languageStickersCanvas');
@@ -686,6 +701,7 @@
         loadLanguageStickers();
 
         window.addEventListener('stickersUpdated', (e) => {
+            const anchorNoteId = window.LANG_ANCHORS ? window.LANG_ANCHORS[currentLang] : null;
             if (e.detail.parentType === 'note' && e.detail.parentId == anchorNoteId) {
                 loadLanguageStickers();
             }

@@ -16,19 +16,19 @@ export const GraphTool = {
         });
 
         try {
-            if (window.app?.logDebug) window.app.logDebug("Загрузка зависимостей (D3 + FunctionPlot)...");
+            if (window.app?.logDebug) window.app.logDebug("Loading dependencies (D3 + FunctionPlot)...");
 
             // 1. Загружаем D3 (локально)
-            await loadScript('/static/libs/d3.min.js?v=3.5.17');
+            await loadScript('/static/js/vendor/d3.min.js');
 
             // 2. Загружаем FunctionPlot (локально)
-            await loadScript('/static/libs/function-plot.js?v=1.25.3');
+            await loadScript('/static/js/vendor/function-plot.js');
 
-            window.functionPlotLoaded = true;
-            if (window.app?.logDebug) window.app.logDebug("Библиотеки графиков инициализированы.");
+            this.isLoaded = true;
+            if (window.app?.logDebug) window.app.logDebug("Graph libraries initialized.");
         } catch (e) {
             console.error("GraphTool init error:", e);
-            if (window.app?.logDebug) window.app.logDebug(`Ошибка загрузки: ${e.message}`);
+            if (window.app?.logDebug) window.app.logDebug(`Load error: ${e.message}`);
         }
     },
 
@@ -42,13 +42,13 @@ export const GraphTool = {
             window.app.logDebug(`d3 version: ${window.d3 ? window.d3.version : 'MISSING'}`);
         }
 
-        if (typeof window.functionPlot !== 'function') {
-            target.innerHTML = `<div style="color:red; padding:20px;">Ошибка: Библиотека графиков не загружена.</div>`;
+        if (!this.isLoaded) {
+            target.innerHTML = `<div style="color:red; padding:20px;">Error: Graph library is not loaded.</div>`;
             return;
         }
 
         if (!window.d3) {
-            target.innerHTML = `<div style="color:red; padding:20px;">Ошибка: Библиотека D3 не найдена.</div>`;
+            target.innerHTML = `<div style="color:red; padding:20px;">Error: D3 library not found.</div>`;
             return;
         }
 
@@ -79,7 +79,8 @@ export const GraphTool = {
                     throw e;
                 }
             } catch (e2) {
-                target.innerHTML = `<div style="color:red; padding:20px;">Ошибка отрисовки: ${e2.message}</div>`;
+                console.error("Plot error:", e2);
+                target.innerHTML = `<div style="color:red; padding:20px;">Render error: ${e2.message}</div>`;
             }
         }
     },

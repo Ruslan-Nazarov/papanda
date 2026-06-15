@@ -120,31 +120,36 @@ async def language_learning(
     user: Any = Depends(check_auth_dependency),
 ) -> HTMLResponse:
     """Обучающая страница "Language Learning"."""
-    from ...services.note_service import NoteService
-    from ...models.notes import Notes
-    from sqlalchemy import select
-    
-    ns = NoteService(db)
-    result = await db.execute(select(Notes).where(Notes.category == "Language Learning System"))
-    anchor_note = result.scalars().first()
-    
-    if not anchor_note:
-        anchor_note = Notes(
-            category="Language Learning System", 
-            note="Системный якорь для стикеров на странице изучения языка."
-        )
-        db.add(anchor_note)
-        await db.commit()
-        await db.refresh(anchor_note)
-    
     active_langs = await word_service.get_active_languages()
     lang_names = await word_service.get_all_language_names()
     sentences_json = word_service.get_sentences_json()
+    
+    import json
+    try:
+        sentences = json.loads(sentences_json)
+        sentence_langs = set(s.get("language") for s in sentences if s.get("language"))
+    except Exception:
+        sentence_langs = set()
+        
+    result = await db.execute(select(Notes).where(Notes.category == "Language Learning System"))
+    anchor_notes = result.scalars().all()
+    lang_anchors = {note.note: note.id for note in anchor_notes}
+    
+    for lang in sentence_langs:
+        if lang not in lang_anchors:
+            new_anchor = Notes(
+                category="Language Learning System",
+                note=lang
+            )
+            db.add(new_anchor)
+            await db.commit()
+            await db.refresh(new_anchor)
+            lang_anchors[lang] = new_anchor.id
     
     return templates.TemplateResponse(request, "language_learning.html", {
         "request": request,
         "active_languages": active_langs,
         "all_languages": lang_names,
-        "anchor_note_id": anchor_note.id,
+        "lang_anchors_json": json.dumps(lang_anchors),
         "sentences_json": sentences_json
     })

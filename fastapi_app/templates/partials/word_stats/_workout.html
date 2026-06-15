@@ -4,7 +4,7 @@
     <span class="help-trigger" onclick="showHelp(event, 'A quick interactive test to verify your knowledge of 5 random words.')">?</span>
 
     <h3 style="color: #8e44ad; display: flex; justify-content: space-between; align-items: center;">
-        <span>Brain Workout: <span id="workout-count-display">5</span> Word Challenge</span>
+        <span>Recognition: <span id="workout-count-display">5</span> Word Challenge</span>
         <div>
             <span id="test-progress" style="font-size: 0.6em; background: #eee; padding: 2px 10px; border-radius: 10px; color: #666; display: none; margin-right: 10px;">Word 1/5</span>
             <span class="edit-btn" style="cursor: pointer; font-size: 0.8em;" onclick="openWorkoutSettingsModal()" title="Settings">⚙️</span>
@@ -41,7 +41,7 @@
     {# Finish screen #}
     <div id="test-finish-view" style="display: none; text-align: center; padding: 20px">
         <div style="font-size: 3em; margin-bottom: 10px">🏆</div>
-        <h4 style="margin: 0; color: #333">Workout Complete!</h4>
+        <h4 style="margin: 0; color: #333">Recognition Complete!</h4>
         <p id="test-result-summary">You knew 0 out of 5 words.</p>
         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
             <button id="btn-try-again"      style="background: none; border: 1px solid #9b59b6; color: #9b59b6; padding: 5px 20px; border-radius: 5px; cursor: pointer;">Try Again</button>
@@ -53,18 +53,20 @@
 <div id="workoutSettingsModal" class="modal premium-modal" style="display: none;">
     <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden; background: white;">
         <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Workout Settings</h2>
+            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Recognition Settings</h2>
             <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 0; color: var(--color-text-muted);" onclick="closeWorkoutSettingsModal()">✕</button>
         </div>
         <div class="modal-body" style="padding: 24px;">
-            <div class="form-group" style="margin-bottom: 24px;">
-                <label class="form-label">Words per Workout</label>
-                <input type="number" id="settingWorkoutLimit" min="1" max="50" value="5" class="form-input" />
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">Max Previously Learned Words</label>
-                <input type="number" id="settingWorkoutMaxKnown" min="0" max="50" value="1" class="form-input" />
-                <div style="font-size: 0.8em; color: var(--color-text-muted); margin-top: 8px;">Limit how many already known words can appear for reinforcement.</div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label class="form-label">Words per Session</label>
+                    <input type="number" id="settingWorkoutLimit" min="1" max="50" value="5" class="form-input" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Max Previously Learned Words</label>
+                    <input type="number" id="settingWorkoutMaxKnown" min="0" max="50" value="1" class="form-input" />
+                    <div style="font-size: 0.8em; color: var(--color-text-muted); margin-top: 8px;">Limit how many already known words can appear for reinforcement.</div>
+                </div>
             </div>
         </div>
         <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">

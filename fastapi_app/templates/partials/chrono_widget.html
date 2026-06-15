@@ -16,24 +16,25 @@
     
     <div class="widget-body">
         <form method="post" action="/submit_chrono" class="chrono-form" onsubmit="saveQuickChrono(event)">
-            <div class="form-group">
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
                 {{ premium_input(
                     type='textarea',
+                    id='chronoWidgetText',
                     name='chrono_text',
                     required=True,
                     placeholder='What happened today?'
                 ) }}
-            </div>
-            
-            <div style="display: flex; gap: 12px; margin-top: 12px; align-items: center;">
                 {{ premium_input(
                     type='date',
+                    id='chronoWidgetDate',
                     name='chrono_date',
                     required=True,
-                    value=today_for_calendar.strftime('%Y-%m-%d'),
-                    style='width: 160px;'
+                    value=today_for_calendar.strftime('%Y-%m-%d')
                 ) }}
-                <button type="submit" class="btn btn-primary" style="flex: 1; height: 48px;">Save to Timeline</button>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                <button type="submit" class="btn btn-primary btn-sm">💾 Save Record</button>
             </div>
         </form>
     </div>

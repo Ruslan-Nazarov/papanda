@@ -172,10 +172,10 @@ export const MathNode = Node.create({
             dom.ondblclick = async (e) => {
                 e.stopPropagation();
                 const newLatex = await customLatexPrompt({
-                    title: '✍ Редактировать формулу (LaTeX)',
+                    title: '✍ Edit formula (LaTeX)',
                     value: node.attrs.latex,
-                    okLabel: 'Сохранить',
-                    cancelLabel: 'Отмена'
+                    okLabel: 'Save',
+                    cancelLabel: 'Cancel'
                 });
                 
                 if (newLatex !== null && typeof getPos === 'function') {

@@ -219,7 +219,15 @@ window.saveWordStatsEdit = async function() {
 
 window.deleteSearchWord = async function() {
     if (!searchSelected) return;
-    if (!confirm(`Are you sure you want to delete "${searchSelected.eng}"?`)) return;
+    const confirmed = await customConfirm({
+        title: 'Delete Word',
+        message: `Are you sure you want to delete "${searchSelected.eng}"?`,
+        buttons: [
+            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+            { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+        ]
+    });
+    if (!confirmed) return;
     try {
         const res = await fetch('/delete_word_data', {
             method: 'POST',
@@ -637,15 +645,6 @@ window.addEventListener('DOMContentLoaded', () => {
         if(e.target.closest('#searchQuery')) searchWord();
     });
 
-    // Backdrop click-to-close
-    window.addEventListener('click', (e) => {
-        const modal       = document.getElementById('wordStatsEditModal');
-        const searchModal = document.getElementById('searchWordModal');
-        const settingsModal = document.getElementById('workoutSettingsModal');
-        if (e.target === modal)       window.closeWordStatsEdit();
-        if (e.target === searchModal) closeSearchModal();
-        if (e.target === settingsModal) closeWorkoutSettingsModal();
-    });
 });
 
 // Expose functions called from HTML inline onclick attributes

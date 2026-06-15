@@ -3,6 +3,14 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
 // Global exports for inline onclicks
 window.openParentStickers = (type, id) => StickerOverview.open(type, id);
 window.openStickerModal = (params) => StickerModal.open(params);
+window.openLanguageStickerModal = function() {
+    const anchorNoteId = window.LANG_ANCHORS ? window.LANG_ANCHORS[currentLang] : null;
+    if (anchorNoteId) {
+        openParentStickers('note', anchorNoteId);
+    } else {
+        console.warn("No anchor note ID found for language:", currentLang);
+    }
+};
 window.toggleTranslation = toggleTranslation;
 window.runFlash = runFlash;
 window.nextSentence = nextSentence;
@@ -28,6 +36,10 @@ function setLanguage(lang, btn) {
     activeSentences = rawSentences.filter(s => s.language === lang);
     currentSentenceIndex = 0;
     renderCurrentSentence();
+    
+    if (isInitialized) {
+        loadLanguageStickers();
+    }
 }
 
 function renderCurrentSentence() {
@@ -37,7 +49,7 @@ function renderCurrentSentence() {
     currentStepIndex = -1;
     
     if (activeSentences.length === 0) {
-        display.innerHTML = '<div style="color: #bdc3c7;">Нет предложений для этого языка.</div>';
+        display.innerHTML = '<div style="color: #bdc3c7;">No sentences for this language.</div>';
         return;
     }
 
@@ -90,6 +102,9 @@ function renderCurrentSentence() {
         progressSpan.innerText = `Sentence ${currentSentenceIndex + 1} / ${activeSentences.length}`;
         progressSpan.style.display = 'inline-block';
     }
+
+    // Auto-start flash mode so full sentence appears immediately
+    runFlash();
 }
 
 function runFlash() {
@@ -112,7 +127,7 @@ function handleDisplayClick() {
         display.classList.remove('flash-mode');
         currentStepIndex = -1;
         isFlashActive = false;
-        return;
+        // Do NOT return here, so that currentStepIndex increments and first element is shown
     }
 
     currentStepIndex++;
@@ -142,8 +157,12 @@ function nextSentence() {
 }
 
 async function loadLanguageStickers() {
-    const anchorNoteId = window.LANG_LEARN_ANCHOR_ID;
-    if (!anchorNoteId || anchorNoteId === 0) return;
+    const anchorNoteId = window.LANG_ANCHORS ? window.LANG_ANCHORS[currentLang] : null;
+    if (!anchorNoteId || anchorNoteId === 0) {
+        const canvas = document.getElementById('languageStickersCanvas');
+        if (canvas) canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">No notes yet...</div>';
+        return;
+    }
 
     const canvas = document.getElementById('languageStickersCanvas');
     if (!canvas) return;
@@ -152,7 +171,7 @@ async function loadLanguageStickers() {
         const stickers = await StickerService.getByParent('note', anchorNoteId);
         canvas.innerHTML = '';
         if (!stickers || stickers.length === 0) {
-            canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
+            canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">No notes yet...</div>';
             return;
         }
         stickers.forEach(s => {
@@ -161,7 +180,7 @@ async function loadLanguageStickers() {
         });
     } catch (err) {
         console.error("Stickers load error:", err);
-        canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Ошибка загрузки заметок</div>';
+        canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Error loading notes</div>';
     }
 }
 
@@ -281,7 +300,8 @@ window.closeLanguageLearningModal = closeLanguageLearningModal;
 
 document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('stickersUpdated', (e) => {
-        if (e.detail.parentType === 'note' && e.detail.parentId == window.LANG_LEARN_ANCHOR_ID) {
+        const anchorNoteId = window.LANG_ANCHORS ? window.LANG_ANCHORS[currentLang] : null;
+        if (e.detail.parentType === 'note' && e.detail.parentId == anchorNoteId) {
             loadLanguageStickers();
         }
     });

@@ -135,10 +135,25 @@
     gap: 6px;
     padding: 6px 10px 0 14px;
     max-height: 0;
+    transition: opacity 0.2s ease, max-height 0.2s ease, padding 0.2s ease;
+    justify-content: flex-start;
+}
+
+.dialectics-block-actions {
+    display: flex;
+    gap: 6px;
+    padding: 6px 10px 0 14px;
+    max-height: 0;
     overflow: hidden;
     opacity: 0;
     transition: opacity 0.2s ease, max-height 0.2s ease, padding 0.2s ease;
     justify-content: flex-start;
+}
+
+.dialectics-block:hover .dialectics-block-actions {
+    opacity: 1;
+    max-height: 40px;
+    padding: 8px 10px 4px 14px;
 }
 
 .dialectics-block:hover .block-actions {
@@ -152,7 +167,7 @@
     line-height: 1.6;
 }
 
-.btn-block-edit, .btn-block-del {
+.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker {
     background: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -179,4 +194,16 @@
     color: #ef4444;
     border-color: #fecaca;
     background: #fef2f2;
+}
+
+.btn-block-ai:hover {
+    color: #8b5cf6;
+    border-color: #ddd6fe;
+    background: #f5f3ff;
+}
+
+.btn-block-sticker:hover {
+    color: #f59e0b;
+    border-color: #fde68a;
+    background: #fef3c7;
 }

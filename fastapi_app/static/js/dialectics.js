@@ -135,7 +135,7 @@ class DialecticsEngine {
         bind('btnEditorExpand', this.toggleExpand);
         bind('btnLoadDialectics', () => {
             if (this.state.isDirty) {
-                customConfirm("У вас есть несохраненные изменения. Все равно продолжить?", () => {
+                customConfirm("You have unsaved changes. Continue anyway?", () => {
                     this.state.isDirty = false;
                     this.showLoadModal();
                 });
@@ -298,7 +298,7 @@ class DialecticsEngine {
         if (!inner) return;
         const processText = inner.innerText || inner.textContent;
 
-        window.showToast("🤖 AI анализирует процесс...", "info");
+        window.showToast("🤖 AI is analyzing the process...", "info");
 
         try {
             const res = await fetch('/api/ai/dialectics/opposites', {
@@ -319,31 +319,31 @@ class DialecticsEngine {
             const formattedResult = `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${safeResult}</div>`;
 
             customConfirm({
-                title: 'Результат анализа',
+                title: 'Analysis Result',
                 message: formattedResult,
                 icon: '🤖',
                 buttons: [
-                    { label: 'Закрыть', value: true, class: 'confirm-btn-primary' }
+                    { label: 'Close', value: true, class: 'confirm-btn-primary' }
                 ]
             });
 
         } catch (error) {
             console.error(error);
             customConfirm({
-                title: 'Ошибка AI',
+                title: 'AI Error',
                 message: `<div style="color: red;">${error.message}</div>`,
                 buttons: [
-                    { label: 'Закрыть', value: true, class: 'confirm-btn-secondary' }
+                    { label: 'Close', value: true, class: 'confirm-btn-secondary' }
                 ]
             });
         }
     }
 
     async runGlobalParser() {
-        const formula = prompt("Введите математическую формулу для диалектического парсинга:");
+        const formula = prompt("Enter math formula for dialectical parsing:");
         if (!formula || !formula.trim()) return;
 
-        window.showToast("🧮 AI парсит формулу...", "info");
+        window.showToast("🧮 AI is parsing formula...", "info");
 
         try {
             const res = await fetch('/api/ai/dialectics/parser', {
@@ -369,7 +369,7 @@ class DialecticsEngine {
                 if (match) {
                     parsed = JSON.parse(match[1]);
                 } else {
-                    throw new Error("Не удалось распарсить JSON ответ от ИИ.");
+                    throw new Error("Failed to parse JSON response from AI.");
                 }
             }
 
@@ -384,30 +384,30 @@ class DialecticsEngine {
             const htmlContent = `
                 <div style="text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
                     <h3 style="margin-top: 0; color: #4338ca; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px;">
-                        Анализ формулы: <span style="font-family: monospace; background: #e0e7ff; padding: 2px 6px; border-radius: 4px;">${formula}</span>
+                        Formula Analysis: <span style="font-family: monospace; background: #e0e7ff; padding: 2px 6px; border-radius: 4px;">${formula}</span>
                     </h3>
-                    ${formatBlock("Предшествующая операция", parsed.predecessor, "#f8fafc")}
-                    ${formatBlock("Кризис усложнения записи", parsed.crisis_of_notation, "#fef2f2")}
-                    ${formatBlock("Снятие (Разрешение)", parsed.resolution, "#f0fdf4")}
+                    ${formatBlock("Preceding Operation", parsed.predecessor, "#f8fafc")}
+                    ${formatBlock("Crisis of Notation Complexity", parsed.crisis_of_notation, "#fef2f2")}
+                    ${formatBlock("Resolution", parsed.resolution, "#f0fdf4")}
                 </div>
             `;
 
             customConfirm({
-                title: 'Результат Парсера',
+                title: 'Parser Result',
                 message: htmlContent,
                 icon: '🧮',
                 buttons: [
-                    { label: 'Закрыть', value: true, class: 'confirm-btn-primary' }
+                    { label: 'Close', value: true, class: 'confirm-btn-primary' }
                 ]
             });
 
         } catch (error) {
             console.error(error);
             customConfirm({
-                title: 'Ошибка Парсера',
+                title: 'Parser Error',
                 message: `<div style="color: red;">${error.message}</div>`,
                 buttons: [
-                    { label: 'Закрыть', value: true, class: 'confirm-btn-secondary' }
+                    { label: 'Close', value: true, class: 'confirm-btn-secondary' }
                 ]
             });
         }
@@ -415,13 +415,13 @@ class DialecticsEngine {
 
     async startTextMathDictation() {
         const text = await customPrompt({
-            title: '✍ Опишите формулу словами',
-            message: 'Например: "корень из x в квадрате плюс y в квадрате"',
-            placeholder: 'Ваш текст...'
+            title: '✍ Describe the formula in words',
+            message: 'Example: "square root of x squared plus y squared"',
+            placeholder: 'Your text...'
         });
         if (!text || !text.trim()) return;
 
-        window.showToast("⏳ ИИ генерирует формулу...", "info");
+        window.showToast("⏳ AI is generating formula...", "info");
 
         try {
             const res = await fetch('/api/ai/dialectics/text-math', {
@@ -441,11 +441,11 @@ class DialecticsEngine {
                     type: 'mathNode',
                     attrs: { latex: latex }
                 }).run();
-                window.showToast("✅ Формула добавлена", "success");
+                window.showToast("✅ Formula added", "success");
             }
         } catch (error) {
             console.error(error);
-            window.showToast("❌ Ошибка генерации формулы", "error");
+            window.showToast("❌ Error generating formula", "error");
         }
     }
 
@@ -465,11 +465,11 @@ class DialecticsEngine {
                 stream.getTracks().forEach(track => track.stop());
 
                 if (isCancelled) {
-                    window.showToast("Запись отменена", "info");
+                    window.showToast("Recording cancelled", "info");
                     return;
                 }
 
-                window.showToast("⏳ Распознавание и генерация LaTeX...", "info");
+                window.showToast("⏳ Recognizing and generating LaTeX...", "info");
 
                 const formData = new FormData();
                 // append file
@@ -494,12 +494,12 @@ class DialecticsEngine {
                             type: 'mathNode',
                             attrs: { latex: latex }
                         }).run();
-                        window.showToast("✅ Формула добавлена", "success");
+                        window.showToast("✅ Formula added", "success");
                     }
 
                 } catch (error) {
                     console.error(error);
-                    window.showToast("❌ Ошибка обработки аудио", "error");
+                    window.showToast("❌ Audio processing error", "error");
                 }
             });
 
@@ -507,11 +507,11 @@ class DialecticsEngine {
 
             // Show toast indicating recording
             customConfirm({
-                title: '🎙 Запись',
-                message: '<div style="text-align: center; color: red; font-weight: bold; animation: pulse 1.5s infinite;">Идет запись аудио... Говорите формулу.</div>',
+                title: '🎙 Recording',
+                message: '<div style="text-align: center; color: red; font-weight: bold; animation: pulse 1.5s infinite;">Audio recording in progress... Speak the formula.</div>',
                 buttons: [
-                    { label: 'Остановить и распознать', value: true, class: 'confirm-btn-primary' },
-                    { label: 'Отмена', value: false, class: 'confirm-btn-secondary' }
+                    { label: 'Stop and recognize', value: true, class: 'confirm-btn-primary' },
+                    { label: 'Cancel', value: false, class: 'confirm-btn-secondary' }
                 ]
             }).then((val) => {
                 if (val === false) isCancelled = true;
@@ -523,7 +523,7 @@ class DialecticsEngine {
 
         } catch (err) {
             console.error("Microphone access denied or error:", err);
-            window.showToast("❌ Нет доступа к микрофону", "error");
+            window.showToast("❌ No microphone access", "error");
         }
     }
 
@@ -616,7 +616,9 @@ class DialecticsEngine {
 
             this._revealInterface();
             this.hideLoadModal();
-            if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
+            if (this.dom.deleteBtn) {
+                this.dom.deleteBtn.style.display = (n.title === "Example Note") ? 'none' : 'block';
+            }
         } else {
             // Note not found (e.g. deleted), clear stored id and show empty
             localStorage.removeItem('dialectics_last_note_id');
@@ -626,18 +628,18 @@ class DialecticsEngine {
 
     async loadExample() {
         DialecticsUI.setLoading(this.dom.canvas); // Optional loading state
-        const notes = await DialecticsAPI.list("Пример конспекта");
-        const exampleNote = notes.find(n => n.title === "Пример конспекта");
+        const notes = await DialecticsAPI.list("Example Note");
+        const exampleNote = notes.find(n => n.title === "Example Note");
 
         if (exampleNote) {
             await this.loadNoteToEditor(exampleNote.id);
-            window.showToast("Открыт существующий пример конспекта", "info");
+            window.showToast("Opened existing example note", "info");
         } else {
             this.state.currentNoteId = null;
-            this.dom.title.value = "Пример конспекта";
+            this.dom.title.value = "Example Note";
             BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
-            window.showToast("Открыт новый пример конспекта (пока пустой)", "info");
+            window.showToast("Opened new example note (empty for now)", "info");
         }
     }
 
@@ -655,7 +657,7 @@ class DialecticsEngine {
     }
 
     renderNotesList(notes) {
-        this.dom.loadList.innerHTML = notes.length ? '' : '<div style="color: #64748b; text-align: center; padding: 20px;">Ничего не найдено</div>';
+        this.dom.loadList.innerHTML = notes.length ? '' : '<div style="color: #64748b; text-align: center; padding: 20px;">Nothing found</div>';
         notes.forEach(n => {
             const i = document.createElement('div');
             i.className = 'load-note-item';
@@ -666,41 +668,43 @@ class DialecticsEngine {
                 dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
 
-            const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Закреплено">📌</span>' : '';
+            const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Pinned">📌</span>' : '';
+            const delBtnHTML = n.title === "Example Note" ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
 
             i.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
                     <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${pinnedIcon}<strong>${n.title}</strong></div>
                     <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">${dateStr}</div>
                 </div>
-                <button class="load-note-item-delete" title="Удалить">🗑️</button>
+                ${delBtnHTML}
             `;
             // Inline styles will be enhanced by CSS if needed, but these ensure it looks ok immediately
 
             i.onclick = () => this.loadNoteToEditor(n.id);
 
             const delBtn = i.querySelector('.load-note-item-delete');
-            delBtn.onclick = async (e) => {
-                e.stopPropagation();
+            if (delBtn) {
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation();
 
                 const confirmed = await customConfirm({
-                    title: 'Подтверждение удаления',
-                    message: `Удалить диалектику "${n.title}"?`,
+                    title: 'Confirm Deletion',
+                    message: `Delete dialectics "${n.title}"?`,
                     icon: '🗑️',
                     buttons: [
-                        { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Удалить', value: true, class: 'confirm-btn-danger' }
+                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Delete', value: true, class: 'confirm-btn-danger' }
                     ]
                 });
 
                 if (confirmed) {
                     const ok = await DialecticsAPI.delete(n.id);
                     if (ok) {
-                        window.showToast("Запись удалена", "info");
+                        window.showToast("Record deleted", "info");
                         // Remove visually without reloading to avoid flicker
                         i.remove();
                         if (this.dom.loadList.children.length === 0) {
-                            this.dom.loadList.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Ничего не найдено</div>';
+                            this.dom.loadList.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Nothing found</div>';
                         }
                         if (this.state.currentNoteId === n.id) {
                             this.close();
@@ -711,15 +715,29 @@ class DialecticsEngine {
                         }
                     }
                 }
-            };
+            }
+        };
 
-            this.dom.loadList.appendChild(i);
+        this.dom.loadList.appendChild(i);
         });
     }
 
     async deleteGlobal() {
         if (!this.state.currentNoteId) return;
-        if (confirm("Are you sure you want to delete this Dialectics?")) {
+        if (this.dom.title && this.dom.title.value === "Example Note") {
+            if(window.showToast) window.showToast("Cannot delete the example note", "error");
+            return;
+        }
+        const confirmed = await customConfirm({
+            title: 'Delete Confirmation',
+            message: 'Are you sure you want to delete this Dialectics?',
+            icon: '🗑️',
+            buttons: [
+                { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+            ]
+        });
+        if (confirmed) {
             const ok = await DialecticsAPI.delete(this.state.currentNoteId);
             if (ok) {
                 window.showToast("Dialectics deleted", "info");

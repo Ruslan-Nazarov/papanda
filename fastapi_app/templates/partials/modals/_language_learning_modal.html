@@ -323,7 +323,7 @@
 
 <div id="languageLearningModal" onclick="if(event.target===this) closeLanguageLearningModal()">
     <div class="modal-content-wrapper">
-        <div class="close-modal-btn" onclick="closeLanguageLearningModal()" title="Закрыть">✕</div>
+        <div class="close-modal-btn" onclick="closeLanguageLearningModal()" title="Close">✕</div>
         <div class="learning-container">
 
             <div class="header-layout">
@@ -335,7 +335,7 @@
                 </div>
                 
                 <div class="sticker-canvas-wrapper">
-                    <div class="add-sticker-btn" onclick="openParentStickers('note', window.LANG_LEARN_ANCHOR_ID)" title="Добавить заметку">+</div>
+                    <div class="add-sticker-btn" onclick="window.openLanguageStickerModal()" title="Add Note">+</div>
                     <div id="languageStickersCanvas" class="sticker-canvas"></div>
                 </div>
             </div>
@@ -353,10 +353,10 @@
 
                 <div class="controls">
                     <button class="btn-action btn-run" onclick="runFlash()">
-                        <span>▶</span> Запустить
+                        <span>▶</span> Start
                     </button>
                     <button id="toggle-translation" class="btn-action btn-toggle" onclick="toggleTranslation()">
-                        👁 Перевод
+                        👁 Translation
                     </button>
                     <button class="btn-action" style="background: #eee;" onclick="nextSentence()">
                         Next ➜
@@ -380,5 +380,5 @@
 </script>
 
 <script>
-    window.LANG_LEARN_ANCHOR_ID = {{ anchor_note_id | default(0) }};
+    window.LANG_ANCHORS = {{ lang_anchors_json | default('{}') | safe }};
 </script>

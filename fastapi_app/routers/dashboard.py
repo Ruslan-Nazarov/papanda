@@ -89,19 +89,29 @@ async def index(
     except Exception:
         event_colors = {}
 
+    sentences_json = word_service.get_sentences_json()
+    import json
+    try:
+        sentences = json.loads(sentences_json)
+        sentence_langs = set(s.get("language") for s in sentences if s.get("language"))
+    except Exception:
+        sentence_langs = set()
+        
     # Получаем данные для модалки Language Learning
     ns_res = await db.execute(select(models.Notes).where(models.Notes.category == "Language Learning System"))
-    anchor_note = ns_res.scalars().first()
-    if not anchor_note:
-        anchor_note = models.Notes(
-            category="Language Learning System", 
-            note="Системный якорь для стикеров на странице изучения языка."
-        )
-        db.add(anchor_note)
-        await db.commit()
-        await db.refresh(anchor_note)
+    anchor_notes = ns_res.scalars().all()
+    lang_anchors = {note.note: note.id for note in anchor_notes}
     
-    sentences_json = word_service.get_sentences_json()
+    for lang in sentence_langs:
+        if lang not in lang_anchors:
+            new_anchor = models.Notes(
+                category="Language Learning System",
+                note=lang
+            )
+            db.add(new_anchor)
+            await db.commit()
+            await db.refresh(new_anchor)
+            lang_anchors[lang] = new_anchor.id
 
     return templates.TemplateResponse(request, "index.html", {
         "request": request,
@@ -135,7 +145,7 @@ async def index(
         "observations": dash_data.get('observations', []),
         "pinned_notes": dash_data.get('pinned_notes', []),
         "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0,
-        "anchor_note_id": anchor_note.id,
+        "lang_anchors_json": json.dumps(lang_anchors),
         "sentences_json": sentences_json
     })
 
@@ -279,9 +289,29 @@ async def get_dashboard_tasks_widget(
     user: Any = Depends(check_auth_dependency)
 ):
     dash_data = await dashboard_service.get_index_data()
+    dashboard_map = await dashboard_service.get_dashboard_settings()
+    
+    today_obj = datetime.now()
+    one_thing, one_thing_date, one_thing_replacement = "...", 0, "..."
+
+    if 'one_thing' in dashboard_map:
+        item = dashboard_map['one_thing']
+        one_thing = item.title
+        d_obj = normalize_date(item.date)
+        if d_obj:
+            if isinstance(d_obj, datetime):
+                d_obj = d_obj.date()
+            one_thing_date = (today_obj.date() - d_obj).days
+    if 'replacement' in dashboard_map:
+        one_thing_replacement = dashboard_map['replacement'].title
+
     return templates.TemplateResponse(request, "partials/tasks_widget.html", {
         "request": request,
-        "tasks": dash_data['tasks']
+        "tasks": dash_data['tasks'],
+        "now_utc": datetime.now(timezone.utc).replace(tzinfo=None),
+        "one_thing": one_thing,
+        "one_thing_date": one_thing_date,
+        "one_thing_replacement": one_thing_replacement
     })
 
 @router.get("/api/dashboard/widget/habits", response_class=HTMLResponse)
@@ -291,8 +321,11 @@ async def get_dashboard_habits_widget(
     user: Any = Depends(check_auth_dependency)
 ):
     dash_data = await dashboard_service.get_index_data()
+    today_obj = datetime.now()
+    
     return templates.TemplateResponse(request, "partials/habits_widget.html", {
         "request": request,
-        "habits_all": dash_data['habits_all']
+        "habits_all": dash_data['habits_all'],
+        "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0
     })
 

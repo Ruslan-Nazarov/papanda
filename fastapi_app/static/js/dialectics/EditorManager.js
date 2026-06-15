@@ -38,7 +38,7 @@ export class EditorManager {
             this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
-                extensions: [StarterKit, ResizableImage, MathNode],
+                extensions: [StarterKit, ResizableImage.configure({ allowBase64: true }), MathNode],
                 content: '<p></p>',
                 autofocus: 'end',
                 onFocus: () => el.classList.add('focused'),
@@ -49,32 +49,6 @@ export class EditorManager {
                             event.stopPropagation();
                             return false;
                         }
-                    },
-                    handleKeyDown: (view, event) => {
-                        // Alt + кириллица → inline LaTeX-формула (mathNode)
-                        const mathMap = {
-                            'п': '+',
-                            'м': '-',
-                            'у': '\\times',
-                            'д': '\\div',
-                            'р': '=',
-                            'и': '\\int',
-                            'с': '\\sum',
-                            'б': '\\infty',
-                            'к': '\\sqrt{}',
-                            'ф': '\\frac{}{}',
-                        };
-                        if (event.altKey && mathMap[event.key] && !event.ctrlKey && !event.metaKey) {
-                            event.preventDefault();
-                            const latex = mathMap[event.key];
-                            const nodeType = view.state.schema.nodes.mathNode;
-                            if (!nodeType) return false;
-                            const mathNode = nodeType.create({ latex });
-                            const tr = view.state.tr.replaceSelectionWith(mathNode);
-                            view.dispatch(tr);
-                            return true;
-                        }
-                        return false;
                     }
                 },
                 onSelectionUpdate: ({ editor }) => {
@@ -169,7 +143,7 @@ export class EditorManager {
         `;
 
         const btnVoice = document.createElement('button');
-        btnVoice.innerHTML = '🎙 Диктовать формулу';
+        btnVoice.innerHTML = '🎙 Dictate formula';
         btnVoice.style.cssText = btnStyle;
         btnVoice.onmouseover = () => btnVoice.style.background = '#f1f5f9';
         btnVoice.onmouseout = () => btnVoice.style.background = 'transparent';
@@ -179,7 +153,7 @@ export class EditorManager {
         };
 
         const btnText = document.createElement('button');
-        btnText.innerHTML = '✍ Написать формулу текстом';
+        btnText.innerHTML = '✍ Write formula in text';
         btnText.style.cssText = btnStyle;
         btnText.onmouseover = () => btnText.style.background = '#f1f5f9';
         btnText.onmouseout = () => btnText.style.background = 'transparent';
@@ -335,8 +309,9 @@ export class EditorManager {
         }
     }
 
-    clearShapes() {
-        if (confirm("Очистить холст?") && this.fabricCanvas) {
+    async clearShapes() {
+        const confirmed = await window.NotificationService.confirm("Clear canvas?", { isDanger: true, okText: 'Clear' });
+        if (confirmed && this.fabricCanvas) {
             this.fabricCanvas.clear();
             this.fabricCanvas.backgroundColor = '#ffffff';
             this.fabricCanvas.renderAll();
@@ -383,19 +358,19 @@ export class EditorManager {
         if (!c || !container) return;
 
         const typeLabels = {
-            'line': '— Отрезок',
-            'group': '🔒 Группа',
-            'circle': '○ Окружность',
-            'rect': '▯ Прямоугольник',
-            'triangle': '△ Треугольник',
-            'polygon': '◇ Многоугольник',
-            'i-text': '🔤 Текст',
-            'path': '✎ Рисунок',
+            'line': '— Segment',
+            'group': '🔒 Group',
+            'circle': '○ Circle',
+            'rect': '▯ Rectangle',
+            'triangle': '△ Triangle',
+            'polygon': '◇ Polygon',
+            'i-text': '🔤 Text',
+            'path': '✎ Drawing',
         };
 
         const objs = c.getObjects();
         if (objs.length === 0) {
-            container.innerHTML = '<div style="padding:8px;font-size:11px;color:#94a3b8;text-align:center;">Холст пуст</div>';
+            container.innerHTML = '<div style="padding:8px;font-size:11px;color:#94a3b8;text-align:center;">Canvas is empty</div>';
             return;
         }
 

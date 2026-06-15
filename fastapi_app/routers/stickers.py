@@ -23,6 +23,8 @@ class StickerCreate(BaseModel):
     task_id: Optional[int] = None
     habit_id: Optional[int] = None
     note_id: Optional[int] = None
+    dialectics_id: Optional[int] = None
+    dialectics_block_id: Optional[str] = None
 
 class StickerUpdate(BaseModel):
     """Схема для обновления стикера."""
@@ -31,6 +33,8 @@ class StickerUpdate(BaseModel):
     color: Optional[str] = None
     type: Optional[str] = None
     note_id: Optional[int] = None
+    dialectics_id: Optional[int] = None
+    dialectics_block_id: Optional[str] = None
 
 @router.get("/debug_info")
 async def debug_info(db_session: Any = Depends(get_db)):
@@ -121,6 +125,16 @@ async def get_regular_note_stickers(
     """Возвращает стикеры, привязанные к обычной заметке."""
     return await service.get_notes_for_note(note_id=note_id)
 
+@router.get("/dialectics/{dialectics_id}/", response_model=List[StickyNoteView])
+async def get_dialectics_stickers(
+    dialectics_id: int, 
+    recurrence_id: Optional[str] = None,
+    service: StickyNoteService = Depends(get_sticky_note_service), 
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Возвращает стикеры, привязанные к модулю Диалектики."""
+    return await service.get_notes_for_dialectics(dialectics_id=dialectics_id, block_id=recurrence_id)
+
 @router.post("/", response_model=StickyNoteView)
 async def create_sticker(
     data: StickerCreate, 
@@ -137,7 +151,9 @@ async def create_sticker(
         recurrence_id=data.recurrence_id,
         task_id=data.task_id,
         habit_id=data.habit_id,
-        note_id=data.note_id
+        note_id=data.note_id,
+        dialectics_id=data.dialectics_id,
+        dialectics_block_id=data.dialectics_block_id
     )
 
 @router.get("/{note_id}/", response_model=StickyNoteView)
@@ -166,7 +182,9 @@ async def update_sticker(
         title=data.title, 
         color=data.color, 
         note_type=data.type,
-        note_id_link=data.note_id
+        note_id_link=data.note_id,
+        dialectics_id=data.dialectics_id,
+        dialectics_block_id=data.dialectics_block_id
     )
     if not note:
         raise HTTPException(status_code=404, detail="Sticker not found")

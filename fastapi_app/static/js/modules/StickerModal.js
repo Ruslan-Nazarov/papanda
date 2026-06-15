@@ -379,6 +379,9 @@ export class StickerModal {
                     if (this.state.parentType === 'event' && this.state.secondaryId) {
                         payload.recurrence_id = this.state.secondaryId;
                     }
+                    if (this.state.parentType === 'dialectics' && this.state.secondaryId) {
+                        payload.dialectics_block_id = String(this.state.secondaryId);
+                    }
                 } else {
                     // Fallback: If state was somehow lost, try to detect open parent modals in the DOM
                     const detailEventId = document.getElementById('detailEventId')?.value;

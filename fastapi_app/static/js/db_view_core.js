@@ -91,8 +91,21 @@ window.refreshCurrentView = function (modelName) {
 };
 
 // Global Search System
-window.openSearchModal = function () {
+window.openSearchModal = function (modelOverride) {
     if (typeof ModalManager !== 'undefined') {
+        if (modelOverride) {
+            window.searchModelOverride = modelOverride;
+        } else {
+            window.searchModelOverride = null;
+        }
+        
+        // Update modal title if possible
+        const titleEl = document.querySelector('#dbSearchModal h2');
+        if (titleEl) {
+            const displayModel = modelOverride || window.currentDbViewModel || 'All';
+            titleEl.textContent = 'Search: ' + displayModel;
+        }
+
         ModalManager.open('dbSearchModal');
         setTimeout(() => {
             const input = document.getElementById('dbSearchInput');
@@ -105,24 +118,12 @@ window.openSearchModal = function () {
     }
 };
 
-window.logSearchDebug = function (msg) {
-    const log = document.getElementById('searchDebugLog');
-    if (log) {
-        const entry = document.createElement('div');
-        entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
-        log.appendChild(entry);
-        log.scrollTop = log.scrollHeight;
-    }
-    console.log("[SearchDebug]", msg);
-};
-
 window.performAjaxSearch = async function () {
-    window.logSearchDebug("performAjaxSearch called");
     const query = (document.getElementById('dbSearchInput')?.value || '').trim();
     // To support generic search, we fetch the active model name.
     // If we're in the modal, we can derive it from the modal title or store it.
-    // For now we'll store it on window when openDbViewModal is called.
-    const modelName = window.currentDbViewModel || 'All';
+    // We use searchModelOverride if set (e.g. from a specific widget), else currentDbViewModel, else 'All'.
+    const modelName = window.searchModelOverride || window.currentDbViewModel || 'All';
     const resultsBox = document.getElementById('dbSearchResults');
     const placeholder = document.getElementById('searchPlaceholder');
 
@@ -132,7 +133,6 @@ window.performAjaxSearch = async function () {
         return;
     }
 
-    window.logSearchDebug("Searching for: " + query + " in " + modelName);
     if (placeholder) {
         placeholder.innerHTML = '<div class="search-loader"></div><div style="font-weight: 600; margin-top: 15px;">Searching...</div>';
         placeholder.style.display = 'block';
@@ -143,21 +143,17 @@ window.performAjaxSearch = async function () {
     window.searchTimeout = setTimeout(async function () {
         try {
             const url = '/api/db/search/' + modelName + '?search=' + encodeURIComponent(query);
-            window.logSearchDebug("Fetching: " + url);
             const resp = await fetch(url);
-            window.logSearchDebug("HTTP status: " + resp.status);
 
             if (!resp.ok) throw new Error("HTTP " + resp.status);
             const data = await resp.json();
 
             if (data.status === 'success') {
-                window.logSearchDebug("Results: " + (data.data ? data.data.length : 0));
                 window.renderSearchItems(data.data);
             } else {
                 throw new Error(data.message || "Error");
             }
         } catch (e) {
-            window.logSearchDebug("FAIL: " + e.message);
             if (placeholder) placeholder.innerHTML = '<div style="color:red; padding:20px;">⚠️ ' + e.message + '</div>';
         }
     }, 300);
@@ -187,7 +183,6 @@ window.renderSearchItems = function (items) {
 };
 
 window.jumpToRecord = async function (id, itemModel = null) {
-    window.logSearchDebug("Jump to: " + id + " (model: " + itemModel + ")");
     const selector = '.event-chip[data-id="' + id + '"], ' +
         '.note-card[data-id="' + id + '"], ' +
         '.record-row[data-id="' + id + '"], ' +
@@ -196,18 +191,15 @@ window.jumpToRecord = async function (id, itemModel = null) {
     const el = document.querySelector(selector);
 
     if (el) {
-        window.logSearchDebug("Valid record found. Opening...");
         if (typeof ModalManager !== 'undefined') ModalManager.close('dbSearchModal');
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         el.style.outline = '4px solid #4F46E5';
         el.style.boxShadow = '0 0 25px rgba(79, 70, 229, 0.4)';
         setTimeout(function () {
             el.click();
-            window.logSearchDebug("Click event triggered");
         }, 500);
         setTimeout(function () { el.style.outline = 'none'; el.style.boxShadow = 'none'; }, 3000);
     } else {
-        window.logSearchDebug("Record NOT on page. Fetching via API to open modal...");
         if (typeof ModalManager !== 'undefined') ModalManager.close('dbSearchModal');
 
         const modelName = itemModel || window.currentDbViewModel || 'All';
@@ -229,7 +221,6 @@ window.jumpToRecord = async function (id, itemModel = null) {
                 throw new Error(data.message);
             }
         } catch (e) {
-            window.logSearchDebug("Failed to fetch record: " + e.message);
             window.location.href = '/database/' + modelName + '?search=' + encodeURIComponent(id);
         }
     }
