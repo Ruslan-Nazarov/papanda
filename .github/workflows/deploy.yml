@@ -22,7 +22,8 @@ jobs:
             cd /root/papanda/
             
             echo "Pulling latest code from main branch..."
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             
             echo "Restarting Papanda service..."
             systemctl restart papanda
