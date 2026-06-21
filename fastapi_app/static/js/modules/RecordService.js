@@ -16,27 +16,27 @@ export const RecordService = {
         try {
             if (modelName === 'Event' && isRecurring) {
                 const choice = await customChoice({
-                    title: 'Delete Recurring Event',
-                    messageHTML: 'Choose how to delete this recurring event:',
+                    title: window._('dashboard.recurring_event') || 'Delete Recurring Event',
+                    messageHTML: window._('dashboard.recurring_delete_msg') || 'Choose how to delete this recurring event:',
                     options: [
-                        { value: 'only', label: 'Delete only this occurrence', checked: true },
-                        { value: 'this_and_future', label: 'Delete this and all future occurrences' },
-                        { value: 'future_only', label: 'Keep this, delete future occurrences' },
-                        { value: 'all', label: 'Delete ALL occurrences in the series' }
+                        { value: 'only', label: window._('dashboard.delete_only_this') || 'Delete only this occurrence', checked: true },
+                        { value: 'this_and_future', label: window._('dashboard.delete_this_and_future') || 'Delete this and all future occurrences' },
+                        { value: 'future_only', label: window._('dashboard.delete_future_only') || 'Keep this, delete future occurrences' },
+                        { value: 'all', label: window._('dashboard.delete_all_occurrences') || 'Delete ALL occurrences in the series' }
                     ],
-                    okLabel: 'Delete',
-                    cancelLabel: 'Cancel'
+                    okLabel: window._('dashboard.delete') || 'Delete',
+                    cancelLabel: window._('dashboard.cancel') || 'Cancel'
                 });
                 if (choice === null) return;
                 confirmed = true;
                 deleteMode = choice;
             } else {
                 confirmed = await customConfirm({
-                    title: 'Confirm Deletion',
-                    message: `Are you sure you want to delete this ${modelName}?`,
+                    title: window._('dashboard.delete_event') || 'Confirm Deletion',
+                    message: window._('dashboard.delete_event_confirm') || `Are you sure you want to delete this ${modelName}?`,
                     buttons: [
-                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+                        { label: window._('dashboard.cancel') || 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                        { label: window._('dashboard.delete') || 'Delete', value: true, class: 'confirm-btn-danger' }
                     ]
                 });
             }
@@ -120,7 +120,11 @@ export const RecordService = {
             if (window.refreshCurrentView) window.refreshCurrentView(modelName);
             else location.reload();
         } else {
-            if (window.showToast) window.showToast(`${modelName} deleted`, 'success');
+            let toastMsg = window._('toast.record_deleted') || `${modelName} deleted`;
+            if (modelName === 'Event') toastMsg = window._('toast.event_deleted') || toastMsg;
+            else if (modelName === 'Note' || modelName === 'Notes') toastMsg = window._('toast.note_deleted') || toastMsg;
+            
+            if (window.showToast) window.showToast(toastMsg, 'success');
         }
     }
 };

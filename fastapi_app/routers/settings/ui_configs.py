@@ -9,7 +9,8 @@ from ...database import get_db
 from ... import models, schemas
 from ...services.settings_service import get_setting, set_setting, get_settings_context
 from ...services.auth import check_auth_dependency
-from ...config import templates
+from ...config import templates, INTERNAL_ROOT
+from ...models.dialectics import Dialectics
 
 router = APIRouter(
     dependencies=[Depends(check_auth_dependency)]
@@ -34,17 +35,9 @@ async def update_settings(
         await set_setting(db, 'max_duration', str(data.max_duration))
     if data.max_random_minutes is not None:
         await set_setting(db, 'max_random_minutes', str(data.max_random_minutes))
-    if data.theme_reading is not None:
-        await set_setting(db, 'theme_reading', data.theme_reading)
-    if data.theme_editor is not None:
-        await set_setting(db, 'theme_editor', data.theme_editor)
 
     await db.commit()
     response = RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
-    if data.theme_reading is not None:
-        response.set_cookie(key="theme_reading", value=data.theme_reading, max_age=31536000)
-    if data.theme_editor is not None:
-        response.set_cookie(key="theme_editor", value=data.theme_editor, max_age=31536000)
     return response
 
 
@@ -121,3 +114,61 @@ async def update_event_color(
     await set_setting(db, "event_colors", json.dumps(colors))
     await db.commit()
     return schemas.SuccessResponse(message="Color label updated")
+
+class LocaleRequest(schemas.BaseModel):
+    locale: str = "en"
+
+@router.post("/api/set-locale", response_model=schemas.SuccessResponse)
+async def set_locale(data: LocaleRequest, db: AsyncSession = Depends(get_db)):
+    """Устанавливает язык интерфейса через cookie и обновляет пример конспекта в БД."""
+    locale = data.locale
+    if locale not in ["en", "ru", "kk"]:
+        locale = "en"
+        
+    # Update Example Note in DB
+    locale_map = {
+        "en": ("Example Note", "example_note_content.json"),
+        "ru": ("Пример конспекта", "example_note_content_ru.json"),
+        "kk": ("Конспект мысалы", "example_note_content_kk.json")
+    }
+    target_title, json_file = locale_map.get(locale, locale_map["en"])
+    
+    stmt = select(Dialectics).where(Dialectics.title.in_(["Example Note", "Пример конспекта", "Конспект мысалы"]))
+    res = await db.execute(stmt)
+    existing = res.scalars().first()
+    
+    json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file
+    if not json_path.exists():
+        json_path = INTERNAL_ROOT / "fastapi_app" / "static" / "example_note_content.json"
+        
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            content_data = json.load(f)
+            
+        if existing:
+            existing.title = content_data.get("title", target_title)
+            existing.content_json = content_data.get("content_json", [])
+        else:
+            new_note = Dialectics(
+                title=content_data.get("title", target_title),
+                content_json=content_data.get("content_json", []),
+                is_pinned=content_data.get("is_pinned", False)
+            )
+            db.add(new_note)
+        await db.commit()
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to seed example note on locale change: {e}")
+        
+    from ...config import settings
+    if settings.demo_mode:
+        from ...database import reseed_demo_data
+        try:
+            await reseed_demo_data(db, locale)
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to reseed demo data on locale change: {e}")
+
+    response = JSONResponse(content={"status": "success", "message": "Locale updated"})
+    response.set_cookie(key="locale", value=locale, max_age=31536000)
+    return response

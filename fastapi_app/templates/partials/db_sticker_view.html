@@ -91,7 +91,7 @@
             <span style="font-style: normal;">📊</span> Filtered by: 
             {% if selected_category %}<span class="badge-premium">{{ selected_category }}</span>{% endif %}
             {% if search_query %}<b style="color: var(--color-text-dark);">"{{ search_query }}"</b>{% endif %}
-            <a href="{{ url_for('db_view', model_name='Stickers') }}" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear All</a>
+            <a href="javascript:void(0)" onclick="loadDbViewModalContent('Stickers')" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear All</a>
         </div>
     {% endif %}
 
@@ -180,7 +180,7 @@
     }
 
     window.filterStickers = function(val) {
-        window.location.href = "{{ url_for('db_view', model_name='Stickers') }}?category=" + encodeURIComponent(val);
+        loadDbViewModalContent('Stickers', { category: val });
     };
 </script>
 {% endif %}

@@ -319,7 +319,7 @@ async function refreshDashboardObservations() {
     const wrapper = document.querySelector('.observation-widget .widget-body');
     if (!wrapper) return;
     try {
-        const response = await fetch('/api/dashboard/widget/observations');
+        const response = await fetch('/api/dashboard/widget/observations', { cache: 'no-store' });
         if (response.ok) {
             const html = await response.text();
             // We only need the inner contents or we can replace the widget-body

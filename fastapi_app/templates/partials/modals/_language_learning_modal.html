@@ -328,9 +328,9 @@
 
             <div class="header-layout">
                 <div class="title-block">
-                    <h1 style="margin-top: 0; margin-bottom: 10px;">Sentence Trainer</h1>
+                    <h1 style="margin-top: 0; margin-bottom: 10px;">{{ _('modal.sentence_trainer') }}</h1>
                     <p style="margin: 0; display: flex; align-items: center; gap: 15px;">
-                        <span style="color: #666;">Learn structural logic word by word.</span>
+                        <span style="color: #666;">{{ _('modal.learn_structural_logic') }}</span>
                     </p>
                 </div>
                 
@@ -352,23 +352,20 @@
                 </div>
 
                 <div class="controls">
-                    <button class="btn-action btn-run" onclick="runFlash()">
-                        <span>▶</span> Start
-                    </button>
                     <button id="toggle-translation" class="btn-action btn-toggle" onclick="toggleTranslation()">
-                        👁 Translation
+                        {{ _('modal.translation_btn') }}
                     </button>
                     <button class="btn-action" style="background: #eee;" onclick="nextSentence()">
-                        Next ➜
+                        {{ _('modal.next') }}
                     </button>
                 </div>
 
                 <div class="legend">
-                    <div class="legend-item"><span class="dot" style="background: #ff7675;"></span> Predicate</div>
-                    <div class="legend-item"><span class="dot" style="background: #74b9ff;"></span> Subject</div>
-                    <div class="legend-item"><span class="dot" style="background: #55efc4;"></span> Attributes</div>
-                    <div class="legend-item"><span class="dot" style="background: #a29bfe;"></span> Object</div>
-                    <div class="legend-item"><span class="dot" style="background: #ffeaa7;"></span> Circumstance</div>
+                    <div class="legend-item"><span class="dot" style="background: #ff7675;"></span> {{ _('modal.predicate') }}</div>
+                    <div class="legend-item"><span class="dot" style="background: #74b9ff;"></span> {{ _('modal.subject') }}</div>
+                    <div class="legend-item"><span class="dot" style="background: #55efc4;"></span> {{ _('modal.attributes') }}</div>
+                    <div class="legend-item"><span class="dot" style="background: #a29bfe;"></span> {{ _('modal.object') }}</div>
+                    <div class="legend-item"><span class="dot" style="background: #ffeaa7;"></span> {{ _('modal.circumstance') }}</div>
                 </div>
             </div>
         </div>

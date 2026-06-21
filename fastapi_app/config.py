@@ -29,6 +29,36 @@ else:
 templates: Jinja2Templates = Jinja2Templates(directory=str(INTERNAL_ROOT / "fastapi_app" / "templates"))
 templates.env.filters['from_json'] = json.loads
 
+from jinja2 import pass_context
+
+@pass_context
+def translate_context_processor(context: dict, key: str) -> str:
+    try:
+        from fastapi_app.services.localization import get_translate_func
+        request = context.get('request')
+        if request:
+            return get_translate_func(request)(key)
+    except Exception as e:
+        print(f"Translation error: {e}")
+    return key
+
+@pass_context
+def get_js_translations_processor(context: dict) -> str:
+    try:
+        from fastapi_app.services.localization import localization_service
+        request = context.get('request')
+        if request:
+            locale = request.cookies.get('locale', 'en')
+            translations = localization_service.get_translations_for_locale(locale)
+            import json
+            return json.dumps(translations)
+    except Exception as e:
+        print(f"Translation JS error: {e}")
+    return "{}"
+
+templates.env.globals['_'] = translate_context_processor
+templates.env.globals['get_js_translations'] = get_js_translations_processor
+
 def ensure_secret_key() -> None:
     """
     Проверяет наличие SECRET_KEY в .env и генерирует его, если файла нет или ключ отсутствует.
@@ -93,6 +123,9 @@ class Settings(BaseSettings):
     # URL базы данных (если не задан, формируется автоматически из db_path)
     database_url: Optional[str] = None
     
+    # Демонстрационный режим (песочница сессий без авторизации)
+    demo_mode: bool = False
+    
     # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     log_level: str = "INFO"
     
@@ -143,3 +176,12 @@ except Exception as e:
 # Обеспечиваем наличие папок
 for d in [settings.db_dir, settings.resources_dir]:
     d.mkdir(parents=True, exist_ok=True)
+
+import shutil
+internal_excel = INTERNAL_ROOT / "data" / "resources" / "translate.xlsx"
+if not settings.excel_path.exists() and internal_excel.exists():
+    try:
+        shutil.copy2(internal_excel, settings.excel_path)
+        print(f"[SETUP] Скопирован базовый файл словаря в {settings.excel_path}")
+    except Exception as e:
+        print(f"[CRITICAL] Не удалось скопировать словарь: {e}")

@@ -30,7 +30,7 @@ async def test_submit_chrono_json_success(auth_client):
     data = resp.json()
     assert data["status"] == "success"
     # SuccessResponse не содержит 'id' — только status/message/data
-    assert data["message"] == "Хронология успешно сохранена"
+    assert data["message"] == "Chronology successfully saved"
 
 @pytest.mark.anyio
 async def test_add_note_json_success(auth_client, db_session):

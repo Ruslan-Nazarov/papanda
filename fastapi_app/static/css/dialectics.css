@@ -54,3 +54,78 @@
     background: #fee2e2;
     transform: scale(1.1);
 }
+
+/* Dialectics Guide Modal Styles */
+.guide-markdown-content {
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: #334155;
+    font-family: inherit;
+}
+.guide-markdown-content h1 {
+    font-size: 1.5rem;
+    color: #0f172a;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+    font-weight: 850;
+}
+.guide-markdown-content h2 {
+    font-size: 1.25rem;
+    color: #1e293b;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    font-weight: 800;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.25rem;
+}
+.guide-markdown-content h3 {
+    font-size: 1.1rem;
+    color: #334155;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 750;
+}
+.guide-markdown-content p {
+    margin-top: 0;
+    margin-bottom: 1.2rem;
+}
+.guide-markdown-content ul {
+    list-style-type: disc !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1.2rem !important;
+    padding-left: 1.5rem !important;
+}
+.guide-markdown-content ol {
+    list-style-type: decimal !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1.2rem !important;
+    padding-left: 1.5rem !important;
+}
+.guide-markdown-content li {
+    margin-bottom: 0.5rem !important;
+    display: list-item !important;
+    line-height: 1.6;
+}
+.guide-markdown-content hr {
+    height: 1px;
+    border: none;
+    background-color: #e2e8f0;
+    margin: 2rem 0;
+}
+.guide-markdown-content code {
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    background-color: #f1f5f9;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.9em;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+}
+.guide-markdown-content strong {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+

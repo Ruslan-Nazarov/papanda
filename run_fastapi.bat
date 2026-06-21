@@ -1,10 +1,10 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Papanda (FastAPI Edition)
+title Papanda v0.6.3 (FastAPI Edition)
 
 echo ==================================================
-echo   🚀 Starting Papanda...
+echo   🚀 Starting Papanda v0.6.3...
 echo ==================================================
 
 :: Check if python is installed

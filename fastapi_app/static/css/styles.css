@@ -21,6 +21,9 @@
 @import 'components/widgets.css';
 @import 'dashboard/notes_widget.css';
 @import 'dashboard/tasks_widget.css';
+@import 'dashboard/calendar.css';
 
+/* 4. Responsive Overrides */
+@import 'base/mobile.css';
 
 /* Scrollbar styles moved to base/scrollbar.css */

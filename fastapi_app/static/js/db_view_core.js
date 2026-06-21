@@ -65,6 +65,12 @@ window.refreshCurrentView = function (modelName) {
     if (modelName === 'Habit' && typeof window.refreshDashboardHabits === 'function') {
         window.refreshDashboardHabits();
     }
+    if (modelName === 'Observation' && typeof window.refreshDashboardObservations === 'function') {
+        window.refreshDashboardObservations();
+    }
+    if (modelName === 'Stickers' && typeof window.refreshDashboardStickers === 'function') {
+        window.refreshDashboardStickers();
+    }
 
     // If the centralized modal is open, silently fetch its content again
     if (modalEl && modalEl.style.display === 'flex' && window.openDbViewModal) {
@@ -86,6 +92,10 @@ window.refreshCurrentView = function (modelName) {
         if (modelName === 'Event' && typeof window.refreshDashboardEvents === 'function') return;
         if (modelName === 'Task' && typeof window.refreshDashboardTasks === 'function') return;
         if (modelName === 'Habit' && typeof window.refreshDashboardHabits === 'function') return;
+        if (modelName === 'Observation' && typeof window.refreshDashboardObservations === 'function') return;
+        if (modelName === 'Stickers' && typeof window.refreshDashboardStickers === 'function') return;
+        if (modelName === 'Chronology') return;
+        if (modelName === 'Notes') return;
         location.reload();
     }
 };
@@ -215,13 +225,23 @@ window.jumpToRecord = async function (id, itemModel = null) {
                 } else if (modelName === 'Chronology' && window.openChronoViewModal) {
                     window.openChronoViewModal(data.data.date, data.data.title);
                 } else {
-                    window.location.href = '/database/' + modelName + '?search=' + encodeURIComponent(id);
+                    if (window.openDbViewModal) {
+                        await window.openDbViewModal(modelName);
+                        setTimeout(() => {
+                            const modalEl = document.querySelector('#dbViewModalContent [data-id="' + id + '"]');
+                            if (modalEl) {
+                                modalEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                modalEl.style.outline = '4px solid #4F46E5';
+                                setTimeout(() => modalEl.click(), 500);
+                            }
+                        }, 800);
+                    }
                 }
             } else {
                 throw new Error(data.message);
             }
         } catch (e) {
-            window.location.href = '/database/' + modelName + '?search=' + encodeURIComponent(id);
+            console.error("Jump to record error:", e);
         }
     }
 };
@@ -277,7 +297,7 @@ window.openAddEventForDay = (dateStr) => EventService.openAddForDay(dateStr);
 window.toggleEventDone = (id) => EventService.toggleDone(id);
 
 window.openEditNoteModal = (...args) => NoteService.openEdit(...args);
-window.closeEditNoteModal = () => ModalManager.close('editNoteModal');
+window.closeEditNoteModal = () => NoteService.closeEditNoteModal();
 window.saveNoteEdit = () => NoteService.save();
 window.openNoteViewModal = (...args) => NoteService.openView(...args);
 window.closeNoteViewModal = () => ModalManager.close('noteViewModal');

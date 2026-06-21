@@ -68,7 +68,7 @@ async function addSticker() {
             stInput.style.height = '40px';
             const titleInput = document.getElementById('stickerTitleInput');
             if (titleInput) titleInput.value = '';
-            if (typeof window.showToast === 'function') window.showToast('Sticker added!', 'success');
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.sticker_added"), 'success');
         } else {
             const errText = await response.text();
             console.error(`Failed to add sticker. Status: ${response.status}`, errText);
@@ -76,7 +76,7 @@ async function addSticker() {
         }
     } catch (e) {
         console.error('Sticker fetch error:', e);
-        if (typeof window.showToast === 'function') window.showToast('Network error', 'error');
+        if (typeof window.showToast === 'function') window.showToast(window._("toast.network_error"), 'error');
     }
 }
 window.addSticker = addSticker;
@@ -102,8 +102,18 @@ window.updateHeaderStickerUI = function (attached) {
 window.syncCategoryStickerVisibility = function () {
     const cat = document.querySelector('select[name="common_category"]')?.value;
     const btn = document.getElementById('headerStickerBtn');
-    if (!btn) return;
-    btn.style.display = (cat === 'event' || cat === 'important') ? 'flex' : 'none';
+    if (btn) {
+        btn.style.display = (cat === 'event' || cat === 'important') ? 'flex' : 'none';
+    }
+    const colorBtn = document.getElementById('headerColorBtn');
+    if (colorBtn) {
+        const wrapper = colorBtn.closest('.recurrence-wrapper');
+        if (wrapper) {
+            wrapper.style.display = (cat === 'event') ? '' : 'none';
+        } else {
+            colorBtn.style.display = (cat === 'event') ? 'flex' : 'none';
+        }
+    }
 };
 
 // ─── Initializer ─────────────────────────────────────────────────────────────

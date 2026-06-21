@@ -24,10 +24,10 @@ export const HabitService = {
         if (!title) return;
         
         try {
-            const r = await fetch(`/edit_record/Habit/${id}`, {
+            const r = await fetch(`/edit_habit_inline`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, start_date: start, end_date: end || null, read })
+                body: JSON.stringify({ id: parseInt(id), title, start_date: start, end_date: end || null, read })
             });
             if (r.ok) {
                 ModalManager.close('editHabitModal');

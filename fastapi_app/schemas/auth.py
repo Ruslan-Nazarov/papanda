@@ -14,7 +14,7 @@ class UserCreate(UserBase):
     @model_validator(mode='after')
     def check_passwords_match(self) -> 'UserCreate':
         if self.password != self.confirm_password:
-            raise ValueError('Пароли не совпадают')
+            raise ValueError('Passwords do not match')
         return self
 
 class UserLogin(UserBase):

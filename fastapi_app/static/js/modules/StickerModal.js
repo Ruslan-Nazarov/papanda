@@ -245,6 +245,16 @@ export class StickerModal {
         const container = document.getElementById('stickerNoteSection');
         const contentEl = document.getElementById('attachedNoteContent');
         const attachBtnGroup = document.getElementById('stickerAttachNoteBtnGroup');
+        
+        const languageModal = document.getElementById('languageLearningModal');
+        const isLanguageContext = languageModal && languageModal.style.display !== 'none';
+
+        if (isLanguageContext) {
+            if (container) container.style.display = 'none';
+            if (attachBtnGroup) attachBtnGroup.style.display = 'none';
+            return;
+        }
+
         if (container && contentEl && note) {
             contentEl.innerHTML = `
                 <div style="flex: 1; text-align: left;">
@@ -367,7 +377,7 @@ export class StickerModal {
                         detail: { parentType: this.state.parentType, parentId: this.state.parentId } 
                     }));
                     
-                if (typeof window.showToast === 'function') window.showToast('✓ Sticker updated', 'success');
+                if (typeof window.showToast === 'function') window.showToast(window._("toast.sticker_updated"), 'success');
             } else {
                 if (this.state.parentType && this.state.parentId) {
                     const parsedId = parseInt(this.state.parentId, 10);
@@ -390,7 +400,7 @@ export class StickerModal {
 
                     const editTaskId = document.getElementById('editTaskId')?.value;
                     const editHabitId = document.getElementById('editHabitId')?.value;
-                    const editNoteId = document.getElementById('editNoteId')?.value;
+                    const editNoteId = document.getElementById('editNoteId')?.value || document.getElementById('expandedNoteId')?.value;
 
                     if (fallbackEventId) {
                         payload['event_id'] = parseInt(fallbackEventId, 10);
@@ -417,6 +427,9 @@ export class StickerModal {
                     detail: { parentType: this.state.parentType, parentId: this.state.parentId } 
                 }));
                 
+                // Immediately update the sticker icon in the DOM for dashboard widget items
+                StickerModal._updateParentStickerIcon(this.state.parentType, this.state.parentId, +1);
+                
                 // If we are in a parent context (like creating a note), 
                 // DON'T reload. Just refresh the parent UI if possible.
                 if (this.state.parentType === 'note' && window.notesWidget) {
@@ -430,7 +443,7 @@ export class StickerModal {
             if (shouldClose) this.close();
         } catch (e) {
             console.error(e);
-            if (typeof window.showToast === 'function') window.showToast('⚠ Error: ' + e.message, 'error');
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.error") + e.message, 'error');
         }
     }
 
@@ -441,5 +454,47 @@ export class StickerModal {
         this.state.parentType = null;
         this.state.parentId = null;
         this.state.secondaryId = null;
+    }
+
+    /**
+     * Directly updates the sticker icon badge on a dashboard widget list item.
+     * @param {string} parentType - 'task', 'habit', 'event'
+     * @param {string|number} parentId - the parent record id
+     * @param {number} delta - +1 for add, -1 for remove
+     */
+    static _updateParentStickerIcon(parentType, parentId, delta) {
+        if (!parentType || !parentId) return;
+
+        // Map parentType to container selector
+        const widgetMap = {
+            task:  '#tasks',
+            habit: '#habits',
+            event: '.schedule-widget'
+        };
+        const widgetSel = widgetMap[parentType];
+        if (!widgetSel) return;
+
+        const li = document.querySelector(`${widgetSel} li[data-id="${parentId}"]`);
+        if (!li) return;
+
+        const iconDiv = li.querySelector('.sticker-icon-mini');
+        if (!iconDiv) return;
+
+        let countSpan = iconDiv.querySelector('.sticker-count');
+        const currentCount = countSpan ? (parseInt(countSpan.textContent) || 0) : 0;
+        const newCount = Math.max(0, currentCount + delta);
+
+        if (newCount > 0) {
+            iconDiv.classList.remove('inactive');
+            if (!countSpan) {
+                countSpan = document.createElement('span');
+                countSpan.className = 'sticker-count';
+                iconDiv.appendChild(countSpan);
+            }
+            countSpan.textContent = newCount;
+        } else {
+            iconDiv.classList.add('inactive');
+            if (countSpan) countSpan.remove();
+        }
     }
 }

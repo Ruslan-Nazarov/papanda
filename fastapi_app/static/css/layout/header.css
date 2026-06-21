@@ -227,19 +227,26 @@
     flex-direction: column;
     justify-content: center;
     min-width: 100px;
-    border: 1px solid transparent;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
 
-.badge-orange { background: #FFF3E0; border-color: #FFE0B2; }
-.badge-green { background: #E8F5E9; border-color: #C8E6C9; }
-.badge-amber { background: #FFF8E1; border-color: #FFECB3; }
-.badge-purple { background: #F3E5F5; border-color: #E1BEE7; }
+.premium-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.badge-orange { border-bottom: 3px solid #f59e0b; }
+.badge-green { border-bottom: 3px solid #10b981; }
+.badge-amber { border-bottom: 3px solid #fbbf24; }
+.badge-purple { border-bottom: 3px solid #8b5cf6; }
 
 .badge-label {
     font-size: 0.65rem;
     font-weight: 850;
     text-transform: uppercase;
-    color: var(--color-text-muted);
     letter-spacing: 0.05em;
     margin-bottom: 2px;
 }
@@ -247,7 +254,6 @@
 .badge-value {
     font-size: 1.1rem;
     font-weight: 800;
-    color: var(--color-text-dark);
 }
 
 /* Header Color Picker Button Visibility */
@@ -269,12 +275,24 @@
 .badge-value-text {
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--color-text-dark);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 150px;
 }
+
+/* Specific text colors */
+.badge-orange .badge-label { color: #d97706; }
+.badge-orange .badge-value, .badge-orange .badge-value-text { color: #92400e; }
+
+.badge-green .badge-label { color: #059669; }
+.badge-green .badge-value, .badge-green .badge-value-text { color: #064e3b; }
+
+.badge-amber .badge-label { color: #d97706; }
+.badge-amber .badge-value, .badge-amber .badge-value-text { color: #92400e; }
+
+.badge-purple .badge-label { color: #7c3aed; }
+.badge-purple .badge-value, .badge-purple .badge-value-text { color: #4c1d95; }
 #recurrenceToggle.active {
     background: var(--color-primary-soft) !important;
     color: var(--color-primary) !important;

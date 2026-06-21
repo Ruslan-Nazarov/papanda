@@ -11,7 +11,16 @@ export const ChronoService = {
         };
         for (const [key, val] of Object.entries(fields)) {
             const el = document.getElementById(key);
-            if (el) el.value = val;
+            if (el) {
+                el.value = val;
+                if (el._flatpickr) {
+                    if (val) {
+                        el._flatpickr.setDate(val, false);
+                    } else {
+                        el._flatpickr.clear();
+                    }
+                }
+            }
         }
         
         const header = document.getElementById('chronoModalHeader');
@@ -54,7 +63,7 @@ export const ChronoService = {
             const data = await resp.json();
             if (data.status === 'success') {
                 ModalManager.close('editChronoModal');
-                if (window.showToast) window.showToast('✓ ' + (data.message || 'Saved'), 'success');
+                if (window.showToast) window.showToast(window._("toast.toast_msg") + (data.message || 'Saved'), 'success');
                 
                 const wText = document.getElementById('chronoWidgetText');
                 if (wText) wText.value = '';
@@ -82,9 +91,7 @@ export const ChronoService = {
         ModalManager.open('chronoViewModal');
     },
 
-    closeEditChronoModal() {
-        ModalManager.close('editChronoModal');
-        
+    syncExpandedToRegular() {
         // Only sync back if it was a NEW record
         if (!this.currentId) {
             const expTa = document.getElementById('editChronoTitle');
@@ -97,6 +104,10 @@ export const ChronoService = {
         }
 
         this.currentId = null;
+    },
+
+    closeEditChronoModal() {
+        ModalManager.close('editChronoModal');
     },
 
     closeChronoViewModal() {
@@ -119,3 +130,10 @@ window.closeEditChronoModal = () => ModalManager.close('editChronoModal');
 window.saveChronoEdit = () => ChronoService.save();
 window.openChronoViewModal = (...args) => ChronoService.openView(...args);
 window.closeChronoViewModal = () => ModalManager.close('chronoViewModal');
+
+const editChronoModalEl = document.getElementById('editChronoModal');
+if (editChronoModalEl) {
+    editChronoModalEl.addEventListener('modal-closed', () => {
+        ChronoService.syncExpandedToRegular();
+    });
+}

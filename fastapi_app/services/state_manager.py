@@ -17,7 +17,10 @@ class StateManager:
 
     async def import_excel_to_db(self, excel_path: str) -> Dict[str, Any]:
         """Импортирует слова из Excel в таблицу WordStats."""
-        return await self.sync_service.import_excel_to_db(excel_path)
+        result = await self.sync_service.import_excel_to_db(excel_path)
+        if result.get("success") and result.get("counts", {}).get("new", 0) > 0:
+            await self.context_service.get_runtime_context(force_update=True)
+        return result
 
     async def sync_conflicts(self, excel_path: str, resolutions: Dict[str, str]) -> Dict[str, Any]:
         """Применяет разрешения конфликтов синхронизации."""

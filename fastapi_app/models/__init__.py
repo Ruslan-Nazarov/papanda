@@ -5,5 +5,5 @@ from .tasks import Task, Habit, HabitsDone
 from .notes import Notes, NoteCategory, StickyNote
 from .dialectics import Dialectics
 from .vocabulary import WordStats, WordStatsSnapshot, WordShowsDaily, Wink
-from .core import Dashboard, AppSettings, LanguageRule
+from .core import Dashboard, AppSettings
 from .observation import Observation, ObservationLog

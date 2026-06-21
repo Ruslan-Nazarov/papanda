@@ -24,6 +24,7 @@ pyinstaller --onefile --noconsole ^
     --hidden-import jinja2 ^
     --hidden-import email_validator ^
     --hidden-import passlib.handlers.bcrypt ^
+    --hidden-import bcrypt ^
     --exclude-module tkinter ^
     --exclude-module tcl ^
     --exclude-module tk ^
@@ -49,6 +50,9 @@ pyinstaller --onefile --noconsole ^
     --exclude-module PySide6 ^
     --add-data "fastapi_app/templates;fastapi_app/templates" ^
     --add-data "fastapi_app/static;fastapi_app/static" ^
+    --add-data "fastapi_app/locales;fastapi_app/locales" ^
+    --add-data "data/resources;data/resources" ^
+    --add-data "DIALECTICS_GUIDE*.md;." ^
     --name Papanda ^
     run_fastapi.py
 

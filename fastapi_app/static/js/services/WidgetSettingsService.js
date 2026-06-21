@@ -31,41 +31,106 @@ window.WidgetSettings = {
         const picker = document.createElement('div');
         picker.id = 'globalWidgetColorPicker';
         picker.className = 'premium-popup';
-        picker.style.cssText = 'display: none; position: fixed; z-index: 9999; padding: 12px; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 160px;';
+        picker.style.cssText = `
+            display: none; 
+            position: absolute; 
+            z-index: 9999; 
+            padding: 16px; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 12px; 
+            width: max-content;
+            background: var(--color-bg-white, #ffffff);
+            border: 1px solid var(--color-border-light, #e2e8f0);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform-origin: top right;
+            animation: popupScale 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        `;
         
         this.colors.forEach(color => {
             const dot = document.createElement('div');
-            dot.className = 'color-dot';
-            dot.style.cssText = `background: ${color}; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: var(--shadow-sm); transition: transform 0.2s;`;
-            dot.onmouseover = () => dot.style.transform = 'scale(1.2)';
-            dot.onmouseout = () => dot.style.transform = 'scale(1)';
+            dot.style.cssText = `
+                background: ${color}; 
+                width: 32px; 
+                height: 32px; 
+                border-radius: 50%; 
+                cursor: pointer; 
+                box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.1); 
+                transition: transform 0.2s, box-shadow 0.2s;
+            `;
+            dot.onmouseover = () => {
+                dot.style.transform = 'scale(1.15)';
+                dot.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.05), 0 4px 10px rgba(0,0,0,0.15)';
+            };
+            dot.onmouseout = () => {
+                dot.style.transform = 'scale(1)';
+                dot.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.1)';
+            };
             dot.onclick = () => this.applyColor(color);
             picker.appendChild(dot);
         });
         
         // Add "Reset" option
-        const reset = document.createElement('div');
-        reset.className = 'color-dot';
+        const reset = document.createElement('button');
         reset.title = 'Reset to default';
-        reset.style.cssText = 'background: #e2e8f0; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; font-size: 14px; grid-column: span 4; width: 100%; border-radius: 6px; margin-top: 4px;';
-        reset.innerHTML = '↺ Reset';
+        reset.style.cssText = `
+            background: var(--color-bg-subtle, #f8fafc); 
+            color: var(--color-text-dark, #1e293b);
+            cursor: pointer; 
+            border: 1px solid var(--color-border-light, #e2e8f0); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 0.85rem;
+            font-weight: 600;
+            grid-column: span 4; 
+            width: 100%; 
+            border-radius: 10px; 
+            margin-top: 4px;
+            padding: 8px;
+            transition: background 0.2s;
+        `;
+        reset.innerHTML = '⟲ Reset Color';
+        reset.onmouseover = () => reset.style.background = 'var(--color-border-light, #e2e8f0)';
+        reset.onmouseout = () => reset.style.background = 'var(--color-bg-subtle, #f8fafc)';
         reset.onclick = () => this.applyColor(null);
         picker.appendChild(reset);
 
         document.body.appendChild(picker);
+
+        if (!document.getElementById('colorPickerStyles')) {
+            const style = document.createElement('style');
+            style.id = 'colorPickerStyles';
+            style.innerHTML = `
+                @keyframes popupScale {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
     },
 
     openColorPicker(btn) {
         const picker = document.getElementById('globalWidgetColorPicker');
-        // Find the grid-stack-item which holds the canonical ID
         this.activeWidget = btn.closest('.grid-stack-item');
         
         if (!picker || !this.activeWidget) return;
 
-        const rect = btn.getBoundingClientRect();
-        picker.style.top = `${rect.bottom + 8}px`;
-        picker.style.left = `${rect.right - 160}px`;
+        if (picker.style.display === 'grid' && this.lastClickedBtn === btn) {
+            picker.style.display = 'none';
+            this.lastClickedBtn = null;
+            return;
+        }
+
         picker.style.display = 'grid';
+        this.lastClickedBtn = btn;
+        
+        const rect = btn.getBoundingClientRect();
+        const width = picker.offsetWidth;
+        
+        picker.style.top = `${rect.bottom + window.scrollY + 8}px`;
+        picker.style.left = `${rect.right + window.scrollX - width}px`;
     },
 
     applyColor(color) {

@@ -1,18 +1,18 @@
 <div class="premium-badge badge-orange" title="{{ title_until }}">
     <span class="badge-label">⏳ {{ title_until }}</span>
-    <span class="badge-value">{{ days_remaining }} <span style="font-size: 0.7rem; opacity: 0.6;">days</span></span>
+    <span class="badge-value">{{ days_remaining }} <span style="font-size: 0.7rem; opacity: 0.6;">{{ _('header.days') }}</span></span>
 </div>
 <div class="premium-badge badge-green" title="{{ title_after }}">
     <span class="badge-label">⌛ {{ title_after }}</span>
-    <span class="badge-value">{{ days_passed }} <span style="font-size: 0.7rem; opacity: 0.6;">days</span></span>
+    <span class="badge-value">{{ days_passed }} <span style="font-size: 0.7rem; opacity: 0.6;">{{ _('header.days') }}</span></span>
 </div>
 {% for event in date_important %}
 <div class="premium-badge badge-amber">
-    <span class="badge-label">⭐ Important</span>
+    <span class="badge-label">{{ _('header.cat_important') }}</span>
     <span class="badge-value-text">{% if event.recurrence_id %}🔁 {% endif %}{{ event.title }}</span>
 </div>
 {% endfor %}
-<div id="wink-display" class="premium-badge badge-purple" title="{{ wink }}">
-    <span class="badge-label">😉 Wink</span>
+<div id="wink-display" class="premium-badge badge-purple" title="{{ wink }}" onclick="openDbViewModal('Wink')" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(155, 89, 182, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+    <span class="badge-label">{{ _('header.cat_wink') }}</span>
     <span class="badge-value-text">{{ wink }}</span>
 </div>

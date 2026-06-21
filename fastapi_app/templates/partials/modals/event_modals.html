@@ -13,7 +13,7 @@
             
             <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 24px;">
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label class="form-label">Title</label>
+                    <label class="form-label">{{ _('dashboard.title') }}</label>
                     <input type="text" id="editEventTitle" class="form-input" placeholder="What needs to be done?" style="font-size: 1.1rem; font-weight: 600;" />
                 </div>
                 <div class="form-group" style="margin-bottom: 0; padding-top: 20px; display: flex; gap: 16px;">
@@ -83,11 +83,11 @@
                     <label class="form-label">Repeat Rule</label>
                     <select id="editEventRecRule" class="form-select" onchange="toggleEditEventWeekdays()">
                         <option value="none">Once</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
+                        <option value="daily">{{ _('dashboard.daily') }}</option>
+                        <option value="weekly">{{ _('dashboard.weekly') }}</option>
                         <option value="weekdays">Weekdays (M-F)</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="monthly">{{ _('dashboard.monthly') }}</option>
+                        <option value="yearly">{{ _('dashboard.yearly') }}</option>
                     </select>
                 </div>
             </div>
@@ -104,7 +104,7 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; align-items: end;">
                 <div class="form-group">
-                    <label class="form-label">End Mode</label>
+                    <label class="form-label">{{ _('dashboard.end_mode') }}</label>
                     <div style="display: flex; gap: 16px; background: var(--color-bg-subtle); padding: 10px 16px; border-radius: 12px; border: 1.5px solid var(--color-bg-app);">
                         <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
                             <input type="radio" name="edit_event_end_mode" value="date" id="editEventEndDateMode" checked onchange="toggleEditEventEndMode()" style="accent-color: var(--color-primary);"> <span>Date</span>
@@ -116,12 +116,12 @@
                 </div>
                 
                 <div id="editEventEndDateBlock" class="form-group">
-                    <label class="form-label">Repeat until</label>
+                    <label class="form-label">{{ _('dashboard.repeat_until') }}</label>
                     <input type="date" id="editEventRecEnd" class="form-input" />
                 </div>
 
                 <div id="editEventEndCountBlock" class="form-group" style="display: none;">
-                    <label class="form-label">Occurrences</label>
+                    <label class="form-label">{{ _('dashboard.occurrences') }}</label>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <input type="number" id="editEventRecCount" class="form-input" min="1" max="365" value="10" oninput="calcEditEventEndDateFromCount()" />
                         <div id="editEventRecEndFromCountLabel" style="font-size: 0.75rem; color: var(--color-primary-dark); font-weight: 600;"></div>
@@ -134,8 +134,8 @@
         </div>
 
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEditEventModal()" style="border-radius: 12px; padding: 12px 24px; font-weight: 600;">Cancel</button>
-            <button type="button" class="btn-save" onclick="saveEventEdit()">Save Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="closeEditEventModal()" style="border-radius: 12px; padding: 12px 24px; font-weight: 600;">{{ _('dashboard.cancel') }}</button>
+            <button type="button" class="btn-save" onclick="saveEventEdit()">{{ _('dashboard.save_changes') }}</button>
         </div>
     </div>
 </div>

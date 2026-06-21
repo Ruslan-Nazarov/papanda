@@ -48,7 +48,7 @@ async def test_login_failed_wrong_password(client):
         "password": "wrong"
     }, follow_redirects=False)
     assert response.status_code == 200 # Returns login page with error
-    assert "Неверный логин или пароль" in response.text
+    assert "Invalid username or password" in response.text
 
 @pytest.mark.anyio
 async def test_register_password_mismatch(client):
@@ -58,4 +58,4 @@ async def test_register_password_mismatch(client):
         "confirm_password": "pass2"
     }, follow_redirects=False)
     assert response.status_code == 200
-    assert "Пароли не совпадают" in response.text
+    assert "Passwords do not match" in response.text

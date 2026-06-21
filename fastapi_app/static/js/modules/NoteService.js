@@ -7,46 +7,17 @@ import { fetchWithJson } from '../db_api.js';
 
 export const NoteService = {
     openEdit(id, text, category) {
-        console.log("[NoteService] Opening edit for ID:", id);
-        const fields = {
-            'editNoteId': id || '',
-            'editNoteText': text || '',
-            'editNoteCategory': category || ''
-        };
-        for (const [key, val] of Object.entries(fields)) {
-            const el = document.getElementById(key);
-            if (el) el.value = val;
+        console.log("[NoteService] Redirecting edit for ID:", id);
+        if (window.notesWidget) {
+            window.notesWidget.editNote(id);
+        } else {
+            console.error("notesWidget not found");
         }
-        ModalManager.open('editNoteModal');
     },
 
     async save() {
-        const id = document.getElementById('editNoteId').value;
-        const note = document.getElementById('editNoteText').value.trim();
-        const category = document.getElementById('editNoteCategory').value;
-        
-        if (!note) {
-            if (window.showToast) window.showToast('Note content cannot be empty', 'error');
-            return;
-        }
-        
-        try {
-            const r = await fetch('/edit_note_inline', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(id), note, category })
-            });
-            const data = await r.json();
-            if (data.status === 'success') {
-                ModalManager.close('editNoteModal');
-                this._updateRow(id, note, category);
-                if (window.showToast) window.showToast('Note updated', 'success');
-            } else {
-                console.error("[NoteService] save failed:", data.message);
-                if (window.showToast) window.showToast(data.message || 'Save failed', 'error');
-            }
-        } catch (e) {
-            console.error("[NoteService] save error:", e);
+        if (window.notesWidget) {
+            return await window.notesWidget.saveNote(true);
         }
     },
 
@@ -65,7 +36,7 @@ export const NoteService = {
     async saveNewCategory() {
         const input = document.getElementById('newCategoryName');
         if (!input || !input.value.trim()) {
-            if (typeof window.showToast === 'function') window.showToast("Category name cannot be empty", "error");
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.category_name_cannot_be_empty"), "error");
             return;
         }
 
@@ -154,7 +125,11 @@ export const NoteService = {
     },
 
     closeEditNoteModal() {
-        ModalManager.close('editNoteModal');
+        if (window.notesWidget) {
+            window.notesWidget.closeExpandedEditor();
+        } else {
+            ModalManager.close('expandedNoteEditorModal');
+        }
     },
 
     closeNoteViewModal() {
@@ -188,7 +163,7 @@ export const NoteService = {
 // Global export
 window.NoteService = NoteService;
 window.openEditNoteModal = (...args) => NoteService.openEdit(...args);
-window.closeEditNoteModal = () => ModalManager.close('editNoteModal');
+window.closeEditNoteModal = () => NoteService.closeEditNoteModal();
 window.saveNoteEdit = () => NoteService.save();
 window.openNoteViewModal = (...args) => NoteService.openView(...args);
 window.closeNoteViewModal = () => ModalManager.close('noteViewModal');

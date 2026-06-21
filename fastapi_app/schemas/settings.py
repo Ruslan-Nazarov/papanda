@@ -12,22 +12,16 @@ class SettingsUpdateSchema(BaseModel):
     """Схема обновления глобальных настроек."""
     max_duration: Optional[int] = Field(None, ge=1, le=1440)
     max_random_minutes: Optional[int] = Field(None, ge=0, le=1440)
-    theme_reading: Optional[str] = Field(None)
-    theme_editor: Optional[str] = Field(None)
 
     @classmethod
     def as_form(
         cls, 
         max_duration: Optional[int] = Form(None), 
-        max_random_minutes: Optional[int] = Form(None),
-        theme_reading: Optional[str] = Form(None),
-        theme_editor: Optional[str] = Form(None)
+        max_random_minutes: Optional[int] = Form(None)
     ):
         return cls(
             max_duration=max_duration, 
-            max_random_minutes=max_random_minutes,
-            theme_reading=theme_reading,
-            theme_editor=theme_editor
+            max_random_minutes=max_random_minutes
         )
 
 class LanguageUpdateSchema(BaseModel):

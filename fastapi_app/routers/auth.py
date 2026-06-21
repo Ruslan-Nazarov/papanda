@@ -21,11 +21,21 @@ router = APIRouter(
 )
 
 @router.get("/register", name="register_page", response_class=HTMLResponse)
-async def register_page(request: Request) -> Any:
+async def register_page(request: Request, db: AsyncSession = Depends(get_main_db)) -> Any:
     """Отображает страницу регистрации."""
-    user = get_current_user_from_cookie(request)
-    if user:
-        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    user_id = get_current_user_from_cookie(request)
+    if user_id:
+        user_res = await db.execute(select(models.User).where(models.User.username == user_id))
+        user = user_res.scalar_one_or_none()
+        if user:
+            return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+        else:
+            response = templates.TemplateResponse(request, "register.html", {
+                "request": request,
+                "error": "Session expired. Please log in again."
+            })
+            response.delete_cookie(COOKIE_NAME)
+            return response
     return templates.TemplateResponse(request, "register.html", {
         "request": request,
         "error": None
@@ -57,7 +67,7 @@ async def register(
     if existing_user:
         return templates.TemplateResponse(
             request, "register.html",
-            {"request": request, "error": "Пользователь с таким именем уже существует"}
+            {"request": request, "error": "User with this name already exists"}
         )
 
     new_user = models.User(
@@ -70,11 +80,21 @@ async def register(
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
 @router.get("/login", name="login_page", response_class=HTMLResponse)
-async def login_page(request: Request) -> Any:
+async def login_page(request: Request, db: AsyncSession = Depends(get_main_db)) -> Any:
     """Отображает страницу входа."""
-    user = get_current_user_from_cookie(request)
-    if user:
-        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    user_id = get_current_user_from_cookie(request)
+    if user_id:
+        user_res = await db.execute(select(models.User).where(models.User.username == user_id))
+        user = user_res.scalar_one_or_none()
+        if user:
+            return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+        else:
+            response = templates.TemplateResponse(request, "login.html", {
+                "request": request,
+                "error": "Session expired. Please log in again."
+            })
+            response.delete_cookie(COOKIE_NAME)
+            return response
     return templates.TemplateResponse(request, "login.html", {
         "request": request,
         "error": None
@@ -109,7 +129,7 @@ async def login(
 
     return templates.TemplateResponse(
         request, "login.html",
-        {"request": request, "error": "Неверный логин или пароль"}
+        {"request": request, "error": "Invalid username or password"}
     )
 
 @router.get("/logout")

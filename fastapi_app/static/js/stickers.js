@@ -195,7 +195,7 @@ window.createNewNoteFromSticker = () => {
     if (typeof window.openNoteExpandModal === 'function') {
         window.openNoteExpandModal();
     } else {
-        if (typeof window.showToast === 'function') window.showToast('Error: Note editor not found', 'error');
+        if (typeof window.showToast === 'function') window.showToast(window._("toast.error_note_editor_not_found"), 'error');
     }
 };
 
@@ -221,7 +221,7 @@ async function refreshDashboardStickers() {
     const corkboard = document.getElementById('corkboard');
     if (!corkboard) return;
     try {
-        const response = await fetch('/api/dashboard/widget/stickers');
+        const response = await fetch('/api/dashboard/widget/stickers', { cache: 'no-store' });
         if (response.ok) {
             const html = await response.text();
             const temp = document.createElement('div');

@@ -48,3 +48,19 @@ class TripletLearnedRequest(BaseModel):
     """Запрос на пометку тройки языков как изученной."""
     eng: str
     is_learned: bool = True
+
+from typing import List
+
+class SentenceWordSchema(BaseModel):
+    text: str
+    dictionary_word: Optional[str] = None
+    role: str
+    label: str
+    parts: List[str]
+    translation: str
+
+class SentenceUpsertSchema(BaseModel):
+    id: Optional[str] = None
+    language: str
+    sentence: str
+    words: List[SentenceWordSchema]

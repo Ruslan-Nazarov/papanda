@@ -3,7 +3,7 @@
  * Handles generic confirmation and choice dialogs across the application.
  */
 
-export function customConfirm({ title = 'Confirmation', message = 'Are you sure?', icon = '', buttons = [] }) {
+export function customConfirm({ title = 'Confirmation', message = 'Are you sure?', icon = '', buttons = [], watermark = '', width = '' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
@@ -28,6 +28,35 @@ export function customConfirm({ title = 'Confirmation', message = 'Are you sure?
                 iconWrapper.style.display = icon ? 'flex' : 'none';
             }
 
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.position = 'relative';
+                const existingWm = modalContent.querySelectorAll('.modal-watermark');
+                existingWm.forEach(el => el.remove());
+                
+                if (width) {
+                    modalContent.style.setProperty('max-width', width, 'important');
+                } else {
+                    modalContent.style.removeProperty('max-width');
+                }
+
+                if (watermark) {
+                    const wm = document.createElement('div');
+                    wm.className = 'modal-watermark';
+                    wm.textContent = watermark;
+                    wm.style.position = 'absolute';
+                    wm.style.bottom = '5px';
+                    wm.style.left = '20px';
+                    wm.style.fontSize = '14px';
+                    wm.style.color = '#cbd5e1';
+                    wm.style.fontWeight = '600';
+                    wm.style.opacity = '0.6';
+                    wm.style.pointerEvents = 'none';
+                    wm.style.letterSpacing = '0.5px';
+                    modalContent.appendChild(wm);
+                }
+            }
+
             if (buttons.length === 0) {
                 buttons = [
                     { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
@@ -43,13 +72,26 @@ export function customConfirm({ title = 'Confirmation', message = 'Are you sure?
 
                 button.onclick = (e) => {
                     e.stopPropagation();
-                    modal.style.display = 'none';
+                    modal.classList.remove('active');
+                    setTimeout(() => {
+                        modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
+                        if (modalContent) {
+                            modalContent.style.removeProperty('max-width');
+                            const existingWm = modalContent.querySelectorAll('.modal-watermark');
+                            existingWm.forEach(el => el.remove());
+                        }
+                    }, 200);
                     resolve(btn.value);
                 };
                 footerEl.appendChild(button);
             });
 
             modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
+            modal.offsetHeight; // trigger reflow
+            modal.classList.add('active');
         } catch (err) {
             console.error("[customConfirm] Error:", err);
             resolve(confirm(message)); 
@@ -116,7 +158,8 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
             btnCancel.innerText = cancelLabel;
             btnCancel.onclick = (e) => {
                 e.stopPropagation();
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
                 resolve(null);
             };
 
@@ -126,7 +169,8 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
             btnOk.onclick = (e) => {
                 e.stopPropagation();
                 const selected = document.querySelector('input[name="customChoiceRadio"]:checked');
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
                 resolve(selected ? selected.value : null);
             };
             
@@ -134,6 +178,8 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
             footerEl.appendChild(btnOk);
 
             modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
         } catch (err) {
             console.error(err);
             resolve(null);
@@ -141,7 +187,7 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
     });
 }
 
-export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = 'OK', cancelLabel = 'Cancel', watermark = '' }) {
+export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = 'OK', cancelLabel = 'Cancel', watermark = '', width = '' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
@@ -186,6 +232,12 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
                 const existingWm = modalContent.querySelectorAll('.modal-watermark');
                 existingWm.forEach(el => el.remove());
                 
+                if (width) {
+                    modalContent.style.setProperty('max-width', width, 'important');
+                } else {
+                    modalContent.style.removeProperty('max-width');
+                }
+
                 if (watermark) {
                     const wm = document.createElement('div');
                     wm.className = 'modal-watermark';
@@ -207,12 +259,22 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
 
             footerEl.innerHTML = '';
             
+            const cleanUp = () => {
+                modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
+                if (modalContent) {
+                    modalContent.style.removeProperty('max-width');
+                    const existingWm = modalContent.querySelectorAll('.modal-watermark');
+                    existingWm.forEach(el => el.remove());
+                }
+            };
+
             const btnCancel = document.createElement('button');
             btnCancel.className = 'btn btn-secondary';
             btnCancel.innerText = cancelLabel;
             btnCancel.onclick = (e) => {
                 e.stopPropagation();
-                modal.style.display = 'none';
+                cleanUp();
                 resolve(null);
             };
 
@@ -221,7 +283,7 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
             btnOk.innerText = okLabel;
             
             const submit = () => {
-                modal.style.display = 'none';
+                cleanUp();
                 resolve(input.value);
             };
 
@@ -235,7 +297,7 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
                     e.preventDefault();
                     submit();
                 } else if (e.key === 'Escape') {
-                    modal.style.display = 'none';
+                    cleanUp();
                     resolve(null);
                 }
             };
@@ -244,6 +306,8 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
             footerEl.appendChild(btnOk);
 
             modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
             setTimeout(() => input.focus(), 100);
         } catch (err) {
             console.error("[customPrompt] Error:", err);
@@ -377,7 +441,8 @@ export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', 
             btnCancel.innerText = cancelLabel;
             btnCancel.onclick = (e) => {
                 e.stopPropagation();
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
                 resolve(null);
             };
 
@@ -386,7 +451,8 @@ export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', 
             btnOk.innerText = okLabel;
             
             const submit = () => {
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
                 resolve(input.value);
             };
 
@@ -400,7 +466,8 @@ export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', 
                     e.preventDefault();
                     submit();
                 } else if (e.key === 'Escape') {
-                    modal.style.display = 'none';
+                    modal.classList.remove('active');
+                    setTimeout(() => { modal.style.display = 'none'; }, 200);
                     resolve(null);
                 }
             };
@@ -409,6 +476,8 @@ export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', 
             footerEl.appendChild(btnOk);
 
             modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
             setTimeout(() => input.focus(), 100);
         } catch (err) {
             console.error("[customLatexPrompt] Error:", err);

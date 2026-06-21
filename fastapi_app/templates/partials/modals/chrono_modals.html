@@ -16,7 +16,7 @@
                 <div class="editor-meta">
                     <div>
                         <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">⏰ Date &amp; Time</label>
-                        <input type="datetime-local" id="editChronoDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
+                        <input type="datetime-local" id="editChronoDate" placeholder="Select date & time" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
                     </div>
                     <div id="editChronoError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
                 </div>
@@ -33,7 +33,7 @@
         </div>
 
         <div class="modal-footer" style="flex-shrink: 0;">
-            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editChronoModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editChronoModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">{{ _('dashboard.cancel') }}</button>
             <button type="button" class="btn btn-primary" onclick="ChronoService.save()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); border: none;">Save Entry</button>
         </div>
     </div>

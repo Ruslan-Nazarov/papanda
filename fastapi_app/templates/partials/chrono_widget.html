@@ -4,37 +4,38 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">📜</span>
-            <span>Chronology</span>
+            <span>{{ _('dashboard.chronology') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Chronology')" title="Full View">☰</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openChronoExpandModal()" title="Full Editor">⤢</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Chronology')" title="{{ _('dashboard.full_view') }}">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openChronoExpandModal()" title="{{ _('dashboard.full_editor') }}">⤢</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
     
     <div class="widget-body">
-        <form method="post" action="/submit_chrono" class="chrono-form" onsubmit="saveQuickChrono(event)">
+        <form method="post" action="/submit_chrono" class="chrono-form" onsubmit="window.saveQuickChrono(event)">
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
                 {{ premium_input(
                     type='textarea',
                     id='chronoWidgetText',
                     name='chrono_text',
-                    required=True,
-                    placeholder='What happened today?'
-                ) }}
-                {{ premium_input(
-                    type='date',
-                    id='chronoWidgetDate',
-                    name='chrono_date',
-                    required=True,
-                    value=today_for_calendar.strftime('%Y-%m-%d')
+                    required=True
                 ) }}
             </div>
             
-            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-                <button type="submit" class="btn btn-primary btn-sm">💾 Save Record</button>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+                <div style="flex-grow: 1;">
+                    {{ premium_input(
+                        type='date',
+                        id='chronoWidgetDate',
+                        name='chrono_date',
+                        required=True,
+                        value=today_for_calendar.strftime('%Y-%m-%d')
+                    ) }}
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="white-space: nowrap; height: fit-content; margin-top: 0;">💾 {{ _('dashboard.save_record') }}</button>
             </div>
         </form>
     </div>

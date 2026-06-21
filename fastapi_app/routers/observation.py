@@ -208,7 +208,6 @@ async def get_full_tree(
     today = datetime.now().date()
     observations = await service.get_dashboard_observations(today) # No limit
     
-    return templates.TemplateResponse("observation_widget.html", {
-        "request": request, 
+    return templates.TemplateResponse(request, "observation_widget.html", {
         "observations": observations
     })

@@ -66,7 +66,6 @@ def test_pydantic_usage_in_routers():
                     # Исключаем простые POST без тела (системные действия)
                     allowed_empty_posts = [
                         "/logout", 
-                        "/settings/start_sandbox", "/settings/exit_sandbox",
                         "/settings/deep_clean", "/settings/import_excel",
                         "/settings/delete_db", "/settings/activate_db",
                         "/delete_event_settings"

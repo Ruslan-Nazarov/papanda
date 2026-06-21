@@ -1,0 +1,235 @@
+<div class="premium-card settings-sentences-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">📝</span>
+            <span>{{ _('settings.sentences.title') }}</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+        </div>
+    </div>
+    <div class="widget-body">
+        <!-- Part 1: Manage Sentences -->
+        <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--color-border-light);">
+            <h3 style="margin-top: 0; font-size: 1rem; color: var(--color-text-dark); font-weight: 700; margin-bottom: 12px;">{{ _('settings.sentences.manage_title') }}</h3>
+            <div id="sentenceManageContent">
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 12px;">{{ _('settings.sentences.loading') }}</p>
+            </div>
+            
+            <!-- List container (hidden by default) -->
+            <div id="sentenceListContainer" style="display: none; margin-top: 20px; border-top: 1px solid var(--color-border-light); padding-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0; font-size: 0.9rem;">{{ _('settings.sentences.select_to_delete') }}</h4>
+                    <button type="button" onclick="deleteSelectedSentences()" class="btn btn-danger" style="padding: 4px 10px; font-size: 0.8rem;">{{ _('settings.sentences.delete_selected') }}</button>
+                </div>
+                <div id="sentenceList" style="max-height: 250px; overflow-y: auto; font-size: 0.85rem; background: #fff; border: 1px solid var(--color-border-light); border-radius: 4px; padding: 10px;">
+                    <!-- Sentences checkboxes will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Part 2: Import Sentences -->
+        <div>
+            <h3 style="margin-top: 0; font-size: 1rem; color: var(--color-text-dark); font-weight: 700; margin-bottom: 8px;">{{ _('settings.sentences.import_title') }}</h3>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 12px;">
+                {{ _('settings.sentences.import_desc') }}
+            </p>
+            <div class="settings-algo-form">
+                <form id="sentenceImportForm">
+                    <textarea id="sentencesJsonInput" class="form-input" style="width: 100%; height: 180px; font-family: monospace; font-size: 0.85rem; resize: vertical; margin-bottom: 12px;" placeholder="[\n  {\n    &#34;id&#34;: &#34;kz_1&#34;,\n    &#34;language&#34;: &#34;Kazakh&#34;,\n    ...\n  }\n]"></textarea>
+                    <div id="sentenceImportResult" style="margin-bottom: 12px; font-size: 0.85rem; display: none;"></div>
+                    <button type="button" onclick="importSentences()" class="btn btn-primary" style="width: 100%; font-weight: 700;">{{ _('settings.sentences.validate') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allSentences = [];
+
+async function loadSentences() {
+    try {
+        const response = await fetch('/api/sentences');
+        const data = await response.json();
+        allSentences = data.sentences || [];
+        renderSentenceStats();
+    } catch (e) {
+        document.getElementById('sentenceManageContent').innerHTML = '<span style="color:var(--color-error-dark)">Failed to load sentences.</span>';
+    }
+}
+
+function renderSentenceStats() {
+    const content = document.getElementById('sentenceManageContent');
+    if (allSentences.length === 0) {
+        content.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted);">${window._('settings.sentences.no_sentences') || 'No sentences found in database.'}</p>`;
+        document.getElementById('sentenceListContainer').style.display = 'none';
+        return;
+    }
+
+    const byLanguage = {};
+    allSentences.forEach(s => {
+        if (!byLanguage[s.language]) byLanguage[s.language] = 0;
+        byLanguage[s.language]++;
+    });
+
+    let html = `<div style="margin-bottom: 15px;">`;
+    for (const [lang, count] of Object.entries(byLanguage)) {
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 8px; background: #fafafa; border-radius: 4px; border: 1px solid #eee;">
+                <span style="font-weight: bold; font-size: 0.9rem;">${lang}: <span style="font-weight: normal;">${count}</span></span>
+                <button type="button" onclick="deleteSentences('delete_language', '${lang}')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;">${window._('settings.sentences.delete') || 'Delete'} ${lang}</button>
+            </div>
+        `;
+    }
+    html += `</div>`;
+    
+    html += `
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="button" onclick="deleteSentences('delete_all')" class="btn btn-danger" style="flex: 1; font-weight: 700;">${window._('settings.sentences.delete_all') || 'Delete All'}</button>
+            <button type="button" onclick="toggleSentenceList()" class="btn btn-primary" style="flex: 1; font-weight: 700;">${window._('settings.sentences.select_specific') || 'Select Specific'}</button>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+}
+
+function toggleSentenceList() {
+    const container = document.getElementById('sentenceListContainer');
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        renderSentenceList();
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function renderSentenceList() {
+    const list = document.getElementById('sentenceList');
+    let html = '';
+    
+    allSentences.forEach(s => {
+        html += `
+            <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" class="sentence-cb" value="${s.id}" style="margin-top: 3px;">
+                    <div>
+                        <div style="font-weight: bold; color: #555;">[${s.id}] <span style="font-size: 0.75rem; font-weight: normal; background: #eee; padding: 1px 4px; border-radius: 3px;">${s.language}</span></div>
+                        <div style="color: #333; margin-top: 2px;">${s.sentence}</div>
+                    </div>
+                </label>
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+async function deleteSentences(action, language = null, ids = null) {
+    let msg = window._('settings.sentences.confirm_delete_selected') || "Are you sure you want to delete these sentences?";
+    if (action === 'delete_all') msg = window._('settings.sentences.confirm_delete_all') || "Delete ALL sentences across all languages?";
+    if (action === 'delete_language') msg = (window._('settings.sentences.confirm_delete_lang') || "Delete ALL sentences for language: ") + language + "?";
+    
+    customConfirm({
+        title: window._('settings.sentences.delete_title') || 'Delete Sentences',
+        message: msg,
+        buttons: [
+            { label: window._('settings.sentences.cancel') || 'Cancel', value: false, class: 'confirm-btn-secondary' },
+            { label: window._('settings.sentences.delete') || 'Delete', value: true, class: 'confirm-btn-danger' }
+        ]
+    }).then(async result => {
+        if (result) {
+            try {
+                const payload = { action };
+                if (language) payload.language = language;
+                if (ids) payload.ids = ids;
+                
+                const response = await fetch('/api/sentences', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    await loadSentences();
+                    document.getElementById('sentenceListContainer').style.display = 'none';
+                } else {
+                    alert('Failed to delete sentences.');
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+    });
+}
+
+function deleteSelectedSentences() {
+    const checkboxes = document.querySelectorAll('.sentence-cb:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (ids.length === 0) {
+        alert("Please select at least one sentence.");
+        return;
+    }
+    
+    deleteSentences('delete_ids', null, ids);
+}
+
+async function importSentences() {
+    const input = document.getElementById('sentencesJsonInput').value;
+    const resultDiv = document.getElementById('sentenceImportResult');
+    
+    if (!input.trim()) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.color = 'var(--color-error-dark)';
+        resultDiv.innerHTML = 'Please paste JSON data first.';
+        return;
+    }
+
+    try {
+        JSON.parse(input);
+    } catch (e) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.color = 'var(--color-error-dark)';
+        resultDiv.innerHTML = 'Invalid JSON format: ' + e.message;
+        return;
+    }
+
+    resultDiv.style.display = 'block';
+    resultDiv.style.color = 'var(--color-text-muted)';
+    resultDiv.innerHTML = 'Validating and saving...';
+
+    try {
+        const response = await fetch('/import_sentences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: input
+        });
+        
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = {};
+        }
+        
+        if (response.ok) {
+            resultDiv.style.color = 'var(--color-success-dark)';
+            resultDiv.innerHTML = `✅ Success: Added ${data.added_count} sentences. Total: ${data.total_count}`;
+            document.getElementById('sentencesJsonInput').value = '';
+            await loadSentences(); // Refresh the list automatically!
+        } else {
+            resultDiv.style.color = 'var(--color-error-dark)';
+            if (data.errors && data.errors.length > 0) {
+                resultDiv.innerHTML = '❌ Errors:<br>' + data.errors.join('<br>');
+            } else {
+                resultDiv.innerHTML = '❌ Error: ' + (data.message || 'Unknown error');
+            }
+        }
+    } catch (err) {
+        resultDiv.style.color = 'var(--color-error-dark)';
+        resultDiv.innerHTML = 'Network error: ' + err.message;
+    }
+}
+
+// Initial load
+document.addEventListener('DOMContentLoaded', loadSentences);
+</script>

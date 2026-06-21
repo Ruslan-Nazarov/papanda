@@ -29,17 +29,6 @@ async def refresh_words(
     await state_manager.get_runtime_context(force_update=True)
     return RedirectResponse("/", status_code=303)
 
-@router.get("/get_random_rule")
-async def get_random_rule(db: AsyncSession = Depends(get_db)) -> Dict[str, str]:
-    """Возвращает случайное языковое правило."""
-    try:
-        rule_res = await db.execute(select(models.LanguageRule).order_by(func.random()).limit(1))
-        rule = rule_res.scalar_one_or_none()
-        if rule:
-            return {"language": rule.language, "rule_ru": rule.rule_ru, "rule_en": rule.rule_en}
-    except Exception as e:
-        logger.error(f"Error fetching random rule: {e}")
-    return {"language": "Info", "rule_ru": "Нет правил", "rule_en": "No rules available"}
 
 @router.get("/get_test_words")
 async def get_test_words(
@@ -86,7 +75,8 @@ async def update_word_data(
             new_translations[lang_code] = value
     
     new_translations['ru'] = data.new_ru
-    new_translations['en'] = data.word_eng
+    if 'en' not in new_translations:
+        new_translations['en'] = data.word_eng
     
     await word_service.update_word_full_dynamic(data.word_eng, new_translations, data.new_meaning)
     # Принудительно сбрасываем кеш слов, чтобы страница показала обновлённые данные
@@ -145,7 +135,8 @@ async def upsert_word(
         if isinstance(key, str) and key.startswith('lang_'):
             translations[key.replace('lang_', '')] = value
     
-    translations['en'] = data.word_eng
+    if 'en' not in translations:
+        translations['en'] = data.word_eng
     translations['ru'] = data.new_ru
     
     word = await word_service.update_word_full_dynamic(data.word_eng, translations, data.new_meaning)

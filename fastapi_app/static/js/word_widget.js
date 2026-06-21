@@ -136,11 +136,11 @@ window.saveDashboardWordEdit = async function() {
             }
             window.closeEditModal();
         } else {
-            alert('Error saving changes');
+            alert(window._("toast.error_saving_changes"));
         }
     } catch (e) {
         console.error('Save failed', e);
-        alert('Network error');
+        alert(window._("toast.network_error"));
     }
 };
 
@@ -174,11 +174,11 @@ window.markTripletLearned = async function (eng, btn) {
                 await window.refreshWords();
             }
         } else {
-            showToast('Error: ' + (data.message || 'Unknown error'), 'error');
+            showToast(window._("toast.error") + (data.message || 'Unknown error'), 'error');
             if (btn) btn.style.opacity = '1';
         }
     } catch (e) {
-        showToast('Network error', 'error');
+        showToast(window._("toast.network_error"), 'error');
         if (btn) btn.style.opacity = '1';
     }
 };
@@ -300,7 +300,7 @@ window.resetWordStats = async function () {
         if (result.status === 'success') {
             await window.refreshWords();
         } else {
-            alert('Reset failed: ' + result.message);
+            alert(window._("toast.reset_failed") + result.message);
         }
     } catch (e) { console.error('Word reset failed', e); }
 };
@@ -510,10 +510,10 @@ window.markWorkoutTripletLearnedWidget = async function() {
             // Auto advance
             await window.recordResultWidget(true);
         } else {
-            showToast('Error: ' + (data.message || 'Unknown error'), 'error');
+            showToast(window._("toast.error") + (data.message || 'Unknown error'), 'error');
         }
     } catch (e) {
-        showToast('Network error', 'error');
+        showToast(window._("toast.network_error"), 'error');
     } finally {
         if (btn) btn.style.opacity = '1';
     }

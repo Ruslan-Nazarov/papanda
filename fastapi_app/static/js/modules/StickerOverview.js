@@ -88,6 +88,9 @@ export class StickerOverview {
                 detail: { parentType: StickerModal.state.parentType, parentId: StickerModal.state.parentId } 
             }));
 
+            // Immediately update the sticker icon badge in the dashboard widget
+            StickerModal._updateParentStickerIcon(StickerModal.state.parentType, StickerModal.state.parentId, -1);
+
             const list = document.getElementById('parentStickersList');
             if (list && list.children.length === 0) {
                 const emptyMsg = document.getElementById('noParentStickersMessage');
@@ -95,7 +98,7 @@ export class StickerOverview {
             }
         } catch(e) {
             console.error(e);
-            if (typeof window.showToast === 'function') window.showToast('⚠ Failed to archive', 'error');
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.failed_to_archive"), 'error');
         }
     }
 }

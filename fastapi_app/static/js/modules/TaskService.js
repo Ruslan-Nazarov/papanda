@@ -21,7 +21,7 @@ export const TaskService = {
         if (!name) return;
         
         try {
-            const r = await fetchWithJson(`/edit_record/Task/${id}`, { name, done });
+            const r = await fetchWithJson(`/edit_task_inline`, { id: parseInt(id), name, done });
             if (r.ok) {
                 ModalManager.close('editTaskModal');
                 if (window.refreshCurrentView) window.refreshCurrentView('Task');

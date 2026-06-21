@@ -2,7 +2,7 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">👤</span>
-            <span>Account Management</span>
+            <span>{{ _('settings.account.title') }}</span>
         </div>
         <div class="widget-actions">
             <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
@@ -12,18 +12,18 @@
     <div class="widget-body">
         <div class="settings-grid">
             <div class="settings-algo-form">
-                <form action="{{ url_for('update_account') }}" method="post" onsubmit="confirmFormSubmit(event, 'Update Account', 'Are you sure you want to change your username? The session might be terminated.')">
-                    <label class="form-label">Username</label>
+                <form action="{{ url_for('update_account') }}" method="post" onsubmit="confirmFormSubmit(event, '{{ _('settings.account.update_account_confirm_title') }}', '{{ _('settings.account.update_account_confirm_msg') }}')">
+                    <label class="form-label">{{ _('settings.account.username') }}</label>
                     <input type="text" name="username" value="{{ current_user_name }}" required class="form-input" />
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Update Username</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">{{ _('settings.account.update_username') }}</button>
                 </form>
             </div>
             <div class="settings-algo-form">
                 <form action="{{ url_for('update_account') }}" method="post">
-                    <label class="form-label">New Password</label>
-                    <input type="password" name="password" placeholder="Leave empty to keep current" class="form-input" />
-                    <p style="font-size: 0.75rem; color: var(--color-text-faint); margin-top: 10px; font-weight: 600;">* At least 8 characters</p>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Update Password</button>
+                    <label class="form-label">{{ _('settings.account.new_password') }}</label>
+                    <input type="password" name="password" placeholder="{{ _('settings.account.password_placeholder') }}" class="form-input" />
+                    <p style="font-size: 0.75rem; color: var(--color-text-faint); margin-top: 10px; font-weight: 600;">{{ _('settings.account.password_hint') }}</p>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">{{ _('settings.account.update_password') }}</button>
                 </form>
             </div>
         </div>

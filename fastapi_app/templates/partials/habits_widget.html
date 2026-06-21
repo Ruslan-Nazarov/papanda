@@ -2,11 +2,11 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">⚡</span>
-            <span>Habits</span>
+            <span>{{ _('dashboard.habits') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Habit')" title="Full View">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Habit')" title="{{ _('dashboard.full_view') }}">☰</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -14,16 +14,16 @@
     <div class="widget-body">
         <ul class="premium-list">
             {% for habits in habits_all %}
-            <li class="premium-list-item">
+            <li class="premium-list-item" data-id="{{ habits.id }}">
                 <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
                     <span class="premium-item-name">{{ habits.title }}</span>
                     <div class="premium-badge muted">
-                        {{ habits_count(habits.start_date) }} Days
+                        {{ habits_count(habits.start_date) }} {{ _('header.days')|capitalize }}
                     </div>
                 </div>
 
                 <div class="row-actions">
-                    <button type="button" class="btn-row-action" onclick="openParentStickers('habit', '{{ habits.id }}')" title="Stickers">
+                    <button type="button" class="btn-row-action" onclick="openParentStickers('habit', '{{ habits.id }}')" title="{{ _('dashboard.stickers') }}">
                         <div class="sticker-icon-mini {{ 'inactive' if not habits.stickers_count }}">
                             {% if habits.stickers_count > 0 %}
                             <span class="sticker-count">{{ habits.stickers_count }}</span>
@@ -31,7 +31,7 @@
                         </div>
                     </button>
                     <form method="post" action="/mark_as_done/{{ habits.id }}" style="margin: 0;" onsubmit="event.preventDefault(); markHabitDone(this, '{{ habits.id }}')">
-                        <button type="submit" class="btn-row-action done" title="Mark as done">✓</button>
+                        <button type="submit" class="btn-row-action done" title="{{ _('dashboard.mark_as_done') }}">✓</button>
                     </form>
                 </div>
             </li>

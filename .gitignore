@@ -3,7 +3,7 @@
 instance/
 
 # Данные приложения (база, ресурсы)
-data/
+data/db/papanda.db
 logs/
 *.log
 *.db
@@ -26,12 +26,12 @@ venv.bak/
 htmlcov/
 
 # Артефакты сборки PyInstaller
-build/
-dist/
+/build/
+/dist/
 *.spec
 
-# Alembic (миграции — для локальной разработки, не для публикации)
-alembic/versions/
+# Alembic (миграции должны быть в Git для синхронизации базы на сервере)
+# alembic/versions/
 
 # Системные файлы Windows
 Thumbs.db
@@ -48,9 +48,17 @@ $RECYCLE.BIN/
 # Прочее
 nul
 node_modules/
-dist/
-build/
-.DS_Store
+/.DS_Store
 
 # Рабочие файлы AI-ассистента (Antigravity IDE)
 .agents/
+
+# Скрипты локализации и обновлений (одноразовые)
+translate_settings.py
+translate_templates.py
+update_context_menu.py
+update_event_locales.py
+update_locales.py
+update_sentences_js_locales.py
+update_sentences_locales.py
+update_settings_locales.py

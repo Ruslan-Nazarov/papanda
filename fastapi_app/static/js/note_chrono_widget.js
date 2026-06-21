@@ -35,7 +35,7 @@ window.saveQuickChrono = async function (e) {
         const response = await fetch('/submit_chrono_json', { method: 'POST', body: new FormData(form) });
         const data = await response.json();
         if (data.status === 'success') {
-            showToast('✓ ' + (data.message || 'Chrono saved'), 'success');
+            showToast(window._("toast.saved"), 'success');
             
             const wText = document.getElementById('chronoWidgetText');
             if (wText) wText.value = '';
@@ -43,11 +43,37 @@ window.saveQuickChrono = async function (e) {
             // Re-fetch chronology list
             if (window.refreshCurrentView) window.refreshCurrentView('Chronology');
         } else {
-            showToast('⚠ ' + (data.message || 'Error saving'), 'error');
+            showToast(data.message || 'Error saving', 'error');
         }
     } catch (error) {
         console.error('Chrono save error:', error);
-        showToast('⚠ Network error', 'error');
+        showToast(window._("toast.network_error"), 'error');
+    }
+};
+
+window.saveChronoFromDashboard = async function () {
+    const textarea = document.getElementById('dashboardChronoTextarea');
+    if (!textarea || !textarea.value.trim()) return;
+
+    try {
+        const formData = new FormData();
+        formData.append('chrono_text', textarea.value.trim());
+        // For date, we could use today's date if there's no specific date input in the new widget
+        const today = new Date();
+        formData.append('chrono_date', today.toISOString().split('T')[0]);
+
+        const response = await fetch('/submit_chrono_json', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.status === 'success') {
+            showToast(window._("toast.saved"), 'success');
+            textarea.value = '';
+            if (window.refreshCurrentView) window.refreshCurrentView('Chronology');
+        } else {
+            showToast(data.message || 'Error saving', 'error');
+        }
+    } catch (error) {
+        console.error('Chrono save error:', error);
+        showToast(window._("toast.network_error"), 'error');
     }
 };
 
@@ -162,7 +188,7 @@ window.saveNoteFromModal = async function () {
         const resp = await fetch('/add_note', { method: 'POST', body: formData });
         const data = await resp.json();
         if (data.status === 'success') {
-            showToast('✓ Note saved', 'success');
+            showToast(window._("toast.note_saved"), 'success');
             window.closeNoteExpandModal(false);
 
             if (window.noteCreationCallback) {
@@ -209,7 +235,7 @@ window.saveQuickNote = async function (e) {
 
         const resp = await fetch('/add_note', { method: 'POST', body: formData });
         if (resp.ok) {
-            showToast('✓ Note added', 'success');
+            showToast(window._("toast.note_added"), 'success');
             form.note.value = '';
             form.note.style.height = '80px';
             document.getElementById('widgetNoteStickerText').value = '';
@@ -273,33 +299,6 @@ function setupNotesEditor(id) {
     });
 }
 
-// ─── Language Rule Widget ─────────────────────────────────────────────────────
-
-window.toggleRule = function () {
-    const ru = document.getElementById('rule-ru');
-    const en = document.getElementById('rule-en');
-    if (!ru || !en) return;
-    const showRu = ru.style.display === 'none';
-    ru.style.display = showRu ? 'block' : 'none';
-    en.style.display = showRu ? 'none'  : 'block';
-};
-
-window.refreshRule = async function () {
-    try {
-        const response = await fetch('/get_random_rule');
-        const data = await response.json();
-        const langEl = document.getElementById('rule-lang');
-        const ruEl   = document.getElementById('rule-ru');
-        const enEl   = document.getElementById('rule-en');
-        if (langEl) langEl.innerText = data.language;
-        if (ruEl)   ruEl.innerText   = data.rule_ru;
-        if (enEl)   enEl.innerText   = data.rule_en;
-        if (ruEl && enEl) {
-            if (ruEl.style.display === 'none') { enEl.style.display = 'block'; }
-            else { ruEl.style.display = 'block'; }
-        }
-    } catch (e) { console.error('Rule refresh failed', e); }
-};
 
 // ─── Dialectics Pinning ──────────────────────────────────────────────────────
 
@@ -307,7 +306,7 @@ window.pinDialectics = async function (id) {
     try {
         const resp = await fetch(`/api/dialectics/${id}/pin`, { method: 'POST' });
         if (resp.ok) {
-            showToast('✓ Dialectics pinned to Dashboard', 'success');
+            showToast(window._("toast.dialectics_pinned_to_dashboard"), 'success');
             if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
                 window.notesWidget.refreshPinnedNotes();
             }
@@ -319,7 +318,7 @@ window.unpinDialectics = async function (id) {
     try {
         const resp = await fetch(`/api/dialectics/${id}/unpin`, { method: 'POST' });
         if (resp.ok) {
-            showToast('✓ Dialectics unpinned', 'success');
+            showToast(window._("toast.dialectics_unpinned"), 'success');
             if (window.notesWidget && typeof window.notesWidget.refreshPinnedNotes === 'function') {
                 window.notesWidget.refreshPinnedNotes();
             }

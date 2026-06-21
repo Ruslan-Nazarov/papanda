@@ -140,7 +140,7 @@ async function deleteSearchWord() {
         window.closeWordStatsEdit();
         openDictionarySearch(); 
     }
-    else { alert('Error deleting word'); }
+    else { alert(window._("toast.error_deleting_word")); }
 }
 
 
@@ -209,11 +209,11 @@ window.saveWordStatsEdit = async function() {
             }
             window.closeWordStatsEdit();
         } else {
-            alert('Error saving changes');
+            alert(window._("toast.error_saving_changes"));
         }
     } catch (e) {
         console.error('Save failed', e);
-        alert('Network error');
+        alert(window._("toast.network_error"));
     }
 };
 
@@ -237,10 +237,10 @@ window.deleteSearchWord = async function() {
         if (res.ok) {
             window.closeWordStatsEdit();
         } else {
-            alert('Delete failed');
+            alert(window._("toast.delete_failed"));
         }
     } catch (e) {
-        alert('Network error');
+        alert(window._("toast.network_error"));
     }
 };
 
@@ -545,8 +545,8 @@ async function resetAllProgress() {
         const res = await fetch('/reset_word_stats', { method: 'POST' });
         const data = await res.json();
         if (data.status === 'success') location.reload();
-        else alert('Error: ' + (data.message || 'Unknown'));
-    } catch (e) { alert('Failed. See console.'); }
+        else alert(window._("toast.error") + (data.message || 'Unknown'));
+    } catch (e) { alert(window._("toast.failed_see_console")); }
 }
 
 // ── Help Tooltip ──────────────────────────────────────────────────────────────

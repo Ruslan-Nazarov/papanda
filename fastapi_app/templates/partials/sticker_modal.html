@@ -28,7 +28,7 @@
 
                 <!-- Title Input -->
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label class="highlight-label">Title</label>
+                    <label class="highlight-label">{{ _('dashboard.title') }}</label>
                     <input type="text" id="stickerDetailTitle" class="form-input" placeholder="Give it a name..." oninput="updateStickerPreview()">
                 </div>
 
@@ -79,7 +79,7 @@
             <button id="stickerArchiveBtn" class="btn" style="background: transparent; color: var(--color-error); font-weight: 700;" onclick="deleteStickerFromModal()">Archive</button>
             <div style="flex: 1;"></div>
             <button id="stickerEditBtn" class="btn btn-secondary" style="display: none; min-width: 100px;" onclick="setStickerModalMode('edit')">Edit</button>
-            <button class="btn btn-secondary" style="min-width: 100px;" onclick="closeStickerModal()">Cancel</button>
+            <button class="btn btn-secondary" style="min-width: 100px;" onclick="closeStickerModal()">{{ _('dashboard.cancel') }}</button>
             <button id="stickerSaveBtn" class="btn btn-primary" style="min-width: 120px;" onclick="saveStickerDetail()">Save</button>
         </div>
     </div>
@@ -99,7 +99,7 @@
             <div id="noteSearchResults" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
         <div class="modal-footer" style="padding: 16px 24px; background: var(--color-bg-subtle); border-top: 1px solid var(--color-border-light);">
-            <button type="button" class="btn btn-secondary" onclick="closeNoteSelectionModal()" style="width: 100%;">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="closeNoteSelectionModal()" style="width: 100%;">{{ _('dashboard.cancel') }}</button>
         </div>
     </div>
 </div>

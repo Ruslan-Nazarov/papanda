@@ -1,21 +1,21 @@
                     <div class="section random-rule">
                         <div class="widget-header">
                             <h1 class="widget-title">
-                                <span class="drag-handle">⠿</span>Language Rules
+                                <span class="drag-handle">⠿</span>{{ _('dashboard.language_rules') }}
                             </h1>
                             <div class="widget-controls">
                                 <button
                                     type="button"
                                     class="collapse-btn"
                                     onclick="toggleWidget(this)"
-                                    title="Collapse / Expand"
+                                    title="{{ _('dashboard.collapse_expand') }}"
                                     style="margin-left: 0"
                                 >
                                     ▾
                                 </button>
                                 <button
                                     onclick="refreshRule()"
-                                    title="Refresh Rule"
+                                    title="{{ _('dashboard.refresh_rule') }}"
                                     class="btn-rule"
                                 >
                                     ↻

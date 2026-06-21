@@ -58,15 +58,7 @@ async def index(
     if 'replacement' in dashboard_map:
         one_thing_replacement = dashboard_map['replacement'].title
 
-    # Правила
-    random_rule: Union[models.LanguageRule, Dict[str, str]] = {"language": "Info", "rule_ru": "Нет правил", "rule_en": "No rules available"}
-    try:
-        rule_res = await db.execute(select(models.LanguageRule).order_by(func.random()).limit(1))
-        rule_obj = rule_res.scalar_one_or_none()
-        if rule_obj: 
-            random_rule = rule_obj
-    except Exception as e:
-        logger.warning(f"Failed to fetch random rule: {e}")
+
 
     categories_res = await db.execute(select(models.NoteCategory))
     categories = [c.name for c in categories_res.scalars().all()]
@@ -135,7 +127,7 @@ async def index(
         "one_thing": one_thing,
         "one_thing_date": one_thing_date,
         "one_thing_replacement": one_thing_replacement,
-        "random_rule": random_rule,
+
         "categories": categories,
         "dashboard_layout": layout_json,
         "today_for_calendar": today_for_calendar,
@@ -149,51 +141,7 @@ async def index(
         "sentences_json": sentences_json
     })
 
-@router.get("/history", response_class=HTMLResponse)
-async def history(
-    request: Request,
-    date_str: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
-    user: Any = Depends(check_auth_dependency)
-) -> HTMLResponse:
-    """
-    Страница истории/архива (History).
-    Позволяет просматривать данные за прошлые даты или за "этот же день" в другие годы.
-    """
-    today_date = datetime.now().date()
 
-    if date_str:
-        try:
-            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            is_today_in_history = (target_date == today_date)
-        except ValueError:
-            target_date = today_date
-            is_today_in_history = True
-    else:
-        target_date = today_date
-        is_today_in_history = True
-
-    history_service = await get_history_service(db)
-    
-    # Получаем данные через HistoryService
-    events, chronology, notes, wink = await history_service.get_history_for_date(target_date, is_today_in_history)
-
-    # Стикеры для истории
-    sticker_service = await get_sticky_note_service(db)
-    history_stickers = await sticker_service.get_notes_for_date(target_date)
-
-    return templates.TemplateResponse(request, "history.html", {
-        "request": request,
-        "target_date": target_date,
-        "events": events,
-        "chronology": chronology,
-        "notes": notes,
-        "wink": wink,
-        "stickers": history_stickers,
-        "is_today_in_history": is_today_in_history,
-        "is_fallback": False,
-        "today_for_calendar": today_date,
-    })
 
 @router.post("/save_dashboard_layout")
 async def save_dashboard_layout(

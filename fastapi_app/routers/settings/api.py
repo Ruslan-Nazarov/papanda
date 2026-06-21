@@ -176,8 +176,8 @@ async def import_sentences(request: Request):
     
     ALLOWED_ROLES = {
         "Subject", "Predicate", "Object",
-        "Attribute_Subject", "Attribute_Object",
-        "Adverbial", "Conjunction"
+        "Attribute", "Attribute_Subject", "Attribute_Object",
+        "Circumstance", "Adverbial", "Conjunction"
     }
     PUNCTUATION = set(".,!?;:\"'—–-")
     
@@ -296,3 +296,70 @@ async def delete_sentences(request: Request):
         return JSONResponse(status_code=500, content={"message": f"Failed to save file: {str(e)}"})
         
     return {"message": "Success", "remaining_count": len(sentences)}
+
+import uuid
+
+from ...schemas.words import SentenceUpsertSchema
+
+@router.post("/api/sentences/upsert")
+async def upsert_sentence(data: SentenceUpsertSchema):
+    """Создает или обновляет одно предложение в sentence.json"""
+    s = data.model_dump(exclude_none=True)
+
+    sentence_file = settings.resources_dir / "sentence.json"
+    existing_sentences = []
+    if sentence_file.exists():
+        try:
+            with open(sentence_file, "r", encoding="utf-8") as f:
+                existing_sentences = json.load(f)
+        except Exception as e:
+            return JSONResponse(status_code=500, content={"message": f"Failed to read existing sentence.json: {str(e)}"})
+
+    # Validation
+    ALLOWED_ROLES = {
+        "Subject", "Predicate", "Object",
+        "Attribute", "Attribute_Subject", "Attribute_Object",
+        "Circumstance", "Adverbial", "Conjunction"
+    }
+    
+    missing = [f for f in ("language", "sentence", "words") if f not in s]
+    if missing:
+        return JSONResponse(status_code=400, content={"message": f"Missing fields: {', '.join(missing)}"})
+
+    if not isinstance(s.get("words"), list) or not s["words"]:
+        return JSONResponse(status_code=400, content={"message": "'words' is empty or not an array"})
+
+    for j, w in enumerate(s["words"]):
+        missing_w = [f for f in ("text", "role", "label", "parts", "translation") if f not in w]
+        if missing_w:
+            return JSONResponse(status_code=400, content={"message": f"Word [{j}] missing fields: {', '.join(missing_w)}"})
+        if w.get("role") and w.get("role") not in ALLOWED_ROLES:
+            return JSONResponse(status_code=400, content={"message": f"Word [{j}] invalid role '{w.get('role')}'"})
+        if not isinstance(w.get("parts"), list):
+            return JSONResponse(status_code=400, content={"message": f"Word [{j}] 'parts' must be an array"})
+
+    # Determine ID
+    sid = s.get("id")
+    if not sid:
+        sid = f"custom_{uuid.uuid4().hex[:8]}"
+        s["id"] = sid
+
+    # Upsert
+    found_idx = -1
+    for idx, ex_s in enumerate(existing_sentences):
+        if ex_s.get("id") == sid:
+            found_idx = idx
+            break
+
+    if found_idx >= 0:
+        existing_sentences[found_idx] = s
+    else:
+        existing_sentences.append(s)
+
+    try:
+        with open(sentence_file, "w", encoding="utf-8") as f:
+            json.dump(existing_sentences, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": f"Failed to save sentence.json: {str(e)}"})
+
+    return {"message": "Success", "sentence": s}

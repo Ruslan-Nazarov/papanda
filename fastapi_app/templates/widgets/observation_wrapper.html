@@ -2,13 +2,13 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">🌲</span>
-            <span>Live Observation</span>
+            <span>{{ _('dashboard.live_observation') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openObsOverviewModal()" title="Tree Overview">🌳</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="scrollToCurrentTime()" title="Scroll to Current Time">🎯</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openObsAddModal()" title="Add Activity">+</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openObsOverviewModal()" title="{{ _('dashboard.tree_overview') }}">🌳</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="scrollToCurrentTime()" title="{{ _('dashboard.scroll_to_current_time') }}">🎯</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openObsAddModal()" title="{{ _('dashboard.add_activity') }}">+</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>

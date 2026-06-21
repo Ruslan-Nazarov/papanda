@@ -2,11 +2,11 @@
     <div class="widget-header" style="margin-bottom: 8px;">
         <div class="widget-title">
             <span class="widget-icon">🎯</span>
-            <span>Tasks</span>
+            <span>{{ _('dashboard.tasks') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Task')" title="Full View">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Task')" title="{{ _('dashboard.full_view') }}">☰</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -16,16 +16,16 @@
         <div class="task-highlights">
             <div class="highlight-row">
                 <div style="display: flex; align-items: baseline; gap: 8px;">
-                    <span class="highlight-label">One Thing:</span>
+                    <span class="highlight-label">{{ _('dashboard.one_thing') }}</span>
                     <span class="highlight-value">{{ one_thing }}</span>
                 </div>
                 {% if one_thing_date %}
-                <div class="premium-badge" style="padding: 1px 6px; font-size: 0.6rem;">{{ one_thing_date }} <span style="opacity: 0.6;">DAYS</span></div>
+                <div class="premium-badge" style="padding: 1px 6px; font-size: 0.6rem;">{{ one_thing_date }} <span style="opacity: 0.6;">{{ _('header.days')|upper }}</span></div>
                 {% endif %}
             </div>
             <div class="highlight-row" style="margin-top: 2px;">
                 <div style="display: flex; align-items: baseline; gap: 8px;">
-                    <span class="highlight-label">Replace:</span>
+                    <span class="highlight-label">{{ _('dashboard.replace') }}</span>
                     <span class="replace-value">{{ one_thing_replacement }}</span>
                 </div>
             </div>
@@ -47,7 +47,7 @@
                 </span>
                 
                 <div class="row-actions">
-                    <button type="button" class="btn-row-action" onclick="openParentStickers('task', '{{ task.id }}')" title="Stickers">
+                    <button type="button" class="btn-row-action" onclick="openParentStickers('task', '{{ task.id }}')" title="{{ _('dashboard.stickers') }}">
                         <div class="sticker-icon-mini {{ 'inactive' if not task.stickers_count }}">
                             {% if task.stickers_count > 0 %}
                             <span class="sticker-count">{{ task.stickers_count }}</span>
@@ -55,7 +55,7 @@
                         </div>
                     </button>
                     <form action="/mark_done/{{ task.id }}" method="post" style="margin: 0" onsubmit="event.preventDefault(); markTaskDone(this, '{{ task.id }}')">
-                        <button type="submit" class="btn-row-action done" title="Complete task">✓</button>
+                        <button type="submit" class="btn-row-action done" title="{{ _('dashboard.complete_task') }}">✓</button>
                     </form>
                 </div>
             </li>

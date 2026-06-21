@@ -8,7 +8,7 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Title</th>
+                        <th>{{ _('dashboard.title') }}</th>
                         <th style="text-align: center; width: 140px;">Actions</th>
                     </tr>
                 </thead>
@@ -70,7 +70,7 @@
     <!-- Filter bar -->
     <!-- Minimalist Navigation Bar -->
     <div style="display: flex; justify-content: center;">
-        <form class="filter-bar" id="eventFilterForm" action="{{ url_for('db_view', model_name='Event') }}" method="GET">
+        <form class="filter-bar" id="eventFilterForm" onsubmit="event.preventDefault(); loadDbViewModalContent('Event', { month: this.month.value, year: this.year.value{% if search_query %}, search: '{{ search_query }}'{% endif %} });">
             {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
             
             <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; margin-left: 8px; margin-right: 12px; gap: 8px;">
@@ -80,23 +80,23 @@
 
             <div style="width: 1px; height: 16px; background: var(--color-border-light); margin: 0 12px 0 4px;"></div>
 
-            <a href="{{ url_for('db_view', model_name='Event') }}?month={{ prev_month }}&year={{ prev_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Prev Month">
+            <a href="javascript:void(0)" onclick="loadDbViewModalContent('Event', { month: {{ prev_month }}, year: {{ prev_year }}{% if search_query %}, search: '{{ search_query }}'{% endif %} })" class="nav-arrow" title="Prev Month">
                 ‹
             </a>
             
-            <select name="month" class="filter-select" onchange="this.form.submit()">
+            <select name="month" class="filter-select" onchange="loadDbViewModalContent('Event', { month: this.value, year: this.form.year.value{% if search_query %}, search: '{{ search_query }}'{% endif %} })">
                 {% for m_val, m_name in months %}
                     <option value="{{ m_val }}" {% if m_val == current_month %}selected{% endif %}>{{ m_name }}</option>
                 {% endfor %}
             </select>
 
-            <select name="year" class="filter-select" onchange="this.form.submit()">
+            <select name="year" class="filter-select" onchange="loadDbViewModalContent('Event', { month: this.form.month.value, year: this.value{% if search_query %}, search: '{{ search_query }}'{% endif %} })">
                 {% for y in years %}
                     <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
             </select>
             
-            <a href="{{ url_for('db_view', model_name='Event') }}?month={{ next_month }}&year={{ next_year }}{% if search_query %}&search={{ search_query }}{% endif %}" class="nav-arrow" title="Next Month">
+            <a href="javascript:void(0)" onclick="loadDbViewModalContent('Event', { month: {{ next_month }}, year: {{ next_year }}{% if search_query %}, search: '{{ search_query }}'{% endif %} })" class="nav-arrow" title="Next Month">
                 ›
             </a>
 

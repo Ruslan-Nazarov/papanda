@@ -24,6 +24,11 @@ class ParserRequest(BaseModel):
 class TextMathRequest(BaseModel):
     text: str
 
+class HintStepRequest(BaseModel):
+    step_id: str
+    goal_text: str
+    context_text: str
+
 @router.post("/dialectics/opposites")
 async def generate_opposites(
     request: OppositesRequest,
@@ -53,7 +58,7 @@ async def generate_opposites(
         raise HTTPException(status_code=500, detail="Error reading prompt file.")
 
     # Подготовка промпта
-    system_prompt = prompt_template.replace("{ВСТАВИТЬ ПРОЦЕСС}", request.process_a)
+    system_prompt = prompt_template.replace("{ВСТАВИТЬ ПРОЦЕСС}", request.process_a).replace("{INSERT PROCESS}", request.process_a)
 
     try:
         client = AsyncGroq(api_key=api_key)
@@ -67,7 +72,7 @@ async def generate_opposites(
                 },
                 {
                     "role": "user",
-                    "content": f"Сгенерируй противоположности для процесса: {request.process_a}"
+                    "content": f"Generate opposites for the process: {request.process_a}"
                 }
             ],
             model="llama-3.3-70b-versatile",
@@ -120,7 +125,7 @@ async def parse_math_formula(
                 },
                 {
                     "role": "user",
-                    "content": f"Проанализируй следующую формулу: {request.formula}"
+                    "content": f"Analyze the following formula: {request.formula}"
                 }
             ],
             model="llama-3.3-70b-versatile",
@@ -147,12 +152,12 @@ async def generate_math_from_text(
 
     try:
         client = AsyncGroq(api_key=api_key)
-        prompt = "Ты ассистент, который переводит описание математической формулы на естественном языке строго в формат LaTeX. Выведи ТОЛЬКО код LaTeX, без обрамляющих кавычек, без блоков markdown (```latex) и без каких-либо пояснений. Твой ответ должен быть готов к вставке в рендерер KaTeX."
+        prompt = "You are an assistant that translates the description of a mathematical formula in natural language strictly into LaTeX format. Output ONLY the LaTeX code, without surrounding quotes, without markdown blocks (```latex) and without any explanations. Your response must be ready to be inserted into the KaTeX renderer."
         
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": prompt},
-                {"role": "user", "content": f"Переведи в LaTeX: {request.text}"}
+                {"role": "user", "content": f"Translate to LaTeX: {request.text}"}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.1,
@@ -200,12 +205,12 @@ async def generate_math_from_voice(
         transcribed_text = str(transcription).strip()
         
         # 2. Convert transcribed text to LaTeX using Llama
-        prompt = "Ты ассистент, который переводит аудио-диктовку математической формулы строго в формат LaTeX. Учти возможные опечатки транскрибации. Выведи ТОЛЬКО код LaTeX, без обрамляющих кавычек, без блоков markdown (```latex) и без каких-либо пояснений."
+        prompt = "You are an assistant that translates the audio dictation of a mathematical formula strictly into LaTeX format. Account for potential transcription typos. Output ONLY the LaTeX code, without surrounding quotes, without markdown blocks (```latex) and without any explanations."
         
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": prompt},
-                {"role": "user", "content": f"Переведи в LaTeX: {transcribed_text}"}
+                {"role": "user", "content": f"Translate to LaTeX: {transcribed_text}"}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.1,
@@ -227,3 +232,60 @@ async def generate_math_from_voice(
     except Exception as e:
         logger.error(f"Error processing voice-math: {e}")
         raise HTTPException(status_code=502, detail=str(e))
+
+@router.post("/dialectics/hint-step")
+async def generate_hint_step(
+    request: HintStepRequest,
+    user: Any = Depends(check_auth_dependency)
+):
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key or api_key == "your_groq_api_key_here":
+        raise HTTPException(
+            status_code=500, 
+            detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file."
+        )
+
+    # Validate step_id to prevent path traversal
+    valid_steps = ["step1", "step2", "step3", "step4", "step5"]
+    if request.step_id not in valid_steps:
+        raise HTTPException(status_code=400, detail="Invalid step_id")
+
+    prompt_path = BASE_DIR / "prompts" / f"dialectics_{request.step_id}.md"
+    if not prompt_path.exists():
+        logger.error(f"Prompt file not found at {prompt_path}")
+        raise HTTPException(status_code=500, detail=f"Prompt file for {request.step_id} not found.")
+
+    try:
+        prompt_template = prompt_path.read_text(encoding="utf-8")
+    except Exception as e:
+        logger.error(f"Error reading prompt file: {e}")
+        raise HTTPException(status_code=500, detail="Error reading prompt file.")
+
+    # Prepare system prompt
+    system_prompt = prompt_template.replace("{GOAL}", request.goal_text).replace("{CONTEXT}", request.context_text)
+
+    try:
+        client = AsyncGroq(api_key=api_key)
+        
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f"Generate the content for {request.step_id}."
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.7,
+            max_tokens=2048,
+        )
+        
+        result = chat_completion.choices[0].message.content
+        return {"result": result}
+        
+    except Exception as e:
+        logger.error(f"Error calling Groq API: {e}")
+        raise HTTPException(status_code=502, detail=f"Error generating AI response: {str(e)}")

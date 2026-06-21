@@ -1,36 +1,5 @@
 /* Settings Specific Styles (GridStack Version) */
 
-.sandbox-banner {
-    background: var(--color-error);
-    color: white;
-    text-align: center;
-    padding: 12px;
-    font-weight: 700;
-    position: sticky;
-    top: 0;
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    box-shadow: var(--shadow-md);
-}
-
-.sandbox-btn-exit {
-    background: white;
-    color: var(--color-error);
-    border: none;
-    padding: 6px 16px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-weight: 700;
-    transition: all 0.2s ease;
-}
-
-.sandbox-btn-exit:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(255,255,255,0.4);
-}
 
 .settings-wrapper {
     width: 100%;

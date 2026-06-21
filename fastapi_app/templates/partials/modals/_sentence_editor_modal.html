@@ -1,0 +1,174 @@
+<style>
+    #sentenceEditorModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(5px);
+    }
+    #sentenceEditorModal .modal-content-wrapper {
+        background-color: #fff;
+        width: 95%;
+        max-width: 900px;
+        max-height: 90vh;
+        border-radius: 20px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        position: relative;
+        padding: 30px;
+    }
+    #sentenceEditorModal .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 25px;
+        font-size: 24px;
+        color: #888;
+        cursor: pointer;
+        background: #f5f5f5;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    #sentenceEditorModal .close-btn:hover {
+        background: #eee;
+        color: #333;
+    }
+    
+    .se-form-group {
+        margin-bottom: 20px;
+    }
+    .se-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2c3e50;
+    }
+    .se-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    
+    .se-words-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px dashed #eee;
+    }
+    
+    .se-word-block {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        position: relative;
+    }
+    .se-word-block .remove-word-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #e74c3c;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .se-word-field {
+        flex: 1;
+        min-width: 150px;
+    }
+    .se-word-field input, .se-word-field select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+    }
+    .se-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+    .se-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    .se-btn-primary {
+        background: #3498db;
+        color: white;
+    }
+    .se-btn-primary:hover { background: #2980b9; }
+    .se-btn-success {
+        background: #2ecc71;
+        color: white;
+    }
+    .se-btn-success:hover { background: #27ae60; }
+    .se-btn-outline {
+        background: transparent;
+        border: 1px solid #3498db;
+        color: #3498db;
+    }
+</style>
+
+<div id="sentenceEditorModal" onclick="if(event.target===this) window.closeSentenceEditor()">
+    <div class="modal-content-wrapper">
+        <div class="close-btn" onclick="window.closeSentenceEditor()">✕</div>
+        <h2 style="margin-top: 0; color: #2c3e50;" id="se-modal-title">{{ _('modal.edit_sentence') }}</h2>
+        
+        <input type="hidden" id="se-id">
+        
+        <div style="display: flex; gap: 20px;">
+            <div class="se-form-group" style="flex: 1;">
+                <label>{{ _('modal.language') }}</label>
+                <input type="text" id="se-lang" class="se-input" placeholder="{{ _('modal.language_placeholder') }}">
+            </div>
+        </div>
+        
+        <div class="se-form-group">
+            <label>{{ _('modal.sentence') }}</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="se-sentence" class="se-input" placeholder="{{ _('modal.sentence_placeholder') }}">
+                <button class="se-btn se-btn-outline" onclick="window.seParseWords()">{{ _('modal.auto_split') }}</button>
+            </div>
+        </div>
+        
+        <h3 style="margin-bottom: 0; margin-top: 10px;">{{ _('modal.words_title') }}</h3>
+        <div id="se-words-list" class="se-words-container">
+            <!-- Words injected here -->
+        </div>
+        
+        <div style="margin-top: 15px;">
+            <button class="se-btn se-btn-outline" onclick="window.seAddWordBlock()">{{ _('modal.add_word') }}</button>
+        </div>
+        
+        <div class="se-actions">
+            <div id="se-status" style="color: #e74c3c; font-weight: 600; align-self: center;"></div>
+            <button class="se-btn se-btn-success" onclick="window.seSaveSentence()">{{ _('modal.save_sentence') }}</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="/static/js/sentence_editor.js"></script>

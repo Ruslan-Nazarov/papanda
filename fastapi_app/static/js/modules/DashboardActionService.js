@@ -55,14 +55,14 @@ export const DashboardActionService = {
                             else btn.innerHTML = '✓';
                         }
                     } else {
-                        showToast('Status: Pending', 'info');
+                        showToast(window._("toast.status_pending"), 'info');
                     }
                 } else {
-                    showToast('Failed to update status', 'error');
+                    showToast(window._("toast.failed_to_update_status"), 'error');
                 }
             } catch (err) {
                 console.error('[ActionService] Error:', err);
-                showToast('Network error', 'error');
+                showToast(window._("toast.network_error"), 'error');
             }
         }
     },
@@ -87,8 +87,22 @@ export const DashboardActionService = {
             
             const data = await response.json();
             if (response.ok && data.status === 'success') {
-                showToast('✓ ' + (data.message || 'Saved'), 'success');
+                showToast(window._("toast.saved"), 'success');
                 form.reset();
+                // Restore date to today after reset (reset clears the date field)
+                const dateInput = form.querySelector('#common_date');
+                if (dateInput) {
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm   = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd   = String(today.getDate()).padStart(2, '0');
+                    const formatted = `${yyyy}-${mm}-${dd}`;
+                    if (dateInput._flatpickr) {
+                        dateInput._flatpickr.setDate(today);
+                    } else {
+                        dateInput.value = formatted;
+                    }
+                }
                 if (window.syncCategoryStickerVisibility) window.syncCategoryStickerVisibility();
                 if (window.setHeaderColor) window.setHeaderColor('', document.querySelector('.bg-none'));
                 
@@ -99,7 +113,7 @@ export const DashboardActionService = {
                 const cat = jsonData.common_category;
                 if (cat === 'event' || cat === 'important') {
                     if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
-                } else if (cat === 'task') {
+                } else if (cat === 'task' || cat === 'one_thing' || cat === 'replacement') {
                     if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
                 } else if (cat === 'habits') {
                     if (typeof window.refreshDashboardHabits === 'function') window.refreshDashboardHabits();
@@ -109,17 +123,14 @@ export const DashboardActionService = {
                     if (typeof window.refreshDashboardObservations === 'function') window.refreshDashboardObservations();
                 } else if (cat === 'sticker') {
                     if (typeof window.refreshDashboardStickers === 'function') window.refreshDashboardStickers();
-                } else {
-                    // Fallback for metadata types like wink, count until, etc. that are hardcoded in the header layout
-                    setTimeout(() => location.reload(), 500);
                 }
             } else {
                 const errorMsg = data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : (data.message || 'Error saving');
-                showToast('⚠ ' + errorMsg, 'error');
+                showToast(errorMsg, 'error');
             }
         } catch (error) {
             console.error('[ActionService] Submit form error:', error);
-            showToast('⚠ Network error', 'error');
+            showToast(window._("toast.network_error"), 'error');
         }
     }
 };

@@ -1,4 +1,4 @@
-# Papanda v.0.6.1
+# papanda v.0.6.2
 
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)
@@ -6,133 +6,118 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows-0078D4?style=flat-square&logo=windows&logoColor=white)
 
-*Персональный инструмент исследователя для работы в эпоху искусственного интеллекта.*
+*From AI - knowledge, from human - understanding.*  
+*Train not only AI, but also humans.*
 
-Papanda предназначена для школьников, студентов, специалистов и ученых, которые активно используют ИИ в своей образовательной и профессиональной деятельности. Это единая среда для организации исследовательского процесса, структурирования мыслей и управления знаниями.
+[Русская версия здесь (Russian version here)](README_RU.md)
 
-Приложение позволяет держать всю важную информацию на одном экране (дашборде) с гибкой настройкой виджетов, обеспечивая полный контроль над ходом ваших исследований и проектов.
+**papanda** is a dialectics-based educational environment designed for learning and research in the era of artificial intelligence.
 
-## Возможности для исследователя
+Traditional educational approaches focused on memorization and fact accumulation have lost their meaning, as AI now performs these functions. However, generative models only provide answers; they are fundamentally incapable of comprehension or building a holistic worldview.
 
-### 🧠 База знаний и генерация идей
-- **Заметки (Notes)**: Сохраняйте результаты взаимодействия с ИИ, промпты, гипотезы и выводы из научных статей. Удобная категоризация позволяет структурировать материалы по темам исследований.
-- **Липкие мысли (Sticky Thoughts)**: Фиксируйте мимолетные идеи и озарения, чтобы вернуться к ним позже и обсудить с ИИ-ассистентом.
-- **Диалектика**: Особый инструментарий для глубокого, диалектического анализа проблем и поиска нестандартных научных решений.
+papanda resolves this contradiction. The application handles the routine of data collection and provides a methodology for developing your own deep understanding. Instead of passive information consumption, the platform teaches you to discover relationships between concepts exclusively through their development.
 
-### 📅 Управление исследовательскими проектами
-- **Задачи (Tasks)**: Планируйте эксперименты, написание статей и этапы научных проектов.
-- **События (Events)**: Управляйте дедлайнами, конференциями и важными встречами. Инструмент Important заранее напомнит о критических датах.
-- **Фокус на главном (One Thing)**: Выделите приоритетное направление исследования на текущий период и сосредоточьтесь на нем, используя систему замещающих задач для предотвращения выгорания.
+It is a comprehensive environment where time management, language acquisition, exact sciences, and note-taking are linked to the methodology of developing a dialectical understanding of the subject.
 
-### 📊 Дневник и самоконтроль
-- **Хронология (Chronology)**: Ведите подробный дневник своей научной и образовательной деятельности. Отслеживайте, как развивались ваши идеи с течением времени.
-- **Обзор деятельности (Live Observation)**: Анализируйте, на что уходит ваше время. Инструмент строит дерево ваших занятий, помогая оптимизировать рутину.
-- **История (On This Day)**: Ретроспективный взгляд на ваши идеи и исследования в этот же день в прошлые годы.
+## Key Features
 
-### 📚 Освоение научной литературы
-- **Интервальное повторение терминов**: Встроенный модуль для изучения иностранных языков и специализированной научной терминологии. Подробная статистика (iMW Index, Coverage) помогает оценивать прогресс и читать зарубежные статьи в оригинале.
+### 🌀 Dialectics (Core System)
+The main module of the application, implementing note-taking based on the rules of dialectical logic. Notes are structured not as a static list of facts, but as the evolution of a thought:
+* **Analysis:** For any concept, event, or formula, a primary element and its contradiction (opposite) are defined.
+* **Contradiction:** The collision of these opposite elements is analyzed.
+* **Resolution:** The contradiction is resolved, which becomes a new concept or formula, but now integrated into your deep understanding.
+
+The module is enhanced by two specialized tools:
+* **AI Search for Opposites:** An algorithm that automatically detects opposing concepts in text for you to evaluate.
+* **Math Parser:** Simplifies complex formulas step-by-step, showing the logic of their dialectical development.
+* Detailed guide: [Dialectics Guide (Russian)](DIALECTICS_GUIDE.md).
+
+### 📚 Linguistics and Language Learning
+Language acquisition in papanda is focused on developing a dialectical understanding of speech structure, rather than mechanical memorization:
+* **Sentence Trainer:** Learn language through sentence structure. See how a sentence develops and unfolds from its logical core—the predicate (verb).
+* **Words in Context:** When working with the vocabulary, the focus shifts to independent construction of meaning. Instead of just memorizing translations, you immediately place new words into your own context.
+* **Recognitio (Assessment):** A specialized mode for checking long-term memory, letting you objectively evaluate vocabulary retention.
+
+### 📅 Dialectical Time Management and Self-Analysis
+Managing time in papanda is a way to apply dialectics to the development of your own life:
+* **Focus on the Core (One Thing):** Instead of a chaotic checklist, you define a single fundamental task ("The Main Thing") from which subordinate sub-tasks branch out. This focuses your resources on the main contradiction of the current stage.
+* **Chronology and Task Evolution:** The calendar and scheduling are linked to Chronology. It serves as a tool for retrospective self-analysis, demonstrating how your projects and tasks evolved over time.
+* **Cross-cutting Stickers (Sticky Thoughts):** Available across most application modules. Stickers allow you to pin quick thoughts to tasks, events, or notes, serving as a reflection space for your projects.
+
+## 🚀 Installation and Startup
+
+### Option 1: Compiled Executable (.exe)
+
+Download `papanda.exe` from the [Releases](https://github.com/your-username/papanda/releases) section, run it, and the browser will open automatically.
+
+> ⚠️ Windows may show an "Unknown Publisher" warning. Click **"More Info" → "Run Anyway"**.
+
+All data (database, settings, dictionaries) will be automatically created and stored in the `data/` folder next to the `.exe` file.
+
+To **stop the server**, simply close the browser tab—the server process will automatically terminate.
 
 ---
 
-## 🚀 Установка и запуск
+### Option 2: Running from Source Code (for Developers)
 
-### Вариант 1: Запуск из исходного кода (для разработчиков)
-
-**Требования:**
+**Requirements:**
 - Python 3.12+
 
-**Шаги:**
+**Steps:**
 
 ```bash
-# 1. Клонируйте репозиторий
+# 1. Clone the repository
 git clone https://github.com/your-username/papanda.git
 cd papanda
 
-# 2. Установите зависимости
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Запустите приложение
+# 3. Run the application
 python run_fastapi.py
 ```
 
-Приложение откроется в браузере автоматически по адресу `http://127.0.0.1:8000`.  
-При первом запуске база данных создаётся автоматически.
+The application will automatically open in your browser at `http://127.0.0.1:8000`.  
+On the first run, the database is created automatically and populated with the default vocabulary from the built-in `translate.xlsx` file.
 
 ---
 
-### Вариант 2: Готовый исполняемый файл (.exe)
-
-Скачайте `Papanda.exe` из раздела [Releases](https://github.com/your-username/papanda/releases), запустите его — браузер откроется сам.
-
-> ⚠️ Windows может показать предупреждение о неизвестном издателе. Нажмите **«Подробнее» → «Выполнить в любом случае»**.
-
-Все данные (база, настройки) будут сохраняться в папке `data/` рядом с `.exe` файлом.
-
-Чтобы **остановить сервер**, просто закройте вкладку с приложением в браузере — процесс завершится автоматически.
-
----
-
-### Сборка .exe самостоятельно
+### Building the .exe Yourself
 
 ```bash
 pip install pyinstaller
 ```
 
-Затем запустите файл `create_bundle.bat` в корне проекта. Готовый `Papanda.exe` появится в папке `dist/`.
+Run the `create_bundle.bat` file in the project root. The compiled `papanda.exe` will appear in the `dist/` folder, containing all templates, static assets, and the default vocabulary.
 
----
+## 🛠️ Technology Stack
 
-## 🧪 Тесты
-
-```bash
-pytest tests/
-```
-
----
-
-## 📋 Подготовка к публикации на GitHub
-
-В разделе **Settings → Sharing Preparation** доступна кнопка **«Deep Clean»**, которая удаляет все личные данные, сбрасывает ключи безопасности и очищает логи — оставляя только чистый код, готовый к публикации.
-
----
-
-## 🛠️ Технологический стек
-
-Papanda — это полноценное веб-приложение, которое работает локально прямо на вашем компьютере. Никаких внешних серверов, никаких облаков — только вы и ваши данные.
+papanda is a fully-featured web application that runs locally on your computer. No external servers or cloud services are used—your data remains entirely yours.
 
 ### Backend
 
-| Компонент | Библиотека | Роль |
+| Component | Library | Role |
 |---|---|---|
-| **Web-фреймворк** | [FastAPI](https://fastapi.tiangolo.com/) | Высокопроизводительный асинхронный фреймворк на Python. Обрабатывает все запросы, маршруты и API-эндпоинты. |
-| **ASGI-сервер** | [Uvicorn](https://www.uvicorn.org/) | Запускает FastAPI-приложение, обеспечивая асинхронную обработку соединений. |
-| **Шаблонизатор** | [Jinja2](https://jinja.palletsprojects.com/) | Генерирует HTML-страницы на сервере, поддерживает наследование шаблонов и частичные `partials`. |
-| **ORM** | [SQLAlchemy](https://www.sqlalchemy.org/) (async) | Описывает модели данных и выполняет запросы к базе данных в асинхронном режиме. |
-| **База данных** | [SQLite](https://www.sqlite.org/) + [aiosqlite](https://github.com/omnilib/aiosqlite) | Встраиваемая файловая БД. Не требует установки сервера, все данные хранятся в одном `.db`-файле. |
-| **Аутентификация** | [python-jose](https://github.com/mpdavis/python-jose) + [passlib](https://passlib.readthedocs.io/) | JWT-токены для сессий, хеширование паролей через bcrypt. |
-| **Конфигурация** | [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) + [python-dotenv](https://github.com/theskumar/python-dotenv) | Типизированные настройки приложения, загружаемые из `.env`-файла. |
-| **Excel** | [openpyxl](https://openpyxl.readthedocs.io/) | Экспорт и импорт словаря слов в формате `.xlsx`. |
-| **Realtime** | WebSockets | Автоматическое управление жизненным циклом сервера при закрытии вкладок браузера. |
+| **Web Framework** | [FastAPI](https://fastapi.tiangolo.com/) | High-performance asynchronous Python framework. |
+| **ASGI Server** | [Uvicorn](https://www.uvicorn.org/) | Asynchronous web server for FastAPI. |
+| **Template Engine** | [Jinja2](https://jinja.palletsprojects.com/) | HTML template rendering. |
+| **ORM** | [SQLAlchemy](https://www.sqlalchemy.org/) (async) | Database models and asynchronous queries. |
+| **Database** | [SQLite](https://www.sqlite.org/) + [aiosqlite](https://github.com/omnilib/aiosqlite) | Embedded file-based database. |
+| **Configuration** | [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) + [python-dotenv](https://github.com/theskumar/python-dotenv) | Typed settings loaded from a `.env` file. |
+| **Excel** | [openpyxl](https://openpyxl.readthedocs.io/) | Exporting and importing vocabulary from `.xlsx` files. |
 
 ### Frontend
 
-Никаких тяжелых фреймворков — только нативные технологии браузера:
+- **HTML + Jinja2 Templates** — Server-side page rendering with modular structures using `partials/`.
+- **Vanilla CSS** — Custom design system with CSS variables, animations, and glassmorphism.
+- **Vanilla JavaScript** — Widget interactivity, API fetch requests, drag-and-drop, WebSocket clients, and dynamic DOM updates.
 
-- **HTML + Jinja2-шаблоны** — серверный рендеринг страниц с компонентной структурой через `partials/`
-- **Vanilla CSS** — кастомная дизайн-система с переменными, анимациями и glassmorphism-эффектами
-- **Vanilla JavaScript** — интерактивность виджетов, fetch-запросы к API, drag-and-drop, WebSocket-клиенты, динамические обновления без перезагрузки страниц.
+### Packaging and Distribution
 
-### Упаковка и распространение
-
-- **[PyInstaller](https://pyinstaller.org/)** — собирает всё приложение (Python, шаблоны, статику) в единый `.exe`-файл, который запускается без установки Python
-
-### Тестирование
-
-- **[pytest](https://pytest.org/) + [pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio)** — асинхронные юнит- и интеграционные тесты
-- **[httpx](https://www.python-httpx.org/)** — HTTP-клиент для тестирования API-эндпоинтов
+- **[PyInstaller](https://pyinstaller.org/)** — Bundles the entire application into a single `.exe` file that runs without a Python installation.
 
 ---
 
-## 📄 Лицензия
+## 📄 License
 
-[MIT License](LICENSE) © Руслан Назаров
+[Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](LICENSE) © Ruslan Nazarov

@@ -2,7 +2,7 @@
 <div id="editWordModal" class="modal premium-modal" data-prevent-outside-click="true">
     <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl);">
         <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px;">
-            <h2 id="modalWordEng" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em;">Edit Word</h2>
+            <h2 id="modalWordEng" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em;">{{ _('modal.edit_word') }}</h2>
         </div>
         
         <form id="dashboardEditWordForm" onsubmit="event.preventDefault(); window.saveDashboardWordEdit();" style="margin: 0;">
@@ -14,19 +14,19 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 24px;">
-                    <label class="form-label">Russian Translation</label>
-                    <input type="text" name="new_ru" id="inputWordRu" class="form-input" placeholder="Translation..." />
+                    <label class="form-label">{{ _('modal.russian_translation') }}</label>
+                    <input type="text" name="new_ru" id="inputWordRu" class="form-input" placeholder="{{ _('modal.translation_placeholder') }}" />
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">Meaning / Context</label>
-                    <textarea name="new_meaning" id="inputWordMeaning" class="form-input" style="height: 100px; resize: vertical;" placeholder="Add context or usage example..."></textarea>
+                    <label class="form-label">{{ _('modal.meaning_context') }}</label>
+                    <textarea name="new_meaning" id="inputWordMeaning" class="form-input" style="height: 100px; resize: vertical;" placeholder="{{ _('modal.meaning_placeholder') }}"></textarea>
                 </div>
             </div>
 
             <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl); display: flex; justify-content: flex-end; gap: 12px;">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" style="min-width: 140px;">Update Word</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">{{ _('modal.cancel') }}</button>
+                <button type="submit" class="btn btn-primary" style="min-width: 140px;">{{ _('modal.update_word') }}</button>
             </div>
         </form>
     </div>

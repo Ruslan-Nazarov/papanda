@@ -17,7 +17,7 @@ class EntityNotFoundError(PapandaError):
     """Ошибка: объект не найден."""
     def __init__(self, entity_name: str, entity_id: Any):
         super().__init__(
-            message=f"{entity_name} с ID {entity_id} не найден(а).",
+            message=f"{entity_name} with ID {entity_id} not found.",
             status_code=404
         )
 
@@ -28,10 +28,10 @@ class ValidationError(PapandaError):
 
 class AuthenticationError(PapandaError):
     """Ошибка аутентификации."""
-    def __init__(self, message: str = "Ошибка авторизации"):
+    def __init__(self, message: str = "Authorization error"):
         super().__init__(message=message, status_code=401)
 
 class PermissionDeniedError(PapandaError):
     """Ошибка доступа."""
-    def __init__(self, message: str = "Доступ запрещен"):
+    def __init__(self, message: str = "Access denied"):
         super().__init__(message=message, status_code=403)

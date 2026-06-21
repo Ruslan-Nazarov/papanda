@@ -83,69 +83,7 @@ class MaintenanceService:
             logger.error(f"VACUUM failed: {e}")
             return False
 
-    async def deep_clean(self) -> None:
-        """
-        Полная очистка системы (Sharing Preparation).
-        Удаляет все пользовательские данные, бэкапы, логи и сбрасывает настройки.
-        """
-        # 1. Список моделей для очистки
-        models_to_clear = [
-            models.Event, models.Habit, models.Task, models.Chronology,
-            models.Notes, models.HabitsDone, models.Dashboard, models.WordStats,
-            models.WordStatsSnapshot, models.LanguageRule, models.NoteCategory,
-            models.Wink, models.AppSettings, models.WordShowsDaily,
-            models.StickyNote, models.User, models.Observation, models.ObservationLog
-        ]
-        
-        for Model in models_to_clear:
-            await self.db.execute(delete(Model))
-        
-        # 2. Factory Defaults
-        from .settings_service import set_settings_batch
-        await set_settings_batch(self.db, {
-            'max_duration': '360',
-            'max_random_minutes': '60'
-        })
-        
-        await self.db.commit()
 
-        # 3. Удаление дополнительных .db файлов
-        db_dir = settings.db_dir
-        if db_dir.exists():
-            for f in os.listdir(db_dir):
-                if f.endswith(".db") and f != settings.db_path.name:
-                    try:
-                        os.remove(db_dir / f)
-                    except Exception as e:
-                        logger.error(f"[DEEP CLEAN] Failed to delete {f}: {e}")
-
-        # 4. Удаление translate.xlsx
-        if settings.excel_path.exists():
-            try:
-                os.remove(settings.excel_path)
-            except Exception as e:
-                logger.error(f"[DEEP CLEAN] Failed to delete translate.xlsx: {e}")
-
-        # 5. Удаление логов
-        log_dir = BASE_DIR / "logs"
-        if log_dir.exists():
-            for f in os.listdir(log_dir):
-                if f.endswith(".log"):
-                    try:
-                        os.remove(log_dir / f)
-                    except Exception as e:
-                        logger.error(f"[DEEP CLEAN] Failed to delete log {f}: {e}")
-
-        # 6. VACUUM
-        await self.run_vacuum()
-
-        # 7. Сброс SECRET_KEY
-        try:
-            reset_secret_key()
-        except Exception as e:
-            logger.error(f"[DEEP CLEAN] Failed to reset SECRET_KEY: {e}")
-
-        logger.warning("System reset to factory state via Deep Clean.")
 
     async def sync_data_from_file(self, filename: str) -> None:
         """

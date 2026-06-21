@@ -143,35 +143,10 @@ async def api_db_get_record(
         logger.error(f"DB record error for {model_name}/{record_id}: {e}", exc_info=True)
         return JSONResponse(status_code=500, content={"status": "error", "message": "Internal server error"})
 
-@router.get("/db_view/{model_name}", name="db_view", response_class=HTMLResponse)
-async def db_view(
-    request: Request,
-    model_name: str,
-    month: Optional[str] = None,
-    day: Optional[str] = None,
-    year: Optional[str] = None,
-    search: Optional[str] = None,
-    category: Optional[str] = None,
-    sort: Optional[str] = None,
-    page: int = 1,
-    as_service: AdminService = Depends(get_admin_service)
-) -> Any:
-    """Просмотрщик таблиц БД."""
-    i_month = int(month) if month and month.strip() else None
-    i_day = int(day) if day and day.strip() else None
-    i_year = int(year) if year and year.strip() else None
-    s_search = search.strip() if search and search.strip() else None
-
-    try:
-        ctx = await as_service.get_db_view_context(
-            model_name=model_name, month=i_month, day=i_day, year=i_year,
-            search=s_search, category=category, sort=sort, page=page
-        )
-    except ValueError:
-        return RedirectResponse(url="/")
-
-    ctx["request"] = request
-    return templates.TemplateResponse(request, "db_view.html", ctx)
+@router.get("/db_view/{model_name}", name="db_view")
+async def db_view(model_name: str) -> RedirectResponse:
+    """Fallback route that redirects to main dashboard."""
+    return RedirectResponse(url="/")
 
 @router.get("/api/ui/db_view/{model_name}", name="api_ui_db_view", response_class=HTMLResponse)
 async def api_ui_db_view(
@@ -209,7 +184,8 @@ async def api_ui_db_view(
         'Stickers': 'partials/db_sticker_view.html',
         'Habit': 'partials/db_habit_view.html',
         'Task': 'partials/db_task_view.html',
-        'Chronology': 'partials/db_chrono_view.html'
+        'Chronology': 'partials/db_chrono_view.html',
+        'Wink': 'partials/db_wink_view.html'
     }
     
     template_name = partial_map.get(model_name)
@@ -218,42 +194,7 @@ async def api_ui_db_view(
         
     return templates.TemplateResponse(request, template_name, ctx)
 
-@router.get("/edit_record/{model_name}/{record_id}", name="edit_record", response_class=HTMLResponse)
-async def edit_record_get(
-    request: Request, 
-    model_name: str, 
-    record_id: str, 
-    db: AsyncSession = Depends(get_db),
-    as_service: AdminService = Depends(get_admin_service)
-) -> Any:
-    """Форма редактирования записи."""
-    Model = as_service.get_model(model_name)
-    if not Model: return RedirectResponse(url="/")
 
-    pk_name = 'word' if model_name == 'WordStats' else 'id'
-    pk_val: Union[str, int] = int(record_id) if pk_name == 'id' and record_id.isdigit() else record_id
-
-    record_res = await db.execute(select(Model).where(getattr(Model, pk_name) == pk_val))
-    record = record_res.scalar_one_or_none()
-    if not record: return RedirectResponse(url=f"/db_view/{model_name}")
-
-    columns = [c.name for c in Model.__table__.columns]
-    return templates.TemplateResponse(request, "db_edit.html", {
-        "request": request, "record": record, "columns": columns, "model_name": model_name
-    })
-
-@router.post("/edit_record/{model_name}/{record_id}")
-async def edit_record_post(
-    model_name: str,
-    record_id: str,
-    data: schemas.GenericUpdateSchema = Depends(schemas.GenericUpdateSchema.as_form),
-    as_service: AdminService = Depends(get_admin_service)
-) -> RedirectResponse:
-    """Сохранение изменений записи."""
-    # Удаляем служебные поля, если они попали в форму
-    update_data = {k: v for k, v in data.model_dump().items() if k not in ['id', 'created_at', 'word']}
-    await as_service.update_item(model_name, record_id, update_data)
-    return RedirectResponse(url=f"/db_view/{model_name}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/delete_record/{model_name}/{record_id}", name="delete_record")
@@ -277,7 +218,7 @@ async def delete_record(
         
     if is_ajax_request(request):
         return schemas.SuccessResponse(message=f"{model_name} deleted")
-    return RedirectResponse(url=f"/db_view/{model_name}", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/delete_event_settings/{event_id}", name="delete_event_settings")

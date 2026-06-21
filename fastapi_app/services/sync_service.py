@@ -34,7 +34,7 @@ class SyncService:
         if not os.path.exists(excel_path):
             return {
                 "success": False,
-                "message": f"Файл Excel не найден по пути: {excel_path}",
+                "message": f"Excel file not found at path: {excel_path}",
                 "counts": {"new": 0, "updated": 0, "skipped": 0, "conflicts": 0},
                 "conflicts_list": []
             }
@@ -56,7 +56,7 @@ class SyncService:
             if not rows:
                 return {
                     "success": False,
-                    "message": "Файл пуст",
+                    "message": "File is empty",
                     "counts": {"new": 0, "updated": 0, "skipped": 0, "conflicts": 0},
                     "conflicts_list": []
                 }
@@ -141,7 +141,7 @@ class SyncService:
             await db.commit()
             logger.info(f"Import summary: {counts}")
 
-            message = f"Импорт завершен. Новых: {counts['new']}, Пропущено: {counts['skipped']}, Конфликтов: {counts['conflicts']}"
+            message = f"Import completed. New: {counts['new']}, Skipped: {counts['skipped']}, Conflicts: {counts['conflicts']}"
             return {
                 "success": True,
                 "message": message,
@@ -153,7 +153,7 @@ class SyncService:
             logger.error(f"Excel import error: {e}", exc_info=True)
             return {
                 "success": False,
-                "message": f"Ошибка при импорте: {str(e)}",
+                "message": f"Error during import: {str(e)}",
                 "counts": {"new": 0, "updated": 0, "skipped": 0, "conflicts": 0},
                 "conflicts_list": []
             }
@@ -162,12 +162,12 @@ class SyncService:
         """Применяет разрешения конфликтов."""
         db = self.db
         if not os.path.exists(excel_path):
-            return {"success": False, "message": "Файл Excel не найден."}
+            return {"success": False, "message": "Excel file not found."}
 
         try:
             words_to_sync = list(resolutions.keys())
             if not words_to_sync:
-                return {"success": True, "message": "Нет данных для синхронизации.", "updated_db": 0, "updated_file": 0}
+                return {"success": True, "message": "No data for synchronization.", "updated_db": 0, "updated_file": 0}
 
             db_records_res = await db.execute(select(models.WordStats).where(models.WordStats.word.in_(words_to_sync)))
             db_records = db_records_res.scalars().all()
@@ -244,14 +244,14 @@ class SyncService:
 
             return {
                 "success": True,
-                "message": f"Синхронизация завершена. БД: {db_updates_count}, Файл: {file_updates_count}.",
+                "message": f"Synchronization completed. DB: {db_updates_count}, File: {file_updates_count}.",
                 "updated_db": db_updates_count,
                 "updated_file": file_updates_count
             }
 
         except PermissionError:
-            return {"success": False, "message": "Ошибка доступа: закройте файл Excel."}
+            return {"success": False, "message": "Access error: close the Excel file."}
         except Exception as e:
             await db.rollback()
             logger.error(f"Sync conflict error: {e}", exc_info=True)
-            return {"success": False, "message": f"Ошибка синхронизации: {str(e)}"}
+            return {"success": False, "message": f"Synchronization error: {str(e)}"}

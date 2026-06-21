@@ -36,8 +36,8 @@
 <div class="stats-container">
 
     <div style="margin-bottom: 30px;">
-        <h1 style="color: #333; margin: 0; font-size: 2em">Word Study Statistics</h1>
-        <p style="color: #888; margin: 5px 0 0">An overview of your vocabulary learning journey</p>
+        <h1 style="color: #333; margin: 0; font-size: 2em">{{ _('modal.word_study_statistics') }}</h1>
+        <p style="color: #888; margin: 5px 0 0">{{ _('modal.overview_learning_journey') }}</p>
     </div>
 
     {# ── Metric Cards ─────────────────────────────────────────────────────── #}
@@ -46,14 +46,14 @@
     {# ── Most Encountered Words ───────────────────────────────────────────── #}
     <div class="details-grid">
         <div class="data-card card-relative">
-            <span class="help-trigger" onclick="showHelp(event, 'Words that appear most frequently or have the highest show count.')">?</span>
-            <h3>Most Encountered Words</h3>
+            <span class="help-trigger" onclick="showHelp(event, '{{ _('modal.most_encountered_tooltip') }}')">?</span>
+            <h3>{{ _('modal.most_encountered_words') }}</h3>
             <div class="top-words-list">
                 {% for w in top_shown %}
                 <div class="word-tag" title="{{ w.ru }}">
                     <div class="word-tag-top">
-                        <strong>{{ w.eng }}{% if w.is_learned or (w.knowledge_stats and w.knowledge_stats.values()|select('equalto', True)|list|length > 0) %} <span title="Learned" style="color:#27ae60; font-size: 0.9em;">✅</span>{% endif %}</strong>
-                        <span class="word-count">{{ w.count }} shows</span>
+                        <strong>{{ w.eng }}{% if w.is_learned or (w.knowledge_stats and w.knowledge_stats.values()|select('equalto', True)|list|length > 0) %} <span title="{{ _('modal.learned') }}" style="color:#27ae60; font-size: 0.9em;">✅</span>{% endif %}</strong>
+                        <span class="word-count">{{ w.count }} {{ _('modal.shows') }}</span>
                     </div>
                     <div class="word-tag-langs">
                         {% for lang_code in active_languages %}

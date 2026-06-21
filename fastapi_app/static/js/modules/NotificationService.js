@@ -81,25 +81,34 @@ export const NotificationService = {
         return new Promise((resolve) => {
             footer.innerHTML = '';
             
+            const closeModal = () => {
+                if (window.ModalManager) {
+                    window.ModalManager.close('customConfirmModal');
+                } else {
+                    modal.classList.remove('active');
+                    modal.style.display = 'none';
+                }
+            };
+
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'btn btn-secondary';
             cancelBtn.textContent = options.cancelText || 'Cancel';
-            cancelBtn.onclick = () => {
-                modal.style.display = 'none';
-                resolve(false);
-            };
+            cancelBtn.onclick = () => { closeModal(); resolve(false); };
 
             const okBtn = document.createElement('button');
             okBtn.className = options.isDanger ? 'btn btn-danger' : 'btn btn-primary';
             okBtn.textContent = options.okText || 'OK';
-            okBtn.onclick = () => {
-                modal.style.display = 'none';
-                resolve(true);
-            };
+            okBtn.onclick = () => { closeModal(); resolve(true); };
 
             footer.appendChild(cancelBtn);
             footer.appendChild(okBtn);
-            modal.style.display = 'flex';
+
+            if (window.ModalManager) {
+                window.ModalManager.open('customConfirmModal');
+            } else {
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            }
         });
     }
 };

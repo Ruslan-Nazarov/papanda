@@ -104,16 +104,16 @@
     <div class="modal-content search-modal-content" data-model="{{ model_name }}">
         <button class="modal-close" onclick="ModalManager.close('dbSearchModal')" title="Close" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--color-text-muted); transition: color 0.2s;">&times;</button>
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-size: 1.8rem; font-weight: 850; letter-spacing: -0.03em; margin: 0;">Search: {{ model_name }}</h2>
-            <p style="color: var(--color-text-muted); margin-top: 8px; font-weight: 600;">Type to find records instantly</p>
+            <h2 style="font-size: 1.8rem; font-weight: 850; letter-spacing: -0.03em; margin: 0;">{{ _('dashboard.search') }}: {{ model_name }}</h2>
+            <p style="color: var(--color-text-muted); margin-top: 8px; font-weight: 600;">{{ _('dashboard.type_to_find') }}</p>
         </div>
 
         <div class="search-field-group">
             <span class="search-icon">🔍</span>
             <input type="text" id="dbSearchInput" class="search-modal-input" 
-                   placeholder="Type keywords..." autocomplete="off" oninput="performAjaxSearch()">
+                   placeholder="{{ _('dashboard.type_keywords') }}" autocomplete="off" oninput="performAjaxSearch()">
             <button type="button" class="btn btn-secondary" onclick="window.performAjaxSearch()" 
-                    style="position: absolute; right: 10px; top: 10px; height: 50px; border-radius: 14px; padding: 0 25px;">Search</button>
+                    style="position: absolute; right: 10px; top: 10px; height: 50px; border-radius: 14px; padding: 0 25px;">{{ _('dashboard.search') }}</button>
         </div>
 
         <div id="dbSearchResults" class="search-results-container" style="display: none;">
@@ -122,7 +122,7 @@
 
         <div id="searchPlaceholder" style="text-align: center; padding: 40px 0; opacity: 0.5;">
             <div style="font-size: 3rem; margin-bottom: 10px;">⚡</div>
-            <div style="font-weight: 600;">Searching is now live and instant</div>
+            <div style="font-weight: 600;">{{ _('dashboard.searching_is_live') }}</div>
         </div>
 
 

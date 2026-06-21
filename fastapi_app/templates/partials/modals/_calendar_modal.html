@@ -24,6 +24,9 @@
     }
 
     #fullCalendarModal .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
         background: var(--color-bg-white);
         padding: 12px 0;
         border-bottom: 1px solid var(--color-border-light);
@@ -81,15 +84,14 @@
         transform: scale(1);
     }
 
+
     /* Floating Toolbar */
     .floating-calendar-toolbar {
         position: absolute;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.96); /* High performance background without filter */
         padding: 8px 12px;
         border-radius: 100px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.05);
@@ -160,7 +162,7 @@
         <!-- Header -->
         <div class="modal-header" style="border-bottom: none; padding-bottom: 0 !important; background: var(--color-bg-page);">
             <h2 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.8rem;">📅</span> Full Calendar
+                <span style="font-size: 1.8rem;">📅</span> {{ _('modal.full_calendar') }}
             </h2>
             <button class="modal-close" onclick="closeFullCalendarModal()" title="Close">&times;</button>
         </div>
@@ -171,20 +173,20 @@
             <!-- Loader -->
             <div id="calendarModalLoader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; flex-direction: column; color: var(--color-text-muted); background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 50;">
                 <div class="spinner" style="width: 50px; height: 50px; border: 4px solid var(--color-border-light); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-                <div style="font-weight: 600; letter-spacing: 1px;">SYNCING...</div>
+                <div style="font-weight: 600; letter-spacing: 1px;">{{ _('modal.syncing') }}</div>
             </div>
             
             <!-- Calendar Content -->
             <div id="calendarModalContent" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
                 <div class="calendar-wrapper">
                     <div class="calendar-header">
-                        <div class="calendar-day-header">Mon</div>
-                        <div class="calendar-day-header">Tue</div>
-                        <div class="calendar-day-header">Wed</div>
-                        <div class="calendar-day-header">Thu</div>
-                        <div class="calendar-day-header">Fri</div>
-                        <div class="calendar-day-header">Sat</div>
-                        <div class="calendar-day-header">Sun</div>
+                        <div class="calendar-day-header">{{ _('modal.mon') }}</div>
+                        <div class="calendar-day-header">{{ _('modal.tue') }}</div>
+                        <div class="calendar-day-header">{{ _('modal.wed') }}</div>
+                        <div class="calendar-day-header">{{ _('modal.thu') }}</div>
+                        <div class="calendar-day-header">{{ _('modal.fri') }}</div>
+                        <div class="calendar-day-header">{{ _('modal.sat') }}</div>
+                        <div class="calendar-day-header">{{ _('modal.sun') }}</div>
                     </div>
                     <!-- Calendar grid rendered by CalendarRenderer -->
                     <div id="modalCalendarGrid" class="calendar-grid" style="flex: 1; overflow-y: auto; padding-bottom: 100px;"></div>
@@ -197,18 +199,18 @@
                 
                 <div style="display: flex; align-items: center; padding: 0 10px;">
                     <select id="calendarModalMonth" class="filter-select" onchange="loadCalendarData()">
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
+                        <option value="1">{{ _('modal.january') }}</option>
+                        <option value="2">{{ _('modal.february') }}</option>
+                        <option value="3">{{ _('modal.march') }}</option>
+                        <option value="4">{{ _('modal.april') }}</option>
+                        <option value="5">{{ _('modal.may') }}</option>
+                        <option value="6">{{ _('modal.june') }}</option>
+                        <option value="7">{{ _('modal.july') }}</option>
+                        <option value="8">{{ _('modal.august') }}</option>
+                        <option value="9">{{ _('modal.september') }}</option>
+                        <option value="10">{{ _('modal.october') }}</option>
+                        <option value="11">{{ _('modal.november') }}</option>
+                        <option value="12">{{ _('modal.december') }}</option>
                     </select>
                     <select id="calendarModalYear" class="filter-select" onchange="loadCalendarData()"></select>
                 </div>
@@ -217,7 +219,7 @@
                 
                 <div class="floating-divider"></div>
                 
-                <button type="button" class="btn btn-primary" style="border-radius: 20px; padding: 8px 20px; font-weight: 800; margin: 0 4px;" onclick="resetCalendarToToday(true)">TODAY</button>
+                <button type="button" class="btn btn-primary" style="border-radius: 20px; padding: 8px 20px; font-weight: 800; margin: 0 4px;" onclick="resetCalendarToToday(true)">{{ _('modal.today') }}</button>
                 
                 <div class="floating-divider"></div>
 
@@ -233,7 +235,7 @@
     <div class="modal-content" style="max-width: 600px; border-radius: var(--radius-xl);">
         <div class="modal-header" style="border-bottom: 1px solid var(--color-border-light); padding: 20px 24px;">
             <h2 id="dayViewModalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.5rem;">📅</span> <span id="dayViewModalDateText">Events</span>
+                <span style="font-size: 1.5rem;">📅</span> <span id="dayViewModalDateText">{{ _('modal.events') }}</span>
             </h2>
             <div style="display: flex; gap: 8px;">
                 <button class="btn btn-secondary btn-icon" id="dayViewModalAddBtn" title="Add Event" style="background: var(--color-bg-subtle);">+</button>
@@ -281,7 +283,7 @@
         listContainer.innerHTML = '';
 
         if (dayEvents.length === 0) {
-            listContainer.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--color-text-muted); background: var(--color-bg-white); border-radius: var(--radius-lg); border: 1px dashed var(--color-border-medium);">No events scheduled for this day.</div>';
+            listContainer.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--color-text-muted); background: var(--color-bg-white); border-radius: var(--radius-lg); border: 1px dashed var(--color-border-medium);">{{ _("modal.no_events_scheduled") }}</div>';
         } else {
             const ul = document.createElement('ul');
             ul.className = 'premium-list';

@@ -21,23 +21,44 @@ from .config import settings, BASE_DIR, templates, INTERNAL_ROOT
 from .services.auth import get_current_user_from_cookie
 from .logger import logger
 
+import secrets
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Управляет жизненным циклом приложения: инициализация БД при старте и очистка ресурсов при выключении.
+    Управляет жизненным циклом приложения.
     """
-    try:
-        # Создаем таблицы (в основной базе при старте)
-        main_engine = get_engine("default")
-        async with main_engine.begin() as conn:
-            await conn.run_sync(models.Base.metadata.create_all)
-        logger.info("Database initialization successful. All tables verified.")
-    except Exception as e:
-        logger.error(f"Database initialization FAILED: {e}", exc_info=True)
+    if not settings.demo_mode:
+        try:
+            # Создаем таблицы (в основной базе при старте)
+            main_engine = get_engine("default")
+            async with main_engine.begin() as conn:
+                await conn.run_sync(models.Base.metadata.create_all)
+            logger.info("Database initialization successful. All tables verified.")
+        
+            # Гарантируем наличие примера конспекта в основной базе
+            from .database import get_session_maker, seed_example_note
+            session_maker = get_session_maker("default")
+            async with session_maker() as db:
+                await seed_example_note(db)
+                
+                # Auto-import if dictionary is empty
+                from .services.word_service import WordService
+                from .services.state_manager import StateManager
+                from .config import settings as app_settings
+                
+                word_service = WordService(db)
+                metrics = await word_service.get_current_metrics()
+                if metrics.get('total_count', 0) == 0:
+                    logger.info("Database dictionary is empty. Running auto-import from translate.xlsx...")
+                    state_manager = StateManager(db)
+                    result = await state_manager.import_excel_to_db(str(app_settings.excel_path))
+                    logger.info(f"Auto-import result: {result.get('message')}")
+                
+        except Exception as e:
+            logger.error(f"Database initialization FAILED: {e}", exc_info=True)
         
     yield
-    # Очистка ресурсов при выключении (опционально)
-    # await get_engine("default").dispose()
     pass
 
 import mimetypes
@@ -48,9 +69,10 @@ mimetypes.add_type('text/css', '.css')
 app = FastAPI(
     title="Papanda API",
     description="Образовательное приложение",
-    version="0.6.1",
+    version="0.6.2",
     lifespan=lifespan
 )
+app.state.settings = settings
 
 # CORS Middleware
 app.add_middleware(
@@ -69,6 +91,17 @@ async def add_security_headers_and_user(request: Request, call_next: Callable) -
     """
     Middleware для добавления заголовков безопасности, пользователя в request.state и логирования.
     """
+    # Инициализация сессии для демо-песочницы
+    if settings.demo_mode:
+        session_id = request.cookies.get("papanda_session_id")
+        new_session = False
+        if not session_id:
+            session_id = secrets.token_hex(16)
+            new_session = True
+        request.state.session_id = session_id
+    else:
+        request.state.session_id = "default"
+
     user = get_current_user_from_cookie(request)
     request.state.user = user
 
@@ -76,6 +109,43 @@ async def add_security_headers_and_user(request: Request, call_next: Callable) -
 
     # Логируем запрос (структурировано)
     logger.info(f"{request.method} {request.url.path} - {response.status_code}")
+
+    # Check locale
+    locale = request.cookies.get("locale")
+    locale_set_by_header = False
+    if not locale:
+        accept_language = request.headers.get("Accept-Language", "en").lower()
+        if accept_language.startswith("ru") or " ru" in accept_language or ";ru" in accept_language:
+            locale = "ru"
+        elif accept_language.startswith("kk") or " kk" in accept_language or ";kk" in accept_language:
+            locale = "kk"
+        else:
+            locale = "en"
+            
+        # Inject into request scope for downstream handlers
+        headers = dict(request.scope['headers'])
+        cookie_header = headers.get(b'cookie', b'').decode('latin-1')
+        new_cookie = f"locale={locale}"
+        if cookie_header:
+            cookie_header += f"; {new_cookie}"
+        else:
+            cookie_header = new_cookie
+        headers[b'cookie'] = cookie_header.encode('latin-1')
+        request.scope['headers'] = [(k, v) for k, v in headers.items()]
+        locale_set_by_header = True
+
+    # Устанавливаем куку сессии для демо-режима
+    if settings.demo_mode and new_session:
+        response.set_cookie(
+            "papanda_session_id",
+            session_id,
+            httponly=True,
+            samesite="lax",
+            max_age=3600 * 24  # 24 часа
+        )
+        
+    if locale_set_by_header:
+        response.set_cookie(key="locale", value=locale, max_age=31536000)
 
     # Добавляем заголовки безопасности
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -99,8 +169,7 @@ async def papanda_exception_handler(request: Request, exc: PapandaError) -> Any:
     logger.warning(f"App Error: {exc.message} (status: {exc.status_code})")
     
     if "text/html" in request.headers.get("accept", ""):
-        return templates.TemplateResponse("error.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "error.html", {
             "detail": exc.message,
             "details": exc.details
         }, status_code=exc.status_code)
@@ -119,9 +188,8 @@ async def global_exception_handler(request: Request, exc: Exception) -> Any:
     """Обработка всех необработанных исключений."""
     logger.error(f"Global Exception: {str(exc)}", exc_info=True)
     if "text/html" in request.headers.get("accept", ""):
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "detail": "Произошла внутренняя ошибка сервера. Пожалуйста, попробуйте позже."
+        return templates.TemplateResponse(request, "error.html", {
+            "detail": "An internal server error occurred. Please try again later."
         }, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -133,9 +201,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """Обработка ошибок валидации запросов."""
     logger.warning(f"Validation Error: {exc.errors()}")
     if "text/html" in request.headers.get("accept", ""):
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "detail": "Ошибка валидации данных. Пожалуйста, проверьте введенные значения."
+        return templates.TemplateResponse(request, "error.html", {
+            "detail": "Data validation error. Please check the values entered."
         }, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -147,9 +214,8 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -
     """Обработка ошибок SQLAlchemy."""
     logger.error(f"Database Error: {str(exc)}", exc_info=True)
     if "text/html" in request.headers.get("accept", ""):
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "detail": "Ошибка базы данных. Мы уже работаем над исправлением."
+        return templates.TemplateResponse(request, "error.html", {
+            "detail": "Database error. We are already working on a fix."
         }, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

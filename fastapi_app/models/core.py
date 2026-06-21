@@ -21,12 +21,4 @@ class AppSettings(Base):
     key: Mapped[str] = mapped_column(String(50), primary_key=True)
     value: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-class LanguageRule(Base):
-    """
-    Модель для хранения грамматических правил на разных языках.
-    """
-    __tablename__ = 'language_rule'
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    language: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    rule_ru: Mapped[str | None] = mapped_column(Text, nullable=True)
-    rule_en: Mapped[str | None] = mapped_column(Text, nullable=True)
+

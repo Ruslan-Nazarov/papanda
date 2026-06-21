@@ -2,7 +2,7 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">🔄</span>
-            <span>Dictionary Synchronization</span>
+            <span>{{ _('settings.sync.title') }}</span>
         </div>
         <div class="widget-actions">
             <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
@@ -12,14 +12,14 @@
     <div class="widget-body">
         <div style="background: var(--color-bg-subtle); padding: 24px; border-radius: var(--radius-md); margin-bottom: 24px; text-align: center; border: 1.5px dashed var(--color-border-medium);">
             <form action="{{ url_for('import_excel') }}" method="post" style="margin-bottom: 20px">
-                <label class="form-label" style="margin-bottom: 16px; font-size: 0.9rem;">Import words from <b>translate.xlsx</b></label>
+                <label class="form-label" style="margin-bottom: 16px; font-size: 0.9rem;">{{ _('settings.sync.import_label')|safe }}</label>
                 <button type="submit" class="btn btn-primary" style="width: 100%; max-width: 320px;">
                     Import to Database
                 </button>
             </form>
             <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 8px;">
                 <a href="{{ url_for('export_excel', model_name='WordStats') }}" class="btn btn-success" style="text-decoration: none; padding: 10px 20px; font-size: 0.85rem;">
-                    <span>📊</span> Export Excel
+                    <span>📊</span> {{ _('settings.sync.export_btn') }}
                 </a>
             </div>
             <p style="font-size: 0.7rem; color: var(--color-text-faint); margin-top: 12px; font-weight: 500;">
@@ -31,43 +31,43 @@
         <div style="background: {% if import_result.success %}#f0fff4{% else %}#fff5f5{% endif %}; 
                     border: 1.5px solid {% if import_result.success %}var(--color-success){% else %}var(--color-error){% endif %}; 
                     padding: 24px; border-radius: var(--radius-lg); margin-top: 24px; box-shadow: var(--shadow-sm);">
-            <h3 style="margin-top: 0; font-size: 1rem; color: var(--color-text-dark); font-weight: 800;">Import Results</h3>
+            <h3 style="margin-top: 0; font-size: 1rem; color: var(--color-text-dark); font-weight: 800;">{{ _('settings.sync.results') }}</h3>
             <p style="font-weight: 800; color: {% if import_result.success %}var(--color-success){% else %}var(--color-error){% endif %}; font-size: 0.95rem;">{{ import_result.message }}</p>
             
             {% if import_result.counts %}
             <div class="sync-stat-grid">
                 <div class="sync-stat-card">
-                    <div class="sync-stat-label">NEW</div>
+                    <div class="sync-stat-label">{{ _('settings.sync.new') }}</div>
                     <div class="sync-stat-value" style="color: var(--color-success);">{{ import_result.counts.new }}</div>
                 </div>
                 <div class="sync-stat-card">
-                    <div class="sync-stat-label">SKIPPED</div>
+                    <div class="sync-stat-label">{{ _('settings.sync.skipped') }}</div>
                     <div class="sync-stat-value">{{ import_result.counts.skipped }}</div>
                 </div>
                 <div class="sync-stat-card">
-                    <div class="sync-stat-label">CONFLICTS</div>
+                    <div class="sync-stat-label">{{ _('settings.sync.conflicts') }}</div>
                     <div class="sync-stat-value" style="color: var(--color-warning);">{{ import_result.counts.conflicts }}</div>
                 </div>
             </div>
             {% endif %}
 
             {% if import_result.conflicts_list %}
-            <h4 style="margin-top: 32px; color: var(--color-text-dark); border-bottom: 2px solid var(--color-border-light); padding-bottom: 12px; font-weight: 800; font-size: 1.1rem;">Sync Conflicts</h4>
-            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 20px;">Choose the authoritative source for each discrepancy.</p>
+            <h4 style="margin-top: 32px; color: var(--color-text-dark); border-bottom: 2px solid var(--color-border-light); padding-bottom: 12px; font-weight: 800; font-size: 1.1rem;">{{ _('settings.sync.conflicts_title') }}</h4>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 20px;">{{ _('settings.sync.conflicts_desc') }}</p>
 
             <form action="/settings/sync_conflicts" method="post" id="syncForm">
                 <div style="margin-bottom: 20px; display: flex; gap: 12px;">
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAll('to_db')">All to DB</button>
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAll('to_file')">All to File</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAll('to_db')">{{ _('settings.sync.all_to_db') }}</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAll('to_file')">{{ _('settings.sync.all_to_file') }}</button>
                 </div>
 
                 <div class="table-responsive" style="border: 1.5px solid var(--color-border-light); border-radius: var(--radius-md); overflow: hidden;">
                     <table class="diag-table" style="margin: 0;">
                         <thead>
                             <tr>
-                                <th>Word</th>
-                                <th>Diffs (DB vs File)</th>
-                                <th style="width: 140px;">Action</th>
+                                <th>{{ _('settings.sync.word') }}</th>
+                                <th>{{ _('settings.sync.diffs') }}</th>
+                                <th style="width: 140px;">{{ _('settings.sync.action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -85,9 +85,9 @@
                                 </td>
                                 <td>
                                     <div style="display: flex; flex-direction: column; gap: 6px;">
-                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="ignore" checked> <span>Keep</span></label>
-                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="to_db" class="radio-to-db"> <span>To DB</span></label>
-                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="to_file" class="radio-to-file"> <span>To File</span></label>
+                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="ignore" checked> <span>{{ _('settings.sync.keep') }}</span></label>
+                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="to_db" class="radio-to-db"> <span>{{ _('settings.sync.to_db') }}</span></label>
+                                        <label class="radio-label"><input type="radio" name="action_{{ conflict.word }}" value="to_file" class="radio-to-file"> <span>{{ _('settings.sync.to_file') }}</span></label>
                                     </div>
                                 </td>
                             </tr>
@@ -99,7 +99,7 @@
                     <button type="submit" class="btn btn-primary" style="width: 100%; max-width: 400px; padding: 16px;">
                         Apply Synchronization
                     </button>
-                    <p style="font-size: 0.75rem; color: var(--color-text-faint); margin-top: 12px; font-weight: 600;">* Warning: Excel must be closed to save changes back to file.</p>
+                    <p style="font-size: 0.75rem; color: var(--color-text-faint); margin-top: 12px; font-weight: 600;">{{ _('settings.sync.warning') }}</p>
                 </div>
             </form>
 

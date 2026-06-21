@@ -4,13 +4,12 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">📓</span>
-            <span>Notes</span>
+            <span>{{ _('dashboard.notes') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Notes')" title="Full View">☰</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="notesWidget.showExpandedEditor()" title="Expanded Editor">↗</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="notesWidget.showAllNotesModal()" title="All Notes">📂</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Notes')" title="{{ _('dashboard.full_view') }}">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="notesWidget.showExpandedEditor()" title="{{ _('dashboard.expanded_editor') }}">↗</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -24,23 +23,23 @@
                         <option value="{{ cat }}">{{ cat }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" class="btn btn-secondary btn-icon" style="width: 44px; height: 44px !important; border: 2px solid var(--color-border-light); border-radius: 12px;" onclick="notesWidget.showAddCategoryModal()" title="Add Category">+</button>
+                    <button type="button" class="btn btn-secondary btn-icon" style="width: 44px; height: 44px !important; border: 2px solid var(--color-border-light); border-radius: 12px;" onclick="notesWidget.showAddCategoryModal()" title="{{ _('dashboard.add_category') }}">+</button>
                 </div>
                 <div class="form-check-item" style="background: white; padding: 0 16px; border-radius: 12px; border: 2px solid var(--color-border-light); height: 44px; display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" id="regularNotePin">
-                    <label for="regularNotePin" class="form-label" style="margin: 0; cursor: pointer; font-size: 0.75rem; font-weight: 800;">PIN</label>
+                    <label for="regularNotePin" class="form-label" style="margin: 0; cursor: pointer; font-size: 0.75rem; font-weight: 800;">{{ _('dashboard.pin') }}</label>
                 </div>
             </div>
             
             {{ premium_input(
                 type='textarea',
                 id='regularNoteTextarea',
-                placeholder='Quick note... (Ctrl+Enter to save)',
+                placeholder=_('dashboard.quick_note'),
                 onkeydown="if(event.ctrlKey && event.key === 'Enter') notesWidget.saveNote()"
             ) }}
 
             <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-                <button class="btn btn-primary btn-sm" onclick="notesWidget.saveNote()">💾 Save Note</button>
+                <button class="btn btn-primary btn-sm" onclick="notesWidget.saveNote()">💾 {{ _('dashboard.save_note') }}</button>
             </div>
         </div>
 
@@ -53,12 +52,12 @@
                     <div style="display: flex; gap: 6px;">
                         <button class="btn-row-action pin-btn active" 
                                 onclick="notesWidget.togglePin({{ note.id }}, true)" 
-                                title="Unpin from dashboard">
+                                title="{{ _('dashboard.unpin_from_dashboard') }}">
                             📌
                         </button>
                         <button class="btn-row-action del-btn" 
                                 onclick="notesWidget.deleteNote({{ note.id }})" 
-                                title="Delete">
+                                title="{{ _('dashboard.delete') }}">
                             ×
                         </button>
                     </div>
@@ -69,7 +68,7 @@
             </div>
             {% else %}
             <div style="grid-column: 1/-1; text-align: center; color: var(--color-text-faint); padding: 40px 20px; font-style: italic; background: var(--color-bg-white); border-radius: var(--radius-md); border: 1.5px dashed var(--color-border-light);">
-                No pinned notes yet
+                {{ _('dashboard.no_pinned_notes') }}
             </div>
             {% endfor %}
         </div>

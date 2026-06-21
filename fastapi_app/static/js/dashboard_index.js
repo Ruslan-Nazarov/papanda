@@ -4,13 +4,13 @@ import { toggleWidget, initGrid, saveLayout } from './grid_controller.js';
 import { NotificationService, showToast } from './modules/NotificationService.js';
 import { ModalManager } from './modules/ModalManager.js';
 
-import { initEventWidget } from './event_widget.js';
+import { initEventWidget } from './event_widget.js?v=2';
 import { initWordWidget } from './word_widget.js?v=5';
 import { initRecurrenceForm } from './recurrence_form.js';
 import { initStickerWidget } from './sticker_widget.js';
 import { initNoteChronoWidget } from './note_chrono_widget.js';
 
-import { DashboardActionService } from './modules/DashboardActionService.js';
+import { DashboardActionService } from './modules/DashboardActionService.js?v=2';
 import { DragAndDropService } from './modules/DragAndDropService.js';
 import { HeaderService } from './modules/HeaderService.js';
 
@@ -28,7 +28,7 @@ window.markTaskDone = async function (form, taskId) {
         const resp = await fetch(form.action, { method: 'POST', headers: { 'Accept': 'application/json' } });
         if (resp.ok) {
             const animationPromise = animateItemRemoval(li);
-            if (showToast) showToast('Task completed', 'success');
+            if (showToast) showToast(window._("toast.task_completed"), 'success');
             if (window.HeaderService) window.HeaderService.refreshBadges();
             await animationPromise;
             if (typeof window.refreshDashboardTasks === 'function') window.refreshDashboardTasks();
@@ -47,7 +47,7 @@ window.markHabitDone = async function (form, habitId) {
     const { animateItemRemoval } = await import('./ui_helpers.js');
 
     const animationPromise = animateItemRemoval(li);
-    if (showToast) showToast('Habit completed for today!', 'success');
+    if (showToast) showToast(window._("toast.habit_completed_for_today"), 'success');
 
     try {
         const resp = await fetch(form.action, { method: 'POST' });
@@ -64,7 +64,7 @@ window.markHabitDone = async function (form, habitId) {
 
 window.refreshDashboardTasks = async function () {
     try {
-        const resp = await fetch('/api/dashboard/widget/tasks');
+        const resp = await fetch('/api/dashboard/widget/tasks', { cache: 'no-store' });
         if (resp.ok) {
             const html = await resp.text();
             const wrapper = document.querySelector('#tasks .grid-stack-item-content');
@@ -78,7 +78,7 @@ window.refreshDashboardTasks = async function () {
 
 window.refreshDashboardHabits = async function () {
     try {
-        const resp = await fetch('/api/dashboard/widget/habits');
+        const resp = await fetch('/api/dashboard/widget/habits', { cache: 'no-store' });
         if (resp.ok) {
             const html = await resp.text();
             const wrapper = document.querySelector('#habits .grid-stack-item-content');

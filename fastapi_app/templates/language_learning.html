@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Language Learning - Papanda{% endblock %}
+{% block title %}Language Learning - papanda{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3" />
@@ -247,6 +247,7 @@
         border-color: #74b9ff;
     }
 
+    .role-Attribute .word-box,
     .role-Attribute_Subject .word-box {
         border-color: #55efc4;
     }
@@ -274,6 +275,7 @@
         background: #f0f7ff;
     }
 
+    .role-Attribute .word-label,
     .role-Attribute_Subject .word-label {
         color: #00b894;
         background: #f0fffb;
@@ -399,7 +401,7 @@
                 <span style="color: #666;">Learn structural logic word by word.</span>
             </p>
                 <div class="sticker-canvas-wrapper">
-                    <div class="add-sticker-btn" onclick="window.openLanguageStickerModal()" title="Добавить заметку">+</div>
+                    <div class="add-sticker-btn" onclick="window.openLanguageStickerModal()" title="Add note">+</div>
                     <div id="languageStickersCanvas" class="sticker-canvas"></div>
                 </div>
         </div>
@@ -419,10 +421,10 @@
 
         <div class="controls">
             <button class="btn-action btn-run" onclick="runFlash()">
-                <span>▶</span> Запустить
+                <span>▶</span> Run
             </button>
             <button id="toggle-translation" class="btn-action btn-toggle" onclick="toggleTranslation()">
-                👁 Перевод
+                👁 Translation
             </button>
             <button class="btn-action" style="background: #eee;" onclick="nextSentence()">
                 Next ➜
@@ -491,8 +493,8 @@
     let currentStepIndex = -1; // -1: hidden, 0: Step 1, etc.
     let isFlashActive = false;
 
-    // Strict Order: Predicate -> Subject -> Attribute_Subject -> Object -> Attribute_Object -> Adverbial
-    const roleOrder = ['Predicate', 'Subject', 'Attribute_Subject', 'Object', 'Attribute_Object', 'Adverbial'];
+    // Strict Order: Predicate -> Subject -> Attribute -> Attribute_Subject -> Object -> Attribute_Object -> Circumstance -> Adverbial
+    const roleOrder = ['Predicate', 'Subject', 'Attribute', 'Attribute_Subject', 'Object', 'Attribute_Object', 'Circumstance', 'Adverbial'];
 
     function setLanguage(lang, btn) {
         currentLang = lang;
@@ -512,7 +514,7 @@
         currentStepIndex = -1;
 
         if (activeSentences.length === 0) {
-            display.innerHTML = '<div style="color: #bdc3c7;">Нет предложений для этого языка.</div>';
+            display.innerHTML = '<div style="color: #bdc3c7;">No sentences for this language.</div>';
             return;
         }
 
@@ -623,7 +625,7 @@
         if (!anchorNoteId || anchorNoteId === 0) {
             console.warn("Anchor Note ID is missing or 0");
             const canvas = document.getElementById('languageStickersCanvas');
-            if (canvas) canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
+            if (canvas) canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">No notes yet...</div>';
             return;
         }
         const canvas = document.getElementById('languageStickersCanvas');
@@ -634,7 +636,7 @@
             console.log("Stickers fetched:", stickers.length);
             canvas.innerHTML = '';
             if (!stickers || stickers.length === 0) {
-                canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">Заметок пока нет...</div>';
+                canvas.innerHTML = '<div style="color: #bdc3c7; font-size: 0.8em; margin-left: 10px;">No notes yet...</div>';
                 return;
             }
             stickers.forEach(s => {
@@ -643,7 +645,7 @@
             });
         } catch (err) {
             console.error("Stickers load error:", err);
-            canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Ошибка загрузки заметок</div>';
+            canvas.innerHTML = '<div style="color: #ff5252; font-size: 0.8em; margin-left: 10px;">Error loading notes</div>';
         }
     }
 

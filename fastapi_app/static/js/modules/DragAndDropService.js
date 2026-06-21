@@ -48,7 +48,7 @@ export const DragAndDropService = {
                 // Rollback: return item to original list at original position
                 const refNode = from.children[oldIndex] || null;
                 from.insertBefore(item, refNode);
-                showToast('Failed to move event', 'error');
+                showToast(window._("toast.failed_to_move_event"), 'error');
                 return;
             }
 
@@ -171,7 +171,7 @@ export const DragAndDropService = {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(ids)
                 }).then(res => {
-                    if (res.ok) showToast('Order saved', 'success');
+                    if (res.ok) showToast(window._("toast.order_saved"), 'success');
                 });
             }
         });

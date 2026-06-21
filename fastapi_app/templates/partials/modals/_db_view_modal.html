@@ -7,8 +7,7 @@
         display: none;
         align-items: center;
         justify-content: center;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(4px);
+        background: rgba(0,0,0,0.75);
     }
     #dbViewModal .modal-content-wrapper {
         background-color: var(--color-bg-app);
@@ -117,11 +116,11 @@
 <div id="dbViewModal" onclick="if(event.target===this) closeDbViewModal()">
     <div class="modal-content-wrapper">
         <div class="modal-header-custom">
-            <h2 class="modal-title" id="dbViewModalTitle">Loading...</h2>
+            <h2 class="modal-title" id="dbViewModalTitle">{{ _('modal.loading') }}</h2>
 
             <!-- Centralized search — hidden for Event/Calendar -->
             <div id="dbViewModalSearchWrap">
-                <input type="text" id="dbViewModalSearch" placeholder="Search..."
+                <input type="text" id="dbViewModalSearch" placeholder="{{ _('modal.search') }}"
                        oninput="dbViewModalSearchFn(this.value)">
                 <button id="dbViewModalSearchClear"
                         onclick="dbViewModalSearchFn(''); document.getElementById('dbViewModalSearch').value='';">✕</button>
@@ -132,44 +131,33 @@
         <div id="dbViewModalContent">
             <!-- Content loaded via AJAX -->
         </div>
-        <div id="dbViewSearchEmpty">No matching records found.</div>
+        <div id="dbViewSearchEmpty">{{ _('modal.no_matching_records') }}</div>
     </div>
 </div>
 
 <script>
     const _dbViewModalTitles = {
-        'Chronology': '📜 Chronology',
-        'Task': '📋 Tasks',
-        'Notes': '📓 Notes',
-        'Habit': '⚡ Habits',
-        'Event': '📅 Calendar',
-        'Stickers': '🗒️ Stickers'
+        'Chronology': '{{ _("modal.chronology_title") }}',
+        'Task': '{{ _("modal.tasks_title") }}',
+        'Notes': '{{ _("modal.notes_title") }}',
+        'Habit': '{{ _("modal.habits_title") }}',
+        'Event': '{{ _("modal.calendar_title") }}',
+        'Stickers': '{{ _("modal.stickers_title") }}'
     };
     // Models where the search bar is not applicable (they have own search/filter)
     const _dbViewNoSearch = ['Event'];
 
-    window.openDbViewModal = async function(modelName) {
-        const modal = document.getElementById('dbViewModal');
+    window.loadDbViewModalContent = async function(modelName, params = {}) {
         const content = document.getElementById('dbViewModalContent');
-        const title = document.getElementById('dbViewModalTitle');
-        const searchWrap = document.getElementById('dbViewModalSearchWrap');
-        const searchInput = document.getElementById('dbViewModalSearch');
         const searchEmpty = document.getElementById('dbViewSearchEmpty');
 
-        title.innerText = _dbViewModalTitles[modelName] || modelName;
-
-        // Reset search state
-        searchInput.value = '';
-        searchWrap.style.display = _dbViewNoSearch.includes(modelName) ? 'none' : 'flex';
-        document.getElementById('dbViewModalSearchClear').style.display = 'none';
-        searchEmpty.style.display = 'none';
-
         content.innerHTML = '<div class="db-view-loader"><div class="spinner"></div><div>Loading ' + modelName + '...</div></div>';
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+        if (searchEmpty) searchEmpty.style.display = 'none';
 
         try {
-            const response = await fetch('/api/ui/db_view/' + modelName);
+            const queryParams = new URLSearchParams(params).toString();
+            const url = '/api/ui/db_view/' + modelName + (queryParams ? '?' + queryParams : '');
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             const html = await response.text();
             content.innerHTML = html;
@@ -182,22 +170,46 @@
                 oldScript.parentNode.replaceChild(newScript, oldScript);
             });
 
+            // Auto-initialize pagination after injecting HTML
+            if (window.initPagination) {
+                setTimeout(() => {
+                    content.querySelectorAll('.load-more-container').forEach(container => {
+                        const grid = container.previousElementSibling;
+                        if (grid && grid.id) {
+                            window.initPagination(grid.id, container.id, 10, 10);
+                        }
+                    });
+                }, 50);
+            }
         } catch (error) {
             console.error('Error loading modal content:', error);
             content.innerHTML = '<div style="color:var(--color-error); padding: 20px;">Failed to load content. Please try again.</div>';
         }
+    };
 
-        // Auto-initialize pagination after injecting HTML
-        if (window.initPagination) {
-            setTimeout(() => {
-                content.querySelectorAll('.load-more-container').forEach(container => {
-                    const grid = container.previousElementSibling;
-                    if (grid && grid.id) {
-                        window.initPagination(grid.id, container.id, 10, 10);
-                    }
-                });
-            }, 50);
+    window.openDbViewModal = async function(modelName) {
+        const modal = document.getElementById('dbViewModal');
+        const title = document.getElementById('dbViewModalTitle');
+        const searchWrap = document.getElementById('dbViewModalSearchWrap');
+        const searchInput = document.getElementById('dbViewModalSearch');
+
+        title.innerText = _dbViewModalTitles[modelName] || modelName;
+
+        // Reset search state
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.style.display = _dbViewNoSearch.includes(modelName) ? 'none' : 'flex';
         }
+        if (searchWrap) {
+            searchWrap.style.display = _dbViewNoSearch.includes(modelName) ? 'none' : 'flex';
+        }
+        const clearBtn = document.getElementById('dbViewModalSearchClear');
+        if (clearBtn) clearBtn.style.display = 'none';
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        await window.loadDbViewModalContent(modelName);
     };
 
     window.closeDbViewModal = function() {
@@ -252,12 +264,22 @@
 
     function _openDetailModal() {
         const m = document.getElementById('dbCardDetailModal');
-        if (m) { m.style.display = 'flex'; }
+        if (!m) return;
+        if (window.ModalManager) {
+            window.ModalManager.open('dbCardDetailModal');
+        } else {
+            m.style.display = 'flex';
+            m.classList.add('active');
+        }
     }
 
     function _closeDetailModal() {
-        const m = document.getElementById('dbCardDetailModal');
-        if (m) { m.style.display = 'none'; }
+        if (window.ModalManager) {
+            window.ModalManager.close('dbCardDetailModal');
+        } else {
+            const m = document.getElementById('dbCardDetailModal');
+            if (m) { m.classList.remove('active'); m.style.display = 'none'; }
+        }
         _currentCardDetail = null;
     }
 
@@ -346,7 +368,7 @@
 </script>
 
 <!-- Centralized Card Detail Modal (Appears over the main dbViewModal) -->
-<div id="dbCardDetailModal" class="modal premium-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1050; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);" onclick="if(event.target===this) closeDbCardDetail()">
+<div id="dbCardDetailModal" class="modal premium-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1050; align-items: center; justify-content: center; background: rgba(0,0,0,0.75);" onclick="if(event.target===this) closeDbCardDetail()">
     <div class="modal-content" style="max-width: 850px; background: var(--color-bg-app); border-radius: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; width: 95%;">
         
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--color-bg-subtle); padding: 24px 32px; background: var(--color-bg-white);">
@@ -365,15 +387,15 @@
             
             <div id="dbCardDetailExtraBoard" style="display: none; border-top: 1px solid var(--color-border-light); padding-top: 24px; margin-top: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted);">Linked Items</h4>
+                    <h4 style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted);">{{ _('modal.linked_items') }}</h4>
                 </div>
                 <div id="dbCardDetailExtraList" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
             </div>
         </div>
         
         <div class="modal-footer" style="padding: 20px 32px; background: var(--color-bg-white); display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid var(--color-bg-subtle);">
-            <button type="button" class="btn btn-error" onclick="handleDbCardDelete()" style="border-radius: 14px; font-weight: 700; padding: 12px 24px;">Delete</button>
-            <button type="button" class="btn btn-primary" onclick="handleDbCardEdit()" style="border-radius: 14px; font-weight: 700; padding: 12px 24px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); border: none;">Edit</button>
+            <button type="button" class="btn btn-error" onclick="handleDbCardDelete()" style="border-radius: 14px; font-weight: 700; padding: 12px 24px;">{{ _('dashboard.delete') }}</button>
+            <button type="button" class="btn btn-primary" onclick="handleDbCardEdit()" style="border-radius: 14px; font-weight: 700; padding: 12px 24px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); border: none;">{{ _('dashboard.edit') }}</button>
         </div>
     </div>
 </div>

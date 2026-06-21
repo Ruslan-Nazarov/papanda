@@ -49,8 +49,8 @@ export const EventService = {
             const statusEl = document.getElementById('detailModalStatus');
             if (statusEl) {
                 statusEl.innerHTML = done ?
-                    '<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">✓ Complete</span>' :
-                    '<span style="color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 20px;">○ Pending</span>';
+                    `<span style="color: var(--color-success); background: var(--color-success-light); padding: 4px 10px; border-radius: 20px;">${window._('dashboard.complete_status') || '✓ Complete'}</span>` :
+                    `<span style="color: var(--color-text-muted); background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 20px;">${window._('dashboard.pending_status') || '○ Pending'}</span>`;
             }
 
             this._updateCategoryInfo(color);
@@ -86,8 +86,18 @@ export const EventService = {
         for (const [fid, val] of Object.entries(fields)) {
             const el = document.getElementById(fid);
             if (!el) continue;
-            if (el.type === 'checkbox') el.checked = val;
-            else el.value = val;
+            if (el.type === 'checkbox') {
+                el.checked = val;
+            } else {
+                el.value = val;
+                if (el._flatpickr) {
+                    if (val) {
+                        el._flatpickr.setDate(val, false);
+                    } else {
+                        el._flatpickr.clear();
+                    }
+                }
+            }
         }
 
         this._updateEditStickersList(id, recId);
@@ -369,9 +379,9 @@ export const EventService = {
         menu.style.top = ev.clientY + 'px';
 
         const actions = [
-            { label: '📝 Edit Event', onClick: () => this.openEdit(e.id, e.title, e.date, e.rule || e.recurrenceRule, e.end || e.recurrenceEnd, e.recurrence_id || e.recurrenceId, e.color, e.important, e.done) },
-            { label: e.done ? '🔄 Reopen Event' : '✅ Mark Completed', onClick: () => this.toggleDone(e.id) },
-            { label: '🗑️ Delete Event', onClick: (ev) => {
+            { label: (window._('dashboard.edit_event') || '📝 Edit Event'), onClick: () => this.openEdit(e.id, e.title, e.date, e.rule || e.recurrenceRule, e.end || e.recurrenceEnd, e.recurrence_id || e.recurrenceId, e.color, e.important, e.done) },
+            { label: e.done ? (window._('dashboard.reopen_event') || '🔄 Reopen Event') : (window._('dashboard.mark_completed') || '✅ Mark Completed'), onClick: () => this.toggleDone(e.id) },
+            { label: (window._('dashboard.delete_event_btn') || '🗑️ Delete Event'), onClick: (ev) => {
                 if (window.deleteEvent) window.deleteEvent(ev, e.id, !!(e.recurrence_id || e.recurrenceId), e.date ? e.date.substring(0, 10) : null);
                 else window.deleteRecordCustom('Event', e.id, !!(e.recurrence_id || e.recurrenceId));
             }, class: 'danger' }
@@ -379,13 +389,13 @@ export const EventService = {
 
         // Tree view for categorized events
         if (e.color) {
-            actions.push({ label: '🌳 View Event Tree', onClick: () => window.viewEventTree(e.color) });
+            actions.push({ label: (window._('dashboard.view_tree') || '🌳 View Event Tree'), onClick: () => window.viewEventTree(e.color) });
         }
 
         // Sticker overview
         const hasStickers = e.has_stickers || e.hasStickers || e.stickers_count > 0;
         actions.push({ 
-            label: `<div class="sticker-icon-menu" style="margin-right: 8px;"></div> ${hasStickers ? 'View Stickers' : 'Add Sticker'}`, 
+            label: `<div class="sticker-icon-menu" style="margin-right: 8px;"></div> ${hasStickers ? (window._('dashboard.view_stickers') || 'View Stickers') : (window._('dashboard.add_sticker') || 'Add Sticker')}`, 
             onClick: () => window.openParentStickers('event', e.id) 
         });
 
@@ -451,7 +461,7 @@ export const EventService = {
             }
         } catch (err) {
             console.error("[EventService] viewTree error:", err);
-            if (window.showToast) window.showToast("Failed to load tree", "error");
+            if (window.showToast) window.showToast(window._("toast.failed_to_load_tree"), "error");
         }
     },
 

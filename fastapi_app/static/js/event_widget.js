@@ -87,7 +87,19 @@ window.handleEventEditClick = function (e, btn) {
     if (!modal) return;
 
     // Set values
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = val || '';
+            if (el._flatpickr) {
+                if (val) {
+                    el._flatpickr.setDate(val, false);
+                } else {
+                    el._flatpickr.clear();
+                }
+            }
+        }
+    };
     
     setVal('editEventId', d.eventId);
     setVal('editEventRecId', d.eventRecId);
@@ -147,25 +159,25 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) 
     let deleteMode = 'only';
     if (isRecurring) {
         const choice = await customChoice({
-            title: 'Recurring Event',
-            messageHTML: 'Choose how to delete this recurring event:',
+            title: window._('dashboard.recurring_event') || 'Recurring Event',
+            messageHTML: window._('dashboard.recurring_delete_msg') || 'Choose how to delete this recurring event:',
             options: [
-                { value: 'only', label: 'Delete only this occurrence', checked: true },
-                { value: 'this_and_future', label: 'Delete this and all future occurrences' },
-                { value: 'future_only', label: 'Keep this, delete future occurrences' },
-                { value: 'all', label: 'Delete ALL occurrences in the series' }
+                { value: 'only', label: window._('dashboard.delete_only_this') || 'Delete only this occurrence', checked: true },
+                { value: 'this_and_future', label: window._('dashboard.delete_this_and_future') || 'Delete this and all future occurrences' },
+                { value: 'future_only', label: window._('dashboard.delete_future_only') || 'Keep this, delete future occurrences' },
+                { value: 'all', label: window._('dashboard.delete_all_occurrences') || 'Delete ALL occurrences in the series' }
             ],
-            okLabel: 'Delete', cancelLabel: 'Cancel'
+            okLabel: window._('dashboard.delete') || 'Delete', cancelLabel: window._('dashboard.cancel') || 'Cancel'
         });
         if (choice === null) return;
         deleteMode = choice;
     } else {
         const confirmed = await customConfirm({
-            title: 'Delete Event',
-            message: 'Are you sure you want to delete this event?',
+            title: window._('dashboard.delete_event') || 'Delete Event',
+            message: window._('dashboard.delete_event_confirm') || 'Are you sure you want to delete this event?',
             buttons: [
-                { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+                { label: window._('dashboard.cancel') || 'Cancel', value: false, class: 'confirm-btn-secondary' },
+                { label: window._('dashboard.delete') || 'Delete', value: true, class: 'confirm-btn-danger' }
             ]
         });
         if (!confirmed) return;
@@ -174,7 +186,7 @@ window.deleteEvent = async function (e, eventId, isRecurring, eventDate = null) 
     try {
         const resp = await deleteRecordApi('Event', eventId, deleteMode, eventDate);
         if (resp.ok) {
-            if (typeof window.showToast === 'function') window.showToast("✓ Event deleted", "success");
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.event_deleted"), "success");
             let li = null;
             if (e && e.target && e.target.closest) {
                 li = e.target.closest('li');
@@ -206,7 +218,7 @@ window.markEventDone = async function(form, eventId) {
         const animationPromise = animateItemRemoval(li);
         await fetch(form.action, { method: 'POST', body: new FormData(form) });
         await animationPromise;
-        if (typeof window.showToast === 'function') window.showToast("✓ Event completed", "success");
+        if (typeof window.showToast === 'function') window.showToast(window._("toast.event_completed"), "success");
         // Update header badges
         if (window.HeaderService) window.HeaderService.refreshBadges();
         
@@ -240,7 +252,7 @@ window.saveEventEdit = async function () {
             original_date: document.getElementById('editEventOriginalDate').value
         });
         if (resp.ok) {
-            if (typeof window.showToast === 'function') window.showToast("✓ Event saved successfully", "success");
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.event_saved_successfully"), "success");
             window.closeEditEventModal();
             if (typeof window.refreshDashboardEvents === 'function') window.refreshDashboardEvents();
         }
@@ -255,7 +267,7 @@ window.refreshDashboardEvents = async function() {
     const wrapper = document.querySelector('.schedule-widget');
     if (!wrapper) return;
     try {
-        const response = await fetch('/api/dashboard/widget/events');
+        const response = await fetch('/api/dashboard/widget/events', { cache: 'no-store' });
         if (response.ok) {
             const html = await response.text();
             const temp = document.createElement('div');

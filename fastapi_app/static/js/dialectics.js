@@ -51,6 +51,7 @@ class DialecticsEngine {
 
         this.state = {
             currentNoteId: null,
+            noteHistory: [],
             pendingSide: null,
             isExpanded: false,
             editingBlock: null,
@@ -68,6 +69,8 @@ class DialecticsEngine {
             dragHandle: document.getElementById('editorDragHandle'),
             loadModal: document.getElementById('loadDialecticsModal'),
             loadList: document.getElementById('loadDialecticsList'),
+            guideModal: document.getElementById('guideDialecticsModal'),
+            guideContent: document.getElementById('dialecticsGuideContent'),
             viewModal: document.getElementById('dialecticsViewModal'),
             viewTitle: document.getElementById('dialecticsViewTitle'),
             viewBody: document.getElementById('dialecticsViewBody'),
@@ -92,9 +95,18 @@ class DialecticsEngine {
             this._revealInterface();
         } else {
             const params = new URLSearchParams(window.location.search);
-            const noteId = params.get('id');
+            let noteId = params.get('id');
+            if (!noteId) {
+                noteId = localStorage.getItem('dialectics_last_note_id');
+                if (noteId) {
+                    const url = new URL(window.location);
+                    url.searchParams.set('id', noteId);
+                    window.history.replaceState({}, '', url);
+                }
+            }
+
             if (noteId) {
-                await this.loadNoteToEditor(noteId);
+                await this.loadNoteToEditor(noteId, false);
             } else {
                 this.state.currentNoteId = null;
                 if (this.dom.title) this.dom.title.value = "";
@@ -125,29 +137,57 @@ class DialecticsEngine {
         bind('btnBoldFormat', () => this.editor.toggleBold());
 
         if (this.dom.editor.classList.contains('embedded')) {
+            this.logDebug("Binding embedded editor save");
             bind('btnEditorSave', this.saveAndPin);
         } else {
+            this.logDebug("Binding global save");
             bind('btnEditorSave', this.saveGlobal);
         }
 
+        this.logDebug("Binding other buttons");
         bind('btnPinNote', this.pinCurrent);
         bind('btnEditorClose', this.close);
         bind('btnEditorExpand', this.toggleExpand);
-        bind('btnLoadDialectics', () => {
-            if (this.state.isDirty) {
-                customConfirm("You have unsaved changes. Continue anyway?", () => {
-                    this.state.isDirty = false;
+        
+        this.logDebug("Binding btnLoadDialectics...");
+        bind('btnLoadDialectics', async (e) => {
+            this.logDebug("btnLoadDialectics CLICKED!");
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                this.logDebug("isDirty = " + this.state.isDirty);
+                if (this.state.isDirty) {
+                    this.logDebug("Showing customConfirm for unsaved changes...");
+                    const confirmed = await customConfirm({
+                        message: "You have unsaved changes. Continue anyway?",
+                        icon: '⚠️'
+                    });
+                    this.logDebug("customConfirm resolved: " + confirmed);
+                    if (confirmed) {
+                        this.state.isDirty = false;
+                        this.showLoadModal();
+                        const searchInput = document.getElementById('dialecticsSearchInput');
+                        if (searchInput) {
+                            searchInput.value = '';
+                            searchInput.focus();
+                        }
+                    }
+                } else {
+                    this.logDebug("No unsaved changes. Opening modal directly.");
                     this.showLoadModal();
-                });
-            } else {
-                this.showLoadModal();
-                const searchInput = document.getElementById('dialecticsSearchInput');
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.focus();
+                    const searchInput = document.getElementById('dialecticsSearchInput');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        searchInput.focus();
+                    }
                 }
+            } catch (err) {
+                this.logDebug("ERROR in open button: " + err.message);
+                alert("Error in open button: " + err.message);
             }
         });
+
+        this.logDebug("Binding btnLoadDialectics COMPLETED.");
 
         const searchInput = document.getElementById('dialecticsSearchInput');
         if (searchInput) {
@@ -156,8 +196,11 @@ class DialecticsEngine {
 
 
 
+        bind('btnNewDialectics', this.createNewNote);
         bind('btnGlobalParser', this.runGlobalParser);
         bind('btnExampleDialectics', this.loadExample);
+        bind('btnPrevDialectics', this.loadPreviousNote);
+        bind('btnDialecticsGuide', this.showGuideModal);
 
         bind('btnViewModalEdit', () => {
             this.hideViewModal();
@@ -166,14 +209,19 @@ class DialecticsEngine {
 
         CanvasManager.init(this.dom.canvas, {
             onClick: (clientX, mid) => {
-                const lastSide = BlockManager.getLastSide(this.dom.canvas);
-                let nextSide = 'left';
-                if (lastSide === 'left') nextSide = 'right';
-                else if (lastSide === 'right') nextSide = 'left';
-                else nextSide = clientX < mid ? 'left' : 'right';
+                const nextSide = clientX < mid ? 'left' : 'right';
 
                 this.state.editingBlock = null;
                 this.state.pendingSide = nextSide;
+                this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
+                this.state.pendingRole = null;
+
+                const blocks = BlockManager.getBlocks(this.dom.canvas);
+                const hasAnchor = blocks.some(b => b.role === 'anchor');
+                if (nextSide === 'left' && !hasAnchor) {
+                    this.state.pendingRole = 'anchor';
+                }
+
                 this.open();
             },
             onDoubleClick: (block) => {
@@ -250,6 +298,7 @@ class DialecticsEngine {
         if (this.dom.backdrop) this.dom.backdrop.style.display = 'none';
         this.state.editingBlock = null;
         this.state.pendingSide = null;
+        this.state.pendingRole = null;
     }
 
     toggleExpand() {
@@ -281,14 +330,81 @@ class DialecticsEngine {
             onEdit: (b) => { this.state.editingBlock = b; this.openEdit(b); },
             onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
             onDelete: () => { this.saveGlobal(); },
-            onAI: (b) => { this.runAI(b); }
+            onAI: (b) => { this.runAI(b); },
+            onHintClick: (hint) => { this.openHintEditor(hint); },
+            onHintAI: (hint) => { this.runHintAI(hint); }
         };
+    }
+
+    openHintEditor(hint, content = '') {
+        this.state.editingBlock = null;
+        this.state.pendingSide = hint.side;
+        this.state.pendingRole = hint.id;
+        this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
+        this.state.insertAfterIndex = null;
+        this.open(content);
+    }
+
+    async runHintAI(hint) {
+        if (!hint || hint.id === 'anchor') {
+            window.showToast("Cannot run AI on the main goal block before it is created.", "info");
+            return;
+        }
+
+        const blocks = BlockManager.getBlocks(this.dom.canvas);
+        const anchorBlock = blocks.find(b => b.role === 'anchor');
+        
+        const stripHtml = (html) => {
+            const tmp = document.createElement('DIV');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        };
+
+        const goalText = anchorBlock ? stripHtml(anchorBlock.html) : '';
+
+        // Extract context (previous blocks)
+        const contextBlocks = blocks.filter(b => b.role && b.role !== 'anchor');
+        const contextText = contextBlocks.map(b => `[${b.role}]: ${stripHtml(b.html)}`).join('\\n\\n');
+
+        window.showToast("✨ " + window._("toast.ai_is_thinking", "AI is generating response..."), "info");
+        try {
+            const res = await fetch('/api/ai/dialectics/hint-step', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    step_id: hint.id, 
+                    goal_text: goalText,
+                    context_text: contextText 
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'API Error');
+            }
+
+            const data = await res.json();
+            
+            // Convert simple text to HTML paragraphs
+            let aiHtml = data.result;
+            if (!aiHtml.includes('<p>') && !aiHtml.includes('<div>')) {
+                aiHtml = aiHtml.split('\\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+            }
+            
+            this.openHintEditor(hint, aiHtml);
+
+        } catch (error) {
+            console.error("AI Error:", error);
+            window.showToast("AI Error: " + error.message, "error");
+        }
     }
 
     // Open editor to insert a new block after a specific index
     openInsertAfter(side, index) {
         this.state.editingBlock = null;
         this.state.pendingSide = side;
+        this.state.pendingRole = null;
+        this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
         this.state.insertAfterIndex = index;
         this.open();
     }
@@ -298,7 +414,7 @@ class DialecticsEngine {
         if (!inner) return;
         const processText = inner.innerText || inner.textContent;
 
-        window.showToast("🤖 AI is analyzing the process...", "info");
+        window.showToast(window._("toast.ai_is_analyzing_the_process"), "info");
 
         try {
             const res = await fetch('/api/ai/dialectics/opposites', {
@@ -340,10 +456,16 @@ class DialecticsEngine {
     }
 
     async runGlobalParser() {
-        const formula = prompt("Enter math formula for dialectical parsing:");
+        const formula = await customPrompt({
+            title: '✨ AI Formula Parser',
+            message: 'Enter math formula for dialectical parsing:',
+            placeholder: 'e.g. E = mc^2 or Hψ = Eψ',
+            watermark: 'made of Iasmin',
+            width: '500px'
+        });
         if (!formula || !formula.trim()) return;
 
-        window.showToast("🧮 AI is parsing formula...", "info");
+        window.showToast(window._("toast.ai_is_parsing_formula"), "info");
 
         try {
             const res = await fetch('/api/ai/dialectics/parser', {
@@ -374,21 +496,21 @@ class DialecticsEngine {
             }
 
             // Create formatted HTML for the parsed JSON
-            const formatBlock = (title, content, bgColor) => `
-                <div style="background: ${bgColor}; border: 1px solid rgba(0,0,0,0.05); padding: 12px 16px; border-radius: 8px; margin-bottom: 12px;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: rgba(0,0,0,0.5); margin-bottom: 6px;">${title}</div>
-                    <div style="font-size: 0.95rem; line-height: 1.5; color: #1e293b;">${content || '—'}</div>
+            const formatBlock = (title, content, bgColor, borderGlow) => `
+                <div style="background: ${bgColor}; border: 1.5px solid ${borderGlow}; padding: 16px 20px; border-radius: var(--radius-md, 12px); margin-bottom: 16px; box-shadow: var(--shadow-sm); transition: all 0.2s;">
+                    <div style="font-family: var(--font-heading, inherit); font-size: 0.8rem; text-transform: uppercase; font-weight: 850; color: var(--color-text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">${title}</div>
+                    <div style="font-size: 0.95rem; line-height: 1.6; color: var(--color-text-dark); font-weight: 500;">${content || '—'}</div>
                 </div>
             `;
 
             const htmlContent = `
-                <div style="text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
-                    <h3 style="margin-top: 0; color: #4338ca; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px;">
-                        Formula Analysis: <span style="font-family: monospace; background: #e0e7ff; padding: 2px 6px; border-radius: 4px;">${formula}</span>
+                <div style="text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 8px; font-family: var(--font-ui, inherit);">
+                    <h3 style="margin-top: 0; color: var(--color-primary-dark); font-family: var(--font-heading, inherit); font-size: 1.2rem; font-weight: 850; border-bottom: 2px solid var(--color-border-medium); padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        Formula Analysis: <span style="font-family: var(--font-editor, monospace); background: var(--color-primary-soft); color: var(--color-primary-dark); padding: 4px 10px; border-radius: 6px; font-size: 0.95rem; font-weight: 600; border: 1px dashed var(--color-primary);">${formula}</span>
                     </h3>
-                    ${formatBlock("Preceding Operation", parsed.predecessor, "#f8fafc")}
-                    ${formatBlock("Crisis of Notation Complexity", parsed.crisis_of_notation, "#fef2f2")}
-                    ${formatBlock("Resolution", parsed.resolution, "#f0fdf4")}
+                    ${formatBlock("Preceding Operation (Thesis)", parsed.predecessor, "var(--color-bg-subtle)", "var(--color-border-medium)")}
+                    ${formatBlock("Crisis of Notation Complexity (Antithesis)", parsed.crisis_of_notation, "rgba(239, 68, 68, 0.04)", "rgba(239, 68, 68, 0.15)")}
+                    ${formatBlock("Resolution (Synthesis)", parsed.resolution, "rgba(16, 185, 129, 0.04)", "rgba(16, 185, 129, 0.15)")}
                 </div>
             `;
 
@@ -396,6 +518,8 @@ class DialecticsEngine {
                 title: 'Parser Result',
                 message: htmlContent,
                 icon: '🧮',
+                watermark: 'made of Iasmin',
+                width: '650px',
                 buttons: [
                     { label: 'Close', value: true, class: 'confirm-btn-primary' }
                 ]
@@ -421,7 +545,7 @@ class DialecticsEngine {
         });
         if (!text || !text.trim()) return;
 
-        window.showToast("⏳ AI is generating formula...", "info");
+        window.showToast(window._("toast.ai_is_generating_formula"), "info");
 
         try {
             const res = await fetch('/api/ai/dialectics/text-math', {
@@ -441,11 +565,11 @@ class DialecticsEngine {
                     type: 'mathNode',
                     attrs: { latex: latex }
                 }).run();
-                window.showToast("✅ Formula added", "success");
+                window.showToast(window._("toast.formula_added"), "success");
             }
         } catch (error) {
             console.error(error);
-            window.showToast("❌ Error generating formula", "error");
+            window.showToast(window._("toast.error_generating_formula"), "error");
         }
     }
 
@@ -465,11 +589,11 @@ class DialecticsEngine {
                 stream.getTracks().forEach(track => track.stop());
 
                 if (isCancelled) {
-                    window.showToast("Recording cancelled", "info");
+                    window.showToast(window._("toast.recording_cancelled"), "info");
                     return;
                 }
 
-                window.showToast("⏳ Recognizing and generating LaTeX...", "info");
+                window.showToast(window._("toast.recognizing_and_generating_lat"), "info");
 
                 const formData = new FormData();
                 // append file
@@ -494,12 +618,12 @@ class DialecticsEngine {
                             type: 'mathNode',
                             attrs: { latex: latex }
                         }).run();
-                        window.showToast("✅ Formula added", "success");
+                        window.showToast(window._("toast.formula_added"), "success");
                     }
 
                 } catch (error) {
                     console.error(error);
-                    window.showToast("❌ Audio processing error", "error");
+                    window.showToast(window._("toast.audio_processing_error"), "error");
                 }
             });
 
@@ -523,11 +647,11 @@ class DialecticsEngine {
 
         } catch (err) {
             console.error("Microphone access denied or error:", err);
-            window.showToast("❌ No microphone access", "error");
+            window.showToast(window._("toast.no_microphone_access"), "error");
         }
     }
 
-    async saveGlobal() {
+    async saveGlobal(shouldClose = true) {
         const title = this.dom.title.value || "Untitled Dialectics";
         const html = this.editor.getHTML();
         console.log("TipTap HTML Output -> length:", html.length);
@@ -540,7 +664,10 @@ class DialecticsEngine {
         } else if (this.state.pendingSide) {
             if (html !== '<p></p>' && html.trim() !== '') {
                 const currentBlocks = BlockManager.getBlocks(this.dom.canvas);
-                const newBlock = { side: this.state.pendingSide, html };
+                const newBlock = { id: this.state.pendingBlockId, side: this.state.pendingSide, html };
+                if (this.state.pendingRole) {
+                    newBlock.role = this.state.pendingRole;
+                }
                 let newBlocks;
                 if (this.state.insertAfterIndex !== null) {
                     // Insert after the specified index
@@ -553,6 +680,7 @@ class DialecticsEngine {
                     newBlocks = [...currentBlocks, newBlock];
                 }
                 this.state.insertAfterIndex = null;
+                this.state.pendingRole = null;
                 BlockManager.render(this.dom.canvas, newBlocks, this._blockCallbacks());
             }
         }
@@ -573,9 +701,46 @@ class DialecticsEngine {
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
             this.state.currentNoteId = res.id;
-            window.showToast("✓ Dialectics Saved", "success");
-            this.close();
+            localStorage.setItem('dialectics_last_note_id', res.id);
+            
+            // Sync URL query parameter
+            const url = new URL(window.location);
+            if (url.searchParams.get('id') !== String(res.id)) {
+                url.searchParams.set('id', res.id);
+                window.history.pushState({}, '', url);
+            }
+
+            window.showToast(window._("toast.dialectics_saved"), "success");
+            if (shouldClose) {
+                this.close();
+            }
             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
+            return res.id;
+        }
+        return null;
+    }
+
+    async openStickersForCurrent(forceBlockId = null) {
+        if (!this.state.currentNoteId) {
+            if (window.showToast) window.showToast(window._("toast.saving_note_to_attach_sticker"), "info");
+            const savedId = await this.saveGlobal(false);
+            if (!savedId) {
+                if (window.showToast) window.showToast(window._("toast.failed_to_save_note"), "error");
+                return;
+            }
+        }
+        
+        let blockId = forceBlockId;
+        if (!blockId) {
+            if (this.state.editingBlock) {
+                blockId = this.state.editingBlock.dataset.blockId;
+            } else if (this.state.pendingBlockId) {
+                blockId = this.state.pendingBlockId;
+            }
+        }
+
+        if (window.openParentStickers) {
+            window.openParentStickers('dialectics', this.state.currentNoteId, blockId);
         }
     }
 
@@ -598,15 +763,22 @@ class DialecticsEngine {
 
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
-            window.showToast("✓ Saved and pinned", "success");
+            window.showToast(window._("toast.saved_and_pinned"), "success");
             this.close();
             setTimeout(() => location.reload(), 500);
         }
     }
 
-    async loadNoteToEditor(id) {
+    async loadNoteToEditor(id, addToHistory = true) {
         const n = await DialecticsAPI.get(id);
         if (n) {
+            if (addToHistory && this.state.currentNoteId && this.state.currentNoteId !== n.id) {
+                const history = this.getNoteHistory();
+                if (history.length === 0 || history[history.length - 1] !== this.state.currentNoteId) {
+                    history.push(this.state.currentNoteId);
+                    this.saveNoteHistory(history);
+                }
+            }
             this.state.currentNoteId = n.id;
             localStorage.setItem('dialectics_last_note_id', n.id);
             this.dom.title.value = n.title;
@@ -617,7 +789,14 @@ class DialecticsEngine {
             this._revealInterface();
             this.hideLoadModal();
             if (this.dom.deleteBtn) {
-                this.dom.deleteBtn.style.display = (n.title === "Example Note") ? 'none' : 'block';
+                this.dom.deleteBtn.style.display = (n.title === "Example Note" || n.title === "Пример конспекта" || n.title === "Конспект мысалы") ? 'none' : 'block';
+            }
+
+            // Sync URL query parameter
+            const url = new URL(window.location);
+            if (url.searchParams.get('id') !== String(n.id)) {
+                url.searchParams.set('id', n.id);
+                window.history.pushState({}, '', url);
             }
         } else {
             // Note not found (e.g. deleted), clear stored id and show empty
@@ -627,33 +806,151 @@ class DialecticsEngine {
     }
 
     async loadExample() {
-        DialecticsUI.setLoading(this.dom.canvas); // Optional loading state
-        const notes = await DialecticsAPI.list("Example Note");
-        const exampleNote = notes.find(n => n.title === "Example Note");
+        DialecticsUI.setLoading(this.dom.canvas);
+        try {
+            const response = await fetch('/api/dialectics/example/get_or_create_id');
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.id) {
+                    await this.loadNoteToEditor(data.id);
+                    window.showToast(window._("toast.opened_existing_example_note") || "Example Note loaded", "info");
+                }
+            } else {
+                console.error("Failed to load example note ID.");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        DialecticsUI.clearLoading(this.dom.canvas);
+    }
 
-        if (exampleNote) {
-            await this.loadNoteToEditor(exampleNote.id);
-            window.showToast("Opened existing example note", "info");
+    async createNewNote() {
+        if (this.state.isDirty) {
+            const confirmed = await customConfirm({
+                message: "You have unsaved changes. Create a new note anyway?",
+                icon: '⚠️'
+            });
+            if (confirmed) {
+                this.state.isDirty = false;
+                this._resetToNewNote();
+            }
         } else {
-            this.state.currentNoteId = null;
-            this.dom.title.value = "Example Note";
-            BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
-            if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
-            window.showToast("Opened new example note (empty for now)", "info");
+            this._resetToNewNote();
+        }
+    }
+
+    _resetToNewNote() {
+        if (this.state.currentNoteId) {
+            const history = this.getNoteHistory();
+            if (history.length === 0 || history[history.length - 1] !== this.state.currentNoteId) {
+                history.push(this.state.currentNoteId);
+                this.saveNoteHistory(history);
+            }
+        }
+        this.state.currentNoteId = null;
+        localStorage.removeItem('dialectics_last_note_id');
+        if (this.dom.title) this.dom.title.value = "";
+        if (this.dom.canvas) BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
+        if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
+        
+        // Remove ?id=... query parameter from the URL
+        const url = new URL(window.location);
+        url.searchParams.delete('id');
+        window.history.pushState({}, '', url);
+        
+        window.showToast(window._("toast.created_a_new_blank_note"), "success");
+    }
+
+    getNoteHistory() {
+        try {
+            const data = sessionStorage.getItem('dialectics_note_history');
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    saveNoteHistory(history) {
+        try {
+            sessionStorage.setItem('dialectics_note_history', JSON.stringify(history));
+        } catch (e) {}
+    }
+
+    loadPreviousNote() {
+        const history = this.getNoteHistory();
+        if (history.length > 0) {
+            const prevId = history.pop();
+            this.saveNoteHistory(history);
+            this.loadNoteToEditor(prevId, false);
+            window.showToast(window._("toast.loaded_previous_note"), "info");
+        } else {
+            window.location.href = '/';
         }
     }
 
     // --- Modal Helpers ---
+    async showGuideModal() {
+        const modal = document.getElementById('guideDialecticsModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+
+        const contentEl = document.getElementById('dialecticsGuideContent');
+        if (!contentEl) return;
+
+        // Fetch guide from API if not loaded yet
+        if (contentEl.dataset.loaded === 'true') return;
+
+        try {
+            contentEl.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Loading instructions...</div>';
+            const res = await fetch('/api/dialectics/guide');
+            if (!res.ok) throw new Error("Failed to load guide");
+            const data = await res.json();
+            contentEl.innerHTML = `<div class="guide-markdown-content">${data.html}</div>`;
+            contentEl.dataset.loaded = 'true';
+        } catch (err) {
+            console.error(err);
+            contentEl.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Failed to load instructions. Please try again.</div>';
+        }
+    }
+
+    hideGuideModal() {
+        const modal = document.getElementById('guideDialecticsModal');
+        if (modal) modal.style.display = 'none';
+    }
+
     showLoadModal() {
-        this.dom.loadModal.style.display = 'flex';
+        this.logDebug("showLoadModal() called");
+        if (this.dom.loadModal) {
+            this.dom.loadModal.style.display = 'flex';
+            this.dom.loadModal.offsetHeight; // trigger reflow
+            this.dom.loadModal.classList.add('active');
+            this.logDebug("loadModal display set to flex and active class added");
+        } else {
+            this.logDebug("ERROR: this.dom.loadModal is undefined!");
+        }
         this.searchNotes("");
     }
-    hideLoadModal() { this.dom.loadModal.style.display = 'none'; }
+    hideLoadModal() { 
+        if (this.dom.loadModal) {
+            this.dom.loadModal.classList.remove('active');
+            setTimeout(() => this.dom.loadModal.style.display = 'none', 200);
+        }
+    }
 
     async searchNotes(query) {
+        this.logDebug("searchNotes called with query: " + query);
+        if (!this.dom.loadList) {
+            this.logDebug("ERROR: this.dom.loadList is undefined!");
+            return;
+        }
         DialecticsUI.setLoading(this.dom.loadList);
-        const notes = await DialecticsAPI.list(query);
-        this.renderNotesList(notes);
+        try {
+            const notes = await DialecticsAPI.list(query);
+            this.logDebug("DialecticsAPI.list returned " + notes.length + " notes");
+            this.renderNotesList(notes);
+        } catch (err) {
+            this.logDebug("ERROR in DialecticsAPI.list: " + err.message);
+        }
     }
 
     renderNotesList(notes) {
@@ -669,7 +966,7 @@ class DialecticsEngine {
             }
 
             const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Pinned">📌</span>' : '';
-            const delBtnHTML = n.title === "Example Note" ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
+            const delBtnHTML = (n.title === "Example Note" || n.title === "Пример конспекта" || n.title === "Конспект мысалы") ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
 
             i.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
@@ -700,7 +997,7 @@ class DialecticsEngine {
                 if (confirmed) {
                     const ok = await DialecticsAPI.delete(n.id);
                     if (ok) {
-                        window.showToast("Record deleted", "info");
+                        window.showToast(window._("toast.record_deleted"), "info");
                         // Remove visually without reloading to avoid flicker
                         i.remove();
                         if (this.dom.loadList.children.length === 0) {
@@ -714,9 +1011,9 @@ class DialecticsEngine {
                             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
                         }
                     }
-                }
+                    }
+                };
             }
-        };
 
         this.dom.loadList.appendChild(i);
         });
@@ -724,8 +1021,8 @@ class DialecticsEngine {
 
     async deleteGlobal() {
         if (!this.state.currentNoteId) return;
-        if (this.dom.title && this.dom.title.value === "Example Note") {
-            if(window.showToast) window.showToast("Cannot delete the example note", "error");
+        if (this.dom.title && (this.dom.title.value === "Example Note" || this.dom.title.value === "Пример конспекта" || this.dom.title.value === "Конспект мысалы")) {
+            if(window.showToast) window.showToast(window._("toast.cannot_delete_the_example_note"), "error");
             return;
         }
         const confirmed = await customConfirm({
@@ -740,7 +1037,7 @@ class DialecticsEngine {
         if (confirmed) {
             const ok = await DialecticsAPI.delete(this.state.currentNoteId);
             if (ok) {
-                window.showToast("Dialectics deleted", "info");
+                window.showToast(window._("toast.dialectics_deleted"), "info");
                 location.reload();
             }
         }
@@ -748,7 +1045,7 @@ class DialecticsEngine {
 
     async pinCurrent() {
         if (!this.state.currentNoteId) {
-            window.showToast("Save first to pin", "warning");
+            window.showToast(window._("toast.save_first_to_pin"), "warning");
             return;
         }
 
@@ -764,7 +1061,7 @@ class DialecticsEngine {
 
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
-            window.showToast("Pinned successfully", "success");
+            window.showToast(window._("toast.pinned_successfully"), "success");
         }
     }
 
@@ -783,11 +1080,46 @@ class DialecticsEngine {
 
         this.dom.viewBody.innerHTML = fullHtml;
         this.dom.viewModal.style.display = 'flex';
+        this.dom.viewModal.offsetHeight; // trigger reflow
+        this.dom.viewModal.classList.add('active');
     }
 
     hideViewModal() {
-        this.dom.viewModal.style.display = 'none';
+        if (this.dom.viewModal) {
+            this.dom.viewModal.classList.remove('active');
+            setTimeout(() => this.dom.viewModal.style.display = 'none', 200);
+        }
         this.state.viewingNoteId = null;
+    }
+
+    async showGuideModal() {
+        if (!this.dom.guideModal) return;
+        this.dom.guideModal.style.display = 'flex';
+        this.dom.guideModal.offsetHeight; // reflow
+        this.dom.guideModal.classList.add('active');
+        
+        try {
+            const res = await fetch('/api/dialectics/guide');
+            if (res.ok) {
+                const data = await res.json();
+                if (this.dom.guideContent) {
+                    this.dom.guideContent.innerHTML = data.html;
+                }
+            } else {
+                if (this.dom.guideContent) {
+                    this.dom.guideContent.innerHTML = '<div style="color:red; text-align:center; padding: 20px;">Failed to load guide.</div>';
+                }
+            }
+        } catch (e) {
+            console.error("Guide error:", e);
+        }
+    }
+
+    hideGuideModal() {
+        if (this.dom.guideModal) {
+            this.dom.guideModal.classList.remove('active');
+            setTimeout(() => this.dom.guideModal.style.display = 'none', 200);
+        }
     }
 
     logDebug(msg) {

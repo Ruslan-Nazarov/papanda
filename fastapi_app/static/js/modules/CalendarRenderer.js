@@ -144,7 +144,7 @@ export const CalendarRenderer = {
                                 body: JSON.stringify({ event_id: parseInt(eventId), new_date: newDate })
                             });
                             if (resp.ok) {
-                                if (window.showToast) window.showToast('Event moved', 'success');
+                                if (window.showToast) window.showToast(window._("toast.event_moved"), 'success');
                                 // Minimal local state update
                                 if (window.eventRecords) {
                                     const rec = window.eventRecords.find(r => r.id == eventId);

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Papanda{% endblock %}
+{% block title %}papanda{% endblock %}
 
 {% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=1.1" />
@@ -28,14 +28,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if request.cookies.get('papanda_mode') == 'sandbox' %}
-    <div class="sandbox-banner" style="background: var(--color-error); color: var(--color-white); text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 20px; box-shadow: var(--shadow-md);">
-        <span>🚧 SANDBOX MODE ACTIVE - Using temporary database (sandbox_demo.db) 🚧</span>
-        <form action="{{ url_for('exit_sandbox') }}" method="post" style="margin: 0;">
-            <button type="submit" class="btn-exit-sandbox" style="background: var(--color-white); color: var(--color-error); border: none; padding: 5px 15px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; transition: opacity 0.2s;">Exit Sandbox</button>
-        </form>
-    </div>
-    {% endif %}
+
 
     {% include 'widgets/header.html' %}
 
@@ -93,11 +86,6 @@
             <div class="grid-stack-item-content">{% include 'partials/words_widget.html' %}</div>
         </div>
 
-        <!-- Rules -->
-        <div class="grid-stack-item" id="rules" gs-id="rules" gs-x="0" gs-y="11" gs-w="8" gs-h="4">
-            <div class="grid-stack-item-content">{% include 'widgets/rules_widget.html' %}</div>
-        </div>
-
         <!-- Sticky Thoughts -->
         <div class="grid-stack-item" id="stickers" gs-id="stickers" gs-x="8" gs-y="5" gs-w="4" gs-h="6">
             <div class="grid-stack-item-content">{% include 'widgets/stickers_widget.html' %}</div>
@@ -118,12 +106,12 @@
         window.P_ALL_LANGUAGES = {{ all_languages|tojson|safe }};
     </script>
     
-    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=17"></script>
+    <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=19"></script>
     <script type="module" src="{{ url_for('static', path='js/language_learning.js') }}?v=1"></script>
     <script src="{{ url_for('static', path='js/word_stats.js') }}?v=5"></script>
     <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v=6"></script>
     <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=10"></script>
-    <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=6"></script>
+    <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=7"></script>
     <script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=31"></script>
-    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=33"></script>
+    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=35"></script>
 {% endblock %}

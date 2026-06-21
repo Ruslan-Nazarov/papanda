@@ -61,12 +61,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                🎨 Event Color Palette
+                🎨 {{ _('modal.event_color_palette') }}
             </h2>
         </div>
         <div class="modal-body" style="padding-top: 0;">
             <p style="font-size: 0.9rem; color: var(--color-text-body); margin-bottom: 20px;">
-                Manage your event category labels here. Click any color to rename it.
+                {{ _('modal.manage_labels_desc') }}
             </p>
             <div class="palette-grid" id="modalPaletteGrid">
                 {% set colors = ['#4F46E5', '#10B981', '#B91C1C', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EC4899', '#1E293B'] %}
@@ -77,7 +77,7 @@
                         <div class="palette-color-circle" style="background: {{ c }}; box-shadow: 0 0 15px {{ c }}44;"></div>
                         <div class="palette-info">
                             <span class="palette-label" id="modal-label-{{ c|replace('#','') }}">
-                                {% if label %}{{ label }}{% else %}<span style="opacity: 0.5; font-style: italic;">Unnamed</span>{% endif %}
+                                {% if label %}{{ label }}{% else %}<span style="opacity: 0.5; font-style: italic;">{{ _('modal.unnamed') }}</span>{% endif %}
                             </span>
                             <span class="palette-hex">{{ c }}</span>
                         </div>
@@ -87,7 +87,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('eventColorPaletteModal').style.display='none'">Close</button>
+            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('eventColorPaletteModal').style.display='none'">{{ _('modal.close') }}</button>
         </div>
     </div>
 </div>

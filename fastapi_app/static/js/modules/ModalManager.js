@@ -14,9 +14,13 @@ export const ModalManager = {
         const newZIndex = baseZIndex + (this.activeModals.length * 10) + 5;
         modal.style.setProperty('z-index', newZIndex, 'important');
 
-        // Ensure backdrop blur is active
-        modal.classList.add('active');
+        // Set display flex first, then add active class on next paint for smooth transition
         modal.style.display = 'flex';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                modal.classList.add('active');
+            });
+        });
         
         // Push to stack for ESC handling
         this.activeModals.push(modalId);
@@ -29,12 +33,17 @@ export const ModalManager = {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
+        // Dispatch an event so widgets can sync back unsubmitted data
+        modal.dispatchEvent(new CustomEvent('modal-closed', { detail: { modalId } }));
+
         modal.classList.remove('active');
         
-        // Wait for animation
+        // Wait for transition animation (200ms) to complete before hiding display
         setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
+            if (!modal.classList.contains('active')) {
+                modal.style.display = 'none';
+            }
+        }, 200);
 
         this.activeModals = this.activeModals.filter(id => id !== modalId);
         

@@ -2,11 +2,11 @@
     <div class="widget-header">
         <div class="widget-title">
             <span class="widget-icon">📅</span>
-            <span>Today</span>
+            <span>{{ _('dashboard.today') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openFullCalendarModal()" title="Full View">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openFullCalendarModal()" title="{{ _('dashboard.full_view') }}">☰</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -17,13 +17,13 @@
                 {% for event in events_today %}
                 <li class="premium-list-item" data-id="{{ event.id }}">
                     <span class="premium-item-name" title="{{ event.title|e }}">
-                        {% if event.important %}<span title="Important">⭐</span> {% endif %}
+                        {% if event.important %}<span title="{{ _('dashboard.important') }}">⭐</span> {% endif %}
                         {{ event.title }}
-                        {% if event.recurrence_id %}<span title="Recurring" style="color: var(--color-primary); font-size: 0.8em; margin-left: 4px;">🔁</span>{% endif %}
+                        {% if event.recurrence_id %}<span title="{{ _('dashboard.recurring') }}" style="color: var(--color-primary); font-size: 0.8em; margin-left: 4px;">🔁</span>{% endif %}
                     </span>
                     
                     <div class="row-actions">
-                        <button type="button" class="btn-row-action" onclick="openParentStickers('event', '{{ event.id }}', '{{ event.recurrence_id or '' }}')" title="Stickers">
+                        <button type="button" class="btn-row-action" onclick="openParentStickers('event', '{{ event.id }}', '{{ event.recurrence_id or '' }}')" title="{{ _('dashboard.stickers') }}">
                             <div class="sticker-icon-mini {{ 'inactive' if not event.stickers_count }}">
                                 {% if event.stickers_count > 0 %}
                                 <span class="sticker-count">{{ event.stickers_count }}</span>
@@ -33,7 +33,7 @@
                         <form action="/mark_event_done/{{ event.id }}" method="post" style="margin: 0;" onsubmit="event.preventDefault(); markEventDone(this, '{{ event.id }}')">
                             <input type="hidden" name="date" value="{{ event.date.strftime('%Y-%m-%d') }}">
                             <input type="hidden" name="recurrence_id" value="{{ event.recurrence_id or '' }}">
-                            <button type="submit" class="btn-row-action done" title="Complete event">✓</button>
+                            <button type="submit" class="btn-row-action done" title="{{ _('dashboard.complete_event') }}">✓</button>
                         </form>
                         <button type="button" class="btn-row-action"
                                 data-event-id="{{ event.id }}"
@@ -43,9 +43,9 @@
                                 data-event-end="{{ event.recurrence_end.isoformat() if event.recurrence_end else '' }}"
                                 data-event-rec-id="{{ event.recurrence_id or '' }}"
                                 data-event-important="{{ 'true' if event.important else 'false' }}"
-                                onclick="handleEventEditClick(event, this)" title="Edit">✎</button>
+                                onclick="handleEventEditClick(event, this)" title="{{ _('dashboard.edit') }}">✎</button>
                         <button type="button" class="btn-row-action"
-                                onclick="deleteEvent(event, '{{ event.id }}', {{ 'true' if event.recurrence_id else 'false' }}, '{{ event.date.strftime('%Y-%m-%d') }}')" title="Delete">×</button>
+                                onclick="deleteEvent(event, '{{ event.id }}', {{ 'true' if event.recurrence_id else 'false' }}, '{{ event.date.strftime('%Y-%m-%d') }}')" title="{{ _('dashboard.delete') }}">×</button>
                     </div>
                 </li>
                 {% endfor %}
@@ -53,7 +53,7 @@
         </div>
 
         <div class="events-tomorrow" style="margin-top: 12px; border-top: 1px solid var(--color-bg-app); padding-top: 8px; {% if not events_tomorrow %}display: none;{% endif %}">
-            <h4 style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--color-text-faint); margin-bottom: 8px; letter-spacing: 0.05em;">Tomorrow</h4>
+            <h4 style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--color-text-faint); margin-bottom: 8px; letter-spacing: 0.05em;">{{ _('dashboard.tomorrow') }}</h4>
             <ul class="premium-list">
                 {% for event in events_tomorrow %}
                 <li class="premium-list-item tomorrow-item" data-id="{{ event.id }}">
@@ -64,7 +64,7 @@
                     </span>
 
                     <div class="row-actions">
-                        <button type="button" class="btn-row-action" onclick="openParentStickers('event', '{{ event.id }}', '{{ event.recurrence_id or '' }}')" title="Stickers">
+                        <button type="button" class="btn-row-action" onclick="openParentStickers('event', '{{ event.id }}', '{{ event.recurrence_id or '' }}')" title="{{ _('dashboard.stickers') }}">
                             <div class="sticker-icon-mini {{ 'inactive' if not event.stickers_count }}">
                                 {% if event.stickers_count > 0 %}
                                 <span class="sticker-count">{{ event.stickers_count }}</span>
@@ -79,9 +79,9 @@
                                 data-event-end="{{ event.recurrence_end.isoformat() if event.recurrence_end else '' }}"
                                 data-event-rec-id="{{ event.recurrence_id or '' }}"
                                 data-event-important="{{ 'true' if event.important else 'false' }}"
-                                onclick="handleEventEditClick(event, this)" title="Edit">✎</button>
+                                onclick="handleEventEditClick(event, this)" title="{{ _('dashboard.edit') }}">✎</button>
                         <button type="button" class="btn-row-action"
-                                onclick="deleteEvent(event, '{{ event.id }}', {{ 'true' if event.recurrence_id else 'false' }}, '{{ event.date.strftime('%Y-%m-%d') }}')" title="Delete">×</button>
+                                onclick="deleteEvent(event, '{{ event.id }}', {{ 'true' if event.recurrence_id else 'false' }}, '{{ event.date.strftime('%Y-%m-%d') }}')" title="{{ _('dashboard.delete') }}">×</button>
                     </div>
                 </li>
                 {% endfor %}

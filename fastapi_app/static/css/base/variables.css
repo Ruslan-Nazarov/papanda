@@ -65,4 +65,32 @@
     --text-xl: 1.25rem;
     --text-2xl: 1.5rem;
     --text-3xl: 2rem;
+
+    /* --- RESTORED / ALIAS COLORS --- */
+    --color-indigo: #6366f1;
+    --color-blue: #3b82f6;
+    --color-blue-glow: rgba(59, 130, 246, 0.15);
+    
+    --color-danger: var(--color-error);
+    --color-error-light: #fca5a5;
+    --color-error-soft: #fee2e2;
+    --color-error-dark: #b91c1c;
+    
+    --color-success-light: #86efac;
+    --color-success-dark: #15803d;
+    
+    --color-primary-medium: #fba158;
+    
+    --color-white: #ffffff;
+    --color-border: var(--color-border-medium);
+    --color-text-medium: var(--color-text-muted);
+    --color-text-disabled: #cbd5e1;
+    
+    --color-bg-surface: var(--color-bg-white);
+    --color-bg-canvas: var(--color-bg-app);
+    --color-bg-card: var(--color-bg-white);
+    --color-bg-page: var(--color-bg-app);
+    
+    --color-sticker-default: #e2e8f0;
+    --color-overlay-light: rgba(255, 255, 255, 0.7);
 }

@@ -7,6 +7,7 @@ class DialecticsBlock(BaseModel):
     id: Optional[str] = None
     side: str
     html: str
+    role: Optional[str] = None
 
 class DialecticsCreate(BaseModel):
     """Схема для создания 'Диалектики'."""
@@ -42,3 +43,11 @@ class DialecticsView(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
+
+class DialecticsGuideResponse(BaseModel):
+    """Схема ответа для руководства по диалектике."""
+    html: str
+
+class DialecticsIdResponse(BaseModel):
+    """Схема ответа с ID 'Диалектики'."""
+    id: int

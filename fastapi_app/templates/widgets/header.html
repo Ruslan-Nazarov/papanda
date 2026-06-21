@@ -2,7 +2,7 @@
     <div class="header-main">
         <form method="post" action="/submit_form" id="common_form" class="header-form">
             <div class="form-input-group">
-                <input list="suggestions" type="text" name="common_text" required placeholder="To do, save or plan..." class="form-input header-main-input" />
+                <input list="suggestions" type="text" name="common_text" required placeholder="{{ _('header.input_placeholder') }}" class="form-input header-main-input" />
                 <datalist id="suggestions"></datalist>
                 
                 <input type="date" name="common_date" required id="common_date" class="form-input header-date-input" value="{{ today_actual.strftime('%Y-%m-%d') }}" />
@@ -12,14 +12,14 @@
                     <button type="button" class="btn btn-secondary btn-icon" id="recurrenceToggle" title="Recurrence settings">🔁</button>
                     <div class="recurrence-glass-menu" id="recurrenceMenu">
                         <div class="form-group">
-                            <label class="form-label">Repeat Pattern</label>
+                            <label class="form-label">{{ _('header.repeat_pattern') }}</label>
                             <select id="repeatSelect" class="form-select">
-                                <option value="none">Once</option>
-                                <option value="daily">Every day</option>
-                                <option value="weekly">Every week</option>
-                                <option value="weekdays">Weekdays (M-F)</option>
-                                <option value="monthly">Every month</option>
-                                <option value="yearly">Every year</option>
+                                <option value="none">{{ _('header.repeat_once') }}</option>
+                                <option value="daily">{{ _('header.repeat_daily') }}</option>
+                                <option value="weekly">{{ _('header.repeat_weekly') }}</option>
+                                <option value="weekdays">{{ _('header.repeat_weekdays') }}</option>
+                                <option value="monthly">{{ _('header.repeat_monthly') }}</option>
+                                <option value="yearly">{{ _('header.repeat_yearly') }}</option>
                             </select>
                         </div>
 
@@ -35,54 +35,54 @@
                         <input type="hidden" name="repeat" id="repeatHidden" value="none" />
 
                         <div class="form-group">
-                            <label class="form-label">End Condition</label>
+                            <label class="form-label">{{ _('header.end_condition') }}</label>
                             <div class="custom-radio-group" style="display: flex; gap: 12px; background: var(--color-bg-app); padding: 6px; border-radius: 12px; margin-bottom: 16px;">
                                 <label style="flex: 1; cursor: pointer;">
                                     <input type="radio" name="rec_end_mode" value="date" id="recEndDate" checked style="display: none;">
-                                    <span class="radio-tab" style="display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;">Date</span>
+                                    <span class="radio-tab" style="display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;">{{ _('header.end_date_tab') }}</span>
                                 </label>
                                 <label style="flex: 1; cursor: pointer;">
                                     <input type="radio" name="rec_end_mode" value="count" id="recEndCount" style="display: none;">
-                                    <span class="radio-tab" style="display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;">Count</span>
+                                    <span class="radio-tab" style="display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;">{{ _('header.end_count_tab') }}</span>
                                 </label>
                             </div>
                         </div>
 
                         <div id="endDateBlock" class="form-group">
-                            <label class="form-label">Until date</label>
+                            <label class="form-label">{{ _('header.until_date') }}</label>
                             <input type="date" name="repeat_end" id="repeatEnd" class="form-input" />
                         </div>
 
                         <div id="endCountBlock" class="form-group" style="display: none">
-                            <label class="form-label">Times</label>
+                            <label class="form-label">{{ _('header.times') }}</label>
                             <input type="number" id="repeatCount" min="1" max="365" value="10" class="form-input" />
                             <input type="hidden" name="repeat_end" id="repeatEndFromCount" />
                         </div>
 
                         <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
-                            <button type="button" onclick="closeRecurrence()" class="btn btn-primary">Apply Changes</button>
+                            <button type="button" onclick="closeRecurrence()" class="btn btn-primary">{{ _('header.apply_changes') }}</button>
                         </div>
                     </div>
                 </div>
 
                 <select name="common_category" class="form-select header-cat-select" onchange="if(typeof syncCategoryStickerVisibility==='function') syncCategoryStickerVisibility()">
-                    <option value="event">📅 Event</option>
-                    <option value="important">⭐ Important</option>
-                    <option value="task">✅ Task</option>
-                    <option value="habits">🔄 Habit</option>
-                    <option value="wink">😉 Wink</option>
-                    <option value="count until">⏳ Count Until</option>
-                    <option value="count after">⌛ Count After</option>
-                    <option value="one_thing">🎯 One Thing</option>
-                    <option value="replacement">🔀 Replacement</option>
+                    <option value="event">{{ _('header.cat_event') }}</option>
+                    <option value="important">{{ _('header.cat_important') }}</option>
+                    <option value="task">{{ _('header.cat_task') }}</option>
+                    <option value="habits">{{ _('header.cat_habit') }}</option>
+                    <option value="wink">{{ _('header.cat_wink') }}</option>
+                    <option value="count until">{{ _('header.cat_count_until') }}</option>
+                    <option value="count after">{{ _('header.cat_count_after') }}</option>
+                    <option value="one_thing">{{ _('header.cat_one_thing') }}</option>
+                    <option value="replacement">{{ _('header.cat_replacement') }}</option>
                 </select>
 
-                <div id="headerStickerBtn" class="btn btn-secondary btn-icon" title="Add Sticker" onclick="openHeaderStickerModal()">
+                <div id="headerStickerBtn" class="btn btn-secondary btn-icon" title="{{ _('header.add_sticker') }}" onclick="openHeaderStickerModal()">
                     <div class="sticker-icon-mini"></div>
                 </div>
 
                 <div class="recurrence-wrapper">
-                    <button id="headerColorBtn" type="button" class="btn btn-secondary btn-icon" title="Set Event Color" onclick="toggleHeaderColorPicker(event)">
+                    <button id="headerColorBtn" type="button" class="btn btn-secondary btn-icon" title="{{ _('header.set_color') }}" onclick="toggleHeaderColorPicker(event)">
                         <div id="headerColorIndicator" style="width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid white; box-shadow: var(--shadow-sm); background: var(--color-text-faint);"></div>
                     </button>
                     <div id="headerColorPickerPopup" class="color-picker-glass-popup">
@@ -99,15 +99,31 @@
                 <input type="hidden" name="sticker_color" id="headerStickerColor" value="#fff9c4">
                 <input type="hidden" name="sticker_type" id="headerStickerType" value="text">
 
-                <button type="submit" class="btn btn-primary header-submit" style="padding: 0 24px; height: 44px;">OK</button>
+                <button type="submit" class="btn btn-primary header-submit" style="padding: 0 24px; height: 44px;">{{ _('header.ok') }}</button>
             </div>
         </form>
 
-        <div class="header-info-widgets">
-            {% include 'partials/header_info_widgets.html' %}
-            <a href="/dialectics" class="dialectics-glitch-btn">
-                <span data-text="Dialectics">Dialectics</span>
+        <div class="header-right-panel" style="display: flex; align-items: center; gap: 8px; height: 48px;">
+            <div class="header-info-widgets" style="display: flex; align-items: stretch; gap: 8px; height: 100%;">
+                {% include 'partials/header_info_widgets.html' %}
+            </div>
+            
+            <a href="/dialectics" class="dialectics-glitch-btn" style="height: 100%; box-sizing: border-box; display: flex; align-items: center; padding: 0 24px;">
+                <span data-text="{{ _('header.dialectics') }}">{{ _('header.dialectics') }}</span>
             </a>
+            
+            <!-- Language Switcher -->
+            <div style="height: 100%; position: relative;">
+                <select id="languageSwitcher" class="form-select" style="height: 100%; box-sizing: border-box; padding: 0 32px 0 16px; font-size: 0.95rem; font-weight: 800; border-radius: 12px; border: 1px solid var(--color-border-medium); background: white; color: var(--color-text-dark); appearance: none; cursor: pointer; text-align: center; font-family: inherit;" onchange="switchLanguage(this.value)">
+                    <option value="en" {% if request.cookies.get('locale', 'en') == 'en' %}selected{% endif %}>EN</option>
+                    <option value="ru" {% if request.cookies.get('locale', 'en') == 'ru' %}selected{% endif %}>RU</option>
+                    <option value="kk" {% if request.cookies.get('locale', 'en') == 'kk' %}selected{% endif %}>KZ</option>
+                </select>
+                <!-- Custom dropdown arrow -->
+                <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.4; font-size: 0.7rem;">
+                    ▼
+                </div>
+            </div>
         </div>
     </div>
 </div>

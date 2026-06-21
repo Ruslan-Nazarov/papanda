@@ -1,0 +1,47 @@
+/* --- MOBILE RESPONSIVE OVERRIDES --- */
+@media (max-width: 768px) {
+    /* 1. Header Layout */
+    .header-main {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 16px !important;
+    }
+    
+    .header-form {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    .header-info-widgets {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+    
+    /* 2. GridStack overrides (force 1 column) */
+    .grid-stack {
+        padding: 10px !important;
+    }
+    
+    .grid-stack-item {
+        position: relative !important;
+        width: 100% !important;
+        left: 0 !important;
+        top: auto !important;
+        margin-bottom: 20px !important;
+        transform: none !important;
+        height: auto !important;
+        min-height: 250px !important;
+    }
+
+    .grid-stack-item-content {
+        position: relative !important;
+        inset: 0 !important;
+        height: auto !important;
+        min-height: 250px !important;
+    }
+
+    /* Hide resize handles on mobile */
+    .ui-resizable-handle {
+        display: none !important;
+    }
+}

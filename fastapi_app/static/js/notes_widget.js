@@ -1,5 +1,4 @@
-import { ModalManager } from './modules/ModalManager.js';
-import { EditorSync } from './modules/EditorSync.js';
+// notes_widget.js - AJAX Controller for Regular Notes
 
 /**
  * notes_widget.js - AJAX Controller for Regular Notes
@@ -25,6 +24,12 @@ class NotesWidget {
 
     setupEventListeners() {
         // Global listeners for outside clicks on modals if needed
+        const modal = document.getElementById('expandedNoteEditorModal');
+        if (modal) {
+            modal.addEventListener('modal-closed', () => {
+                this.syncExpandedToRegular();
+            });
+        }
     }
 
     async loadNotes() {
@@ -116,7 +121,7 @@ class NotesWidget {
         const noteId = idInput ? idInput.value : null;
 
         if (!ta || !ta.value.trim()) {
-            if (typeof window.showToast === 'function') window.showToast("Note cannot be empty", "error");
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.note_cannot_be_empty"), "error");
             return null;
         }
 
@@ -131,7 +136,7 @@ class NotesWidget {
             const res = await fetch(url, { method: 'POST', body: formData });
             
             if (!res.ok) {
-                if (window.showToast) window.showToast("Save failed", "error");
+                if (window.showToast) window.showToast(window._("toast.save_failed"), "error");
                 return null;
             }
 
@@ -139,7 +144,7 @@ class NotesWidget {
             
             if (result.status === 'success') {
                 if (typeof window.showToast === 'function') {
-                    window.showToast("✓ Note saved successfully", "success");
+                    window.showToast(window._("toast.note_saved_successfully"), "success");
                 }
                 
                 const savedId = result.id || noteId;
@@ -147,8 +152,12 @@ class NotesWidget {
                 
                 if (isExpanded) {
                     if (shouldClose) {
-                        const modal = document.getElementById('expandedNoteEditorModal');
-                        if (modal) modal.style.display = 'none';
+                        if (window.ModalManager) {
+                            window.ModalManager.close('expandedNoteEditorModal');
+                        } else {
+                            const modal = document.getElementById('expandedNoteEditorModal');
+                            if (modal) modal.style.display = 'none';
+                        }
                     }
                     
                     // Clear the Quick Note widget so it's ready for a new note
@@ -167,9 +176,12 @@ class NotesWidget {
                 }
 
                 this.refreshPinnedNotes();
+                if (window.refreshCurrentView) {
+                    window.refreshCurrentView('Notes');
+                }
                 return savedId;
             } else {
-                if (typeof window.showToast === 'function') window.showToast("Error: " + result.message, "error");
+                if (typeof window.showToast === 'function') window.showToast(window._("toast.error") + result.message, "error");
             }
         } catch (e) {
             console.error("Save failed:", e);
@@ -200,6 +212,16 @@ class NotesWidget {
             })();
 
             if (modal && expTa) {
+                // Dynamically update title & button text for editing
+                const titleHeader = modal.querySelector('h3');
+                if (titleHeader) {
+                    titleHeader.innerHTML = `<span style="color: var(--color-primary);">📝</span> ${window._ ? window._('dashboard.edit_note') : 'Edit Note'}`;
+                }
+                const saveBtn = modal.querySelector('.modal-footer .btn-primary');
+                if (saveBtn) {
+                    saveBtn.innerHTML = `💾 ${window._ ? window._('dashboard.save_changes') : 'Save changes'}`;
+                }
+
                 expTa.value = note.note;
                 if (expCat) expCat.value = note.category;
                 if (expPin) expPin.checked = note.is_pinned;
@@ -209,12 +231,17 @@ class NotesWidget {
                 // Show existing stickers
                 this.renderStickersInEditor('expanded', note.stickers);
 
-                modal.style.display = 'flex';
+                if (window.ModalManager) {
+                    window.ModalManager.open('expandedNoteEditorModal');
+                } else {
+                    modal.style.display = 'flex';
+                    modal.classList.add('active');
+                }
                 setTimeout(() => expTa.focus(), 100);
             }
         } catch (e) {
             console.error("Edit failed:", e);
-            if (typeof window.showToast === 'function') window.showToast("Could not load note data", "error");
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.could_not_load_note_data"), "error");
         }
     }
 
@@ -275,13 +302,13 @@ class NotesWidget {
                     setTimeout(() => this.manageStickersForNewNote(retryCount + 1), 100);
                     return;
                 }
-                if (window.showToast) window.showToast("Stickers module not loaded yet", "error");
+                if (window.showToast) window.showToast(window._("toast.stickers_module_not_loaded_yet"), "error");
                 return;
             }
 
             const ta = document.getElementById('expandedNoteTextarea');
             if (!ta || !ta.value.trim()) {
-                if (window.showToast) window.showToast("Write something first!", "info");
+                if (window.showToast) window.showToast(window._("toast.write_something_first"), "info");
                 return;
             }
 
@@ -319,7 +346,7 @@ class NotesWidget {
         try {
             const res = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                if (typeof window.showToast === 'function') window.showToast("✓ Note deleted", "success");
+                if (typeof window.showToast === 'function') window.showToast(window._("toast.note_deleted"), "success");
                 this.refreshPinnedNotes();
             }
         } catch (e) {
@@ -327,44 +354,7 @@ class NotesWidget {
         }
     }
 
-    // --- All Notes Modal Logic ---
-
-    showAllNotesModal() {
-        const modal = document.getElementById('allNotesModal');
-        if (!modal) return;
-        
-        modal.style.display = 'flex';
-        const input = document.getElementById('allNotesSearchInput');
-        if (input) {
-            input.value = '';
-            setTimeout(() => input.focus(), 100);
-        }
-        
-        // Initial load
-        this.searchInModal('');
-    }
-
-    async searchInModal(query) {
-        const grid = document.getElementById('allNotesGrid');
-        const debug = document.getElementById('notesCountDebug');
-        if (!grid) return;
-
-        if (debug) debug.innerText = '(loading...)';
-
-        try {
-            const res = await fetch(`/api/notes/search?query=${encodeURIComponent(query)}`);
-            if (res.ok) {
-                const notes = await res.json();
-                if (debug) debug.innerText = `(${notes.length} found)`;
-                this.renderModalCards(notes);
-            } else {
-                if (debug) debug.innerText = '(error loading)';
-            }
-        } catch (e) {
-            console.error("Failed to search notes in modal:", e);
-            if (debug) debug.innerText = '(fetch failed)';
-        }
-    }
+    // --- All Notes Modal Logic Removed ---
 
     renderNotes(notes) {
         const container = document.getElementById('pinned-notes-list');
@@ -408,49 +398,7 @@ class NotesWidget {
         });
     }
 
-    renderModalCards(notes) {
-        const container = document.getElementById('allNotesGrid');
-        if (!container) return;
 
-        if (!notes || notes.length === 0) {
-            container.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; color: var(--color-text-faint); padding: 60px 20px;">
-                    <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
-                    <p style="font-size: 1.1rem; font-weight: 500;">No notes matching your search</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = '';
-        notes.forEach(n => {
-            const card = document.createElement('div');
-            card.className = 'pinned-note-card search-result-card';
-            card.dataset.id = n.id;
-            card.style.cssText = 'background: var(--color-bg-white); border: 2px solid var(--color-border-light); cursor: default; transition: all 0.2s ease;';
-            
-            card.innerHTML = `
-                <div class="note-card-header">
-                    <span class="note-card-category">${n.category || 'General'}</span>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="note-card-action pin-btn ${n.is_pinned ? 'active' : ''}" 
-                                onclick="notesWidget.togglePin(${n.id}, ${n.is_pinned})" 
-                                title="${n.is_pinned ? 'Unpin from dashboard' : 'Pin to dashboard'}">
-                            ${n.is_pinned ? '📌' : '📍'}
-                        </button>
-                        <button class="note-card-action del-btn" onclick="notesWidget.deleteNote(${n.id})" title="Delete">×</button>
-                    </div>
-                </div>
-                <div class="premium-note-text" style="cursor: pointer; font-size: 0.95rem; line-height: 1.5; color: var(--color-text-dark); max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;"></div>
-            `;
-            
-            const textEl = card.querySelector('.premium-note-text');
-            textEl.textContent = n.note;
-            textEl.onclick = () => this.viewNote(n.id);
-            
-            container.appendChild(card);
-        });
-    }
 
     async viewNote(id) {
         try {
@@ -502,6 +450,16 @@ class NotesWidget {
         const expTa = document.getElementById('expandedNoteTextarea');
         
         if (modal && mainTa && expTa) {
+            // Dynamically update title & button text for creating
+            const titleHeader = modal.querySelector('h3');
+            if (titleHeader) {
+                titleHeader.innerHTML = `<span style="color: var(--color-primary);">⚡</span> ${window._ ? window._('dashboard.expanded_editor') : 'Expanded Editor'}`;
+            }
+            const saveBtn = modal.querySelector('.modal-footer .btn-primary');
+            if (saveBtn) {
+                saveBtn.innerHTML = `💾 ${window._ ? window._('dashboard.save_note') : 'Save note'}`;
+            }
+
             expTa.value = mainTa.value;
             
             const mainCat = document.getElementById('regularNoteCategory');
@@ -517,7 +475,12 @@ class NotesWidget {
             if (expId) expId.value = '';
             
             this.currentNoteId = null;
-            modal.style.display = 'flex';
+            if (window.ModalManager) {
+                window.ModalManager.open('expandedNoteEditorModal');
+            } else {
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            }
             setTimeout(() => expTa.focus(), 100);
         }
     }
@@ -529,10 +492,7 @@ class NotesWidget {
         return expTa && expTa.value.trim() && (!expId || !expId.value);
     }
 
-    closeExpandedEditor() {
-        const modal = document.getElementById('expandedNoteEditorModal');
-        if (modal) modal.style.display = 'none';
-
+    syncExpandedToRegular() {
         // Only sync back if this was a NEW note.
         // If it was an existing note (this.currentNoteId exists), we shouldn't overwrite the quick note area!
         if (!this.currentNoteId) {
@@ -552,6 +512,16 @@ class NotesWidget {
         this.currentNoteId = null;
     }
 
+    closeExpandedEditor() {
+        if (window.ModalManager) {
+            window.ModalManager.close('expandedNoteEditorModal');
+        } else {
+            const modal = document.getElementById('expandedNoteEditorModal');
+            if (modal) modal.style.display = 'none';
+            this.syncExpandedToRegular();
+        }
+    }
+
 
 
 
@@ -560,6 +530,8 @@ class NotesWidget {
         const input = document.getElementById('newCategoryName');
         if (modal) {
             modal.style.display = 'flex';
+            modal.offsetHeight; // trigger reflow
+            modal.classList.add('active');
             if (input) {
                 input.value = '';
                 setTimeout(() => input.focus(), 100);
@@ -570,7 +542,7 @@ class NotesWidget {
     async saveNewCategory() {
         const input = document.getElementById('newCategoryName');
         if (!input || !input.value.trim()) {
-            if (typeof window.showToast === 'function') window.showToast("Category name cannot be empty", "error");
+            if (typeof window.showToast === 'function') window.showToast(window._("toast.category_name_cannot_be_empty"), "error");
             return;
         }
 
@@ -584,7 +556,11 @@ class NotesWidget {
 
             if (res.ok) {
                 if (typeof window.showToast === 'function') window.showToast(`✓ Category "${name}" added`, "success");
-                document.getElementById('addCategoryModal').style.display = 'none';
+                const modal = document.getElementById('addCategoryModal');
+                if (modal) {
+                    modal.classList.remove('active');
+                    setTimeout(() => modal.style.display = 'none', 200);
+                }
                 this.updateCategorySelects(name);
             } else {
                 const err = await res.json();
@@ -618,12 +594,6 @@ class NotesWidget {
                 window.showToast(data.message || 'Note pin status updated', 'success');
             }
             this.loadNotes();
-            // Refresh allNotesModal if open
-            const allModal = document.getElementById('allNotesModal');
-            if (allModal && allModal.style.display === 'flex') {
-                const query = document.getElementById('allNotesSearchInput')?.value || '';
-                this.searchInModal(query);
-            }
         } catch (e) {
             console.error('[Notes] Failed to toggle pin:', e);
         }

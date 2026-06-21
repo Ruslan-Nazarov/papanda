@@ -2,7 +2,7 @@
 <div id="editHabitModal" class="modal premium-modal" data-prevent-outside-click="true">
     <div class="modal-content" style="max-width: 900px; width: 95%; border-top: 6px solid var(--color-primary);">
         <div class="modal-header" style="flex-shrink: 0;">
-            <h3><span style="color: var(--color-primary);">⚡</span> Edit Habit</h3>
+            <h3><span style="color: var(--color-primary);">⚡</span> {{ _('dashboard.edit_habit') }}</h3>
             <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editHabitModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         </div>
 
@@ -13,18 +13,18 @@
                 <!-- LEFT: Dates & controls -->
                 <div class="editor-meta">
                     <div>
-                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">📅 Start Date</label>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">📅 {{ _('dashboard.start_date') }}</label>
                         <input type="date" id="editHabitStartDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
                     </div>
                     <div id="editHabitEndDateGroup">
-                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">🏁 End Date</label>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">🏁 {{ _('dashboard.end_date') }}</label>
                         <input type="date" id="editHabitEndDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
                     </div>
                     <div>
                         <label class="premium-checkbox-wrapper">
                             <input type="checkbox" id="editHabitRead" onchange="toggleHabitEndDate()">
                             <div class="checkbox-custom"></div>
-                            <span style="font-weight: 600; color: var(--color-text-dark); font-size: 0.9rem;">Mark as Finished</span>
+                            <span style="font-weight: 600; color: var(--color-text-dark); font-size: 0.9rem;">{{ _('dashboard.mark_as_finished') }}</span>
                         </label>
                     </div>
                     <div id="editHabitError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
@@ -32,16 +32,16 @@
 
                 <!-- RIGHT: Habit title -->
                 <div class="editor-main" style="padding: 28px 32px;">
-                    <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">📝 Habit Title</label>
-                    <input type="text" id="editHabitTitle" class="form-input" placeholder="What habit are we tracking?"
+                    <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">📝 {{ _('dashboard.habit_title') }}</label>
+                    <input type="text" id="editHabitTitle" class="form-input" placeholder="{{ _('dashboard.what_habit_tracking') }}"
                         style="font-size: 1.2rem; font-weight: 600; border: none; border-bottom: 2px solid var(--color-border-light); border-radius: 0; padding: 12px 0; background: transparent; outline: none; color: var(--color-text-dark); width: 100%;">
                 </div>
             </div>
         </div>
 
         <div class="modal-footer" style="flex-shrink: 0;">
-            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editHabitModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveHabitEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">Save Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editHabitModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">{{ _('dashboard.cancel') }}</button>
+            <button type="button" class="btn btn-primary" onclick="saveHabitEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">{{ _('dashboard.save_changes') }}</button>
         </div>
     </div>
 </div>
@@ -50,7 +50,7 @@
 <div id="editWinkModal" class="modal premium-modal" data-prevent-outside-click="true">
     <div class="modal-content" style="max-width: 900px; width: 95%; border-top: 6px solid var(--color-primary);">
         <div class="modal-header" style="flex-shrink: 0;">
-            <h3><span style="color: var(--color-primary);">😉</span> Edit Leisure (Wink)</h3>
+            <h3><span style="color: var(--color-primary);">😉</span> {{ _('dashboard.edit_wink') }}</h3>
             <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editWinkModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         </div>
 
@@ -60,7 +60,7 @@
                 <!-- LEFT: Date & time -->
                 <div class="editor-meta">
                     <div>
-                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">⏰ Date &amp; Time</label>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 10px; display: block;">⏰ {{ _('dashboard.date_and_time') }}</label>
                         <input type="datetime-local" id="editWinkDate" class="form-input" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--color-border-light); padding: 10px 12px; background: var(--color-bg-white); font-size: 0.9rem;">
                     </div>
                     <div id="editWinkError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
@@ -68,16 +68,16 @@
 
                 <!-- RIGHT: Title -->
                 <div class="editor-main" style="padding: 28px 32px;">
-                    <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">✨ Title</label>
-                    <input type="text" id="editWinkTitle" class="form-input" placeholder="What did you do?"
+                    <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">✨ {{ _('dashboard.title') }}</label>
+                    <input type="text" id="editWinkTitle" class="form-input" placeholder="{{ _('dashboard.what_did_you_do') }}"
                         style="font-size: 1.2rem; font-weight: 600; border: none; border-bottom: 2px solid var(--color-border-light); border-radius: 0; padding: 12px 0; background: transparent; outline: none; color: var(--color-text-dark); width: 100%;">
                 </div>
             </div>
         </div>
 
         <div class="modal-footer" style="flex-shrink: 0;">
-            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editWinkModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveWinkEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">Save Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editWinkModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">{{ _('dashboard.cancel') }}</button>
+            <button type="button" class="btn btn-primary" onclick="saveWinkEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">{{ _('dashboard.save_changes') }}</button>
         </div>
     </div>
 </div>
@@ -86,7 +86,7 @@
 <div id="editTaskModal" class="modal premium-modal" data-prevent-outside-click="true">
     <div class="modal-content" style="max-width: 1100px; width: 95%; border-top: 6px solid var(--color-primary);">
         <div class="modal-header" style="flex-shrink: 0;">
-            <h3><span style="color: var(--color-primary);">📋</span> Edit Task</h3>
+            <h3><span style="color: var(--color-primary);">📋</span> {{ _('dashboard.edit_task') }}</h3>
             <button type="button" class="btn btn-secondary btn-icon" onclick="ModalManager.close('editTaskModal')" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         </div>
 
@@ -97,11 +97,11 @@
                 <!-- LEFT: Status -->
                 <div class="editor-meta">
                     <div>
-                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">✅ Status</label>
+                        <label style="font-size: 0.7rem; font-weight: 850; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.8px; margin-bottom: 14px; display: block;">✅ {{ _('dashboard.status') }}</label>
                         <label class="premium-checkbox-wrapper">
                             <input type="checkbox" id="editTaskDone">
                             <div class="checkbox-custom"></div>
-                            <span style="font-weight: 600; color: var(--color-text-dark); font-size: 0.9rem;">Mark as Done</span>
+                            <span style="font-weight: 600; color: var(--color-text-dark); font-size: 0.9rem;">{{ _('dashboard.mark_as_done') }}</span>
                         </label>
                     </div>
                     <div id="editTaskError" style="color: var(--color-error); font-size: 0.82rem; font-weight: 700;"></div>
@@ -109,14 +109,14 @@
 
                 <!-- RIGHT: Task description -->
                 <div class="editor-main">
-                    <textarea id="editTaskName" placeholder="What needs to be done?"></textarea>
+                    <textarea id="editTaskName" placeholder="{{ _('dashboard.what_needs_done') }}"></textarea>
                 </div>
             </div>
         </div>
 
         <div class="modal-footer" style="flex-shrink: 0;">
-            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editTaskModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveTaskEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">Save Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="ModalManager.close('editTaskModal')" style="border-radius: 12px; padding: 10px 24px; font-weight: 600;">{{ _('dashboard.cancel') }}</button>
+            <button type="button" class="btn btn-primary" onclick="saveTaskEdit()" style="border-radius: 12px; padding: 10px 28px; font-weight: 700;">{{ _('dashboard.save_changes') }}</button>
         </div>
     </div>
 </div>

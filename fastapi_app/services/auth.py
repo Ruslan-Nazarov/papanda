@@ -63,13 +63,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def get_current_user_from_cookie(request: Request) -> Optional[str]:
     """
     Извлекает имя пользователя (sub) из JWT токена в куках.
-    
-    Args:
-        request: Объект запроса.
-        
-    Returns:
-        Optional[str]: Username пользователя или None, если токен невалиден.
     """
+    if settings.demo_mode:
+        return "guest"
+        
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         return None
@@ -83,18 +80,10 @@ def get_current_user_from_cookie(request: Request) -> Optional[str]:
 async def check_auth_dependency(request: Request, db: AsyncSession = Depends(get_main_db)) -> models.User:
     """
     Зависимость (Dependency) для проверки авторизации пользователя.
-    Если пользователь не авторизован, перенаправляет на страницу /login.
-    
-    Args:
-        request: Объект запроса.
-        db: Сессия основной базы данных.
-        
-    Returns:
-        models.User: Объект пользователя из БД.
-        
-    Raises:
-        HTTPException: Редирект на /login, если авторизация не пройдена.
     """
+    if settings.demo_mode:
+        return models.User(id=1, username="guest")
+        
     user_id = get_current_user_from_cookie(request)
     if not user_id:
         raise HTTPException(

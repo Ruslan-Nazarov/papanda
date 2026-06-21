@@ -18,24 +18,24 @@
                     {% if not obs['no_time'] %}
                         {{ obs['created_at'].strftime('%H:%M') }}
                     {% else %}
-                        Anytime
+                        {{ _('modal.anytime') }}
                     {% endif %}
                 </div>
 
                 <div class="tree-card">
                     {% if obs['task_id'] %}
-                        <div class="tree-category">TASK ACTIVITY</div>
+                        <div class="tree-category">{{ _('dashboard.task_activity') }}</div>
                     {% endif %}
                     <div class="tree-text">{{ obs['text'] }}</div>
                     
                     <div class="tree-footer">
                         <div class="tree-weekdays">
-                            {% for i, letter in [(0,'M'), (1,'T'), (2,'W'), (3,'T'), (4,'F'), (5,'S'), (6,'S')] %}
-                                <span class="day-dot {{ 'active' if i in obs['done_days'] }}">{{ letter }}</span>
+                            {% for i, day_key in [(0,'mon'), (1,'tue'), (2,'wed'), (3,'thu'), (4,'fri'), (5,'sat'), (6,'sun')] %}
+                                <span class="day-dot {{ 'active' if i in obs['done_days'] }}">{{ _('dashboard.' ~ day_key)[:1] | upper }}</span>
                             {% endfor %}
                         </div>
                         <button class="btn-tree-edit" onclick="openObsEditModalFromTree({{ obs['id'] }})">
-                            <i class="fas fa-edit"></i> Edit
+                            <i class="fas fa-edit"></i> {{ _('dashboard.edit') }}
                         </button>
                     </div>
                 </div>
@@ -44,5 +44,5 @@
     {% endfor %}
 </div>
 {% else %}
-    <div class="empty-state">No activities yet</div>
+    <div class="empty-state">{{ _('dashboard.no_activities_yet') }}</div>
 {% endif %}

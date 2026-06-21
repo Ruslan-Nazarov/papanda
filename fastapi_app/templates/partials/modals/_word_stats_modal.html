@@ -74,12 +74,12 @@
 
 <div id="wordStatsModal" onclick="if(event.target===this) closeWordStatsModal()">
     <div class="modal-content-wrapper">
-        <div class="close-modal-btn" onclick="closeWordStatsModal()" title="Close" style="right: 25px;">✕</div>
-        <div class="close-modal-btn" id="wordStatsSearchBtn" onclick="openDictionarySearch()" title="Search my words" style="right: 72px; font-size: 20px;">🔍</div>
+        <div class="close-modal-btn" onclick="closeWordStatsModal()" title="{{ _('modal.close') }}" style="right: 25px;">✕</div>
+        <div class="close-modal-btn" id="wordStatsSearchBtn" onclick="openDictionarySearch()" title="{{ _('modal.search_my_words') }}" style="right: 72px; font-size: 20px;">🔍</div>
         <div id="wordStatsModalContent">
             <div class="word-stats-loader">
                 <div class="word-stats-spinner"></div>
-                <h2>Loading your stats...</h2>
+                <h2>{{ _('modal.loading_your_stats') }}</h2>
             </div>
         </div>
     </div>
@@ -94,7 +94,7 @@
         contentDiv.innerHTML = `
             <div class="word-stats-loader">
                 <div class="word-stats-spinner"></div>
-                <h2>Loading your stats...</h2>
+                <h2>{{ _('modal.loading_your_stats') }}</h2>
             </div>
         `;
 
@@ -127,7 +127,7 @@
                 }
             })
             .catch(err => {
-                contentDiv.innerHTML = `<div style="padding: 50px; text-align: center; color: red;">Failed to load stats: ${err}</div>`;
+                contentDiv.innerHTML = `<div style="padding: 50px; text-align: center; color: red;">{{ _('modal.failed_to_load_stats') }} ${err}</div>`;
             });
     }
 

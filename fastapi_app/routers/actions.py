@@ -67,8 +67,8 @@ async def submit_form_json(
     """Обработка JSON-запроса с автоматической валидацией Pydantic."""
     created_id = await _process_form_submission(data, dashboard_service)
     if created_id:
-        return schemas.SuccessResponse(message=f"Данные успешно сохранены. ID: {created_id}")
-    raise HTTPException(status_code=500, detail="Ошибка при сохранении")
+        return schemas.SuccessResponse(message=f"Data successfully saved. ID: {created_id}")
+    raise HTTPException(status_code=500, detail="Error saving data")
 
 
 @router.post("/submit_chrono")
@@ -89,8 +89,8 @@ async def submit_chrono_json(
 ):
     created_id = await chronology_service.add_chronology(data.text, data.date)
     if created_id:
-        return schemas.SuccessResponse(message="Хронология успешно сохранена")
-    raise HTTPException(status_code=500, detail="Ошибка при сохранении")
+        return schemas.SuccessResponse(message="Chronology successfully saved")
+    raise HTTPException(status_code=500, detail="Error saving data")
 
 
 @router.post("/edit_chrono_json", response_model=schemas.SuccessResponse)
@@ -102,7 +102,7 @@ async def edit_chrono_json(
     success = await chronology_service.update_chronology(data.id, data.text, data.date)
     if success:
         return schemas.SuccessResponse(message="Chronology updated")
-    raise HTTPException(status_code=404, detail="Запись не найдена")
+    raise HTTPException(status_code=404, detail="Entry not found")
 
 
 @router.post("/mark_done/{task_id}", response_model=schemas.ToggleDoneResponse)

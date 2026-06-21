@@ -4,11 +4,11 @@
     <div class="widget-header">
         <div class="widget-title">
             <div class="sticker-icon-mini"></div>
-            <span>Stickers</span>
+            <span>{{ _('dashboard.stickers') }}</span>
         </div>
         <div class="widget-actions">
-            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="Widget Color">🎨</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Stickers')" title="Full View">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Stickers')" title="{{ _('dashboard.full_view') }}">☰</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -18,14 +18,14 @@
         <div class="sticker-editor-box">
             <div class="editor-row">
                 <div class="editor-col-main">
-                    <label class="highlight-label">Quick Thought</label>
+                    <label class="highlight-label">{{ _('dashboard.quick_thought') }}</label>
                     {{ premium_input(
                         id='stickerTitleInput',
-                        placeholder='Title (optional)...'
+                        placeholder=_('dashboard.title_optional')
                     ) }}
                 </div>
                 <div class="editor-col-mode">
-                    <label class="highlight-label">Mode</label>
+                    <label class="highlight-label">{{ _('dashboard.mode') }}</label>
                     <div class="sticker-type-segmented">
                         <div id="type-text-quick" class="type-segment active" onclick="toggleStickerMode('text')">📝</div>
                         <div id="type-list-quick" class="type-segment" onclick="toggleStickerMode('list')">✅</div>
@@ -37,10 +37,10 @@
                 {{ premium_input(
                     type='textarea',
                     id='stickerInput',
-                    placeholder='Write something...',
+                    placeholder=_('dashboard.write_something'),
                     rows=3
                 ) }}
-                <button type="button" class="btn btn-primary" onclick="addSticker()" style="height: 48px; min-width: 60px;">OK</button>
+                <button type="button" class="btn btn-primary" onclick="addSticker()" style="height: 48px; min-width: 60px;">{{ _('header.ok') }}</button>
             </div>
 
             <div class="editor-footer-row">
@@ -49,7 +49,7 @@
                     <div class="color-swatch {% if loop.first %}active{% endif %}" data-color="{{ color }}" style="background: {{ color }};" onclick="this.classList.add('active')"></div>
                     {% endfor %}
                 </div>
-                <span class="editor-hint">Ctrl+Enter to save</span>
+                <span class="editor-hint">{{ _('dashboard.ctrl_enter_to_save') }}</span>
             </div>
         </div>
 

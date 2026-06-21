@@ -121,7 +121,7 @@ export class StickerRenderer {
         }
 
         // Add Linked Note Card
-        if (note.note_id && note.note) {
+        if (note.note_id && note.note && !options.hideNoteCard) {
             const noteText = note.note.note || '';
             const shortNote = noteText.length > 60 ? noteText.substring(0, 57) + '...' : noteText;
             const escapedNoteText = noteText.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');

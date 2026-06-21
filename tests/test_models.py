@@ -13,7 +13,7 @@ async def test_all_models_registered(db_session):
         "User", "Event", "Chronology", "Task", "Habit", "HabitsDone", 
         "Notes", "NoteCategory", "StickyNote", 
         "WordStats", "WordStatsSnapshot", "WordShowsDaily", "Wink",
-        "Dashboard", "AppSettings", "LanguageRule",
+        "Dashboard", "AppSettings",
         "Observation", "ObservationLog"
     ]
     
