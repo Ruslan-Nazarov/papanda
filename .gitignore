@@ -4,9 +4,14 @@ instance/
 
 # Данные приложения (база, ресурсы)
 data/db/papanda.db
+data/
 logs/
 *.log
 *.db
+*.sqlite
+*.sqlite3
+*.key
+papanda_encryption.key
 
 # Python
 __pycache__/
