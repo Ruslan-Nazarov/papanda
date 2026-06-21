@@ -7,23 +7,11 @@ import secrets
 import json
 import sys
 
-# Корень проекта (папка papanda v 0.6 experiment)
+# Корень проекта
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
-# Логика для работы в скомпилированном (.exe) виде через PyInstaller
-IS_FROZEN: bool = getattr(sys, 'frozen', False)
-
-INTERNAL_ROOT: Path
-USER_DATA_ROOT: Path
-
-if IS_FROZEN:
-    # Если запущено как .exe, код и шаблоны лежат во временной папке _MEIPASS
-    INTERNAL_ROOT = Path(sys._MEIPASS)
-    # Данные (база, логи) лежат РЯДОМ с самим .exe файлом
-    USER_DATA_ROOT = Path(sys.executable).parent
-else:
-    INTERNAL_ROOT = BASE_DIR
-    USER_DATA_ROOT = BASE_DIR
+INTERNAL_ROOT = BASE_DIR
+USER_DATA_ROOT = BASE_DIR
 
 # Шаблоны Jinja2
 templates: Jinja2Templates = Jinja2Templates(directory=str(INTERNAL_ROOT / "fastapi_app" / "templates"))

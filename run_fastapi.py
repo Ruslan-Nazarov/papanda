@@ -26,14 +26,10 @@ def open_browser(url):
     time.sleep(1.5)
     webbrowser.open(url)
 
+
+
 if __name__ == "__main__":
     import sys
-    # Check if frozen and redirect stdout/stderr immediately to catch import errors
-    # We use a hardcoded check for sys.frozen to avoid importing config
-    is_frozen = getattr(sys, 'frozen', False)
-    if is_frozen:
-        sys.stdout = open(os.devnull, 'w')
-        sys.stderr = open(os.devnull, 'w')
 
     # Получаем настройки из окружения или используем значения по умолчанию
     host = os.getenv("HOST", "127.0.0.1")
@@ -45,12 +41,10 @@ if __name__ == "__main__":
     port = get_free_port(start_port, host)
     
     # Включаем reload только если явно указано в окружении
-    # ВНИМАНИЕ: Для .exe (frozen) reload должен быть ВСЕГДА False
-    from fastapi_app.config import IS_FROZEN
-    reload = False if IS_FROZEN else (os.getenv("RELOAD", "True").lower() == "true")
+    reload = (os.getenv("RELOAD", "True").lower() == "true")
 
     url = f"http://{host}:{port}"
-    print("--- Запуск Papanda v0.6.3 на FastAPI ---")
+    print("--- Запуск Papanda v0.6.4 на FastAPI ---")
     if port != start_port:
         print(f"[INFO] Порт {start_port} занят. Используется свободный порт {port}.")
     print(f"Приложение будет доступно по адресу: {url}")
@@ -62,9 +56,4 @@ if __name__ == "__main__":
     threading.Thread(target=open_browser, args=(url,), daemon=True).start()
 
     # Запускаем сервер
-    # Используем объект напрямую или строку, но для PyInstaller лучше импортировать app
-    if IS_FROZEN:
-        from fastapi_app.main import app
-        uvicorn.run(app, host=host, port=port)
-    else:
-        uvicorn.run("fastapi_app.main:app", host=host, port=port, reload=reload)
+    uvicorn.run("fastapi_app.main:app", host=host, port=port, reload=reload)

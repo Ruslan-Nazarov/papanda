@@ -69,7 +69,7 @@ mimetypes.add_type('text/css', '.css')
 app = FastAPI(
     title="Papanda API",
     description="Образовательное приложение",
-    version="0.6.2",
+    version="0.6.4",
     lifespan=lifespan
 )
 app.state.settings = settings
@@ -249,59 +249,4 @@ app.include_router(observation.router)       # /api/observations/...
 app.include_router(dialectics.router)       # /dialectics
 app.include_router(ai.router)               # /api/ai/...
 
-import asyncio
-import os
-import signal
 
-active_connections = 0
-shutdown_task = None
-
-@app.websocket("/ws/ping")
-async def websocket_ping(websocket: WebSocket):
-    global active_connections, shutdown_task
-    await websocket.accept()
-    active_connections += 1
-    
-    if shutdown_task and not shutdown_task.done():
-        shutdown_task.cancel()
-        
-    try:
-        while True:
-            await websocket.receive_text()
-    except Exception:
-        pass
-    finally:
-        active_connections -= 1
-        if active_connections <= 0:
-            shutdown_task = asyncio.create_task(delayed_shutdown())
-
-async def delayed_shutdown():
-    await asyncio.sleep(15) # 15 секунд грейс-период на загрузку страниц
-    if active_connections <= 0:
-        logger.info("Все вкладки браузера закрыты. Автоматически завершаем работу сервера...")
-        import platform
-        import os
-        import signal
-        
-        pid = os.getpid()
-        if platform.system() == "Windows":
-            parent_pid = os.getppid()
-            try:
-                import subprocess
-                # Проверяем, является ли родительский процесс тоже python.exe (например, uvicorn reloader)
-                output = subprocess.check_output(
-                    f'tasklist /fi "PID eq {parent_pid}" /nh /fo csv', 
-                    shell=True
-                ).decode('utf-8', errors='ignore')
-                
-                if 'python' in output.lower():
-                    # Тихо убиваем родительский reloader без вызова сторонних утилит
-                    os.kill(parent_pid, signal.SIGTERM)
-            except Exception as e:
-                logger.error(f"Не удалось завершить родительский процесс: {e}")
-                
-            # Затем завершаем текущий процесс с кодом 0 (чистый выход)
-            # Это крайне важно для PyInstaller, чтобы загрузчик удалил временные файлы
-            os._exit(0)
-        else:
-            os._exit(0)

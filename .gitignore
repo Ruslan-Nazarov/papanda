@@ -30,14 +30,6 @@ venv.bak/
 .coverage
 htmlcov/
 
-# Артефакты сборки PyInstaller
-/build/
-/dist/
-*.spec
-
-# Alembic (миграции должны быть в Git для синхронизации базы на сервере)
-# alembic/versions/
-
 # Системные файлы Windows
 Thumbs.db
 desktop.ini
@@ -67,3 +59,7 @@ update_locales.py
 update_sentences_js_locales.py
 update_sentences_locales.py
 update_settings_locales.py
+
+# Временные и мусорные файлы
+scratch_*
+test_*
