@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
@@ -21,8 +21,8 @@ jobs:
             echo "Starting deployment..."
             cd /root/papanda/
             
-            echo "Pulling latest code from master branch..."
-            git pull origin master
+            echo "Pulling latest code from main branch..."
+            git pull origin main
             
             echo "Restarting Papanda service..."
             systemctl restart papanda
