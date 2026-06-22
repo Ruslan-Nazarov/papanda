@@ -20,14 +20,14 @@ router = APIRouter(
     tags=["dialectics"]
 )
 
-@router.get("/dialectics", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def view_dialectics(
     request: Request,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
 ) -> HTMLResponse:
-    """Отображает страницу 'Диалектики'."""
-    return templates.TemplateResponse(request, "dialectics.html", {})
+    """Отображает главную страницу (Диалектика)."""
+    return templates.TemplateResponse(request, "index.html", {})
 
 @router.get("/api/dialectics/guide", response_model=DialecticsGuideResponse)
 async def get_dialectics_guide(

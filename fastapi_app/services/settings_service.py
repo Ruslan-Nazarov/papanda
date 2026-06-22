@@ -89,6 +89,22 @@ async def initialize_language_settings(db: AsyncSession) -> None:
         if existing is None:
             await set_setting(db, key, val)
 
+async def initialize_plugin_settings(db: AsyncSession) -> None:
+    """
+    Инициализирует настройки плагинов по умолчанию (включены).
+    """
+    plugins = [
+        'plugin_dashboard',
+        'plugin_languages',
+        'plugin_tasks',
+        'plugin_habits',
+        'plugin_events'
+    ]
+    for p in plugins:
+        existing = await get_setting(db, p)
+        if existing is None:
+            await set_setting(db, p, 'True')
+
 async def get_settings_context(db: AsyncSession, request: Request, import_result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Собирает контекст для шаблона settings.html.

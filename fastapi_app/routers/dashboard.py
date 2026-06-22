@@ -23,7 +23,7 @@ router = APIRouter(
     tags=["dashboard"]
 )
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/dashboard", response_class=HTMLResponse)
 async def index(
     request: Request,
     dashboard_service: DashboardService = Depends(get_dashboard_service),
@@ -32,7 +32,7 @@ async def index(
     user: Any = Depends(check_auth_dependency)
 ) -> HTMLResponse:
     """
-    Главная страница приложения (Dashboard).
+    Страница Dashboard.
     Отображает текущие задачи, события, привычки и слова для изучения.
     """
     db = dashboard_service.db
@@ -105,7 +105,7 @@ async def index(
             await db.refresh(new_anchor)
             lang_anchors[lang] = new_anchor.id
 
-    return templates.TemplateResponse(request, "index.html", {
+    return templates.TemplateResponse(request, "dashboard.html", {
         "request": request,
         "words": ctx['words'],
         "active_languages": active_langs,
