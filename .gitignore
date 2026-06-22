@@ -67,3 +67,7 @@ test_*
 # Локальные скрипты запуска
 run_fastapi.bat
 run_fastapi.py
+
+# Сборка PyInstaller
+build/
+dist/
