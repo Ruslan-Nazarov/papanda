@@ -89,6 +89,7 @@ async def save_dialectics(
 
 @router.get("/api/dialectics", response_model=List[DialecticsView])
 async def list_dialectics(
+    request: Request,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
@@ -98,11 +99,25 @@ async def list_dialectics(
     if search:
         query = query.where(Dialectics.title.ilike(f"%{search}%"))
     result = await db.execute(query.order_by(func.coalesce(Dialectics.updated_at, Dialectics.created_at).desc()))
-    return result.scalars().all()
+    notes = result.scalars().all()
+
+    locale = request.cookies.get("locale", "en")
+    locale_map = {
+        "en": "Example Note",
+        "ru": "Пример конспекта",
+        "kk": "Конспект мысалы"
+    }
+    target_title = locale_map.get(locale, "Example Note")
+
+    for note in notes:
+        if note.title in ["Example Note", "Пример конспекта", "Конспект мысалы"]:
+            note.title = target_title
+
+    return notes
 
 @router.get("/api/dialectics/example/get_or_create_id", response_model=DialecticsIdResponse)
 async def get_example_note_id(request: Request, db: AsyncSession = Depends(get_db)):
-    """Находит или обновляет пример конспекта под текущий язык и возвращает его ID."""
+    """Находит или создаёт пример конспекта под текущий язык и возвращает его ID."""
     locale = request.cookies.get("locale", "en")
     
     locale_map = {
@@ -117,19 +132,16 @@ async def get_example_note_id(request: Request, db: AsyncSession = Depends(get_d
     res = await db.execute(stmt)
     existing = res.scalars().first()
     
-    json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file
-    if not json_path.exists():
-        json_path = INTERNAL_ROOT / "fastapi_app" / "static" / "example_note_content.json"
-        
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-        
     if existing:
-        existing.title = data.get("title", target_title)
-        existing.content_json = data.get("content_json", [])
-        await db.commit()
         return {"id": existing.id}
     else:
+        json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file
+        if not json_path.exists():
+            json_path = INTERNAL_ROOT / "fastapi_app" / "static" / "example_note_content.json"
+            
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
         new_note = Dialectics(
             title=data.get("title", target_title),
             content_json=data.get("content_json", []),
@@ -159,19 +171,18 @@ async def get_dialectics(
             "kk": ("Конспект мысалы", "example_note_content_kk.json")
         }
         target_title, json_file = locale_map.get(locale, locale_map["en"])
-        if note.title != target_title:
-            json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file
-            if not json_path.exists():
-                json_path = INTERNAL_ROOT / "fastapi_app" / "static" / "example_note_content.json"
-            try:
-                with open(json_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                note.title = data.get("title", target_title)
-                note.content_json = data.get("content_json", [])
-                await db.commit()
-                await db.refresh(note)
-            except Exception as e:
-                logger.error(f"Error updating example note on fetch: {e}")
+        json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file
+        if not json_path.exists():
+            json_path = INTERNAL_ROOT / "fastapi_app" / "static" / "example_note_content.json"
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Temporarily modify title and content in memory for the response,
+            # but do not commit these changes to the database.
+            note.title = data.get("title", target_title)
+            note.content_json = data.get("content_json", [])
+        except Exception as e:
+            logger.error(f"Error loading localized example note: {e}")
                 
     return note
 

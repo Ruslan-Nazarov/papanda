@@ -140,41 +140,6 @@ async def set_locale(data: LocaleRequest, db: AsyncSession = Depends(get_db)):
     if locale not in ["en", "ru", "kk"]:
         locale = "en"
         
-    # Update Example Note in DB
-    locale_map = {
-        "en": ("Example Note", "example_note_content.json"),
-        "ru": ("Пример конспекта", "example_note_content_ru.json"),
-        "kk": ("Конспект мысалы", "example_note_content_kk.json")
-    }
-    target_title, json_file = locale_map.get(locale, locale_map["en"])
-    
-    stmt = select(Dialectics).where(Dialectics.title.in_(["Example Note", "Пример конспекта", "Конспект мысалы"]))
-    res = await db.execute(stmt)
-    existing = res.scalars().first()
-    
-    json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file
-    if not json_path.exists():
-        json_path = INTERNAL_ROOT / "fastapi_app" / "static" / "example_note_content.json"
-        
-    try:
-        with open(json_path, "r", encoding="utf-8") as f:
-            content_data = json.load(f)
-            
-        if existing:
-            existing.title = content_data.get("title", target_title)
-            existing.content_json = content_data.get("content_json", [])
-        else:
-            new_note = Dialectics(
-                title=content_data.get("title", target_title),
-                content_json=content_data.get("content_json", []),
-                is_pinned=content_data.get("is_pinned", False)
-            )
-            db.add(new_note)
-        await db.commit()
-    except Exception as e:
-        import logging
-        logging.error(f"Failed to seed example note on locale change: {e}")
-        
     from ...config import settings
     if settings.demo_mode:
         from ...database import reseed_demo_data
