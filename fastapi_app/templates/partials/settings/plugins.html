@@ -1,0 +1,61 @@
+<div class="premium-card settings-algo-widget">
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">🧩</span>
+            <span>{{ _('settings.plugins.title') }}</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
+        </div>
+    </div>
+    <div class="widget-body">
+        <div class="settings-grid" style="gap: 32px; grid-template-columns: 1fr;">
+            <div class="settings-algo-form">
+                <form action="{{ url_for('update_plugins') }}" method="post">
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light);">
+                        <label class="form-label" style="margin: 0;">{{ _('dashboard.dashboard') }}</label>
+                        <label class="switch">
+                            <input type="checkbox" name="plugin_dashboard" value="true" {% if plugin_dashboard %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light);">
+                        <label class="form-label" style="margin: 0;">{{ _('dashboard.languages') }}</label>
+                        <label class="switch">
+                            <input type="checkbox" name="plugin_languages" value="true" {% if plugin_languages %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light);">
+                        <label class="form-label" style="margin: 0;">{{ _('header.cat_task') }}</label>
+                        <label class="switch">
+                            <input type="checkbox" name="plugin_tasks" value="true" {% if plugin_tasks %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light);">
+                        <label class="form-label" style="margin: 0;">{{ _('header.cat_habit') }}</label>
+                        <label class="switch">
+                            <input type="checkbox" name="plugin_habits" value="true" {% if plugin_habits %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <label class="form-label" style="margin: 0;">{{ _('header.cat_event') }}</label>
+                        <label class="switch">
+                            <input type="checkbox" name="plugin_events" value="true" {% if plugin_events %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; font-family: inherit;">{{ _('settings.save') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

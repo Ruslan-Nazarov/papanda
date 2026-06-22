@@ -12,6 +12,11 @@ class SettingsUpdateSchema(BaseModel):
     """Схема обновления глобальных настроек."""
     max_duration: Optional[int] = Field(None, ge=1, le=1440)
     max_random_minutes: Optional[int] = Field(None, ge=0, le=1440)
+    plugin_dashboard: bool = Field(False)
+    plugin_languages: bool = Field(False)
+    plugin_tasks: bool = Field(False)
+    plugin_habits: bool = Field(False)
+    plugin_events: bool = Field(False)
 
     @classmethod
     def as_form(
@@ -22,6 +27,30 @@ class SettingsUpdateSchema(BaseModel):
         return cls(
             max_duration=max_duration, 
             max_random_minutes=max_random_minutes
+        )
+
+class PluginsUpdateSchema(BaseModel):
+    plugin_dashboard: bool = Field(False)
+    plugin_languages: bool = Field(False)
+    plugin_tasks: bool = Field(False)
+    plugin_habits: bool = Field(False)
+    plugin_events: bool = Field(False)
+
+    @classmethod
+    def as_form(
+        cls, 
+        plugin_dashboard: bool = Form(False),
+        plugin_languages: bool = Form(False),
+        plugin_tasks: bool = Form(False),
+        plugin_habits: bool = Form(False),
+        plugin_events: bool = Form(False)
+    ):
+        return cls(
+            plugin_dashboard=plugin_dashboard,
+            plugin_languages=plugin_languages,
+            plugin_tasks=plugin_tasks,
+            plugin_habits=plugin_habits,
+            plugin_events=plugin_events
         )
 
 class LanguageUpdateSchema(BaseModel):

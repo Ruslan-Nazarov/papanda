@@ -153,8 +153,9 @@
         "view_tree": "🌳 Ағашты көру",
         "view_stickers": "Стикерлерді көру",
         "add_sticker": "Стикер қосу",
-        "complete_status": "✓ Аяқталды",
-        "pending_status": "○ Күтілуде"
+        "pending_status": "○ Күтілуде",
+        "dashboard": "Басқару панелі",
+        "languages": "Тіл үйрену"
     },
     "modal": {
         "chronology_entry": "📅 Хронология жазбасы",
@@ -393,8 +394,12 @@
     },
     "settings": {
         "title": "Параметрлер",
-        "dashboard": "Басқару тақтасы",
+        "dashboard": "Виджеттер",
         "save": "Параметрлерді сақтау",
+        "to_main": "Басты бетке",
+        "plugins": {
+            "title": "Белсенді плагиндер"
+        },
         "algo": {
             "title": "Алгоритм параметрлері",
             "max_duration": "Макс. Wink уақыты (минут):",
@@ -499,7 +504,7 @@
         "title": "Диалектика",
         "topic_placeholder": "Жазба тақырыбы...",
         "instructions": "Нұсқаулық",
-        "dashboard": "Басқару тақтасы",
+        "dashboard": "Виджеттер",
         "relations": "Байланыстар",
         "menu": "Мәзір",
         "new": "Жаңа",

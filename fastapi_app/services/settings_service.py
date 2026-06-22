@@ -140,6 +140,14 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
         notes_last = note_res.scalar_one_or_none()
     
     await initialize_language_settings(db)
+    await initialize_plugin_settings(db)
+    
+    plugin_dashboard = await get_setting(db, 'plugin_dashboard', 'True') == 'True'
+    plugin_languages = await get_setting(db, 'plugin_languages', 'True') == 'True'
+    plugin_tasks = await get_setting(db, 'plugin_tasks', 'True') == 'True'
+    plugin_habits = await get_setting(db, 'plugin_habits', 'True') == 'True'
+    plugin_events = await get_setting(db, 'plugin_events', 'True') == 'True'
+    
     active_langs_raw = await get_setting(db, 'active_languages', 'en,it,de')
     active_languages = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
     
@@ -170,6 +178,11 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
         "active_languages": active_languages,
         "all_languages": lang_names,
         "settings_layout": settings_layout,
+        "plugin_dashboard": plugin_dashboard,
+        "plugin_languages": plugin_languages,
+        "plugin_tasks": plugin_tasks,
+        "plugin_habits": plugin_habits,
+        "plugin_events": plugin_events,
     }
     if import_result is not None:
         ctx["import_result"] = import_result

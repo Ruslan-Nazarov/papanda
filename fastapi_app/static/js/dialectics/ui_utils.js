@@ -9,6 +9,9 @@ export const DialecticsUI = {
     setLoading(container, text = 'Loading...') {
         container.innerHTML = `<div style="color: #64748b; text-align: center; padding: 20px;">${text}</div>`;
     },
+    clearLoading(container) {
+        if (container) container.innerHTML = '';
+    },
     setupDraggable(el, handle, state) {
         if (!el || !handle) return;
         let isDragging = false;

@@ -58,7 +58,21 @@ class ContextService:
                     count = int(await get_setting(self.db, 'total_words_count', '0'))
                     imw = float(await get_setting(self.db, 'current_imw_cache', '0'))
                     coverage = float(await get_setting(self.db, 'current_coverage_cache', '100.0'))
-                    return {'words': words, 'wink': wink, 'count': count, 'coverage': coverage, 'imw': imw}
+                    
+                    plugin_dashboard = await get_setting(self.db, 'plugin_dashboard', 'True') == 'True'
+                    plugin_languages = await get_setting(self.db, 'plugin_languages', 'True') == 'True'
+                    plugin_tasks = await get_setting(self.db, 'plugin_tasks', 'True') == 'True'
+                    plugin_habits = await get_setting(self.db, 'plugin_habits', 'True') == 'True'
+                    plugin_events = await get_setting(self.db, 'plugin_events', 'True') == 'True'
+                    
+                    return {
+                        'words': words, 'wink': wink, 'count': count, 'coverage': coverage, 'imw': imw,
+                        'plugin_dashboard': plugin_dashboard,
+                        'plugin_languages': plugin_languages,
+                        'plugin_tasks': plugin_tasks,
+                        'plugin_habits': plugin_habits,
+                        'plugin_events': plugin_events
+                    }
                 except Exception as e:
                     logger.warning(f"Cache read failed: {e}")
                     need_update = True
@@ -157,7 +171,20 @@ class ContextService:
             'last_update_ts': now.isoformat()
         })
 
-        return {'words': final_words, 'wink': wink_title, 'count': total_count, 'coverage': coverage, 'imw': imw}
+        plugin_dashboard = await get_setting(db, 'plugin_dashboard', 'True') == 'True'
+        plugin_languages = await get_setting(db, 'plugin_languages', 'True') == 'True'
+        plugin_tasks = await get_setting(db, 'plugin_tasks', 'True') == 'True'
+        plugin_habits = await get_setting(db, 'plugin_habits', 'True') == 'True'
+        plugin_events = await get_setting(db, 'plugin_events', 'True') == 'True'
+
+        return {
+            'words': final_words, 'wink': wink_title, 'count': total_count, 'coverage': coverage, 'imw': imw,
+            'plugin_dashboard': plugin_dashboard,
+            'plugin_languages': plugin_languages,
+            'plugin_tasks': plugin_tasks,
+            'plugin_habits': plugin_habits,
+            'plugin_events': plugin_events
+        }
 
     async def remove_word_from_cache(self, eng: str) -> None:
         """Удаляет слово из кэша текущих слов (например, когда оно выучено)."""

@@ -54,10 +54,12 @@ export const BlockManager = {
 
         const allElements = [];
 
+        // Always push normal blocks first
+        normalBlocks.forEach(b => allElements.push({ type: 'block', data: b }));
+
         if (!specialBlocks['anchor']) {
             allElements.push({ type: 'hint', data: ANCHOR_HINT });
         } else {
-            normalBlocks.forEach(b => allElements.push({ type: 'block', data: b }));
 
             let nextHint = null;
             for (const step of STEPS) {

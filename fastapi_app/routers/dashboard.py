@@ -105,6 +105,11 @@ async def index(
             await db.refresh(new_anchor)
             lang_anchors[lang] = new_anchor.id
 
+    plugin_events = await get_setting(db, 'plugin_events', 'True') == 'True'
+    plugin_tasks = await get_setting(db, 'plugin_tasks', 'True') == 'True'
+    plugin_habits = await get_setting(db, 'plugin_habits', 'True') == 'True'
+    plugin_languages = await get_setting(db, 'plugin_languages', 'True') == 'True'
+
     return templates.TemplateResponse(request, "dashboard.html", {
         "request": request,
         "words": ctx['words'],
@@ -138,7 +143,11 @@ async def index(
         "pinned_notes": dash_data.get('pinned_notes', []),
         "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0,
         "lang_anchors_json": json.dumps(lang_anchors),
-        "sentences_json": sentences_json
+        "sentences_json": sentences_json,
+        "plugin_events": plugin_events,
+        "plugin_tasks": plugin_tasks,
+        "plugin_habits": plugin_habits,
+        "plugin_languages": plugin_languages
     })
 
 

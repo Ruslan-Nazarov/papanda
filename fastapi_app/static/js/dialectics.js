@@ -817,11 +817,12 @@ class DialecticsEngine {
                 }
             } else {
                 console.error("Failed to load example note ID.");
+                DialecticsUI.clearLoading(this.dom.canvas);
             }
         } catch (e) {
             console.error(e);
+            DialecticsUI.clearLoading(this.dom.canvas);
         }
-        DialecticsUI.clearLoading(this.dom.canvas);
     }
 
     async createNewNote() {

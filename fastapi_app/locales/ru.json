@@ -183,7 +183,9 @@
         "what_are_you_doing": "Что вы делаете?",
         "what_did_you_do": "Что вы сделали?",
         "what_habit_tracking": "Какую привычку отслеживаем?",
-        "what_needs_done": "Что нужно сделать?"
+        "what_needs_done": "Что нужно сделать?",
+        "dashboard": "Дашборд",
+        "languages": "Изучение языков"
     },
     "modal": {
         "chronology_entry": "📅 Запись хронологии",
@@ -422,8 +424,12 @@
     },
     "settings": {
         "title": "Настройки",
-        "dashboard": "Главная",
+        "dashboard": "Виджеты",
         "save": "Сохранить настройки",
+        "to_main": "На главную",
+        "plugins": {
+            "title": "Активные плагины"
+        },
         "algo": {
             "title": "Настройки алгоритмов",
             "max_duration": "Макс. время Wink (минут):",
@@ -527,8 +533,8 @@
     "dialectics": {
         "title": "Диалектика",
         "topic_placeholder": "Тема заметки...",
-        "instructions": "Инструкция",
-        "dashboard": "Главная",
+        "instructions": "Как это работает?",
+        "dashboard": "Виджеты",
         "relations": "Связи",
         "menu": "Меню",
         "new": "Новая",

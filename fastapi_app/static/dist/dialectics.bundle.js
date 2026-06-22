@@ -27,6 +27,9 @@ var t = {
 	setLoading(e, t = "Loading...") {
 		e.innerHTML = `<div style="color: #64748b; text-align: center; padding: 20px;">${t}</div>`;
 	},
+	clearLoading(e) {
+		e && (e.innerHTML = "");
+	},
 	setupDraggable(e, t, n) {
 		if (!e || !t) return;
 		let r = !1, i = {
@@ -22196,15 +22199,14 @@ var ja = function(e, t) {
 			e.role ? (s[e.role] = e, e.role !== "anchor" && c.push(e)) : c.push(e);
 		});
 		let l = [];
-		if (!s.anchor) l.push({
+		if (c.forEach((e) => l.push({
+			type: "block",
+			data: e
+		})), !s.anchor) l.push({
 			type: "hint",
 			data: a
 		});
 		else {
-			c.forEach((e) => l.push({
-				type: "block",
-				data: e
-			}));
 			let e = null;
 			for (let t of o) if (!s[t.id]) {
 				e = t;
@@ -34364,11 +34366,10 @@ window.app = new class {
 			if (e.ok) {
 				let t = await e.json();
 				t && t.id && (await this.loadNoteToEditor(t.id), window.showToast(window._("toast.opened_existing_example_note") || "Example Note loaded", "info"));
-			} else console.error("Failed to load example note ID.");
+			} else console.error("Failed to load example note ID."), n.clearLoading(this.dom.canvas);
 		} catch (e) {
-			console.error(e);
+			console.error(e), n.clearLoading(this.dom.canvas);
 		}
-		n.clearLoading(this.dom.canvas);
 	}
 	async createNewNote() {
 		this.state.isDirty ? await r({

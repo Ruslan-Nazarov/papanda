@@ -40,6 +40,21 @@ async def update_settings(
     response = RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
     return response
 
+@router.post("/settings/update_plugins", name="update_plugins")
+async def update_plugins(
+    data: schemas.PluginsUpdateSchema = Depends(schemas.PluginsUpdateSchema.as_form),
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    """Обновляет настройки плагинов."""
+    await set_setting(db, 'plugin_dashboard', str(data.plugin_dashboard))
+    await set_setting(db, 'plugin_languages', str(data.plugin_languages))
+    await set_setting(db, 'plugin_tasks', str(data.plugin_tasks))
+    await set_setting(db, 'plugin_habits', str(data.plugin_habits))
+    await set_setting(db, 'plugin_events', str(data.plugin_events))
+
+    await db.commit()
+    return RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @router.post("/settings/update_languages", name="update_languages")
 async def update_languages(

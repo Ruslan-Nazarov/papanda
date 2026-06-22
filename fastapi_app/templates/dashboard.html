@@ -67,24 +67,32 @@
         </div>
 
         <!-- Schedule -->
+        {% if plugin_events %}
         <div class="grid-stack-item" id="events" gs-id="events" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
             <div class="grid-stack-item-content">{% include 'partials/schedule_widget.html' %}</div>
         </div>
+        {% endif %}
 
         <!-- Tasks -->
+        {% if plugin_tasks %}
         <div class="grid-stack-item" id="tasks" gs-id="tasks" gs-x="0" gs-y="5" gs-w="4" gs-h="6">
             <div class="grid-stack-item-content">{% include 'partials/tasks_widget.html' %}</div>
         </div>
+        {% endif %}
 
         <!-- Habits -->
+        {% if plugin_habits %}
         <div class="grid-stack-item" id="habits" gs-id="habits" gs-x="4" gs-y="5" gs-w="4" gs-h="6">
             <div class="grid-stack-item-content">{% include 'partials/habits_widget.html' %}</div>
         </div>
+        {% endif %}
 
         <!-- Words -->
+        {% if plugin_languages %}
         <div class="grid-stack-item" id="words" gs-id="words" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
             <div class="grid-stack-item-content">{% include 'partials/words_widget.html' %}</div>
         </div>
+        {% endif %}
 
         <!-- Sticky Thoughts -->
         <div class="grid-stack-item" id="stickers" gs-id="stickers" gs-x="8" gs-y="5" gs-w="4" gs-h="6">

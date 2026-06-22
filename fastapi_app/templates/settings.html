@@ -21,8 +21,8 @@
             <div class="header-line">
                 <h1>{{ _('settings.title') }}</h1>
                 <div style="background: white; padding: 6px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--color-border-light);">
-                    <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--color-text-dark); font-weight: 800; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                        <span>←</span> {{ _('settings.dashboard') }}
+                    <a href="{{ url_for('view_dialectics') }}" style="text-decoration: none; color: var(--color-text-dark); font-weight: 800; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                        <span>←</span> {{ _('settings.to_main') }}
                     </a>
                 </div>
             </div>
@@ -30,6 +30,7 @@
             <!-- GridStack Container -->
             <div class="grid-stack">
                 
+                {% if plugin_languages %}
                 <!-- 1. Dictionary Sync -->
                 <div class="grid-stack-item" gs-id="set_sync" gs-w="6" gs-h="6">
                     <div class="grid-stack-item-content">
@@ -43,6 +44,7 @@
                         {% include 'partials/settings/language_settings.html' %}
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- 3. Algorithm Settings -->
                 <div class="grid-stack-item" gs-id="set_algo" gs-w="6" gs-h="6">
@@ -92,14 +94,23 @@
                     </div>
                 </div>
 
+                {% if plugin_languages %}
                 <!-- 8. Sentences Settings -->
                 <div class="grid-stack-item" gs-id="set_sentences" gs-w="6" gs-h="16">
                     <div class="grid-stack-item-content">
                         {% include 'partials/settings/sentences.html' %}
                     </div>
                 </div>
+                {% endif %}
 
 
+
+                <!-- Plugins -->
+                <div class="grid-stack-item" gs-id="set_plugins" gs-w="6" gs-h="8">
+                    <div class="grid-stack-item-content">
+                        {% include 'partials/settings/plugins.html' %}
+                    </div>
+                </div>
 
              </div> <!-- /grid-stack -->
         </div> <!-- /settings-wrapper -->

@@ -183,7 +183,9 @@
         "what_are_you_doing": "What are you doing?",
         "what_did_you_do": "What did you do?",
         "what_habit_tracking": "What habit tracking?",
-        "what_needs_done": "What needs to be done?"
+        "what_needs_done": "What needs to be done?",
+        "dashboard": "Dashboard",
+        "languages": "Language Learning"
     },
     "modal": {
         "chronology_entry": "📅 Chronology Entry",
@@ -422,8 +424,12 @@
     },
     "settings": {
         "title": "Settings",
-        "dashboard": "Dashboard",
+        "dashboard": "Widgets",
         "save": "Save Settings",
+        "to_main": "To Main Page",
+        "plugins": {
+            "title": "Active Plugins"
+        },
         "algo": {
             "title": "Algorithm Settings",
             "max_duration": "Max Wink time (minutes):",
@@ -528,7 +534,7 @@
         "title": "Dialectics",
         "topic_placeholder": "Note topic...",
         "instructions": "Instructions",
-        "dashboard": "Dashboard",
+        "dashboard": "Widgets",
         "relations": "Relations",
         "menu": "Menu",
         "new": "New",

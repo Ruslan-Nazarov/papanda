@@ -86,3 +86,5 @@ def get_translate_func(request: Request):
         return localization_service.get_text(locale, key)
         
     return translate
+
+# Triggering reload to refresh localized translations from json files.

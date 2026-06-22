@@ -20,6 +20,8 @@ router = APIRouter(
     tags=["dialectics"]
 )
 
+from ..services.settings_service import get_setting
+
 @router.get("/", response_class=HTMLResponse)
 async def view_dialectics(
     request: Request,
@@ -27,7 +29,10 @@ async def view_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> HTMLResponse:
     """Отображает главную страницу (Диалектика)."""
-    return templates.TemplateResponse(request, "index.html", {})
+    plugin_dashboard = await get_setting(db, 'plugin_dashboard', 'True') == 'True'
+    return templates.TemplateResponse(request, "index.html", {
+        "plugin_dashboard": plugin_dashboard
+    })
 
 @router.get("/api/dialectics/guide", response_model=DialecticsGuideResponse)
 async def get_dialectics_guide(
