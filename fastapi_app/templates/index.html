@@ -297,7 +297,7 @@
         });
     </script>
     <script type="module" src="{{ url_for('static', path='js/modules/NotificationService.js') }}"></script>
-    <script src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
+    <script type="module" src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
     <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v={{ range(1, 9999) | random }}"></script>
     <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
 

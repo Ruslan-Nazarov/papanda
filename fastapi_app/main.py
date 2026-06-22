@@ -153,12 +153,12 @@ async def add_security_headers_and_user(request: Request, call_next: Callable) -
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://d3js.org; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://cdn.quilljs.com; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://d3js.org https://cdn.quilljs.com; "
-        "font-src 'self' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com data:; "
-        "img-src 'self' data: blob:; "
-        "connect-src 'self' https://d3js.org https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com;"
+        "default-src 'self' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://d3js.org https://npmcdn.com https://*.npmcdn.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://cdn.quilljs.com https://fonts.googleapis.com; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://d3js.org https://cdn.quilljs.com https://npmcdn.com https://*.npmcdn.com https://mc.yandex.ru; "
+        "font-src 'self' https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://fonts.gstatic.com data:; "
+        "img-src 'self' data: blob: https://mc.yandex.ru; "
+        "connect-src 'self' ws: wss: https://d3js.org https://cdn.jsdelivr.net https://*.jsdelivr.net https://unpkg.com https://*.unpkg.com https://mc.yandex.ru;"
     )
 
     return response
@@ -221,6 +221,19 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Database error"}
     )
+
+@app.websocket("/ws/ping")
+async def websocket_ping(websocket: WebSocket):
+    """WebSocket для поддержания активности сессии (auto-shutdown)."""
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"pong: {data}")
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon() -> FileResponse:

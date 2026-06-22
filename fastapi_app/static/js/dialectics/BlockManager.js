@@ -26,17 +26,54 @@ export const BlockManager = {
         container.innerHTML = '';
         if (divider) container.appendChild(divider);
 
+        const getHint = (key, defaultVal) => {
+            if (typeof window._ === 'function') {
+                const trans = window._(key);
+                return trans !== key ? trans : defaultVal;
+            }
+            return defaultVal;
+        };
+
         const ANCHOR_HINT = {
-            id: 'anchor', side: 'left', text: 'Что вам нужно понять?', title: 'Что вам нужно понять?'
+            id: 'anchor',
+            side: 'left',
+            text: getHint('dialectics.hints.anchor', 'Что вам нужно понять?'),
+            title: getHint('dialectics.hints.anchor', 'Что вам нужно понять?')
         };
 
         const STEPS = [
-            { id: 'step1', side: 'left', text: 'Простейший процесс', title: 'Простейший процесс' },
-            { id: 'step2', side: 'right', text: 'Опишите как развивается этот простейший процесс', title: 'Опишите как развивается этот простейший процесс' },
-            { id: 'step3', side: 'left', text: 'Найти противоположный процесс', title: 'Найти противоположный процесс' },
-            { id: 'step4', side: 'right', text: 'Опишите развитие противоположного процесса', title: 'Опишите развитие противоположного процесса' },
-            { id: 'step5', side: 'center', text: 'Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие', title: 'Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие' }
+            {
+                id: 'step1',
+                side: 'left',
+                text: getHint('dialectics.hints.step1', 'Простейший процесс'),
+                title: getHint('dialectics.hints.step1', 'Простейший процесс')
+            },
+            {
+                id: 'step2',
+                side: 'right',
+                text: getHint('dialectics.hints.step2', 'Опишите как развивается этот простейший процесс'),
+                title: getHint('dialectics.hints.step2', 'Опишите как развивается этот простейший процесс')
+            },
+            {
+                id: 'step3',
+                side: 'left',
+                text: getHint('dialectics.hints.step3', 'Найти противоположный процесс'),
+                title: getHint('dialectics.hints.step3', 'Найти противоположный процесс')
+            },
+            {
+                id: 'step4',
+                side: 'right',
+                text: getHint('dialectics.hints.step4', 'Опишите развитие противоположного процесса'),
+                title: getHint('dialectics.hints.step4', 'Опишите развитие противоположного процесса')
+            },
+            {
+                id: 'step5',
+                side: 'center',
+                text: getHint('dialectics.hints.step5', 'Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие'),
+                title: getHint('dialectics.hints.step5', 'Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие')
+            }
         ];
+
 
         const specialBlocks = {};
         const normalBlocks = [];

@@ -552,7 +552,15 @@
         "insert_to_text": "Insert to text",
         "graph_empty": "Enter function and click \\\"Plot\\\"",
         "editor_title": "Dialectics Editor",
-        "ok": "OK"
+        "ok": "OK",
+        "hints": {
+            "anchor": "What do you need to understand?",
+            "step1": "The simplest process",
+            "step2": "Describe how this simplest process develops",
+            "step3": "Find the opposing process",
+            "step4": "Describe the development of the opposing process",
+            "step5": "Unite both opposing processes into one common development or movement: what contradictions does this lead to and how is this contradiction resolved?"
+        }
     },
     "demo_banner": {
         "title": "ℹ️ Demo Mode:",
