@@ -163,7 +163,9 @@ window.markTripletLearned = async function (eng, btn) {
         });
         const data = await resp.json();
         if (data.status === 'success') {
-            showToast(`"${eng}" marked as learned!`);
+            let tKey = window._("toast.word_marked_as_learned");
+            let msg = (tKey !== "toast.word_marked_as_learned") ? tKey.replace("{word}", eng) : `"${eng}" marked as learned!`;
+            showToast(msg);
             if (data.new_word) {
                 const row = btn.closest('.word-row');
                 if (row) {
@@ -506,7 +508,9 @@ window.markWorkoutTripletLearnedWidget = async function() {
         });
         const data = await resp.json();
         if (data.status === 'success') {
-            showToast(`"${word.eng}" triplet marked as learned!`);
+            let tKey = window._("toast.triplet_marked_as_learned");
+            let msg = (tKey !== "toast.triplet_marked_as_learned") ? tKey.replace("{word}", word.eng) : `"${word.eng}" triplet marked as learned!`;
+            showToast(msg);
             // Auto advance
             await window.recordResultWidget(true);
         } else {

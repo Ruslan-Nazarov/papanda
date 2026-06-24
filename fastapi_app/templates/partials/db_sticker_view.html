@@ -10,8 +10,8 @@
             onDelete: function(){ hardDeleteStickerGlobal(document.querySelector(".db-card[data-id=\"{{ row.id }}\"]"), "{{ row.id }}"); }
          })'>
         
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
                 <span class="note-cat badge-premium" style="background: {{ row.color or '#fff9c4' }}33; color: var(--color-text-dark);">
                     {{ row.type|capitalize }}
                 </span>
@@ -28,7 +28,7 @@
                 {% endif %}
             </div>
 
-            <div class="db-card-actions" style="border-top: none; padding-top: 0; margin-top: 0;" onclick="event.stopPropagation()">
+            <div class="db-card-actions" style="border-top: none; padding-top: 0; margin-top: 0; flex-shrink: 0;" onclick="event.stopPropagation()">
                 <button type="button" class="btn-action btn-edit" title="Edit" 
                         onclick="event.stopPropagation(); openStickerModal({ id: '{{ row.id }}', mode: 'edit' })">
                     Edit

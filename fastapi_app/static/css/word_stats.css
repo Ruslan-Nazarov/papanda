@@ -231,7 +231,7 @@ body {
 #help-popup {
     display: none;
     position: absolute;
-    z-index: 2000;
+    z-index: 999999;
     background: rgba(44, 62, 80, 0.95);
     color: white;
     padding: 12px 16px;

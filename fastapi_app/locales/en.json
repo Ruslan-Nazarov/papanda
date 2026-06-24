@@ -420,7 +420,9 @@
         "note_updated": "Note updated",
         "sticker_updated": "✓ Sticker updated",
         "failed_to_archive": "⚠ Failed to archive",
-        "saved": "Saved"
+        "saved": "Saved",
+        "word_marked_as_learned": "\"{word}\" marked as learned!",
+        "triplet_marked_as_learned": "\"{word}\" triplet marked as learned!"
     },
     "settings": {
         "title": "Settings",

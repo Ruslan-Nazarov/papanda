@@ -390,7 +390,9 @@
         "note_updated": "Жазба жаңартылды",
         "sticker_updated": "✓ Стикер жаңартылды",
         "failed_to_archive": "⚠ Мұрағаттау сәтсіз аяқталды",
-        "saved": "Сақталды"
+        "saved": "Сақталды",
+        "word_marked_as_learned": "«{word}» жатталды деп белгіленді!",
+        "triplet_marked_as_learned": "«{word}» триплеті жатталды деп белгіленді!"
     },
     "settings": {
         "title": "Параметрлер",

@@ -52,9 +52,7 @@ export class EditorManager {
                     }
                 },
                 onSelectionUpdate: ({ editor }) => {
-                    const { from, to } = editor.state.selection;
-                    const btn = document.getElementById('btnBoldFormat');
-                    if (btn) btn.style.display = (from !== to) ? 'inline-block' : 'none';
+                    // Selection logic for bold button removed
                 }
             });
             this.engine.logDebug("[EditorManager] TipTap initialized successfully.");
@@ -176,9 +174,6 @@ export class EditorManager {
         }, 10);
     }
 
-    toggleBold() {
-        this.tiptap?.chain().focus().toggleBold().run();
-    }
 
     plotGraph() {
         GraphTool.plot(document.getElementById('graphPreview'), document.getElementById('graphFuncInput').value);

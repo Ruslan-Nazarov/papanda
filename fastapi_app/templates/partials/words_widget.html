@@ -54,13 +54,13 @@
                 <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); gap: 8px;">
                     <!-- Foreign Words (Top Row) -->
                     {% for lang_code in active_languages %}
-                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;" oncontextmenu="event.preventDefault(); this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';">
+                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';" oncontextmenu="event.preventDefault(); this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';">
                         {{ word.translations.get(lang_code, '') }}
                     </span>
                     {% endfor %}
                     
                     <!-- Russian sub-text (Bottom Row, under first column only) -->
-                    <div style="grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <div style="grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';">
                         <span style="font-weight: 600; color: var(--color-text-faint); font-size: 0.7rem; line-height: 1.2; opacity: 0.7;">
                             {{ word.ru }}
                         </span>
@@ -111,7 +111,7 @@
                 <div id="current-translation-display" style="font-size: 0.9em; color: var(--color-text-faint); margin-bottom: 16px; visibility: hidden;">{{ _('dashboard.translation') }}</div>
 
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                    <button id="btn-show-hint" onclick="toggleHint()" style="background: white; border: 1px solid var(--color-border-light); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.hint') }}</button>
+                    <button id="btn-show-hint" onclick="toggleHint()" style="background: #fdf5ff; border: 1px solid var(--color-primary); color: var(--color-primary); font-weight: bold; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(155,89,182,0.1);">💡 {{ _('dashboard.hint') }}</button>
                     <button id="btn-known" onclick="recordResult(true)" style="background: #27ae60; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">{{ _('dashboard.i_know_this') }}</button>
                     <button id="btn-unknown" onclick="recordResult(false)" style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.dont_know') }}</button>
                     <button id="btn-learn-triplet" onclick="if(window.markWorkoutTripletLearnedWidget) window.markWorkoutTripletLearnedWidget()" style="background: white; color: var(--color-success); border: 1px solid var(--color-success); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Mark all translations as learned">✓ {{ _('dashboard.all') }}</button>

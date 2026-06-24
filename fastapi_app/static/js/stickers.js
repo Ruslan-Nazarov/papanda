@@ -87,7 +87,7 @@ async function expandNoteOnSticker(noteId, cardEl, fullText = null) {
 // Actions
 async function archiveStickerGlobal(btn, id) {
     const confirmed = await window.NotificationService.confirm('Archive this thought? (It will be hidden from the dashboard)', { okText: 'Archive' });
-    if (!confirmed) return;
+    if (!confirmed) return false;
     try {
         await StickerService.archive(id);
         
@@ -108,12 +108,13 @@ async function archiveStickerGlobal(btn, id) {
             if (window.refreshCurrentView) window.refreshCurrentView('Stickers');
             else if (!StickerModal.state.parentType) location.reload();
         }
-    } catch(e) { console.error(e); }
+        return true;
+    } catch(e) { console.error(e); return false; }
 }
 
 async function hardDeleteStickerGlobal(btn, id) {
     const confirmed = await window.NotificationService.confirm('PERMANENTLY DELETE this sticker? This cannot be undone.', { isDanger: true, okText: 'Delete Forever' });
-    if (!confirmed) return;
+    if (!confirmed) return false;
     try {
         await StickerService.hardDelete(id);
         
@@ -134,7 +135,8 @@ async function hardDeleteStickerGlobal(btn, id) {
             if (window.refreshCurrentView) window.refreshCurrentView('Stickers');
             else if (!StickerModal.state.parentType) location.reload();
         }
-    } catch(e) { console.error(e); }
+        return true;
+    } catch(e) { console.error(e); return false; }
 }
 
 // Global Bridge
@@ -148,9 +150,14 @@ window.setStickerDetailColor = (c, b) => StickerModal.setColor(c, b);
 window.setStickerModalMode = (m) => StickerModal.setMode(m);
 window.archiveStickerGlobal = archiveStickerGlobal;
 window.hardDeleteStickerGlobal = hardDeleteStickerGlobal;
-window.deleteStickerFromModal = () => {
-    if (StickerModal.state.id) archiveStickerGlobal(null, StickerModal.state.id);
-    else StickerModal.close();
+window.deleteStickerFromModal = async () => {
+    if (StickerModal.state.id) {
+        const success = await archiveStickerGlobal(null, StickerModal.state.id);
+        if (success) StickerModal.close();
+    }
+    else {
+        StickerModal.close();
+    }
 };
 
 

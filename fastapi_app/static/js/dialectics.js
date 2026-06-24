@@ -134,7 +134,6 @@ class DialecticsEngine {
         bind('btnDeleteDialectics', this.deleteGlobal);
         bind('btnSaveDialectics', this.saveGlobal);
         bind('btnMathFormula', () => this.editor.showMathMenu()); // Need to add showMathMenu to EditorManager or keep here
-        bind('btnBoldFormat', () => this.editor.toggleBold());
 
         if (this.dom.editor.classList.contains('embedded')) {
             this.logDebug("Binding embedded editor save");

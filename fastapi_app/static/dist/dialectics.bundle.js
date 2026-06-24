@@ -22158,69 +22158,75 @@ var ja = function(e, t) {
 		if (!e) return;
 		let i = document.getElementById("canvasDivider");
 		e.innerHTML = "", i && e.appendChild(i);
-		let a = {
+		let a = (e, t) => {
+			if (typeof window._ == "function") {
+				let n = window._(e);
+				return n === e ? t : n;
+			}
+			return t;
+		}, o = {
 			id: "anchor",
 			side: "left",
-			text: "Что вам нужно понять?",
-			title: "Что вам нужно понять?"
-		}, o = [
+			text: a("dialectics.hints.anchor", "Что вам нужно понять?"),
+			title: a("dialectics.hints.anchor", "Что вам нужно понять?")
+		}, s = [
 			{
 				id: "step1",
 				side: "left",
-				text: "Простейший процесс",
-				title: "Простейший процесс"
+				text: a("dialectics.hints.step1", "Простейший процесс"),
+				title: a("dialectics.hints.step1", "Простейший процесс")
 			},
 			{
 				id: "step2",
 				side: "right",
-				text: "Опишите как развивается этот простейший процесс",
-				title: "Опишите как развивается этот простейший процесс"
+				text: a("dialectics.hints.step2", "Опишите как развивается этот простейший процесс"),
+				title: a("dialectics.hints.step2", "Опишите как развивается этот простейший процесс")
 			},
 			{
 				id: "step3",
 				side: "left",
-				text: "Найти противоположный процесс",
-				title: "Найти противоположный процесс"
+				text: a("dialectics.hints.step3", "Найти противоположный процесс"),
+				title: a("dialectics.hints.step3", "Найти противоположный процесс")
 			},
 			{
 				id: "step4",
 				side: "right",
-				text: "Опишите развитие противоположного процесса",
-				title: "Опишите развитие противоположного процесса"
+				text: a("dialectics.hints.step4", "Опишите развитие противоположного процесса"),
+				title: a("dialectics.hints.step4", "Опишите развитие противоположного процесса")
 			},
 			{
 				id: "step5",
 				side: "center",
-				text: "Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие",
-				title: "Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие"
+				text: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие"),
+				title: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие")
 			}
-		], s = {}, c = [];
+		], c = {}, l = [];
 		t.forEach((e) => {
-			e.role ? (s[e.role] = e, e.role !== "anchor" && c.push(e)) : c.push(e);
+			e.role ? (c[e.role] = e, e.role !== "anchor" && l.push(e)) : l.push(e);
 		});
-		let l = [];
-		if (c.forEach((e) => l.push({
+		let u = [];
+		if (l.forEach((e) => u.push({
 			type: "block",
 			data: e
-		})), !s.anchor) l.push({
+		})), !c.anchor) u.push({
 			type: "hint",
-			data: a
+			data: o
 		});
 		else {
 			let e = null;
-			for (let t of o) if (!s[t.id]) {
+			for (let t of s) if (!c[t.id]) {
 				e = t;
 				break;
 			}
-			e && l.push({
+			e && u.push({
 				type: "hint",
 				data: e
-			}), l.push({
+			}), u.push({
 				type: "block",
-				data: s.anchor
+				data: c.anchor
 			});
 		}
-		let u = (e) => {
+		let d = (e) => {
 			let t = document.createElement("div");
 			return t.className = "block-insert-row", [
 				"left",
@@ -22235,9 +22241,9 @@ var ja = function(e, t) {
 				}, t.appendChild(i);
 			}), t;
 		};
-		n.onInsertAfter && e.appendChild(u(0));
-		let d = 0;
-		l.forEach((t) => {
+		n.onInsertAfter && e.appendChild(d(0));
+		let f = 0;
+		u.forEach((t) => {
 			if (t.type === "hint") {
 				let r = t.data, i = document.createElement("div");
 				i.className = `dialectics-hint-block block-${r.side}`, i.dataset.hintId = r.id, i.dataset.side = r.side, i.innerHTML = `
@@ -22253,19 +22259,19 @@ var ja = function(e, t) {
 			} else {
 				let i = t.data;
 				i.id ||= "block_" + Math.random().toString(36).substring(2, 9);
-				let s = document.createElement("div");
-				s.className = `dialectics-block block-${i.side || "left"}`, s.dataset.blockId = i.id, i.role && (s.dataset.role = i.role);
+				let a = document.createElement("div");
+				a.className = `dialectics-block block-${i.side || "left"}`, a.dataset.blockId = i.id, i.role && (a.dataset.role = i.role);
 				let c = "";
 				if (i.role) {
 					let e = "";
-					if (i.role === "anchor") e = a.title;
+					if (i.role === "anchor") e = o.title;
 					else {
-						let t = o.find((e) => e.id === i.role);
+						let t = s.find((e) => e.id === i.role);
 						t && (e = t.title);
 					}
 					e && (c = `<div style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 0 14px; text-transform: uppercase;">${e}</div>`);
 				}
-				s.innerHTML = `
+				a.innerHTML = `
                     <div class="dialectics-block-actions">
                         <button class="btn-block-edit" title="Edit">✎</button>
                         <button class="btn-block-ai" title="Ask AI">✨</button>
@@ -22274,13 +22280,13 @@ var ja = function(e, t) {
                     </div>
                     ${c}
                     <div class="dialectics-content-inner">${i.html}</div>
-                `, this.renderMath(s), s.querySelector(".btn-block-ai").onclick = (e) => {
-					e.stopPropagation(), n.onAI && n.onAI(s);
-				}, s.querySelector(".btn-block-edit").onclick = (e) => {
-					e.stopPropagation(), n.onEdit(s);
-				}, s.querySelector(".btn-block-sticker").onclick = (e) => {
+                `, this.renderMath(a), a.querySelector(".btn-block-ai").onclick = (e) => {
+					e.stopPropagation(), n.onAI && n.onAI(a);
+				}, a.querySelector(".btn-block-edit").onclick = (e) => {
+					e.stopPropagation(), n.onEdit(a);
+				}, a.querySelector(".btn-block-sticker").onclick = (e) => {
 					e.stopPropagation(), window.app && window.app.openStickersForCurrent(i.id);
-				}, s.querySelector(".btn-block-del").onclick = async (e) => {
+				}, a.querySelector(".btn-block-del").onclick = async (e) => {
 					if (e.stopPropagation(), await r({
 						title: "Delete block",
 						message: "Are you sure you want to delete this block?",
@@ -22295,10 +22301,10 @@ var ja = function(e, t) {
 							class: "confirm-btn-danger"
 						}]
 					})) {
-						let e = s.nextElementSibling;
-						e && e.classList.contains("block-insert-row") && e.remove(), s.remove(), n.onDelete && n.onDelete();
+						let e = a.nextElementSibling;
+						e && e.classList.contains("block-insert-row") && e.remove(), a.remove(), n.onDelete && n.onDelete();
 					}
-				}, e.appendChild(s), n.onInsertAfter && e.appendChild(u(d + 1)), d++;
+				}, e.appendChild(a), n.onInsertAfter && e.appendChild(d(f + 1)), f++;
 			}
 		});
 	},
@@ -33721,10 +33727,7 @@ var sv = ov(!1, !0), cv = ov(!0, !0), lv = eh.create({
 					onFocus: () => e.classList.add("focused"),
 					onBlur: () => e.classList.remove("focused"),
 					editorProps: { handleDOMEvents: { mousedown: (e, t) => (t.stopPropagation(), !1) } },
-					onSelectionUpdate: ({ editor: e }) => {
-						let { from: t, to: n } = e.state.selection, r = document.getElementById("btnBoldFormat");
-						r && (r.style.display = t === n ? "none" : "inline-block");
-					}
+					onSelectionUpdate: ({ editor: e }) => {}
 				}), this.engine.logDebug("[EditorManager] TipTap initialized successfully.");
 			} catch (e) {
 				this.engine.logDebug(`[EditorManager] TipTap init error: ${e.message}`), console.error("TipTap init error:", e);
@@ -33767,9 +33770,6 @@ var sv = ov(!1, !0), cv = ov(!0, !0), lv = eh.create({
 				r.contains(t.target) || (r.remove(), document.removeEventListener("click", e));
 			});
 		}, 10);
-	}
-	toggleBold() {
-		this.tiptap?.chain().focus().toggleBold().run();
 	}
 	plotGraph() {
 		Av.plot(document.getElementById("graphPreview"), document.getElementById("graphFuncInput").value);
@@ -33977,7 +33977,7 @@ window.app = new class {
 	_bindEvents() {
 		n.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state), n.setupResizable(this.dom.editor, document.getElementById("editorResizeHandle"));
 		let e = (e, t) => document.getElementById(e)?.addEventListener("click", t.bind(this));
-		e("btnDeleteDialectics", this.deleteGlobal), e("btnSaveDialectics", this.saveGlobal), e("btnMathFormula", () => this.editor.showMathMenu()), e("btnBoldFormat", () => this.editor.toggleBold()), this.dom.editor.classList.contains("embedded") ? (this.logDebug("Binding embedded editor save"), e("btnEditorSave", this.saveAndPin)) : (this.logDebug("Binding global save"), e("btnEditorSave", this.saveGlobal)), this.logDebug("Binding other buttons"), e("btnPinNote", this.pinCurrent), e("btnEditorClose", this.close), e("btnEditorExpand", this.toggleExpand), this.logDebug("Binding btnLoadDialectics..."), e("btnLoadDialectics", async (e) => {
+		e("btnDeleteDialectics", this.deleteGlobal), e("btnSaveDialectics", this.saveGlobal), e("btnMathFormula", () => this.editor.showMathMenu()), this.dom.editor.classList.contains("embedded") ? (this.logDebug("Binding embedded editor save"), e("btnEditorSave", this.saveAndPin)) : (this.logDebug("Binding global save"), e("btnEditorSave", this.saveGlobal)), this.logDebug("Binding other buttons"), e("btnPinNote", this.pinCurrent), e("btnEditorClose", this.close), e("btnEditorExpand", this.toggleExpand), this.logDebug("Binding btnLoadDialectics..."), e("btnLoadDialectics", async (e) => {
 			this.logDebug("btnLoadDialectics CLICKED!"), e.preventDefault(), e.stopPropagation();
 			try {
 				if (this.logDebug("isDirty = " + this.state.isDirty), this.state.isDirty) {

@@ -420,7 +420,9 @@
         "note_updated": "Заметка обновлена",
         "sticker_updated": "✓ Стикер обновлен",
         "failed_to_archive": "⚠ Не удалось заархивировать",
-        "saved": "Сохранено"
+        "saved": "Сохранено",
+        "word_marked_as_learned": "Слово «{word}» отмечено как выученное!",
+        "triplet_marked_as_learned": "Триплет «{word}» отмечен как выученный!"
     },
     "settings": {
         "title": "Настройки",
@@ -532,13 +534,16 @@
     },
     "dialectics": {
         "title": "Диалектика",
-        "topic_placeholder": "Тема заметки...",
+        "topic_placeholder": "Тема конспекта...",
         "instructions": "Как это работает?",
         "dashboard": "Виджеты",
         "relations": "Связи",
         "menu": "Меню",
-        "new": "Новая",
+        "new": "Новый",
         "parser": "Парсер",
+        "parsers": "Парсеры",
+        "parser_formula": "Парсер формул",
+        "parser_article": "Парсер статей",
         "example": "Пример",
         "open": "Открыть",
         "previous": "Назад",

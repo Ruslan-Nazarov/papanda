@@ -556,6 +556,10 @@ function showHelp(event, text) {
     const trigger = event.target;
     const popup   = document.getElementById('help-popup');
 
+    if (popup.parentNode !== document.body) {
+        document.body.appendChild(popup);
+    }
+
     popup.innerText           = text;
     popup.style.display       = 'block';
     popup.style.visibility    = 'hidden';
