@@ -947,13 +947,18 @@ class DialecticsEngine {
                 delBtn.onclick = async (e) => {
                     e.stopPropagation();
 
+                const titleText = window._ ? window._('dialectics.delete', 'Confirm Deletion') : 'Confirm Deletion';
+                const msgTemplate = window._ ? window._('dialectics.confirm_delete', 'Delete note "%s"?') : 'Delete note "%s"?';
+                const cancelText = window._ ? window._('dialectics.cancel', 'Cancel') : 'Cancel';
+                const deleteText = window._ ? window._('dialectics.delete', 'Delete') : 'Delete';
+                
                 const confirmed = await customConfirm({
-                    title: 'Confirm Deletion',
-                    message: `Delete dialectics "${n.title}"?`,
+                    title: titleText,
+                    message: msgTemplate.replace('%s', n.title),
                     icon: '🗑️',
                     buttons: [
-                        { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+                        { label: cancelText, value: false, class: 'confirm-btn-secondary' },
+                        { label: deleteText, value: true, class: 'confirm-btn-danger' }
                     ]
                 });
 

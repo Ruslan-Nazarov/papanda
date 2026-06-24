@@ -562,7 +562,14 @@
             "step3": "Find the opposing process",
             "step4": "Describe the development of the opposing process",
             "step5": "Unite both opposing processes into one common development or movement: what contradictions does this lead to and how is this contradiction resolved?"
-        }
+        },
+        "load_title": "Load Note",
+        "search_placeholder": "Search by title...",
+        "loading": "Loading...",
+        "close": "Close",
+        "guide_title": "Guide",
+        "confirm_delete": "Delete note \"%s\"?",
+        "cancel": "Cancel"
     },
     "demo_banner": {
         "title": "ℹ️ Demo Mode:",

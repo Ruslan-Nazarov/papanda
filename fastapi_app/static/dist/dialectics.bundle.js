@@ -34444,16 +34444,18 @@ window.app = new class {
             `, n.onclick = () => this.loadNoteToEditor(e.id);
 			let c = n.querySelector(".load-note-item-delete");
 			c && (c.onclick = async (i) => {
-				i.stopPropagation(), await r({
-					title: "Confirm Deletion",
-					message: `Delete dialectics "${e.title}"?`,
+				i.stopPropagation();
+				let a = window._ ? window._("dialectics.delete", "Confirm Deletion") : "Confirm Deletion", o = window._ ? window._("dialectics.confirm_delete", "Delete note \"%s\"?") : "Delete note \"%s\"?", s = window._ ? window._("dialectics.cancel", "Cancel") : "Cancel", c = window._ ? window._("dialectics.delete", "Delete") : "Delete";
+				await r({
+					title: a,
+					message: o.replace("%s", e.title),
 					icon: "🗑️",
 					buttons: [{
-						label: "Cancel",
+						label: s,
 						value: !1,
 						class: "confirm-btn-secondary"
 					}, {
-						label: "Delete",
+						label: c,
 						value: !0,
 						class: "confirm-btn-danger"
 					}]

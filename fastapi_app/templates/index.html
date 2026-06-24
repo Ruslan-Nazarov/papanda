@@ -247,17 +247,17 @@
     <div id="loadDialecticsModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h2 style="margin-top: 0;"><span class="modal-icon">📂</span> Load Dialectics</h2>
+                <h2 style="margin-top: 0;"><span class="modal-icon">📂</span> {{ _('dialectics.load_title') }}</h2>
                 <button class="modal-close" onclick="document.getElementById('loadDialecticsModal').style.display='none'">&times;</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
-                <input type="text" id="dialecticsSearchInput" class="form-input" placeholder="Search by title..." style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                <input type="text" id="dialecticsSearchInput" class="form-input" placeholder="{{ _('dialectics.search_placeholder') }}" style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
                 <div id="loadDialecticsList" class="load-notes-list" style="max-height: 400px; overflow-y: auto;">
-                    <div style="color: #64748b; text-align: center; padding: 20px;">Loading...</div>
+                    <div style="color: #64748b; text-align: center; padding: 20px;">{{ _('dialectics.loading') }}</div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('loadDialecticsModal').style.display='none'" style="font-family: inherit;">Close</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('loadDialecticsModal').style.display='none'" style="font-family: inherit;">{{ _('dialectics.close') }}</button>
             </div>
         </div>
     </div>
@@ -266,7 +266,7 @@
     <div id="guideDialecticsModal" class="modal">
         <div class="modal-content" style="max-width: 800px; width: 90%;">
             <div class="modal-header">
-                <h2 style="margin-top: 0;"><span class="modal-icon">📖</span> Smart Notes Guide</h2>
+                <h2 style="margin-top: 0;"><span class="modal-icon">📖</span> {{ _('dialectics.guide_title') }}</h2>
                 <button class="modal-close" onclick="document.getElementById('guideDialecticsModal').style.display='none'">&times;</button>
             </div>
             <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
