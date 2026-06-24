@@ -67,7 +67,7 @@ async def save_dialectics(
     # Convert blocks back to standard dicts
     content_json = [b.model_dump() for b in data.blocks]
     new_note = Dialectics(
-        title=data.title or "Untitled Dialectics",
+        title=data.title or "",
         content_json=content_json,
         is_pinned=data.is_pinned
     )

@@ -11,7 +11,7 @@ class Dialectics(Base):
     __tablename__ = "dialectics"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    title: Mapped[str] = mapped_column(String, index=True, default="Untitled Dialectics")
+    title: Mapped[str] = mapped_column(String, index=True, default="")
     content_json: Mapped[list | dict] = mapped_column(JSON, default=list)
     is_pinned: Mapped[bool] = mapped_column(default=False)
     
