@@ -8,43 +8,6 @@ import { CanvasManager } from './dialectics/CanvasManager.js';
 import { EditorManager } from './dialectics/EditorManager.js';
 import { customConfirm, customChoice, customPrompt } from './modal_controller.js';
 
-// --- Debug Console Interceptor ---
-const debugEl = document.getElementById('debugLogContent');
-if (debugEl) {
-    const origLog = console.log;
-    const origErr = console.error;
-    const origWarn = console.warn;
-
-    function logToScreen(type, args) {
-        const msg = Array.from(args).map(a => {
-            if (a instanceof Error) return a.message + '\\n' + a.stack;
-            return typeof a === 'object' ? JSON.stringify(a) : a;
-        }).join(' ');
-
-        const line = document.createElement('div');
-        line.style.color = type === 'error' ? '#ff5555' : type === 'warn' ? '#ffff55' : '#55ff55';
-        line.style.marginBottom = '4px';
-        line.style.borderBottom = '1px solid #333';
-        line.style.paddingBottom = '4px';
-        line.style.wordBreak = 'break-all';
-        line.textContent = `[${type.toUpperCase()}] ${msg}`;
-        debugEl.prepend(line);
-    }
-
-    console.log = function () { logToScreen('log', arguments); origLog.apply(console, arguments); };
-    console.error = function () { logToScreen('error', arguments); origErr.apply(console, arguments); };
-    console.warn = function () { logToScreen('warn', arguments); origWarn.apply(console, arguments); };
-
-    window.addEventListener('error', function (e) {
-        console.error('Global Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
-    });
-    window.addEventListener('unhandledrejection', function (e) {
-        console.error('Unhandled Rejection: ', e.reason);
-    });
-    console.log("Debug console initialized");
-}
-// ---------------------------------
-
 class DialecticsEngine {
     constructor() {
         window.showToast = window.showToast || ((msg) => console.log("Toast:", msg));
@@ -495,21 +458,21 @@ class DialecticsEngine {
             }
 
             // Create formatted HTML for the parsed JSON
-            const formatBlock = (title, content, bgColor, borderGlow) => `
-                <div style="background: ${bgColor}; border: 1.5px solid ${borderGlow}; padding: 16px 20px; border-radius: var(--radius-md, 12px); margin-bottom: 16px; box-shadow: var(--shadow-sm); transition: all 0.2s;">
-                    <div style="font-family: var(--font-heading, inherit); font-size: 0.8rem; text-transform: uppercase; font-weight: 850; color: var(--color-text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">${title}</div>
-                    <div style="font-size: 0.95rem; line-height: 1.6; color: var(--color-text-dark); font-weight: 500;">${content || '—'}</div>
+            const formatBlock = (title, content, typeClass) => `
+                <div class="parser-block ${typeClass}">
+                    <div class="parser-block-title">${title}</div>
+                    <div class="parser-block-content">${content || '—'}</div>
                 </div>
             `;
 
             const htmlContent = `
-                <div style="text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 8px; font-family: var(--font-ui, inherit);">
-                    <h3 style="margin-top: 0; color: var(--color-primary-dark); font-family: var(--font-heading, inherit); font-size: 1.2rem; font-weight: 850; border-bottom: 2px solid var(--color-border-medium); padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        Formula Analysis: <span style="font-family: var(--font-editor, monospace); background: var(--color-primary-soft); color: var(--color-primary-dark); padding: 4px 10px; border-radius: 6px; font-size: 0.95rem; font-weight: 600; border: 1px dashed var(--color-primary);">${formula}</span>
+                <div class="parser-modal-container">
+                    <h3 class="parser-modal-header">
+                        Formula Analysis: <span class="parser-modal-formula">${formula}</span>
                     </h3>
-                    ${formatBlock("Preceding Operation (Thesis)", parsed.predecessor, "var(--color-bg-subtle)", "var(--color-border-medium)")}
-                    ${formatBlock("Crisis of Notation Complexity (Antithesis)", parsed.crisis_of_notation, "rgba(239, 68, 68, 0.04)", "rgba(239, 68, 68, 0.15)")}
-                    ${formatBlock("Resolution (Synthesis)", parsed.resolution, "rgba(16, 185, 129, 0.04)", "rgba(16, 185, 129, 0.15)")}
+                    ${formatBlock("Preceding Operation (Thesis)", parsed.predecessor, "thesis")}
+                    ${formatBlock("Crisis of Notation Complexity (Antithesis)", parsed.crisis_of_notation, "antithesis")}
+                    ${formatBlock("Resolution (Synthesis)", parsed.resolution, "synthesis")}
                 </div>
             `;
 
@@ -651,7 +614,7 @@ class DialecticsEngine {
     }
 
     async saveGlobal(shouldClose = true) {
-        const title = this.dom.title.value || "Untitled Dialectics";
+        const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const html = this.editor.getHTML();
         console.log("TipTap HTML Output -> length:", html.length);
         if (this.state.editingBlock) {
@@ -744,7 +707,7 @@ class DialecticsEngine {
     }
 
     async saveAndPin() {
-        const title = this.dom.title.value || "Untitled Dialectics";
+        const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         let html = this.editor.getHTML() || (this.dom.dashboardTextarea?.value.replace(/\n/g, '<br>') || "");
 
         const payload = {
@@ -1005,7 +968,7 @@ class DialecticsEngine {
                         }
                         if (this.state.currentNoteId === n.id) {
                             this.close();
-                            this.dom.title.value = "Untitled Dialectics";
+                            this.dom.title.value = "";
                             BlockManager.render(this.dom.canvas, []);
                             this.state.currentNoteId = null;
                             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
@@ -1049,7 +1012,7 @@ class DialecticsEngine {
             return;
         }
 
-        const title = this.dom.title.value || "Untitled Dialectics";
+        const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const blocks = BlockManager.getBlocks(this.dom.canvas);
 
         const payload = {
