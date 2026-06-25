@@ -595,3 +595,23 @@
 .mini-sticker-card:hover .mini-sticker-del {
     opacity: 1;
 }
+
+/* Custom Prompt Input Premium Styling */
+.prompt-container .form-input-premium, .latex-prompt-container .form-input-premium {
+    padding: 10px 14px !important;
+    border: 1.5px solid var(--color-border-medium, #cbd5e1) !important;
+    border-radius: 8px !important;
+    font-size: 0.95rem !important;
+    color: var(--color-text-header, #1e293b) !important;
+    background: var(--color-bg-base, #ffffff) !important;
+    transition: all 0.2s ease !important;
+    outline: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.prompt-container .form-input-premium:focus, .latex-prompt-container .form-input-premium:focus {
+    border-color: var(--color-primary, #f97316) !important;
+    background: var(--color-bg-base, #ffffff) !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
+}
+

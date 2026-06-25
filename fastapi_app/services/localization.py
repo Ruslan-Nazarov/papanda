@@ -11,6 +11,7 @@ class LocalizationService:
     def __init__(self):
         self.locales_dir = INTERNAL_ROOT / "fastapi_app" / "locales"
         self.translations: Dict[str, Dict[str, Any]] = {}
+        self.file_mtimes: Dict[str, float] = {}
         self.default_locale = "en"
         self._load_translations()
 
@@ -22,14 +23,18 @@ class LocalizationService:
         for file_path in self.locales_dir.glob("*.json"):
             locale = file_path.stem
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    self.translations[locale] = json.load(f)
-                logger.info(f"Loaded translations for locale: {locale}")
+                mtime = os.path.getmtime(file_path)
+                if self.file_mtimes.get(locale) != mtime:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        self.translations[locale] = json.load(f)
+                    self.file_mtimes[locale] = mtime
+                    logger.info(f"Loaded translations for locale: {locale}")
             except Exception as e:
                 logger.error(f"Failed to load translations for {locale}: {e}")
 
     def get_text(self, locale: str, key: str) -> str:
         """Get translated text by key (e.g. 'header.dialectics'). Fallback to default_locale, then to key."""
+        self._load_translations()
         keys = key.split('.')
         
         # Try requested locale
@@ -57,6 +62,7 @@ class LocalizationService:
         
     def get_translations_for_locale(self, locale: str) -> Dict[str, Any]:
         """Returns the full dictionary for a locale (merged with default locale for missing keys)."""
+        self._load_translations()
         result = {}
         
         if self.default_locale in self.translations:

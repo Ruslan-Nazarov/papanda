@@ -45,20 +45,20 @@ export const BlockManager = {
             {
                 id: 'step1',
                 side: 'left',
-                text: getHint('dialectics.hints.step1', 'Простейший процесс'),
-                title: getHint('dialectics.hints.step1', 'Простейший процесс')
+                text: getHint('dialectics.hints.step1', '<div style="font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;">Опишите простейший процесс, который, по вашему мнению, лежит в основе проблемы, которую вы хотите понять.</div><div style="font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;">Примером простейшего процесса может быть суммирование. Если вы затрудняетесь, то нажмите кнопку Помощь ИИ. Помните, что ИИ не способен к пониманию, но может предоставить вам знания.</div>'),
+                title: getHint('dialectics.hints.step1_title', 'Простейший процесс')
             },
             {
                 id: 'step2',
                 side: 'right',
-                text: getHint('dialectics.hints.step2', 'Опишите как развивается этот простейший процесс'),
-                title: getHint('dialectics.hints.step2', 'Опишите как развивается этот простейший процесс')
+                text: getHint('dialectics.hints.step2', '<div style="font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;">Опишите, как развивается этот простейший процесс.</div><div style="font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;">Развитие – это взаимодействие процесса с другими процессами в мире. Например, если простейшим является суммирование, то его развитием будет суммирование пяти, десяти и т.п. единиц, использование суммирования в торговле, праве, науке. Если вы сомневаетесь или не знаете, то можете нажать кнопку Помощь ИИ. Однако помните, что ИИ не может заменить человека в понимании процессов, ИИ может только предоставить знания.</div>'),
+                title: getHint('dialectics.hints.step2_title', 'Опишите как развивается этот простейший процесс')
             },
             {
                 id: 'step3',
                 side: 'left',
-                text: getHint('dialectics.hints.step3', 'Найти противоположный процесс'),
-                title: getHint('dialectics.hints.step3', 'Найти противоположный процесс')
+                text: getHint('dialectics.hints.step3', '<div style="font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;">Вы уже нашли простейший процесс, посмотрели, как он развивается. В этом развитии вы должны отыскать противоположный процесс.</div><div style="font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;">Вы можете сделать это через специальный ИИ под кнопкой ✨. А можете сделать это самостоятельно. Противоположным является такой процесс, который сам остается самостоятельным, но полностью исключает другой.</div>'),
+                title: getHint('dialectics.hints.step3_title', 'Найти противоположный процесс')
             },
             {
                 id: 'step4',
@@ -69,8 +69,8 @@ export const BlockManager = {
             {
                 id: 'step5',
                 side: 'center',
-                text: getHint('dialectics.hints.step5', 'Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие'),
-                title: getHint('dialectics.hints.step5', 'Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие')
+                text: getHint('dialectics.hints.step5', 'Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?'),
+                title: getHint('dialectics.hints.step5', 'Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?')
             }
         ];
 
@@ -89,15 +89,13 @@ export const BlockManager = {
             }
         });
 
+        const stepOrder = { 'step1': 1, 'step2': 2, 'step3': 3, 'step4': 4, 'step5': 5 };
         const allElements = [];
 
-        // Always push normal blocks first
-        normalBlocks.forEach(b => allElements.push({ type: 'block', data: b }));
-
         if (!specialBlocks['anchor']) {
+            normalBlocks.forEach(b => allElements.push({ type: 'block', data: b }));
             allElements.push({ type: 'hint', data: ANCHOR_HINT });
         } else {
-
             let nextHint = null;
             for (const step of STEPS) {
                 if (!specialBlocks[step.id]) {
@@ -106,7 +104,16 @@ export const BlockManager = {
                 }
             }
 
-            if (nextHint) {
+            let hintPushed = false;
+            normalBlocks.forEach(b => {
+                if (nextHint && !hintPushed && b.role && stepOrder[b.role] && stepOrder[b.role] > stepOrder[nextHint.id]) {
+                    allElements.push({ type: 'hint', data: nextHint });
+                    hintPushed = true;
+                }
+                allElements.push({ type: 'block', data: b });
+            });
+
+            if (nextHint && !hintPushed) {
                 allElements.push({ type: 'hint', data: nextHint });
             }
 
@@ -145,9 +152,10 @@ export const BlockManager = {
                 div.className = `dialectics-hint-block block-${hint.side}`;
                 div.dataset.hintId = hint.id;
                 div.dataset.side = hint.side;
+                const aiHelpText = hint.id === 'step3' ? getHint('dialectics.ai_opposites', 'ИИ-противоположности') : getHint('dialectics.ai_help', 'Помощь ИИ');
                 div.innerHTML = `
                     <div class="dialectics-hint-text">${hint.text}</div>
-                    <button class="btn-hint-ai" title="Ask AI for this step" style="position:absolute; right: 10px; top: 10px; background:transparent; border:none; cursor:pointer; opacity:0.6; transition:opacity 0.2s; font-size: 1.2rem;">✨</button>
+                    <button class="btn-hint-ai" title="${aiHelpText}" style="position:absolute; right: 12px; top: 12px; background:rgba(255,255,255,0.7); border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; cursor:pointer; opacity:0.85; transition:all 0.2s; font-size: 0.82rem; display:flex; align-items:center; gap:5px; color:#334155; font-weight:500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"><span style="font-size:1rem;">✨</span> <span>${aiHelpText}</span></button>
                 `;
                 div.onclick = (e) => {
                     e.stopPropagation();
@@ -192,7 +200,7 @@ export const BlockManager = {
                 blockEl.innerHTML = `
                     <div class="dialectics-block-actions">
                         <button class="btn-block-edit" title="Edit">✎</button>
-                        <button class="btn-block-ai" title="Ask AI">✨</button>
+                        ${b.role === 'step3' ? '<button class="btn-block-ai" title="Поиск противоположностей">✨</button>' : ''}
                         <button class="btn-block-sources" title="Sources">🔗${sourcesCountHtml}</button>
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div></button>
                         <button class="btn-block-del" title="Delete">🗑️</button>
@@ -203,10 +211,13 @@ export const BlockManager = {
                 
                 this.renderMath(blockEl);
 
-                blockEl.querySelector('.btn-block-ai').onclick = (e) => {
-                    e.stopPropagation();
-                    if (callbacks.onAI) callbacks.onAI(blockEl);
-                };
+                const aiBtnEl = blockEl.querySelector('.btn-block-ai');
+                if (aiBtnEl) {
+                    aiBtnEl.onclick = (e) => {
+                        e.stopPropagation();
+                        if (callbacks.onAI) callbacks.onAI(blockEl);
+                    };
+                }
                 blockEl.querySelector('.btn-block-edit').onclick = (e) => {
                     e.stopPropagation();
                     callbacks.onEdit(blockEl);
@@ -226,12 +237,12 @@ export const BlockManager = {
                 blockEl.querySelector('.btn-block-del').onclick = async (e) => {
                     e.stopPropagation();
                     const confirmed = await customConfirm({
-                        title: 'Delete block',
-                        message: 'Are you sure you want to delete this block?',
+                        title: window._ ? window._('dialectics.delete_block_title') : 'Удаление блока',
+                        message: window._ ? window._('dialectics.delete_block_msg') : 'Вы уверены, что хотите удалить этот блок?',
                         icon: '🗑️',
                         buttons: [
-                            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                            { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+                            { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                            { label: window._ ? window._('dialectics.delete') : 'Удалить', value: true, class: 'confirm-btn-danger' }
                         ]
                     });
                     if (confirmed) {

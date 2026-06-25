@@ -63,6 +63,31 @@ async def get_dialectics_guide(
         logger.error(f"Error reading guide: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/api/dialectics/reference", response_model=DialecticsGuideResponse)
+async def get_dialectics_reference(
+    request: Request,
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Возвращает справочник функций конспекта в формате HTML с учетом языка."""
+    locale = request.cookies.get("locale", "en").upper()
+    ref_path = INTERNAL_ROOT / f"REFERENCE_{locale}.md"
+    
+    if not ref_path.exists() and locale == "EN":
+        ref_path = INTERNAL_ROOT / "REFERENCE.md"
+        
+    if not ref_path.exists():
+        ref_path = INTERNAL_ROOT / "REFERENCE_RU.md"
+        
+    if not ref_path.exists():
+        raise HTTPException(status_code=404, detail="Reference file not found")
+    try:
+        text = ref_path.read_text(encoding="utf-8")
+        html_content = markdown.markdown(text, extensions=['extra', 'sane_lists', 'tables'])
+        return {"html": html_content}
+    except Exception as e:
+        logger.error(f"Error reading reference: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/api/dialectics/save", response_model=DialecticsView)
 async def save_dialectics(
     data: DialecticsCreate,

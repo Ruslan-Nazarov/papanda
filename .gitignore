@@ -63,6 +63,9 @@ update_settings_locales.py
 # Временные и мусорные файлы
 scratch_*
 test_*
+fix_*.py
+migrate_*.py
+update_locales_*.py
 
 # Локальные скрипты запуска
 run_fastapi.bat

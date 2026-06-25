@@ -136,8 +136,13 @@ class DialecticsEngine {
                 if (this.state.isDirty) {
                     this.logDebug("Showing customConfirm for unsaved changes...");
                     const confirmed = await customConfirm({
-                        message: "You have unsaved changes. Continue anyway?",
-                        icon: '⚠️'
+                        title: window._ ? window._('dialectics.unsaved_title') : "Внимание",
+                        message: window._ ? window._('dialectics.unsaved_msg') : "Есть несохранённые изменения. Продолжить?",
+                        icon: '⚠️',
+                        buttons: [
+                            { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                            { label: window._ ? window._('dialectics.continue_btn') : 'Продолжить', value: true, class: 'confirm-btn-primary' }
+                        ]
                     });
                     this.logDebug("customConfirm resolved: " + confirmed);
                     if (confirmed) {
@@ -177,6 +182,7 @@ class DialecticsEngine {
         bind('btnGlobalParser', this.runGlobalParser);
         bind('btnExampleDialectics', this.loadExample);
         bind('btnPrevDialectics', this.loadPreviousNote);
+        bind('btnDialecticsReference', this.showReferenceModal);
         bind('btnDialecticsGuide', this.showGuideModal);
         
         bind('btnDialecticsConnections', this.showConnectionsModal);
@@ -393,6 +399,8 @@ class DialecticsEngine {
         if (this.dom.editor && !this.dom.editor.classList.contains('embedded')) {
             DialecticsUI.toggleDisplay(this.dom.editor, true, true);
         }
+        const aiTab = document.getElementById('tab-ai');
+        if (aiTab) aiTab.style.display = 'none';
         this.editor.switchTab('text');
         this.editor.setContent(content);
 
@@ -412,12 +420,357 @@ class DialecticsEngine {
     close() {
         if (this.dom.editor) {
             this.dom.editor.style.display = 'none';
-            this.dom.editor.classList.remove('expanded');
+            this.dom.editor.classList.remove('embedded');
         }
-        if (this.dom.backdrop) this.dom.backdrop.style.display = 'none';
+        this.editor.setContent('');
         this.state.editingBlock = null;
         this.state.pendingSide = null;
         this.state.pendingRole = null;
+        this.state.pendingBlockId = null;
+        this.state.insertAfterIndex = null;
+    }
+
+    save() {
+        this.saveGlobal(false, "toast.dialectics_saved");
+    }
+
+    saveGlobal(silent = false, toastKey = "toast.dialectics_saved") {
+        let html = '';
+        if (this.editor.tiptap) {
+            html = this.editor.getContent();
+        } else if (this.dom.dashboardTextarea) {
+            const text = this.dom.dashboardTextarea.value.trim();
+            html = text ? `<p>${text.replace(/\n/g, '<br>')}</p>` : '';
+        }
+
+        const cleanHtml = html.replace(/<p><\/p>/g, '').trim();
+        if (!cleanHtml) {
+            if (!silent && window.showToast) window.showToast("Введите текст конспекта", "warning");
+            return;
+        }
+
+        const stickers = [];
+        if (this.dom.stickerText) {
+            const sText = this.dom.stickerText.value.trim();
+            if (sText) {
+                stickers.push({
+                    text: sText,
+                    title: this.dom.stickerTitle?.value?.trim() || "Важное примечание",
+                    color: this.dom.stickerColor?.value || "#fff9c4",
+                    type: this.dom.stickerType?.value || "text"
+                });
+            }
+        }
+
+        if (this.state.editingBlock) {
+            const inner = this.state.editingBlock.querySelector('.dialectics-content-inner');
+            if (inner) inner.innerHTML = html;
+            
+            if (stickers.length > 0) {
+                let existingStickers = [];
+                try { existingStickers = JSON.parse(this.state.editingBlock.dataset.stickers || "[]"); } catch(e){}
+                existingStickers.push(...stickers);
+                this.state.editingBlock.dataset.stickers = JSON.stringify(existingStickers);
+            }
+        } else {
+            const side = this.state.pendingSide || 'left';
+            const role = this.state.pendingRole || 'thesis';
+            const blockId = this.state.pendingBlockId || ('block_' + Math.random().toString(36).substr(2, 9));
+            
+            this.createBlock(side, role, html, blockId, stickers, [], this.state.insertAfterIndex);
+        }
+
+        this.close();
+        if (!silent && window.showToast) {
+            window.showToast(window._(toastKey, "Сохранено"), "success");
+        }
+    }
+
+    createBlock(side, role, html, id, stickers = [], sources = [], insertAfterIndex = null) {
+        const container = side === 'left' ? this.dom.leftCol : this.dom.rightCol;
+        if (!container) return;
+
+        const el = document.createElement('div');
+        el.className = 'dialectics-block';
+        el.dataset.id = id;
+        el.dataset.side = side;
+        el.dataset.role = role;
+        if (stickers.length > 0) el.dataset.stickers = JSON.stringify(stickers);
+        if (sources.length > 0) el.dataset.sources = JSON.stringify(sources);
+
+        const badgeText = window._('dialectics.roles.' + role) || role;
+
+        el.innerHTML = `
+            <div class="dialectics-block-header">
+                <span class="dialectics-block-badge">${badgeText}</span>
+                <div class="dialectics-block-actions">
+                    <button type="button" class="btn-block-action btn-block-sources" title="Источники">🔗</button>
+                    <button type="button" class="btn-block-action btn-block-stickers" title="Стикеры">🏷️</button>
+                    <button type="button" class="btn-block-action btn-block-edit" title="Редактировать">✏️</button>
+                    <button type="button" class="btn-block-action btn-block-del" title="Удалить">🗑️</button>
+                </div>
+            </div>
+            <div class="dialectics-content-inner">${html}</div>
+            <div class="dialectics-stickers-container" style="display:none; margin-top:10px; border-top:1px dashed #e2e8f0; padding-top:8px;"></div>
+        `;
+
+        this.attachBlockEvents(el);
+
+        if (insertAfterIndex !== null && insertAfterIndex !== undefined) {
+            const allBlocks = Array.from(container.querySelectorAll('.dialectics-block'));
+            if (insertAfterIndex < allBlocks.length) {
+                allBlocks[insertAfterIndex].after(el);
+            } else {
+                container.appendChild(el);
+            }
+        } else {
+            container.appendChild(el);
+        }
+
+        if (stickers.length > 0) {
+            this.renderStickersForBlock(el);
+        }
+    }
+
+    attachBlockEvents(el) {
+        const editBtn = el.querySelector('.btn-block-edit');
+        const delBtn = el.querySelector('.btn-block-del');
+        const stickersBtn = el.querySelector('.btn-block-stickers');
+        const sourcesBtn = el.querySelector('.btn-block-sources');
+
+        if (editBtn) editBtn.onclick = () => {
+            this.state.editingBlock = el;
+            this.openEdit(el);
+        };
+
+        if (delBtn) delBtn.onclick = () => {
+            el.remove();
+            if (window.showToast) window.showToast(window._("toast.dialectics_updated", "Обновлено"), "success");
+        };
+
+        if (stickersBtn) stickersBtn.onclick = () => {
+            this.openStickersForCurrent(el.dataset.id);
+        };
+
+        if (sourcesBtn) sourcesBtn.onclick = () => {
+            this.openSourcesModal(el);
+        };
+    }
+
+    initStickersModal() {
+        const modal = document.getElementById('blockStickersModal');
+        const addBtn = document.getElementById('btnAddStickerModal');
+        const listEl = document.getElementById('modalStickersList');
+
+        if (!modal || !addBtn) return;
+
+        addBtn.onclick = () => {
+            const blockId = modal.dataset.currentBlockId;
+            if (!blockId) return;
+
+            const textInput = document.getElementById('modalStickerText');
+            const titleInput = document.getElementById('modalStickerTitle');
+            const colorInput = document.getElementById('modalStickerColor');
+
+            const text = textInput?.value?.trim();
+            if (!text) {
+                if (window.showToast) window.showToast("Введите текст стикера", "warning");
+                return;
+            }
+
+            const block = document.querySelector(`.dialectics-block[data-id="${blockId}"]`);
+            if (block) {
+                let existing = [];
+                try { existing = JSON.parse(block.dataset.stickers || "[]"); } catch(e){}
+                existing.push({
+                    text: text,
+                    title: titleInput?.value?.trim() || "Важное примечание",
+                    color: colorInput?.value || "#fff9c4",
+                    type: "text"
+                });
+                block.dataset.stickers = JSON.stringify(existing);
+                this.renderStickersForBlock(block);
+                this.renderStickersListInModal(blockId);
+                this.saveGlobal(false, "toast.dialectics_updated");
+            }
+
+            if (textInput) textInput.value = '';
+            if (titleInput) titleInput.value = '';
+        };
+    }
+
+    openStickersForCurrent(blockId) {
+        const modal = document.getElementById('blockStickersModal');
+        if (!modal) return;
+        modal.dataset.currentBlockId = blockId;
+        this.renderStickersListInModal(blockId);
+        modal.style.display = 'flex';
+    }
+
+    renderStickersListInModal(blockId) {
+        const listEl = document.getElementById('modalStickersList');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        const block = document.querySelector(`.dialectics-block[data-id="${blockId}"]`);
+        if (!block) return;
+
+        let stickers = [];
+        try { stickers = JSON.parse(block.dataset.stickers || "[]"); } catch(e){}
+
+        if (stickers.length === 0) {
+            listEl.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; font-style:italic;">Стикеры пока не добавлены.</div>';
+            return;
+        }
+
+        stickers.forEach((st, idx) => {
+            const item = document.createElement('div');
+            item.style.cssText = `background:${st.color || '#fff9c4'}; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; box-shadow:0 1px 2px rgba(0,0,0,0.05);`;
+            item.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; font-size:0.85rem; margin-bottom:4px; color:#334155;">${st.title || 'Примечание'}</div>
+                    <div style="font-size:0.9rem; color:#1e293b; white-space:pre-wrap;">${st.text}</div>
+                </div>
+                <button type="button" class="btn-del-st" style="background:none; border:none; cursor:pointer; color:#ef4444; font-weight:bold; padding:0 4px;" title="Удалить">&times;</button>
+            `;
+            item.querySelector('.btn-del-st').onclick = () => {
+                stickers.splice(idx, 1);
+                block.dataset.stickers = JSON.stringify(stickers);
+                this.renderStickersForBlock(block);
+                this.renderStickersListInModal(blockId);
+                this.saveGlobal(false, "toast.dialectics_updated");
+            };
+            listEl.appendChild(item);
+        });
+    }
+
+    renderStickersForBlock(blockEl) {
+        let stickers = [];
+        try { stickers = JSON.parse(blockEl.dataset.stickers || "[]"); } catch(e){}
+
+        const container = blockEl.querySelector('.dialectics-stickers-container');
+        const btn = blockEl.querySelector('.btn-block-stickers');
+
+        if (btn) {
+            const countHtml = stickers.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${stickers.length}</span>` : '';
+            btn.innerHTML = `🏷️${countHtml}`;
+        }
+
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (stickers.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'flex';
+        container.style.flexWrap = 'wrap';
+        container.style.gap = '8px';
+
+        stickers.forEach(st => {
+            const pill = document.createElement('div');
+            pill.style.cssText = `background:${st.color || '#fff9c4'}; padding:6px 10px; border-radius:6px; font-size:0.85rem; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.05); max-width:100%;`;
+            pill.innerHTML = `<strong style="display:block; font-size:0.75rem; color:#64748b; margin-bottom:2px;">${st.title || 'Примечание'}:</strong><span style="color:#1e293b; white-space:pre-wrap;">${st.text}</span>`;
+            container.appendChild(pill);
+        });
+    }
+
+    initHintEvents() {
+        const hints = document.querySelectorAll('.dialectics-hint-block');
+        hints.forEach(hintEl => {
+            const btnAI = hintEl.querySelector('.btn-hint-ai');
+            if (btnAI) {
+                btnAI.onclick = (e) => {
+                    e.stopPropagation();
+                    this.runHintAI({
+                        id: hintEl.dataset.stepId || hintEl.dataset.id,
+                        side: hintEl.dataset.side
+                    });
+                };
+            }
+
+            hintEl.onclick = () => {
+                this.openHintEditor({
+                    id: hintEl.dataset.stepId || hintEl.dataset.id,
+                    side: hintEl.dataset.side
+                });
+            };
+        });
+    }
+
+    bindEvents() {
+        if (this.dom.btnSave) this.dom.btnSave.onclick = () => this.save();
+        if (this.dom.btnCancel) this.dom.btnCancel.onclick = () => this.close();
+        if (this.dom.btnClose) this.dom.btnClose.onclick = () => this.close();
+
+        // Global delegator for dynamically added blocks or hints
+        document.addEventListener('click', (e) => {
+            const badge = e.target.closest('.dialectics-hint-badge');
+            if (badge) {
+                e.preventDefault();
+                e.stopPropagation();
+                const hintEl = badge.closest('.dialectics-hint-block');
+                if (hintEl) {
+                    this.openHintEditor({
+                        id: hintEl.dataset.stepId || hintEl.dataset.id,
+                        side: hintEl.dataset.side
+                    });
+                }
+                return;
+            }
+
+            const aiBtn = e.target.closest('.btn-hint-ai');
+            if (aiBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const hintEl = aiBtn.closest('.dialectics-hint-block');
+                if (hintEl) {
+                    this.runHintAI({
+                        id: hintEl.dataset.stepId || hintEl.dataset.id,
+                        side: hintEl.dataset.side
+                    });
+                }
+                return;
+            }
+        });
+
+        // Setup callbacks for BlockManager
+        if (window.BlockManager) {
+            window.BlockManager.setCallbacks({
+                onEdit: (block) => this.openEdit(block),
+                onDelete: async () => { await this.saveGlobal(false, "toast.dialectics_updated"); const blocks = BlockManager.getBlocks(this.dom.canvas); BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks()); },
+                onHintClick: (hint) => this.openHintEditor(hint),
+                onHintAI: (hint) => (hint && hint.id === 'step3' ? this.runAI(this.dom.canvas) : this.runHintAI(hint))
+            });
+        }
+    }
+
+    openHintEditor(hint, content = '', aiHtml = null) {
+        this.state.editingBlock = null;
+        this.state.pendingSide = hint.side;
+        this.state.pendingRole = hint.id;
+        this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
+        this.state.insertAfterIndex = null;
+        this.open(content);
+
+        const aiTab = document.getElementById('tab-ai');
+        if (aiHtml) {
+            if (aiTab) aiTab.style.display = 'flex';
+            const aiContainer = document.getElementById('aiHelpContent');
+            if (aiContainer) aiContainer.innerHTML = aiHtml;
+            const copyBtn = document.getElementById('btnCopyAiToText');
+            if (copyBtn) {
+                copyBtn.onclick = () => {
+                    this.editor.setContent(aiHtml);
+                    this.editor.switchTab('text');
+                    if (window.showToast) window.showToast(window._("dialectics.ai_transferred", "Текст от ИИ перенесен в редактор"), "success");
+                };
+            }
+            this.editor.switchTab('ai');
+        } else {
+            if (aiTab) aiTab.style.display = 'none';
+        }
     }
 
     toggleExpand() {
@@ -448,21 +801,12 @@ class DialecticsEngine {
         return {
             onEdit: (b) => { this.state.editingBlock = b; this.openEdit(b); },
             onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
-            onDelete: () => { this.saveGlobal(); },
+            onDelete: async () => { await this.saveGlobal(false, "toast.dialectics_updated"); const blocks = BlockManager.getBlocks(this.dom.canvas); BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks()); },
             onAI: (b) => { this.runAI(b); },
             onSources: (b) => { this.openSourcesModal(b); },
             onHintClick: (hint) => { this.openHintEditor(hint); },
-            onHintAI: (hint) => { this.runHintAI(hint); }
+            onHintAI: (hint) => { if (hint && hint.id === 'step3') { this.runAI(this.dom.canvas); } else { this.runHintAI(hint); } }
         };
-    }
-
-    openHintEditor(hint, content = '') {
-        this.state.editingBlock = null;
-        this.state.pendingSide = hint.side;
-        this.state.pendingRole = hint.id;
-        this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
-        this.state.insertAfterIndex = null;
-        this.open(content);
     }
 
     openSourcesModal(blockEl) {
@@ -530,7 +874,7 @@ class DialecticsEngine {
                 const countHtml = sources.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${sources.length}</span>` : '';
                 btn.innerHTML = `🔗${countHtml}`;
             }
-            this.saveGlobal();
+            this.saveGlobal(false, "toast.dialectics_updated");
         };
 
         addBtn.onclick = () => {
@@ -602,7 +946,7 @@ class DialecticsEngine {
                 aiHtml = aiHtml.split('\\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
             }
             
-            this.openHintEditor(hint, aiHtml);
+            this.openHintEditor(hint, '', aiHtml);
 
         } catch (error) {
             console.error("AI Error:", error);
@@ -621,9 +965,27 @@ class DialecticsEngine {
     }
 
     async runAI(block) {
-        const inner = block.querySelector('.dialectics-content-inner');
-        if (!inner) return;
-        const processText = inner.innerText || inner.textContent;
+        const container = block.closest('.dialectics-editor') || document;
+        const getRoleText = (role) => {
+            const el = container.querySelector(`[data-role="${role}"] .dialectics-content-inner`);
+            return el ? (el.innerText || el.textContent).trim() : '';
+        };
+
+        const anchorText = getRoleText('anchor');
+        const step1Text = getRoleText('step1');
+        const step2Text = getRoleText('step2');
+
+        let parts = [];
+        if (anchorText) parts.push(`Что понять: ${anchorText}`);
+        if (step1Text) parts.push(`Простейший процесс: ${step1Text}`);
+        if (step2Text) parts.push(`Развитие процесса: ${step2Text}`);
+
+        let processText = parts.join('\n\n');
+        if (!processText) {
+            const inner = block.querySelector('.dialectics-content-inner');
+            processText = inner ? (inner.innerText || inner.textContent).trim() : '';
+        }
+        if (!processText) return;
 
         window.showToast(window._("toast.ai_is_analyzing_the_process"), "info");
 
@@ -880,7 +1242,7 @@ class DialecticsEngine {
         }
     }
 
-    async saveGlobal(shouldClose = true) {
+    async saveGlobal(shouldClose = true, toastKey = "toast.dialectics_saved") {
         const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const html = this.editor.getHTML();
         console.log("TipTap HTML Output -> length:", html.length);
@@ -948,7 +1310,7 @@ class DialecticsEngine {
                 window.history.pushState({}, '', url);
             }
 
-            window.showToast(window._("toast.dialectics_saved"), "success");
+            window.showToast(window._(toastKey) || window._("toast.dialectics_saved"), "success");
             if (shouldClose) {
                 this.close();
             }
@@ -1070,8 +1432,13 @@ class DialecticsEngine {
     async createNewNote() {
         if (this.state.isDirty) {
             const confirmed = await customConfirm({
-                message: "You have unsaved changes. Create a new note anyway?",
-                icon: '⚠️'
+                title: window._ ? window._('dialectics.unsaved_title') : "Внимание",
+                message: window._ ? window._('dialectics.unsaved_new_msg') : "Есть несохранённые изменения. Создать новый конспект?",
+                icon: '⚠️',
+                buttons: [
+                    { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                    { label: window._ ? window._('dialectics.create_btn') : 'Создать', value: true, class: 'confirm-btn-primary' }
+                ]
             });
             if (confirmed) {
                 this.state.isDirty = false;
@@ -1133,6 +1500,29 @@ class DialecticsEngine {
     }
 
     // --- Modal Helpers ---
+    async showReferenceModal() {
+        const modal = document.getElementById('referenceDialecticsModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+
+        const contentEl = document.getElementById('dialecticsReferenceContent');
+        if (!contentEl) return;
+
+        if (contentEl.dataset.loaded === 'true') return;
+
+        try {
+            contentEl.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Загрузка справочника...</div>';
+            const res = await fetch('/api/dialectics/reference');
+            if (!res.ok) throw new Error("Failed to load reference");
+            const data = await res.json();
+            contentEl.innerHTML = `<div class="guide-markdown-content">${data.html}</div>`;
+            contentEl.dataset.loaded = 'true';
+        } catch (err) {
+            console.error(err);
+            contentEl.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Не удалось загрузить справочник.</div>';
+        }
+    }
+
     async showGuideModal() {
         const modal = document.getElementById('guideDialecticsModal');
         if (!modal) return;
@@ -1275,12 +1665,12 @@ class DialecticsEngine {
             return;
         }
         const confirmed = await customConfirm({
-            title: 'Delete Confirmation',
-            message: 'Are you sure you want to delete this Dialectics?',
+            title: window._ ? window._('dialectics.delete_note_title') : 'Удаление конспекта',
+            message: window._ ? window._('dialectics.delete_note_msg') : 'Вы уверены, что хотите удалить этот конспект?',
             icon: '🗑️',
             buttons: [
-                { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+                { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                { label: window._ ? window._('dialectics.delete') : 'Удалить', value: true, class: 'confirm-btn-danger' }
             ]
         });
         if (confirmed) {

@@ -3,7 +3,7 @@
  * Handles generic confirmation and choice dialogs across the application.
  */
 
-export function customConfirm({ title = 'Confirmation', message = 'Are you sure?', icon = '', buttons = [], watermark = '', width = '' }) {
+export function customConfirm({ title = 'Подтверждение', message = 'Вы уверены?', icon = '', buttons = [], watermark = '', width = '' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
@@ -58,9 +58,11 @@ export function customConfirm({ title = 'Confirmation', message = 'Are you sure?
             }
 
             if (buttons.length === 0) {
+                const cancelTxt = window._ ? window._('modal.cancel') || 'Отмена' : 'Отмена';
+                const okTxt = window._ ? window._('modal.save_entry') || 'ОК' : 'ОК';
                 buttons = [
-                    { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-                    { label: 'OK', value: true, class: 'confirm-btn-primary' }
+                    { label: cancelTxt, value: false, class: 'confirm-btn-secondary' },
+                    { label: okTxt, value: true, class: 'confirm-btn-primary' }
                 ];
             }
 
@@ -99,18 +101,21 @@ export function customConfirm({ title = 'Confirmation', message = 'Are you sure?
     });
 }
 
-export function customChoice({ title = 'Select Option', messageHTML = '', options = [], okLabel = 'Confirm', cancelLabel = 'Cancel' }) {
+export function customChoice({ title = 'Select Option', messageHTML = '', options = [], okLabel = '', cancelLabel = '' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
             const titleEl = document.getElementById('confirmModalTitle');
             const messageEl = document.getElementById('confirmModalMessage');
+            const iconWrapper = document.getElementById('confirmModalIconWrapper');
             const footerEl = document.getElementById('confirmModalFooter');
 
             if (!modal || !titleEl || !messageEl || !footerEl) {
                 resolve(null);
                 return;
             }
+
+            if (iconWrapper) iconWrapper.style.display = 'none';
 
             titleEl.innerText = title;
             const container = document.createElement('div');
@@ -153,9 +158,12 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
             messageEl.appendChild(container);
 
             footerEl.innerHTML = '';
+            const finalCancel = cancelLabel || (window._ ? window._('modal.cancel') || 'Отмена' : 'Отмена');
+            const finalOk = okLabel || (window._ ? window._('modal.save_entry') || 'Готово' : 'Готово');
+
             const btnCancel = document.createElement('button');
             btnCancel.className = 'btn btn-secondary';
-            btnCancel.innerText = cancelLabel;
+            btnCancel.innerText = finalCancel;
             btnCancel.onclick = (e) => {
                 e.stopPropagation();
                 modal.classList.remove('active');
@@ -165,7 +173,7 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
 
             const btnOk = document.createElement('button');
             btnOk.className = 'btn btn-primary';
-            btnOk.innerText = okLabel;
+            btnOk.innerText = finalOk;
             btnOk.onclick = (e) => {
                 e.stopPropagation();
                 const selected = document.querySelector('input[name="customChoiceRadio"]:checked');
@@ -187,12 +195,13 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
     });
 }
 
-export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = 'OK', cancelLabel = 'Cancel', watermark = '', width = '' }) {
+export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = '', cancelLabel = '', watermark = '', width = '' }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
             const titleEl = document.getElementById('confirmModalTitle');
             const messageEl = document.getElementById('confirmModalMessage');
+            const iconWrapper = document.getElementById('confirmModalIconWrapper');
             const footerEl = document.getElementById('confirmModalFooter');
 
             if (!modal || !titleEl || !messageEl || !footerEl) {
@@ -200,6 +209,8 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
                 resolve(prompt(message, value));
                 return;
             }
+
+            if (iconWrapper) iconWrapper.style.display = 'none';
 
             titleEl.innerText = title;
             messageEl.innerHTML = '';
@@ -269,9 +280,12 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
                 }
             };
 
+            const finalCancel = cancelLabel || (window._ ? window._('modal.cancel') || 'Отмена' : 'Отмена');
+            const finalOk = okLabel || (window._ ? window._('modal.save_entry') || 'Создать' : 'Создать');
+
             const btnCancel = document.createElement('button');
             btnCancel.className = 'btn btn-secondary';
-            btnCancel.innerText = cancelLabel;
+            btnCancel.innerText = finalCancel;
             btnCancel.onclick = (e) => {
                 e.stopPropagation();
                 cleanUp();
@@ -280,7 +294,7 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
 
             const btnOk = document.createElement('button');
             btnOk.className = 'btn btn-primary';
-            btnOk.innerText = okLabel;
+            btnOk.innerText = finalOk;
             
             const submit = () => {
                 cleanUp();

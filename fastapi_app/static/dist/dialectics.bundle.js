@@ -85,7 +85,7 @@ var t = {
 };
 //#endregion
 //#region fastapi_app/static/js/modal_controller.js
-function r({ title: e = "Confirmation", message: t = "Are you sure?", icon: n = "", buttons: r = [], watermark: i = "", width: a = "" }) {
+function r({ title: e = "Подтверждение", message: t = "Вы уверены?", icon: n = "", buttons: r = [], watermark: i = "", width: a = "" }) {
 	return new Promise((o) => {
 		try {
 			let s = document.getElementById("customConfirmModal"), c = document.getElementById("confirmModalTitle"), l = document.getElementById("confirmModalMessage"), u = document.getElementById("confirmModalIcon"), d = document.getElementById("confirmModalIconWrapper"), f = document.getElementById("confirmModalFooter");
@@ -99,15 +99,19 @@ function r({ title: e = "Confirmation", message: t = "Are you sure?", icon: n = 
 				let e = document.createElement("div");
 				e.className = "modal-watermark", e.textContent = i, e.style.position = "absolute", e.style.bottom = "5px", e.style.left = "20px", e.style.fontSize = "14px", e.style.color = "#cbd5e1", e.style.fontWeight = "600", e.style.opacity = "0.6", e.style.pointerEvents = "none", e.style.letterSpacing = "0.5px", p.appendChild(e);
 			}
-			r.length === 0 && (r = [{
-				label: "Cancel",
-				value: !1,
-				class: "confirm-btn-secondary"
-			}, {
-				label: "OK",
-				value: !0,
-				class: "confirm-btn-primary"
-			}]), r.forEach((e) => {
+			if (r.length === 0) {
+				let e = window._ && window._("modal.cancel") || "Отмена", t = window._ && window._("modal.save_entry") || "ОК";
+				r = [{
+					label: e,
+					value: !1,
+					class: "confirm-btn-secondary"
+				}, {
+					label: t,
+					value: !0,
+					class: "confirm-btn-primary"
+				}];
+			}
+			r.forEach((e) => {
 				let t = document.createElement("button");
 				t.innerText = e.label, t.className = "btn " + (e.class || "confirm-btn-secondary"), t.onclick = (t) => {
 					t.stopPropagation(), s.classList.remove("active"), setTimeout(() => {
@@ -122,46 +126,46 @@ function r({ title: e = "Confirmation", message: t = "Are you sure?", icon: n = 
 		}
 	});
 }
-function i({ title: e = "Input Required", message: t = "", value: n = "", placeholder: r = "", okLabel: i = "OK", cancelLabel: a = "Cancel", watermark: o = "", width: s = "" }) {
+function i({ title: e = "Input Required", message: t = "", value: n = "", placeholder: r = "", okLabel: i = "", cancelLabel: a = "", watermark: o = "", width: s = "" }) {
 	return new Promise((c) => {
 		try {
-			let l = document.getElementById("customConfirmModal"), u = document.getElementById("confirmModalTitle"), d = document.getElementById("confirmModalMessage"), f = document.getElementById("confirmModalFooter");
-			if (!l || !u || !d || !f) {
+			let l = document.getElementById("customConfirmModal"), u = document.getElementById("confirmModalTitle"), d = document.getElementById("confirmModalMessage"), f = document.getElementById("confirmModalIconWrapper"), p = document.getElementById("confirmModalFooter");
+			if (!l || !u || !d || !p) {
 				console.warn("[customPrompt] UI elements missing, falling back to native."), c(prompt(t, n));
 				return;
 			}
-			u.innerText = e, d.innerHTML = "";
-			let p = document.createElement("div");
-			if (p.className = "prompt-container", p.style.textAlign = "left", t) {
+			f && (f.style.display = "none"), u.innerText = e, d.innerHTML = "";
+			let m = document.createElement("div");
+			if (m.className = "prompt-container", m.style.textAlign = "left", t) {
 				let e = document.createElement("div");
-				e.textContent = t, e.style.marginBottom = "15px", e.style.fontSize = "0.95rem", e.style.color = "var(--color-text-body)", p.appendChild(e);
+				e.textContent = t, e.style.marginBottom = "15px", e.style.fontSize = "0.95rem", e.style.color = "var(--color-text-body)", m.appendChild(e);
 			}
-			let m = document.createElement("input");
-			m.type = "text", m.value = n, m.placeholder = r, m.className = "form-input-premium", m.style.width = "100%", p.appendChild(m);
-			let h = l.querySelector(".modal-content");
-			if (h && (h.style.position = "relative", h.querySelectorAll(".modal-watermark").forEach((e) => e.remove()), s ? h.style.setProperty("max-width", s, "important") : h.style.removeProperty("max-width"), o)) {
+			let h = document.createElement("input");
+			h.type = "text", h.value = n, h.placeholder = r, h.className = "form-input-premium", h.style.width = "100%", m.appendChild(h);
+			let g = l.querySelector(".modal-content");
+			if (g && (g.style.position = "relative", g.querySelectorAll(".modal-watermark").forEach((e) => e.remove()), s ? g.style.setProperty("max-width", s, "important") : g.style.removeProperty("max-width"), o)) {
 				let e = document.createElement("div");
-				e.className = "modal-watermark", e.textContent = o, e.style.position = "absolute", e.style.bottom = "5px", e.style.left = "20px", e.style.fontSize = "14px", e.style.color = "#cbd5e1", e.style.fontWeight = "600", e.style.opacity = "0.6", e.style.pointerEvents = "none", e.style.letterSpacing = "0.5px", h.appendChild(e);
+				e.className = "modal-watermark", e.textContent = o, e.style.position = "absolute", e.style.bottom = "5px", e.style.left = "20px", e.style.fontSize = "14px", e.style.color = "#cbd5e1", e.style.fontWeight = "600", e.style.opacity = "0.6", e.style.pointerEvents = "none", e.style.letterSpacing = "0.5px", g.appendChild(e);
 			}
-			d.appendChild(p), f.innerHTML = "";
-			let g = () => {
+			d.appendChild(m), p.innerHTML = "";
+			let _ = () => {
 				l.classList.remove("active"), setTimeout(() => {
 					l.style.display = "none";
-				}, 200), h && (h.style.removeProperty("max-width"), h.querySelectorAll(".modal-watermark").forEach((e) => e.remove()));
-			}, _ = document.createElement("button");
-			_.className = "btn btn-secondary", _.innerText = a, _.onclick = (e) => {
-				e.stopPropagation(), g(), c(null);
+				}, 200), g && (g.style.removeProperty("max-width"), g.querySelectorAll(".modal-watermark").forEach((e) => e.remove()));
+			}, v = a || window._ && window._("modal.cancel") || "Отмена", y = i || window._ && window._("modal.save_entry") || "Создать", b = document.createElement("button");
+			b.className = "btn btn-secondary", b.innerText = v, b.onclick = (e) => {
+				e.stopPropagation(), _(), c(null);
 			};
-			let v = document.createElement("button");
-			v.className = "btn btn-primary", v.innerText = i;
-			let y = () => {
-				g(), c(m.value);
+			let x = document.createElement("button");
+			x.className = "btn btn-primary", x.innerText = y;
+			let S = () => {
+				_(), c(h.value);
 			};
-			v.onclick = (e) => {
-				e.stopPropagation(), y();
-			}, m.onkeydown = (e) => {
-				e.key === "Enter" ? (e.preventDefault(), y()) : e.key === "Escape" && (g(), c(null));
-			}, f.appendChild(_), f.appendChild(v), l.style.display = "flex", l.offsetHeight, l.classList.add("active"), setTimeout(() => m.focus(), 100);
+			x.onclick = (e) => {
+				e.stopPropagation(), S();
+			}, h.onkeydown = (e) => {
+				e.key === "Enter" ? (e.preventDefault(), S()) : e.key === "Escape" && (_(), c(null));
+			}, p.appendChild(b), p.appendChild(x), l.style.display = "flex", l.offsetHeight, l.classList.add("active"), setTimeout(() => h.focus(), 100);
 		} catch (e) {
 			console.error("[customPrompt] Error:", e), c(prompt(t, n));
 		}
@@ -22190,20 +22194,20 @@ var ja = function(e, t) {
 			{
 				id: "step1",
 				side: "left",
-				text: a("dialectics.hints.step1", "Простейший процесс"),
-				title: a("dialectics.hints.step1", "Простейший процесс")
+				text: a("dialectics.hints.step1", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Опишите простейший процесс, который, по вашему мнению, лежит в основе проблемы, которую вы хотите понять.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Примером простейшего процесса может быть суммирование. Если вы затрудняетесь, то нажмите кнопку Помощь ИИ. Помните, что ИИ не способен к пониманию, но может предоставить вам знания.</div>"),
+				title: a("dialectics.hints.step1_title", "Простейший процесс")
 			},
 			{
 				id: "step2",
 				side: "right",
-				text: a("dialectics.hints.step2", "Опишите как развивается этот простейший процесс"),
-				title: a("dialectics.hints.step2", "Опишите как развивается этот простейший процесс")
+				text: a("dialectics.hints.step2", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Опишите, как развивается этот простейший процесс.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Развитие – это взаимодействие процесса с другими процессами в мире. Например, если простейшим является суммирование, то его развитием будет суммирование пяти, десяти и т.п. единиц, использование суммирования в торговле, праве, науке. Если вы сомневаетесь или не знаете, то можете нажать кнопку Помощь ИИ. Однако помните, что ИИ не может заменить человека в понимании процессов, ИИ может только предоставить знания.</div>"),
+				title: a("dialectics.hints.step2_title", "Опишите как развивается этот простейший процесс")
 			},
 			{
 				id: "step3",
 				side: "left",
-				text: a("dialectics.hints.step3", "Найти противоположный процесс"),
-				title: a("dialectics.hints.step3", "Найти противоположный процесс")
+				text: a("dialectics.hints.step3", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Вы уже нашли простейший процесс, посмотрели, как он развивается. В этом развитии вы должны отыскать противоположный процесс.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Вы можете сделать это через специальный ИИ под кнопкой ✨. А можете сделать это самостоятельно. Противоположным является такой процесс, который сам остается самостоятельным, но полностью исключает другой.</div>"),
+				title: a("dialectics.hints.step3_title", "Найти противоположный процесс")
 			},
 			{
 				id: "step4",
@@ -22214,18 +22218,24 @@ var ja = function(e, t) {
 			{
 				id: "step5",
 				side: "center",
-				text: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие"),
-				title: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие, движение, к каким противоречиям это приводит и как разрешается это противоречие")
+				text: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?"),
+				title: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?")
 			}
 		], c = {}, l = [];
 		t.forEach((e) => {
 			e.role ? (c[e.role] = e, e.role !== "anchor" && l.push(e)) : l.push(e);
 		});
-		let u = [];
-		if (l.forEach((e) => u.push({
+		let u = {
+			step1: 1,
+			step2: 2,
+			step3: 3,
+			step4: 4,
+			step5: 5
+		}, d = [];
+		if (!c.anchor) l.forEach((e) => d.push({
 			type: "block",
 			data: e
-		})), !c.anchor) u.push({
+		})), d.push({
 			type: "hint",
 			data: o
 		});
@@ -22235,15 +22245,24 @@ var ja = function(e, t) {
 				e = t;
 				break;
 			}
-			e && u.push({
+			let t = !1;
+			l.forEach((n) => {
+				e && !t && n.role && u[n.role] && u[n.role] > u[e.id] && (d.push({
+					type: "hint",
+					data: e
+				}), t = !0), d.push({
+					type: "block",
+					data: n
+				});
+			}), e && !t && d.push({
 				type: "hint",
 				data: e
-			}), u.push({
+			}), d.push({
 				type: "block",
 				data: c.anchor
 			});
 		}
-		let d = (e) => {
+		let f = (e) => {
 			let t = document.createElement("div");
 			return t.className = "block-insert-row", [
 				"left",
@@ -22258,19 +22277,21 @@ var ja = function(e, t) {
 				}, t.appendChild(i);
 			}), t;
 		};
-		n.onInsertAfter && e.appendChild(d(0));
-		let f = 0;
-		u.forEach((t) => {
+		n.onInsertAfter && e.appendChild(f(0));
+		let p = 0;
+		d.forEach((t) => {
 			if (t.type === "hint") {
 				let r = t.data, i = document.createElement("div");
-				i.className = `dialectics-hint-block block-${r.side}`, i.dataset.hintId = r.id, i.dataset.side = r.side, i.innerHTML = `
+				i.className = `dialectics-hint-block block-${r.side}`, i.dataset.hintId = r.id, i.dataset.side = r.side;
+				let o = r.id === "step3" ? a("dialectics.ai_opposites", "ИИ-противоположности") : a("dialectics.ai_help", "Помощь ИИ");
+				i.innerHTML = `
                     <div class="dialectics-hint-text">${r.text}</div>
-                    <button class="btn-hint-ai" title="Ask AI for this step" style="position:absolute; right: 10px; top: 10px; background:transparent; border:none; cursor:pointer; opacity:0.6; transition:opacity 0.2s; font-size: 1.2rem;">✨</button>
+                    <button class="btn-hint-ai" title="${o}" style="position:absolute; right: 12px; top: 12px; background:rgba(255,255,255,0.7); border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; cursor:pointer; opacity:0.85; transition:all 0.2s; font-size: 0.82rem; display:flex; align-items:center; gap:5px; color:#334155; font-weight:500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"><span style="font-size:1rem;">✨</span> <span>${o}</span></button>
                 `, i.onclick = (e) => {
 					e.stopPropagation(), n.onHintClick && n.onHintClick(r);
 				};
-				let a = i.querySelector(".btn-hint-ai");
-				a && (a.onmouseover = () => a.style.opacity = "1", a.onmouseout = () => a.style.opacity = "0.6", a.onclick = (e) => {
+				let s = i.querySelector(".btn-hint-ai");
+				s && (s.onmouseover = () => s.style.opacity = "1", s.onmouseout = () => s.style.opacity = "0.6", s.onclick = (e) => {
 					e.stopPropagation(), n.onHintAI && n.onHintAI(r);
 				}), e.appendChild(i);
 			} else {
@@ -22292,16 +22313,18 @@ var ja = function(e, t) {
 				i.sources && i.sources.length > 0 && (l = `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px;">${i.sources.length}</span>`), a.innerHTML = `
                     <div class="dialectics-block-actions">
                         <button class="btn-block-edit" title="Edit">✎</button>
-                        <button class="btn-block-ai" title="Ask AI">✨</button>
+                        ${i.role === "step3" ? "<button class=\"btn-block-ai\" title=\"Поиск противоположностей\">✨</button>" : ""}
                         <button class="btn-block-sources" title="Sources">🔗${l}</button>
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div></button>
                         <button class="btn-block-del" title="Delete">🗑️</button>
                     </div>
                     ${c}
                     <div class="dialectics-content-inner">${i.html}</div>
-                `, this.renderMath(a), a.querySelector(".btn-block-ai").onclick = (e) => {
+                `, this.renderMath(a);
+				let u = a.querySelector(".btn-block-ai");
+				u && (u.onclick = (e) => {
 					e.stopPropagation(), n.onAI && n.onAI(a);
-				}, a.querySelector(".btn-block-edit").onclick = (e) => {
+				}), a.querySelector(".btn-block-edit").onclick = (e) => {
 					e.stopPropagation(), n.onEdit(a);
 				}, a.querySelector(".btn-block-sticker").onclick = (e) => {
 					e.stopPropagation(), window.app && window.app.openStickersForCurrent(i.id);
@@ -22309,15 +22332,15 @@ var ja = function(e, t) {
 					e.stopPropagation(), n.onSources && n.onSources(a);
 				}, a.querySelector(".btn-block-del").onclick = async (e) => {
 					if (e.stopPropagation(), await r({
-						title: "Delete block",
-						message: "Are you sure you want to delete this block?",
+						title: window._ ? window._("dialectics.delete_block_title") : "Удаление блока",
+						message: window._ ? window._("dialectics.delete_block_msg") : "Вы уверены, что хотите удалить этот блок?",
 						icon: "🗑️",
 						buttons: [{
-							label: "Cancel",
+							label: window._ ? window._("dialectics.cancel") : "Отмена",
 							value: !1,
 							class: "confirm-btn-secondary"
 						}, {
-							label: "Delete",
+							label: window._ ? window._("dialectics.delete") : "Удалить",
 							value: !0,
 							class: "confirm-btn-danger"
 						}]
@@ -22325,7 +22348,7 @@ var ja = function(e, t) {
 						let e = a.nextElementSibling;
 						e && e.classList.contains("block-insert-row") && e.remove(), a.remove(), n.onDelete && n.onDelete();
 					}
-				}, e.appendChild(a), n.onInsertAfter && e.appendChild(d(f + 1)), f++;
+				}, e.appendChild(a), n.onInsertAfter && e.appendChild(f(p + 1)), p++;
 			}
 		});
 	},
@@ -34002,8 +34025,18 @@ window.app = new class {
 				if (this.logDebug("isDirty = " + this.state.isDirty), this.state.isDirty) {
 					this.logDebug("Showing customConfirm for unsaved changes...");
 					let e = await r({
-						message: "You have unsaved changes. Continue anyway?",
-						icon: "⚠️"
+						title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
+						message: window._ ? window._("dialectics.unsaved_msg") : "Есть несохранённые изменения. Продолжить?",
+						icon: "⚠️",
+						buttons: [{
+							label: window._ ? window._("dialectics.cancel") : "Отмена",
+							value: !1,
+							class: "confirm-btn-secondary"
+						}, {
+							label: window._ ? window._("dialectics.continue_btn") : "Продолжить",
+							value: !0,
+							class: "confirm-btn-primary"
+						}]
 					});
 					if (this.logDebug("customConfirm resolved: " + e), e) {
 						this.state.isDirty = !1, this.showLoadModal();
@@ -34020,7 +34053,7 @@ window.app = new class {
 			}
 		}), this.logDebug("Binding btnLoadDialectics COMPLETED.");
 		let t = document.getElementById("dialecticsSearchInput");
-		t && t.addEventListener("input", (e) => this.searchNotes(e.target.value)), e("btnNewDialectics", this.createNewNote), e("btnGlobalParser", this.runGlobalParser), e("btnExampleDialectics", this.loadExample), e("btnPrevDialectics", this.loadPreviousNote), e("btnDialecticsGuide", this.showGuideModal), e("btnDialecticsConnections", this.showConnectionsModal), e("close-connections-btn", () => {
+		t && t.addEventListener("input", (e) => this.searchNotes(e.target.value)), e("btnNewDialectics", this.createNewNote), e("btnGlobalParser", this.runGlobalParser), e("btnExampleDialectics", this.loadExample), e("btnPrevDialectics", this.loadPreviousNote), e("btnDialecticsReference", this.showReferenceModal), e("btnDialecticsGuide", this.showGuideModal), e("btnDialecticsConnections", this.showConnectionsModal), e("close-connections-btn", () => {
 			this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
 		}), e("add-category-btn", this.addCategory);
 		let a = document.getElementById("connections-search-input");
@@ -34116,7 +34149,9 @@ window.app = new class {
 		});
 	}
 	open(e = "") {
-		if (this.dom.editor && !this.dom.editor.classList.contains("embedded") && n.toggleDisplay(this.dom.editor, !0, !0), this.editor.switchTab("text"), this.editor.setContent(e), !this.editor.tiptap && this.dom.dashboardTextarea) {
+		this.dom.editor && !this.dom.editor.classList.contains("embedded") && n.toggleDisplay(this.dom.editor, !0, !0);
+		let t = document.getElementById("tab-ai");
+		if (t && (t.style.display = "none"), this.editor.switchTab("text"), this.editor.setContent(e), !this.editor.tiptap && this.dom.dashboardTextarea) {
 			let t = document.createElement("div");
 			t.innerHTML = e, this.dom.dashboardTextarea.value = t.innerText || t.textContent || "", this.dom.dashboardTextarea.dispatchEvent(new Event("input"));
 		}
@@ -34126,7 +34161,216 @@ window.app = new class {
 		this.open(t);
 	}
 	close() {
-		this.dom.editor && (this.dom.editor.style.display = "none", this.dom.editor.classList.remove("expanded")), this.dom.backdrop && (this.dom.backdrop.style.display = "none"), this.state.editingBlock = null, this.state.pendingSide = null, this.state.pendingRole = null;
+		this.dom.editor && (this.dom.editor.style.display = "none", this.dom.editor.classList.remove("embedded")), this.editor.setContent(""), this.state.editingBlock = null, this.state.pendingSide = null, this.state.pendingRole = null, this.state.pendingBlockId = null, this.state.insertAfterIndex = null;
+	}
+	save() {
+		this.saveGlobal(!1, "toast.dialectics_saved");
+	}
+	saveGlobal(e = !1, t = "toast.dialectics_saved") {
+		let n = "";
+		if (this.editor.tiptap) n = this.editor.getContent();
+		else if (this.dom.dashboardTextarea) {
+			let e = this.dom.dashboardTextarea.value.trim();
+			n = e ? `<p>${e.replace(/\n/g, "<br>")}</p>` : "";
+		}
+		if (!n.replace(/<p><\/p>/g, "").trim()) {
+			!e && window.showToast && window.showToast("Введите текст конспекта", "warning");
+			return;
+		}
+		let r = [];
+		if (this.dom.stickerText) {
+			let e = this.dom.stickerText.value.trim();
+			e && r.push({
+				text: e,
+				title: this.dom.stickerTitle?.value?.trim() || "Важное примечание",
+				color: this.dom.stickerColor?.value || "#fff9c4",
+				type: this.dom.stickerType?.value || "text"
+			});
+		}
+		if (this.state.editingBlock) {
+			let e = this.state.editingBlock.querySelector(".dialectics-content-inner");
+			if (e && (e.innerHTML = n), r.length > 0) {
+				let e = [];
+				try {
+					e = JSON.parse(this.state.editingBlock.dataset.stickers || "[]");
+				} catch {}
+				e.push(...r), this.state.editingBlock.dataset.stickers = JSON.stringify(e);
+			}
+		} else {
+			let e = this.state.pendingSide || "left", t = this.state.pendingRole || "thesis", i = this.state.pendingBlockId || "block_" + Math.random().toString(36).substr(2, 9);
+			this.createBlock(e, t, n, i, r, [], this.state.insertAfterIndex);
+		}
+		this.close(), !e && window.showToast && window.showToast(window._(t, "Сохранено"), "success");
+	}
+	createBlock(e, t, n, r, i = [], a = [], o = null) {
+		let s = e === "left" ? this.dom.leftCol : this.dom.rightCol;
+		if (!s) return;
+		let c = document.createElement("div");
+		if (c.className = "dialectics-block", c.dataset.id = r, c.dataset.side = e, c.dataset.role = t, i.length > 0 && (c.dataset.stickers = JSON.stringify(i)), a.length > 0 && (c.dataset.sources = JSON.stringify(a)), c.innerHTML = `
+            <div class="dialectics-block-header">
+                <span class="dialectics-block-badge">${window._("dialectics.roles." + t) || t}</span>
+                <div class="dialectics-block-actions">
+                    <button type="button" class="btn-block-action btn-block-sources" title="Источники">🔗</button>
+                    <button type="button" class="btn-block-action btn-block-stickers" title="Стикеры">🏷️</button>
+                    <button type="button" class="btn-block-action btn-block-edit" title="Редактировать">✏️</button>
+                    <button type="button" class="btn-block-action btn-block-del" title="Удалить">🗑️</button>
+                </div>
+            </div>
+            <div class="dialectics-content-inner">${n}</div>
+            <div class="dialectics-stickers-container" style="display:none; margin-top:10px; border-top:1px dashed #e2e8f0; padding-top:8px;"></div>
+        `, this.attachBlockEvents(c), o != null) {
+			let e = Array.from(s.querySelectorAll(".dialectics-block"));
+			o < e.length ? e[o].after(c) : s.appendChild(c);
+		} else s.appendChild(c);
+		i.length > 0 && this.renderStickersForBlock(c);
+	}
+	attachBlockEvents(e) {
+		let t = e.querySelector(".btn-block-edit"), n = e.querySelector(".btn-block-del"), r = e.querySelector(".btn-block-stickers"), i = e.querySelector(".btn-block-sources");
+		t && (t.onclick = () => {
+			this.state.editingBlock = e, this.openEdit(e);
+		}), n && (n.onclick = () => {
+			e.remove(), window.showToast && window.showToast(window._("toast.dialectics_updated", "Обновлено"), "success");
+		}), r && (r.onclick = () => {
+			this.openStickersForCurrent(e.dataset.id);
+		}), i && (i.onclick = () => {
+			this.openSourcesModal(e);
+		});
+	}
+	initStickersModal() {
+		let e = document.getElementById("blockStickersModal"), t = document.getElementById("btnAddStickerModal");
+		document.getElementById("modalStickersList"), !(!e || !t) && (t.onclick = () => {
+			let t = e.dataset.currentBlockId;
+			if (!t) return;
+			let n = document.getElementById("modalStickerText"), r = document.getElementById("modalStickerTitle"), i = document.getElementById("modalStickerColor"), a = n?.value?.trim();
+			if (!a) {
+				window.showToast && window.showToast("Введите текст стикера", "warning");
+				return;
+			}
+			let o = document.querySelector(`.dialectics-block[data-id="${t}"]`);
+			if (o) {
+				let e = [];
+				try {
+					e = JSON.parse(o.dataset.stickers || "[]");
+				} catch {}
+				e.push({
+					text: a,
+					title: r?.value?.trim() || "Важное примечание",
+					color: i?.value || "#fff9c4",
+					type: "text"
+				}), o.dataset.stickers = JSON.stringify(e), this.renderStickersForBlock(o), this.renderStickersListInModal(t), this.saveGlobal(!1, "toast.dialectics_updated");
+			}
+			n && (n.value = ""), r && (r.value = "");
+		});
+	}
+	openStickersForCurrent(e) {
+		let t = document.getElementById("blockStickersModal");
+		t && (t.dataset.currentBlockId = e, this.renderStickersListInModal(e), t.style.display = "flex");
+	}
+	renderStickersListInModal(e) {
+		let t = document.getElementById("modalStickersList");
+		if (!t) return;
+		t.innerHTML = "";
+		let n = document.querySelector(`.dialectics-block[data-id="${e}"]`);
+		if (!n) return;
+		let r = [];
+		try {
+			r = JSON.parse(n.dataset.stickers || "[]");
+		} catch {}
+		if (r.length === 0) {
+			t.innerHTML = "<div style=\"color:#94a3b8; font-size:0.9rem; font-style:italic;\">Стикеры пока не добавлены.</div>";
+			return;
+		}
+		r.forEach((i, a) => {
+			let o = document.createElement("div");
+			o.style.cssText = `background:${i.color || "#fff9c4"}; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; box-shadow:0 1px 2px rgba(0,0,0,0.05);`, o.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; font-size:0.85rem; margin-bottom:4px; color:#334155;">${i.title || "Примечание"}</div>
+                    <div style="font-size:0.9rem; color:#1e293b; white-space:pre-wrap;">${i.text}</div>
+                </div>
+                <button type="button" class="btn-del-st" style="background:none; border:none; cursor:pointer; color:#ef4444; font-weight:bold; padding:0 4px;" title="Удалить">&times;</button>
+            `, o.querySelector(".btn-del-st").onclick = () => {
+				r.splice(a, 1), n.dataset.stickers = JSON.stringify(r), this.renderStickersForBlock(n), this.renderStickersListInModal(e), this.saveGlobal(!1, "toast.dialectics_updated");
+			}, t.appendChild(o);
+		});
+	}
+	renderStickersForBlock(e) {
+		let t = [];
+		try {
+			t = JSON.parse(e.dataset.stickers || "[]");
+		} catch {}
+		let n = e.querySelector(".dialectics-stickers-container"), r = e.querySelector(".btn-block-stickers");
+		if (r && (r.innerHTML = `🏷️${t.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${t.length}</span>` : ""}`), n) {
+			if (n.innerHTML = "", t.length === 0) {
+				n.style.display = "none";
+				return;
+			}
+			n.style.display = "flex", n.style.flexWrap = "wrap", n.style.gap = "8px", t.forEach((e) => {
+				let t = document.createElement("div");
+				t.style.cssText = `background:${e.color || "#fff9c4"}; padding:6px 10px; border-radius:6px; font-size:0.85rem; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.05); max-width:100%;`, t.innerHTML = `<strong style="display:block; font-size:0.75rem; color:#64748b; margin-bottom:2px;">${e.title || "Примечание"}:</strong><span style="color:#1e293b; white-space:pre-wrap;">${e.text}</span>`, n.appendChild(t);
+			});
+		}
+	}
+	initHintEvents() {
+		document.querySelectorAll(".dialectics-hint-block").forEach((e) => {
+			let t = e.querySelector(".btn-hint-ai");
+			t && (t.onclick = (t) => {
+				t.stopPropagation(), this.runHintAI({
+					id: e.dataset.stepId || e.dataset.id,
+					side: e.dataset.side
+				});
+			}), e.onclick = () => {
+				this.openHintEditor({
+					id: e.dataset.stepId || e.dataset.id,
+					side: e.dataset.side
+				});
+			};
+		});
+	}
+	bindEvents() {
+		this.dom.btnSave && (this.dom.btnSave.onclick = () => this.save()), this.dom.btnCancel && (this.dom.btnCancel.onclick = () => this.close()), this.dom.btnClose && (this.dom.btnClose.onclick = () => this.close()), document.addEventListener("click", (e) => {
+			let t = e.target.closest(".dialectics-hint-badge");
+			if (t) {
+				e.preventDefault(), e.stopPropagation();
+				let n = t.closest(".dialectics-hint-block");
+				n && this.openHintEditor({
+					id: n.dataset.stepId || n.dataset.id,
+					side: n.dataset.side
+				});
+				return;
+			}
+			let n = e.target.closest(".btn-hint-ai");
+			if (n) {
+				e.preventDefault(), e.stopPropagation();
+				let t = n.closest(".dialectics-hint-block");
+				t && this.runHintAI({
+					id: t.dataset.stepId || t.dataset.id,
+					side: t.dataset.side
+				});
+				return;
+			}
+		}), window.BlockManager && window.BlockManager.setCallbacks({
+			onEdit: (e) => this.openEdit(e),
+			onDelete: async () => {
+				await this.saveGlobal(!1, "toast.dialectics_updated");
+				let e = Ia.getBlocks(this.dom.canvas);
+				Ia.render(this.dom.canvas, e, this._blockCallbacks());
+			},
+			onHintClick: (e) => this.openHintEditor(e),
+			onHintAI: (e) => e && e.id === "step3" ? this.runAI(this.dom.canvas) : this.runHintAI(e)
+		});
+	}
+	openHintEditor(e, t = "", n = null) {
+		this.state.editingBlock = null, this.state.pendingSide = e.side, this.state.pendingRole = e.id, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = null, this.open(t);
+		let r = document.getElementById("tab-ai");
+		if (n) {
+			r && (r.style.display = "flex");
+			let e = document.getElementById("aiHelpContent");
+			e && (e.innerHTML = n);
+			let t = document.getElementById("btnCopyAiToText");
+			t && (t.onclick = () => {
+				this.editor.setContent(n), this.editor.switchTab("text"), window.showToast && window.showToast(window._("dialectics.ai_transferred", "Текст от ИИ перенесен в редактор"), "success");
+			}), this.editor.switchTab("ai");
+		} else r && (r.style.display = "none");
 	}
 	toggleExpand() {
 		this.state.isExpanded = !this.state.isExpanded, this.dom.editor && (this.dom.editor.classList.toggle("expanded", this.state.isExpanded), this.dom.backdrop && n.toggleDisplay(this.dom.backdrop, this.state.isExpanded)), setTimeout(() => {
@@ -34145,8 +34389,10 @@ window.app = new class {
 			onInsertAfter: (e, t) => {
 				this.openInsertAfter(e, t);
 			},
-			onDelete: () => {
-				this.saveGlobal();
+			onDelete: async () => {
+				await this.saveGlobal(!1, "toast.dialectics_updated");
+				let e = Ia.getBlocks(this.dom.canvas);
+				Ia.render(this.dom.canvas, e, this._blockCallbacks());
 			},
 			onAI: (e) => {
 				this.runAI(e);
@@ -34158,12 +34404,9 @@ window.app = new class {
 				this.openHintEditor(e);
 			},
 			onHintAI: (e) => {
-				this.runHintAI(e);
+				e && e.id === "step3" ? this.runAI(this.dom.canvas) : this.runHintAI(e);
 			}
 		};
-	}
-	openHintEditor(e, t = "") {
-		this.state.editingBlock = null, this.state.pendingSide = e.side, this.state.pendingRole = e.id, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = null, this.open(t);
 	}
 	openSourcesModal(e) {
 		let t = document.getElementById("blockSourcesModal"), n = document.getElementById("sourcesList"), r = document.getElementById("sourceUrl"), i = document.getElementById("sourceTitle"), a = document.getElementById("sourceQuote"), o = document.getElementById("btnAddSource");
@@ -34196,7 +34439,7 @@ window.app = new class {
 		}, l = () => {
 			e.dataset.sources = JSON.stringify(s);
 			let t = e.querySelector(".btn-block-sources");
-			t && (t.innerHTML = `🔗${s.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${s.length}</span>` : ""}`), this.saveGlobal();
+			t && (t.innerHTML = `🔗${s.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${s.length}</span>` : ""}`), this.saveGlobal(!1, "toast.dialectics_updated");
 		};
 		o.onclick = () => {
 			let e = r ? r.value.trim() : "", t = i ? i.value.trim() : "", n = a ? a.value.trim() : "";
@@ -34236,7 +34479,7 @@ window.app = new class {
 				throw Error(e.detail || "API Error");
 			}
 			let n = (await t.json()).result;
-			!n.includes("<p>") && !n.includes("<div>") && (n = n.split("\\n").filter((e) => e.trim()).map((e) => `<p>${e}</p>`).join("")), this.openHintEditor(e, n);
+			!n.includes("<p>") && !n.includes("<div>") && (n = n.split("\\n").filter((e) => e.trim()).map((e) => `<p>${e}</p>`).join("")), this.openHintEditor(e, "", n);
 		} catch (e) {
 			console.error("AI Error:", e), window.showToast("AI Error: " + e.message, "error");
 		}
@@ -34245,42 +34488,51 @@ window.app = new class {
 		this.state.editingBlock = null, this.state.pendingSide = e, this.state.pendingRole = null, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = t, this.open();
 	}
 	async runAI(e) {
-		let t = e.querySelector(".dialectics-content-inner");
-		if (!t) return;
-		let n = t.innerText || t.textContent;
-		window.showToast(window._("toast.ai_is_analyzing_the_process"), "info");
-		try {
-			let e = await fetch("/api/ai/dialectics/opposites", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ process_a: n })
-			});
-			if (!e.ok) {
-				let t = await e.json();
-				throw Error(t.detail || "API Error");
+		let t = e.closest(".dialectics-editor") || document, n = (e) => {
+			let n = t.querySelector(`[data-role="${e}"] .dialectics-content-inner`);
+			return n ? (n.innerText || n.textContent).trim() : "";
+		}, i = n("anchor"), a = n("step1"), o = n("step2"), s = [];
+		i && s.push(`Что понять: ${i}`), a && s.push(`Простейший процесс: ${a}`), o && s.push(`Развитие процесса: ${o}`);
+		let c = s.join("\n\n");
+		if (!c) {
+			let t = e.querySelector(".dialectics-content-inner");
+			c = t ? (t.innerText || t.textContent).trim() : "";
+		}
+		if (c) {
+			window.showToast(window._("toast.ai_is_analyzing_the_process"), "info");
+			try {
+				let e = await fetch("/api/ai/dialectics/opposites", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ process_a: c })
+				});
+				if (!e.ok) {
+					let t = await e.json();
+					throw Error(t.detail || "API Error");
+				}
+				let t = await e.json(), n = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
+				n && i && a ? (i.innerText = window._ && window._("analysis_result") || "Результат анализа", a.innerHTML = this._renderMarkdown(t.result), n.style.display = "flex") : r({
+					title: "Результат анализа",
+					message: `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${t.result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
+					buttons: [{
+						label: "Закрыть",
+						value: !0,
+						class: "confirm-btn-primary"
+					}]
+				});
+			} catch (e) {
+				console.error(e);
+				let t = document.getElementById("explainConceptModal"), n = document.getElementById("explainConceptTitle"), i = document.getElementById("explainConceptBody");
+				t && n && i ? (n.innerText = "Ошибка", i.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex") : r({
+					title: "Ошибка",
+					message: `<div style="color: red;">${e.message}</div>`,
+					buttons: [{
+						label: "Закрыть",
+						value: !0,
+						class: "confirm-btn-secondary"
+					}]
+				});
 			}
-			let t = await e.json(), i = document.getElementById("explainConceptModal"), a = document.getElementById("explainConceptTitle"), o = document.getElementById("explainConceptBody");
-			i && a && o ? (a.innerText = window._ && window._("analysis_result") || "Результат анализа", o.innerHTML = this._renderMarkdown(t.result), i.style.display = "flex") : r({
-				title: "Результат анализа",
-				message: `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${t.result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
-				buttons: [{
-					label: "Закрыть",
-					value: !0,
-					class: "confirm-btn-primary"
-				}]
-			});
-		} catch (e) {
-			console.error(e);
-			let t = document.getElementById("explainConceptModal"), n = document.getElementById("explainConceptTitle"), i = document.getElementById("explainConceptBody");
-			t && n && i ? (n.innerText = "Ошибка", i.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex") : r({
-				title: "Ошибка",
-				message: `<div style="color: red;">${e.message}</div>`,
-				buttons: [{
-					label: "Закрыть",
-					value: !0,
-					class: "confirm-btn-secondary"
-				}]
-			});
 		}
 	}
 	async runGlobalParser() {
@@ -34423,16 +34675,16 @@ window.app = new class {
 			console.error("Microphone access denied or error:", e), window.showToast(window._("toast.no_microphone_access"), "error");
 		}
 	}
-	async saveGlobal(e = !0) {
-		let n = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), r = this.editor.getHTML();
-		if (console.log("TipTap HTML Output -> length:", r.length), this.state.editingBlock) {
+	async saveGlobal(e = !0, n = "toast.dialectics_saved") {
+		let r = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), i = this.editor.getHTML();
+		if (console.log("TipTap HTML Output -> length:", i.length), this.state.editingBlock) {
 			let e = this.state.editingBlock.querySelector(".dialectics-content-inner");
-			e && (e.innerHTML = r, Ia.renderMath(e));
-		} else if (this.state.pendingSide && r !== "<p></p>" && r.trim() !== "") {
+			e && (e.innerHTML = i, Ia.renderMath(e));
+		} else if (this.state.pendingSide && i !== "<p></p>" && i.trim() !== "") {
 			let e = Ia.getBlocks(this.dom.canvas), t = {
 				id: this.state.pendingBlockId,
 				side: this.state.pendingSide,
-				html: r
+				html: i
 			};
 			this.state.pendingRole && (t.role = this.state.pendingRole);
 			let n;
@@ -34442,27 +34694,27 @@ window.app = new class {
 				...e.slice(this.state.insertAfterIndex + 1)
 			], this.state.insertAfterIndex = null, this.state.pendingRole = null, Ia.render(this.dom.canvas, n, this._blockCallbacks());
 		}
-		let i = Ia.getBlocks(this.dom.canvas), a = this.dom.categorySelect ? this.dom.categorySelect.value : null, o = {
-			title: n,
-			blocks: i.map((e) => ({
+		let a = Ia.getBlocks(this.dom.canvas), o = this.dom.categorySelect ? this.dom.categorySelect.value : null, s = {
+			title: r,
+			blocks: a.map((e) => ({
 				id: e.id,
 				side: e.side,
 				html: e.html,
 				role: e.role
 			})),
 			is_pinned: this.state.isPinned || !1,
-			category_id: a ? parseInt(a) : null,
+			category_id: o ? parseInt(o) : null,
 			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
 			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
 			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
 			sticker_type: document.getElementById("dialecticsStickerType")?.value || "text"
 		};
-		this.state.currentNoteId && (o.id = Number(this.state.currentNoteId));
-		let s = await t.save(o, this.state.currentNoteId);
-		if (s) {
-			this.state.currentNoteId = s.id, localStorage.setItem("dialectics_last_note_id", s.id);
+		this.state.currentNoteId && (s.id = Number(this.state.currentNoteId));
+		let c = await t.save(s, this.state.currentNoteId);
+		if (c) {
+			this.state.currentNoteId = c.id, localStorage.setItem("dialectics_last_note_id", c.id);
 			let t = new URL(window.location);
-			return t.searchParams.get("id") !== String(s.id) && (t.searchParams.set("id", s.id), window.history.pushState({}, "", t)), window.showToast(window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), s.id;
+			return t.searchParams.get("id") !== String(c.id) && (t.searchParams.set("id", c.id), window.history.pushState({}, "", t)), window.showToast(window._(n) || window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), c.id;
 		}
 		return null;
 	}
@@ -34517,8 +34769,18 @@ window.app = new class {
 	}
 	async createNewNote() {
 		this.state.isDirty ? await r({
-			message: "You have unsaved changes. Create a new note anyway?",
-			icon: "⚠️"
+			title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_new_msg") : "Есть несохранённые изменения. Создать новый конспект?",
+			icon: "⚠️",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.create_btn") : "Создать",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
 		}) && (this.state.isDirty = !1, this._resetToNewNote()) : this._resetToNewNote();
 	}
 	_resetToNewNote() {
@@ -34549,6 +34811,20 @@ window.app = new class {
 			let t = e.pop();
 			this.saveNoteHistory(e), this.loadNoteToEditor(t, !1), window.showToast(window._("toast.loaded_previous_note"), "info");
 		} else window.location.href = "/";
+	}
+	async showReferenceModal() {
+		let e = document.getElementById("referenceDialecticsModal");
+		if (!e) return;
+		e.style.display = "flex";
+		let t = document.getElementById("dialecticsReferenceContent");
+		if (t && t.dataset.loaded !== "true") try {
+			t.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Загрузка справочника...</div>";
+			let e = await fetch("/api/dialectics/reference");
+			if (!e.ok) throw Error("Failed to load reference");
+			t.innerHTML = `<div class="guide-markdown-content">${(await e.json()).html}</div>`, t.dataset.loaded = "true";
+		} catch (e) {
+			console.error(e), t.innerHTML = "<div style=\"color: #ef4444; text-align: center; padding: 20px;\">Не удалось загрузить справочник.</div>";
+		}
 	}
 	async showGuideModal() {
 		let e = document.getElementById("guideDialecticsModal");
@@ -34632,15 +34908,15 @@ window.app = new class {
 				return;
 			}
 			await r({
-				title: "Delete Confirmation",
-				message: "Are you sure you want to delete this Dialectics?",
+				title: window._ ? window._("dialectics.delete_note_title") : "Удаление конспекта",
+				message: window._ ? window._("dialectics.delete_note_msg") : "Вы уверены, что хотите удалить этот конспект?",
 				icon: "🗑️",
 				buttons: [{
-					label: "Cancel",
+					label: window._ ? window._("dialectics.cancel") : "Отмена",
 					value: !1,
 					class: "confirm-btn-secondary"
 				}, {
-					label: "Delete",
+					label: window._ ? window._("dialectics.delete") : "Удалить",
 					value: !0,
 					class: "confirm-btn-danger"
 				}]

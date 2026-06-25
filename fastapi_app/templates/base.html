@@ -95,17 +95,17 @@
     <script>
         window.currentLocale = "{{ request.cookies.get('locale', 'en') }}";
         window.translations = {{ get_js_translations() | safe }};
-        window._ = function(key) {
+        window._ = function(key, fallback) {
             let keys = key.split('.');
             let current = window.translations;
             for (let k of keys) {
                 if (current && typeof current === 'object' && k in current) {
                     current = current[k];
                 } else {
-                    return key;
+                    return fallback !== undefined ? fallback : key;
                 }
             }
-            return typeof current === 'string' ? current : key;
+            return typeof current === 'string' ? current : (fallback !== undefined ? fallback : key);
         };
         
         async function switchLanguage(lang) {

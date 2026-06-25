@@ -20,6 +20,7 @@
                     <option value="">Без категории</option>
                 </select>
                 <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Тема конспекта..." style="font-family: inherit; color: #ea580c; font-weight: 700;">
+                <button class="badge-relations" id="btnDialecticsReference" title="{{ _('dialectics.reference_title') }}">📚 {{ _('dialectics.reference') }}</button>
                 <button class="badge-relations" id="btnDialecticsGuide" title="Instructions (Guide)">📖 {{ _('dialectics.instructions') }}</button>
                 {% if plugin_dashboard %}
                 <a href="/dashboard" class="badge-relations" style="text-decoration: none;">🏠 {{ _('dialectics.dashboard') }}</a>
@@ -95,6 +96,7 @@
                 <!-- Tabs Header -->
                 <div class="editor-tabs" id="editorTabs">
                     <div class="editor-tab active" id="tab-text" data-tab="text">{{ _('dialectics.tab_text') }}</div>
+                    <div class="editor-tab" id="tab-ai" data-tab="ai" style="display: none; color: #d97706; font-weight: 600;">{{ _('dialectics.tab_ai') }}</div>
                     <div class="editor-tab" id="tab-graph" data-tab="graph">{{ _('dialectics.tab_graphs') }}</div>
                     <div class="editor-tab" id="tab-shapes" data-tab="shapes">{{ _('dialectics.tab_shapes') }}</div>
                 </div>
@@ -121,6 +123,14 @@
                         <input type="hidden" id="dialecticsStickerTitle">
                         <input type="hidden" id="dialecticsStickerColor" value="#fff9c4">
                         <input type="hidden" id="dialecticsStickerType" value="text">
+                    </div>
+                    <!-- AI Tab -->
+                    <div id="editor-ai" class="tab-content" style="display: none; padding: 16px; flex-direction: column; gap: 12px; width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: #fffbeb; border: 1px solid #fde68a; padding: 10px 14px; border-radius: 8px; flex-shrink: 0; gap: 10px;">
+                            <span style="font-size: 0.85rem; color: #92400e; font-weight: 500;">{{ _('dialectics.ai_suggestion_header') }}</span>
+                            <button type="button" id="btnCopyAiToText" style="font-size: 0.8rem; padding: 6px 14px; background: #d97706; border: none; font-weight: 600; cursor: pointer; border-radius: 6px; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); white-space: nowrap;">{{ _('dialectics.copy_ai_to_text') }}</button>
+                        </div>
+                        <div id="aiHelpContent" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 0.95rem; line-height: 1.6; color: #334155; overflow-y: auto; flex-grow: 1; min-height: 200px; max-height: 380px; user-select: text;"></div>
                     </div>
                     <!-- Graph Tab -->
                     <div id="editor-graph" class="tab-content">
@@ -276,6 +286,24 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="document.getElementById('guideDialecticsModal').style.display='none'" style="font-family: inherit;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reference Handbook Modal -->
+    <div id="referenceDialecticsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; width: 90%;">
+            <div class="modal-header">
+                <h2 style="margin-top: 0;"><span class="modal-icon">📚</span> {{ _('dialectics.reference_title') }}</h2>
+                <button class="modal-close" onclick="document.getElementById('referenceDialecticsModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+                <div id="dialecticsReferenceContent" class="guide-markdown-content">
+                    <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка справочника...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('referenceDialecticsModal').style.display='none'" style="font-family: inherit;">Закрыть</button>
             </div>
         </div>
     </div>
