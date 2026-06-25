@@ -22288,10 +22288,12 @@ var ja = function(e, t) {
 					}
 					e && (c = `<div style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 0 14px; text-transform: uppercase;">${e}</div>`);
 				}
-				a.innerHTML = `
+				let l = "";
+				i.sources && i.sources.length > 0 && (l = `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px;">${i.sources.length}</span>`), a.innerHTML = `
                     <div class="dialectics-block-actions">
                         <button class="btn-block-edit" title="Edit">✎</button>
                         <button class="btn-block-ai" title="Ask AI">✨</button>
+                        <button class="btn-block-sources" title="Sources">🔗${l}</button>
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div></button>
                         <button class="btn-block-del" title="Delete">🗑️</button>
                     </div>
@@ -22303,6 +22305,8 @@ var ja = function(e, t) {
 					e.stopPropagation(), n.onEdit(a);
 				}, a.querySelector(".btn-block-sticker").onclick = (e) => {
 					e.stopPropagation(), window.app && window.app.openStickersForCurrent(i.id);
+				}, i.sources && (a.dataset.sources = JSON.stringify(i.sources)), a.querySelector(".btn-block-sources").onclick = (e) => {
+					e.stopPropagation(), n.onSources && n.onSources(a);
 				}, a.querySelector(".btn-block-del").onclick = async (e) => {
 					if (e.stopPropagation(), await r({
 						title: "Delete block",
@@ -22330,12 +22334,19 @@ var ja = function(e, t) {
 		let t = [];
 		return e.querySelectorAll(".dialectics-block").forEach((e) => {
 			let n = e.querySelector(".dialectics-content-inner");
-			n && t.push({
-				id: e.dataset.blockId || "block_" + Math.random().toString(36).substring(2, 9),
-				side: e.classList.contains("block-left") ? "left" : e.classList.contains("block-center") ? "center" : "right",
-				html: n.innerHTML,
-				role: e.dataset.role || void 0
-			});
+			if (n) {
+				let r = [];
+				try {
+					e.dataset.sources && (r = JSON.parse(e.dataset.sources));
+				} catch {}
+				t.push({
+					id: e.dataset.blockId || "block_" + Math.random().toString(36).substring(2, 9),
+					side: e.classList.contains("block-left") ? "left" : e.classList.contains("block-center") ? "center" : "right",
+					html: n.innerHTML,
+					role: e.dataset.role || void 0,
+					sources: r
+				});
+			}
 		}), t;
 	},
 	getLastSide(e) {
@@ -33724,11 +33735,14 @@ var sv = ov(!1, !0), cv = ov(!0, !0), lv = eh.create({
 		let e = document.getElementById("tiptap-editor");
 		if (e) {
 			e.addEventListener("mousedown", (e) => e.stopPropagation()), e.addEventListener("contextmenu", (e) => {
-				e.preventDefault(), this.engine.logDebug(`[EditorManager] Right-click detected at ${e.clientX}, ${e.clientY}`);
-				try {
-					this.showMathMenu(e.clientX, e.clientY), this.engine.logDebug("[EditorManager] Menu rendered successfully");
-				} catch (e) {
-					this.engine.logDebug(`[EditorManager] Error showing menu: ${e.message}`), console.error(e);
+				let t = window.getSelection();
+				if (!(t && !t.isCollapsed && t.toString().trim() !== "")) {
+					e.preventDefault(), this.engine.logDebug(`[EditorManager] Right-click detected at ${e.clientX}, ${e.clientY}`);
+					try {
+						this.showMathMenu(e.clientX, e.clientY), this.engine.logDebug("[EditorManager] Menu rendered successfully");
+					} catch (e) {
+						this.engine.logDebug(`[EditorManager] Error showing menu: ${e.message}`), console.error(e);
+					}
 				}
 			}, !0);
 			try {
@@ -34034,7 +34048,7 @@ window.app = new class {
 			}
 		}), document.querySelectorAll(".editor-tab").forEach((e) => {
 			e.addEventListener("click", () => this.editor.switchTab(e.dataset.tab));
-		}), e("btnGraphPlot", () => this.editor.plotGraph()), e("btnGraphInsert", () => this.editor.insertGraphToNote()), e("btnShapeUndo", () => this.editor.undoShape()), e("btnShapeDelete", () => this.editor.deleteSelectedShape()), e("btnShapeGrid", () => this.editor.toggleShapeGrid()), e("btnShapeCopy", () => this.editor.copySelectedShape()), e("btnShapeClear", () => this.editor.clearShapes()), e("btnShapesInsert", () => this.editor.insertShapesToNote()), e("btnShapeGroup", () => this.editor.groupSelected()), e("btnObjectList", () => this.editor.toggleObjectListPanel()), document.querySelectorAll(".shape-tool[data-tool]").forEach((e) => {
+		}), e("btnGraphPlot", () => this.editor.plotGraph()), e("btnGraphInsert", () => this.editor.insertGraphToNote()), e("btnShapeUndo", () => this.editor.undoShape()), e("btnShapeDelete", () => this.editor.deleteSelectedShape()), e("btnShapeGrid", () => this.editor.toggleShapeGrid()), e("btnShapeCopy", () => this.editor.copySelectedShape()), e("btnShapeClear", () => this.editor.clearShapes()), e("btnShapesInsert", () => this.editor.insertShapesToNote()), e("btnShapeGroup", () => this.editor.groupSelected()), e("btnObjectList", () => this.editor.toggleObjectListPanel()), this.setupExplainTooltip(), document.querySelectorAll(".shape-tool[data-tool]").forEach((e) => {
 			e.addEventListener("click", () => this.editor.setShapeTool(e.dataset.tool));
 		}), document.querySelectorAll(".shape-tool[data-shape]").forEach((e) => {
 			e.addEventListener("click", () => this.editor.addShape(e.dataset.shape));
@@ -34047,6 +34061,59 @@ window.app = new class {
 		s && s.addEventListener("input", (e) => {
 			this.editor.applyFillToSelected(e.target.value + "33");
 		}), e("btnToggleFill", () => this.editor.toggleFillForSelected());
+	}
+	_renderMarkdown(e) {
+		return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>");
+	}
+	setupExplainTooltip() {
+		let e = document.createElement("div");
+		e.className = "dialectics-context-menu", e.style.display = "none";
+		let t = document.createElement("div");
+		t.className = "dialectics-context-menu-item", t.innerHTML = "Что это?", e.appendChild(t), document.body.appendChild(e);
+		let n = "", r = (e) => e.closest(".dialectics-content-inner") || e.closest(".tiptap-editor") || e.closest(".ProseMirror") || e.closest("#inlineEditor");
+		document.addEventListener("contextmenu", (t) => {
+			let i = window.getSelection();
+			if (!i || !i.rangeCount || i.isCollapsed) {
+				e.style.display = "none";
+				return;
+			}
+			let a = i.getRangeAt(0).commonAncestorContainer;
+			if (!r(a.nodeType === 3 ? a.parentElement : a)) {
+				e.style.display = "none";
+				return;
+			}
+			if (n = i.toString().trim(), !n) {
+				e.style.display = "none";
+				return;
+			}
+			t.preventDefault(), e.style.display = "block";
+			let o = t.pageX, s = t.pageY;
+			o + 160 > window.innerWidth && (o = window.innerWidth - 160), s + 50 > window.innerHeight + window.scrollY && (s = t.pageY - 50), e.style.left = `${o}px`, e.style.top = `${s}px`;
+		}, !0), document.addEventListener("click", (t) => {
+			e.contains(t.target) || (e.style.display = "none");
+		}), document.addEventListener("keydown", (t) => {
+			t.key === "Escape" && (e.style.display = "none");
+		}), t.addEventListener("click", async (t) => {
+			if (t.stopPropagation(), !n) return;
+			e.style.display = "none";
+			let r = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
+			if (!(!r || !a)) {
+				i.innerText = `Что это: "${n}"?`, a.innerHTML = "<div style=\"text-align:center; padding:40px; color:#94a3b8;\"><div style=\"font-size:2rem; margin-bottom:12px;\">⏳</div><div>Анализирую концепт...</div></div>", r.style.display = "flex";
+				try {
+					let e = await fetch("/api/ai/dialectics/explain-concept", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ text: n })
+					});
+					if (!e.ok) throw Error(`HTTP ${e.status}`);
+					let t = await e.json();
+					a.innerHTML = this._renderMarkdown(t.result);
+				} catch (e) {
+					a.innerHTML = `<div style="color:#ef4444;">Ошибка: ${e.message}</div>`;
+				}
+				window.getSelection()?.removeAllRanges();
+			}
+		});
 	}
 	open(e = "") {
 		if (this.dom.editor && !this.dom.editor.classList.contains("embedded") && n.toggleDisplay(this.dom.editor, !0, !0), this.editor.switchTab("text"), this.editor.setContent(e), !this.editor.tiptap && this.dom.dashboardTextarea) {
@@ -34084,6 +34151,9 @@ window.app = new class {
 			onAI: (e) => {
 				this.runAI(e);
 			},
+			onSources: (e) => {
+				this.openSourcesModal(e);
+			},
 			onHintClick: (e) => {
 				this.openHintEditor(e);
 			},
@@ -34094,6 +34164,52 @@ window.app = new class {
 	}
 	openHintEditor(e, t = "") {
 		this.state.editingBlock = null, this.state.pendingSide = e.side, this.state.pendingRole = e.id, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = null, this.open(t);
+	}
+	openSourcesModal(e) {
+		let t = document.getElementById("blockSourcesModal"), n = document.getElementById("sourcesList"), r = document.getElementById("sourceUrl"), i = document.getElementById("sourceTitle"), a = document.getElementById("sourceQuote"), o = document.getElementById("btnAddSource");
+		if (!t || !n) return;
+		let s = [];
+		try {
+			e.dataset.sources && (s = JSON.parse(e.dataset.sources));
+		} catch {}
+		let c = () => {
+			if (n.innerHTML = "", s.length === 0) {
+				n.innerHTML = "<div style=\"color:#94a3b8; font-size:0.9rem; font-style:italic;\">Источники пока не добавлены.</div>";
+				return;
+			}
+			s.forEach((e, t) => {
+				let r = document.createElement("div");
+				r.style.cssText = "background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;";
+				let i = e.title || e.url;
+				i = e.url ? `<a href="${e.url.startsWith("http") ? e.url : "https://" + e.url}" target="_blank" rel="noopener noreferrer" style="color:#2563eb; font-weight:600; text-decoration:none;">${e.title || e.url}</a>` : `<span style="font-weight:600; color:#1e293b;">${e.title}</span>`;
+				let a = "";
+				e.quote && (a = `<div style="font-size:0.85rem; color:#475569; margin-top:4px; white-space:pre-wrap;">${e.quote}</div>`), r.innerHTML = `
+                    <div style="flex-grow:1; overflow:hidden;">
+                        ${i}
+                        ${a}
+                    </div>
+                    <button type="button" class="btn-del-src" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:1.2rem; padding:0 4px; line-height:1;" title="Удалить">&times;</button>
+                `, r.querySelector(".btn-del-src").onclick = () => {
+					s.splice(t, 1), l(), c();
+				}, n.appendChild(r);
+			});
+		}, l = () => {
+			e.dataset.sources = JSON.stringify(s);
+			let t = e.querySelector(".btn-block-sources");
+			t && (t.innerHTML = `🔗${s.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${s.length}</span>` : ""}`), this.saveGlobal();
+		};
+		o.onclick = () => {
+			let e = r ? r.value.trim() : "", t = i ? i.value.trim() : "", n = a ? a.value.trim() : "";
+			if (!e && !t && !n) {
+				window.showToast && window.showToast("Введите информацию об источнике", "warning");
+				return;
+			}
+			s.push({
+				url: e,
+				title: t,
+				quote: n
+			}), r && (r.value = ""), i && (i.value = ""), a && (a.value = ""), l(), c();
+		}, c(), t.style.display = "flex";
 	}
 	async runHintAI(e) {
 		if (!e || e.id === "anchor") {
@@ -34143,22 +34259,24 @@ window.app = new class {
 				let t = await e.json();
 				throw Error(t.detail || "API Error");
 			}
-			r({
-				title: "Analysis Result",
-				message: `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${(await e.json()).result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
-				icon: "🤖",
+			let t = await e.json(), i = document.getElementById("explainConceptModal"), a = document.getElementById("explainConceptTitle"), o = document.getElementById("explainConceptBody");
+			i && a && o ? (a.innerText = window._ && window._("analysis_result") || "Результат анализа", o.innerHTML = this._renderMarkdown(t.result), i.style.display = "flex") : r({
+				title: "Результат анализа",
+				message: `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${t.result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
 				buttons: [{
-					label: "Close",
+					label: "Закрыть",
 					value: !0,
 					class: "confirm-btn-primary"
 				}]
 			});
 		} catch (e) {
-			console.error(e), r({
-				title: "AI Error",
+			console.error(e);
+			let t = document.getElementById("explainConceptModal"), n = document.getElementById("explainConceptTitle"), i = document.getElementById("explainConceptBody");
+			t && n && i ? (n.innerText = "Ошибка", i.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex") : r({
+				title: "Ошибка",
 				message: `<div style="color: red;">${e.message}</div>`,
 				buttons: [{
-					label: "Close",
+					label: "Закрыть",
 					value: !0,
 					class: "confirm-btn-secondary"
 				}]

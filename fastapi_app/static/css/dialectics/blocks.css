@@ -167,7 +167,7 @@
     line-height: 1.6;
 }
 
-.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker {
+.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker, .btn-block-sources {
     background: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -200,6 +200,12 @@
     color: #8b5cf6;
     border-color: #ddd6fe;
     background: #f5f3ff;
+}
+
+.btn-block-sources:hover {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background: #eff6ff;
 }
 
 .btn-block-sticker:hover {

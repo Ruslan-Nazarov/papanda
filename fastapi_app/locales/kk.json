@@ -355,7 +355,7 @@
         "recognizing_and_generating_lat": "⏳ LaTeX тану және жасау...",
         "audio_processing_error": "❌ Аудио өңдеудегі қателік",
         "no_microphone_access": "❌ Микрофонға рұқсат жоқ",
-        "dialectics_saved": "✓ Диалектика сақталды",
+        "dialectics_saved": "✓ Сақталды",
         "saving_note_to_attach_sticker": "Стикер бекіту үшін жазбаны сақтау...",
         "failed_to_save_note": "Жазбаны сақтау сәтсіз аяқталды",
         "saved_and_pinned": "✓ Сақталды және бекітілді",
@@ -519,6 +519,7 @@
     },
     "dialectics": {
         "title": "Диалектика",
+        "article_parser": "Мақала талдаушысы",
         "topic_placeholder": "Жазба тақырыбы...",
         "instructions": "Нұсқаулық",
         "dashboard": "Виджеттер",

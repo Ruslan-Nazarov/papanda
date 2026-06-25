@@ -384,7 +384,7 @@
         "recognizing_and_generating_lat": "⏳ Распознавание и генерация LaTeX...",
         "audio_processing_error": "❌ Ошибка обработки аудио",
         "no_microphone_access": "❌ Нет доступа к микрофону",
-        "dialectics_saved": "✓ Диалектика сохранена",
+        "dialectics_saved": "✓ Сохранено",
         "saving_note_to_attach_sticker": "Сохранение заметки для прикрепления стикера...",
         "failed_to_save_note": "Не удалось сохранить заметку",
         "saved_and_pinned": "✓ Сохранено и закреплено",
@@ -548,6 +548,7 @@
     },
     "dialectics": {
         "title": "Диалектика",
+        "article_parser": "Парсер статей",
         "topic_placeholder": "Тема конспекта...",
         "instructions": "Как это работает?",
         "dashboard": "Виджеты",

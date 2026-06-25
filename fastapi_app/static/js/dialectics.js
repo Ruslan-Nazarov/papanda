@@ -250,6 +250,8 @@ class DialecticsEngine {
         bind('btnShapeGroup', () => this.editor.groupSelected());
         bind('btnObjectList', () => this.editor.toggleObjectListPanel());
 
+        this.setupExplainTooltip();
+
         document.querySelectorAll('.shape-tool[data-tool]').forEach(btn => {
             btn.addEventListener('click', () => this.editor.setShapeTool(btn.dataset.tool));
         });
@@ -272,6 +274,118 @@ class DialecticsEngine {
         }
 
         bind('btnToggleFill', () => this.editor.toggleFillForSelected());
+    }
+
+    _renderMarkdown(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>')
+            .replace(/^/, '<p>')
+            .replace(/$/, '</p>');
+    }
+
+    setupExplainTooltip() {
+        const contextMenu = document.createElement('div');
+        contextMenu.className = 'dialectics-context-menu';
+        contextMenu.style.display = 'none';
+        
+        const explainOption = document.createElement('div');
+        explainOption.className = 'dialectics-context-menu-item';
+        explainOption.innerHTML = 'Что это?';
+        
+        contextMenu.appendChild(explainOption);
+        document.body.appendChild(contextMenu);
+
+        let selectedText = '';
+
+        const isInsideDialecticsArea = (element) => {
+            return element.closest('.dialectics-content-inner') ||
+                   element.closest('.tiptap-editor') ||
+                   element.closest('.ProseMirror') ||
+                   element.closest('#inlineEditor');
+        };
+
+        document.addEventListener('contextmenu', (e) => {
+            const selection = window.getSelection();
+            if (!selection || !selection.rangeCount || selection.isCollapsed) {
+                contextMenu.style.display = 'none';
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            const element = container.nodeType === 3 ? container.parentElement : container;
+
+            if (!isInsideDialecticsArea(element)) {
+                contextMenu.style.display = 'none';
+                return;
+            }
+
+            selectedText = selection.toString().trim();
+            if (!selectedText) {
+                contextMenu.style.display = 'none';
+                return;
+            }
+
+            e.preventDefault();
+            contextMenu.style.display = 'block';
+            
+            let left = e.pageX;
+            let top = e.pageY;
+            if (left + 160 > window.innerWidth) left = window.innerWidth - 160;
+            if (top + 50 > window.innerHeight + window.scrollY) top = e.pageY - 50;
+            
+            contextMenu.style.left = `${left}px`;
+            contextMenu.style.top = `${top}px`;
+        }, true);
+
+        document.addEventListener('click', (e) => {
+            if (!contextMenu.contains(e.target)) {
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') contextMenu.style.display = 'none';
+        });
+
+        explainOption.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!selectedText) return;
+            
+            contextMenu.style.display = 'none';
+            
+            const modal = document.getElementById('explainConceptModal');
+            const titleEl = document.getElementById('explainConceptTitle');
+            const bodyEl = document.getElementById('explainConceptBody');
+
+            if (!modal || !bodyEl) return;
+
+            titleEl.innerText = `Что это: "${selectedText}"?`;
+            bodyEl.innerHTML = `<div style="text-align:center; padding:40px; color:#94a3b8;"><div style="font-size:2rem; margin-bottom:12px;">⏳</div><div>Анализирую концепт...</div></div>`;
+            modal.style.display = 'flex';
+            
+            try {
+                const response = await fetch('/api/ai/dialectics/explain-concept', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: selectedText })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                bodyEl.innerHTML = this._renderMarkdown(data.result);
+            } catch (err) {
+                bodyEl.innerHTML = `<div style="color:#ef4444;">Ошибка: ${err.message}</div>`;
+            }
+            
+            window.getSelection()?.removeAllRanges();
+        });
     }
 
     // --- Core Logic ---
@@ -336,6 +450,7 @@ class DialecticsEngine {
             onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
             onDelete: () => { this.saveGlobal(); },
             onAI: (b) => { this.runAI(b); },
+            onSources: (b) => { this.openSourcesModal(b); },
             onHintClick: (hint) => { this.openHintEditor(hint); },
             onHintAI: (hint) => { this.runHintAI(hint); }
         };
@@ -348,6 +463,97 @@ class DialecticsEngine {
         this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
         this.state.insertAfterIndex = null;
         this.open(content);
+    }
+
+    openSourcesModal(blockEl) {
+        const modal = document.getElementById('blockSourcesModal');
+        const listEl = document.getElementById('sourcesList');
+        const urlInput = document.getElementById('sourceUrl');
+        const titleInput = document.getElementById('sourceTitle');
+        const quoteInput = document.getElementById('sourceQuote');
+        const addBtn = document.getElementById('btnAddSource');
+
+        if (!modal || !listEl) return;
+
+        let sources = [];
+        try {
+            if (blockEl.dataset.sources) {
+                sources = JSON.parse(blockEl.dataset.sources);
+            }
+        } catch(e) {}
+
+        const renderList = () => {
+            listEl.innerHTML = '';
+            if (sources.length === 0) {
+                listEl.innerHTML = `<div style="color:#94a3b8; font-size:0.9rem; font-style:italic;">Источники пока не добавлены.</div>`;
+                return;
+            }
+            sources.forEach((s, idx) => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;';
+                
+                let linkHtml = s.title || s.url;
+                if (s.url) {
+                    let safeUrl = s.url.startsWith('http') ? s.url : 'https://' + s.url;
+                    linkHtml = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb; font-weight:600; text-decoration:none;">${s.title || s.url}</a>`;
+                } else {
+                    linkHtml = `<span style="font-weight:600; color:#1e293b;">${s.title}</span>`;
+                }
+
+                let quoteHtml = '';
+                if (s.quote) {
+                    quoteHtml = `<div style="font-size:0.85rem; color:#475569; margin-top:4px; white-space:pre-wrap;">${s.quote}</div>`;
+                }
+
+                item.innerHTML = `
+                    <div style="flex-grow:1; overflow:hidden;">
+                        ${linkHtml}
+                        ${quoteHtml}
+                    </div>
+                    <button type="button" class="btn-del-src" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:1.2rem; padding:0 4px; line-height:1;" title="Удалить">&times;</button>
+                `;
+
+                item.querySelector('.btn-del-src').onclick = () => {
+                    sources.splice(idx, 1);
+                    updateBlockData();
+                    renderList();
+                };
+
+                listEl.appendChild(item);
+            });
+        };
+
+        const updateBlockData = () => {
+            blockEl.dataset.sources = JSON.stringify(sources);
+            const btn = blockEl.querySelector('.btn-block-sources');
+            if (btn) {
+                const countHtml = sources.length > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px; color:#334155;">${sources.length}</span>` : '';
+                btn.innerHTML = `🔗${countHtml}`;
+            }
+            this.saveGlobal();
+        };
+
+        addBtn.onclick = () => {
+            const url = urlInput ? urlInput.value.trim() : '';
+            const title = titleInput ? titleInput.value.trim() : '';
+            const quote = quoteInput ? quoteInput.value.trim() : '';
+
+            if (!url && !title && !quote) {
+                if (window.showToast) window.showToast("Введите информацию об источнике", "warning");
+                return;
+            }
+
+            sources.push({ url, title, quote });
+            if (urlInput) urlInput.value = '';
+            if (titleInput) titleInput.value = '';
+            if (quoteInput) quoteInput.value = '';
+
+            updateBlockData();
+            renderList();
+        };
+
+        renderList();
+        modal.style.display = 'flex';
     }
 
     async runHintAI(hint) {
@@ -435,28 +641,46 @@ class DialecticsEngine {
 
             const data = await res.json();
 
-            // Format result safely
-            const safeResult = data.result.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            const formattedResult = `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${safeResult}</div>`;
+            const modal = document.getElementById('explainConceptModal');
+            const titleEl = document.getElementById('explainConceptTitle');
+            const bodyEl = document.getElementById('explainConceptBody');
 
-            customConfirm({
-                title: 'Analysis Result',
-                message: formattedResult,
-                icon: '🤖',
-                buttons: [
-                    { label: 'Close', value: true, class: 'confirm-btn-primary' }
-                ]
-            });
+            if (modal && titleEl && bodyEl) {
+                titleEl.innerText = window._ ? (window._('analysis_result') || 'Результат анализа') : 'Результат анализа';
+                bodyEl.innerHTML = this._renderMarkdown(data.result);
+                modal.style.display = 'flex';
+            } else {
+                // Fallback safe formatting
+                const safeResult = data.result.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const formattedResult = `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${safeResult}</div>`;
+                customConfirm({
+                    title: 'Результат анализа',
+                    message: formattedResult,
+                    buttons: [
+                        { label: 'Закрыть', value: true, class: 'confirm-btn-primary' }
+                    ]
+                });
+            }
 
         } catch (error) {
             console.error(error);
-            customConfirm({
-                title: 'AI Error',
-                message: `<div style="color: red;">${error.message}</div>`,
-                buttons: [
-                    { label: 'Close', value: true, class: 'confirm-btn-secondary' }
-                ]
-            });
+            const modal = document.getElementById('explainConceptModal');
+            const titleEl = document.getElementById('explainConceptTitle');
+            const bodyEl = document.getElementById('explainConceptBody');
+
+            if (modal && titleEl && bodyEl) {
+                titleEl.innerText = 'Ошибка';
+                bodyEl.innerHTML = `<div style="color:#ef4444;">${error.message}</div>`;
+                modal.style.display = 'flex';
+            } else {
+                customConfirm({
+                    title: 'Ошибка',
+                    message: `<div style="color: red;">${error.message}</div>`,
+                    buttons: [
+                        { label: 'Закрыть', value: true, class: 'confirm-btn-secondary' }
+                    ]
+                });
+            }
         }
     }
 

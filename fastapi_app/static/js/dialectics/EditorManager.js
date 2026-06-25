@@ -23,6 +23,10 @@ export class EditorManager {
         
         // Custom context menu for math
         el.addEventListener('contextmenu', (e) => {
+            const selection = window.getSelection();
+            if (selection && !selection.isCollapsed && selection.toString().trim() !== '') {
+                return; // Let the global selection context menu handle it
+            }
             e.preventDefault();
             this.engine.logDebug(`[EditorManager] Right-click detected at ${e.clientX}, ${e.clientY}`);
             try {

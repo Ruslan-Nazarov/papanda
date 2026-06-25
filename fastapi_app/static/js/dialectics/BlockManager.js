@@ -184,10 +184,16 @@ export const BlockManager = {
                     }
                 }
 
+                let sourcesCountHtml = '';
+                if (b.sources && b.sources.length > 0) {
+                    sourcesCountHtml = `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px;">${b.sources.length}</span>`;
+                }
+
                 blockEl.innerHTML = `
                     <div class="dialectics-block-actions">
                         <button class="btn-block-edit" title="Edit">✎</button>
                         <button class="btn-block-ai" title="Ask AI">✨</button>
+                        <button class="btn-block-sources" title="Sources">🔗${sourcesCountHtml}</button>
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div></button>
                         <button class="btn-block-del" title="Delete">🗑️</button>
                     </div>
@@ -208,6 +214,14 @@ export const BlockManager = {
                 blockEl.querySelector('.btn-block-sticker').onclick = (e) => {
                     e.stopPropagation();
                     if(window.app) window.app.openStickersForCurrent(b.id);
+                };
+                if (b.sources) {
+                    blockEl.dataset.sources = JSON.stringify(b.sources);
+                }
+
+                blockEl.querySelector('.btn-block-sources').onclick = (e) => {
+                    e.stopPropagation();
+                    if (callbacks.onSources) callbacks.onSources(blockEl);
                 };
                 blockEl.querySelector('.btn-block-del').onclick = async (e) => {
                     e.stopPropagation();
@@ -246,12 +260,20 @@ export const BlockManager = {
         container.querySelectorAll('.dialectics-block').forEach(b => {
             const inner = b.querySelector('.dialectics-content-inner');
             if (inner) {
+                let sources = [];
+                try {
+                    if (b.dataset.sources) {
+                        sources = JSON.parse(b.dataset.sources);
+                    }
+                } catch(e) {}
+
                 blocks.push({
                     id: b.dataset.blockId || ('block_' + Math.random().toString(36).substring(2, 9)),
                     side: b.classList.contains('block-left') ? 'left' : 
                           b.classList.contains('block-center') ? 'center' : 'right',
                     html: inner.innerHTML,
-                    role: b.dataset.role || undefined
+                    role: b.dataset.role || undefined,
+                    sources: sources
                 });
             }
         });

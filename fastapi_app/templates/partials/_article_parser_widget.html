@@ -1,0 +1,61 @@
+<!-- Article Parser Widget -->
+<div id="articleParserWidget" class="floating-widget article-parser-widget" style="display: none; z-index: 1000;">
+    <!-- Draggable Header -->
+    <div class="widget-header" id="articleParserDragHandle">
+        <div class="widget-title">
+            <span class="widget-icon">📄</span>
+            <span class="widget-title-text">{{ _('dialectics.article_parser') | default('Парсер статей') }}</span>
+        </div>
+        <div class="widget-controls">
+            <button class="widget-btn-close" id="btnArticleParserClose" title="Close" onclick="toggleArticleParser()">✖</button>
+        </div>
+    </div>
+
+    <!-- Widget Body -->
+    <div class="widget-body">
+        <div class="parser-tabs">
+            <button class="parser-tab active" onclick="switchParserTab('chat')">Чат</button>
+            <button class="parser-tab" onclick="switchParserTab('dict')">Словарь</button>
+        </div>
+        
+        <!-- File Upload Section (Chat Tab Only) -->
+        <div class="parser-upload-section" id="parserUploadSection">
+            <input type="file" id="articleFileInput" accept=".pdf,.txt,.md" style="display: none;" onchange="handleArticleUpload(this)">
+            <button class="upload-btn" onclick="document.getElementById('articleFileInput').click()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Загрузить статью (PDF, TXT)
+            </button>
+            <div id="uploadedFileName" class="uploaded-file-name" style="display: none;">
+                <span class="file-name-text"></span>
+                <button class="remove-file-btn" onclick="removeUploadedArticle()" title="Remove">×</button>
+            </div>
+        </div>
+
+        <!-- Chat History -->
+        <div class="parser-chat-history" id="parserChatHistory">
+            <div class="chat-message ai-message">
+                <div class="message-content">Привет! Загрузи статью, и я отвечу на любые вопросы по ней.</div>
+            </div>
+        </div>
+
+        <!-- Dictionary View (Hidden by default) -->
+        <div class="parser-dict-history" id="parserDictHistory" style="display: none;">
+            <!-- Dict items will go here -->
+            <div class="dict-empty-state">Словарь пуст. Спросите значение любого понятия из статьи.</div>
+        </div>
+    </div>
+
+    <!-- Widget Footer (Input) -->
+    <div class="widget-footer parser-input-area">
+        <textarea id="parserPromptInput" placeholder="Задайте вопрос по статье..." rows="1" oninput="autoResizeTextarea(this)"></textarea>
+        
+        <div class="input-actions">
+            <button class="btn-icon voice-btn" id="btnParserVoice" title="Голосовой ввод" onclick="toggleVoiceInput()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            </button>
+            <button class="btn-icon send-btn" id="btnParserSend" title="Отправить" onclick="sendParserMessage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+</div>

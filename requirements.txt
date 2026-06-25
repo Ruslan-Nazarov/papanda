@@ -31,3 +31,5 @@ groq==1.1.2
 
 # Markdown rendering
 Markdown==3.6
+
+pypdf==5.1.0

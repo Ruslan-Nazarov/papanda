@@ -384,7 +384,7 @@
         "recognizing_and_generating_lat": "⏳ Recognizing and generating LaTeX...",
         "audio_processing_error": "❌ Audio processing error",
         "no_microphone_access": "❌ No microphone access",
-        "dialectics_saved": "✓ Dialectics Saved",
+        "dialectics_saved": "✓ Saved",
         "saving_note_to_attach_sticker": "Saving note to attach sticker...",
         "failed_to_save_note": "Failed to save note",
         "saved_and_pinned": "✓ Saved and pinned",
@@ -548,6 +548,7 @@
     },
     "dialectics": {
         "title": "Dialectics",
+        "article_parser": "Article Parser",
         "topic_placeholder": "Note topic...",
         "instructions": "Instructions",
         "dashboard": "Widgets",
