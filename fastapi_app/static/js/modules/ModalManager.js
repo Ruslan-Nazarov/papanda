@@ -36,12 +36,14 @@ export const ModalManager = {
         // Dispatch an event so widgets can sync back unsubmitted data
         modal.dispatchEvent(new CustomEvent('modal-closed', { detail: { modalId } }));
 
+        modal.classList.add('closing');
         modal.classList.remove('active');
         
         // Wait for transition animation (200ms) to complete before hiding display
         setTimeout(() => {
             if (!modal.classList.contains('active')) {
                 modal.style.display = 'none';
+                modal.classList.remove('closing');
             }
         }, 200);
 

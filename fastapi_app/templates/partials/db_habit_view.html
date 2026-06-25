@@ -2,7 +2,7 @@
     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
         <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
             <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Habits</span>
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">{{ _('dashboard.total_habits') }}</span>
                 <span style="font-size: 1.1rem; color: var(--color-primary); line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
         </div>
@@ -36,8 +36,8 @@
                     </div>
                     <div class="db-card-actions" onclick="event.stopPropagation()">
                         <button type="button" class="btn-action btn-edit"
-                                onclick='openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", false, "{{ row.end_date.isoformat() if row.end_date else '' }}")'>Edit</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                                onclick='openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", false, "{{ row.end_date.isoformat() if row.end_date else '' }}")'>{{ _('dashboard.edit_short') }}</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">{{ _('dashboard.del_short') }}</button>
                     </div>
                 </div>
             {% else %}
@@ -47,7 +47,7 @@
 
         {% if active_habits|length > 10 %}
         <div class="load-more-container" id="loadMoreActiveHabitContainer">
-            <button class="btn-load-more">Show More (+10)</button>
+            <button class="btn-load-more">{{ _('dashboard.show_more_10') }}</button>
         </div>
         {% endif %}
 
@@ -75,8 +75,8 @@
                     </div>
                     <div class="db-card-actions" onclick="event.stopPropagation()">
                         <button type="button" class="btn-action btn-edit"
-                                onclick='openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", true, "{{ row.end_date.isoformat() if row.end_date else '' }}")'>Edit</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">Del</button>
+                                onclick='openEditHabitModal("{{ row.id }}", {{ row.title|tojson }}, "{{ row.start_date.isoformat() if row.start_date else '' }}", true, "{{ row.end_date.isoformat() if row.end_date else '' }}")'>{{ _('dashboard.edit_short') }}</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Habit', {{ row.id }})">{{ _('dashboard.del_short') }}</button>
                     </div>
                 </div>
             {% else %}
@@ -86,7 +86,7 @@
 
         {% if finished_habits|length > 10 %}
         <div class="load-more-container" id="loadMoreFinishedHabitContainer">
-            <button class="btn-load-more">Show More (+10)</button>
+            <button class="btn-load-more">{{ _('dashboard.show_more_10') }}</button>
         </div>
         {% endif %}
     </div>

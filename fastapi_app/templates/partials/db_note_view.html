@@ -2,7 +2,7 @@
     <div class="db-card {% if is_archive %}old archive-note{% else %}recent{% endif %}" data-id="{{ row.id }}" 
          {% if is_archive %}style="display: none;"{% endif %}
          onclick='openDbCardDetail({
-            title: "Note",
+            title: "{{ _('dashboard.notes') }}",
             date: "",
             category: "{{ row.category|e }}",
             body: {{ row.note|tojson }},
@@ -13,9 +13,9 @@
         <div class="db-card-text">{{ row.note }}</div>
         <div class="db-card-actions" onclick="event.stopPropagation()">
             <button type="button" class="btn-action btn-edit" 
-                    onclick='NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}")'>Edit</button>
+                    onclick='NoteService.openEdit({{ row.id }}, {{ row.note|tojson }}, "{{ row.category|e }}")'>{{ _('dashboard.edit_short') }}</button>
             <button type="button" class="btn-action btn-del" 
-                    onclick="deleteRecordCustom('Notes', {{ row.id }})">Del</button>
+                    onclick="deleteRecordCustom('Notes', {{ row.id }})">{{ _('dashboard.del_short') }}</button>
         </div>
     </div>
 {% endmacro %}
@@ -56,10 +56,10 @@
 
     {% set notes_list = records if records else [] %}
 
-    <!-- Recent Notes (Top 10) -->
+    <!-- {{ _('dashboard.recent') }} Notes (Top 10) -->
     {% if not selected_category and not search_query %}
         <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-primary);">⚡</span> Recent Notes
+            <span style="color: var(--color-primary);">⚡</span> {{ _('dashboard.recent') }} Notes
         </h2>
         <div class="db-grid" id="recentNotesGrid">
             {% for row in notes_list[:10] %}
@@ -69,9 +69,9 @@
             {% endfor %}
         </div>
 
-        <!-- Archive Section -->
+        <!-- {{ _('dashboard.archive') }} Section -->
         <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
-            <span style="color: var(--color-text-muted);">📦</span> Archive
+            <span style="color: var(--color-text-muted);">📦</span> {{ _('dashboard.archive') }}
         </h2>
         <div class="db-grid" id="archiveNotesGrid">
             {% for row in notes_list[10:] %}
@@ -81,7 +81,7 @@
 
         {% if notes_list|length > 10 %}
             <div class="load-more-container" id="loadMoreNotesContainer">
-                <button class="btn-load-more">Show More (+10)</button>
+                <button class="btn-load-more">{{ _('dashboard.show_more_10') }}</button>
             </div>
         {% endif %}
     {% else %}

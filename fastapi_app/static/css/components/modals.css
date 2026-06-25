@@ -5,6 +5,16 @@
     100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+@keyframes modalBackdropFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes modalBackdropFadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -22,12 +32,16 @@
     align-items: center;
     justify-content: center;
     
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    opacity: 1;
+    animation: modalBackdropFadeIn 0.2s ease-out forwards;
+}
+
+.modal.closing {
+    animation: modalBackdropFadeOut 0.2s ease-in forwards;
 }
 
 .modal.active {
-    opacity: 1;
+    /* Kept for backwards compatibility */
 }
 
 .modal-content {

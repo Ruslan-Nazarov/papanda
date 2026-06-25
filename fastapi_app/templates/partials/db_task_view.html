@@ -2,7 +2,7 @@
     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
         <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
             <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Tasks</span>
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">{{ _('dashboard.total_tasks') }}</span>
                 <span style="font-size: 1.1rem; color: #3B82F6; line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
         </div>
@@ -31,8 +31,8 @@
                     </div>
                     <div class="db-card-actions" onclick="event.stopPropagation()">
                         <button type="button" class="btn-action btn-edit"
-                                onclick='TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, false)'>Edit</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
+                                onclick='TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, false)'>{{ _('dashboard.edit_short') }}</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">{{ _('dashboard.del_short') }}</button>
                     </div>
                 </div>
             {% else %}
@@ -42,7 +42,7 @@
 
         {% if active_tasks|length > 10 %}
         <div class="load-more-container" id="loadMoreActiveTaskContainer">
-            <button class="btn-load-more">Show More (+10)</button>
+            <button class="btn-load-more">{{ _('dashboard.show_more_10') }}</button>
         </div>
         {% endif %}
 
@@ -65,8 +65,8 @@
                     </div>
                     <div class="db-card-actions" onclick="event.stopPropagation()">
                         <button type="button" class="btn-action btn-edit"
-                                onclick='TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, true)'>Edit</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">Del</button>
+                                onclick='TaskService.openEdit("{{ row.id }}", {{ row.name|tojson }}, true)'>{{ _('dashboard.edit_short') }}</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Task', {{ row.id }})">{{ _('dashboard.del_short') }}</button>
                     </div>
                 </div>
             {% else %}
@@ -76,7 +76,7 @@
 
         {% if finished_tasks|length > 10 %}
         <div class="load-more-container" id="loadMoreFinishedTaskContainer">
-            <button class="btn-load-more">Show More (+10)</button>
+            <button class="btn-load-more">{{ _('dashboard.show_more_10') }}</button>
         </div>
         {% endif %}
     </div>

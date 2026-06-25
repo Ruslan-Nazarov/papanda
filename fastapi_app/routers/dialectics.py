@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
+from sqlalchemy.orm import selectinload
 from typing import List, Any, Optional
 from .. import models, schemas
 
@@ -9,12 +10,18 @@ from ..database import get_db
 from ..services.auth import check_auth_dependency
 from ..config import templates, INTERNAL_ROOT
 from ..logger import logger
-from ..models.dialectics import Dialectics
-from ..schemas import DialecticsCreate, DialecticsView, DialecticsUpdate, StickyNoteCreate, SuccessResponse, DialecticsGuideResponse, DialecticsIdResponse
+from ..models.dialectics import Dialectics, DialecticsCategory
+from ..schemas.dialectics import DialecticsCreate, DialecticsView, DialecticsUpdate, DialecticsGuideResponse, DialecticsCategoryBase
+from ..schemas import StickyNoteCreate, SuccessResponse, DialecticsIdResponse
 from ..services.sticky_note_service import StickyNoteService
 from ..dependencies import get_sticky_note_service
+from pydantic import BaseModel
 import markdown
 import json
+
+class CategoryCreate(BaseModel):
+    name: str
+    color: Optional[str] = None
 
 router = APIRouter(
     tags=["dialectics"]
@@ -69,11 +76,16 @@ async def save_dialectics(
     new_note = Dialectics(
         title=data.title or "",
         content_json=content_json,
-        is_pinned=data.is_pinned
+        is_pinned=data.is_pinned,
+        category_id=data.category_id
     )
     db.add(new_note)
     await db.commit()
-    await db.refresh(new_note)
+    
+    # Reload with category
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == new_note.id)
+    result = await db.execute(query)
+    new_note = result.scalar_one()
 
     # Handle sticker
     if data.sticker_text or data.sticker_title:
@@ -95,7 +107,7 @@ async def list_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Any:
     """Возвращает список записей 'Диалектики'."""
-    query = select(Dialectics)
+    query = select(Dialectics).options(selectinload(Dialectics.category))
     if search:
         query = query.where(Dialectics.title.ilike(f"%{search}%"))
     result = await db.execute(query.order_by(func.coalesce(Dialectics.updated_at, Dialectics.created_at).desc()))
@@ -159,7 +171,10 @@ async def get_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Dialectics:
     """Возвращает содержимое конкретной записи."""
-    note = await db.get(Dialectics, id)
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    result = await db.execute(query)
+    note = result.scalar_one_or_none()
+    
     if not note:
         raise HTTPException(status_code=404, detail="Entry not found")
         
@@ -195,7 +210,10 @@ async def update_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Dialectics:
     """Обновляет существующую запись 'Диалектики'."""
-    note = await db.get(Dialectics, id)
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    result = await db.execute(query)
+    note = result.scalar_one_or_none()
+    
     if not note:
         raise HTTPException(status_code=404, detail="Entry not found")
     
@@ -207,9 +225,16 @@ async def update_dialectics(
     
     if data.is_pinned is not None:
         note.is_pinned = data.is_pinned
+        
+    if hasattr(data, 'category_id'):
+        note.category_id = data.category_id
     
     await db.commit()
-    await db.refresh(note)
+    
+    # Reload with category after commit
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == note.id)
+    result = await db.execute(query)
+    note = result.scalar_one()
 
     # Handle sticker
     if data.sticker_text or data.sticker_title:
@@ -229,7 +254,7 @@ async def get_pinned_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Optional[Dialectics]:
     """Возвращает закрепленную запись."""
-    result = await db.execute(select(Dialectics).where(Dialectics.is_pinned == True).limit(1))
+    result = await db.execute(select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.is_pinned == True).limit(1))
     return result.scalar_one_or_none()
 
 @router.post("/api/dialectics/{id}/pin", response_model=DialecticsView)
@@ -278,3 +303,57 @@ async def delete_dialectics(
     await db.delete(note)
     await db.commit()
     return schemas.SuccessResponse(message="Dialectics entry deleted")
+
+@router.get("/api/dialectics/categories/all", response_model=List[DialecticsCategoryBase])
+async def list_dialectics_categories(
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Возвращает список всех категорий диалектики."""
+    result = await db.execute(select(DialecticsCategory).order_by(DialecticsCategory.name))
+    return result.scalars().all()
+
+@router.post("/api/dialectics/categories/new", response_model=DialecticsCategoryBase)
+async def create_dialectics_category(
+    data: CategoryCreate,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Создает новую категорию для диалектики."""
+    # Check if exists
+    existing = await db.execute(select(DialecticsCategory).where(func.lower(DialecticsCategory.name) == data.name.lower()))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Category already exists")
+        
+    category = DialecticsCategory(name=data.name, color=data.color)
+    db.add(category)
+    await db.commit()
+    await db.refresh(category)
+    return category
+
+@router.get("/api/dialectics/search/notes", response_model=List[DialecticsView])
+async def search_dialectics(
+    request: Request,
+    q: str,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Поиск по конспектам (по заголовку и содержимому)."""
+    if not q or len(q.strip()) < 2:
+        return []
+        
+    search_term = f"%{q.strip()}%"
+    
+    # Simple search in title or content_json
+    # Note: For SQLite, JSON searching with LIKE is possible if we cast or just search text
+    # SQLAlchemy might cast JSON to text for ilike, but let's be safe and use cast to String
+    from sqlalchemy import cast, String
+    
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(
+        or_(
+            Dialectics.title.ilike(search_term),
+            cast(Dialectics.content_json, String).ilike(search_term)
+        )
+    )
+    result = await db.execute(query.order_by(func.coalesce(Dialectics.updated_at, Dialectics.created_at).desc()))
+    return result.scalars().all()

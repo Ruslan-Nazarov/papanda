@@ -14,6 +14,7 @@ class DialecticsCreate(BaseModel):
     title: str
     blocks: List[DialecticsBlock]
     is_pinned: bool = False
+    category_id: Optional[int] = None
     
     # Sticker data (optional)
     sticker_text: Optional[str] = None
@@ -27,6 +28,7 @@ class DialecticsUpdate(BaseModel):
     title: str
     blocks: List[DialecticsBlock]
     is_pinned: Optional[bool] = None
+    category_id: Optional[int] = None
     
     # Sticker data (optional)
     sticker_text: Optional[str] = None
@@ -34,12 +36,20 @@ class DialecticsUpdate(BaseModel):
     sticker_color: Optional[str] = "#fff9c4"
     sticker_type: Optional[str] = "text"
 
+class DialecticsCategoryBase(BaseModel):
+    id: int
+    name: str
+    color: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
 class DialecticsView(BaseModel):
     """Схема для отображения 'Диалектики'."""
     id: int
     title: str
     content_json: Any
     is_pinned: bool
+    category_id: Optional[int] = None
+    category: Optional[DialecticsCategoryBase] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)

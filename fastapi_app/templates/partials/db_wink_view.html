@@ -2,7 +2,7 @@
     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
         <div class="filter-bar" style="display: flex; align-items: center; gap: 15px; padding: 10px 25px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 30px; box-shadow: var(--shadow-md);">
             <div class="stats-counter-compact" style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">Total Records</span>
+                <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">{{ _('dashboard.total_records') }}</span>
                 <span style="font-size: 1.1rem; color: #9b59b6; line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
 
@@ -16,7 +16,7 @@
 
     {% if search_query %}
         <div style="padding: 0 20px 20px; color: var(--color-text-muted); font-style: italic; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-            <span style="font-style: normal;">🔍</span> Search results for: <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
+            <span style="font-style: normal;">🔍</span> {{ _('dashboard.search_results_for') }} <b style="color: var(--color-text-dark);">"{{ search_query }}"</b>
             <a href="javascript:void(0)" onclick="loadDbViewModalContent('Wink')" style="margin-left: 10px; color: var(--color-primary); text-decoration: none; font-style: normal; font-weight: 600;">Clear</a>
         </div>
     {% endif %}
@@ -37,7 +37,7 @@
                                 onclick="openEditWinkModal('{{ row.id }}', '{{ row.title|e }}', '{{ row.date.isoformat() if row.date else '' }}')">
                             Edit
                         </button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Wink', {{ row.id }})">Del</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteRecordCustom('Wink', {{ row.id }})">{{ _('dashboard.del_short') }}</button>
                     </div>
                 </div>
             {% else %}
@@ -47,7 +47,7 @@
         
         {% if records|length > 10 %}
         <div class="load-more-container" id="loadMoreWinkContainer" style="margin-top: 30px;">
-            <button class="btn-load-more" onclick="loadMoreWink()">Show More (+10)</button>
+            <button class="btn-load-more" onclick="loadMoreWink()">{{ _('dashboard.show_more_10') }}</button>
         </div>
         {% endif %}
     </div>

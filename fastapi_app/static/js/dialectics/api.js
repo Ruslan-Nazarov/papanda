@@ -24,5 +24,22 @@ export const DialecticsAPI = {
     async delete(id) {
         const res = await fetch(`/api/dialectics/${id}`, { method: 'DELETE' });
         return res.ok;
+    },
+    async listCategories() {
+        const res = await fetch('/api/dialectics/categories/all');
+        return res.ok ? await res.json() : [];
+    },
+    async createCategory(name) {
+        const res = await fetch('/api/dialectics/categories/new', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        return res.ok ? await res.json() : null;
+    },
+    async searchNotes(q) {
+        if (!q || q.length < 2) return [];
+        const res = await fetch(`/api/dialectics/search/notes?q=${encodeURIComponent(q)}`);
+        return res.ok ? await res.json() : [];
     }
 };

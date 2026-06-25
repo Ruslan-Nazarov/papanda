@@ -185,7 +185,21 @@
         "what_habit_tracking": "Какую привычку отслеживаем?",
         "what_needs_done": "Что нужно сделать?",
         "dashboard": "Дашборд",
-        "languages": "Изучение языков"
+        "languages": "Изучение языков",
+        "total_entries": "Всего записей",
+        "total_habits": "Всего привычек",
+        "total_tasks": "Всего задач",
+        "total_records": "Всего записей",
+        "recent": "Недавние",
+        "archive": "Архив",
+        "show_more_10": "Показать еще (+10)",
+        "no_records_yet": "Пока нет записей.",
+        "edit_short": "Изм.",
+        "del_short": "Удал.",
+        "search_results_for": "Результаты поиска для:",
+        "changelog": "История изменений",
+        "tutorial": "Обучение",
+        "feedback": "Написать разработчику"
     },
     "modal": {
         "chronology_entry": "📅 Запись хронологии",

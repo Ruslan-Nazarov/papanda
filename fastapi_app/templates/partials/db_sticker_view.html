@@ -15,7 +15,7 @@
                 <span class="note-cat badge-premium" style="background: {{ row.color or '#fff9c4' }}33; color: var(--color-text-dark);">
                     {{ row.type|capitalize }}
                 </span>
-                {% if row.finished_at %}<span class="premium-badge-archive">Archived</span>{% endif %}
+                {% if row.finished_at %}<span class="premium-badge-archive">{{ _('dashboard.archive') }}d</span>{% endif %}
                 
                 {% if row.task_id %}
                     <span class="parent-badge-premium" title="Task: {{ row.task.name if row.task else 'Deleted Task' }}">📋 Task</span>
@@ -80,7 +80,7 @@
                     <option value="habit" {% if selected_category == 'habit' %}selected{% endif %}>Linked to Habits</option>
                     <option value="note" {% if selected_category == 'note' %}selected{% endif %}>Linked to Notes</option>
                     <option value="event" {% if selected_category == 'event' %}selected{% endif %}>Linked to Events</option>
-                    <option value="finished" {% if selected_category == 'finished' %}selected{% endif %}>Only Archived</option>
+                    <option value="finished" {% if selected_category == 'finished' %}selected{% endif %}>Only {{ _('dashboard.archive') }}d</option>
                 </select>
             </div>
         </div>
@@ -99,7 +99,7 @@
 
     {% if not selected_category and not search_query %}
         <h2 style="padding: 0 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-primary);">⚡</span> Recent Stickers
+            <span style="color: var(--color-primary);">⚡</span> {{ _('dashboard.recent') }} Stickers
         </h2>
         <div class="db-grid" id="recentStickersGrid">
             {% for row in sticker_list[:10] %}
@@ -110,7 +110,7 @@
         </div>
 
         <h2 style="padding: 40px 24px 20px; color: var(--color-text-dark); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); margin-top: 40px;">
-            <span style="color: var(--color-text-muted);">📦</span> Archive
+            <span style="color: var(--color-text-muted);">📦</span> {{ _('dashboard.archive') }}
         </h2>
         <div class="db-grid" id="archiveStickersGrid">
             {% for row in sticker_list[10:] %}
@@ -120,7 +120,7 @@
 
         {% if sticker_list|length > 10 %}
             <div class="load-more-container" id="loadMoreStickersContainer">
-                <button class="btn-load-more">Show More (+10)</button>
+                <button class="btn-load-more">{{ _('dashboard.show_more_10') }}</button>
             </div>
         {% endif %}
     {% else %}

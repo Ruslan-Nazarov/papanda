@@ -45,7 +45,16 @@ function openEditModal(eng, translations, ru, meaning) {
 
     document.getElementById('inputWordRu').value = ru || '';
     document.getElementById('inputWordMeaning').value = meaning || '';
-    document.getElementById('editWordModal').style.display = 'flex';
+    if (window.ModalManager) {
+        window.ModalManager.open('editWordModal');
+    } else {
+        const m = document.getElementById('editWordModal');
+        if (m) {
+            m.style.display = 'flex';
+            void m.offsetWidth;
+            m.classList.add('active');
+        }
+    }
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -81,7 +90,15 @@ window.openEditModalFromData = function (btn) {
 };
 
 window.closeEditModal = function () {
-    document.getElementById('editWordModal').style.display = 'none';
+    if (window.ModalManager) {
+        window.ModalManager.close('editWordModal');
+    } else {
+        const m = document.getElementById('editWordModal');
+        if (m) {
+            m.classList.remove('active');
+            setTimeout(() => { m.style.display = 'none'; }, 200);
+        }
+    }
 };
 
 window.saveDashboardWordEdit = async function() {

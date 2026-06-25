@@ -19,6 +19,23 @@ var t = {
 	},
 	async delete(e) {
 		return (await fetch(`/api/dialectics/${e}`, { method: "DELETE" })).ok;
+	},
+	async listCategories() {
+		let e = await fetch("/api/dialectics/categories/all");
+		return e.ok ? await e.json() : [];
+	},
+	async createCategory(e) {
+		let t = await fetch("/api/dialectics/categories/new", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: e })
+		});
+		return t.ok ? await t.json() : null;
+	},
+	async searchNotes(e) {
+		if (!e || e.length < 2) return [];
+		let t = await fetch(`/api/dialectics/search/notes?q=${encodeURIComponent(e)}`);
+		return t.ok ? await t.json() : [];
 	}
 }, n = {
 	toggleDisplay(e, t, n = !1) {
@@ -33921,7 +33938,8 @@ window.app = new class {
 			editingBlock: null,
 			notesList: [],
 			viewingNoteId: null,
-			insertAfterIndex: null
+			insertAfterIndex: null,
+			categories: []
 		}, this.dom = {
 			canvas: document.getElementById("dialecticsCanvas"),
 			editor: document.getElementById("inlineEditor"),
@@ -33937,18 +33955,23 @@ window.app = new class {
 			viewTitle: document.getElementById("dialecticsViewTitle"),
 			viewBody: document.getElementById("dialecticsViewBody"),
 			debug: document.getElementById("debugLogContent"),
-			dashboardTextarea: document.getElementById("dashboard-note-editor")
+			dashboardTextarea: document.getElementById("dashboard-note-editor"),
+			connectionsModal: document.getElementById("dialectics-connections-modal"),
+			categorySelect: document.getElementById("dialecticsCategorySelect"),
+			connCategoriesList: document.getElementById("connections-categories-list"),
+			connResultsContainer: document.getElementById("connections-results-container"),
+			newCategoryInput: document.getElementById("new-category-input")
 		}, this.editor = new Mv(this), this.dom.editor && this.init();
 	}
 	async init() {
-		if (this.logDebug("Engine init..."), this._bindEvents(), this.dom.editor.classList.contains("embedded") && this.dom.dashboardTextarea) this.setupDashboardTextarea(), this._revealInterface();
+		if (this.logDebug("Engine init..."), this._bindEvents(), await this.loadCategories(), this.dom.editor.classList.contains("embedded") && this.dom.dashboardTextarea) this.setupDashboardTextarea(), this._revealInterface();
 		else {
 			let e = new URLSearchParams(window.location.search).get("id");
 			if (!e && (e = localStorage.getItem("dialectics_last_note_id"), e)) {
 				let t = new URL(window.location);
 				t.searchParams.set("id", e), window.history.replaceState({}, "", t);
 			}
-			e ? await this.loadNoteToEditor(e, !1) : (this.state.currentNoteId = null, this.dom.title && (this.dom.title.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none"), this._revealInterface());
+			e ? await this.loadNoteToEditor(e, !1) : (this.state.currentNoteId = null, this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none"), this._revealInterface());
 		}
 		await this.editor.switchTab("text");
 	}
@@ -33983,7 +34006,21 @@ window.app = new class {
 			}
 		}), this.logDebug("Binding btnLoadDialectics COMPLETED.");
 		let t = document.getElementById("dialecticsSearchInput");
-		t && t.addEventListener("input", (e) => this.searchNotes(e.target.value)), e("btnNewDialectics", this.createNewNote), e("btnGlobalParser", this.runGlobalParser), e("btnExampleDialectics", this.loadExample), e("btnPrevDialectics", this.loadPreviousNote), e("btnDialecticsGuide", this.showGuideModal), e("btnViewModalEdit", () => {
+		t && t.addEventListener("input", (e) => this.searchNotes(e.target.value)), e("btnNewDialectics", this.createNewNote), e("btnGlobalParser", this.runGlobalParser), e("btnExampleDialectics", this.loadExample), e("btnPrevDialectics", this.loadPreviousNote), e("btnDialecticsGuide", this.showGuideModal), e("btnDialecticsConnections", this.showConnectionsModal), e("close-connections-btn", () => {
+			this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
+		}), e("add-category-btn", this.addCategory);
+		let a = document.getElementById("connections-search-input");
+		a && a.addEventListener("input", (e) => this.searchConnections(e.target.value)), this.dom.categorySelect && this.dom.categorySelect.addEventListener("change", async (e) => {
+			if (e.target.value === "__add_new__") {
+				e.target.value = "";
+				let t = await i({
+					title: "Новая категория",
+					message: "Введите название новой категории:",
+					placeholder: "Например: Физика, Идеи..."
+				});
+				t && t.trim() && await this.createNewCategory(t.trim());
+			}
+		}), e("btnViewModalEdit", () => {
 			this.hideViewModal(), this.loadNoteToEditor(this.state.viewingNoteId);
 		}), La.init(this.dom.canvas, {
 			onClick: (e, t) => {
@@ -34002,12 +34039,12 @@ window.app = new class {
 		}), document.querySelectorAll(".shape-tool[data-shape]").forEach((e) => {
 			e.addEventListener("click", () => this.editor.addShape(e.dataset.shape));
 		});
-		let i = document.getElementById("shapeColor");
-		i && i.addEventListener("input", (e) => {
+		let o = document.getElementById("shapeColor");
+		o && o.addEventListener("input", (e) => {
 			this.editor.applyColorToSelected(e.target.value);
 		});
-		let a = document.getElementById("shapeFillColor");
-		a && a.addEventListener("input", (e) => {
+		let s = document.getElementById("shapeFillColor");
+		s && s.addEventListener("input", (e) => {
 			this.editor.applyFillToSelected(e.target.value + "33");
 		}), e("btnToggleFill", () => this.editor.toggleFillForSelected());
 	}
@@ -34287,20 +34324,27 @@ window.app = new class {
 				...e.slice(this.state.insertAfterIndex + 1)
 			], this.state.insertAfterIndex = null, this.state.pendingRole = null, Ia.render(this.dom.canvas, n, this._blockCallbacks());
 		}
-		let i = {
+		let i = Ia.getBlocks(this.dom.canvas), a = this.dom.categorySelect ? this.dom.categorySelect.value : null, o = {
 			title: n,
-			blocks: Ia.getBlocks(this.dom.canvas),
+			blocks: i.map((e) => ({
+				id: e.id,
+				side: e.side,
+				html: e.html,
+				role: e.role
+			})),
+			is_pinned: this.state.isPinned || !1,
+			category_id: a ? parseInt(a) : null,
 			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
 			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
 			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
 			sticker_type: document.getElementById("dialecticsStickerType")?.value || "text"
 		};
-		this.state.currentNoteId && (i.id = Number(this.state.currentNoteId));
-		let a = await t.save(i, this.state.currentNoteId);
-		if (a) {
-			this.state.currentNoteId = a.id, localStorage.setItem("dialectics_last_note_id", a.id);
+		this.state.currentNoteId && (o.id = Number(this.state.currentNoteId));
+		let s = await t.save(o, this.state.currentNoteId);
+		if (s) {
+			this.state.currentNoteId = s.id, localStorage.setItem("dialectics_last_note_id", s.id);
 			let t = new URL(window.location);
-			return t.searchParams.get("id") !== String(a.id) && (t.searchParams.set("id", a.id), window.history.pushState({}, "", t)), window.showToast(window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), a.id;
+			return t.searchParams.get("id") !== String(s.id) && (t.searchParams.set("id", s.id), window.history.pushState({}, "", t)), window.showToast(window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), s.id;
 		}
 		return null;
 	}
@@ -34336,7 +34380,7 @@ window.app = new class {
 			}
 			this.state.currentNoteId = r.id, localStorage.setItem("dialectics_last_note_id", r.id), this.dom.title.value = r.title;
 			let e = typeof r.content_json == "string" ? JSON.parse(r.content_json) : r.content_json;
-			Ia.render(this.dom.canvas, e, this._blockCallbacks()), this._revealInterface(), this.hideLoadModal(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = r.title === "Example Note" || r.title === "Пример конспекта" || r.title === "Конспект мысалы" ? "none" : "block");
+			this.dom.categorySelect && (this.dom.categorySelect.value = r.category_id || ""), Ia.render(this.dom.canvas, e, this._blockCallbacks()), this._revealInterface(), this.hideLoadModal(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = r.title === "Example Note" || r.title === "Пример конспекта" || r.title === "Конспект мысалы" ? "none" : "block");
 			let t = new URL(window.location);
 			t.searchParams.get("id") !== String(r.id) && (t.searchParams.set("id", r.id), window.history.pushState({}, "", t));
 		} else localStorage.removeItem("dialectics_last_note_id"), this._revealInterface();
@@ -34364,7 +34408,7 @@ window.app = new class {
 			let e = this.getNoteHistory();
 			(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
 		}
-		this.state.currentNoteId = null, localStorage.removeItem("dialectics_last_note_id"), this.dom.title && (this.dom.title.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none");
+		this.state.currentNoteId = null, localStorage.removeItem("dialectics_last_note_id"), this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none");
 		let e = new URL(window.location);
 		e.searchParams.delete("id"), window.history.pushState({}, "", e), window.showToast(window._("toast.created_a_new_blank_note"), "success");
 	}
@@ -34527,6 +34571,95 @@ window.app = new class {
 	}
 	hideGuideModal() {
 		this.dom.guideModal && (this.dom.guideModal.classList.remove("active"), setTimeout(() => this.dom.guideModal.style.display = "none", 200));
+	}
+	async loadCategories() {
+		try {
+			this.state.categories = await t.listCategories(), this.renderCategorySelect(), this.renderConnectionsCategories();
+		} catch (e) {
+			console.error("Error loading categories", e);
+		}
+	}
+	renderCategorySelect() {
+		if (!this.dom.categorySelect) return;
+		let e = this.dom.categorySelect.value;
+		this.dom.categorySelect.innerHTML = "<option value=\"\">Без категории</option>", this.state.categories.forEach((e) => {
+			let t = document.createElement("option");
+			t.value = e.id, t.textContent = e.name, this.dom.categorySelect.appendChild(t);
+		});
+		let t = document.createElement("option");
+		t.value = "__add_new__", t.textContent = "➕ Новая категория...", t.style.fontWeight = "bold", t.style.color = "var(--color-primary)", this.dom.categorySelect.appendChild(t), this.dom.categorySelect.value = e;
+	}
+	renderConnectionsCategories() {
+		this.dom.connCategoriesList && (this.dom.connCategoriesList.innerHTML = "", this.state.categories.forEach((e) => {
+			let t = document.createElement("li");
+			t.className = "connections-category-item", t.style.cssText = "display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent;", t.onmouseover = () => {
+				t.style.backgroundColor = "var(--color-bg-subtle)", t.style.borderColor = "var(--color-border)";
+			}, t.onmouseout = () => {
+				t.style.backgroundColor = "transparent", t.style.borderColor = "transparent";
+			}, t.innerHTML = `
+                <span class="category-color-dot" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; background-color: ${e.color || "#94a3b8"}; box-shadow: 0 0 0 2px ${e.color}33;"></span>
+                <span style="font-weight: 500; font-size: 0.95rem;">${e.name}</span>
+            `, t.addEventListener("click", () => {
+				let t = document.getElementById("connections-search-input");
+				t && (t.value = e.name, this.searchConnections(e.name));
+			}), this.dom.connCategoriesList.appendChild(t);
+		}));
+	}
+	async addCategory(e) {
+		if (e && e.preventDefault(), !this.dom.newCategoryInput) return;
+		let t = this.dom.newCategoryInput.value.trim();
+		t && await this.createNewCategory(t) && (this.dom.newCategoryInput.value = "");
+	}
+	async createNewCategory(e) {
+		try {
+			let n = await t.createCategory(e);
+			if (n) return this.state.categories.push(n), this.state.categories.sort((e, t) => e.name.localeCompare(t.name)), this.renderCategorySelect(), this.renderConnectionsCategories(), this.dom.categorySelect && (this.dom.categorySelect.value = n.id), window.showToast("Категория добавлена", "success"), !0;
+		} catch (e) {
+			console.error("Error adding category", e), window.showToast("Ошибка при добавлении категории", "error");
+		}
+		return !1;
+	}
+	async showConnectionsModal(e) {
+		console.log("showConnectionsModal called", e), e && e.preventDefault();
+		let t = document.getElementById("dialectics-connections-modal");
+		console.log("Modal element:", t), t ? (t.style.display = "flex", t.offsetHeight, t.classList.add("active"), this.dom.connectionsModal = t, this.renderConnectionsCategories(), this.searchConnections("")) : (console.error("Connections modal element not found in DOM!"), window.showToast("Ошибка: модальное окно не найдено", "error"));
+	}
+	hideConnectionsModal() {
+		this.dom.connectionsModal && (this.dom.connectionsModal.classList.remove("active"), setTimeout(() => this.dom.connectionsModal.style.display = "none", 200));
+	}
+	async searchConnections(e) {
+		if (this.dom.connResultsContainer) {
+			this.dom.connResultsContainer.innerHTML = "<div style=\"color:#64748b; padding:20px; text-align:center; font-style: italic;\"><i class=\"fas fa-circle-notch fa-spin\" style=\"margin-right: 8px;\"></i> Поиск...</div>";
+			try {
+				let n = [];
+				if (n = !e || e.trim().length < 2 ? await t.list("") : await t.searchNotes(e), !n || n.length === 0) {
+					this.dom.connResultsContainer.innerHTML = "\n                    <div class=\"empty-state\" style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-light); opacity: 0.7; padding: 40px 0;\">\n                        <i class=\"fas fa-search\" style=\"font-size: 3rem; margin-bottom: 16px; color: var(--color-bg-app);\"></i>\n                        <p class=\"connections-empty-state\" data-i18n=\"dialectics_search_empty\" style=\"margin: 0; font-size: 0.95rem;\">Ничего не найдено</p>\n                    </div>";
+					return;
+				}
+				this.dom.connResultsContainer.innerHTML = "", n.forEach((e) => {
+					let t = document.createElement("div");
+					t.className = "connections-result-item", t.style.cssText = "padding: 16px; border-radius: var(--radius-lg); background: var(--color-bg-white); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px;", t.onmouseover = () => {
+						t.style.transform = "translateY(-2px)", t.style.boxShadow = "0 6px 12px rgba(0,0,0,0.05)", t.style.borderColor = "var(--color-primary)";
+					}, t.onmouseout = () => {
+						t.style.transform = "translateY(0)", t.style.boxShadow = "0 2px 4px rgba(0,0,0,0.02)", t.style.borderColor = "var(--color-border)";
+					};
+					let n = e.title || "Untitled", r = e.category ? e.category.name : "Без категории", i = e.category && e.category.color ? e.category.color : "#cbd5e1";
+					t.innerHTML = `
+                    <div class="connections-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${n}</strong>
+                        <span class="connections-result-cat" style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${r}</span>
+                    </div>
+                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${new Date(e.created_at).toLocaleDateString()}</div>
+                `, t.addEventListener("click", () => {
+						this.loadNoteToEditor(e.id), this.dom.connectionsModal && this.dom.connectionsModal.classList.remove("active"), setTimeout(() => {
+							this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
+						}, 200);
+					}), this.dom.connResultsContainer.appendChild(t);
+				});
+			} catch (e) {
+				console.error("Search error", e), this.dom.connResultsContainer.innerHTML = "<p class=\"connections-empty-state\">Ошибка поиска</p>";
+			}
+		}
 	}
 	logDebug(e) {
 		if (!this.dom.debug) return;

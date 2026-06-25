@@ -20,7 +20,8 @@ class DialecticsEngine {
             editingBlock: null,
             notesList: [],
             viewingNoteId: null,
-            insertAfterIndex: null   // null = append at end, number = insert after that index
+            insertAfterIndex: null,   // null = append at end, number = insert after that index
+            categories: []
         };
 
         this.dom = {
@@ -38,7 +39,12 @@ class DialecticsEngine {
             viewTitle: document.getElementById('dialecticsViewTitle'),
             viewBody: document.getElementById('dialecticsViewBody'),
             debug: document.getElementById('debugLogContent'),
-            dashboardTextarea: document.getElementById('dashboard-note-editor')
+            dashboardTextarea: document.getElementById('dashboard-note-editor'),
+            connectionsModal: document.getElementById('dialectics-connections-modal'),
+            categorySelect: document.getElementById('dialecticsCategorySelect'),
+            connCategoriesList: document.getElementById('connections-categories-list'),
+            connResultsContainer: document.getElementById('connections-results-container'),
+            newCategoryInput: document.getElementById('new-category-input')
         };
 
         this.editor = new EditorManager(this);
@@ -52,6 +58,8 @@ class DialecticsEngine {
         this.logDebug("Engine init...");
 
         this._bindEvents();
+        
+        await this.loadCategories();
 
         if (this.dom.editor.classList.contains('embedded') && this.dom.dashboardTextarea) {
             this.setupDashboardTextarea();
@@ -72,7 +80,14 @@ class DialecticsEngine {
                 await this.loadNoteToEditor(noteId, false);
             } else {
                 this.state.currentNoteId = null;
-                if (this.dom.title) this.dom.title.value = "";
+                if (this.dom.title) {
+                    this.dom.title.value = "";
+                }
+                
+                if (this.dom.categorySelect) {
+                    this.dom.categorySelect.value = "";
+                }
+
                 if (this.dom.canvas) BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
                 if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
                 this._revealInterface();
@@ -163,6 +178,34 @@ class DialecticsEngine {
         bind('btnExampleDialectics', this.loadExample);
         bind('btnPrevDialectics', this.loadPreviousNote);
         bind('btnDialecticsGuide', this.showGuideModal);
+        
+        bind('btnDialecticsConnections', this.showConnectionsModal);
+        bind('close-connections-btn', () => {
+            if (this.dom.connectionsModal) this.dom.connectionsModal.style.display = 'none';
+        });
+        bind('add-category-btn', this.addCategory);
+        
+        const connSearchInput = document.getElementById('connections-search-input');
+        if (connSearchInput) {
+            connSearchInput.addEventListener('input', (e) => this.searchConnections(e.target.value));
+        }
+
+        if (this.dom.categorySelect) {
+            this.dom.categorySelect.addEventListener('change', async (e) => {
+                if (e.target.value === "__add_new__") {
+                    e.target.value = ""; // Reset temporarily
+                    const newCatName = await customPrompt({
+                        title: "Новая категория",
+                        message: "Введите название новой категории:",
+                        placeholder: "Например: Физика, Идеи..."
+                    });
+                    
+                    if (newCatName && newCatName.trim()) {
+                        await this.createNewCategory(newCatName.trim());
+                    }
+                }
+            });
+        }
 
         bind('btnViewModalEdit', () => {
             this.hideViewModal();
@@ -648,9 +691,18 @@ class DialecticsEngine {
         }
 
         const blocks = BlockManager.getBlocks(this.dom.canvas);
+        const categoryId = this.dom.categorySelect ? this.dom.categorySelect.value : null;
+
         const payload = {
             title,
-            blocks,
+            blocks: blocks.map(b => ({
+                id: b.id,
+                side: b.side,
+                html: b.html,
+                role: b.role
+            })),
+            is_pinned: this.state.isPinned || false,
+            category_id: categoryId ? parseInt(categoryId) : null,
             sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
             sticker_title: document.getElementById('dialecticsStickerTitle')?.value || "",
             sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
@@ -746,6 +798,10 @@ class DialecticsEngine {
             this.dom.title.value = n.title;
             const blocks = typeof n.content_json === 'string' ? JSON.parse(n.content_json) : n.content_json;
 
+            if (this.dom.categorySelect) {
+                this.dom.categorySelect.value = n.category_id || "";
+            }
+
             BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
 
             this._revealInterface();
@@ -813,6 +869,7 @@ class DialecticsEngine {
         this.state.currentNoteId = null;
         localStorage.removeItem('dialectics_last_note_id');
         if (this.dom.title) this.dom.title.value = "";
+        if (this.dom.categorySelect) this.dom.categorySelect.value = "";
         if (this.dom.canvas) BlockManager.render(this.dom.canvas, [], this._blockCallbacks());
         if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'none';
         
@@ -1087,6 +1144,188 @@ class DialecticsEngine {
         if (this.dom.guideModal) {
             this.dom.guideModal.classList.remove('active');
             setTimeout(() => this.dom.guideModal.style.display = 'none', 200);
+        }
+    }
+
+    // --- Connections Modal & Category Logic ---
+
+    async loadCategories() {
+        try {
+            this.state.categories = await DialecticsAPI.listCategories();
+            this.renderCategorySelect();
+            this.renderConnectionsCategories();
+        } catch (e) {
+            console.error("Error loading categories", e);
+        }
+    }
+
+    renderCategorySelect() {
+        if (!this.dom.categorySelect) return;
+        const currentVal = this.dom.categorySelect.value;
+        this.dom.categorySelect.innerHTML = '<option value="">Без категории</option>';
+        this.state.categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            this.dom.categorySelect.appendChild(opt);
+        });
+        
+        // Add option to create a new category
+        const addOpt = document.createElement('option');
+        addOpt.value = '__add_new__';
+        addOpt.textContent = '➕ Новая категория...';
+        addOpt.style.fontWeight = 'bold';
+        addOpt.style.color = 'var(--color-primary)';
+        this.dom.categorySelect.appendChild(addOpt);
+        
+        this.dom.categorySelect.value = currentVal; // Restore if possible
+    }
+
+    renderConnectionsCategories() {
+        if (!this.dom.connCategoriesList) return;
+        this.dom.connCategoriesList.innerHTML = '';
+        this.state.categories.forEach(cat => {
+            const li = document.createElement('li');
+            li.className = 'connections-category-item';
+            // Add premium styling
+            li.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent;';
+            li.onmouseover = () => { li.style.backgroundColor = 'var(--color-bg-subtle)'; li.style.borderColor = 'var(--color-border)'; };
+            li.onmouseout = () => { li.style.backgroundColor = 'transparent'; li.style.borderColor = 'transparent'; };
+            
+            li.innerHTML = `
+                <span class="category-color-dot" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; background-color: ${cat.color || '#94a3b8'}; box-shadow: 0 0 0 2px ${cat.color}33;"></span>
+                <span style="font-weight: 500; font-size: 0.95rem;">${cat.name}</span>
+            `;
+            li.addEventListener('click', () => {
+                const searchInput = document.getElementById('connections-search-input');
+                if (searchInput) {
+                    searchInput.value = cat.name;
+                    this.searchConnections(cat.name);
+                }
+            });
+            this.dom.connCategoriesList.appendChild(li);
+        });
+    }
+
+    async addCategory(e) {
+        if (e) e.preventDefault();
+        if (!this.dom.newCategoryInput) return;
+        const name = this.dom.newCategoryInput.value.trim();
+        if (!name) return;
+        
+        const success = await this.createNewCategory(name);
+        if (success) {
+            this.dom.newCategoryInput.value = '';
+        }
+    }
+
+    async createNewCategory(name) {
+        try {
+            const newCat = await DialecticsAPI.createCategory(name);
+            if (newCat) {
+                this.state.categories.push(newCat);
+                this.state.categories.sort((a,b) => a.name.localeCompare(b.name));
+                this.renderCategorySelect();
+                this.renderConnectionsCategories();
+                
+                // Select the new category if the select exists
+                if (this.dom.categorySelect) {
+                    this.dom.categorySelect.value = newCat.id;
+                }
+                
+                window.showToast("Категория добавлена", "success");
+                return true;
+            }
+        } catch (e) {
+            console.error("Error adding category", e);
+            window.showToast("Ошибка при добавлении категории", "error");
+        }
+        return false;
+    }
+
+    async showConnectionsModal(e) {
+        console.log("showConnectionsModal called", e);
+        if (e) e.preventDefault();
+        
+        // Re-fetch dynamically just in case it wasn't found during init
+        const modal = document.getElementById('dialectics-connections-modal');
+        console.log("Modal element:", modal);
+        
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.offsetHeight; // trigger reflow
+            modal.classList.add('active');
+            this.dom.connectionsModal = modal;
+            this.renderConnectionsCategories();
+            this.searchConnections(''); // Load default results
+        } else {
+            console.error("Connections modal element not found in DOM!");
+            window.showToast("Ошибка: модальное окно не найдено", "error");
+        }
+    }
+
+    hideConnectionsModal() {
+        if (this.dom.connectionsModal) {
+            this.dom.connectionsModal.classList.remove('active');
+            setTimeout(() => this.dom.connectionsModal.style.display = 'none', 200);
+        }
+    }
+
+    async searchConnections(query) {
+        if (!this.dom.connResultsContainer) return;
+        
+        // Show loading state
+        this.dom.connResultsContainer.innerHTML = '<div style="color:#64748b; padding:20px; text-align:center; font-style: italic;"><i class="fas fa-circle-notch fa-spin" style="margin-right: 8px;"></i> Поиск...</div>';
+        
+        try {
+            let results = [];
+            if (!query || query.trim().length < 2) {
+                results = await DialecticsAPI.list(''); 
+            } else {
+                results = await DialecticsAPI.searchNotes(query);
+            }
+            
+            if (!results || results.length === 0) {
+                this.dom.connResultsContainer.innerHTML = `
+                    <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-light); opacity: 0.7; padding: 40px 0;">
+                        <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 16px; color: var(--color-bg-app);"></i>
+                        <p class="connections-empty-state" data-i18n="dialectics_search_empty" style="margin: 0; font-size: 0.95rem;">Ничего не найдено</p>
+                    </div>`;
+                return;
+            }
+            
+            this.dom.connResultsContainer.innerHTML = '';
+            results.forEach(note => {
+                const item = document.createElement('div');
+                item.className = 'connections-result-item';
+                item.style.cssText = 'padding: 16px; border-radius: var(--radius-lg); background: var(--color-bg-white); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px;';
+                item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = '0 6px 12px rgba(0,0,0,0.05)'; item.style.borderColor = 'var(--color-primary)'; };
+                item.onmouseout = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'; item.style.borderColor = 'var(--color-border)'; };
+                
+                const title = note.title || "Untitled";
+                const catName = note.category ? note.category.name : "Без категории";
+                const catColor = note.category && note.category.color ? note.category.color : "#cbd5e1";
+                
+                item.innerHTML = `
+                    <div class="connections-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
+                        <span class="connections-result-cat" style="background-color: ${catColor}15; color: ${catColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${catColor}30;">${catName}</span>
+                    </div>
+                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${new Date(note.created_at).toLocaleDateString()}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    this.loadNoteToEditor(note.id);
+                    if (this.dom.connectionsModal) this.dom.connectionsModal.classList.remove('active');
+                    setTimeout(() => { if(this.dom.connectionsModal) this.dom.connectionsModal.style.display = 'none'; }, 200);
+                });
+                
+                this.dom.connResultsContainer.appendChild(item);
+            });
+            
+        } catch (e) {
+            console.error("Search error", e);
+            this.dom.connResultsContainer.innerHTML = '<p class="connections-empty-state">Ошибка поиска</p>';
         }
     }
 

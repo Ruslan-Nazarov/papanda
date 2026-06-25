@@ -1,0 +1,51 @@
+<!-- Connections Modal (Связи) -->
+<div id="dialectics-connections-modal" class="modal premium-modal" style="display: none; z-index: 99999;">
+    <div class="modal-content" style="max-width: 900px; border-radius: var(--radius-xl);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px; position: relative;">
+            <h2 data-i18n="dialectics_connections_title" style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">Связи</h2>
+            <span class="close-btn" id="close-connections-btn" onclick="if(window.app) window.app.hideConnectionsModal()" style="position: absolute; right: 24px; top: 24px; cursor: pointer; font-size: 1.5rem; color: var(--color-text-light); transition: color 0.2s;">&times;</span>
+        </div>
+
+        <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+            <!-- Search Header -->
+            <div style="position: relative; margin-bottom: 32px; display: block;">
+                <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--color-text-light); font-size: 1.2rem;">🔍</span>
+                <input type="text" id="connections-search-input" class="form-input" placeholder="Поиск по конспектам..." data-i18n-placeholder="dialectics_connections_search" style="width: 100%; font-size: 1.1rem; padding: 16px 16px 16px 48px; border-radius: var(--radius-lg); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--color-border); box-sizing: border-box; display: block; margin: 0;">
+            </div>
+
+            <!-- Split View: Categories on Left, Results on Right -->
+            <div class="connections-split-view" style="display: grid; grid-template-columns: 250px 1fr; gap: 32px; min-height: 350px;">
+                <!-- Categories Pane -->
+                <div class="connections-categories-pane" style="border-right: 1px solid var(--color-bg-app); padding-right: 24px; display: flex; flex-direction: column;">
+                    <h3 data-i18n="dialectics_categories_title" style="font-size: 0.85rem; color: var(--color-text-light); margin-top: 0; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Категории</h3>
+                    
+                    <ul id="connections-categories-list" class="connections-categories-list" style="list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: 250px;">
+                        <!-- Categories will be dynamically loaded here -->
+                    </ul>
+                    
+                    <div class="connections-add-category" style="margin-top: 16px; display: flex; gap: 8px; padding-top: 16px; border-top: 1px dashed var(--color-border); align-items: stretch;">
+                        <input type="text" id="new-category-input" class="form-input" placeholder="Новая категория..." data-i18n-placeholder="dialectics_new_category" style="flex-grow: 1; font-size: 0.9rem; padding: 8px 12px; margin: 0;">
+                        <button id="add-category-btn" class="btn btn-secondary" style="padding: 0 16px; border-radius: var(--radius-md); font-weight: bold; display: flex; align-items: center; justify-content: center;">+</button>
+                    </div>
+                </div>
+
+                <!-- Search Results Pane -->
+                <div class="connections-results-pane" style="display: flex; flex-direction: column;">
+                    <h3 data-i18n="dialectics_results_title" style="font-size: 0.85rem; color: var(--color-text-light); margin-top: 0; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Результаты поиска</h3>
+                    
+                    <div id="connections-results-container" class="connections-results-container" style="flex-grow: 1; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; gap: 12px; max-height: 350px;">
+                        <!-- Search results will be loaded here -->
+                        <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-light); opacity: 0.7;">
+                            <span style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;">🔍</span>
+                            <p class="connections-empty-state" data-i18n="dialectics_search_empty" style="margin: 0; font-size: 0.95rem;">Введите запрос для поиска конспектов.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl); display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--color-bg-app);">
+            <button type="button" class="btn btn-secondary" onclick="if(window.app) window.app.hideConnectionsModal()" style="font-weight: 600;">Закрыть</button>
+        </div>
+    </div>
+</div>

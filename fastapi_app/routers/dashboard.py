@@ -286,3 +286,13 @@ async def get_dashboard_habits_widget(
         "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0
     })
 
+@router.get("/api/changelog", response_class=HTMLResponse)
+async def get_changelog(user: Any = Depends(check_auth_dependency)):
+    import markdown
+    from pathlib import Path
+    changelog_path = Path("CHANGELOG.md")
+    if changelog_path.exists():
+        text = changelog_path.read_text(encoding="utf-8")
+        html = markdown.markdown(text, extensions=['fenced_code', 'tables'])
+        return HTMLResponse(content=html)
+    return HTMLResponse(content="<p>Changelog not found.</p>")

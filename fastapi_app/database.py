@@ -55,9 +55,20 @@ def get_session_maker(db_label: str = "default") -> async_sessionmaker[AsyncSess
         )
     return _session_makers[db_label]
 
+from sqlalchemy import MetaData
+
+naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
 # 4. Базовый класс для всех ваших таблиц (моделей)
 class Base(DeclarativeBase):
     """Базовый класс для декларативных моделей SQLAlchemy."""
+    metadata = MetaData(naming_convention=naming_convention)
     pass
 
 # 5. Функция-зависимость для получения асинхронной сессии базы данных

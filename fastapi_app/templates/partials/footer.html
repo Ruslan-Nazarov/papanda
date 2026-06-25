@@ -1,11 +1,108 @@
 <div class="footer">
     <div class="footer-container">
-        <div class="footer-nav main-nav">
+        <div class="footer-nav main-nav" style="display: flex; gap: 10px; justify-content: center;">
             <a href="/settings" class="footer-btn">⚙️ {{ _('dashboard.settings') }}</a>
+            <button type="button" class="footer-btn" onclick="openChangelogModal()">📝 {{ _('dashboard.changelog') }}</button>
+            <a href="https://www.youtube.com/playlist?list=PLcw81HMAarVIV8u5MSVgEhk8i5iS3VXwj" target="_blank" class="footer-btn" style="display: flex; align-items: center; gap: 4px;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="1.2em" height="1.2em" style="color: #ff0000;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                {{ _('dashboard.tutorial') }}
+            </a>
+            <button type="button" class="footer-btn" onclick="openFeedbackModal()">💬 {{ _('dashboard.feedback') }}</button>
         </div>
         <div class="footer-version">
-            papanda version 0.6.5 (est. 21.11.2023; last update 22.06.2026)<br>
+            papanda version 0.6.6 (est. 21.11.2023; last update 25.06.2026)<br>
             <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" style="color: inherit; text-decoration: none; opacity: 0.8; font-size: 0.9em;">CC BY-NC 4.0 License</a>
         </div>
     </div>
 </div>
+
+<!-- Changelog Modal -->
+<div id="changelogModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2>📝 {{ _('dashboard.changelog') }}</h2>
+            <button class="modal-close" onclick="closeChangelogModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="changelogModalBody">
+            <div style="text-align: center; color: var(--color-text-muted);">{{ _('modal.loading') }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div id="feedbackModal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h2>💬 {{ _('dashboard.feedback') }}</h2>
+            <button class="modal-close" onclick="closeFeedbackModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; padding: 24px;">
+            <a href="https://t.me/ruslan_nazarov" target="_blank" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(0, 136, 204, 0.1); border: 1px solid rgba(0, 136, 204, 0.3); border-radius: 12px; color: var(--color-text-dark); text-decoration: none; transition: background 0.2s;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="2em" height="2em" style="color: #0088cc; flex-shrink: 0;"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                <div>
+                    <div style="font-weight: 600; font-size: 1.1rem;">Telegram</div>
+                    <div style="font-size: 0.9rem; color: var(--color-text-muted); margin-top: 4px;">@ruslan_nazarov (Быстрый ответ)</div>
+                </div>
+            </a>
+            <a href="mailto:runaz2007@gmail.com" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(234, 67, 53, 0.1); border: 1px solid rgba(234, 67, 53, 0.3); border-radius: 12px; color: var(--color-text-dark); text-decoration: none; transition: background 0.2s;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="2em" height="2em" style="color: #ea4335; flex-shrink: 0;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                <div>
+                    <div style="font-weight: 600; font-size: 1.1rem;">Email</div>
+                    <div style="font-size: 0.9rem; color: var(--color-text-muted); margin-top: 4px;">runaz2007@gmail.com (Подробные письма)</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+<style>
+#changelogModalBody h1 { margin-bottom: 1rem; font-size: 1.5rem; }
+#changelogModalBody h2 { margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.25rem; border-bottom: 1px solid var(--color-border-light); padding-bottom: 0.25rem; }
+#changelogModalBody h3 { margin-top: 1rem; margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--color-text-dark); }
+#changelogModalBody p { margin-bottom: 1rem; line-height: 1.5; }
+#changelogModalBody ul { margin-left: 1.5rem; margin-bottom: 1rem; list-style-type: disc; }
+#changelogModalBody li { margin-bottom: 0.4rem; line-height: 1.5; }
+#changelogModalBody code { background: var(--color-bg-subtle); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+</style>
+
+<script>
+function openChangelogModal() {
+    if (window.ModalManager) {
+        window.ModalManager.open('changelogModal');
+    } else {
+        document.getElementById('changelogModal').style.display = 'flex';
+    }
+    
+    fetch('/api/changelog')
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('changelogModalBody').innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('changelogModalBody').innerHTML = '<div style="color: red;">Error loading changelog</div>';
+        });
+}
+
+function closeChangelogModal() {
+    if (window.ModalManager) {
+        window.ModalManager.close('changelogModal');
+    } else {
+        document.getElementById('changelogModal').style.display = 'none';
+    }
+}
+
+function openFeedbackModal() {
+    if (window.ModalManager) {
+        window.ModalManager.open('feedbackModal');
+    } else {
+        document.getElementById('feedbackModal').style.display = 'flex';
+    }
+}
+
+function closeFeedbackModal() {
+    if (window.ModalManager) {
+        window.ModalManager.close('feedbackModal');
+    } else {
+        document.getElementById('feedbackModal').style.display = 'none';
+    }
+}
+</script>

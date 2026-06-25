@@ -185,7 +185,21 @@
         "what_habit_tracking": "What habit tracking?",
         "what_needs_done": "What needs to be done?",
         "dashboard": "Dashboard",
-        "languages": "Language Learning"
+        "languages": "Language Learning",
+        "total_entries": "Total Entries",
+        "total_habits": "Total Habits",
+        "total_tasks": "Total Tasks",
+        "total_records": "Total Records",
+        "recent": "Recent",
+        "archive": "Archive",
+        "show_more_10": "Show More (+10)",
+        "no_records_yet": "No records yet.",
+        "edit_short": "Edit",
+        "del_short": "Del",
+        "search_results_for": "Search results for:",
+        "changelog": "Changelog",
+        "tutorial": "Tutorial",
+        "feedback": "Contact Developer"
     },
     "modal": {
         "chronology_entry": "📅 Chronology Entry",

@@ -18,13 +18,16 @@
                 <span class="branding-title">{{ _('dialectics.title') }}</span>
             </div>
             
-            <div class="title-and-relations">
+            <div class="title-and-relations" style="display: flex; gap: 8px; align-items: center;">
+                <select class="badge-relations dialectics-category-select" id="dialecticsCategorySelect" style="max-width: 150px; text-overflow: ellipsis;">
+                    <option value="">Без категории</option>
+                </select>
                 <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Тема конспекта..." style="font-family: inherit; color: #ea580c; font-weight: 700;">
                 <button class="badge-relations" id="btnDialecticsGuide" title="Instructions (Guide)">📖 {{ _('dialectics.instructions') }}</button>
                 {% if plugin_dashboard %}
                 <a href="/dashboard" class="badge-relations" style="text-decoration: none;">🏠 {{ _('dialectics.dashboard') }}</a>
                 {% endif %}
-                <button class="badge-relations" title="Manage relations">🔗 {{ _('dialectics.relations') }}</button>
+                <button class="badge-relations" id="btnDialecticsConnections" title="Manage relations" onclick="if(window.app) window.app.showConnectionsModal(event)">🔗 {{ _('dialectics.relations') }}</button>
                 <div class="dialectics-menu-dropdown" style="position: relative;">
                     <button class="badge-relations" id="dialecticsMenuBtn" onclick="toggleDialecticsMenu()" title="Tools menu">⋮ {{ _('dialectics.menu') }}</button>
                     <div class="dialectics-menu-content" id="dialecticsMenuContent" style="display: none;">
@@ -281,6 +284,7 @@
     </div>
 
     {% include 'partials/modals/note_modals.html' %}
+    {% include '_dialectics_connections_modal.html' %}
     {% include 'partials/sticker_modal.html' %}
     {% include 'partials/parent_stickers_modal.html' %}
     {% include 'partials/modals/common_modals.html' %}

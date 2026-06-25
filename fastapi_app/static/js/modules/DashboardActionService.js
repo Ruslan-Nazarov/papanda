@@ -40,7 +40,7 @@ export const DashboardActionService = {
                     const isDone = data.done || data.status === 'success';
 
                     if (isDone) {
-                        let msg = isEvent ? 'Event completed' : (isTask ? 'Task completed' : 'Habit updated');
+                        let msg = isEvent ? window._("toast.event_completed") : (isTask ? window._("toast.task_completed") : window._("toast.habit_completed_for_today"));
                         showToast(msg, 'success');
 
                         if (isEvent || isTask) {

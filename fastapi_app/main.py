@@ -69,7 +69,7 @@ mimetypes.add_type('text/css', '.css')
 app = FastAPI(
     title="Papanda API",
     description="Образовательное приложение",
-    version="0.6.5",
+    version="0.6.6",
     lifespan=lifespan
 )
 app.state.settings = settings
