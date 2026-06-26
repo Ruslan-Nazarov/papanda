@@ -201,8 +201,7 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
             'it': ['italiano', 'italian'],
             'fr': ['français', 'french'],
             'es': ['español', 'spanish'],
-            'kz': ['қазақша', 'kazakh', 'kz'],
-            'kk': ['қазақша', 'kazakh', 'kk'],
+            'kz': ['қазақша', 'kazakh', 'kz', 'kk'],
             'la': ['latina', 'latin']
         };
 

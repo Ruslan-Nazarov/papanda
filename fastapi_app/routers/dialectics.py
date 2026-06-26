@@ -118,10 +118,11 @@ async def list_dialectics(
     notes = result.scalars().all()
 
     locale = request.cookies.get("locale", "en")
+    if locale == "kk": locale = "kz"
     locale_map = {
         "en": "Example Note",
         "ru": "Пример конспекта",
-        "kk": "Конспект мысалы"
+        "kz": "Конспект мысалы"
     }
     target_title = locale_map.get(locale, "Example Note")
 
@@ -135,11 +136,12 @@ async def list_dialectics(
 async def get_example_note_id(request: Request, db: AsyncSession = Depends(get_db)):
     """Находит или создаёт пример конспекта под текущий язык и возвращает его ID."""
     locale = request.cookies.get("locale", "en")
+    if locale == "kk": locale = "kz"
     
     locale_map = {
         "en": ("Example Note", "example_note_content.json"),
         "ru": ("Пример конспекта", "example_note_content_ru.json"),
-        "kk": ("Конспект мысалы", "example_note_content_kk.json")
+        "kz": ("Конспект мысалы", "example_note_content_kz.json")
     }
     
     target_title, json_file = locale_map.get(locale, locale_map["en"])
@@ -184,10 +186,11 @@ async def get_dialectics(
         
     if note.title in ["Example Note", "Пример конспекта", "Конспект мысалы"]:
         locale = request.cookies.get("locale", "en")
+        if locale == "kk": locale = "kz"
         locale_map = {
             "en": ("Example Note", "example_note_content.json"),
             "ru": ("Пример конспекта", "example_note_content_ru.json"),
-            "kk": ("Конспект мысалы", "example_note_content_kk.json")
+            "kz": ("Конспект мысалы", "example_note_content_kz.json")
         }
         target_title, json_file = locale_map.get(locale, locale_map["en"])
         json_path = INTERNAL_ROOT / "fastapi_app" / "static" / json_file

@@ -112,13 +112,15 @@ async def add_security_headers_and_user(request: Request, call_next: Callable) -
 
     # Check locale
     locale = request.cookies.get("locale")
+    if locale == "kk":
+        locale = "kz"
     locale_set_by_header = False
     if not locale:
         accept_language = request.headers.get("Accept-Language", "en").lower()
         if accept_language.startswith("ru") or " ru" in accept_language or ";ru" in accept_language:
             locale = "ru"
-        elif accept_language.startswith("kk") or " kk" in accept_language or ";kk" in accept_language:
-            locale = "kk"
+        elif accept_language.startswith("kk") or accept_language.startswith("kz") or " kk" in accept_language or " kz" in accept_language or ";kk" in accept_language or ";kz" in accept_language:
+            locale = "kz"
         else:
             locale = "en"
             

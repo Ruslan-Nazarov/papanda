@@ -137,7 +137,9 @@ class LocaleRequest(schemas.BaseModel):
 async def set_locale(data: LocaleRequest, db: AsyncSession = Depends(get_db)):
     """Устанавливает язык интерфейса через cookie и обновляет пример конспекта в БД."""
     locale = data.locale
-    if locale not in ["en", "ru", "kk"]:
+    if locale == "kk":
+        locale = "kz"
+    if locale not in ["en", "ru", "kz"]:
         locale = "en"
         
     from ...config import settings

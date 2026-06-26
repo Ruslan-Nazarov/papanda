@@ -10,7 +10,7 @@
             <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--color-border-light); padding-bottom: 16px;">
                 <button type="button" onclick="switchAboutLang('ru')" id="aboutTabRu" style="padding: 8px 18px; border-radius: 8px; border: none; background: var(--color-primary); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">RU</button>
                 <button type="button" onclick="switchAboutLang('en')" id="aboutTabEn" style="padding: 8px 18px; border-radius: 8px; border: none; background: var(--color-bg-subtle); color: var(--color-text-body); font-weight: 600; cursor: pointer; transition: all 0.2s;">EN</button>
-                <button type="button" onclick="switchAboutLang('kk')" id="aboutTabKk" style="padding: 8px 18px; border-radius: 8px; border: none; background: var(--color-bg-subtle); color: var(--color-text-body); font-weight: 600; cursor: pointer; transition: all 0.2s;">KK</button>
+                <button type="button" onclick="switchAboutLang('kz')" id="aboutTabKz" style="padding: 8px 18px; border-radius: 8px; border: none; background: var(--color-bg-subtle); color: var(--color-text-body); font-weight: 600; cursor: pointer; transition: all 0.2s;">KZ</button>
             </div>
 
             <!-- Russian text -->
@@ -89,7 +89,7 @@
             </div>
 
             <!-- Kazakh text -->
-            <div id="aboutContentKk" class="about-article" style="display: none;">
+            <div id="aboutContentKz" class="about-article" style="display: none;">
                 <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--color-text-dark); margin-top: 24px; margin-bottom: 12px;">1. Ескі білім тұжырымдамасының күйреуі</h3>
                 <p style="margin-bottom: 16px;">Жасанды интеллектінің (ЖИ) келуімен білімнің тұжырымдамасы түбегейлі өзгеруде. Дәлірек айтқанда, өзгеріп қана қоймай, үстем тұжырымдаманың мәнін жоғалтып бара жатқаны айқындала түсуде.</p>
                 <p style="margin-bottom: 16px;">Бұл тұжырымдаманың мәні позитивистік болды: білім жинау, олардан блоктар сияқты құрылым жасау, ал блоктардан «ғылым ғибадатханасын» тұрғызу. Бұл ғибадатхананың абыздары — ғалымдар — оның тастарын есте сақтау қабілетінің жеткенінше білді, оны шексіз есептер мен жаттығулар арқылы шыңдады. Білімнің мұндай моделі Фейнманның сүйікті қағидасымен жақсы сипатталатын: «Үндеме де, есепте» (Shut up and calculate).</p>
@@ -137,7 +137,7 @@
 
 <script>
 function switchAboutLang(lang) {
-    const langs = ['ru', 'en', 'kk'];
+    const langs = ['ru', 'en', 'kz'];
     langs.forEach(l => {
         const content = document.getElementById('aboutContent' + l.charAt(0).toUpperCase() + l.slice(1));
         const tab = document.getElementById('aboutTab' + l.charAt(0).toUpperCase() + l.slice(1));

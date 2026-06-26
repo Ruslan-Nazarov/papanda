@@ -117,7 +117,7 @@
                 <select id="languageSwitcher" class="form-select" style="height: 100%; box-sizing: border-box; padding: 0 32px 0 16px; font-size: 0.95rem; font-weight: 800; border-radius: 12px; border: 1px solid var(--color-border-medium); background: white; color: var(--color-text-dark); appearance: none; cursor: pointer; text-align: center; font-family: inherit;" onchange="switchLanguage(this.value)">
                     <option value="en" {% if request.cookies.get('locale', 'en') == 'en' %}selected{% endif %}>EN</option>
                     <option value="ru" {% if request.cookies.get('locale', 'en') == 'ru' %}selected{% endif %}>RU</option>
-                    <option value="kk" {% if request.cookies.get('locale', 'en') == 'kk' %}selected{% endif %}>KZ</option>
+                    <option value="kz" {% if request.cookies.get('locale', 'en') in ['kz', 'kk'] %}selected{% endif %}>KZ</option>
                 </select>
                 <!-- Custom dropdown arrow -->
                 <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.4; font-size: 0.7rem;">

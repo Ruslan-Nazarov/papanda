@@ -54,7 +54,7 @@
                     <select id="languageSwitcher" class="badge-relations" style="height: 100%; box-sizing: border-box; appearance: none; padding: 0 24px 0 12px; font-size: 0.8rem; font-weight: 800; border-radius: 20px; border: 1px solid #cbd5e1; background: white; color: #334155; cursor: pointer; text-align: center; font-family: inherit; text-transform: uppercase;" onchange="switchLanguage(this.value)">
                         <option value="en" {% if request.cookies.get('locale', 'en') == 'en' %}selected{% endif %}>EN</option>
                         <option value="ru" {% if request.cookies.get('locale', 'en') == 'ru' %}selected{% endif %}>RU</option>
-                        <option value="kk" {% if request.cookies.get('locale', 'en') == 'kk' %}selected{% endif %}>KZ</option>
+                        <option value="kz" {% if request.cookies.get('locale', 'en') in ['kz', 'kk'] %}selected{% endif %}>KZ</option>
                     </select>
                     <!-- Custom dropdown arrow -->
                     <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.6; font-size: 0.5rem; color: #64748b;">

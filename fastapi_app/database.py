@@ -180,10 +180,12 @@ async def seed_example_note(db: AsyncSession, locale: str = "en") -> None:
     import json
     from sqlalchemy import select
     
+    if locale == "kk":
+        locale = "kz"
     locale_map = {
         "en": ("Example Note", "example_note_content.json"),
         "ru": ("Пример конспекта", "example_note_content_ru.json"),
-        "kk": ("Конспект мысалы", "example_note_content_kk.json")
+        "kz": ("Конспект мысалы", "example_note_content_kz.json")
     }
     target_title, json_file = locale_map.get(locale, locale_map["en"])
     

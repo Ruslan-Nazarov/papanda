@@ -13,7 +13,7 @@
 
 const activeLangs   = window.WS_ACTIVE_LANGS   || window.P_ACTIVE_LANGUAGES || window.DASHBOARD_ACTIVE_LANGS || [];
 const allLangNames  = window.WS_ALL_LANG_NAMES || window.P_ALL_LANGUAGES || window.DASHBOARD_ALL_LANGUAGES || {};
-const languageFlags = window.WS_LANGUAGE_FLAGS || window.P_LANGUAGE_FLAGS || window.DASHBOARD_LANGUAGE_FLAGS || { en: '🇬🇧', ru: '🇷🇺', it: '🇮🇹', de: '🇩🇪', kk: '🇰🇿', zh: '🇨🇳' };
+const languageFlags = window.WS_LANGUAGE_FLAGS || window.P_LANGUAGE_FLAGS || window.DASHBOARD_LANGUAGE_FLAGS || { en: '🇬🇧', ru: '🇷🇺', it: '🇮🇹', de: '🇩🇪', kz: '🇰🇿', zh: '🇨🇳' };
 
 // ── Search Modal ──────────────────────────────────────────────────────────────
 
