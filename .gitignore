@@ -77,3 +77,4 @@ dist/
 
 # Внешние счетчики аналитики
 fastapi_app/templates/partials/analytics.html
+fastapi_app/templates/partials/head_analytics.html
