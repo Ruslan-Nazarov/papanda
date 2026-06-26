@@ -199,7 +199,8 @@
         "search_results_for": "Search results for:",
         "changelog": "Changelog",
         "tutorial": "Tutorial",
-        "feedback": "Contact Developer"
+        "feedback": "Contact Developer",
+        "about": "About Project"
     },
     "modal": {
         "chronology_entry": "📅 Chronology Entry",
