@@ -1,0 +1,38 @@
+<!-- AI Formula Parser Widget -->
+<div id="formulaParserWidget" class="floating-widget formula-parser-widget" style="display: none; z-index: 1000;">
+    <!-- Draggable Header -->
+    <div class="widget-header" id="formulaParserDragHandle">
+        <div class="widget-title">
+            <span class="widget-icon">🧮</span>
+            <span class="widget-title-text">{{ _('dialectics.formula_parser') | default('Парсер формул') }}</span>
+        </div>
+        <div class="widget-controls">
+            <button class="widget-btn-min" title="Свернуть" onclick="window.WidgetManager && window.WidgetManager.minimize('formulaParserWidget')">_</button>
+            <button class="widget-btn-close" title="Закрыть" onclick="window.WidgetManager && window.WidgetManager.close('formulaParserWidget')">✖</button>
+        </div>
+    </div>
+
+    <!-- Widget Body -->
+    <div class="widget-body">
+        <!-- Chat History -->
+        <div class="parser-chat-history" id="formulaChatHistory">
+            <div class="chat-message ai-message">
+                <div class="message-content">Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Footer (Input) -->
+    <div class="widget-footer parser-input-area">
+        <textarea id="formulaPromptInput" placeholder="Введите формулу..." rows="1" oninput="if(window.autoResizeTextarea) autoResizeTextarea(this); else {this.style.height='auto';this.style.height=this.scrollHeight+'px';}" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendFormulaMessage();}"></textarea>
+        
+        <div class="input-actions">
+            <button class="btn-icon voice-btn" id="btnFormulaVoice" title="Голосовой ввод формулы" onclick="toggleFormulaVoiceInput()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            </button>
+            <button class="btn-icon send-btn" id="btnFormulaSend" title="Отправить" onclick="sendFormulaMessage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+</div>

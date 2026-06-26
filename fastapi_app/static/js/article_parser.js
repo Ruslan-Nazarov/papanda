@@ -8,6 +8,13 @@ let articleTextCache = ""; // To avoid sending the file every time if not needed
 
 // Toggle visibility of the widget
 window.toggleArticleParser = function() {
+    if (window.WidgetManager) {
+        window.WidgetManager.toggle('articleParserWidget');
+        const widget = document.getElementById('articleParserWidget');
+        articleParserActive = widget && widget.style.display !== 'none';
+        if (!articleParserActive && isRecording) toggleVoiceInput();
+        return;
+    }
     const widget = document.getElementById('articleParserWidget');
     if (!widget) return;
     
@@ -18,7 +25,7 @@ window.toggleArticleParser = function() {
         widget.style.display = 'none';
         articleParserActive = false;
         if (isRecording) {
-            toggleVoiceInput(); // stop recording if closing
+            toggleVoiceInput();
         }
     }
 };

@@ -7,7 +7,8 @@
             <span class="widget-title-text">{{ _('dialectics.article_parser') | default('Парсер статей') }}</span>
         </div>
         <div class="widget-controls">
-            <button class="widget-btn-close" id="btnArticleParserClose" title="Close" onclick="toggleArticleParser()">✖</button>
+            <button class="widget-btn-min" title="Свернуть" onclick="window.WidgetManager && window.WidgetManager.minimize('articleParserWidget')">_</button>
+            <button class="widget-btn-close" id="btnArticleParserClose" title="Закрыть" onclick="window.WidgetManager ? window.WidgetManager.close('articleParserWidget') : toggleArticleParser()">✖</button>
         </div>
     </div>
 

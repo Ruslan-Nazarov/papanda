@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
     <link rel="stylesheet" href="{{ url_for('static', path='dist/papanda-smart-notes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics/article_parser.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics/widget_dock.css') }}?v=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 {% endblock %}
@@ -380,6 +382,8 @@
     <script type="module" src="{{ url_for('static', path='js/note_chrono_widget.js') }}"></script>
     <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v={{ range(1, 9999) | random }}"></script>
     <script type="module" src="/static/dist/dialectics.bundle.js?v={{ range(1, 9999) | random }}"></script>
+    <script src="{{ url_for('static', path='js/widget_manager.js') }}?v={{ range(1, 9999) | random }}"></script>
+    <script src="{{ url_for('static', path='js/formula_parser.js') }}?v={{ range(1, 9999) | random }}"></script>
     <script src="{{ url_for('static', path='js/article_parser.js') }}?v={{ range(1, 9999) | random }}"></script>
 
     {% include 'partials/footer.html' %}

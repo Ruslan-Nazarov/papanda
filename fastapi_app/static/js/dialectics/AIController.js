@@ -150,84 +150,11 @@ export const AIControllerMixin = {
     }
 
     async runGlobalParser() {
-        const formula = await customPrompt({
-            title: '✨ AI Formula Parser',
-            message: 'Enter math formula for dialectical parsing:',
-            placeholder: 'e.g. E = mc^2 or Hψ = Eψ',
-            watermark: 'made of Iasmin',
-            width: '500px'
-        });
-        if (!formula || !formula.trim()) return;
-
-        window.showToast(window._("toast.ai_is_parsing_formula"), "info");
-
-        try {
-            const res = await fetch('/api/ai/dialectics/parser', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ formula: formula.trim() })
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'API Error');
-            }
-
-            const data = await res.json();
-
-            // Parse JSON response
-            let parsed;
-            try {
-                parsed = JSON.parse(data.result);
-            } catch (e) {
-                // Sometimes LLM wraps JSON in markdown blocks
-                const match = data.result.match(/```(?:json)?\n([\s\S]*?)\n```/);
-                if (match) {
-                    parsed = JSON.parse(match[1]);
-                } else {
-                    throw new Error("Failed to parse JSON response from AI.");
-                }
-            }
-
-            // Create formatted HTML for the parsed JSON
-            const formatBlock = (title, content, typeClass) => `
-                <div class="parser-block ${typeClass}">
-                    <div class="parser-block-title">${title}</div>
-                    <div class="parser-block-content">${content || '—'}</div>
-                </div>
-            `;
-
-            const htmlContent = `
-                <div class="parser-modal-container">
-                    <h3 class="parser-modal-header">
-                        Formula Analysis: <span class="parser-modal-formula">${formula}</span>
-                    </h3>
-                    ${formatBlock("Preceding Operation (Thesis)", parsed.predecessor, "thesis")}
-                    ${formatBlock("Crisis of Notation Complexity (Antithesis)", parsed.crisis_of_notation, "antithesis")}
-                    ${formatBlock("Resolution (Synthesis)", parsed.resolution, "synthesis")}
-                </div>
-            `;
-
-            customConfirm({
-                title: 'Parser Result',
-                message: htmlContent,
-                icon: '🧮',
-                watermark: 'made of Iasmin',
-                width: '650px',
-                buttons: [
-                    { label: 'Close', value: true, class: 'confirm-btn-primary' }
-                ]
-            });
-
-        } catch (error) {
-            console.error(error);
-            customConfirm({
-                title: 'Parser Error',
-                message: `<div style="color: red;">${error.message}</div>`,
-                buttons: [
-                    { label: 'Close', value: true, class: 'confirm-btn-secondary' }
-                ]
-            });
+        if (window.WidgetManager) {
+            window.WidgetManager.toggle('formulaParserWidget');
+        } else {
+            const widget = document.getElementById('formulaParserWidget');
+            if (widget) widget.style.display = 'flex';
         }
     }
 
