@@ -1,66 +1,57 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
-from pydantic import BaseModel
 from typing import Any, Optional
 import os
-import httpx
-from pathlib import Path
+import io
 from groq import AsyncGroq
 from pypdf import PdfReader
-import io
 
 from ..services.auth import check_auth_dependency
 from ..config import BASE_DIR
 from ..logger import logger
+from ..schemas.ai import (
+    OppositesRequest, ParserRequest, TextMathRequest, 
+    HintStepRequest, ExplainConceptRequest
+)
 
 router = APIRouter(
     tags=["ai"],
     prefix="/api/ai"
 )
 
-class OppositesRequest(BaseModel):
-    process_a: str
-
-class ParserRequest(BaseModel):
-    formula: str
-
-class TextMathRequest(BaseModel):
-    text: str
-
-class HintStepRequest(BaseModel):
-    step_id: str
-    goal_text: str
-    context_text: str
-
-class ExplainConceptRequest(BaseModel):
-    text: str
-
-@router.post("/dialectics/opposites")
-async def generate_opposites(
-    request: OppositesRequest,
-    user: Any = Depends(check_auth_dependency)
-):
+def get_groq_client() -> AsyncGroq:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key or api_key == "your_groq_api_key_here":
         raise HTTPException(
             status_code=500, 
             detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file."
         )
+    return AsyncGroq(api_key=api_key)
 
-    prompt_path = BASE_DIR / "prompts" / "opposites.md"
-    if not prompt_path.exists():
-        logger.error(f"Prompt file not found at {prompt_path}")
-        raise HTTPException(status_code=500, detail="Prompt file not found.")
+_prompt_cache: dict[str, str] = {}
 
-    try:
-        prompt_template = prompt_path.read_text(encoding="utf-8")
-    except Exception as e:
-        logger.error(f"Error reading prompt file: {e}")
-        raise HTTPException(status_code=500, detail="Error reading prompt file.")
+def get_cached_prompt(filename: str) -> str:
+    if filename not in _prompt_cache:
+        prompt_path = BASE_DIR / "prompts" / filename
+        if not prompt_path.exists():
+            logger.error(f"Prompt file not found at {prompt_path}")
+            raise HTTPException(status_code=500, detail=f"Prompt file {filename} not found.")
+        try:
+            _prompt_cache[filename] = prompt_path.read_text(encoding="utf-8")
+        except Exception as e:
+            logger.error(f"Error reading prompt file: {e}")
+            raise HTTPException(status_code=500, detail="Error reading prompt file.")
+    return _prompt_cache[filename]
 
+@router.post("/dialectics/opposites")
+async def generate_opposites(
+    request: OppositesRequest,
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
+):
+    prompt_template = get_cached_prompt("opposites.md")
     system_prompt = prompt_template.replace("{ВСТАВИТЬ ПРОЦЕСС}", request.process_a).replace("{INSERT PROCESS}", request.process_a)
 
     try:
-        client = AsyncGroq(api_key=api_key)
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -78,23 +69,11 @@ async def generate_opposites(
 @router.post("/dialectics/parser")
 async def parse_math_formula(
     request: ParserRequest,
-    user: Any = Depends(check_auth_dependency)
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
 ):
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file.")
-
-    prompt_path = BASE_DIR / "prompts" / "parser.md"
-    if not prompt_path.exists():
-        raise HTTPException(status_code=500, detail="Prompt file not found.")
-
+    system_prompt = get_cached_prompt("parser.md")
     try:
-        system_prompt = prompt_path.read_text(encoding="utf-8")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error reading prompt file.")
-
-    try:
-        client = AsyncGroq(api_key=api_key)
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -113,14 +92,10 @@ async def parse_math_formula(
 @router.post("/dialectics/text-math")
 async def generate_math_from_text(
     request: TextMathRequest,
-    user: Any = Depends(check_auth_dependency)
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
 ):
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set.")
-
     try:
-        client = AsyncGroq(api_key=api_key)
         prompt = "You are an assistant that translates the description of a mathematical formula in natural language strictly into LaTeX format. Output ONLY the LaTeX code, without surrounding quotes, without markdown blocks (```latex) and without any explanations. Your response must be ready to be inserted into the KaTeX renderer."
         chat_completion = await client.chat.completions.create(
             messages=[
@@ -143,15 +118,11 @@ async def generate_math_from_text(
 @router.post("/dialectics/voice-math")
 async def generate_math_from_voice(
     file: UploadFile = File(...),
-    user: Any = Depends(check_auth_dependency)
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
 ):
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set.")
-
     try:
         content = await file.read()
-        client = AsyncGroq(api_key=api_key)
         transcription = await client.audio.transcriptions.create(
             file=(file.filename, content, file.content_type),
             model="whisper-large-v3-turbo",
@@ -181,29 +152,17 @@ async def generate_math_from_voice(
 @router.post("/dialectics/hint-step")
 async def generate_hint_step(
     request: HintStepRequest,
-    user: Any = Depends(check_auth_dependency)
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
 ):
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set.")
-
     valid_steps = ["step1", "step2", "step3", "step4", "step5"]
     if request.step_id not in valid_steps:
         raise HTTPException(status_code=400, detail="Invalid step_id")
 
-    prompt_path = BASE_DIR / "prompts" / f"dialectics_{request.step_id}.md"
-    if not prompt_path.exists():
-        raise HTTPException(status_code=500, detail=f"Prompt file for {request.step_id} not found.")
-
-    try:
-        prompt_template = prompt_path.read_text(encoding="utf-8")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error reading prompt file.")
-
+    prompt_template = get_cached_prompt(f"dialectics_{request.step_id}.md")
     system_prompt = prompt_template.replace("{GOAL}", request.goal_text).replace("{CONTEXT}", request.context_text)
 
     try:
-        client = AsyncGroq(api_key=api_key)
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -222,17 +181,10 @@ async def generate_hint_step(
 async def process_article_parser(
     message: str = Form(...),
     file: Optional[UploadFile] = File(None),
-    user: Any = Depends(check_auth_dependency)
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
 ):
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set.")
-
-    prompt_path = BASE_DIR / "prompts" / "article_parser.md"
-    if not prompt_path.exists():
-        raise HTTPException(status_code=500, detail="Article parser prompt file not found.")
-
-    prompt_template = prompt_path.read_text(encoding="utf-8")
+    prompt_template = get_cached_prompt("article_parser.md")
     
     extracted_text = ""
     if file:
@@ -262,7 +214,6 @@ async def process_article_parser(
     system_prompt = prompt_template.replace("{ARTICLE_CONTENT}", extracted_text)
 
     try:
-        client = AsyncGroq(api_key=api_key)
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -280,23 +231,11 @@ async def process_article_parser(
 @router.post("/dialectics/explain-concept")
 async def explain_concept(
     request: ExplainConceptRequest,
-    user: Any = Depends(check_auth_dependency)
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
 ):
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set.")
-
-    prompt_path = BASE_DIR / "prompts" / "explain_concept.md"
-    if not prompt_path.exists():
-        raise HTTPException(status_code=500, detail="Explain concept prompt file not found.")
-
+    system_prompt = get_cached_prompt("explain_concept.md")
     try:
-        system_prompt = prompt_path.read_text(encoding="utf-8")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error reading prompt file.")
-
-    try:
-        client = AsyncGroq(api_key=api_key)
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},

@@ -10,6 +10,7 @@ from ...database import get_db
 from ... import models
 from ...services.auth import check_auth_dependency
 from ...services.admin_service import AdminService
+from ...services.search_service import SearchService
 from ...dependencies import get_admin_service
 from ...utils import is_ajax_request
 from ...config import templates
@@ -33,60 +34,11 @@ async def api_db_search(
         return JSONResponse(content={"status": "success", "data": []})
         
     try:
-        from ...logger import logger
         search_query = search.strip()
-        results = []
-
-        if model_name.lower() == 'all':
-            models_to_search = ['Event', 'Notes', 'Stickers', 'Chronology', 'Habit', 'Task', 'Wink']
-            for m in models_to_search:
-                try:
-                    ctx = await as_service.get_db_view_context(
-                        model_name=m, search=search_query, category=category, sort=sort, page=page
-                    )
-                    for r in ctx["records"]:
-                        res = {"id": getattr(r, 'id', getattr(r, 'word', None)), "model": m}
-                        if m == 'Event':
-                            res.update({"title": f"📅 [Event] {r.title}", "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
-                        elif m == 'Notes':
-                            res.update({"title": f"📝 [Note] {r.category}", "text": r.note[:100] + "..." if r.note and len(r.note) > 100 else r.note})
-                        elif m == 'Stickers':
-                            res.update({"title": f"📋 [Sticker] {r.title}", "text": r.text[:100] if r.text else ""})
-                        elif m == 'Chronology':
-                            res.update({"title": f"🕒 [Chrono] {r.title}", "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
-                        elif m == 'Habit':
-                            res.update({"title": f"🔄 [Habit] {r.title}", "text": f"Started: {r.start_date}"})
-                        elif m == 'Task':
-                            res.update({"title": f"✅ [Task] {r.name}", "text": f"Created: {r.created_at.strftime('%d.%m.%Y')}"})
-                        elif m == 'Wink':
-                            res.update({"title": f"✨ [Wink] {r.title}", "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
-                        results.append(res)
-                except Exception as ex:
-                    logger.error(f"Error searching model {m}: {ex}")
-        else:
-            ctx = await as_service.get_db_view_context(
-                model_name=model_name, search=search_query, category=category, sort=sort, page=page
-            )
-            for r in ctx["records"]:
-                res = {"id": getattr(r, 'id', getattr(r, 'word', None)), "model": model_name}
-                if model_name == 'Event':
-                    res.update({"title": r.title, "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
-                elif model_name == 'Notes':
-                    res.update({"title": r.category, "text": r.note[:100] + "..." if r.note and len(r.note) > 100 else r.note})
-                elif model_name == 'Stickers':
-                    res.update({"title": r.title, "text": r.text[:100] if r.text else ""})
-                elif model_name == 'Chronology':
-                    res.update({"title": r.title, "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
-                elif model_name == 'Habit':
-                    res.update({"title": r.title, "text": f"Started: {r.start_date}"})
-                elif model_name == 'Task':
-                    res.update({"title": r.name, "text": f"Created: {r.created_at.strftime('%d.%m.%Y')}"})
-                elif model_name == 'Wink':
-                    res.update({"title": r.title, "date": r.date.isoformat() if hasattr(r.date, 'isoformat') else str(r.date)})
-                else:
-                    res.update({"title": str(r)})
-                results.append(res)
-            
+        results = await SearchService.global_search(
+            as_service=as_service, search_query=search_query, model_name=model_name,
+            category=category, sort=sort, page=page
+        )
         return JSONResponse(content={"status": "success", "data": results})
     except Exception as e:
         from ...logger import logger

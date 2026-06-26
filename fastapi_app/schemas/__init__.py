@@ -11,6 +11,7 @@ from .settings import *
 from .stickers import *
 from .observations import *
 from .dialectics import *
+from .ai import *
 
 # Rebuild models with circular dependencies
 NoteView.model_rebuild()

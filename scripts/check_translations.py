@@ -1,8 +1,11 @@
 import os
 import json
 import re
+from pathlib import Path
 
-ru_json_path = 'locales/ru.json'
+BASE_DIR = Path(__file__).resolve().parent.parent / "fastapi_app"
+
+ru_json_path = BASE_DIR / 'locales' / 'ru.json'
 with open(ru_json_path, 'r', encoding='utf-8') as f:
     translations = json.load(f)
 
@@ -19,7 +22,7 @@ existing_keys = set(get_keys(translations))
 
 found_keys = set()
 pattern = re.compile(r"_\(['\"](.*?)['\"]\)")
-for root, dirs, files in os.walk('templates'):
+for root, dirs, files in os.walk(BASE_DIR / 'templates'):
     for file in files:
         if file.endswith('.html'):
             with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
@@ -27,7 +30,7 @@ for root, dirs, files in os.walk('templates'):
                 matches = pattern.findall(content)
                 found_keys.update(matches)
 
-for root, dirs, files in os.walk('static/js'):
+for root, dirs, files in os.walk(BASE_DIR / 'static' / 'js'):
     for file in files:
         if file.endswith('.js'):
             with open(os.path.join(root, file), 'r', encoding='utf-8') as f:

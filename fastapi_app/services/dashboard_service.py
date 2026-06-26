@@ -114,6 +114,115 @@ class DashboardService:
 
         return data
 
+    async def get_dashboard_page_context(
+        self, word_service: Any, state_manager: Any
+    ) -> Dict[str, Any]:
+        """Собирает полный контекст для отображения шаблона dashboard.html."""
+        import json
+        from .settings_service import get_setting
+
+        ctx = await state_manager.get_runtime_context()
+        today_obj = datetime.now()
+        today_actual = today_obj.date()
+        today_for_calendar = today_actual - timedelta(days=1)
+
+        dash_data = await self.get_index_data()
+        dashboard_map = await self.get_dashboard_settings()
+
+        one_thing, one_thing_date, one_thing_replacement = "...", 0, "..."
+        if 'one_thing' in dashboard_map:
+            item = dashboard_map['one_thing']
+            one_thing = item.title
+            d_obj = normalize_date(item.date)
+            if d_obj:
+                if isinstance(d_obj, datetime):
+                    d_obj = d_obj.date()
+                one_thing_date = (today_obj.date() - d_obj).days
+        if 'replacement' in dashboard_map:
+            one_thing_replacement = dashboard_map['replacement'].title
+
+        categories_res = await self.db.execute(select(models.NoteCategory))
+        categories = [c.name for c in categories_res.scalars().all()]
+        
+        layout_json = await get_setting(self.db, "dashboard_layout", "{}")
+
+        active_langs_raw = await get_setting(self.db, 'active_languages', 'en,it,de')
+        active_langs = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
+        
+        lang_names_raw = await get_setting(self.db, 'language_names', '{}')
+        event_colors_raw = await get_setting(self.db, 'event_colors', '{}')
+        try:
+            lang_names = json.loads(lang_names_raw if lang_names_raw else '{}')
+        except Exception:
+            lang_names = {}
+
+        try:
+            event_colors = json.loads(event_colors_raw if event_colors_raw else '{}')
+        except Exception:
+            event_colors = {}
+
+        sentences_json = word_service.get_sentences_json()
+        try:
+            sentences = json.loads(sentences_json)
+            sentence_langs = set(s.get("language") for s in sentences if s.get("language"))
+        except Exception:
+            sentence_langs = set()
+
+        ns_res = await self.db.execute(select(models.Notes).where(models.Notes.category == "Language Learning System"))
+        anchor_notes = ns_res.scalars().all()
+        lang_anchors = {note.note: note.id for note in anchor_notes}
+        
+        for lang in sentence_langs:
+            if lang not in lang_anchors:
+                new_anchor = models.Notes(category="Language Learning System", note=lang)
+                self.db.add(new_anchor)
+                await self.db.commit()
+                await self.db.refresh(new_anchor)
+                lang_anchors[lang] = new_anchor.id
+
+        plugin_events = await get_setting(self.db, 'plugin_events', 'True') == 'True'
+        plugin_tasks = await get_setting(self.db, 'plugin_tasks', 'True') == 'True'
+        plugin_habits = await get_setting(self.db, 'plugin_habits', 'True') == 'True'
+        plugin_languages = await get_setting(self.db, 'plugin_languages', 'True') == 'True'
+
+        return {
+            "words": ctx['words'],
+            "active_languages": active_langs,
+            "all_languages": lang_names,
+            "event_colors": event_colors,
+            "wink": ctx['wink'],
+            "count_words_translate": ctx['count'],
+            "coverage_learning_words": ctx['coverage'],
+            "iMW": ctx['imw'],
+            "events_today": dash_data['events_today'],
+            "events_tomorrow": dash_data['events_tomorrow'],
+            "date_important": dash_data.get('date_important', []),
+            "habits_all": dash_data['habits_all'],
+            "tasks": dash_data['tasks'],
+            "title_until": dash_data.get('title_until', '...'),
+            "days_remaining": dash_data.get('days_remaining', 0),
+            "title_after": dash_data.get('title_after', '...'),
+            "days_passed": dash_data.get('days_passed', 0),
+            "one_thing": one_thing,
+            "one_thing_date": one_thing_date,
+            "one_thing_replacement": one_thing_replacement,
+            "categories": categories,
+            "dashboard_layout": layout_json,
+            "today_for_calendar": today_for_calendar,
+            "today_actual": today_actual,
+            "now_utc": datetime.now(timezone.utc).replace(tzinfo=None),
+            "stickers": dash_data.get('stickers', []),
+            "observations": dash_data.get('observations', []),
+            "pinned_notes": dash_data.get('pinned_notes', []),
+            "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0,
+            "lang_anchors_json": json.dumps(lang_anchors),
+            "sentences_json": sentences_json,
+            "plugin_events": plugin_events,
+            "plugin_tasks": plugin_tasks,
+            "plugin_habits": plugin_habits,
+            "plugin_languages": plugin_languages
+        }
+
     async def submit_form(self, category: str, text: str, dt: datetime, repeat: str = "none", repeat_end: str = "", sticker_data: Optional[Dict[str, Any]] = None, color: Optional[str] = None) -> Union[int, str, None]:
         """Универсальный метод сохранения из формы."""
         try:

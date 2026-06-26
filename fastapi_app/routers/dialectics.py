@@ -11,23 +11,17 @@ from ..services.auth import check_auth_dependency
 from ..config import templates, INTERNAL_ROOT
 from ..logger import logger
 from ..models.dialectics import Dialectics, DialecticsCategory
-from ..schemas.dialectics import DialecticsCreate, DialecticsView, DialecticsUpdate, DialecticsGuideResponse, DialecticsCategoryBase
+from ..schemas.dialectics import DialecticsCreate, DialecticsView, DialecticsUpdate, DialecticsGuideResponse, DialecticsCategoryBase, CategoryCreate
 from ..schemas import StickyNoteCreate, SuccessResponse, DialecticsIdResponse
 from ..services.sticky_note_service import StickyNoteService
+from ..services.settings_service import get_setting
 from ..dependencies import get_sticky_note_service
-from pydantic import BaseModel
 import markdown
 import json
-
-class CategoryCreate(BaseModel):
-    name: str
-    color: Optional[str] = None
 
 router = APIRouter(
     tags=["dialectics"]
 )
-
-from ..services.settings_service import get_setting
 
 @router.get("/", response_class=HTMLResponse)
 async def view_dialectics(
@@ -41,27 +35,29 @@ async def view_dialectics(
         "plugin_dashboard": plugin_dashboard
     })
 
+def get_localized_markdown_html(prefix: str, fallback_file: str, request: Request) -> str:
+    locale = request.cookies.get("locale", "en").upper()
+    path = INTERNAL_ROOT / f"{prefix}_{locale}.md"
+    if not path.exists():
+        path = INTERNAL_ROOT / fallback_file
+    if not path.exists() and prefix == "REFERENCE":
+        path = INTERNAL_ROOT / "REFERENCE_RU.md"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"{prefix} file not found")
+    try:
+        text = path.read_text(encoding="utf-8")
+        return markdown.markdown(text, extensions=['extra', 'sane_lists', 'tables'])
+    except Exception as e:
+        logger.error(f"Error reading {prefix}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/api/dialectics/guide", response_model=DialecticsGuideResponse)
 async def get_dialectics_guide(
     request: Request,
     user: Any = Depends(check_auth_dependency)
 ) -> Any:
     """Возвращает скомпилированное руководство по диалектике в формате HTML с учетом языка."""
-    locale = request.cookies.get("locale", "en").upper()
-    guide_path = INTERNAL_ROOT / f"DIALECTICS_GUIDE_{locale}.md"
-    
-    if not guide_path.exists():
-        guide_path = INTERNAL_ROOT / "DIALECTICS_GUIDE.md"
-        
-    if not guide_path.exists():
-        raise HTTPException(status_code=404, detail="Guide file not found")
-    try:
-        text = guide_path.read_text(encoding="utf-8")
-        html_content = markdown.markdown(text, extensions=['extra', 'sane_lists', 'tables'])
-        return {"html": html_content}
-    except Exception as e:
-        logger.error(f"Error reading guide: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"html": get_localized_markdown_html("DIALECTICS_GUIDE", "DIALECTICS_GUIDE.md", request)}
 
 @router.get("/api/dialectics/reference", response_model=DialecticsGuideResponse)
 async def get_dialectics_reference(
@@ -69,24 +65,7 @@ async def get_dialectics_reference(
     user: Any = Depends(check_auth_dependency)
 ) -> Any:
     """Возвращает справочник функций конспекта в формате HTML с учетом языка."""
-    locale = request.cookies.get("locale", "en").upper()
-    ref_path = INTERNAL_ROOT / f"REFERENCE_{locale}.md"
-    
-    if not ref_path.exists() and locale == "EN":
-        ref_path = INTERNAL_ROOT / "REFERENCE.md"
-        
-    if not ref_path.exists():
-        ref_path = INTERNAL_ROOT / "REFERENCE_RU.md"
-        
-    if not ref_path.exists():
-        raise HTTPException(status_code=404, detail="Reference file not found")
-    try:
-        text = ref_path.read_text(encoding="utf-8")
-        html_content = markdown.markdown(text, extensions=['extra', 'sane_lists', 'tables'])
-        return {"html": html_content}
-    except Exception as e:
-        logger.error(f"Error reading reference: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"html": get_localized_markdown_html("REFERENCE", "REFERENCE.md", request)}
 
 @router.post("/api/dialectics/save", response_model=DialecticsView)
 async def save_dialectics(

@@ -36,6 +36,10 @@ class DialecticsUpdate(BaseModel):
     sticker_color: Optional[str] = "#fff9c4"
     sticker_type: Optional[str] = "text"
 
+class CategoryCreate(BaseModel):
+    name: str
+    color: Optional[str] = None
+
 class DialecticsCategoryBase(BaseModel):
     id: int
     name: str
