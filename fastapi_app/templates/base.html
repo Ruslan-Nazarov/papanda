@@ -49,7 +49,7 @@
 
     <!-- Auto-shutdown mechanism: keeps a WebSocket open to tell the server the app is active -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize custom styled date pickers
             setTimeout(() => {
                 try {
@@ -71,7 +71,7 @@
                         allowInput: true,
                         time_24hr: true
                     });
-                } catch(e) { console.error("Flatpickr init error:", e); }
+                } catch (e) { console.error("Flatpickr init error:", e); }
             }, 100);
         });
 
@@ -90,12 +90,12 @@
             setTimeout(connect, 1000);
         })();
     </script>
-    
+
     <!-- I18n JavaScript Initialization -->
     <script>
         window.currentLocale = "{{ request.cookies.get('locale', 'en') }}";
         window.translations = {{ get_js_translations() | safe }};
-        window._ = function(key, fallback) {
+        window._ = function (key, fallback) {
             let keys = key.split('.');
             let current = window.translations;
             for (let k of keys) {
@@ -107,14 +107,14 @@
             }
             return typeof current === 'string' ? current : (fallback !== undefined ? fallback : key);
         };
-        
+
         async function switchLanguage(lang) {
             try {
                 localStorage.removeItem('dialectics_last_note_id'); // Clear last note on language switch
                 await fetch('/api/set-locale', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({locale: lang})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locale: lang })
                 });
                 window.location.reload();
             } catch (e) {
@@ -122,20 +122,23 @@
             }
         }
     </script>
-    
+
     {% if request.app.state.settings.demo_mode %}
-    <div id="demo-disclaimer-banner" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; width: 90%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; display: none; padding: 16px 20px; align-items: center; justify-content: space-between; gap: 16px;">
+    <div id="demo-disclaimer-banner"
+        style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; width: 90%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; display: none; padding: 16px 20px; align-items: center; justify-content: space-between; gap: 16px;">
         <div style="flex: 1; font-size: 13px; line-height: 1.5; text-align: left;">
             <span style="font-weight: 700; color: #f97316; margin-right: 4px;">{{ _('demo_banner.title') }}</span>
             {{ _('demo_banner.description') }}
-            <br><span style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: inline-block;">{{ _('demo_banner.ai_note') }}</span>
+            <br><span style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: inline-block;">{{
+                _('demo_banner.ai_note') }}</span>
         </div>
-        <button onclick="dismissDemoDisclaimer()" style="background: #ea580c; border: none; border-radius: 6px; padding: 8px 16px; color: white; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
+        <button onclick="dismissDemoDisclaimer()"
+            style="background: #ea580c; border: none; border-radius: 6px; padding: 8px 16px; color: white; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
             {{ _('demo_banner.button') }}
         </button>
     </div>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             if (!sessionStorage.getItem("demo_disclaimer_dismissed")) {
                 const banner = document.getElementById("demo-disclaimer-banner");
                 if (banner) {
@@ -152,6 +155,7 @@
         }
     </script>
     {% endif %}
+    {% include 'partials/analytics.html' ignore missing %}
 </body>
 
 </html>

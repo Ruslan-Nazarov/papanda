@@ -74,3 +74,6 @@ run_fastapi.py
 # Сборка PyInstaller
 build/
 dist/
+
+# Внешние счетчики аналитики
+fastapi_app/templates/partials/analytics.html
