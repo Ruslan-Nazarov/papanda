@@ -3,10 +3,10 @@
         <div class="footer-nav main-nav" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
             <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
                 <a href="/settings" class="footer-btn">⚙️ {{ _('dashboard.settings') }}</a>
-                <a href="https://www.youtube.com/playlist?list=PLcw81HMAarVIV8u5MSVgEhk8i5iS3VXwj" target="_blank" class="footer-btn">
+                <button type="button" class="footer-btn" onclick="openTutorialModal()">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="1.3em" height="1.3em" style="color: #ff0000; flex-shrink: 0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                     {{ _('dashboard.tutorial') }}
-                </a>
+                </button>
                 <button type="button" class="footer-btn" onclick="openAboutModal()">📖 {{ _('dashboard.about') }}</button>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="footer-version">
-            papanda version 0.6.8 (est. 21.11.2023; last update 26.06.2026)<br>
+            papanda version 0.6.9 (est. 21.11.2023; last update 27.06.2026)<br>
             <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" style="color: inherit; text-decoration: none; opacity: 0.8; font-size: 0.9em;">CC BY-NC 4.0 License</a>
         </div>
     </div>
@@ -132,4 +132,63 @@ function closeAboutModal() {
         document.getElementById('aboutModal').style.display = 'none';
     }
 }
+
+function openTutorialModal() {
+    if (window.ModalManager) {
+        window.ModalManager.open('tutorialModal');
+    } else {
+        document.getElementById('tutorialModal').style.display = 'flex';
+    }
+}
+
+function closeTutorialModal() {
+    if (window.ModalManager) {
+        window.ModalManager.close('tutorialModal');
+    } else {
+        document.getElementById('tutorialModal').style.display = 'none';
+    }
+}
 </script>
+
+<!-- Tutorial & Help Modal -->
+<div id="tutorialModal" class="modal">
+    <div class="modal-content" style="max-width: 520px; width: 92%;">
+        <div class="modal-header">
+            <h2>🎓 {{ _('dashboard.tutorial') }}</h2>
+            <button class="modal-close" onclick="closeTutorialModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px; padding: 24px;">
+            <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.showGuideModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--color-bg-white, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; color: inherit;">
+                <span style="font-size: 1.8rem;">📖</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.instructions') }}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Пошаговая инструкция по методу диалектического конспекта</div>
+                </div>
+            </button>
+
+            <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.showReferenceModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--color-bg-white, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; color: inherit;">
+                <span style="font-size: 1.8rem;">📚</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.reference') }}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Справочник по интерфейсу и функциям приложения</div>
+                </div>
+            </button>
+
+            <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.loadExample();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--color-bg-white, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; color: inherit;">
+                <span style="font-size: 1.8rem;">💡</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.example') }}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Загрузить демонстрационный готовый разбор проблемы</div>
+                </div>
+            </button>
+
+            <a href="https://www.youtube.com/playlist?list=PLcw81HMAarVIV8u5MSVgEhk8i5iS3VXwj" target="_blank" onclick="closeTutorialModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: rgba(255,0,0,0.04); border: 1px solid rgba(255,0,0,0.2); border-radius: 12px; text-decoration: none; transition: all 0.2s; color: inherit;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="2rem" height="2rem" style="color: #ff0000; flex-shrink: 0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                <div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">YouTube-плейлист</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Смотреть подробные видеоуроки по работе с системой</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>

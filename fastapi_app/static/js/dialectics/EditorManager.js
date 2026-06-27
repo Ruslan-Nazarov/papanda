@@ -57,6 +57,13 @@ export class EditorManager {
                 },
                 onSelectionUpdate: ({ editor }) => {
                     // Selection logic for bold button removed
+                },
+                onUpdate: ({ editor }) => {
+                    try {
+                        const current = JSON.parse(localStorage.getItem('papanda_editor_open_state') || '{}');
+                        current.content = editor.getHTML();
+                        localStorage.setItem('papanda_editor_open_state', JSON.stringify(current));
+                    } catch (e) {}
                 }
             });
             this.engine.logDebug("[EditorManager] TipTap initialized successfully.");

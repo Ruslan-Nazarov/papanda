@@ -4,7 +4,7 @@
     <div class="widget-header" id="articleParserDragHandle">
         <div class="widget-title">
             <span class="widget-icon">📄</span>
-            <span class="widget-title-text">{{ _('dialectics.article_parser') | default('Парсер статей') }}</span>
+            <span class="widget-title-text">{{ _('dialectics.article_parser') | default('Парсер статей', true) }}</span>
         </div>
         <div class="widget-controls">
             <button class="widget-btn-min" title="Свернуть" onclick="window.WidgetManager && window.WidgetManager.minimize('articleParserWidget')">_</button>

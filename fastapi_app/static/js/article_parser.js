@@ -180,6 +180,14 @@ function appendMessage(sender, text) {
     
     // Scroll to bottom
     chatHistory.scrollTop = chatHistory.scrollHeight;
+    saveArticleHistory();
+}
+
+function saveArticleHistory() {
+    const chatHist = document.getElementById('parserChatHistory');
+    const dictHist = document.getElementById('parserDictHistory');
+    if (chatHist) localStorage.setItem('papanda_article_chat_history', chatHist.innerHTML);
+    if (dictHist) localStorage.setItem('papanda_article_dict_history', dictHist.innerHTML);
 }
 
 function appendToDictionary(title, content) {
@@ -208,6 +216,7 @@ function appendToDictionary(title, content) {
     itemDiv.appendChild(contentDiv);
     
     dictHist.prepend(itemDiv); // Add to top
+    saveArticleHistory();
 }
 
 // Parse AI response for [CONCEPT: ...] blocks
@@ -298,6 +307,7 @@ window.sendParserMessage = async function() {
         input.disabled = false;
         document.getElementById('btnParserSend').disabled = false;
         input.focus();
+        saveArticleHistory();
     }
 };
 
@@ -311,6 +321,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 sendParserMessage();
             }
         });
+    }
+
+    const chatHist = document.getElementById('parserChatHistory');
+    const dictHist = document.getElementById('parserDictHistory');
+    const savedChat = localStorage.getItem('papanda_article_chat_history');
+    const savedDict = localStorage.getItem('papanda_article_dict_history');
+    if (chatHist && savedChat) {
+        chatHist.innerHTML = savedChat;
+        chatHist.scrollTop = chatHist.scrollHeight;
+    }
+    if (dictHist && savedDict) {
+        dictHist.innerHTML = savedDict;
     }
     
     // Draggable Widget Logic

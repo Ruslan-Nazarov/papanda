@@ -4,6 +4,12 @@
 import { customConfirm } from '../modal_controller.js';
 import katex from 'katex';
 
+window.DIALECTICS_HINTS = null;
+fetch('/api/ai/dialectics/hints')
+    .then(r => r.json())
+    .then(data => { window.DIALECTICS_HINTS = data; })
+    .catch(e => console.warn('Failed to load dialectics hints:', e));
+
 export const BlockManager = {
     renderMath(element) {
         const mathNodes = element.querySelectorAll('span[data-type="mathNode"]');
@@ -27,6 +33,10 @@ export const BlockManager = {
         if (divider) container.appendChild(divider);
 
         const getHint = (key, defaultVal) => {
+            const shortKey = key.replace('dialectics.hints.', '');
+            if (window.DIALECTICS_HINTS && window.DIALECTICS_HINTS[shortKey]) {
+                return window.DIALECTICS_HINTS[shortKey];
+            }
             if (typeof window._ === 'function') {
                 const trans = window._(key);
                 return trans !== key ? trans : defaultVal;

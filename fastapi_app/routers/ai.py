@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import Any, Optional
 import os
 import io
+import json
 from groq import AsyncGroq
 from pypdf import PdfReader
 
@@ -29,18 +30,52 @@ def get_groq_client() -> AsyncGroq:
 
 _prompt_cache: dict[str, str] = {}
 
+PROMPT_MAP = {
+    "base": "1 главный промпт.md",
+    "restore": "2 восстановление_промпт.md",
+    "what_is": "3 контекстный_промпт.md",
+    "formula": "4 формулы_промпт.md",
+    "article": "5 статьи_промпт.md",
+    "opposites": "6 противоположности_промпт.md",
+    "hint": "7 помощник_промпт.md"
+}
+
 def get_cached_prompt(filename: str) -> str:
     if filename not in _prompt_cache:
-        prompt_path = BASE_DIR / "prompts" / filename
+        prompts_dir = BASE_DIR / "prompts"
+        prompt_path = prompts_dir / filename
         if not prompt_path.exists():
-            logger.error(f"Prompt file not found at {prompt_path}")
-            raise HTTPException(status_code=500, detail=f"Prompt file {filename} not found.")
+            found = False
+            if prompts_dir.exists():
+                for p in prompts_dir.glob("*.md"):
+                    if p.name.strip() == filename.strip() or p.name.startswith(filename[:4]):
+                        prompt_path = p
+                        found = True
+                        break
+            if not found:
+                logger.error(f"Prompt file not found: {filename}")
+                raise HTTPException(status_code=500, detail=f"Prompt file {filename} not found.")
         try:
             _prompt_cache[filename] = prompt_path.read_text(encoding="utf-8")
         except Exception as e:
-            logger.error(f"Error reading prompt file: {e}")
+            logger.error(f"Error reading prompt file {filename}: {e}")
             raise HTTPException(status_code=500, detail="Error reading prompt file.")
     return _prompt_cache[filename]
+
+def get_bundled_prompt(target_key: str) -> str:
+    """
+    Семантическая сборка системного промпта из цепочки зависимостей (базовые + модульные промпты).
+    """
+    bundles = {
+        "opposites": ["base", "restore", "opposites"],
+        "formula": ["base", "restore", "what_is", "formula"],
+        "hint": ["base", "restore", "hint"],
+        "article": ["base", "restore", "what_is", "formula", "article"],
+        "what_is": ["base", "restore", "what_is"]
+    }
+    keys = bundles.get(target_key, [target_key])
+    texts = [get_cached_prompt(PROMPT_MAP.get(k, k)) for k in keys]
+    return "\n\n---\n\n".join(texts)
 
 @router.post("/dialectics/opposites")
 async def generate_opposites(
@@ -48,7 +83,7 @@ async def generate_opposites(
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    prompt_template = get_cached_prompt("opposites.md")
+    prompt_template = get_bundled_prompt("opposites")
     system_prompt = prompt_template.replace("{ВСТАВИТЬ ПРОЦЕСС}", request.process_a).replace("{INSERT PROCESS}", request.process_a)
 
     try:
@@ -72,7 +107,7 @@ async def parse_math_formula(
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    system_prompt = get_cached_prompt("parser.md")
+    system_prompt = get_bundled_prompt("formula")
     try:
         chat_completion = await client.chat.completions.create(
             messages=[
@@ -129,24 +164,9 @@ async def generate_math_from_voice(
             response_format="text",
             language="ru"
         )
-        transcribed_text = str(transcription).strip()
-        prompt = "You are an assistant that translates the audio dictation of a mathematical formula strictly into LaTeX format. Account for potential transcription typos. Output ONLY the LaTeX code, without surrounding quotes, without markdown blocks (```latex) and without any explanations."
-        chat_completion = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": f"Translate to LaTeX: {transcribed_text}"}
-            ],
-            model="llama-3.3-70b-versatile",
-            temperature=0.1,
-            max_tokens=512,
-        )
-        result = chat_completion.choices[0].message.content.strip()
-        if result.startswith("```latex"): result = result[8:]
-        if result.startswith("```"): result = result[3:]
-        if result.endswith("```"): result = result[:-3]
-        return {"latex": result.strip(), "transcribed_text": transcribed_text}
+        return {"text": transcription.strip()}
     except Exception as e:
-        logger.error(f"Error processing voice-math: {e}")
+        logger.error(f"Error calling Groq Whisper API: {e}")
         raise HTTPException(status_code=502, detail=str(e))
 
 @router.post("/dialectics/hint-step")
@@ -159,8 +179,9 @@ async def generate_hint_step(
     if request.step_id not in valid_steps:
         raise HTTPException(status_code=400, detail="Invalid step_id")
 
-    prompt_template = get_cached_prompt(f"dialectics_{request.step_id}.md")
-    system_prompt = prompt_template.replace("{GOAL}", request.goal_text).replace("{CONTEXT}", request.context_text)
+    step_num = request.step_id.replace("step", "")
+    prompt_template = get_bundled_prompt("hint")
+    system_prompt = prompt_template.replace("{GOAL}", request.goal_text).replace("{CONTEXT}", request.context_text).replace("{CURRENT_STEP}", step_num)
 
     try:
         chat_completion = await client.chat.completions.create(
@@ -184,7 +205,7 @@ async def process_article_parser(
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    prompt_template = get_cached_prompt("article_parser.md")
+    prompt_template = get_bundled_prompt("article")
     
     extracted_text = ""
     if file:
@@ -234,7 +255,7 @@ async def explain_concept(
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    system_prompt = get_cached_prompt("explain_concept.md")
+    system_prompt = get_bundled_prompt("what_is")
     try:
         chat_completion = await client.chat.completions.create(
             messages=[
@@ -249,3 +270,22 @@ async def explain_concept(
     except Exception as e:
         logger.error(f"Error calling Groq API for explain-concept: {e}")
         raise HTTPException(status_code=502, detail=f"Error generating explanation: {str(e)}")
+
+@router.get("/dialectics/hints")
+async def get_dialectics_hints():
+    prompts_dir = BASE_DIR / "prompts"
+    hints_file = prompts_dir / "8 алгоритм_составления_конспекта.json"
+    if not hints_file.exists():
+        for p in prompts_dir.glob("*.json"):
+            if "алгоритм_составления_конспекта" in p.name:
+                hints_file = p
+                break
+    if not hints_file.exists():
+        raise HTTPException(status_code=404, detail="Hints file not found")
+    try:
+        data = json.loads(hints_file.read_text(encoding="utf-8"))
+        return data
+    except Exception as e:
+        logger.error(f"Error reading hints file: {e}")
+        raise HTTPException(status_code=500, detail="Error reading hints file")
+

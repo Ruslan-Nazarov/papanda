@@ -3,7 +3,7 @@ import { DialecticsUI } from './ui_utils.js';
 import { BlockManager } from './BlockManager.js';
 import { CanvasManager } from './CanvasManager.js';
 
-export const NoteControllerMixin = {
+class NoteControllerClass {
     async saveGlobal(shouldClose = true, toastKey = "toast.dialectics_saved") {
         const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const html = this.editor.getHTML();
@@ -260,5 +260,9 @@ export const NoteControllerMixin = {
             window.location.href = '/';
         }
     }
+}
 
-};
+export const NoteControllerMixin = {};
+Object.getOwnPropertyNames(NoteControllerClass.prototype).forEach(key => {
+    if (key !== 'constructor') NoteControllerMixin[key] = NoteControllerClass.prototype[key];
+});

@@ -66,6 +66,8 @@ class WordService:
             if w:
                 w.meaning = meaning
                 w.ru = translations.get('ru', w.ru)
+                if 'it' in translations: w.it = translations['it']
+                if 'de' in translations: w.de = translations['de']
                 current_trans = dict(w.translations or {})
                 current_trans.update(translations)
                 w.translations = current_trans
@@ -74,6 +76,8 @@ class WordService:
                 w = models.WordStats(
                     word=eng, eng=eng, 
                     ru=translations.get('ru', ''),
+                    it=translations.get('it', ''),
+                    de=translations.get('de', ''),
                     meaning=meaning, 
                     translations=translations,
                     knowledge_stats={l: False for l in translations.keys()}

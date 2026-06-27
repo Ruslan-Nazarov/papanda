@@ -4,7 +4,7 @@
     <div class="widget-header" id="formulaParserDragHandle">
         <div class="widget-title">
             <span class="widget-icon">🧮</span>
-            <span class="widget-title-text">{{ _('dialectics.formula_parser') | default('Парсер формул') }}</span>
+            <span class="widget-title-text">{{ _('dialectics.formula_parser') | default('Парсер формул', true) }}</span>
         </div>
         <div class="widget-controls">
             <button class="widget-btn-min" title="Свернуть" onclick="window.WidgetManager && window.WidgetManager.minimize('formulaParserWidget')">_</button>

@@ -15568,51 +15568,51 @@ function it(e) {
 	}
 	return rt[t];
 }
-var D = {
+var at = {
 	math: {},
 	text: {}
 };
-function O(e, t, n, r, i, a) {
-	D[e][i] = {
+function D(e, t, n, r, i, a) {
+	at[e][i] = {
 		font: t,
 		group: n,
 		replace: r
-	}, a && r && (D[e][r] = D[e][i]);
+	}, a && r && (at[e][r] = at[e][i]);
 }
-var k = "math", A = "text", j = "main", M = "ams", at = "accent-token", N = "bin", ot = "close", st = "inner", P = "mathord", ct = "op-token", lt = "open", ut = "punct", F = "rel", dt = "spacing", I = "textord";
-O(k, j, F, "≡", "\\equiv", !0), O(k, j, F, "≺", "\\prec", !0), O(k, j, F, "≻", "\\succ", !0), O(k, j, F, "∼", "\\sim", !0), O(k, j, F, "⊥", "\\perp"), O(k, j, F, "⪯", "\\preceq", !0), O(k, j, F, "⪰", "\\succeq", !0), O(k, j, F, "≃", "\\simeq", !0), O(k, j, F, "∣", "\\mid", !0), O(k, j, F, "≪", "\\ll", !0), O(k, j, F, "≫", "\\gg", !0), O(k, j, F, "≍", "\\asymp", !0), O(k, j, F, "∥", "\\parallel"), O(k, j, F, "⋈", "\\bowtie", !0), O(k, j, F, "⌣", "\\smile", !0), O(k, j, F, "⊑", "\\sqsubseteq", !0), O(k, j, F, "⊒", "\\sqsupseteq", !0), O(k, j, F, "≐", "\\doteq", !0), O(k, j, F, "⌢", "\\frown", !0), O(k, j, F, "∋", "\\ni", !0), O(k, j, F, "∝", "\\propto", !0), O(k, j, F, "⊢", "\\vdash", !0), O(k, j, F, "⊣", "\\dashv", !0), O(k, j, F, "∋", "\\owns"), O(k, j, ut, ".", "\\ldotp"), O(k, j, ut, "⋅", "\\cdotp"), O(k, j, ut, "⋅", "·"), O(A, j, I, "⋅", "·"), O(k, j, I, "#", "\\#"), O(A, j, I, "#", "\\#"), O(k, j, I, "&", "\\&"), O(A, j, I, "&", "\\&"), O(k, j, I, "ℵ", "\\aleph", !0), O(k, j, I, "∀", "\\forall", !0), O(k, j, I, "ℏ", "\\hbar", !0), O(k, j, I, "∃", "\\exists", !0), O(k, j, I, "∇", "\\nabla", !0), O(k, j, I, "♭", "\\flat", !0), O(k, j, I, "ℓ", "\\ell", !0), O(k, j, I, "♮", "\\natural", !0), O(k, j, I, "♣", "\\clubsuit", !0), O(k, j, I, "℘", "\\wp", !0), O(k, j, I, "♯", "\\sharp", !0), O(k, j, I, "♢", "\\diamondsuit", !0), O(k, j, I, "ℜ", "\\Re", !0), O(k, j, I, "♡", "\\heartsuit", !0), O(k, j, I, "ℑ", "\\Im", !0), O(k, j, I, "♠", "\\spadesuit", !0), O(k, j, I, "§", "\\S", !0), O(A, j, I, "§", "\\S"), O(k, j, I, "¶", "\\P", !0), O(A, j, I, "¶", "\\P"), O(k, j, I, "†", "\\dag"), O(A, j, I, "†", "\\dag"), O(A, j, I, "†", "\\textdagger"), O(k, j, I, "‡", "\\ddag"), O(A, j, I, "‡", "\\ddag"), O(A, j, I, "‡", "\\textdaggerdbl"), O(k, j, ot, "⎱", "\\rmoustache", !0), O(k, j, lt, "⎰", "\\lmoustache", !0), O(k, j, ot, "⟯", "\\rgroup", !0), O(k, j, lt, "⟮", "\\lgroup", !0), O(k, j, N, "∓", "\\mp", !0), O(k, j, N, "⊖", "\\ominus", !0), O(k, j, N, "⊎", "\\uplus", !0), O(k, j, N, "⊓", "\\sqcap", !0), O(k, j, N, "∗", "\\ast"), O(k, j, N, "⊔", "\\sqcup", !0), O(k, j, N, "◯", "\\bigcirc", !0), O(k, j, N, "∙", "\\bullet", !0), O(k, j, N, "‡", "\\ddagger"), O(k, j, N, "≀", "\\wr", !0), O(k, j, N, "⨿", "\\amalg"), O(k, j, N, "&", "\\And"), O(k, j, F, "⟵", "\\longleftarrow", !0), O(k, j, F, "⇐", "\\Leftarrow", !0), O(k, j, F, "⟸", "\\Longleftarrow", !0), O(k, j, F, "⟶", "\\longrightarrow", !0), O(k, j, F, "⇒", "\\Rightarrow", !0), O(k, j, F, "⟹", "\\Longrightarrow", !0), O(k, j, F, "↔", "\\leftrightarrow", !0), O(k, j, F, "⟷", "\\longleftrightarrow", !0), O(k, j, F, "⇔", "\\Leftrightarrow", !0), O(k, j, F, "⟺", "\\Longleftrightarrow", !0), O(k, j, F, "↦", "\\mapsto", !0), O(k, j, F, "⟼", "\\longmapsto", !0), O(k, j, F, "↗", "\\nearrow", !0), O(k, j, F, "↩", "\\hookleftarrow", !0), O(k, j, F, "↪", "\\hookrightarrow", !0), O(k, j, F, "↘", "\\searrow", !0), O(k, j, F, "↼", "\\leftharpoonup", !0), O(k, j, F, "⇀", "\\rightharpoonup", !0), O(k, j, F, "↙", "\\swarrow", !0), O(k, j, F, "↽", "\\leftharpoondown", !0), O(k, j, F, "⇁", "\\rightharpoondown", !0), O(k, j, F, "↖", "\\nwarrow", !0), O(k, j, F, "⇌", "\\rightleftharpoons", !0), O(k, M, F, "≮", "\\nless", !0), O(k, M, F, "", "\\@nleqslant"), O(k, M, F, "", "\\@nleqq"), O(k, M, F, "⪇", "\\lneq", !0), O(k, M, F, "≨", "\\lneqq", !0), O(k, M, F, "", "\\@lvertneqq"), O(k, M, F, "⋦", "\\lnsim", !0), O(k, M, F, "⪉", "\\lnapprox", !0), O(k, M, F, "⊀", "\\nprec", !0), O(k, M, F, "⋠", "\\npreceq", !0), O(k, M, F, "⋨", "\\precnsim", !0), O(k, M, F, "⪹", "\\precnapprox", !0), O(k, M, F, "≁", "\\nsim", !0), O(k, M, F, "", "\\@nshortmid"), O(k, M, F, "∤", "\\nmid", !0), O(k, M, F, "⊬", "\\nvdash", !0), O(k, M, F, "⊭", "\\nvDash", !0), O(k, M, F, "⋪", "\\ntriangleleft"), O(k, M, F, "⋬", "\\ntrianglelefteq", !0), O(k, M, F, "⊊", "\\subsetneq", !0), O(k, M, F, "", "\\@varsubsetneq"), O(k, M, F, "⫋", "\\subsetneqq", !0), O(k, M, F, "", "\\@varsubsetneqq"), O(k, M, F, "≯", "\\ngtr", !0), O(k, M, F, "", "\\@ngeqslant"), O(k, M, F, "", "\\@ngeqq"), O(k, M, F, "⪈", "\\gneq", !0), O(k, M, F, "≩", "\\gneqq", !0), O(k, M, F, "", "\\@gvertneqq"), O(k, M, F, "⋧", "\\gnsim", !0), O(k, M, F, "⪊", "\\gnapprox", !0), O(k, M, F, "⊁", "\\nsucc", !0), O(k, M, F, "⋡", "\\nsucceq", !0), O(k, M, F, "⋩", "\\succnsim", !0), O(k, M, F, "⪺", "\\succnapprox", !0), O(k, M, F, "≆", "\\ncong", !0), O(k, M, F, "", "\\@nshortparallel"), O(k, M, F, "∦", "\\nparallel", !0), O(k, M, F, "⊯", "\\nVDash", !0), O(k, M, F, "⋫", "\\ntriangleright"), O(k, M, F, "⋭", "\\ntrianglerighteq", !0), O(k, M, F, "", "\\@nsupseteqq"), O(k, M, F, "⊋", "\\supsetneq", !0), O(k, M, F, "", "\\@varsupsetneq"), O(k, M, F, "⫌", "\\supsetneqq", !0), O(k, M, F, "", "\\@varsupsetneqq"), O(k, M, F, "⊮", "\\nVdash", !0), O(k, M, F, "⪵", "\\precneqq", !0), O(k, M, F, "⪶", "\\succneqq", !0), O(k, M, F, "", "\\@nsubseteqq"), O(k, M, N, "⊴", "\\unlhd"), O(k, M, N, "⊵", "\\unrhd"), O(k, M, F, "↚", "\\nleftarrow", !0), O(k, M, F, "↛", "\\nrightarrow", !0), O(k, M, F, "⇍", "\\nLeftarrow", !0), O(k, M, F, "⇏", "\\nRightarrow", !0), O(k, M, F, "↮", "\\nleftrightarrow", !0), O(k, M, F, "⇎", "\\nLeftrightarrow", !0), O(k, M, F, "△", "\\vartriangle"), O(k, M, I, "ℏ", "\\hslash"), O(k, M, I, "▽", "\\triangledown"), O(k, M, I, "◊", "\\lozenge"), O(k, M, I, "Ⓢ", "\\circledS"), O(k, M, I, "®", "\\circledR"), O(A, M, I, "®", "\\circledR"), O(k, M, I, "∡", "\\measuredangle", !0), O(k, M, I, "∄", "\\nexists"), O(k, M, I, "℧", "\\mho"), O(k, M, I, "Ⅎ", "\\Finv", !0), O(k, M, I, "⅁", "\\Game", !0), O(k, M, I, "‵", "\\backprime"), O(k, M, I, "▲", "\\blacktriangle"), O(k, M, I, "▼", "\\blacktriangledown"), O(k, M, I, "■", "\\blacksquare"), O(k, M, I, "⧫", "\\blacklozenge"), O(k, M, I, "★", "\\bigstar"), O(k, M, I, "∢", "\\sphericalangle", !0), O(k, M, I, "∁", "\\complement", !0), O(k, M, I, "ð", "\\eth", !0), O(A, j, I, "ð", "ð"), O(k, M, I, "╱", "\\diagup"), O(k, M, I, "╲", "\\diagdown"), O(k, M, I, "□", "\\square"), O(k, M, I, "□", "\\Box"), O(k, M, I, "◊", "\\Diamond"), O(k, M, I, "¥", "\\yen", !0), O(A, M, I, "¥", "\\yen", !0), O(k, M, I, "✓", "\\checkmark", !0), O(A, M, I, "✓", "\\checkmark"), O(k, M, I, "ℶ", "\\beth", !0), O(k, M, I, "ℸ", "\\daleth", !0), O(k, M, I, "ℷ", "\\gimel", !0), O(k, M, I, "ϝ", "\\digamma", !0), O(k, M, I, "ϰ", "\\varkappa"), O(k, M, lt, "┌", "\\@ulcorner", !0), O(k, M, ot, "┐", "\\@urcorner", !0), O(k, M, lt, "└", "\\@llcorner", !0), O(k, M, ot, "┘", "\\@lrcorner", !0), O(k, M, F, "≦", "\\leqq", !0), O(k, M, F, "⩽", "\\leqslant", !0), O(k, M, F, "⪕", "\\eqslantless", !0), O(k, M, F, "≲", "\\lesssim", !0), O(k, M, F, "⪅", "\\lessapprox", !0), O(k, M, F, "≊", "\\approxeq", !0), O(k, M, N, "⋖", "\\lessdot"), O(k, M, F, "⋘", "\\lll", !0), O(k, M, F, "≶", "\\lessgtr", !0), O(k, M, F, "⋚", "\\lesseqgtr", !0), O(k, M, F, "⪋", "\\lesseqqgtr", !0), O(k, M, F, "≑", "\\doteqdot"), O(k, M, F, "≓", "\\risingdotseq", !0), O(k, M, F, "≒", "\\fallingdotseq", !0), O(k, M, F, "∽", "\\backsim", !0), O(k, M, F, "⋍", "\\backsimeq", !0), O(k, M, F, "⫅", "\\subseteqq", !0), O(k, M, F, "⋐", "\\Subset", !0), O(k, M, F, "⊏", "\\sqsubset", !0), O(k, M, F, "≼", "\\preccurlyeq", !0), O(k, M, F, "⋞", "\\curlyeqprec", !0), O(k, M, F, "≾", "\\precsim", !0), O(k, M, F, "⪷", "\\precapprox", !0), O(k, M, F, "⊲", "\\vartriangleleft"), O(k, M, F, "⊴", "\\trianglelefteq"), O(k, M, F, "⊨", "\\vDash", !0), O(k, M, F, "⊪", "\\Vvdash", !0), O(k, M, F, "⌣", "\\smallsmile"), O(k, M, F, "⌢", "\\smallfrown"), O(k, M, F, "≏", "\\bumpeq", !0), O(k, M, F, "≎", "\\Bumpeq", !0), O(k, M, F, "≧", "\\geqq", !0), O(k, M, F, "⩾", "\\geqslant", !0), O(k, M, F, "⪖", "\\eqslantgtr", !0), O(k, M, F, "≳", "\\gtrsim", !0), O(k, M, F, "⪆", "\\gtrapprox", !0), O(k, M, N, "⋗", "\\gtrdot"), O(k, M, F, "⋙", "\\ggg", !0), O(k, M, F, "≷", "\\gtrless", !0), O(k, M, F, "⋛", "\\gtreqless", !0), O(k, M, F, "⪌", "\\gtreqqless", !0), O(k, M, F, "≖", "\\eqcirc", !0), O(k, M, F, "≗", "\\circeq", !0), O(k, M, F, "≜", "\\triangleq", !0), O(k, M, F, "∼", "\\thicksim"), O(k, M, F, "≈", "\\thickapprox"), O(k, M, F, "⫆", "\\supseteqq", !0), O(k, M, F, "⋑", "\\Supset", !0), O(k, M, F, "⊐", "\\sqsupset", !0), O(k, M, F, "≽", "\\succcurlyeq", !0), O(k, M, F, "⋟", "\\curlyeqsucc", !0), O(k, M, F, "≿", "\\succsim", !0), O(k, M, F, "⪸", "\\succapprox", !0), O(k, M, F, "⊳", "\\vartriangleright"), O(k, M, F, "⊵", "\\trianglerighteq"), O(k, M, F, "⊩", "\\Vdash", !0), O(k, M, F, "∣", "\\shortmid"), O(k, M, F, "∥", "\\shortparallel"), O(k, M, F, "≬", "\\between", !0), O(k, M, F, "⋔", "\\pitchfork", !0), O(k, M, F, "∝", "\\varpropto"), O(k, M, F, "◀", "\\blacktriangleleft"), O(k, M, F, "∴", "\\therefore", !0), O(k, M, F, "∍", "\\backepsilon"), O(k, M, F, "▶", "\\blacktriangleright"), O(k, M, F, "∵", "\\because", !0), O(k, M, F, "⋘", "\\llless"), O(k, M, F, "⋙", "\\gggtr"), O(k, M, N, "⊲", "\\lhd"), O(k, M, N, "⊳", "\\rhd"), O(k, M, F, "≂", "\\eqsim", !0), O(k, j, F, "⋈", "\\Join"), O(k, M, F, "≑", "\\Doteq", !0), O(k, M, N, "∔", "\\dotplus", !0), O(k, M, N, "∖", "\\smallsetminus"), O(k, M, N, "⋒", "\\Cap", !0), O(k, M, N, "⋓", "\\Cup", !0), O(k, M, N, "⩞", "\\doublebarwedge", !0), O(k, M, N, "⊟", "\\boxminus", !0), O(k, M, N, "⊞", "\\boxplus", !0), O(k, M, N, "⋇", "\\divideontimes", !0), O(k, M, N, "⋉", "\\ltimes", !0), O(k, M, N, "⋊", "\\rtimes", !0), O(k, M, N, "⋋", "\\leftthreetimes", !0), O(k, M, N, "⋌", "\\rightthreetimes", !0), O(k, M, N, "⋏", "\\curlywedge", !0), O(k, M, N, "⋎", "\\curlyvee", !0), O(k, M, N, "⊝", "\\circleddash", !0), O(k, M, N, "⊛", "\\circledast", !0), O(k, M, N, "⋅", "\\centerdot"), O(k, M, N, "⊺", "\\intercal", !0), O(k, M, N, "⋒", "\\doublecap"), O(k, M, N, "⋓", "\\doublecup"), O(k, M, N, "⊠", "\\boxtimes", !0), O(k, M, F, "⇢", "\\dashrightarrow", !0), O(k, M, F, "⇠", "\\dashleftarrow", !0), O(k, M, F, "⇇", "\\leftleftarrows", !0), O(k, M, F, "⇆", "\\leftrightarrows", !0), O(k, M, F, "⇚", "\\Lleftarrow", !0), O(k, M, F, "↞", "\\twoheadleftarrow", !0), O(k, M, F, "↢", "\\leftarrowtail", !0), O(k, M, F, "↫", "\\looparrowleft", !0), O(k, M, F, "⇋", "\\leftrightharpoons", !0), O(k, M, F, "↶", "\\curvearrowleft", !0), O(k, M, F, "↺", "\\circlearrowleft", !0), O(k, M, F, "↰", "\\Lsh", !0), O(k, M, F, "⇈", "\\upuparrows", !0), O(k, M, F, "↿", "\\upharpoonleft", !0), O(k, M, F, "⇃", "\\downharpoonleft", !0), O(k, j, F, "⊶", "\\origof", !0), O(k, j, F, "⊷", "\\imageof", !0), O(k, M, F, "⊸", "\\multimap", !0), O(k, M, F, "↭", "\\leftrightsquigarrow", !0), O(k, M, F, "⇉", "\\rightrightarrows", !0), O(k, M, F, "⇄", "\\rightleftarrows", !0), O(k, M, F, "↠", "\\twoheadrightarrow", !0), O(k, M, F, "↣", "\\rightarrowtail", !0), O(k, M, F, "↬", "\\looparrowright", !0), O(k, M, F, "↷", "\\curvearrowright", !0), O(k, M, F, "↻", "\\circlearrowright", !0), O(k, M, F, "↱", "\\Rsh", !0), O(k, M, F, "⇊", "\\downdownarrows", !0), O(k, M, F, "↾", "\\upharpoonright", !0), O(k, M, F, "⇂", "\\downharpoonright", !0), O(k, M, F, "⇝", "\\rightsquigarrow", !0), O(k, M, F, "⇝", "\\leadsto"), O(k, M, F, "⇛", "\\Rrightarrow", !0), O(k, M, F, "↾", "\\restriction"), O(k, j, I, "‘", "`"), O(k, j, I, "$", "\\$"), O(A, j, I, "$", "\\$"), O(A, j, I, "$", "\\textdollar"), O(k, j, I, "%", "\\%"), O(A, j, I, "%", "\\%"), O(k, j, I, "_", "\\_"), O(A, j, I, "_", "\\_"), O(A, j, I, "_", "\\textunderscore"), O(k, j, I, "∠", "\\angle", !0), O(k, j, I, "∞", "\\infty", !0), O(k, j, I, "′", "\\prime"), O(k, j, I, "△", "\\triangle"), O(k, j, I, "Γ", "\\Gamma", !0), O(k, j, I, "Δ", "\\Delta", !0), O(k, j, I, "Θ", "\\Theta", !0), O(k, j, I, "Λ", "\\Lambda", !0), O(k, j, I, "Ξ", "\\Xi", !0), O(k, j, I, "Π", "\\Pi", !0), O(k, j, I, "Σ", "\\Sigma", !0), O(k, j, I, "Υ", "\\Upsilon", !0), O(k, j, I, "Φ", "\\Phi", !0), O(k, j, I, "Ψ", "\\Psi", !0), O(k, j, I, "Ω", "\\Omega", !0), O(k, j, I, "A", "Α"), O(k, j, I, "B", "Β"), O(k, j, I, "E", "Ε"), O(k, j, I, "Z", "Ζ"), O(k, j, I, "H", "Η"), O(k, j, I, "I", "Ι"), O(k, j, I, "K", "Κ"), O(k, j, I, "M", "Μ"), O(k, j, I, "N", "Ν"), O(k, j, I, "O", "Ο"), O(k, j, I, "P", "Ρ"), O(k, j, I, "T", "Τ"), O(k, j, I, "X", "Χ"), O(k, j, I, "¬", "\\neg", !0), O(k, j, I, "¬", "\\lnot"), O(k, j, I, "⊤", "\\top"), O(k, j, I, "⊥", "\\bot"), O(k, j, I, "∅", "\\emptyset"), O(k, M, I, "∅", "\\varnothing"), O(k, j, P, "α", "\\alpha", !0), O(k, j, P, "β", "\\beta", !0), O(k, j, P, "γ", "\\gamma", !0), O(k, j, P, "δ", "\\delta", !0), O(k, j, P, "ϵ", "\\epsilon", !0), O(k, j, P, "ζ", "\\zeta", !0), O(k, j, P, "η", "\\eta", !0), O(k, j, P, "θ", "\\theta", !0), O(k, j, P, "ι", "\\iota", !0), O(k, j, P, "κ", "\\kappa", !0), O(k, j, P, "λ", "\\lambda", !0), O(k, j, P, "μ", "\\mu", !0), O(k, j, P, "ν", "\\nu", !0), O(k, j, P, "ξ", "\\xi", !0), O(k, j, P, "ο", "\\omicron", !0), O(k, j, P, "π", "\\pi", !0), O(k, j, P, "ρ", "\\rho", !0), O(k, j, P, "σ", "\\sigma", !0), O(k, j, P, "τ", "\\tau", !0), O(k, j, P, "υ", "\\upsilon", !0), O(k, j, P, "ϕ", "\\phi", !0), O(k, j, P, "χ", "\\chi", !0), O(k, j, P, "ψ", "\\psi", !0), O(k, j, P, "ω", "\\omega", !0), O(k, j, P, "ε", "\\varepsilon", !0), O(k, j, P, "ϑ", "\\vartheta", !0), O(k, j, P, "ϖ", "\\varpi", !0), O(k, j, P, "ϱ", "\\varrho", !0), O(k, j, P, "ς", "\\varsigma", !0), O(k, j, P, "φ", "\\varphi", !0), O(k, j, N, "∗", "*", !0), O(k, j, N, "+", "+"), O(k, j, N, "−", "-", !0), O(k, j, N, "⋅", "\\cdot", !0), O(k, j, N, "∘", "\\circ", !0), O(k, j, N, "÷", "\\div", !0), O(k, j, N, "±", "\\pm", !0), O(k, j, N, "×", "\\times", !0), O(k, j, N, "∩", "\\cap", !0), O(k, j, N, "∪", "\\cup", !0), O(k, j, N, "∖", "\\setminus", !0), O(k, j, N, "∧", "\\land"), O(k, j, N, "∨", "\\lor"), O(k, j, N, "∧", "\\wedge", !0), O(k, j, N, "∨", "\\vee", !0), O(k, j, I, "√", "\\surd"), O(k, j, lt, "⟨", "\\langle", !0), O(k, j, lt, "∣", "\\lvert"), O(k, j, lt, "∥", "\\lVert"), O(k, j, ot, "?", "?"), O(k, j, ot, "!", "!"), O(k, j, ot, "⟩", "\\rangle", !0), O(k, j, ot, "∣", "\\rvert"), O(k, j, ot, "∥", "\\rVert"), O(k, j, F, "=", "="), O(k, j, F, ":", ":"), O(k, j, F, "≈", "\\approx", !0), O(k, j, F, "≅", "\\cong", !0), O(k, j, F, "≥", "\\ge"), O(k, j, F, "≥", "\\geq", !0), O(k, j, F, "←", "\\gets"), O(k, j, F, ">", "\\gt", !0), O(k, j, F, "∈", "\\in", !0), O(k, j, F, "", "\\@not"), O(k, j, F, "⊂", "\\subset", !0), O(k, j, F, "⊃", "\\supset", !0), O(k, j, F, "⊆", "\\subseteq", !0), O(k, j, F, "⊇", "\\supseteq", !0), O(k, M, F, "⊈", "\\nsubseteq", !0), O(k, M, F, "⊉", "\\nsupseteq", !0), O(k, j, F, "⊨", "\\models"), O(k, j, F, "←", "\\leftarrow", !0), O(k, j, F, "≤", "\\le"), O(k, j, F, "≤", "\\leq", !0), O(k, j, F, "<", "\\lt", !0), O(k, j, F, "→", "\\rightarrow", !0), O(k, j, F, "→", "\\to"), O(k, M, F, "≱", "\\ngeq", !0), O(k, M, F, "≰", "\\nleq", !0), O(k, j, dt, "\xA0", "\\ "), O(k, j, dt, "\xA0", "\\space"), O(k, j, dt, "\xA0", "\\nobreakspace"), O(A, j, dt, "\xA0", "\\ "), O(A, j, dt, "\xA0", " "), O(A, j, dt, "\xA0", "\\space"), O(A, j, dt, "\xA0", "\\nobreakspace"), O(k, j, dt, "", "\\nobreak"), O(k, j, dt, "", "\\allowbreak"), O(k, j, ut, ",", ","), O(k, j, ut, ";", ";"), O(k, M, N, "⊼", "\\barwedge", !0), O(k, M, N, "⊻", "\\veebar", !0), O(k, j, N, "⊙", "\\odot", !0), O(k, j, N, "⊕", "\\oplus", !0), O(k, j, N, "⊗", "\\otimes", !0), O(k, j, I, "∂", "\\partial", !0), O(k, j, N, "⊘", "\\oslash", !0), O(k, M, N, "⊚", "\\circledcirc", !0), O(k, M, N, "⊡", "\\boxdot", !0), O(k, j, N, "△", "\\bigtriangleup"), O(k, j, N, "▽", "\\bigtriangledown"), O(k, j, N, "†", "\\dagger"), O(k, j, N, "⋄", "\\diamond"), O(k, j, N, "⋆", "\\star"), O(k, j, N, "◃", "\\triangleleft"), O(k, j, N, "▹", "\\triangleright"), O(k, j, lt, "{", "\\{"), O(A, j, I, "{", "\\{"), O(A, j, I, "{", "\\textbraceleft"), O(k, j, ot, "}", "\\}"), O(A, j, I, "}", "\\}"), O(A, j, I, "}", "\\textbraceright"), O(k, j, lt, "{", "\\lbrace"), O(k, j, ot, "}", "\\rbrace"), O(k, j, lt, "[", "\\lbrack", !0), O(A, j, I, "[", "\\lbrack", !0), O(k, j, ot, "]", "\\rbrack", !0), O(A, j, I, "]", "\\rbrack", !0), O(k, j, lt, "(", "\\lparen", !0), O(k, j, ot, ")", "\\rparen", !0), O(A, j, I, "<", "\\textless", !0), O(A, j, I, ">", "\\textgreater", !0), O(k, j, lt, "⌊", "\\lfloor", !0), O(k, j, ot, "⌋", "\\rfloor", !0), O(k, j, lt, "⌈", "\\lceil", !0), O(k, j, ot, "⌉", "\\rceil", !0), O(k, j, I, "\\", "\\backslash"), O(k, j, I, "∣", "|"), O(k, j, I, "∣", "\\vert"), O(A, j, I, "|", "\\textbar", !0), O(k, j, I, "∥", "\\|"), O(k, j, I, "∥", "\\Vert"), O(A, j, I, "∥", "\\textbardbl"), O(A, j, I, "~", "\\textasciitilde"), O(A, j, I, "\\", "\\textbackslash"), O(A, j, I, "^", "\\textasciicircum"), O(k, j, F, "↑", "\\uparrow", !0), O(k, j, F, "⇑", "\\Uparrow", !0), O(k, j, F, "↓", "\\downarrow", !0), O(k, j, F, "⇓", "\\Downarrow", !0), O(k, j, F, "↕", "\\updownarrow", !0), O(k, j, F, "⇕", "\\Updownarrow", !0), O(k, j, ct, "∐", "\\coprod"), O(k, j, ct, "⋁", "\\bigvee"), O(k, j, ct, "⋀", "\\bigwedge"), O(k, j, ct, "⨄", "\\biguplus"), O(k, j, ct, "⋂", "\\bigcap"), O(k, j, ct, "⋃", "\\bigcup"), O(k, j, ct, "∫", "\\int"), O(k, j, ct, "∫", "\\intop"), O(k, j, ct, "∬", "\\iint"), O(k, j, ct, "∭", "\\iiint"), O(k, j, ct, "∏", "\\prod"), O(k, j, ct, "∑", "\\sum"), O(k, j, ct, "⨂", "\\bigotimes"), O(k, j, ct, "⨁", "\\bigoplus"), O(k, j, ct, "⨀", "\\bigodot"), O(k, j, ct, "∮", "\\oint"), O(k, j, ct, "∯", "\\oiint"), O(k, j, ct, "∰", "\\oiiint"), O(k, j, ct, "⨆", "\\bigsqcup"), O(k, j, ct, "∫", "\\smallint"), O(A, j, st, "…", "\\textellipsis"), O(k, j, st, "…", "\\mathellipsis"), O(A, j, st, "…", "\\ldots", !0), O(k, j, st, "…", "\\ldots", !0), O(k, j, st, "⋯", "\\@cdots", !0), O(k, j, st, "⋱", "\\ddots", !0), O(k, j, I, "⋮", "\\varvdots"), O(A, j, I, "⋮", "\\varvdots"), O(k, j, at, "ˊ", "\\acute"), O(k, j, at, "ˋ", "\\grave"), O(k, j, at, "¨", "\\ddot"), O(k, j, at, "~", "\\tilde"), O(k, j, at, "ˉ", "\\bar"), O(k, j, at, "˘", "\\breve"), O(k, j, at, "ˇ", "\\check"), O(k, j, at, "^", "\\hat"), O(k, j, at, "⃗", "\\vec"), O(k, j, at, "˙", "\\dot"), O(k, j, at, "˚", "\\mathring"), O(k, j, P, "", "\\@imath"), O(k, j, P, "", "\\@jmath"), O(k, j, I, "ı", "ı"), O(k, j, I, "ȷ", "ȷ"), O(A, j, I, "ı", "\\i", !0), O(A, j, I, "ȷ", "\\j", !0), O(A, j, I, "ß", "\\ss", !0), O(A, j, I, "æ", "\\ae", !0), O(A, j, I, "œ", "\\oe", !0), O(A, j, I, "ø", "\\o", !0), O(A, j, I, "Æ", "\\AE", !0), O(A, j, I, "Œ", "\\OE", !0), O(A, j, I, "Ø", "\\O", !0), O(A, j, at, "ˊ", "\\'"), O(A, j, at, "ˋ", "\\`"), O(A, j, at, "ˆ", "\\^"), O(A, j, at, "˜", "\\~"), O(A, j, at, "ˉ", "\\="), O(A, j, at, "˘", "\\u"), O(A, j, at, "˙", "\\."), O(A, j, at, "¸", "\\c"), O(A, j, at, "˚", "\\r"), O(A, j, at, "ˇ", "\\v"), O(A, j, at, "¨", "\\\""), O(A, j, at, "˝", "\\H"), O(A, j, at, "◯", "\\textcircled");
+var O = "math", k = "text", A = "main", j = "ams", M = "accent-token", N = "bin", ot = "close", st = "inner", P = "mathord", ct = "op-token", lt = "open", ut = "punct", F = "rel", dt = "spacing", I = "textord";
+D(O, A, F, "≡", "\\equiv", !0), D(O, A, F, "≺", "\\prec", !0), D(O, A, F, "≻", "\\succ", !0), D(O, A, F, "∼", "\\sim", !0), D(O, A, F, "⊥", "\\perp"), D(O, A, F, "⪯", "\\preceq", !0), D(O, A, F, "⪰", "\\succeq", !0), D(O, A, F, "≃", "\\simeq", !0), D(O, A, F, "∣", "\\mid", !0), D(O, A, F, "≪", "\\ll", !0), D(O, A, F, "≫", "\\gg", !0), D(O, A, F, "≍", "\\asymp", !0), D(O, A, F, "∥", "\\parallel"), D(O, A, F, "⋈", "\\bowtie", !0), D(O, A, F, "⌣", "\\smile", !0), D(O, A, F, "⊑", "\\sqsubseteq", !0), D(O, A, F, "⊒", "\\sqsupseteq", !0), D(O, A, F, "≐", "\\doteq", !0), D(O, A, F, "⌢", "\\frown", !0), D(O, A, F, "∋", "\\ni", !0), D(O, A, F, "∝", "\\propto", !0), D(O, A, F, "⊢", "\\vdash", !0), D(O, A, F, "⊣", "\\dashv", !0), D(O, A, F, "∋", "\\owns"), D(O, A, ut, ".", "\\ldotp"), D(O, A, ut, "⋅", "\\cdotp"), D(O, A, ut, "⋅", "·"), D(k, A, I, "⋅", "·"), D(O, A, I, "#", "\\#"), D(k, A, I, "#", "\\#"), D(O, A, I, "&", "\\&"), D(k, A, I, "&", "\\&"), D(O, A, I, "ℵ", "\\aleph", !0), D(O, A, I, "∀", "\\forall", !0), D(O, A, I, "ℏ", "\\hbar", !0), D(O, A, I, "∃", "\\exists", !0), D(O, A, I, "∇", "\\nabla", !0), D(O, A, I, "♭", "\\flat", !0), D(O, A, I, "ℓ", "\\ell", !0), D(O, A, I, "♮", "\\natural", !0), D(O, A, I, "♣", "\\clubsuit", !0), D(O, A, I, "℘", "\\wp", !0), D(O, A, I, "♯", "\\sharp", !0), D(O, A, I, "♢", "\\diamondsuit", !0), D(O, A, I, "ℜ", "\\Re", !0), D(O, A, I, "♡", "\\heartsuit", !0), D(O, A, I, "ℑ", "\\Im", !0), D(O, A, I, "♠", "\\spadesuit", !0), D(O, A, I, "§", "\\S", !0), D(k, A, I, "§", "\\S"), D(O, A, I, "¶", "\\P", !0), D(k, A, I, "¶", "\\P"), D(O, A, I, "†", "\\dag"), D(k, A, I, "†", "\\dag"), D(k, A, I, "†", "\\textdagger"), D(O, A, I, "‡", "\\ddag"), D(k, A, I, "‡", "\\ddag"), D(k, A, I, "‡", "\\textdaggerdbl"), D(O, A, ot, "⎱", "\\rmoustache", !0), D(O, A, lt, "⎰", "\\lmoustache", !0), D(O, A, ot, "⟯", "\\rgroup", !0), D(O, A, lt, "⟮", "\\lgroup", !0), D(O, A, N, "∓", "\\mp", !0), D(O, A, N, "⊖", "\\ominus", !0), D(O, A, N, "⊎", "\\uplus", !0), D(O, A, N, "⊓", "\\sqcap", !0), D(O, A, N, "∗", "\\ast"), D(O, A, N, "⊔", "\\sqcup", !0), D(O, A, N, "◯", "\\bigcirc", !0), D(O, A, N, "∙", "\\bullet", !0), D(O, A, N, "‡", "\\ddagger"), D(O, A, N, "≀", "\\wr", !0), D(O, A, N, "⨿", "\\amalg"), D(O, A, N, "&", "\\And"), D(O, A, F, "⟵", "\\longleftarrow", !0), D(O, A, F, "⇐", "\\Leftarrow", !0), D(O, A, F, "⟸", "\\Longleftarrow", !0), D(O, A, F, "⟶", "\\longrightarrow", !0), D(O, A, F, "⇒", "\\Rightarrow", !0), D(O, A, F, "⟹", "\\Longrightarrow", !0), D(O, A, F, "↔", "\\leftrightarrow", !0), D(O, A, F, "⟷", "\\longleftrightarrow", !0), D(O, A, F, "⇔", "\\Leftrightarrow", !0), D(O, A, F, "⟺", "\\Longleftrightarrow", !0), D(O, A, F, "↦", "\\mapsto", !0), D(O, A, F, "⟼", "\\longmapsto", !0), D(O, A, F, "↗", "\\nearrow", !0), D(O, A, F, "↩", "\\hookleftarrow", !0), D(O, A, F, "↪", "\\hookrightarrow", !0), D(O, A, F, "↘", "\\searrow", !0), D(O, A, F, "↼", "\\leftharpoonup", !0), D(O, A, F, "⇀", "\\rightharpoonup", !0), D(O, A, F, "↙", "\\swarrow", !0), D(O, A, F, "↽", "\\leftharpoondown", !0), D(O, A, F, "⇁", "\\rightharpoondown", !0), D(O, A, F, "↖", "\\nwarrow", !0), D(O, A, F, "⇌", "\\rightleftharpoons", !0), D(O, j, F, "≮", "\\nless", !0), D(O, j, F, "", "\\@nleqslant"), D(O, j, F, "", "\\@nleqq"), D(O, j, F, "⪇", "\\lneq", !0), D(O, j, F, "≨", "\\lneqq", !0), D(O, j, F, "", "\\@lvertneqq"), D(O, j, F, "⋦", "\\lnsim", !0), D(O, j, F, "⪉", "\\lnapprox", !0), D(O, j, F, "⊀", "\\nprec", !0), D(O, j, F, "⋠", "\\npreceq", !0), D(O, j, F, "⋨", "\\precnsim", !0), D(O, j, F, "⪹", "\\precnapprox", !0), D(O, j, F, "≁", "\\nsim", !0), D(O, j, F, "", "\\@nshortmid"), D(O, j, F, "∤", "\\nmid", !0), D(O, j, F, "⊬", "\\nvdash", !0), D(O, j, F, "⊭", "\\nvDash", !0), D(O, j, F, "⋪", "\\ntriangleleft"), D(O, j, F, "⋬", "\\ntrianglelefteq", !0), D(O, j, F, "⊊", "\\subsetneq", !0), D(O, j, F, "", "\\@varsubsetneq"), D(O, j, F, "⫋", "\\subsetneqq", !0), D(O, j, F, "", "\\@varsubsetneqq"), D(O, j, F, "≯", "\\ngtr", !0), D(O, j, F, "", "\\@ngeqslant"), D(O, j, F, "", "\\@ngeqq"), D(O, j, F, "⪈", "\\gneq", !0), D(O, j, F, "≩", "\\gneqq", !0), D(O, j, F, "", "\\@gvertneqq"), D(O, j, F, "⋧", "\\gnsim", !0), D(O, j, F, "⪊", "\\gnapprox", !0), D(O, j, F, "⊁", "\\nsucc", !0), D(O, j, F, "⋡", "\\nsucceq", !0), D(O, j, F, "⋩", "\\succnsim", !0), D(O, j, F, "⪺", "\\succnapprox", !0), D(O, j, F, "≆", "\\ncong", !0), D(O, j, F, "", "\\@nshortparallel"), D(O, j, F, "∦", "\\nparallel", !0), D(O, j, F, "⊯", "\\nVDash", !0), D(O, j, F, "⋫", "\\ntriangleright"), D(O, j, F, "⋭", "\\ntrianglerighteq", !0), D(O, j, F, "", "\\@nsupseteqq"), D(O, j, F, "⊋", "\\supsetneq", !0), D(O, j, F, "", "\\@varsupsetneq"), D(O, j, F, "⫌", "\\supsetneqq", !0), D(O, j, F, "", "\\@varsupsetneqq"), D(O, j, F, "⊮", "\\nVdash", !0), D(O, j, F, "⪵", "\\precneqq", !0), D(O, j, F, "⪶", "\\succneqq", !0), D(O, j, F, "", "\\@nsubseteqq"), D(O, j, N, "⊴", "\\unlhd"), D(O, j, N, "⊵", "\\unrhd"), D(O, j, F, "↚", "\\nleftarrow", !0), D(O, j, F, "↛", "\\nrightarrow", !0), D(O, j, F, "⇍", "\\nLeftarrow", !0), D(O, j, F, "⇏", "\\nRightarrow", !0), D(O, j, F, "↮", "\\nleftrightarrow", !0), D(O, j, F, "⇎", "\\nLeftrightarrow", !0), D(O, j, F, "△", "\\vartriangle"), D(O, j, I, "ℏ", "\\hslash"), D(O, j, I, "▽", "\\triangledown"), D(O, j, I, "◊", "\\lozenge"), D(O, j, I, "Ⓢ", "\\circledS"), D(O, j, I, "®", "\\circledR"), D(k, j, I, "®", "\\circledR"), D(O, j, I, "∡", "\\measuredangle", !0), D(O, j, I, "∄", "\\nexists"), D(O, j, I, "℧", "\\mho"), D(O, j, I, "Ⅎ", "\\Finv", !0), D(O, j, I, "⅁", "\\Game", !0), D(O, j, I, "‵", "\\backprime"), D(O, j, I, "▲", "\\blacktriangle"), D(O, j, I, "▼", "\\blacktriangledown"), D(O, j, I, "■", "\\blacksquare"), D(O, j, I, "⧫", "\\blacklozenge"), D(O, j, I, "★", "\\bigstar"), D(O, j, I, "∢", "\\sphericalangle", !0), D(O, j, I, "∁", "\\complement", !0), D(O, j, I, "ð", "\\eth", !0), D(k, A, I, "ð", "ð"), D(O, j, I, "╱", "\\diagup"), D(O, j, I, "╲", "\\diagdown"), D(O, j, I, "□", "\\square"), D(O, j, I, "□", "\\Box"), D(O, j, I, "◊", "\\Diamond"), D(O, j, I, "¥", "\\yen", !0), D(k, j, I, "¥", "\\yen", !0), D(O, j, I, "✓", "\\checkmark", !0), D(k, j, I, "✓", "\\checkmark"), D(O, j, I, "ℶ", "\\beth", !0), D(O, j, I, "ℸ", "\\daleth", !0), D(O, j, I, "ℷ", "\\gimel", !0), D(O, j, I, "ϝ", "\\digamma", !0), D(O, j, I, "ϰ", "\\varkappa"), D(O, j, lt, "┌", "\\@ulcorner", !0), D(O, j, ot, "┐", "\\@urcorner", !0), D(O, j, lt, "└", "\\@llcorner", !0), D(O, j, ot, "┘", "\\@lrcorner", !0), D(O, j, F, "≦", "\\leqq", !0), D(O, j, F, "⩽", "\\leqslant", !0), D(O, j, F, "⪕", "\\eqslantless", !0), D(O, j, F, "≲", "\\lesssim", !0), D(O, j, F, "⪅", "\\lessapprox", !0), D(O, j, F, "≊", "\\approxeq", !0), D(O, j, N, "⋖", "\\lessdot"), D(O, j, F, "⋘", "\\lll", !0), D(O, j, F, "≶", "\\lessgtr", !0), D(O, j, F, "⋚", "\\lesseqgtr", !0), D(O, j, F, "⪋", "\\lesseqqgtr", !0), D(O, j, F, "≑", "\\doteqdot"), D(O, j, F, "≓", "\\risingdotseq", !0), D(O, j, F, "≒", "\\fallingdotseq", !0), D(O, j, F, "∽", "\\backsim", !0), D(O, j, F, "⋍", "\\backsimeq", !0), D(O, j, F, "⫅", "\\subseteqq", !0), D(O, j, F, "⋐", "\\Subset", !0), D(O, j, F, "⊏", "\\sqsubset", !0), D(O, j, F, "≼", "\\preccurlyeq", !0), D(O, j, F, "⋞", "\\curlyeqprec", !0), D(O, j, F, "≾", "\\precsim", !0), D(O, j, F, "⪷", "\\precapprox", !0), D(O, j, F, "⊲", "\\vartriangleleft"), D(O, j, F, "⊴", "\\trianglelefteq"), D(O, j, F, "⊨", "\\vDash", !0), D(O, j, F, "⊪", "\\Vvdash", !0), D(O, j, F, "⌣", "\\smallsmile"), D(O, j, F, "⌢", "\\smallfrown"), D(O, j, F, "≏", "\\bumpeq", !0), D(O, j, F, "≎", "\\Bumpeq", !0), D(O, j, F, "≧", "\\geqq", !0), D(O, j, F, "⩾", "\\geqslant", !0), D(O, j, F, "⪖", "\\eqslantgtr", !0), D(O, j, F, "≳", "\\gtrsim", !0), D(O, j, F, "⪆", "\\gtrapprox", !0), D(O, j, N, "⋗", "\\gtrdot"), D(O, j, F, "⋙", "\\ggg", !0), D(O, j, F, "≷", "\\gtrless", !0), D(O, j, F, "⋛", "\\gtreqless", !0), D(O, j, F, "⪌", "\\gtreqqless", !0), D(O, j, F, "≖", "\\eqcirc", !0), D(O, j, F, "≗", "\\circeq", !0), D(O, j, F, "≜", "\\triangleq", !0), D(O, j, F, "∼", "\\thicksim"), D(O, j, F, "≈", "\\thickapprox"), D(O, j, F, "⫆", "\\supseteqq", !0), D(O, j, F, "⋑", "\\Supset", !0), D(O, j, F, "⊐", "\\sqsupset", !0), D(O, j, F, "≽", "\\succcurlyeq", !0), D(O, j, F, "⋟", "\\curlyeqsucc", !0), D(O, j, F, "≿", "\\succsim", !0), D(O, j, F, "⪸", "\\succapprox", !0), D(O, j, F, "⊳", "\\vartriangleright"), D(O, j, F, "⊵", "\\trianglerighteq"), D(O, j, F, "⊩", "\\Vdash", !0), D(O, j, F, "∣", "\\shortmid"), D(O, j, F, "∥", "\\shortparallel"), D(O, j, F, "≬", "\\between", !0), D(O, j, F, "⋔", "\\pitchfork", !0), D(O, j, F, "∝", "\\varpropto"), D(O, j, F, "◀", "\\blacktriangleleft"), D(O, j, F, "∴", "\\therefore", !0), D(O, j, F, "∍", "\\backepsilon"), D(O, j, F, "▶", "\\blacktriangleright"), D(O, j, F, "∵", "\\because", !0), D(O, j, F, "⋘", "\\llless"), D(O, j, F, "⋙", "\\gggtr"), D(O, j, N, "⊲", "\\lhd"), D(O, j, N, "⊳", "\\rhd"), D(O, j, F, "≂", "\\eqsim", !0), D(O, A, F, "⋈", "\\Join"), D(O, j, F, "≑", "\\Doteq", !0), D(O, j, N, "∔", "\\dotplus", !0), D(O, j, N, "∖", "\\smallsetminus"), D(O, j, N, "⋒", "\\Cap", !0), D(O, j, N, "⋓", "\\Cup", !0), D(O, j, N, "⩞", "\\doublebarwedge", !0), D(O, j, N, "⊟", "\\boxminus", !0), D(O, j, N, "⊞", "\\boxplus", !0), D(O, j, N, "⋇", "\\divideontimes", !0), D(O, j, N, "⋉", "\\ltimes", !0), D(O, j, N, "⋊", "\\rtimes", !0), D(O, j, N, "⋋", "\\leftthreetimes", !0), D(O, j, N, "⋌", "\\rightthreetimes", !0), D(O, j, N, "⋏", "\\curlywedge", !0), D(O, j, N, "⋎", "\\curlyvee", !0), D(O, j, N, "⊝", "\\circleddash", !0), D(O, j, N, "⊛", "\\circledast", !0), D(O, j, N, "⋅", "\\centerdot"), D(O, j, N, "⊺", "\\intercal", !0), D(O, j, N, "⋒", "\\doublecap"), D(O, j, N, "⋓", "\\doublecup"), D(O, j, N, "⊠", "\\boxtimes", !0), D(O, j, F, "⇢", "\\dashrightarrow", !0), D(O, j, F, "⇠", "\\dashleftarrow", !0), D(O, j, F, "⇇", "\\leftleftarrows", !0), D(O, j, F, "⇆", "\\leftrightarrows", !0), D(O, j, F, "⇚", "\\Lleftarrow", !0), D(O, j, F, "↞", "\\twoheadleftarrow", !0), D(O, j, F, "↢", "\\leftarrowtail", !0), D(O, j, F, "↫", "\\looparrowleft", !0), D(O, j, F, "⇋", "\\leftrightharpoons", !0), D(O, j, F, "↶", "\\curvearrowleft", !0), D(O, j, F, "↺", "\\circlearrowleft", !0), D(O, j, F, "↰", "\\Lsh", !0), D(O, j, F, "⇈", "\\upuparrows", !0), D(O, j, F, "↿", "\\upharpoonleft", !0), D(O, j, F, "⇃", "\\downharpoonleft", !0), D(O, A, F, "⊶", "\\origof", !0), D(O, A, F, "⊷", "\\imageof", !0), D(O, j, F, "⊸", "\\multimap", !0), D(O, j, F, "↭", "\\leftrightsquigarrow", !0), D(O, j, F, "⇉", "\\rightrightarrows", !0), D(O, j, F, "⇄", "\\rightleftarrows", !0), D(O, j, F, "↠", "\\twoheadrightarrow", !0), D(O, j, F, "↣", "\\rightarrowtail", !0), D(O, j, F, "↬", "\\looparrowright", !0), D(O, j, F, "↷", "\\curvearrowright", !0), D(O, j, F, "↻", "\\circlearrowright", !0), D(O, j, F, "↱", "\\Rsh", !0), D(O, j, F, "⇊", "\\downdownarrows", !0), D(O, j, F, "↾", "\\upharpoonright", !0), D(O, j, F, "⇂", "\\downharpoonright", !0), D(O, j, F, "⇝", "\\rightsquigarrow", !0), D(O, j, F, "⇝", "\\leadsto"), D(O, j, F, "⇛", "\\Rrightarrow", !0), D(O, j, F, "↾", "\\restriction"), D(O, A, I, "‘", "`"), D(O, A, I, "$", "\\$"), D(k, A, I, "$", "\\$"), D(k, A, I, "$", "\\textdollar"), D(O, A, I, "%", "\\%"), D(k, A, I, "%", "\\%"), D(O, A, I, "_", "\\_"), D(k, A, I, "_", "\\_"), D(k, A, I, "_", "\\textunderscore"), D(O, A, I, "∠", "\\angle", !0), D(O, A, I, "∞", "\\infty", !0), D(O, A, I, "′", "\\prime"), D(O, A, I, "△", "\\triangle"), D(O, A, I, "Γ", "\\Gamma", !0), D(O, A, I, "Δ", "\\Delta", !0), D(O, A, I, "Θ", "\\Theta", !0), D(O, A, I, "Λ", "\\Lambda", !0), D(O, A, I, "Ξ", "\\Xi", !0), D(O, A, I, "Π", "\\Pi", !0), D(O, A, I, "Σ", "\\Sigma", !0), D(O, A, I, "Υ", "\\Upsilon", !0), D(O, A, I, "Φ", "\\Phi", !0), D(O, A, I, "Ψ", "\\Psi", !0), D(O, A, I, "Ω", "\\Omega", !0), D(O, A, I, "A", "Α"), D(O, A, I, "B", "Β"), D(O, A, I, "E", "Ε"), D(O, A, I, "Z", "Ζ"), D(O, A, I, "H", "Η"), D(O, A, I, "I", "Ι"), D(O, A, I, "K", "Κ"), D(O, A, I, "M", "Μ"), D(O, A, I, "N", "Ν"), D(O, A, I, "O", "Ο"), D(O, A, I, "P", "Ρ"), D(O, A, I, "T", "Τ"), D(O, A, I, "X", "Χ"), D(O, A, I, "¬", "\\neg", !0), D(O, A, I, "¬", "\\lnot"), D(O, A, I, "⊤", "\\top"), D(O, A, I, "⊥", "\\bot"), D(O, A, I, "∅", "\\emptyset"), D(O, j, I, "∅", "\\varnothing"), D(O, A, P, "α", "\\alpha", !0), D(O, A, P, "β", "\\beta", !0), D(O, A, P, "γ", "\\gamma", !0), D(O, A, P, "δ", "\\delta", !0), D(O, A, P, "ϵ", "\\epsilon", !0), D(O, A, P, "ζ", "\\zeta", !0), D(O, A, P, "η", "\\eta", !0), D(O, A, P, "θ", "\\theta", !0), D(O, A, P, "ι", "\\iota", !0), D(O, A, P, "κ", "\\kappa", !0), D(O, A, P, "λ", "\\lambda", !0), D(O, A, P, "μ", "\\mu", !0), D(O, A, P, "ν", "\\nu", !0), D(O, A, P, "ξ", "\\xi", !0), D(O, A, P, "ο", "\\omicron", !0), D(O, A, P, "π", "\\pi", !0), D(O, A, P, "ρ", "\\rho", !0), D(O, A, P, "σ", "\\sigma", !0), D(O, A, P, "τ", "\\tau", !0), D(O, A, P, "υ", "\\upsilon", !0), D(O, A, P, "ϕ", "\\phi", !0), D(O, A, P, "χ", "\\chi", !0), D(O, A, P, "ψ", "\\psi", !0), D(O, A, P, "ω", "\\omega", !0), D(O, A, P, "ε", "\\varepsilon", !0), D(O, A, P, "ϑ", "\\vartheta", !0), D(O, A, P, "ϖ", "\\varpi", !0), D(O, A, P, "ϱ", "\\varrho", !0), D(O, A, P, "ς", "\\varsigma", !0), D(O, A, P, "φ", "\\varphi", !0), D(O, A, N, "∗", "*", !0), D(O, A, N, "+", "+"), D(O, A, N, "−", "-", !0), D(O, A, N, "⋅", "\\cdot", !0), D(O, A, N, "∘", "\\circ", !0), D(O, A, N, "÷", "\\div", !0), D(O, A, N, "±", "\\pm", !0), D(O, A, N, "×", "\\times", !0), D(O, A, N, "∩", "\\cap", !0), D(O, A, N, "∪", "\\cup", !0), D(O, A, N, "∖", "\\setminus", !0), D(O, A, N, "∧", "\\land"), D(O, A, N, "∨", "\\lor"), D(O, A, N, "∧", "\\wedge", !0), D(O, A, N, "∨", "\\vee", !0), D(O, A, I, "√", "\\surd"), D(O, A, lt, "⟨", "\\langle", !0), D(O, A, lt, "∣", "\\lvert"), D(O, A, lt, "∥", "\\lVert"), D(O, A, ot, "?", "?"), D(O, A, ot, "!", "!"), D(O, A, ot, "⟩", "\\rangle", !0), D(O, A, ot, "∣", "\\rvert"), D(O, A, ot, "∥", "\\rVert"), D(O, A, F, "=", "="), D(O, A, F, ":", ":"), D(O, A, F, "≈", "\\approx", !0), D(O, A, F, "≅", "\\cong", !0), D(O, A, F, "≥", "\\ge"), D(O, A, F, "≥", "\\geq", !0), D(O, A, F, "←", "\\gets"), D(O, A, F, ">", "\\gt", !0), D(O, A, F, "∈", "\\in", !0), D(O, A, F, "", "\\@not"), D(O, A, F, "⊂", "\\subset", !0), D(O, A, F, "⊃", "\\supset", !0), D(O, A, F, "⊆", "\\subseteq", !0), D(O, A, F, "⊇", "\\supseteq", !0), D(O, j, F, "⊈", "\\nsubseteq", !0), D(O, j, F, "⊉", "\\nsupseteq", !0), D(O, A, F, "⊨", "\\models"), D(O, A, F, "←", "\\leftarrow", !0), D(O, A, F, "≤", "\\le"), D(O, A, F, "≤", "\\leq", !0), D(O, A, F, "<", "\\lt", !0), D(O, A, F, "→", "\\rightarrow", !0), D(O, A, F, "→", "\\to"), D(O, j, F, "≱", "\\ngeq", !0), D(O, j, F, "≰", "\\nleq", !0), D(O, A, dt, "\xA0", "\\ "), D(O, A, dt, "\xA0", "\\space"), D(O, A, dt, "\xA0", "\\nobreakspace"), D(k, A, dt, "\xA0", "\\ "), D(k, A, dt, "\xA0", " "), D(k, A, dt, "\xA0", "\\space"), D(k, A, dt, "\xA0", "\\nobreakspace"), D(O, A, dt, "", "\\nobreak"), D(O, A, dt, "", "\\allowbreak"), D(O, A, ut, ",", ","), D(O, A, ut, ";", ";"), D(O, j, N, "⊼", "\\barwedge", !0), D(O, j, N, "⊻", "\\veebar", !0), D(O, A, N, "⊙", "\\odot", !0), D(O, A, N, "⊕", "\\oplus", !0), D(O, A, N, "⊗", "\\otimes", !0), D(O, A, I, "∂", "\\partial", !0), D(O, A, N, "⊘", "\\oslash", !0), D(O, j, N, "⊚", "\\circledcirc", !0), D(O, j, N, "⊡", "\\boxdot", !0), D(O, A, N, "△", "\\bigtriangleup"), D(O, A, N, "▽", "\\bigtriangledown"), D(O, A, N, "†", "\\dagger"), D(O, A, N, "⋄", "\\diamond"), D(O, A, N, "⋆", "\\star"), D(O, A, N, "◃", "\\triangleleft"), D(O, A, N, "▹", "\\triangleright"), D(O, A, lt, "{", "\\{"), D(k, A, I, "{", "\\{"), D(k, A, I, "{", "\\textbraceleft"), D(O, A, ot, "}", "\\}"), D(k, A, I, "}", "\\}"), D(k, A, I, "}", "\\textbraceright"), D(O, A, lt, "{", "\\lbrace"), D(O, A, ot, "}", "\\rbrace"), D(O, A, lt, "[", "\\lbrack", !0), D(k, A, I, "[", "\\lbrack", !0), D(O, A, ot, "]", "\\rbrack", !0), D(k, A, I, "]", "\\rbrack", !0), D(O, A, lt, "(", "\\lparen", !0), D(O, A, ot, ")", "\\rparen", !0), D(k, A, I, "<", "\\textless", !0), D(k, A, I, ">", "\\textgreater", !0), D(O, A, lt, "⌊", "\\lfloor", !0), D(O, A, ot, "⌋", "\\rfloor", !0), D(O, A, lt, "⌈", "\\lceil", !0), D(O, A, ot, "⌉", "\\rceil", !0), D(O, A, I, "\\", "\\backslash"), D(O, A, I, "∣", "|"), D(O, A, I, "∣", "\\vert"), D(k, A, I, "|", "\\textbar", !0), D(O, A, I, "∥", "\\|"), D(O, A, I, "∥", "\\Vert"), D(k, A, I, "∥", "\\textbardbl"), D(k, A, I, "~", "\\textasciitilde"), D(k, A, I, "\\", "\\textbackslash"), D(k, A, I, "^", "\\textasciicircum"), D(O, A, F, "↑", "\\uparrow", !0), D(O, A, F, "⇑", "\\Uparrow", !0), D(O, A, F, "↓", "\\downarrow", !0), D(O, A, F, "⇓", "\\Downarrow", !0), D(O, A, F, "↕", "\\updownarrow", !0), D(O, A, F, "⇕", "\\Updownarrow", !0), D(O, A, ct, "∐", "\\coprod"), D(O, A, ct, "⋁", "\\bigvee"), D(O, A, ct, "⋀", "\\bigwedge"), D(O, A, ct, "⨄", "\\biguplus"), D(O, A, ct, "⋂", "\\bigcap"), D(O, A, ct, "⋃", "\\bigcup"), D(O, A, ct, "∫", "\\int"), D(O, A, ct, "∫", "\\intop"), D(O, A, ct, "∬", "\\iint"), D(O, A, ct, "∭", "\\iiint"), D(O, A, ct, "∏", "\\prod"), D(O, A, ct, "∑", "\\sum"), D(O, A, ct, "⨂", "\\bigotimes"), D(O, A, ct, "⨁", "\\bigoplus"), D(O, A, ct, "⨀", "\\bigodot"), D(O, A, ct, "∮", "\\oint"), D(O, A, ct, "∯", "\\oiint"), D(O, A, ct, "∰", "\\oiiint"), D(O, A, ct, "⨆", "\\bigsqcup"), D(O, A, ct, "∫", "\\smallint"), D(k, A, st, "…", "\\textellipsis"), D(O, A, st, "…", "\\mathellipsis"), D(k, A, st, "…", "\\ldots", !0), D(O, A, st, "…", "\\ldots", !0), D(O, A, st, "⋯", "\\@cdots", !0), D(O, A, st, "⋱", "\\ddots", !0), D(O, A, I, "⋮", "\\varvdots"), D(k, A, I, "⋮", "\\varvdots"), D(O, A, M, "ˊ", "\\acute"), D(O, A, M, "ˋ", "\\grave"), D(O, A, M, "¨", "\\ddot"), D(O, A, M, "~", "\\tilde"), D(O, A, M, "ˉ", "\\bar"), D(O, A, M, "˘", "\\breve"), D(O, A, M, "ˇ", "\\check"), D(O, A, M, "^", "\\hat"), D(O, A, M, "⃗", "\\vec"), D(O, A, M, "˙", "\\dot"), D(O, A, M, "˚", "\\mathring"), D(O, A, P, "", "\\@imath"), D(O, A, P, "", "\\@jmath"), D(O, A, I, "ı", "ı"), D(O, A, I, "ȷ", "ȷ"), D(k, A, I, "ı", "\\i", !0), D(k, A, I, "ȷ", "\\j", !0), D(k, A, I, "ß", "\\ss", !0), D(k, A, I, "æ", "\\ae", !0), D(k, A, I, "œ", "\\oe", !0), D(k, A, I, "ø", "\\o", !0), D(k, A, I, "Æ", "\\AE", !0), D(k, A, I, "Œ", "\\OE", !0), D(k, A, I, "Ø", "\\O", !0), D(k, A, M, "ˊ", "\\'"), D(k, A, M, "ˋ", "\\`"), D(k, A, M, "ˆ", "\\^"), D(k, A, M, "˜", "\\~"), D(k, A, M, "ˉ", "\\="), D(k, A, M, "˘", "\\u"), D(k, A, M, "˙", "\\."), D(k, A, M, "¸", "\\c"), D(k, A, M, "˚", "\\r"), D(k, A, M, "ˇ", "\\v"), D(k, A, M, "¨", "\\\""), D(k, A, M, "˝", "\\H"), D(k, A, M, "◯", "\\textcircled");
 var ft = {
 	"--": !0,
 	"---": !0,
 	"``": !0,
 	"''": !0
 };
-O(A, j, I, "–", "--", !0), O(A, j, I, "–", "\\textendash"), O(A, j, I, "—", "---", !0), O(A, j, I, "—", "\\textemdash"), O(A, j, I, "‘", "`", !0), O(A, j, I, "‘", "\\textquoteleft"), O(A, j, I, "’", "'", !0), O(A, j, I, "’", "\\textquoteright"), O(A, j, I, "“", "``", !0), O(A, j, I, "“", "\\textquotedblleft"), O(A, j, I, "”", "''", !0), O(A, j, I, "”", "\\textquotedblright"), O(k, j, I, "°", "\\degree", !0), O(A, j, I, "°", "\\degree"), O(A, j, I, "°", "\\textdegree", !0), O(k, j, I, "£", "\\pounds"), O(k, j, I, "£", "\\mathsterling", !0), O(A, j, I, "£", "\\pounds"), O(A, j, I, "£", "\\textsterling", !0), O(k, M, I, "✠", "\\maltese"), O(A, M, I, "✠", "\\maltese");
+D(k, A, I, "–", "--", !0), D(k, A, I, "–", "\\textendash"), D(k, A, I, "—", "---", !0), D(k, A, I, "—", "\\textemdash"), D(k, A, I, "‘", "`", !0), D(k, A, I, "‘", "\\textquoteleft"), D(k, A, I, "’", "'", !0), D(k, A, I, "’", "\\textquoteright"), D(k, A, I, "“", "``", !0), D(k, A, I, "“", "\\textquotedblleft"), D(k, A, I, "”", "''", !0), D(k, A, I, "”", "\\textquotedblright"), D(O, A, I, "°", "\\degree", !0), D(k, A, I, "°", "\\degree"), D(k, A, I, "°", "\\textdegree", !0), D(O, A, I, "£", "\\pounds"), D(O, A, I, "£", "\\mathsterling", !0), D(k, A, I, "£", "\\pounds"), D(k, A, I, "£", "\\textsterling", !0), D(O, j, I, "✠", "\\maltese"), D(k, j, I, "✠", "\\maltese");
 for (var pt = "0123456789/@.\"", mt = 0; mt < pt.length; mt++) {
 	var ht = pt.charAt(mt);
-	O(k, j, I, ht, ht);
+	D(O, A, I, ht, ht);
 }
 for (var gt = "0123456789!@*()-=+\";:?/.,", _t = 0; _t < gt.length; _t++) {
 	var vt = gt.charAt(_t);
-	O(A, j, I, vt, vt);
+	D(k, A, I, vt, vt);
 }
 for (var yt = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", bt = 0; bt < yt.length; bt++) {
 	var xt = yt.charAt(bt);
-	O(k, j, P, xt, xt), O(A, j, I, xt, xt);
+	D(O, A, P, xt, xt), D(k, A, I, xt, xt);
 }
-O(k, M, I, "C", "ℂ"), O(A, M, I, "C", "ℂ"), O(k, M, I, "H", "ℍ"), O(A, M, I, "H", "ℍ"), O(k, M, I, "N", "ℕ"), O(A, M, I, "N", "ℕ"), O(k, M, I, "P", "ℙ"), O(A, M, I, "P", "ℙ"), O(k, M, I, "Q", "ℚ"), O(A, M, I, "Q", "ℚ"), O(k, M, I, "R", "ℝ"), O(A, M, I, "R", "ℝ"), O(k, M, I, "Z", "ℤ"), O(A, M, I, "Z", "ℤ"), O(k, j, P, "h", "ℎ"), O(A, j, P, "h", "ℎ");
+D(O, j, I, "C", "ℂ"), D(k, j, I, "C", "ℂ"), D(O, j, I, "H", "ℍ"), D(k, j, I, "H", "ℍ"), D(O, j, I, "N", "ℕ"), D(k, j, I, "N", "ℕ"), D(O, j, I, "P", "ℙ"), D(k, j, I, "P", "ℙ"), D(O, j, I, "Q", "ℚ"), D(k, j, I, "Q", "ℚ"), D(O, j, I, "R", "ℝ"), D(k, j, I, "R", "ℝ"), D(O, j, I, "Z", "ℤ"), D(k, j, I, "Z", "ℤ"), D(O, A, P, "h", "ℎ"), D(k, A, P, "h", "ℎ");
 for (var L, St = 0; St < yt.length; St++) {
 	var Ct = yt.charAt(St);
-	L = String.fromCharCode(55349, 56320 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56372 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56424 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56580 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56684 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56736 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56788 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56840 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56944 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), St < 26 && (L = String.fromCharCode(55349, 56632 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L), L = String.fromCharCode(55349, 56476 + St), O(k, j, P, Ct, L), O(A, j, I, Ct, L));
+	L = String.fromCharCode(55349, 56320 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56372 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56424 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56580 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56684 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56736 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56788 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56840 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56944 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), St < 26 && (L = String.fromCharCode(55349, 56632 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L), L = String.fromCharCode(55349, 56476 + St), D(O, A, P, Ct, L), D(k, A, I, Ct, L));
 }
-L = String.fromCharCode(55349, 56668), O(k, j, P, "k", L), O(A, j, I, "k", L);
+L = String.fromCharCode(55349, 56668), D(O, A, P, "k", L), D(k, A, I, "k", L);
 for (var wt = 0; wt < 10; wt++) {
 	var Tt = wt.toString();
-	L = String.fromCharCode(55349, 57294 + wt), O(k, j, P, Tt, L), O(A, j, I, Tt, L), L = String.fromCharCode(55349, 57314 + wt), O(k, j, P, Tt, L), O(A, j, I, Tt, L), L = String.fromCharCode(55349, 57324 + wt), O(k, j, P, Tt, L), O(A, j, I, Tt, L), L = String.fromCharCode(55349, 57334 + wt), O(k, j, P, Tt, L), O(A, j, I, Tt, L);
+	L = String.fromCharCode(55349, 57294 + wt), D(O, A, P, Tt, L), D(k, A, I, Tt, L), L = String.fromCharCode(55349, 57314 + wt), D(O, A, P, Tt, L), D(k, A, I, Tt, L), L = String.fromCharCode(55349, 57324 + wt), D(O, A, P, Tt, L), D(k, A, I, Tt, L), L = String.fromCharCode(55349, 57334 + wt), D(O, A, P, Tt, L), D(k, A, I, Tt, L);
 }
 for (var Et = "ÐÞþ", Dt = 0; Dt < Et.length; Dt++) {
 	var Ot = Et.charAt(Dt);
-	O(k, j, P, Ot, Ot), O(A, j, I, Ot, Ot);
+	D(O, A, P, Ot, Ot), D(k, A, I, Ot, Ot);
 }
 var kt = {
 	mathClass: "mathbf",
@@ -15703,8 +15703,8 @@ var kt = {
 	if (120486 < r && r < 120782) return Nt;
 	throw new o("Unsupported character: " + e);
 }, Wt = function(e, t, n) {
-	if (D[n][e]) {
-		var r = D[n][e].replace;
+	if (at[n][e]) {
+		var r = at[n][e].replace;
 		r && (e = r);
 	}
 	return {
@@ -15726,7 +15726,7 @@ var kt = {
 	}
 	return s;
 }, Kt = function(e, t, n, r) {
-	return r === void 0 && (r = []), n.font === "boldsymbol" && Wt(e, "Main-Bold", t).metrics ? Gt(e, "Main-Bold", t, n, r.concat(["mathbf"])) : e === "\\" || D[t][e].font === "main" ? Gt(e, "Main-Regular", t, n, r) : Gt(e, "AMS-Regular", t, n, r.concat(["amsrm"]));
+	return r === void 0 && (r = []), n.font === "boldsymbol" && Wt(e, "Main-Bold", t).metrics ? Gt(e, "Main-Bold", t, n, r.concat(["mathbf"])) : e === "\\" || at[t][e].font === "main" ? Gt(e, "Main-Regular", t, n, r) : Gt(e, "AMS-Regular", t, n, r.concat(["amsrm"]));
 }, qt = function(e, t, n) {
 	return n !== "textord" && Wt(e, "Math-BoldItalic", t).metrics ? {
 		fontName: "Math-BoldItalic",
@@ -15760,7 +15760,7 @@ var kt = {
 	}
 	if (n === "mathord") return Gt(i, "Math-Italic", r, t, a.concat(["mathnormal"]));
 	if (n === "textord") {
-		var b = D[r][i] && D[r][i].font;
+		var b = at[r][i] && at[r][i].font;
 		if (b === "ams") return Gt(i, on("amsrm", c, l), r, t, a.concat("amsrm", c, l));
 		if (b === "main" || !b) return Gt(i, on("textrm", c, l), r, t, a.concat(c, l));
 		var x = on(b, c, l);
@@ -16233,7 +16233,7 @@ var H = class {
 		return this.character ? this.character : " ";
 	}
 }, In = new Set(["\\imath", "\\jmath"]), Ln = new Set(["mrow", "mtable"]), Rn = function(e, t, n) {
-	return D[t][e] && D[t][e].replace && e.charCodeAt(0) !== 55349 && !(ft.hasOwnProperty(e) && n && (n.fontFamily && n.fontFamily.slice(4, 6) === "tt" || n.font && n.font.slice(4, 6) === "tt")) && (e = D[t][e].replace), new Pn(e);
+	return at[t][e] && at[t][e].replace && e.charCodeAt(0) !== 55349 && !(ft.hasOwnProperty(e) && n && (n.fontFamily && n.fontFamily.slice(4, 6) === "tt" || n.font && n.font.slice(4, 6) === "tt")) && (e = at[t][e].replace), new Pn(e);
 }, zn = function(e) {
 	return e.length === 1 ? e[0] : new H("mrow", e);
 }, Bn = {
@@ -16261,8 +16261,8 @@ var H = class {
 	if (i) return typeof i == "function" ? i(e) : i;
 	var a = e.text;
 	if (In.has(a)) return null;
-	if (D[r][a]) {
-		var o = D[r][a].replace;
+	if (at[r][a]) {
+		var o = at[r][a].replace;
 		o && (a = o);
 	}
 	var s = sn[n].fontName;
@@ -17721,7 +17721,7 @@ B({
 	}
 });
 var kr = function(e, t, n) {
-	var r = nt(D.math[e] && D.math[e].replace || e, t, n);
+	var r = nt(at.math[e] && at.math[e].replace || e, t, n);
 	if (!r) throw Error("Unsupported symbol " + e + " and font size " + t + ".");
 	return r;
 }, Ar = function(e, t, n, r) {
@@ -20922,7 +20922,7 @@ G("\\newcommand", (e) => ga(e, !1, !0, !1)), G("\\renewcommand", (e) => ga(e, !0
 	return console.error(t.reverse().map((e) => e.text).join("")), "";
 }), G("\\show", (e) => {
 	var t = e.popToken(), n = t.text;
-	return console.log(t, e.macros.get(n), ra[n], D.math[n], D.text[n]), "";
+	return console.log(t, e.macros.get(n), ra[n], at.math[n], at.text[n]), "";
 }), G("\\bgroup", "{"), G("\\egroup", "}"), G("~", "\\nobreakspace"), G("\\lq", "`"), G("\\rq", "'"), G("\\aa", "\\r a"), G("\\AA", "\\r A"), G("\\textcopyright", "\\html@mathml{\\textcircled{c}}{\\char`©}"), G("\\copyright", "\\TextOrMath{\\textcopyright}{\\text{\\textcopyright}}"), G("\\textregistered", "\\html@mathml{\\textcircled{\\scriptsize R}}{\\char`®}"), G("ℬ", "\\mathscr{B}"), G("ℰ", "\\mathscr{E}"), G("ℱ", "\\mathscr{F}"), G("ℋ", "\\mathscr{H}"), G("ℐ", "\\mathscr{I}"), G("ℒ", "\\mathscr{L}"), G("ℳ", "\\mathscr{M}"), G("ℛ", "\\mathscr{R}"), G("ℭ", "\\mathfrak{C}"), G("ℌ", "\\mathfrak{H}"), G("ℨ", "\\mathfrak{Z}"), G("\\Bbbk", "\\Bbb{k}"), G("\\llap", "\\mathllap{\\textrm{#1}}"), G("\\rlap", "\\mathrlap{\\textrm{#1}}"), G("\\clap", "\\mathclap{\\textrm{#1}}"), G("\\mathstrut", "\\vphantom{(}"), G("\\underbar", "\\underline{\\text{#1}}"), G("\\not", "\\html@mathml{\\mathrel{\\mathrlap\\@not}\\nobreak}{\\char\"338}"), G("\\neq", "\\html@mathml{\\mathrel{\\not=}}{\\mathrel{\\char`≠}}"), G("\\ne", "\\neq"), G("≠", "\\neq"), G("\\notin", "\\html@mathml{\\mathrel{{\\in}\\mathllap{/\\mskip1mu}}}{\\mathrel{\\char`∉}}"), G("∉", "\\notin"), G("≘", "\\html@mathml{\\mathrel{=\\kern{-1em}\\raisebox{0.4em}{$\\scriptsize\\frown$}}}{\\mathrel{\\char`≘}}"), G("≙", "\\html@mathml{\\stackrel{\\tiny\\wedge}{=}}{\\mathrel{\\char`≘}}"), G("≚", "\\html@mathml{\\stackrel{\\tiny\\vee}{=}}{\\mathrel{\\char`≚}}"), G("≛", "\\html@mathml{\\stackrel{\\scriptsize\\star}{=}}{\\mathrel{\\char`≛}}"), G("≝", "\\html@mathml{\\stackrel{\\tiny\\mathrm{def}}{=}}{\\mathrel{\\char`≝}}"), G("≞", "\\html@mathml{\\stackrel{\\tiny\\mathrm{m}}{=}}{\\mathrel{\\char`≞}}"), G("≟", "\\html@mathml{\\stackrel{\\tiny?}{=}}{\\mathrel{\\char`≟}}"), G("⟂", "\\perp"), G("‼", "\\mathclose{!\\mkern-0.8mu!}"), G("∌", "\\notni"), G("⌜", "\\ulcorner"), G("⌝", "\\urcorner"), G("⌞", "\\llcorner"), G("⌟", "\\lrcorner"), G("©", "\\copyright"), G("®", "\\textregistered"), G("\\ulcorner", "\\html@mathml{\\@ulcorner}{\\mathop{\\char\"231c}}"), G("\\urcorner", "\\html@mathml{\\@urcorner}{\\mathop{\\char\"231d}}"), G("\\llcorner", "\\html@mathml{\\@llcorner}{\\mathop{\\char\"231e}}"), G("\\lrcorner", "\\html@mathml{\\@lrcorner}{\\mathop{\\char\"231f}}"), G("\\vdots", "{\\varvdots\\rule{0pt}{15pt}}"), G("⋮", "\\vdots"), G("\\varGamma", "\\mathit{\\Gamma}"), G("\\varDelta", "\\mathit{\\Delta}"), G("\\varTheta", "\\mathit{\\Theta}"), G("\\varLambda", "\\mathit{\\Lambda}"), G("\\varXi", "\\mathit{\\Xi}"), G("\\varPi", "\\mathit{\\Pi}"), G("\\varSigma", "\\mathit{\\Sigma}"), G("\\varUpsilon", "\\mathit{\\Upsilon}"), G("\\varPhi", "\\mathit{\\Phi}"), G("\\varPsi", "\\mathit{\\Psi}"), G("\\varOmega", "\\mathit{\\Omega}"), G("\\substack", "\\begin{subarray}{c}#1\\end{subarray}"), G("\\colon", "\\nobreak\\mskip2mu\\mathpunct{}\\mathchoice{\\mkern-3mu}{\\mkern-3mu}{}{}{:}\\mskip6mu\\relax"), G("\\boxed", "\\fbox{$\\displaystyle{#1}$}"), G("\\iff", "\\DOTSB\\;\\Longleftrightarrow\\;"), G("\\implies", "\\DOTSB\\;\\Longrightarrow\\;"), G("\\impliedby", "\\DOTSB\\;\\Longleftarrow\\;"), G("\\dddot", "{\\overset{\\raisebox{-0.1ex}{\\normalsize ...}}{#1}}"), G("\\ddddot", "{\\overset{\\raisebox{-0.1ex}{\\normalsize ....}}{#1}}");
 var _a = {
 	",": "\\dotsc",
@@ -20975,7 +20975,7 @@ var _a = {
 }, va = new Set(["bin", "rel"]);
 G("\\dots", function(e) {
 	var t = "\\dotso", n = e.expandAfterFuture().text;
-	return n in _a ? t = _a[n] : (n.slice(0, 4) === "\\not" || n in D.math && va.has(D.math[n].group)) && (t = "\\dotsb"), t;
+	return n in _a ? t = _a[n] : (n.slice(0, 4) === "\\not" || n in at.math && va.has(at.math[n].group)) && (t = "\\dotsb"), t;
 });
 var ya = {
 	")": !0,
@@ -21183,7 +21183,7 @@ var Sa = {
 		return r;
 	}
 	isDefined(e) {
-		return this.macros.has(e) || ra.hasOwnProperty(e) || D.math.hasOwnProperty(e) || D.text.hasOwnProperty(e) || Sa.hasOwnProperty(e);
+		return this.macros.has(e) || ra.hasOwnProperty(e) || at.math.hasOwnProperty(e) || at.text.hasOwnProperty(e) || Sa.hasOwnProperty(e);
 	}
 	isExpandable(e) {
 		var t = this.macros.get(e);
@@ -22047,13 +22047,13 @@ var Sa = {
 				star: r
 			};
 		}
-		Da.hasOwnProperty(t[0]) && !D[this.mode][t[0]] && (this.settings.strict && this.mode === "math" && this.settings.reportNonstrict("unicodeTextInMathMode", "Accented Unicode text character \"" + t[0] + "\" used in math mode", e), t = Da[t[0]] + t.slice(1));
+		Da.hasOwnProperty(t[0]) && !at[this.mode][t[0]] && (this.settings.strict && this.mode === "math" && this.settings.reportNonstrict("unicodeTextInMathMode", "Accented Unicode text character \"" + t[0] + "\" used in math mode", e), t = Da[t[0]] + t.slice(1));
 		var i = ua.exec(t);
 		i && (t = t.substring(0, i.index), t === "i" ? t = "ı" : t === "j" && (t = "ȷ"));
 		var a;
-		if (D[this.mode][t]) {
+		if (at[this.mode][t]) {
 			this.settings.strict && this.mode === "math" && Et.includes(t) && this.settings.reportNonstrict("unicodeTextInMathMode", "Latin-1/Unicode text character \"" + t[0] + "\" used in math mode", e);
-			var s = D[this.mode][t].group, c = fi.range(e);
+			var s = at[this.mode][t].group, c = fi.range(e);
 			a = cr(s) ? {
 				type: "atom",
 				mode: this.mode,
@@ -22153,7 +22153,7 @@ var ja = function(e, t) {
 		}
 	},
 	__setFontMetrics: tt,
-	__defineSymbol: O,
+	__defineSymbol: D,
 	__defineFunction: B,
 	__defineMacro: G,
 	__domTree: {
@@ -22164,7 +22164,11 @@ var ja = function(e, t) {
 		PathNode: qe,
 		LineNode: Je
 	}
-}, Ia = {
+};
+window.DIALECTICS_HINTS = null, fetch("/api/ai/dialectics/hints").then((e) => e.json()).then((e) => {
+	window.DIALECTICS_HINTS = e;
+}).catch((e) => console.warn("Failed to load dialectics hints:", e));
+var Ia = {
 	renderMath(e) {
 		e.querySelectorAll("span[data-type=\"mathNode\"]").forEach((e) => {
 			let t = e.getAttribute("latex");
@@ -22180,6 +22184,8 @@ var ja = function(e, t) {
 		let i = document.getElementById("canvasDivider");
 		e.innerHTML = "", i && e.appendChild(i);
 		let a = (e, t) => {
+			let n = e.replace("dialectics.hints.", "");
+			if (window.DIALECTICS_HINTS && window.DIALECTICS_HINTS[n]) return window.DIALECTICS_HINTS[n];
 			if (typeof window._ == "function") {
 				let n = window._(e);
 				return n === e ? t : n;
@@ -33964,190 +33970,549 @@ var sv = ov(!1, !0), cv = ov(!0, !0), lv = eh.create({
 	getHTML() {
 		return this.tiptap ? this.tiptap.getHTML() : "";
 	}
-};
-window.app = new class {
-	constructor() {
-		window.showToast = window.showToast || ((e) => console.log("Toast:", e)), this.state = {
-			currentNoteId: null,
-			noteHistory: [],
-			pendingSide: null,
-			isExpanded: !1,
-			editingBlock: null,
-			notesList: [],
-			viewingNoteId: null,
-			insertAfterIndex: null,
-			categories: []
-		}, this.dom = {
-			canvas: document.getElementById("dialecticsCanvas"),
-			editor: document.getElementById("inlineEditor"),
-			title: document.getElementById("globalDialecticsTitle"),
-			deleteBtn: document.getElementById("btnDeleteDialectics"),
-			backdrop: document.getElementById("expandedBackdrop"),
-			dragHandle: document.getElementById("editorDragHandle"),
-			loadModal: document.getElementById("loadDialecticsModal"),
-			loadList: document.getElementById("loadDialecticsList"),
-			guideModal: document.getElementById("guideDialecticsModal"),
-			guideContent: document.getElementById("dialecticsGuideContent"),
-			viewModal: document.getElementById("dialecticsViewModal"),
-			viewTitle: document.getElementById("dialecticsViewTitle"),
-			viewBody: document.getElementById("dialecticsViewBody"),
-			debug: document.getElementById("debugLogContent"),
-			dashboardTextarea: document.getElementById("dashboard-note-editor"),
-			connectionsModal: document.getElementById("dialectics-connections-modal"),
-			categorySelect: document.getElementById("dialecticsCategorySelect"),
-			connCategoriesList: document.getElementById("connections-categories-list"),
-			connResultsContainer: document.getElementById("connections-results-container"),
-			newCategoryInput: document.getElementById("new-category-input")
-		}, this.editor = new Mv(this), this.dom.editor && this.init();
-	}
-	async init() {
-		if (this.logDebug("Engine init..."), this._bindEvents(), await this.loadCategories(), this.dom.editor.classList.contains("embedded") && this.dom.dashboardTextarea) this.setupDashboardTextarea(), this._revealInterface();
-		else {
-			let e = new URLSearchParams(window.location.search).get("id");
-			if (!e && (e = localStorage.getItem("dialectics_last_note_id"), e)) {
-				let t = new URL(window.location);
-				t.searchParams.set("id", e), window.history.replaceState({}, "", t);
-			}
-			e ? await this.loadNoteToEditor(e, !1) : (this.state.currentNoteId = null, this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none"), this._revealInterface());
+}, Nv = {
+	async showReferenceModal() {
+		let e = document.getElementById("referenceDialecticsModal");
+		if (!e) return;
+		e.style.display = "flex";
+		let t = document.getElementById("dialecticsReferenceContent");
+		if (t && t.dataset.loaded !== "true") try {
+			t.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Загрузка справочника...</div>";
+			let e = await fetch("/api/dialectics/reference");
+			if (!e.ok) throw Error("Failed to load reference");
+			t.innerHTML = `<div class="guide-markdown-content">${(await e.json()).html}</div>`, t.dataset.loaded = "true";
+		} catch (e) {
+			console.error(e), t.innerHTML = "<div style=\"color: #ef4444; text-align: center; padding: 20px;\">Не удалось загрузить справочник.</div>";
 		}
-		await this.editor.switchTab("text");
-	}
-	_revealInterface() {
-		let e = document.querySelector(".note-interface");
-		e && (e.style.opacity = "1");
-	}
-	_bindEvents() {
-		n.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state), n.setupResizable(this.dom.editor, document.getElementById("editorResizeHandle"));
-		let e = (e, t) => document.getElementById(e)?.addEventListener("click", t.bind(this));
-		e("btnDeleteDialectics", this.deleteGlobal), e("btnSaveDialectics", this.saveGlobal), e("btnMathFormula", () => this.editor.showMathMenu()), this.dom.editor.classList.contains("embedded") ? (this.logDebug("Binding embedded editor save"), e("btnEditorSave", this.saveAndPin)) : (this.logDebug("Binding global save"), e("btnEditorSave", this.saveGlobal)), this.logDebug("Binding other buttons"), e("btnPinNote", this.pinCurrent), e("btnEditorClose", this.close), e("btnEditorExpand", this.toggleExpand), this.logDebug("Binding btnLoadDialectics..."), e("btnLoadDialectics", async (e) => {
-			this.logDebug("btnLoadDialectics CLICKED!"), e.preventDefault(), e.stopPropagation();
+	},
+	async showGuideModal() {
+		let e = document.getElementById("guideDialecticsModal");
+		if (!e) return;
+		e.style.display = "flex", e.offsetHeight, e.classList.add("active");
+		let t = document.getElementById("dialecticsGuideContent");
+		if (t && t.dataset.loaded !== "true") try {
+			t.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Загрузка инструкции...</div>";
+			let e = await fetch("/api/dialectics/guide");
+			if (!e.ok) throw Error("Failed to load guide");
+			t.innerHTML = `<div class="guide-markdown-content">${(await e.json()).html}</div>`, t.dataset.loaded = "true";
+		} catch (e) {
+			console.error(e), t.innerHTML = "<div style=\"color: #ef4444; text-align: center; padding: 20px;\">Не удалось загрузить инструкцию.</div>";
+		}
+	},
+	hideGuideModal() {
+		let e = document.getElementById("guideDialecticsModal");
+		e && (e.classList.remove("active"), setTimeout(() => e.style.display = "none", 200));
+	},
+	showLoadModal() {
+		this.logDebug("showLoadModal() called"), this.dom.loadModal ? (this.dom.loadModal.style.display = "flex", this.dom.loadModal.offsetHeight, this.dom.loadModal.classList.add("active"), this.logDebug("loadModal display set to flex and active class added")) : this.logDebug("ERROR: this.dom.loadModal is undefined!"), this.searchNotes("");
+	},
+	hideLoadModal() {
+		this.dom.loadModal && (this.dom.loadModal.classList.remove("active"), setTimeout(() => this.dom.loadModal.style.display = "none", 200));
+	},
+	async searchNotes(e) {
+		if (this.logDebug("searchNotes called with query: " + e), !this.dom.loadList) {
+			this.logDebug("ERROR: this.dom.loadList is undefined!");
+			return;
+		}
+		n.setLoading(this.dom.loadList);
+		try {
+			let n = await t.list(e);
+			this.logDebug("DialecticsAPI.list returned " + n.length + " notes"), this.renderNotesList(n);
+		} catch (e) {
+			this.logDebug("ERROR in DialecticsAPI.list: " + e.message);
+		}
+	},
+	renderNotesList(e) {
+		this.dom.loadList.innerHTML = e.length ? "" : "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>", e.forEach((e) => {
+			let n = document.createElement("div");
+			n.className = "load-note-item";
+			let i = new Date(e.updated_at || e.created_at), a = "";
+			i.getFullYear() > 1970 && (a = i.toLocaleDateString() + " " + i.toLocaleTimeString([], {
+				hour: "2-digit",
+				minute: "2-digit"
+			}));
+			let o = e.is_pinned ? "<span style=\"color: #f59e0b; margin-right: 8px;\" title=\"Pinned\">📌</span>" : "", s = e.title === "Example Note" || e.title === "Пример конспекта" || e.title === "Конспект мысалы" ? "" : "<button class=\"load-note-item-delete\" title=\"Delete\">🗑️</button>";
+			n.innerHTML = `
+                <div class="load-note-item-content" style="flex: 1;">
+                    <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${o}<strong>${e.title || (window._ ? window._("dialectics.topic_placeholder") : "Untitled")}</strong></div>
+                    <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">${a}</div>
+                </div>
+                ${s}
+            `, n.onclick = () => this.loadNoteToEditor(e.id);
+			let c = n.querySelector(".load-note-item-delete");
+			c && (c.onclick = async (i) => {
+				i.stopPropagation();
+				let a = window._ ? window._("dialectics.delete", "Confirm Deletion") : "Confirm Deletion", o = window._ ? window._("dialectics.confirm_delete", "Delete note \"%s\"?") : "Delete note \"%s\"?", s = window._ ? window._("dialectics.cancel", "Cancel") : "Cancel", c = window._ ? window._("dialectics.delete", "Delete") : "Delete";
+				await r({
+					title: a,
+					message: o.replace("%s", e.title),
+					icon: "🗑️",
+					buttons: [{
+						label: s,
+						value: !1,
+						class: "confirm-btn-secondary"
+					}, {
+						label: c,
+						value: !0,
+						class: "confirm-btn-danger"
+					}]
+				}) && await t.delete(e.id) && (window.showToast(window._("toast.record_deleted"), "info"), n.remove(), this.dom.loadList.children.length === 0 && (this.dom.loadList.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>"), this.state.currentNoteId === e.id && (this.close(), this.dom.title.value = "", Ia.render(this.dom.canvas, []), this.state.currentNoteId = null, this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none")));
+			}), this.dom.loadList.appendChild(n);
+		});
+	},
+	async deleteGlobal() {
+		if (this.state.currentNoteId) {
+			if (this.dom.title && (this.dom.title.value === "Example Note" || this.dom.title.value === "Пример конспекта" || this.dom.title.value === "Конспект мысалы")) {
+				window.showToast && window.showToast(window._("toast.cannot_delete_the_example_note"), "error");
+				return;
+			}
+			await r({
+				title: window._ ? window._("dialectics.delete_note_title") : "Удаление конспекта",
+				message: window._ ? window._("dialectics.delete_note_msg") : "Вы уверены, что хотите удалить этот конспект?",
+				icon: "🗑️",
+				buttons: [{
+					label: window._ ? window._("dialectics.cancel") : "Отмена",
+					value: !1,
+					class: "confirm-btn-secondary"
+				}, {
+					label: window._ ? window._("dialectics.delete") : "Удалить",
+					value: !0,
+					class: "confirm-btn-danger"
+				}]
+			}) && await t.delete(this.state.currentNoteId) && (window.showToast(window._("toast.dialectics_deleted"), "info"), location.reload());
+		}
+	},
+	async pinCurrent() {
+		if (!this.state.currentNoteId) {
+			window.showToast(window._("toast.save_first_to_pin"), "warning");
+			return;
+		}
+		let e = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), n = Ia.getBlocks(this.dom.canvas), r = {
+			id: this.state.currentNoteId,
+			title: e,
+			blocks: n,
+			is_pinned: !0
+		};
+		await t.save(r, this.state.currentNoteId) && window.showToast(window._("toast.pinned_successfully"), "success");
+	},
+	showViewModal(e, t, n) {
+		this.state.viewingNoteId = e, this.dom.viewTitle.textContent = t;
+		let r = "";
+		n.forEach((e) => {
+			r += `<div style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <small style="color: #94a3b8; text-transform: uppercase;">${e.side}</small>
+                <div>${e.html}</div>
+            </div>`;
+		}), this.dom.viewBody.innerHTML = r, this.dom.viewModal.style.display = "flex", this.dom.viewModal.offsetHeight, this.dom.viewModal.classList.add("active");
+	},
+	hideViewModal() {
+		this.dom.viewModal && (this.dom.viewModal.classList.remove("active"), setTimeout(() => this.dom.viewModal.style.display = "none", 200)), this.state.viewingNoteId = null;
+	},
+	async loadCategories() {
+		try {
+			this.state.categories = await t.listCategories(), this.renderCategorySelect(), this.renderConnectionsCategories();
+		} catch (e) {
+			console.error("Error loading categories", e);
+		}
+	},
+	renderCategorySelect() {
+		if (!this.dom.categorySelect) return;
+		let e = this.dom.categorySelect.value;
+		this.dom.categorySelect.innerHTML = "<option value=\"\">Без категории</option>", this.state.categories.forEach((e) => {
+			let t = document.createElement("option");
+			t.value = e.id, t.textContent = e.name, this.dom.categorySelect.appendChild(t);
+		});
+		let t = document.createElement("option");
+		t.value = "__add_new__", t.textContent = "➕ Новая категория...", t.style.fontWeight = "bold", t.style.color = "var(--color-primary)", this.dom.categorySelect.appendChild(t), this.dom.categorySelect.value = e;
+	},
+	renderConnectionsCategories() {
+		this.dom.connCategoriesList && (this.dom.connCategoriesList.innerHTML = "", this.state.categories.forEach((e) => {
+			let t = document.createElement("li");
+			t.className = "connections-category-item", t.style.cssText = "display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent;", t.onmouseover = () => {
+				t.style.backgroundColor = "var(--color-bg-subtle)", t.style.borderColor = "var(--color-border)";
+			}, t.onmouseout = () => {
+				t.style.backgroundColor = "transparent", t.style.borderColor = "transparent";
+			}, t.innerHTML = `
+                <span class="category-color-dot" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; background-color: ${e.color || "#94a3b8"}; box-shadow: 0 0 0 2px ${e.color}33;"></span>
+                <span style="font-weight: 500; font-size: 0.95rem;">${e.name}</span>
+            `, t.addEventListener("click", () => {
+				let t = document.getElementById("connections-search-input");
+				t && (t.value = e.name, this.searchConnections(e.name));
+			}), this.dom.connCategoriesList.appendChild(t);
+		}));
+	},
+	async addCategory(e) {
+		if (e && e.preventDefault(), !this.dom.newCategoryInput) return;
+		let t = this.dom.newCategoryInput.value.trim();
+		t && await this.createNewCategory(t) && (this.dom.newCategoryInput.value = "");
+	},
+	async createNewCategory(e) {
+		try {
+			let n = await t.createCategory(e);
+			if (n) return this.state.categories.push(n), this.state.categories.sort((e, t) => e.name.localeCompare(t.name)), this.renderCategorySelect(), this.renderConnectionsCategories(), this.dom.categorySelect && (this.dom.categorySelect.value = n.id), window.showToast("Категория добавлена", "success"), !0;
+		} catch (e) {
+			console.error("Error adding category", e), window.showToast("Ошибка при добавлении категории", "error");
+		}
+		return !1;
+	},
+	async showConnectionsModal(e) {
+		console.log("showConnectionsModal called", e), e && e.preventDefault();
+		let t = document.getElementById("dialectics-connections-modal");
+		t ? (t.style.display = "flex", t.offsetHeight, t.classList.add("active"), this.dom.connectionsModal = t, this.renderConnectionsCategories(), this.searchConnections("")) : (console.error("Connections modal element not found in DOM!"), window.showToast("Ошибка: модальное окно не найдено", "error"));
+	},
+	hideConnectionsModal() {
+		this.dom.connectionsModal && (this.dom.connectionsModal.classList.remove("active"), setTimeout(() => this.dom.connectionsModal.style.display = "none", 200));
+	},
+	async searchConnections(e) {
+		if (this.dom.connResultsContainer) {
+			this.dom.connResultsContainer.innerHTML = "<div style=\"color:#64748b; padding:20px; text-align:center; font-style: italic;\"><i class=\"fas fa-circle-notch fa-spin\" style=\"margin-right: 8px;\"></i> Поиск...</div>";
 			try {
-				if (this.logDebug("isDirty = " + this.state.isDirty), this.state.isDirty) {
-					this.logDebug("Showing customConfirm for unsaved changes...");
-					let e = await r({
-						title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
-						message: window._ ? window._("dialectics.unsaved_msg") : "Есть несохранённые изменения. Продолжить?",
-						icon: "⚠️",
+				let n = [];
+				if (n = !e || e.trim().length < 2 ? await t.list("") : await t.searchNotes(e), !n || n.length === 0) {
+					this.dom.connResultsContainer.innerHTML = "\n                    <div class=\"empty-state\" style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-light); opacity: 0.7; padding: 40px 0;\">\n                        <i class=\"fas fa-search\" style=\"font-size: 3rem; margin-bottom: 16px; color: var(--color-bg-app);\"></i>\n                        <p class=\"connections-empty-state\" data-i18n=\"dialectics_search_empty\" style=\"margin: 0; font-size: 0.95rem;\">Ничего не найдено</p>\n                    </div>";
+					return;
+				}
+				this.dom.connResultsContainer.innerHTML = "", n.forEach((e) => {
+					let t = document.createElement("div");
+					t.className = "connections-result-item", t.style.cssText = "padding: 16px; border-radius: var(--radius-lg); background: var(--color-bg-white); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px;", t.onmouseover = () => {
+						t.style.transform = "translateY(-2px)", t.style.boxShadow = "0 6px 12px rgba(0,0,0,0.05)", t.style.borderColor = "var(--color-primary)";
+					}, t.onmouseout = () => {
+						t.style.transform = "translateY(0)", t.style.boxShadow = "0 2px 4px rgba(0,0,0,0.02)", t.style.borderColor = "var(--color-border)";
+					};
+					let n = e.title || "Untitled", r = e.category ? e.category.name : "Без категории", i = e.category && e.category.color ? e.category.color : "#cbd5e1";
+					t.innerHTML = `
+                    <div class="connections-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${n}</strong>
+                        <span class="connections-result-cat" style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${r}</span>
+                    </div>
+                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${new Date(e.created_at).toLocaleDateString()}</div>
+                `, t.addEventListener("click", () => {
+						this.loadNoteToEditor(e.id), this.dom.connectionsModal && this.dom.connectionsModal.classList.remove("active"), setTimeout(() => {
+							this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
+						}, 200);
+					}), this.dom.connResultsContainer.appendChild(t);
+				});
+			} catch (e) {
+				console.error("Search error", e), this.dom.connResultsContainer.innerHTML = "<p class=\"connections-empty-state\">Ошибка поиска</p>";
+			}
+		}
+	}
+}, Pv = class {
+	async saveGlobal(e = !0, n = "toast.dialectics_saved") {
+		let r = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), i = this.editor.getHTML();
+		if (console.log("TipTap HTML Output -> length:", i.length), this.state.editingBlock) {
+			let e = this.state.editingBlock.querySelector(".dialectics-content-inner");
+			e && (e.innerHTML = i, Ia.renderMath(e));
+		} else if (this.state.pendingSide && i !== "<p></p>" && i.trim() !== "") {
+			let e = Ia.getBlocks(this.dom.canvas), t = {
+				id: this.state.pendingBlockId,
+				side: this.state.pendingSide,
+				html: i
+			};
+			this.state.pendingRole && (t.role = this.state.pendingRole);
+			let n;
+			n = this.state.insertAfterIndex === null ? [...e, t] : [
+				...e.slice(0, this.state.insertAfterIndex + 1),
+				t,
+				...e.slice(this.state.insertAfterIndex + 1)
+			], this.state.insertAfterIndex = null, this.state.pendingRole = null, Ia.render(this.dom.canvas, n, this._blockCallbacks());
+		}
+		let a = Ia.getBlocks(this.dom.canvas), o = this.dom.categorySelect ? this.dom.categorySelect.value : null, s = {
+			title: r,
+			blocks: a.map((e) => ({
+				id: e.id,
+				side: e.side,
+				html: e.html,
+				role: e.role
+			})),
+			is_pinned: this.state.isPinned || !1,
+			category_id: o ? parseInt(o) : null,
+			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
+			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
+			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
+			sticker_type: document.getElementById("dialecticsStickerType")?.value || "text"
+		};
+		this.state.currentNoteId && (s.id = Number(this.state.currentNoteId));
+		let c = await t.save(s, this.state.currentNoteId);
+		if (c) {
+			this.state.currentNoteId = c.id, localStorage.setItem("dialectics_last_note_id", c.id);
+			let t = new URL(window.location);
+			return t.searchParams.get("id") !== String(c.id) && (t.searchParams.set("id", c.id), window.history.pushState({}, "", t)), window.showToast(window._(n) || window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), c.id;
+		}
+		return null;
+	}
+	async openStickersForCurrent(e = null) {
+		if (!this.state.currentNoteId && (window.showToast && window.showToast(window._("toast.saving_note_to_attach_sticker"), "info"), !await this.saveGlobal(!1))) {
+			window.showToast && window.showToast(window._("toast.failed_to_save_note"), "error");
+			return;
+		}
+		let t = e;
+		t || (this.state.editingBlock ? t = this.state.editingBlock.dataset.blockId : this.state.pendingBlockId && (t = this.state.pendingBlockId)), window.openParentStickers && window.openParentStickers("dialectics", this.state.currentNoteId, t);
+	}
+	async saveAndPin() {
+		let e = {
+			title: this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"),
+			blocks: [{
+				side: "left",
+				html: this.editor.getHTML() || this.dom.dashboardTextarea?.value.replace(/\n/g, "<br>") || ""
+			}],
+			is_pinned: !0,
+			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
+			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
+			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
+			sticker_type: document.getElementById("dialecticsStickerType")?.value || "text"
+		};
+		this.state.currentNoteId && (e.id = this.state.currentNoteId), await t.save(e, this.state.currentNoteId) && (window.showToast(window._("toast.saved_and_pinned"), "success"), this.close(), setTimeout(() => location.reload(), 500));
+	}
+	async loadNoteToEditor(e, n = !0) {
+		let r = await t.get(e);
+		if (r) {
+			if (n && this.state.currentNoteId && this.state.currentNoteId !== r.id) {
+				let e = this.getNoteHistory();
+				(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
+			}
+			this.state.currentNoteId = r.id, localStorage.setItem("dialectics_last_note_id", r.id), this.dom.title.value = r.title;
+			let e = typeof r.content_json == "string" ? JSON.parse(r.content_json) : r.content_json;
+			this.dom.categorySelect && (this.dom.categorySelect.value = r.category_id || ""), Ia.render(this.dom.canvas, e, this._blockCallbacks()), this._revealInterface(), this.hideLoadModal(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = r.title === "Example Note" || r.title === "Пример конспекта" || r.title === "Конспект мысалы" ? "none" : "block");
+			let t = new URL(window.location);
+			t.searchParams.get("id") !== String(r.id) && (t.searchParams.set("id", r.id), window.history.pushState({}, "", t));
+		} else localStorage.removeItem("dialectics_last_note_id"), this._revealInterface();
+	}
+	async loadExample() {
+		n.setLoading(this.dom.canvas);
+		try {
+			let e = await fetch("/api/dialectics/example/get_or_create_id");
+			if (e.ok) {
+				let t = await e.json();
+				t && t.id && (await this.loadNoteToEditor(t.id), window.showToast(window._("toast.opened_existing_example_note") || "Example Note loaded", "info"));
+			} else console.error("Failed to load example note ID."), n.clearLoading(this.dom.canvas);
+		} catch (e) {
+			console.error(e), n.clearLoading(this.dom.canvas);
+		}
+	}
+	async createNewNote() {
+		this.state.isDirty ? await customConfirm({
+			title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_new_msg") : "Есть несохранённые изменения. Создать новый конспект?",
+			icon: "⚠️",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.create_btn") : "Создать",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
+		}) && (this.state.isDirty = !1, this._resetToNewNote()) : this._resetToNewNote();
+	}
+	_resetToNewNote() {
+		if (this.state.currentNoteId) {
+			let e = this.getNoteHistory();
+			(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
+		}
+		this.state.currentNoteId = null, localStorage.removeItem("dialectics_last_note_id"), this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none");
+		let e = new URL(window.location);
+		e.searchParams.delete("id"), window.history.pushState({}, "", e), window.showToast(window._("toast.created_a_new_blank_note"), "success");
+	}
+	getNoteHistory() {
+		try {
+			let e = sessionStorage.getItem("dialectics_note_history");
+			return e ? JSON.parse(e) : [];
+		} catch {
+			return [];
+		}
+	}
+	saveNoteHistory(e) {
+		try {
+			sessionStorage.setItem("dialectics_note_history", JSON.stringify(e));
+		} catch {}
+	}
+	loadPreviousNote() {
+		let e = this.getNoteHistory();
+		if (e.length > 0) {
+			let t = e.pop();
+			this.saveNoteHistory(e), this.loadNoteToEditor(t, !1), window.showToast(window._("toast.loaded_previous_note"), "info");
+		} else window.location.href = "/";
+	}
+}, Fv = {};
+Object.getOwnPropertyNames(Pv.prototype).forEach((e) => {
+	e !== "constructor" && (Fv[e] = Pv.prototype[e]);
+});
+//#endregion
+//#region fastapi_app/static/js/dialectics/AIController.js
+var Iv = class {
+	async runHintAI(e) {
+		if (!e || e.id === "anchor") {
+			window.showToast("Cannot run AI on the main goal block before it is created.", "info");
+			return;
+		}
+		let t = Ia.getBlocks(this.dom.canvas), n = t.find((e) => e.role === "anchor"), r = (e) => {
+			let t = document.createElement("DIV");
+			return t.innerHTML = e, t.textContent || t.innerText || "";
+		}, i = n ? r(n.html) : "", a = t.filter((e) => e.role && e.role !== "anchor").map((e) => `[${e.role}]: ${r(e.html)}`).join("\\n\\n");
+		window.showToast("✨ " + window._("toast.ai_is_thinking", "AI is generating response..."), "info");
+		try {
+			let t = await fetch("/api/ai/dialectics/hint-step", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					step_id: e.id,
+					goal_text: i,
+					context_text: a
+				})
+			});
+			if (!t.ok) {
+				let e = await t.json();
+				throw Error(e.detail || "API Error");
+			}
+			let n = (await t.json()).result;
+			!n.includes("<p>") && !n.includes("<div>") && (n = n.split("\\n").filter((e) => e.trim()).map((e) => `<p>${e}</p>`).join("")), this.openHintEditor(e, "", n);
+		} catch (e) {
+			console.error("AI Error:", e), window.showToast("AI Error: " + e.message, "error");
+		}
+	}
+	openInsertAfter(e, t) {
+		this.state.editingBlock = null, this.state.pendingSide = e, this.state.pendingRole = null, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = t, this.open();
+	}
+	async runAI(e) {
+		let t = e.closest(".dialectics-editor") || document, n = (e) => {
+			let n = t.querySelector(`[data-role="${e}"] .dialectics-content-inner`);
+			return n ? (n.innerText || n.textContent).trim() : "";
+		}, r = n("anchor"), i = n("step1"), a = n("step2"), o = [];
+		r && o.push(`Что понять: ${r}`), i && o.push(`Простейший процесс: ${i}`), a && o.push(`Развитие процесса: ${a}`);
+		let s = o.join("\n\n");
+		if (!s) {
+			let t = e.querySelector(".dialectics-content-inner");
+			s = t ? (t.innerText || t.textContent).trim() : "";
+		}
+		if (s) {
+			window.showToast(window._("toast.ai_is_analyzing_the_process"), "info");
+			try {
+				let e = await fetch("/api/ai/dialectics/opposites", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ process_a: s })
+				});
+				if (!e.ok) {
+					let t = await e.json();
+					throw Error(t.detail || "API Error");
+				}
+				let t = await e.json(), n = document.getElementById("explainConceptModal"), r = document.getElementById("explainConceptTitle"), i = document.getElementById("explainConceptBody");
+				if (n && r && i) r.innerText = window._ && window._("analysis_result") || "Результат анализа", i.innerHTML = this._renderMarkdown(t.result), n.style.display = "flex";
+				else {
+					let e = `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${t.result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+					customConfirm({
+						title: "Результат анализа",
+						message: e,
 						buttons: [{
-							label: window._ ? window._("dialectics.cancel") : "Отмена",
-							value: !1,
-							class: "confirm-btn-secondary"
-						}, {
-							label: window._ ? window._("dialectics.continue_btn") : "Продолжить",
+							label: "Закрыть",
 							value: !0,
 							class: "confirm-btn-primary"
 						}]
 					});
-					if (this.logDebug("customConfirm resolved: " + e), e) {
-						this.state.isDirty = !1, this.showLoadModal();
-						let e = document.getElementById("dialecticsSearchInput");
-						e && (e.value = "", e.focus());
-					}
-				} else {
-					this.logDebug("No unsaved changes. Opening modal directly."), this.showLoadModal();
-					let e = document.getElementById("dialecticsSearchInput");
-					e && (e.value = "", e.focus());
 				}
 			} catch (e) {
-				this.logDebug("ERROR in open button: " + e.message), alert("Error in open button: " + e.message);
-			}
-		}), this.logDebug("Binding btnLoadDialectics COMPLETED.");
-		let t = document.getElementById("dialecticsSearchInput");
-		t && t.addEventListener("input", (e) => this.searchNotes(e.target.value)), e("btnNewDialectics", this.createNewNote), e("btnGlobalParser", this.runGlobalParser), e("btnExampleDialectics", this.loadExample), e("btnPrevDialectics", this.loadPreviousNote), e("btnDialecticsReference", this.showReferenceModal), e("btnDialecticsGuide", this.showGuideModal), e("btnDialecticsConnections", this.showConnectionsModal), e("close-connections-btn", () => {
-			this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
-		}), e("add-category-btn", this.addCategory);
-		let a = document.getElementById("connections-search-input");
-		a && a.addEventListener("input", (e) => this.searchConnections(e.target.value)), this.dom.categorySelect && this.dom.categorySelect.addEventListener("change", async (e) => {
-			if (e.target.value === "__add_new__") {
-				e.target.value = "";
-				let t = await i({
-					title: "Новая категория",
-					message: "Введите название новой категории:",
-					placeholder: "Например: Физика, Идеи..."
+				console.error(e);
+				let t = document.getElementById("explainConceptModal"), n = document.getElementById("explainConceptTitle"), r = document.getElementById("explainConceptBody");
+				t && n && r ? (n.innerText = "Ошибка", r.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex") : customConfirm({
+					title: "Ошибка",
+					message: `<div style="color: red;">${e.message}</div>`,
+					buttons: [{
+						label: "Закрыть",
+						value: !0,
+						class: "confirm-btn-secondary"
+					}]
 				});
-				t && t.trim() && await this.createNewCategory(t.trim());
 			}
-		}), e("btnViewModalEdit", () => {
-			this.hideViewModal(), this.loadNoteToEditor(this.state.viewingNoteId);
-		}), La.init(this.dom.canvas, {
-			onClick: (e, t) => {
-				let n = e < t ? "left" : "right";
-				this.state.editingBlock = null, this.state.pendingSide = n, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.pendingRole = null;
-				let r = Ia.getBlocks(this.dom.canvas).some((e) => e.role === "anchor");
-				n === "left" && !r && (this.state.pendingRole = "anchor"), this.open();
-			},
-			onDoubleClick: (e) => {
-				this.state.editingBlock = e, this.openEdit(e);
-			}
-		}), document.querySelectorAll(".editor-tab").forEach((e) => {
-			e.addEventListener("click", () => this.editor.switchTab(e.dataset.tab));
-		}), e("btnGraphPlot", () => this.editor.plotGraph()), e("btnGraphInsert", () => this.editor.insertGraphToNote()), e("btnShapeUndo", () => this.editor.undoShape()), e("btnShapeDelete", () => this.editor.deleteSelectedShape()), e("btnShapeGrid", () => this.editor.toggleShapeGrid()), e("btnShapeCopy", () => this.editor.copySelectedShape()), e("btnShapeClear", () => this.editor.clearShapes()), e("btnShapesInsert", () => this.editor.insertShapesToNote()), e("btnShapeGroup", () => this.editor.groupSelected()), e("btnObjectList", () => this.editor.toggleObjectListPanel()), this.setupExplainTooltip(), document.querySelectorAll(".shape-tool[data-tool]").forEach((e) => {
-			e.addEventListener("click", () => this.editor.setShapeTool(e.dataset.tool));
-		}), document.querySelectorAll(".shape-tool[data-shape]").forEach((e) => {
-			e.addEventListener("click", () => this.editor.addShape(e.dataset.shape));
-		});
-		let o = document.getElementById("shapeColor");
-		o && o.addEventListener("input", (e) => {
-			this.editor.applyColorToSelected(e.target.value);
-		});
-		let s = document.getElementById("shapeFillColor");
-		s && s.addEventListener("input", (e) => {
-			this.editor.applyFillToSelected(e.target.value + "33");
-		}), e("btnToggleFill", () => this.editor.toggleFillForSelected());
+		}
 	}
-	_renderMarkdown(e) {
-		return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>");
+	async runGlobalParser() {
+		if (window.WidgetManager) window.WidgetManager.toggle("formulaParserWidget");
+		else {
+			let e = document.getElementById("formulaParserWidget");
+			e && (e.style.display = "flex");
+		}
 	}
-	setupExplainTooltip() {
-		let e = document.createElement("div");
-		e.className = "dialectics-context-menu", e.style.display = "none";
-		let t = document.createElement("div");
-		t.className = "dialectics-context-menu-item", t.innerHTML = "Что это?", e.appendChild(t), document.body.appendChild(e);
-		let n = "", r = (e) => e.closest(".dialectics-content-inner") || e.closest(".tiptap-editor") || e.closest(".ProseMirror") || e.closest("#inlineEditor");
-		document.addEventListener("contextmenu", (t) => {
-			let i = window.getSelection();
-			if (!i || !i.rangeCount || i.isCollapsed) {
-				e.style.display = "none";
-				return;
+	async startTextMathDictation() {
+		let e = await customPrompt({
+			title: "✍ Describe the formula in words",
+			message: "Example: \"square root of x squared plus y squared\"",
+			placeholder: "Your text..."
+		});
+		if (!(!e || !e.trim())) {
+			window.showToast(window._("toast.ai_is_generating_formula"), "info");
+			try {
+				let t = await fetch("/api/ai/dialectics/text-math", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ text: e.trim() })
+				});
+				if (!t.ok) throw Error(await t.text());
+				let n = (await t.json()).latex;
+				this.editor && this.editor.tiptap && (this.editor.tiptap.chain().focus().insertContent({
+					type: "mathNode",
+					attrs: { latex: n }
+				}).run(), window.showToast(window._("toast.formula_added"), "success"));
+			} catch (e) {
+				console.error(e), window.showToast(window._("toast.error_generating_formula"), "error");
 			}
-			let a = i.getRangeAt(0).commonAncestorContainer;
-			if (!r(a.nodeType === 3 ? a.parentElement : a)) {
-				e.style.display = "none";
-				return;
-			}
-			if (n = i.toString().trim(), !n) {
-				e.style.display = "none";
-				return;
-			}
-			t.preventDefault(), e.style.display = "block";
-			let o = t.pageX, s = t.pageY;
-			o + 160 > window.innerWidth && (o = window.innerWidth - 160), s + 50 > window.innerHeight + window.scrollY && (s = t.pageY - 50), e.style.left = `${o}px`, e.style.top = `${s}px`;
-		}, !0), document.addEventListener("click", (t) => {
-			e.contains(t.target) || (e.style.display = "none");
-		}), document.addEventListener("keydown", (t) => {
-			t.key === "Escape" && (e.style.display = "none");
-		}), t.addEventListener("click", async (t) => {
-			if (t.stopPropagation(), !n) return;
-			e.style.display = "none";
-			let r = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
-			if (!(!r || !a)) {
-				i.innerText = `Что это: "${n}"?`, a.innerHTML = "<div style=\"text-align:center; padding:40px; color:#94a3b8;\"><div style=\"font-size:2rem; margin-bottom:12px;\">⏳</div><div>Анализирую концепт...</div></div>", r.style.display = "flex";
-				try {
-					let e = await fetch("/api/ai/dialectics/explain-concept", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ text: n })
-					});
-					if (!e.ok) throw Error(`HTTP ${e.status}`);
-					let t = await e.json();
-					a.innerHTML = this._renderMarkdown(t.result);
-				} catch (e) {
-					a.innerHTML = `<div style="color:#ef4444;">Ошибка: ${e.message}</div>`;
+		}
+	}
+	async startVoiceMathDictation() {
+		try {
+			let e = await navigator.mediaDevices.getUserMedia({ audio: !0 }), t = new MediaRecorder(e), n = [], r = !1;
+			t.addEventListener("dataavailable", (e) => {
+				n.push(e.data);
+			}), t.addEventListener("stop", async () => {
+				let t = new Blob(n, { type: "audio/webm" });
+				if (e.getTracks().forEach((e) => e.stop()), r) {
+					window.showToast(window._("toast.recording_cancelled"), "info");
+					return;
 				}
-				window.getSelection()?.removeAllRanges();
-			}
-		});
+				window.showToast(window._("toast.recognizing_and_generating_lat"), "info");
+				let i = new FormData();
+				i.append("file", t, "voice-math.webm");
+				try {
+					let e = await fetch("/api/ai/dialectics/voice-math", {
+						method: "POST",
+						body: i
+					});
+					if (!e.ok) throw Error(await e.text());
+					let t = await e.json(), n = t.latex;
+					console.log("Transcribed text:", t.transcribed_text), this.editor && this.editor.tiptap && (this.editor.tiptap.chain().focus().insertContent({
+						type: "mathNode",
+						attrs: { latex: n }
+					}).run(), window.showToast(window._("toast.formula_added"), "success"));
+				} catch (e) {
+					console.error(e), window.showToast(window._("toast.audio_processing_error"), "error");
+				}
+			}), t.start(), customConfirm({
+				title: "🎙 Recording",
+				message: "<div style=\"text-align: center; color: red; font-weight: bold; animation: pulse 1.5s infinite;\">Audio recording in progress... Speak the formula.</div>",
+				buttons: [{
+					label: "Stop and recognize",
+					value: !0,
+					class: "confirm-btn-primary"
+				}, {
+					label: "Cancel",
+					value: !1,
+					class: "confirm-btn-secondary"
+				}]
+			}).then((e) => {
+				e === !1 && (r = !0), t.state === "recording" && t.stop();
+			});
+		} catch (e) {
+			console.error("Microphone access denied or error:", e), window.showToast(window._("toast.no_microphone_access"), "error");
+		}
 	}
+}, Lv = {};
+Object.getOwnPropertyNames(Iv.prototype).forEach((e) => {
+	e !== "constructor" && (Lv[e] = Iv.prototype[e]);
+});
+//#endregion
+//#region fastapi_app/static/js/dialectics/BlocksOrchestrator.js
+var Rv = class {
 	open(e = "") {
 		this.dom.editor && !this.dom.editor.classList.contains("embedded") && n.toggleDisplay(this.dom.editor, !0, !0);
 		let t = document.getElementById("tab-ai");
@@ -34165,42 +34530,6 @@ window.app = new class {
 	}
 	save() {
 		this.saveGlobal(!1, "toast.dialectics_saved");
-	}
-	saveGlobal(e = !1, t = "toast.dialectics_saved") {
-		let n = "";
-		if (this.editor.tiptap) n = this.editor.getContent();
-		else if (this.dom.dashboardTextarea) {
-			let e = this.dom.dashboardTextarea.value.trim();
-			n = e ? `<p>${e.replace(/\n/g, "<br>")}</p>` : "";
-		}
-		if (!n.replace(/<p><\/p>/g, "").trim()) {
-			!e && window.showToast && window.showToast("Введите текст конспекта", "warning");
-			return;
-		}
-		let r = [];
-		if (this.dom.stickerText) {
-			let e = this.dom.stickerText.value.trim();
-			e && r.push({
-				text: e,
-				title: this.dom.stickerTitle?.value?.trim() || "Важное примечание",
-				color: this.dom.stickerColor?.value || "#fff9c4",
-				type: this.dom.stickerType?.value || "text"
-			});
-		}
-		if (this.state.editingBlock) {
-			let e = this.state.editingBlock.querySelector(".dialectics-content-inner");
-			if (e && (e.innerHTML = n), r.length > 0) {
-				let e = [];
-				try {
-					e = JSON.parse(this.state.editingBlock.dataset.stickers || "[]");
-				} catch {}
-				e.push(...r), this.state.editingBlock.dataset.stickers = JSON.stringify(e);
-			}
-		} else {
-			let e = this.state.pendingSide || "left", t = this.state.pendingRole || "thesis", i = this.state.pendingBlockId || "block_" + Math.random().toString(36).substr(2, 9);
-			this.createBlock(e, t, n, i, r, [], this.state.insertAfterIndex);
-		}
-		this.close(), !e && window.showToast && window.showToast(window._(t, "Сохранено"), "success");
 	}
 	createBlock(e, t, n, r, i = [], a = [], o = null) {
 		let s = e === "left" ? this.dom.leftCol : this.dom.rightCol;
@@ -34261,10 +34590,6 @@ window.app = new class {
 			}
 			n && (n.value = ""), r && (r.value = "");
 		});
-	}
-	openStickersForCurrent(e) {
-		let t = document.getElementById("blockStickersModal");
-		t && (t.dataset.currentBlockId = e, this.renderStickersListInModal(e), t.style.display = "flex");
 	}
 	renderStickersListInModal(e) {
 		let t = document.getElementById("modalStickersList");
@@ -34454,611 +34779,200 @@ window.app = new class {
 			}), r && (r.value = ""), i && (i.value = ""), a && (a.value = ""), l(), c();
 		}, c(), t.style.display = "flex";
 	}
-	async runHintAI(e) {
-		if (!e || e.id === "anchor") {
-			window.showToast("Cannot run AI on the main goal block before it is created.", "info");
-			return;
-		}
-		let t = Ia.getBlocks(this.dom.canvas), n = t.find((e) => e.role === "anchor"), r = (e) => {
-			let t = document.createElement("DIV");
-			return t.innerHTML = e, t.textContent || t.innerText || "";
-		}, i = n ? r(n.html) : "", a = t.filter((e) => e.role && e.role !== "anchor").map((e) => `[${e.role}]: ${r(e.html)}`).join("\\n\\n");
-		window.showToast("✨ " + window._("toast.ai_is_thinking", "AI is generating response..."), "info");
-		try {
-			let t = await fetch("/api/ai/dialectics/hint-step", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					step_id: e.id,
-					goal_text: i,
-					context_text: a
-				})
-			});
-			if (!t.ok) {
-				let e = await t.json();
-				throw Error(e.detail || "API Error");
+}, zv = {};
+Object.getOwnPropertyNames(Rv.prototype).forEach((e) => {
+	e !== "constructor" && (zv[e] = Rv.prototype[e]);
+});
+//#endregion
+//#region fastapi_app/static/js/dialectics.js
+var Bv = class {
+	constructor() {
+		window.showToast = window.showToast || ((e) => console.log("Toast:", e)), this.state = {
+			currentNoteId: null,
+			noteHistory: [],
+			pendingSide: null,
+			isExpanded: !1,
+			editingBlock: null,
+			notesList: [],
+			viewingNoteId: null,
+			insertAfterIndex: null,
+			categories: []
+		}, this.dom = {
+			canvas: document.getElementById("dialecticsCanvas"),
+			editor: document.getElementById("inlineEditor"),
+			title: document.getElementById("globalDialecticsTitle"),
+			deleteBtn: document.getElementById("btnDeleteDialectics"),
+			backdrop: document.getElementById("expandedBackdrop"),
+			dragHandle: document.getElementById("editorDragHandle"),
+			loadModal: document.getElementById("loadDialecticsModal"),
+			loadList: document.getElementById("loadDialecticsList"),
+			guideModal: document.getElementById("guideDialecticsModal"),
+			guideContent: document.getElementById("dialecticsGuideContent"),
+			viewModal: document.getElementById("dialecticsViewModal"),
+			viewTitle: document.getElementById("dialecticsViewTitle"),
+			viewBody: document.getElementById("dialecticsViewBody"),
+			debug: document.getElementById("debugLogContent"),
+			dashboardTextarea: document.getElementById("dashboard-note-editor"),
+			connectionsModal: document.getElementById("dialectics-connections-modal"),
+			categorySelect: document.getElementById("dialecticsCategorySelect"),
+			connCategoriesList: document.getElementById("connections-categories-list"),
+			connResultsContainer: document.getElementById("connections-results-container"),
+			newCategoryInput: document.getElementById("new-category-input")
+		}, this.editor = new Mv(this), this.dom.editor && this.init();
+	}
+	async init() {
+		if (this.logDebug("Engine init..."), this._bindEvents(), await this.loadCategories(), this.dom.editor.classList.contains("embedded") && this.dom.dashboardTextarea) this.setupDashboardTextarea(), this._revealInterface();
+		else {
+			let e = new URLSearchParams(window.location.search).get("id");
+			if (!e && (e = localStorage.getItem("dialectics_last_note_id"), e)) {
+				let t = new URL(window.location);
+				t.searchParams.set("id", e), window.history.replaceState({}, "", t);
 			}
-			let n = (await t.json()).result;
-			!n.includes("<p>") && !n.includes("<div>") && (n = n.split("\\n").filter((e) => e.trim()).map((e) => `<p>${e}</p>`).join("")), this.openHintEditor(e, "", n);
-		} catch (e) {
-			console.error("AI Error:", e), window.showToast("AI Error: " + e.message, "error");
+			e ? await this.loadNoteToEditor(e, !1) : (this.state.currentNoteId = null, this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none"), this._revealInterface());
 		}
+		await this.editor.switchTab("text");
 	}
-	openInsertAfter(e, t) {
-		this.state.editingBlock = null, this.state.pendingSide = e, this.state.pendingRole = null, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = t, this.open();
+	_revealInterface() {
+		let e = document.querySelector(".note-interface");
+		e && (e.style.opacity = "1");
 	}
-	async runAI(e) {
-		let t = e.closest(".dialectics-editor") || document, n = (e) => {
-			let n = t.querySelector(`[data-role="${e}"] .dialectics-content-inner`);
-			return n ? (n.innerText || n.textContent).trim() : "";
-		}, i = n("anchor"), a = n("step1"), o = n("step2"), s = [];
-		i && s.push(`Что понять: ${i}`), a && s.push(`Простейший процесс: ${a}`), o && s.push(`Развитие процесса: ${o}`);
-		let c = s.join("\n\n");
-		if (!c) {
-			let t = e.querySelector(".dialectics-content-inner");
-			c = t ? (t.innerText || t.textContent).trim() : "";
-		}
-		if (c) {
-			window.showToast(window._("toast.ai_is_analyzing_the_process"), "info");
+	_bindEvents() {
+		n.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state), n.setupResizable(this.dom.editor, document.getElementById("editorResizeHandle"));
+		let e = (e, t) => document.getElementById(e)?.addEventListener("click", t.bind(this));
+		e("btnDeleteDialectics", this.deleteGlobal), e("btnSaveDialectics", this.saveGlobal), e("btnMathFormula", () => this.editor.showMathMenu()), this.dom.editor.classList.contains("embedded") ? (this.logDebug("Binding embedded editor save"), e("btnEditorSave", this.saveAndPin)) : (this.logDebug("Binding global save"), e("btnEditorSave", this.saveGlobal)), this.logDebug("Binding other buttons"), e("btnPinNote", this.pinCurrent), e("btnEditorClose", this.close), e("btnEditorExpand", this.toggleExpand), this.logDebug("Binding btnLoadDialectics..."), e("btnLoadDialectics", async (e) => {
+			this.logDebug("btnLoadDialectics CLICKED!"), e.preventDefault(), e.stopPropagation();
 			try {
-				let e = await fetch("/api/ai/dialectics/opposites", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ process_a: c })
-				});
-				if (!e.ok) {
-					let t = await e.json();
-					throw Error(t.detail || "API Error");
-				}
-				let t = await e.json(), n = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
-				n && i && a ? (i.innerText = window._ && window._("analysis_result") || "Результат анализа", a.innerHTML = this._renderMarkdown(t.result), n.style.display = "flex") : r({
-					title: "Результат анализа",
-					message: `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${t.result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
-					buttons: [{
-						label: "Закрыть",
-						value: !0,
-						class: "confirm-btn-primary"
-					}]
-				});
-			} catch (e) {
-				console.error(e);
-				let t = document.getElementById("explainConceptModal"), n = document.getElementById("explainConceptTitle"), i = document.getElementById("explainConceptBody");
-				t && n && i ? (n.innerText = "Ошибка", i.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex") : r({
-					title: "Ошибка",
-					message: `<div style="color: red;">${e.message}</div>`,
-					buttons: [{
-						label: "Закрыть",
-						value: !0,
-						class: "confirm-btn-secondary"
-					}]
-				});
-			}
-		}
-	}
-	async runGlobalParser() {
-		let e = await i({
-			title: "✨ AI Formula Parser",
-			message: "Enter math formula for dialectical parsing:",
-			placeholder: "e.g. E = mc^2 or Hψ = Eψ",
-			watermark: "made of Iasmin",
-			width: "500px"
-		});
-		if (!(!e || !e.trim())) {
-			window.showToast(window._("toast.ai_is_parsing_formula"), "info");
-			try {
-				let t = await fetch("/api/ai/dialectics/parser", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ formula: e.trim() })
-				});
-				if (!t.ok) {
-					let e = await t.json();
-					throw Error(e.detail || "API Error");
-				}
-				let n = await t.json(), i;
-				try {
-					i = JSON.parse(n.result);
-				} catch {
-					let e = n.result.match(/```(?:json)?\n([\s\S]*?)\n```/);
-					if (e) i = JSON.parse(e[1]);
-					else throw Error("Failed to parse JSON response from AI.");
-				}
-				let a = (e, t, n) => `
-                <div class="parser-block ${n}">
-                    <div class="parser-block-title">${e}</div>
-                    <div class="parser-block-content">${t || "—"}</div>
-                </div>
-            `;
-				r({
-					title: "Parser Result",
-					message: `
-                <div class="parser-modal-container">
-                    <h3 class="parser-modal-header">
-                        Formula Analysis: <span class="parser-modal-formula">${e}</span>
-                    </h3>
-                    ${a("Preceding Operation (Thesis)", i.predecessor, "thesis")}
-                    ${a("Crisis of Notation Complexity (Antithesis)", i.crisis_of_notation, "antithesis")}
-                    ${a("Resolution (Synthesis)", i.resolution, "synthesis")}
-                </div>
-            `,
-					icon: "🧮",
-					watermark: "made of Iasmin",
-					width: "650px",
-					buttons: [{
-						label: "Close",
-						value: !0,
-						class: "confirm-btn-primary"
-					}]
-				});
-			} catch (e) {
-				console.error(e), r({
-					title: "Parser Error",
-					message: `<div style="color: red;">${e.message}</div>`,
-					buttons: [{
-						label: "Close",
-						value: !0,
-						class: "confirm-btn-secondary"
-					}]
-				});
-			}
-		}
-	}
-	async startTextMathDictation() {
-		let e = await i({
-			title: "✍ Describe the formula in words",
-			message: "Example: \"square root of x squared plus y squared\"",
-			placeholder: "Your text..."
-		});
-		if (!(!e || !e.trim())) {
-			window.showToast(window._("toast.ai_is_generating_formula"), "info");
-			try {
-				let t = await fetch("/api/ai/dialectics/text-math", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ text: e.trim() })
-				});
-				if (!t.ok) throw Error(await t.text());
-				let n = (await t.json()).latex;
-				this.editor && this.editor.tiptap && (this.editor.tiptap.chain().focus().insertContent({
-					type: "mathNode",
-					attrs: { latex: n }
-				}).run(), window.showToast(window._("toast.formula_added"), "success"));
-			} catch (e) {
-				console.error(e), window.showToast(window._("toast.error_generating_formula"), "error");
-			}
-		}
-	}
-	async startVoiceMathDictation() {
-		try {
-			let e = await navigator.mediaDevices.getUserMedia({ audio: !0 }), t = new MediaRecorder(e), n = [], i = !1;
-			t.addEventListener("dataavailable", (e) => {
-				n.push(e.data);
-			}), t.addEventListener("stop", async () => {
-				let t = new Blob(n, { type: "audio/webm" });
-				if (e.getTracks().forEach((e) => e.stop()), i) {
-					window.showToast(window._("toast.recording_cancelled"), "info");
-					return;
-				}
-				window.showToast(window._("toast.recognizing_and_generating_lat"), "info");
-				let r = new FormData();
-				r.append("file", t, "voice-math.webm");
-				try {
-					let e = await fetch("/api/ai/dialectics/voice-math", {
-						method: "POST",
-						body: r
+				if (this.logDebug("isDirty = " + this.state.isDirty), this.state.isDirty) {
+					this.logDebug("Showing customConfirm for unsaved changes...");
+					let e = await r({
+						title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
+						message: window._ ? window._("dialectics.unsaved_msg") : "Есть несохранённые изменения. Продолжить?",
+						icon: "⚠️",
+						buttons: [{
+							label: window._ ? window._("dialectics.cancel") : "Отмена",
+							value: !1,
+							class: "confirm-btn-secondary"
+						}, {
+							label: window._ ? window._("dialectics.continue_btn") : "Продолжить",
+							value: !0,
+							class: "confirm-btn-primary"
+						}]
 					});
-					if (!e.ok) throw Error(await e.text());
-					let t = await e.json(), n = t.latex;
-					console.log("Transcribed text:", t.transcribed_text), this.editor && this.editor.tiptap && (this.editor.tiptap.chain().focus().insertContent({
-						type: "mathNode",
-						attrs: { latex: n }
-					}).run(), window.showToast(window._("toast.formula_added"), "success"));
-				} catch (e) {
-					console.error(e), window.showToast(window._("toast.audio_processing_error"), "error");
+					if (this.logDebug("customConfirm resolved: " + e), e) {
+						this.state.isDirty = !1, this.showLoadModal();
+						let e = document.getElementById("dialecticsSearchInput");
+						e && (e.value = "", e.focus());
+					}
+				} else {
+					this.logDebug("No unsaved changes. Opening modal directly."), this.showLoadModal();
+					let e = document.getElementById("dialecticsSearchInput");
+					e && (e.value = "", e.focus());
 				}
-			}), t.start(), r({
-				title: "🎙 Recording",
-				message: "<div style=\"text-align: center; color: red; font-weight: bold; animation: pulse 1.5s infinite;\">Audio recording in progress... Speak the formula.</div>",
-				buttons: [{
-					label: "Stop and recognize",
-					value: !0,
-					class: "confirm-btn-primary"
-				}, {
-					label: "Cancel",
-					value: !1,
-					class: "confirm-btn-secondary"
-				}]
-			}).then((e) => {
-				e === !1 && (i = !0), t.state === "recording" && t.stop();
-			});
-		} catch (e) {
-			console.error("Microphone access denied or error:", e), window.showToast(window._("toast.no_microphone_access"), "error");
-		}
-	}
-	async saveGlobal(e = !0, n = "toast.dialectics_saved") {
-		let r = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), i = this.editor.getHTML();
-		if (console.log("TipTap HTML Output -> length:", i.length), this.state.editingBlock) {
-			let e = this.state.editingBlock.querySelector(".dialectics-content-inner");
-			e && (e.innerHTML = i, Ia.renderMath(e));
-		} else if (this.state.pendingSide && i !== "<p></p>" && i.trim() !== "") {
-			let e = Ia.getBlocks(this.dom.canvas), t = {
-				id: this.state.pendingBlockId,
-				side: this.state.pendingSide,
-				html: i
-			};
-			this.state.pendingRole && (t.role = this.state.pendingRole);
-			let n;
-			n = this.state.insertAfterIndex === null ? [...e, t] : [
-				...e.slice(0, this.state.insertAfterIndex + 1),
-				t,
-				...e.slice(this.state.insertAfterIndex + 1)
-			], this.state.insertAfterIndex = null, this.state.pendingRole = null, Ia.render(this.dom.canvas, n, this._blockCallbacks());
-		}
-		let a = Ia.getBlocks(this.dom.canvas), o = this.dom.categorySelect ? this.dom.categorySelect.value : null, s = {
-			title: r,
-			blocks: a.map((e) => ({
-				id: e.id,
-				side: e.side,
-				html: e.html,
-				role: e.role
-			})),
-			is_pinned: this.state.isPinned || !1,
-			category_id: o ? parseInt(o) : null,
-			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
-			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
-			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
-			sticker_type: document.getElementById("dialecticsStickerType")?.value || "text"
-		};
-		this.state.currentNoteId && (s.id = Number(this.state.currentNoteId));
-		let c = await t.save(s, this.state.currentNoteId);
-		if (c) {
-			this.state.currentNoteId = c.id, localStorage.setItem("dialectics_last_note_id", c.id);
-			let t = new URL(window.location);
-			return t.searchParams.get("id") !== String(c.id) && (t.searchParams.set("id", c.id), window.history.pushState({}, "", t)), window.showToast(window._(n) || window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), c.id;
-		}
-		return null;
-	}
-	async openStickersForCurrent(e = null) {
-		if (!this.state.currentNoteId && (window.showToast && window.showToast(window._("toast.saving_note_to_attach_sticker"), "info"), !await this.saveGlobal(!1))) {
-			window.showToast && window.showToast(window._("toast.failed_to_save_note"), "error");
-			return;
-		}
-		let t = e;
-		t || (this.state.editingBlock ? t = this.state.editingBlock.dataset.blockId : this.state.pendingBlockId && (t = this.state.pendingBlockId)), window.openParentStickers && window.openParentStickers("dialectics", this.state.currentNoteId, t);
-	}
-	async saveAndPin() {
-		let e = {
-			title: this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"),
-			blocks: [{
-				side: "left",
-				html: this.editor.getHTML() || this.dom.dashboardTextarea?.value.replace(/\n/g, "<br>") || ""
-			}],
-			is_pinned: !0,
-			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
-			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
-			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
-			sticker_type: document.getElementById("dialecticsStickerType")?.value || "text"
-		};
-		this.state.currentNoteId && (e.id = this.state.currentNoteId), await t.save(e, this.state.currentNoteId) && (window.showToast(window._("toast.saved_and_pinned"), "success"), this.close(), setTimeout(() => location.reload(), 500));
-	}
-	async loadNoteToEditor(e, n = !0) {
-		let r = await t.get(e);
-		if (r) {
-			if (n && this.state.currentNoteId && this.state.currentNoteId !== r.id) {
-				let e = this.getNoteHistory();
-				(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
+			} catch (e) {
+				this.logDebug("ERROR in open button: " + e.message), alert("Error in open button: " + e.message);
 			}
-			this.state.currentNoteId = r.id, localStorage.setItem("dialectics_last_note_id", r.id), this.dom.title.value = r.title;
-			let e = typeof r.content_json == "string" ? JSON.parse(r.content_json) : r.content_json;
-			this.dom.categorySelect && (this.dom.categorySelect.value = r.category_id || ""), Ia.render(this.dom.canvas, e, this._blockCallbacks()), this._revealInterface(), this.hideLoadModal(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = r.title === "Example Note" || r.title === "Пример конспекта" || r.title === "Конспект мысалы" ? "none" : "block");
-			let t = new URL(window.location);
-			t.searchParams.get("id") !== String(r.id) && (t.searchParams.set("id", r.id), window.history.pushState({}, "", t));
-		} else localStorage.removeItem("dialectics_last_note_id"), this._revealInterface();
-	}
-	async loadExample() {
-		n.setLoading(this.dom.canvas);
-		try {
-			let e = await fetch("/api/dialectics/example/get_or_create_id");
-			if (e.ok) {
-				let t = await e.json();
-				t && t.id && (await this.loadNoteToEditor(t.id), window.showToast(window._("toast.opened_existing_example_note") || "Example Note loaded", "info"));
-			} else console.error("Failed to load example note ID."), n.clearLoading(this.dom.canvas);
-		} catch (e) {
-			console.error(e), n.clearLoading(this.dom.canvas);
-		}
-	}
-	async createNewNote() {
-		this.state.isDirty ? await r({
-			title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
-			message: window._ ? window._("dialectics.unsaved_new_msg") : "Есть несохранённые изменения. Создать новый конспект?",
-			icon: "⚠️",
-			buttons: [{
-				label: window._ ? window._("dialectics.cancel") : "Отмена",
-				value: !1,
-				class: "confirm-btn-secondary"
-			}, {
-				label: window._ ? window._("dialectics.create_btn") : "Создать",
-				value: !0,
-				class: "confirm-btn-primary"
-			}]
-		}) && (this.state.isDirty = !1, this._resetToNewNote()) : this._resetToNewNote();
-	}
-	_resetToNewNote() {
-		if (this.state.currentNoteId) {
-			let e = this.getNoteHistory();
-			(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
-		}
-		this.state.currentNoteId = null, localStorage.removeItem("dialectics_last_note_id"), this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && Ia.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none");
-		let e = new URL(window.location);
-		e.searchParams.delete("id"), window.history.pushState({}, "", e), window.showToast(window._("toast.created_a_new_blank_note"), "success");
-	}
-	getNoteHistory() {
-		try {
-			let e = sessionStorage.getItem("dialectics_note_history");
-			return e ? JSON.parse(e) : [];
-		} catch {
-			return [];
-		}
-	}
-	saveNoteHistory(e) {
-		try {
-			sessionStorage.setItem("dialectics_note_history", JSON.stringify(e));
-		} catch {}
-	}
-	loadPreviousNote() {
-		let e = this.getNoteHistory();
-		if (e.length > 0) {
-			let t = e.pop();
-			this.saveNoteHistory(e), this.loadNoteToEditor(t, !1), window.showToast(window._("toast.loaded_previous_note"), "info");
-		} else window.location.href = "/";
-	}
-	async showReferenceModal() {
-		let e = document.getElementById("referenceDialecticsModal");
-		if (!e) return;
-		e.style.display = "flex";
-		let t = document.getElementById("dialecticsReferenceContent");
-		if (t && t.dataset.loaded !== "true") try {
-			t.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Загрузка справочника...</div>";
-			let e = await fetch("/api/dialectics/reference");
-			if (!e.ok) throw Error("Failed to load reference");
-			t.innerHTML = `<div class="guide-markdown-content">${(await e.json()).html}</div>`, t.dataset.loaded = "true";
-		} catch (e) {
-			console.error(e), t.innerHTML = "<div style=\"color: #ef4444; text-align: center; padding: 20px;\">Не удалось загрузить справочник.</div>";
-		}
-	}
-	async showGuideModal() {
-		let e = document.getElementById("guideDialecticsModal");
-		if (!e) return;
-		e.style.display = "flex";
-		let t = document.getElementById("dialecticsGuideContent");
-		if (t && t.dataset.loaded !== "true") try {
-			t.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Loading instructions...</div>";
-			let e = await fetch("/api/dialectics/guide");
-			if (!e.ok) throw Error("Failed to load guide");
-			t.innerHTML = `<div class="guide-markdown-content">${(await e.json()).html}</div>`, t.dataset.loaded = "true";
-		} catch (e) {
-			console.error(e), t.innerHTML = "<div style=\"color: #ef4444; text-align: center; padding: 20px;\">Failed to load instructions. Please try again.</div>";
-		}
-	}
-	hideGuideModal() {
-		let e = document.getElementById("guideDialecticsModal");
-		e && (e.style.display = "none");
-	}
-	showLoadModal() {
-		this.logDebug("showLoadModal() called"), this.dom.loadModal ? (this.dom.loadModal.style.display = "flex", this.dom.loadModal.offsetHeight, this.dom.loadModal.classList.add("active"), this.logDebug("loadModal display set to flex and active class added")) : this.logDebug("ERROR: this.dom.loadModal is undefined!"), this.searchNotes("");
-	}
-	hideLoadModal() {
-		this.dom.loadModal && (this.dom.loadModal.classList.remove("active"), setTimeout(() => this.dom.loadModal.style.display = "none", 200));
-	}
-	async searchNotes(e) {
-		if (this.logDebug("searchNotes called with query: " + e), !this.dom.loadList) {
-			this.logDebug("ERROR: this.dom.loadList is undefined!");
-			return;
-		}
-		n.setLoading(this.dom.loadList);
-		try {
-			let n = await t.list(e);
-			this.logDebug("DialecticsAPI.list returned " + n.length + " notes"), this.renderNotesList(n);
-		} catch (e) {
-			this.logDebug("ERROR in DialecticsAPI.list: " + e.message);
-		}
-	}
-	renderNotesList(e) {
-		this.dom.loadList.innerHTML = e.length ? "" : "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>", e.forEach((e) => {
-			let n = document.createElement("div");
-			n.className = "load-note-item";
-			let i = new Date(e.updated_at || e.created_at), a = "";
-			i.getFullYear() > 1970 && (a = i.toLocaleDateString() + " " + i.toLocaleTimeString([], {
-				hour: "2-digit",
-				minute: "2-digit"
-			}));
-			let o = e.is_pinned ? "<span style=\"color: #f59e0b; margin-right: 8px;\" title=\"Pinned\">📌</span>" : "", s = e.title === "Example Note" || e.title === "Пример конспекта" || e.title === "Конспект мысалы" ? "" : "<button class=\"load-note-item-delete\" title=\"Delete\">🗑️</button>";
-			n.innerHTML = `
-                <div class="load-note-item-content" style="flex: 1;">
-                    <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${o}<strong>${e.title || (window._ ? window._("dialectics.topic_placeholder") : "Untitled")}</strong></div>
-                    <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">${a}</div>
-                </div>
-                ${s}
-            `, n.onclick = () => this.loadNoteToEditor(e.id);
-			let c = n.querySelector(".load-note-item-delete");
-			c && (c.onclick = async (i) => {
-				i.stopPropagation();
-				let a = window._ ? window._("dialectics.delete", "Confirm Deletion") : "Confirm Deletion", o = window._ ? window._("dialectics.confirm_delete", "Delete note \"%s\"?") : "Delete note \"%s\"?", s = window._ ? window._("dialectics.cancel", "Cancel") : "Cancel", c = window._ ? window._("dialectics.delete", "Delete") : "Delete";
-				await r({
-					title: a,
-					message: o.replace("%s", e.title),
-					icon: "🗑️",
-					buttons: [{
-						label: s,
-						value: !1,
-						class: "confirm-btn-secondary"
-					}, {
-						label: c,
-						value: !0,
-						class: "confirm-btn-danger"
-					}]
-				}) && await t.delete(e.id) && (window.showToast(window._("toast.record_deleted"), "info"), n.remove(), this.dom.loadList.children.length === 0 && (this.dom.loadList.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>"), this.state.currentNoteId === e.id && (this.close(), this.dom.title.value = "", Ia.render(this.dom.canvas, []), this.state.currentNoteId = null, this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none")));
-			}), this.dom.loadList.appendChild(n);
+		}), this.logDebug("Binding btnLoadDialectics COMPLETED.");
+		let t = document.getElementById("dialecticsSearchInput");
+		t && t.addEventListener("input", (e) => this.searchNotes(e.target.value)), e("btnNewDialectics", this.createNewNote), e("btnGlobalParser", this.runGlobalParser), e("btnExampleDialectics", this.loadExample), e("btnPrevDialectics", this.loadPreviousNote), e("btnDialecticsReference", this.showReferenceModal), e("btnDialecticsGuide", this.showGuideModal), e("btnDialecticsConnections", this.showConnectionsModal), e("close-connections-btn", () => {
+			this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
+		}), e("add-category-btn", this.addCategory);
+		let a = document.getElementById("connections-search-input");
+		a && a.addEventListener("input", (e) => this.searchConnections(e.target.value)), this.dom.categorySelect && this.dom.categorySelect.addEventListener("change", async (e) => {
+			if (e.target.value === "__add_new__") {
+				e.target.value = "";
+				let t = await i({
+					title: "Новая категория",
+					message: "Введите название новой категории:",
+					placeholder: "Например: Физика, Идеи..."
+				});
+				t && t.trim() && await this.createNewCategory(t.trim());
+			}
+		}), e("btnViewModalEdit", () => {
+			this.hideViewModal(), this.loadNoteToEditor(this.state.viewingNoteId);
+		}), La.init(this.dom.canvas, {
+			onClick: (e, t) => {
+				let n = e < t ? "left" : "right";
+				this.state.editingBlock = null, this.state.pendingSide = n, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.pendingRole = null;
+				let r = Ia.getBlocks(this.dom.canvas).some((e) => e.role === "anchor");
+				n === "left" && !r && (this.state.pendingRole = "anchor"), this.open();
+			},
+			onDoubleClick: (e) => {
+				this.state.editingBlock = e, this.openEdit(e);
+			}
+		}), document.querySelectorAll(".editor-tab").forEach((e) => {
+			e.addEventListener("click", () => this.editor.switchTab(e.dataset.tab));
+		}), e("btnGraphPlot", () => this.editor.plotGraph()), e("btnGraphInsert", () => this.editor.insertGraphToNote()), e("btnShapeUndo", () => this.editor.undoShape()), e("btnShapeDelete", () => this.editor.deleteSelectedShape()), e("btnShapeGrid", () => this.editor.toggleShapeGrid()), e("btnShapeCopy", () => this.editor.copySelectedShape()), e("btnShapeClear", () => this.editor.clearShapes()), e("btnShapesInsert", () => this.editor.insertShapesToNote()), e("btnShapeGroup", () => this.editor.groupSelected()), e("btnObjectList", () => this.editor.toggleObjectListPanel()), this.setupExplainTooltip(), document.querySelectorAll(".shape-tool[data-tool]").forEach((e) => {
+			e.addEventListener("click", () => this.editor.setShapeTool(e.dataset.tool));
+		}), document.querySelectorAll(".shape-tool[data-shape]").forEach((e) => {
+			e.addEventListener("click", () => this.editor.addShape(e.dataset.shape));
 		});
+		let o = document.getElementById("shapeColor");
+		o && o.addEventListener("input", (e) => {
+			this.editor.applyColorToSelected(e.target.value);
+		});
+		let s = document.getElementById("shapeFillColor");
+		s && s.addEventListener("input", (e) => {
+			this.editor.applyFillToSelected(e.target.value + "33");
+		}), e("btnToggleFill", () => this.editor.toggleFillForSelected());
 	}
-	async deleteGlobal() {
-		if (this.state.currentNoteId) {
-			if (this.dom.title && (this.dom.title.value === "Example Note" || this.dom.title.value === "Пример конспекта" || this.dom.title.value === "Конспект мысалы")) {
-				window.showToast && window.showToast(window._("toast.cannot_delete_the_example_note"), "error");
+	_renderMarkdown(e) {
+		return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>");
+	}
+	setupExplainTooltip() {
+		let e = document.createElement("div");
+		e.className = "dialectics-context-menu", e.style.display = "none";
+		let t = document.createElement("div");
+		t.className = "dialectics-context-menu-item", t.innerHTML = "Что это?", e.appendChild(t), document.body.appendChild(e);
+		let n = "", r = (e) => e.closest(".dialectics-content-inner") || e.closest(".tiptap-editor") || e.closest(".ProseMirror") || e.closest("#inlineEditor");
+		document.addEventListener("contextmenu", (t) => {
+			let i = window.getSelection();
+			if (!i || !i.rangeCount || i.isCollapsed) {
+				e.style.display = "none";
 				return;
 			}
-			await r({
-				title: window._ ? window._("dialectics.delete_note_title") : "Удаление конспекта",
-				message: window._ ? window._("dialectics.delete_note_msg") : "Вы уверены, что хотите удалить этот конспект?",
-				icon: "🗑️",
-				buttons: [{
-					label: window._ ? window._("dialectics.cancel") : "Отмена",
-					value: !1,
-					class: "confirm-btn-secondary"
-				}, {
-					label: window._ ? window._("dialectics.delete") : "Удалить",
-					value: !0,
-					class: "confirm-btn-danger"
-				}]
-			}) && await t.delete(this.state.currentNoteId) && (window.showToast(window._("toast.dialectics_deleted"), "info"), location.reload());
-		}
-	}
-	async pinCurrent() {
-		if (!this.state.currentNoteId) {
-			window.showToast(window._("toast.save_first_to_pin"), "warning");
-			return;
-		}
-		let e = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), n = Ia.getBlocks(this.dom.canvas), r = {
-			id: this.state.currentNoteId,
-			title: e,
-			blocks: n,
-			is_pinned: !0
-		};
-		await t.save(r, this.state.currentNoteId) && window.showToast(window._("toast.pinned_successfully"), "success");
-	}
-	showViewModal(e, t, n) {
-		this.state.viewingNoteId = e, this.dom.viewTitle.textContent = t;
-		let r = "";
-		n.forEach((e) => {
-			r += `<div style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                <small style="color: #94a3b8; text-transform: uppercase;">${e.side}</small>
-                <div>${e.html}</div>
-            </div>`;
-		}), this.dom.viewBody.innerHTML = r, this.dom.viewModal.style.display = "flex", this.dom.viewModal.offsetHeight, this.dom.viewModal.classList.add("active");
-	}
-	hideViewModal() {
-		this.dom.viewModal && (this.dom.viewModal.classList.remove("active"), setTimeout(() => this.dom.viewModal.style.display = "none", 200)), this.state.viewingNoteId = null;
-	}
-	async showGuideModal() {
-		if (this.dom.guideModal) {
-			this.dom.guideModal.style.display = "flex", this.dom.guideModal.offsetHeight, this.dom.guideModal.classList.add("active");
-			try {
-				let e = await fetch("/api/dialectics/guide");
-				if (e.ok) {
+			let a = i.getRangeAt(0).commonAncestorContainer;
+			if (!r(a.nodeType === 3 ? a.parentElement : a)) {
+				e.style.display = "none";
+				return;
+			}
+			if (n = i.toString().trim(), !n) {
+				e.style.display = "none";
+				return;
+			}
+			t.preventDefault(), e.style.display = "block";
+			let o = t.pageX, s = t.pageY;
+			o + 160 > window.innerWidth && (o = window.innerWidth - 160), s + 50 > window.innerHeight + window.scrollY && (s = t.pageY - 50), e.style.left = `${o}px`, e.style.top = `${s}px`;
+		}, !0), document.addEventListener("click", (t) => {
+			e.contains(t.target) || (e.style.display = "none");
+		}), document.addEventListener("keydown", (t) => {
+			t.key === "Escape" && (e.style.display = "none");
+		}), t.addEventListener("click", async (t) => {
+			if (t.stopPropagation(), !n) return;
+			e.style.display = "none";
+			let r = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
+			if (!(!r || !a)) {
+				i.innerText = `Что это: "${n}"?`, a.innerHTML = "<div style=\"text-align:center; padding:40px; color:#94a3b8;\"><div style=\"font-size:2rem; margin-bottom:12px;\">⏳</div><div>Анализирую концепт...</div></div>", r.style.display = "flex";
+				try {
+					let e = await fetch("/api/ai/dialectics/explain-concept", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ text: n })
+					});
+					if (!e.ok) throw Error(`HTTP ${e.status}`);
 					let t = await e.json();
-					this.dom.guideContent && (this.dom.guideContent.innerHTML = t.html);
-				} else this.dom.guideContent && (this.dom.guideContent.innerHTML = "<div style=\"color:red; text-align:center; padding: 20px;\">Failed to load guide.</div>");
-			} catch (e) {
-				console.error("Guide error:", e);
-			}
-		}
-	}
-	hideGuideModal() {
-		this.dom.guideModal && (this.dom.guideModal.classList.remove("active"), setTimeout(() => this.dom.guideModal.style.display = "none", 200));
-	}
-	async loadCategories() {
-		try {
-			this.state.categories = await t.listCategories(), this.renderCategorySelect(), this.renderConnectionsCategories();
-		} catch (e) {
-			console.error("Error loading categories", e);
-		}
-	}
-	renderCategorySelect() {
-		if (!this.dom.categorySelect) return;
-		let e = this.dom.categorySelect.value;
-		this.dom.categorySelect.innerHTML = "<option value=\"\">Без категории</option>", this.state.categories.forEach((e) => {
-			let t = document.createElement("option");
-			t.value = e.id, t.textContent = e.name, this.dom.categorySelect.appendChild(t);
-		});
-		let t = document.createElement("option");
-		t.value = "__add_new__", t.textContent = "➕ Новая категория...", t.style.fontWeight = "bold", t.style.color = "var(--color-primary)", this.dom.categorySelect.appendChild(t), this.dom.categorySelect.value = e;
-	}
-	renderConnectionsCategories() {
-		this.dom.connCategoriesList && (this.dom.connCategoriesList.innerHTML = "", this.state.categories.forEach((e) => {
-			let t = document.createElement("li");
-			t.className = "connections-category-item", t.style.cssText = "display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent;", t.onmouseover = () => {
-				t.style.backgroundColor = "var(--color-bg-subtle)", t.style.borderColor = "var(--color-border)";
-			}, t.onmouseout = () => {
-				t.style.backgroundColor = "transparent", t.style.borderColor = "transparent";
-			}, t.innerHTML = `
-                <span class="category-color-dot" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; background-color: ${e.color || "#94a3b8"}; box-shadow: 0 0 0 2px ${e.color}33;"></span>
-                <span style="font-weight: 500; font-size: 0.95rem;">${e.name}</span>
-            `, t.addEventListener("click", () => {
-				let t = document.getElementById("connections-search-input");
-				t && (t.value = e.name, this.searchConnections(e.name));
-			}), this.dom.connCategoriesList.appendChild(t);
-		}));
-	}
-	async addCategory(e) {
-		if (e && e.preventDefault(), !this.dom.newCategoryInput) return;
-		let t = this.dom.newCategoryInput.value.trim();
-		t && await this.createNewCategory(t) && (this.dom.newCategoryInput.value = "");
-	}
-	async createNewCategory(e) {
-		try {
-			let n = await t.createCategory(e);
-			if (n) return this.state.categories.push(n), this.state.categories.sort((e, t) => e.name.localeCompare(t.name)), this.renderCategorySelect(), this.renderConnectionsCategories(), this.dom.categorySelect && (this.dom.categorySelect.value = n.id), window.showToast("Категория добавлена", "success"), !0;
-		} catch (e) {
-			console.error("Error adding category", e), window.showToast("Ошибка при добавлении категории", "error");
-		}
-		return !1;
-	}
-	async showConnectionsModal(e) {
-		console.log("showConnectionsModal called", e), e && e.preventDefault();
-		let t = document.getElementById("dialectics-connections-modal");
-		console.log("Modal element:", t), t ? (t.style.display = "flex", t.offsetHeight, t.classList.add("active"), this.dom.connectionsModal = t, this.renderConnectionsCategories(), this.searchConnections("")) : (console.error("Connections modal element not found in DOM!"), window.showToast("Ошибка: модальное окно не найдено", "error"));
-	}
-	hideConnectionsModal() {
-		this.dom.connectionsModal && (this.dom.connectionsModal.classList.remove("active"), setTimeout(() => this.dom.connectionsModal.style.display = "none", 200));
-	}
-	async searchConnections(e) {
-		if (this.dom.connResultsContainer) {
-			this.dom.connResultsContainer.innerHTML = "<div style=\"color:#64748b; padding:20px; text-align:center; font-style: italic;\"><i class=\"fas fa-circle-notch fa-spin\" style=\"margin-right: 8px;\"></i> Поиск...</div>";
-			try {
-				let n = [];
-				if (n = !e || e.trim().length < 2 ? await t.list("") : await t.searchNotes(e), !n || n.length === 0) {
-					this.dom.connResultsContainer.innerHTML = "\n                    <div class=\"empty-state\" style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-light); opacity: 0.7; padding: 40px 0;\">\n                        <i class=\"fas fa-search\" style=\"font-size: 3rem; margin-bottom: 16px; color: var(--color-bg-app);\"></i>\n                        <p class=\"connections-empty-state\" data-i18n=\"dialectics_search_empty\" style=\"margin: 0; font-size: 0.95rem;\">Ничего не найдено</p>\n                    </div>";
-					return;
+					a.innerHTML = this._renderMarkdown(t.result);
+				} catch (e) {
+					a.innerHTML = `<div style="color:#ef4444;">Ошибка: ${e.message}</div>`;
 				}
-				this.dom.connResultsContainer.innerHTML = "", n.forEach((e) => {
-					let t = document.createElement("div");
-					t.className = "connections-result-item", t.style.cssText = "padding: 16px; border-radius: var(--radius-lg); background: var(--color-bg-white); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px;", t.onmouseover = () => {
-						t.style.transform = "translateY(-2px)", t.style.boxShadow = "0 6px 12px rgba(0,0,0,0.05)", t.style.borderColor = "var(--color-primary)";
-					}, t.onmouseout = () => {
-						t.style.transform = "translateY(0)", t.style.boxShadow = "0 2px 4px rgba(0,0,0,0.02)", t.style.borderColor = "var(--color-border)";
-					};
-					let n = e.title || "Untitled", r = e.category ? e.category.name : "Без категории", i = e.category && e.category.color ? e.category.color : "#cbd5e1";
-					t.innerHTML = `
-                    <div class="connections-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${n}</strong>
-                        <span class="connections-result-cat" style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${r}</span>
-                    </div>
-                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${new Date(e.created_at).toLocaleDateString()}</div>
-                `, t.addEventListener("click", () => {
-						this.loadNoteToEditor(e.id), this.dom.connectionsModal && this.dom.connectionsModal.classList.remove("active"), setTimeout(() => {
-							this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
-						}, 200);
-					}), this.dom.connResultsContainer.appendChild(t);
-				});
-			} catch (e) {
-				console.error("Search error", e), this.dom.connResultsContainer.innerHTML = "<p class=\"connections-empty-state\">Ошибка поиска</p>";
+				window.getSelection()?.removeAllRanges();
 			}
-		}
+		});
 	}
 	logDebug(e) {
 		if (!this.dom.debug) return;
 		let t = document.createElement("div");
 		t.textContent = `[${(/* @__PURE__ */ new Date()).toLocaleTimeString()}] ${e}`, this.dom.debug.prepend(t);
 	}
-}();
+};
+Object.assign(Bv.prototype, Nv), Object.assign(Bv.prototype, Nv, Fv, Lv, zv), window.app = new Bv();
 //#endregion

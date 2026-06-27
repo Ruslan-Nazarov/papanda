@@ -5,7 +5,6 @@
 {% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
-    <link rel="stylesheet" href="{{ url_for('static', path='dist/papanda-smart-notes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics/article_parser.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics/widget_dock.css') }}?v=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -22,27 +21,21 @@
                     <option value="">Без категории</option>
                 </select>
                 <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Тема конспекта..." style="font-family: inherit; color: #ea580c; font-weight: 700;">
-                <button class="badge-relations" id="btnDialecticsReference" title="{{ _('dialectics.reference_title') }}">📚 {{ _('dialectics.reference') }}</button>
-                <button class="badge-relations" id="btnDialecticsGuide" title="Instructions (Guide)">📖 {{ _('dialectics.instructions') }}</button>
+                <div class="dialectics-menu-dropdown" id="parsersMenuDropdown" style="position: relative;">
+                    <button class="badge-relations" id="parsersMenuBtn" onclick="toggleParsersMenu()" title="Парсеры">☰ Парсеры</button>
+                    <div class="dialectics-menu-content" id="parsersMenuContent" style="display: none;">
+                        <button class="dropdown-item" id="btnGlobalParser" title="AI Formula Parser" onclick="document.getElementById('parsersMenuContent').style.display='none';">🧮 Парсер формул</button>
+                        <button class="dropdown-item" id="btnArticleParser" title="AI Article Parser" onclick="toggleArticleParser(); document.getElementById('parsersMenuContent').style.display='none';">📄 Парсер статей</button>
+                    </div>
+                </div>
                 {% if plugin_dashboard %}
                 <a href="/dashboard" class="badge-relations" style="text-decoration: none;">🏠 {{ _('dialectics.dashboard') }}</a>
                 {% endif %}
                 <button class="badge-relations" id="btnDialecticsConnections" title="Manage relations" onclick="if(window.app) window.app.showConnectionsModal(event)">🔗 {{ _('dialectics.relations') }}</button>
-                <div class="dialectics-menu-dropdown" style="position: relative;">
+                <div class="dialectics-menu-dropdown" id="toolsMenuDropdown" style="position: relative;">
                     <button class="badge-relations" id="dialecticsMenuBtn" onclick="toggleDialecticsMenu()" title="Tools menu">⋮ {{ _('dialectics.menu') }}</button>
                     <div class="dialectics-menu-content" id="dialecticsMenuContent" style="display: none;">
                         <button class="dropdown-item" id="btnNewDialectics" title="Create new note">📄 Новый</button>
-                        <div class="dropdown-submenu">
-                            <button class="dropdown-item has-submenu" title="Parsers">
-                                <span>✨ Парсеры</span>
-                                <span style="font-size: 0.8em; color: #94a3b8;">▶</span>
-                            </button>
-                            <div class="dropdown-submenu-content">
-                                <button class="dropdown-item" id="btnGlobalParser" title="AI Formula Parser">🧮 Парсер формул</button>
-                                <button class="dropdown-item" id="btnArticleParser" title="AI Article Parser" onclick="toggleArticleParser()">📄 Парсер статей</button>
-                            </div>
-                        </div>
-                        <button class="dropdown-item" id="btnExampleDialectics" title="Open example">📖 {{ _('dialectics.example') }}</button>
                         <div class="dropdown-divider"></div>
                         <button class="dropdown-item" id="btnLoadDialectics">📂 {{ _('dialectics.open') }}</button>
                         <button class="dropdown-item" id="btnPrevDialectics">↩️ {{ _('dialectics.previous') }}</button>
@@ -370,11 +363,24 @@
                 menu.style.display = 'none';
             }
         }
-        document.addEventListener('click', function(e) {
-            const dropdown = document.querySelector('.dialectics-menu-dropdown');
-            const menu = document.getElementById('dialecticsMenuContent');
-            if (dropdown && !dropdown.contains(e.target) && menu) {
+        function toggleParsersMenu() {
+            const menu = document.getElementById('parsersMenuContent');
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'flex';
+            } else {
                 menu.style.display = 'none';
+            }
+        }
+        document.addEventListener('click', function(e) {
+            const toolsDropdown = document.getElementById('toolsMenuDropdown');
+            const toolsMenu = document.getElementById('dialecticsMenuContent');
+            if (toolsDropdown && !toolsDropdown.contains(e.target) && toolsMenu) {
+                toolsMenu.style.display = 'none';
+            }
+            const parsersDropdown = document.getElementById('parsersMenuDropdown');
+            const parsersMenu = document.getElementById('parsersMenuContent');
+            if (parsersDropdown && !parsersDropdown.contains(e.target) && parsersMenu) {
+                parsersMenu.style.display = 'none';
             }
         });
     </script>

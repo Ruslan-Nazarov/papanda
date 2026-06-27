@@ -107,3 +107,28 @@
 .formula-parser-widget .widget-header:active {
     cursor: grabbing;
 }
+
+/* Common floating widget header styling overrides */
+.floating-widget .widget-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    color: #ffffff !important;
+}
+
+.floating-widget .widget-btn-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+    padding: 4px;
+}
+
+.floating-widget .widget-btn-close:hover {
+    color: #ef4444;
+}
+

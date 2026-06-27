@@ -121,13 +121,19 @@ class WordStatsService:
                 snap.imw = imw
                 snap.total_count = total_count
                 snap.fully_learned_count = fully_learned_count
+                if snap.test_total is None: snap.test_total = 0
+                if snap.test_success is None: snap.test_success = 0
+                if snap.test_stats_json is None: snap.test_stats_json = {}
             else:
                 self.db.add(models.WordStatsSnapshot(
                     date=date_obj, 
                     coverage=coverage, 
                     imw=imw, 
                     total_count=total_count,
-                    fully_learned_count=fully_learned_count
+                    fully_learned_count=fully_learned_count,
+                    test_total=0,
+                    test_success=0,
+                    test_stats_json={}
                 ))
             await self.db.commit()
         except Exception as e:

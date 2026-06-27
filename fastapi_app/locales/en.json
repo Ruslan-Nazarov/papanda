@@ -82,6 +82,7 @@
         "all": "All",
         "ready_for_a": "Ready for a",
         "word_recognition_q": "-word recognition?",
+        "recognition_hint": "Your task is simply to indicate whether you remember the word itself, not its exact meaning.",
         "recognition_settings": "Recognition Settings",
         "start_test": "Start Test",
         "recognition_complete": "Recognition Complete!",
@@ -552,6 +553,7 @@
     "dialectics": {
         "title": "Dialectics",
         "article_parser": "Article Parser",
+        "formula_parser": "Formula Parser",
         "topic_placeholder": "Note topic...",
         "reference": "Handbook",
         "reference_title": "Feature Reference Handbook",

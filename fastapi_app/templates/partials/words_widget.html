@@ -90,44 +90,45 @@
         </div> <!-- End words-tab-list -->
 
         <!-- WORKOUT TAB -->
-        <div id="words-tab-workout" style="display: none; padding: 10px;">
-            <div id="test-start-view" style="text-align: center; padding: 10px 0;">
+        <div id="words-tab-workout" style="display: none; padding: 20px 10px; min-height: 220px; display: flex; flex-direction: column; justify-content: center;">
+            <div id="ww-test-start-view" style="text-align: center; padding: 10px 0;">
                 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px;">
-                    <p style="font-size: 0.85rem; color: var(--color-text-body); margin: 0;">{{ _('dashboard.ready_for_a') }} <span id="workout-count-display">5</span>{{ _('dashboard.word_recognition_q') }}</p>
+                    <p style="font-size: 0.85rem; color: var(--color-text-body); margin: 0;">{{ _('dashboard.ready_for_a') }} <span id="ww-workout-count-display">5</span>{{ _('dashboard.word_recognition_q') }}</p>
                     <span class="edit-btn" style="cursor: pointer; font-size: 0.8em; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" onclick="openWorkoutSettingsModalWidget()" title="{{ _('dashboard.recognition_settings') }}">⚙️</span>
                 </div>
-                <button id="btn-start-test" onclick="startKnowledgeTest()" style="background: #9b59b6; color: white; border: none; padding: 6px 20px; font-size: 0.9rem; border-radius: 20px; cursor: pointer; font-weight: bold;">{{ _('dashboard.start_test') }}</button>
-                <div id="test-log" style="margin-top: 8px; color: #c00; min-height: 16px; font-size: 0.75rem;"></div>
+                <button id="ww-btn-start-test" type="button" style="background: #9b59b6; color: white; border: none; padding: 8px 24px; font-size: 0.95rem; border-radius: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(155, 89, 182, 0.25);">{{ _('dashboard.start_test') }}</button>
+                <p style="font-size: 0.78rem; color: var(--color-text-muted); opacity: 0.85; max-width: 300px; margin: 14px auto 0; line-height: 1.35;">{{ _('dashboard.recognition_hint') }}</p>
+                <div id="ww-test-log" style="margin-top: 8px; color: #c00; min-height: 16px; font-size: 0.75rem;"></div>
             </div>
 
-            <div id="test-active-view" style="display: none; text-align: center; padding: 10px 0;">
-                <div id="test-lang-header" style="text-transform: uppercase; font-size: 0.7em; color: #9b59b6; font-weight: bold; margin-bottom: 2px;">{{ _('dashboard.translate_this') }}</div>
-                <div id="word-show-count" style="font-size: 0.65em; color: var(--color-text-muted); margin-bottom: 6px; background: var(--color-bg-subtle); display: inline-block; padding: 2px 8px; border-radius: 8px;">{{ _('dashboard.seen') }} 0 {{ _('dashboard.times') }}</div>
+            <div id="ww-test-active-view" style="display: none; text-align: center; padding: 10px 0;">
+                <div id="ww-test-lang-header" style="text-transform: uppercase; font-size: 0.7em; color: #9b59b6; font-weight: bold; margin-bottom: 2px;">{{ _('dashboard.translate_this') }}</div>
+                <div id="ww-word-show-count" style="font-size: 0.65em; color: var(--color-text-muted); margin-bottom: 6px; background: var(--color-bg-subtle); display: inline-block; padding: 2px 8px; border-radius: 8px;">{{ _('dashboard.seen') }} 0 {{ _('dashboard.times') }}</div>
                 <div>
-                    <div id="current-word-display" style="font-size: 1.5em; font-weight: bold; margin-bottom: 6px; color: var(--color-text-dark); display: inline-block;">...</div>
-                    <span id="learned-icon" style="display:none; font-size: 0.9em; vertical-align: middle; margin-left: 6px; color: var(--color-success);" title="{{ _('dashboard.learned') }}">✅</span>
-                    <span id="workout-edit-trigger" class="edit-btn" style="display:none; cursor:pointer;" onclick="window.openWorkoutEditWidget()">✎ {{ _('dashboard.edit') }}</span>
+                    <div id="ww-current-word-display" style="font-size: 1.5em; font-weight: bold; margin-bottom: 6px; color: var(--color-text-dark); display: inline-block;">...</div>
+                    <span id="ww-learned-icon" style="display:none; font-size: 0.9em; vertical-align: middle; margin-left: 6px; color: var(--color-success);" title="{{ _('dashboard.learned') }}">✅</span>
+                    <span id="ww-workout-edit-trigger" class="edit-btn" style="display:none; cursor:pointer;" onclick="window.openWorkoutEditWidget()">✎ {{ _('dashboard.edit') }}</span>
                 </div>
-                <div id="current-translation-display" style="font-size: 0.9em; color: var(--color-text-faint); margin-bottom: 16px; visibility: hidden;">{{ _('dashboard.translation') }}</div>
+                <div id="ww-current-translation-display" style="font-size: 0.9em; color: var(--color-text-faint); margin-bottom: 16px; visibility: hidden;">{{ _('dashboard.translation') }}</div>
 
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                    <button id="btn-show-hint" onclick="toggleHint()" style="background: #fdf5ff; border: 1px solid var(--color-primary); color: var(--color-primary); font-weight: bold; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(155,89,182,0.1);">💡 {{ _('dashboard.hint') }}</button>
-                    <button id="btn-known" onclick="recordResult(true)" style="background: #27ae60; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">{{ _('dashboard.i_know_this') }}</button>
-                    <button id="btn-unknown" onclick="recordResult(false)" style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.dont_know') }}</button>
-                    <button id="btn-learn-triplet" onclick="if(window.markWorkoutTripletLearnedWidget) window.markWorkoutTripletLearnedWidget()" style="background: white; color: var(--color-success); border: 1px solid var(--color-success); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Mark all translations as learned">✓ {{ _('dashboard.all') }}</button>
+                    <button id="ww-btn-show-hint" type="button" style="background: #fdf5ff; border: 1px solid var(--color-primary); color: var(--color-primary); font-weight: bold; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(155,89,182,0.1);">💡 {{ _('dashboard.hint') }}</button>
+                    <button id="ww-btn-known" type="button" style="background: #27ae60; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">{{ _('dashboard.i_know_this') }}</button>
+                    <button id="ww-btn-unknown" type="button" style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.dont_know') }}</button>
+                    <button id="ww-btn-learn-triplet" type="button" style="background: white; color: var(--color-success); border: 1px solid var(--color-success); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Mark all translations as learned">✓ {{ _('dashboard.all') }}</button>
                 </div>
             </div>
 
-            <div id="test-finish-view" style="display: none; text-align: center; padding: 10px 0;">
+            <div id="ww-test-finish-view" style="display: none; text-align: center; padding: 10px 0;">
                 <div style="font-size: 2em; margin-bottom: 8px">🏆</div>
                 <h4 style="margin: 0; color: var(--color-text-dark); font-size: 1rem;">{{ _('dashboard.recognition_complete') }}</h4>
-                <p id="test-result-summary" style="font-size: 0.85rem; color: var(--color-text-body); margin-top: 6px;">{{ _('dashboard.you_knew') }} 0 {{ _('dashboard.out_of') }} 5 {{ _('dashboard.words_lower') }}</p>
+                <p id="ww-test-result-summary" style="font-size: 0.85rem; color: var(--color-text-body); margin-top: 6px;">{{ _('dashboard.you_knew') }} 0 {{ _('dashboard.out_of') }} 5 {{ _('dashboard.words_lower') }}</p>
                 <div style="display: flex; gap: 8px; justify-content: center; margin-top: 12px;">
-                    <button id="btn-try-again" style="background: none; border: 1px solid #9b59b6; color: #9b59b6; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.try_again') }}</button>
+                    <button id="ww-btn-try-again" type="button" style="background: none; border: 1px solid #9b59b6; color: #9b59b6; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.try_again') }}</button>
                 </div>
             </div>
             
-            <div id="test-progress" style="font-size: 0.6em; background: var(--color-bg-subtle); padding: 2px 10px; border-radius: 10px; color: var(--color-text-muted); display: none; text-align: center; margin-top: 12px;">{{ _('dashboard.word') }} 1/5</div>
+            <div id="ww-test-progress" style="font-size: 0.6em; background: var(--color-bg-subtle); padding: 2px 10px; border-radius: 10px; color: var(--color-text-muted); display: none; text-align: center; margin-top: 12px;">{{ _('dashboard.word') }} 1/5</div>
         </div>
     </div>
 </div>

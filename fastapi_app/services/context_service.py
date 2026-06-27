@@ -125,8 +125,8 @@ class ContextService:
                     'is_learned': w.is_learned,
                     'translations': w.translations or {}
                 }
-                word_data['it'] = w.it
-                word_data['de'] = w.de
+                word_data['it'] = (w.translations or {}).get('it') or w.it
+                word_data['de'] = (w.translations or {}).get('de') or w.de
                 final_words.append(word_data)
 
             for w in selected:

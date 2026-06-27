@@ -18,6 +18,9 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
     window.nextSentence = nextSentence;
     window.setLanguage = setLanguage;
     window.handleDisplayClick = handleDisplayClick;
+    window.openLanguageLearningModal = openLanguageLearningModal;
+    window.openLanguageLearningModalForSentence = openLanguageLearningModal;
+    window.closeLanguageLearningModal = closeLanguageLearningModal;
 
 
 
@@ -236,6 +239,35 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
         if (languages.length > 0) {
             setLanguage(languages[0]);
         }
+    }
+
+    function openLanguageLearningModal(sentenceId = null) {
+        const modal = document.getElementById('languageLearningModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+
+        if (sentenceId !== null) {
+            const targetSentence = rawSentences.find(s => s.id == sentenceId);
+            if (targetSentence) {
+                setLanguage(targetSentence.language);
+                const idx = activeSentences.findIndex(s => s.id == sentenceId);
+                if (idx !== -1) {
+                    currentSentenceIndex = idx;
+                    renderCurrentSentence();
+                }
+            }
+        } else {
+            if (activeSentences.length === 0 && rawSentences.length > 0) {
+                initLanguages();
+            } else {
+                renderCurrentSentence();
+            }
+        }
+    }
+
+    function closeLanguageLearningModal() {
+        const modal = document.getElementById('languageLearningModal');
+        if (modal) modal.style.display = 'none';
     }
 
     // Module script runs after DOM is parsed, but we use DOMContentLoaded for extra safety

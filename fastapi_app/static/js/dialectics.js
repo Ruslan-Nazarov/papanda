@@ -99,6 +99,13 @@ class DialecticsEngine {
         }
 
         await this.editor.switchTab('text');
+
+        try {
+            const editorState = JSON.parse(localStorage.getItem('papanda_editor_open_state') || 'null');
+            if (editorState && editorState.isOpen) {
+                this.open(editorState.content || '');
+            }
+        } catch (e) {}
     }
 
     _revealInterface() {

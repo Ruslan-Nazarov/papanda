@@ -81,7 +81,8 @@
         "dont_know": "Білмеймін",
         "all": "Барлығы",
         "ready_for_a": "Тануға дайынсыз ба",
-        "word_recognition_q": "сөз?",
+        "word_recognition_q": " сөз?",
+        "recognition_hint": "Сіздің міндетіңіз — сөздің мағынасын емес, сөздің өзін есіңізде сақтағаныңызды көрсету.",
         "recognition_settings": "Тану параметрлері",
         "start_test": "Тестті бастау",
         "recognition_complete": "Тану аяқталды!",
@@ -523,6 +524,7 @@
     "dialectics": {
         "title": "Диалектика",
         "article_parser": "Мақала талдаушысы",
+        "formula_parser": "Формула талдаушысы",
         "topic_placeholder": "Жазба тақырыбы...",
         "instructions": "Нұсқаулық",
         "dashboard": "Виджеттер",

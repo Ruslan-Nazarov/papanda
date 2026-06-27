@@ -4,7 +4,7 @@ import { BlockManager } from './BlockManager.js';
 import { CanvasManager } from './CanvasManager.js';
 import { customConfirm, customChoice, customPrompt } from '../modal_controller.js';
 
-export const BlocksOrchestratorMixin = {
+class BlocksOrchestratorClass {
     // --- Core Logic ---
     open(content = '') {
         if (this.dom.editor && !this.dom.editor.classList.contains('embedded')) {
@@ -21,6 +21,7 @@ export const BlocksOrchestratorMixin = {
             this.dom.dashboardTextarea.value = temp.innerText || temp.textContent || "";
             this.dom.dashboardTextarea.dispatchEvent(new Event('input'));
         }
+        try { localStorage.setItem('papanda_editor_open_state', JSON.stringify({ isOpen: true, content })); } catch(e) {}
     }
 
     openEdit(block) {
@@ -38,6 +39,7 @@ export const BlocksOrchestratorMixin = {
         this.state.pendingSide = null;
         this.state.pendingRole = null;
         this.state.pendingBlockId = null;
+        try { localStorage.setItem('papanda_editor_open_state', JSON.stringify({ isOpen: false })); } catch(e) {}
         this.state.insertAfterIndex = null;
     }
 
@@ -452,4 +454,9 @@ export const BlocksOrchestratorMixin = {
     }
 
 
-};
+}
+
+export const BlocksOrchestratorMixin = {};
+Object.getOwnPropertyNames(BlocksOrchestratorClass.prototype).forEach(key => {
+    if (key !== 'constructor') BlocksOrchestratorMixin[key] = BlocksOrchestratorClass.prototype[key];
+});

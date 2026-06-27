@@ -81,7 +81,8 @@
         "dont_know": "Не знаю",
         "all": "Все",
         "ready_for_a": "Готовы к распознаванию",
-        "word_recognition_q": "слов?",
+        "word_recognition_q": " слов?",
+        "recognition_hint": "Ваша задача просто указать, что вы помните или нет само слово, а не его значение.",
         "recognition_settings": "Настройки распознавания",
         "start_test": "Начать тест",
         "recognition_complete": "Распознавание завершено!",
@@ -552,6 +553,7 @@
     "dialectics": {
         "title": "Диалектика",
         "article_parser": "Парсер статей",
+        "formula_parser": "Парсер формул",
         "topic_placeholder": "Тема конспекта...",
         "reference": "Справочник",
         "reference_title": "Справочник по функциям",

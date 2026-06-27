@@ -146,11 +146,23 @@ class WordTestService:
                 )
                 self.db.add(snap)
             
+            if snap.test_total is None:
+                snap.test_total = 0
+            if snap.test_success is None:
+                snap.test_success = 0
             snap.test_total += 1
             if is_correct: snap.test_success += 1
             
             if lang:
-                stats = dict(snap.test_stats_json or {})
+                raw_stats = snap.test_stats_json
+                if raw_stats is None:
+                    stats = {}
+                elif isinstance(raw_stats, str):
+                    import json
+                    try: stats = json.loads(raw_stats)
+                    except Exception: stats = {}
+                else:
+                    stats = dict(raw_stats)
                 lang_data = stats.get(lang, {"total": 0, "success": 0})
                 lang_data["total"] += 1
                 if is_correct: lang_data["success"] += 1
@@ -169,7 +181,9 @@ class WordTestService:
         return list(res.scalars().all())
 
     def _extract_translation(self, word: models.WordStats, lang: str) -> str:
+        trans = (word.translations or {}).get(lang, "")
+        if trans: return trans
         if lang == 'en': return word.eng
-        if lang == 'it': return word.it
-        if lang == 'de': return word.de
-        return (word.translations or {}).get(lang, "") or getattr(word, lang, word.eng)
+        if lang == 'it': return word.it or word.eng
+        if lang == 'de': return word.de or word.eng
+        return getattr(word, lang, word.eng)

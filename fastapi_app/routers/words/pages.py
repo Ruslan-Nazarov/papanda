@@ -54,6 +54,17 @@ async def word_stats_modal(
         'fr': '🇫🇷', 'es': '🇪🇸', 'tr': '🇹🇷', 'kz': '🇰🇿'
     }
 
+    def parse_snap_stats(snap) -> dict:
+        raw = snap.test_stats_json
+        if not raw: return {}
+        if isinstance(raw, str):
+            import json
+            try: return json.loads(raw)
+            except Exception: return {}
+        return dict(raw)
+
+    parsed_stats = [parse_snap_stats(s) for s in history_snapshots]
+
     response = templates.TemplateResponse(request, "partials/modals/_word_stats_content.html", {
         "request": request,
         "total_count": total_count,
@@ -75,31 +86,31 @@ async def word_stats_modal(
         "history_total": [int(s.total_count or 0) for s in history_snapshots],
         "history_learned": [int(s.fully_learned_count or 0) for s in history_snapshots],
         "history_total_tests": [
-            sum(v.get("total", 0) for v in s.test_stats_json.values()) if s.test_stats_json else 0 
-            for s in history_snapshots
+            sum(v.get("total", 0) for v in st.values()) if st else 0 
+            for st in parsed_stats
         ],
         "history_total_success": [
-            sum(v.get("success", 0) for v in s.test_stats_json.values()) if s.test_stats_json else 0 
-            for s in history_snapshots
+            sum(v.get("success", 0) for v in st.values()) if st else 0 
+            for st in parsed_stats
         ],
         "history_retention": [
-            round((sum(v.get("success", 0) for v in s.test_stats_json.values()) / sum(v.get("total", 0) for v in s.test_stats_json.values()) * 100), 1)
-            if s.test_stats_json and sum(v.get("total", 0) for v in s.test_stats_json.values()) > 0 else 0
-            for s in history_snapshots
+            round((sum(v.get("success", 0) for v in st.values()) / sum(v.get("total", 0) for v in st.values()) * 100), 1)
+            if st and sum(v.get("total", 0) for v in st.values()) > 0 else 0
+            for st in parsed_stats
         ],
         "history_lang_success": {
             lang: [
-                int(s.test_stats_json.get(lang, {}).get("success", 0)) if s.test_stats_json and lang in s.test_stats_json else 0
-                for s in history_snapshots
+                int(st.get(lang, {}).get("success", 0)) if st and lang in st else 0
+                for st in parsed_stats
             ]
             for lang in active_langs
         },
         "history_lang_retention": {
             lang: [
-                round((s.test_stats_json.get(lang, {}).get("success", 0) / s.test_stats_json.get(lang, {}).get("total", 1) * 100), 1)
-                if s.test_stats_json and lang in s.test_stats_json and s.test_stats_json[lang].get("total", 0) > 0
+                round((st.get(lang, {}).get("success", 0) / st.get(lang, {}).get("total", 1) * 100), 1)
+                if st and lang in st and st[lang].get("total", 0) > 0
                 else 0
-                for s in history_snapshots
+                for st in parsed_stats
             ]
             for lang in active_langs
         },

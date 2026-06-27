@@ -2,7 +2,7 @@ import { DialecticsAPI } from './api.js';
 import { DialecticsUI } from './ui_utils.js';
 import { BlockManager } from './BlockManager.js';
 
-export const AIControllerMixin = {
+class AIControllerClass {
     async runHintAI(hint) {
         if (!hint || hint.id === 'anchor') {
             window.showToast("Cannot run AI on the main goal block before it is created.", "info");
@@ -271,5 +271,9 @@ export const AIControllerMixin = {
             window.showToast(window._("toast.no_microphone_access"), "error");
         }
     }
+}
 
-};
+export const AIControllerMixin = {};
+Object.getOwnPropertyNames(AIControllerClass.prototype).forEach(key => {
+    if (key !== 'constructor') AIControllerMixin[key] = AIControllerClass.prototype[key];
+});
