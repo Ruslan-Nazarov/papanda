@@ -1,7 +1,9 @@
 {# partials/word_stats/_workout.html — Brain Workout interactive test widget #}
 
 <div class="data-card card-relative" style="margin-bottom: 30px; border: 2px solid #9b59b6; background: #fdfaff;">
+    {% if show_lang_tips != False %}
     <span class="help-trigger" onclick="showHelp(event, 'A quick interactive test to verify your knowledge of 5 random words.')">?</span>
+    {% endif %}
 
     <h3 style="color: #8e44ad; display: flex; justify-content: space-between; align-items: center;">
         <span>Recognition: <span id="workout-count-display">5</span> Word Challenge</span>

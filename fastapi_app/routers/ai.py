@@ -11,7 +11,7 @@ from ..config import BASE_DIR
 from ..logger import logger
 from ..schemas.ai import (
     OppositesRequest, ParserRequest, TextMathRequest, 
-    HintStepRequest, ExplainConceptRequest
+    HintStepRequest, ExplainConceptRequest, EditMathRequest
 )
 
 router = APIRouter(
@@ -28,8 +28,6 @@ def get_groq_client() -> AsyncGroq:
         )
     return AsyncGroq(api_key=api_key)
 
-_prompt_cache: dict[str, str] = {}
-
 PROMPT_MAP = {
     "base": "1 главный промпт.md",
     "restore": "2 восстановление_промпт.md",
@@ -41,26 +39,25 @@ PROMPT_MAP = {
 }
 
 def get_cached_prompt(filename: str) -> str:
-    if filename not in _prompt_cache:
-        prompts_dir = BASE_DIR / "prompts"
-        prompt_path = prompts_dir / filename
-        if not prompt_path.exists():
-            found = False
-            if prompts_dir.exists():
-                for p in prompts_dir.glob("*.md"):
-                    if p.name.strip() == filename.strip() or p.name.startswith(filename[:4]):
-                        prompt_path = p
-                        found = True
-                        break
-            if not found:
-                logger.error(f"Prompt file not found: {filename}")
-                raise HTTPException(status_code=500, detail=f"Prompt file {filename} not found.")
-        try:
-            _prompt_cache[filename] = prompt_path.read_text(encoding="utf-8")
-        except Exception as e:
-            logger.error(f"Error reading prompt file {filename}: {e}")
-            raise HTTPException(status_code=500, detail="Error reading prompt file.")
-    return _prompt_cache[filename]
+    prompts_dir = BASE_DIR / "prompts"
+    prompt_path = prompts_dir / filename
+    if not prompt_path.exists():
+        found = False
+        if prompts_dir.exists():
+            for p in prompts_dir.glob("*.md"):
+                if p.name.strip() == filename.strip() or p.name.startswith(filename[:4]):
+                    prompt_path = p
+                    found = True
+                    break
+        if not found:
+            logger.error(f"Prompt file not found: {filename}")
+            raise HTTPException(status_code=500, detail=f"Prompt file {filename} not found.")
+    try:
+        return prompt_path.read_text(encoding="utf-8")
+    except Exception as e:
+        logger.error(f"Error reading prompt file {filename}: {e}")
+        raise HTTPException(status_code=500, detail="Error reading prompt file.")
+
 
 def get_bundled_prompt(target_key: str) -> str:
     """
@@ -164,9 +161,113 @@ async def generate_math_from_voice(
             response_format="text",
             language="ru"
         )
-        return {"text": transcription.strip()}
+        transcription_text = transcription.strip() if isinstance(transcription, str) else str(transcription).strip()
+
+        prompt = (
+            "You are an assistant that translates the description of a mathematical formula in natural language strictly into LaTeX format. Output ONLY the LaTeX code, without surrounding quotes, without markdown blocks (```latex) and without any explanations. Your response must be ready to be inserted into the KaTeX renderer.\n\n"
+            "CRITICAL RULES & EXAMPLES FOR KATEX:\n"
+            "1. OVERBRACE / UNDERBRACE WITH LABELS: When instructed to add a horizontal curly brace over an expression/sum with a label/signature (например: 'фигурная скобка над суммой единиц и подпись N'), you MUST wrap the ENTIRE expression inside \\overbrace{...} and attach the label as a superscript directly to the brace: \\overbrace{expression}^{label}.\n"
+            "2. Never place the label before or beside the brace.\n"
+            "3. Examples:\n"
+            "- Input: сумма пяти единиц, над ними фигурная скобка с буквой N и в конце равно 5\n  Output: \\overbrace{1 + 1 + 1 + 1 + 1}^{N} = 5\n"
+            "- Input: фигурная скобка над суммой троек и подпись M\n  Output: \\overbrace{3 + \\dots + 3}^{M}\n"
+        )
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": f"Translate to LaTeX: {transcription_text}"}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,
+            max_tokens=512,
+        )
+        result = chat_completion.choices[0].message.content.strip()
+        if result.startswith("```latex"): result = result[8:]
+        if result.startswith("```"): result = result[3:]
+        if result.endswith("```"): result = result[:-3]
+        return {"latex": result.strip(), "transcribed_text": transcription_text}
     except Exception as e:
-        logger.error(f"Error calling Groq Whisper API: {e}")
+        logger.error(f"Error calling Groq Whisper/LLM API: {e}")
+        raise HTTPException(status_code=502, detail=str(e))
+
+@router.post("/dialectics/edit-math")
+async def edit_math_from_text(
+    request: EditMathRequest,
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
+):
+    try:
+        prompt = (
+            "You are an expert LaTeX assistant. You are given an existing LaTeX mathematical formula and a user's instruction (in Russian or English) describing how to modify or add to this formula. Modify the formula according to the instruction. Output ONLY the resulting valid LaTeX code, without surrounding quotes, without markdown formatting blocks (```latex), and without any explanations or chatter. Your response must be ready to be rendered directly by KaTeX.\n\n"
+            "CRITICAL RULES & EXAMPLES FOR KATEX:\n"
+            "1. OVERBRACE / UNDERBRACE WITH LABELS: When instructed to add a horizontal curly brace over an expression/sum with a label/signature (например: 'фигурная скобка над суммой единиц и подпись N' или 'добавить над суммой фигурную скобку и подпись N'), you MUST wrap the ENTIRE sum/expression inside \\overbrace{...} and attach the label as a superscript directly to the brace: \\overbrace{expression}^{label}.\n"
+            "2. Never place the label before or beside the brace. Do not wrap just a single digit if the instruction says 'над суммой' or 'над выражением'. Wrap the whole sequence.\n"
+            "3. Examples:\n"
+            "- Current: 1 + 1 + 1\n  Instruction: добавить над суммой фигурную скобку и подпись N\n  Result: \\overbrace{1 + 1 + 1}^{N}\n"
+            "- Current: 3 + \\dots + 3 = 2^k\n  Instruction: фигурная скобка над суммой левой части и сверху подпись M\n  Result: \\overbrace{3 + \\dots + 3}^{M} = 2^k\n"
+        )
+        user_content = f"Current LaTeX formula:\n{request.current_latex}\n\nUser modification instruction:\n{request.instruction}\n\nNew modified LaTeX formula:"
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": user_content}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,
+            max_tokens=512,
+        )
+        result = chat_completion.choices[0].message.content.strip()
+        if result.startswith("```latex"): result = result[8:]
+        if result.startswith("```"): result = result[3:]
+        if result.endswith("```"): result = result[:-3]
+        return {"latex": result.strip()}
+    except Exception as e:
+        logger.error(f"Error calling Groq API for edit-math: {e}")
+        raise HTTPException(status_code=502, detail=str(e))
+
+@router.post("/dialectics/edit-voice-math")
+async def edit_math_from_voice(
+    current_latex: str = Form(...),
+    file: UploadFile = File(...),
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
+):
+    try:
+        content = await file.read()
+        transcription = await client.audio.transcriptions.create(
+            file=(file.filename, content, file.content_type),
+            model="whisper-large-v3-turbo",
+            response_format="text",
+            language="ru"
+        )
+        transcription_text = transcription.strip() if isinstance(transcription, str) else str(transcription).strip()
+
+        prompt = (
+            "You are an expert LaTeX assistant. You are given an existing LaTeX mathematical formula and a user's spoken instruction transcribed from voice describing how to modify or add to this formula. Modify the formula according to the instruction. Output ONLY the resulting valid LaTeX code, without surrounding quotes, without markdown formatting blocks (```latex), and without any explanations or chatter. Your response must be ready to be rendered directly by KaTeX.\n\n"
+            "CRITICAL RULES & EXAMPLES FOR KATEX:\n"
+            "1. OVERBRACE / UNDERBRACE WITH LABELS: When instructed to add a horizontal curly brace over an expression/sum with a label/signature (например: 'фигурная скобка над суммой единиц и подпись N' или 'добавить над суммой фигурную скобку и подпись N'), you MUST wrap the ENTIRE sum/expression inside \\overbrace{...} and attach the label as a superscript directly to the brace: \\overbrace{expression}^{label}.\n"
+            "2. Never place the label before or beside the brace. Do not wrap just a single digit if the instruction says 'над суммой' or 'над выражением'. Wrap the whole sequence.\n"
+            "3. Examples:\n"
+            "- Current: 1 + 1 + 1\n  Instruction: добавить над суммой фигурную скобку и подпись N\n  Result: \\overbrace{1 + 1 + 1}^{N}\n"
+            "- Current: 3 + \\dots + 3 = 2^k\n  Instruction: фигурная скобка над суммой левой части и сверху подпись M\n  Result: \\overbrace{3 + \\dots + 3}^{M} = 2^k\n"
+        )
+        user_content = f"Current LaTeX formula:\n{current_latex}\n\nUser voice instruction:\n{transcription_text}\n\nNew modified LaTeX formula:"
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": user_content}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,
+            max_tokens=512,
+        )
+        result = chat_completion.choices[0].message.content.strip()
+        if result.startswith("```latex"): result = result[8:]
+        if result.startswith("```"): result = result[3:]
+        if result.endswith("```"): result = result[:-3]
+        return {"latex": result.strip(), "transcribed_text": transcription_text}
+    except Exception as e:
+        logger.error(f"Error calling Groq Whisper/LLM API for edit-voice-math: {e}")
         raise HTTPException(status_code=502, detail=str(e))
 
 @router.post("/dialectics/hint-step")
@@ -230,9 +331,14 @@ async def process_article_parser(
         if len(extracted_text) > 15000:
             extracted_text = extracted_text[:15000] + "... [Text truncated due to length limits]"
     else:
-        extracted_text = "[No article text provided in this request.]"
+        extracted_text = ""
 
-    system_prompt = prompt_template.replace("{ARTICLE_CONTENT}", extracted_text)
+    if "{ARTICLE_CONTENT}" in prompt_template:
+        system_prompt = prompt_template.replace("{ARTICLE_CONTENT}", extracted_text)
+    elif extracted_text:
+        system_prompt = f"{prompt_template}\n\n--- ТЕКСТ АНАЛИЗИРУЕМОЙ СТАТЬИ ---\n{extracted_text}"
+    else:
+        system_prompt = prompt_template
 
     try:
         chat_completion = await client.chat.completions.create(

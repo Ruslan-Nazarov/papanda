@@ -3,6 +3,9 @@
         <div class="widget-title">
             <span class="widget-icon">⚡</span>
             <span>{{ _('dashboard.habits') }}</span>
+            {% if show_widget_tips %}
+            <span class="help-trigger" onclick="openWidgetHelpModal('{{ _('dashboard.habits') }}')">?</span>
+            {% endif %}
         </div>
         <div class="widget-actions">
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>

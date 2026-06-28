@@ -180,10 +180,12 @@ class DashboardService:
                 await self.db.refresh(new_anchor)
                 lang_anchors[lang] = new_anchor.id
 
-        plugin_events = await get_setting(self.db, 'plugin_events', 'True') == 'True'
-        plugin_tasks = await get_setting(self.db, 'plugin_tasks', 'True') == 'True'
-        plugin_habits = await get_setting(self.db, 'plugin_habits', 'True') == 'True'
-        plugin_languages = await get_setting(self.db, 'plugin_languages', 'True') == 'True'
+        plugin_events = str(await get_setting(self.db, 'plugin_events', 'True')).lower() in ('true', '1')
+        plugin_tasks = str(await get_setting(self.db, 'plugin_tasks', 'True')).lower() in ('true', '1')
+        plugin_habits = str(await get_setting(self.db, 'plugin_habits', 'True')).lower() in ('true', '1')
+        plugin_languages = str(await get_setting(self.db, 'plugin_languages', 'True')).lower() in ('true', '1')
+        show_widget_tips = str(await get_setting(self.db, 'show_widget_tips', 'True')).lower() in ('true', '1')
+        show_dedications = str(await get_setting(self.db, 'show_dedications', 'True')).lower() in ('true', '1')
 
         return {
             "words": ctx['words'],
@@ -220,7 +222,9 @@ class DashboardService:
             "plugin_events": plugin_events,
             "plugin_tasks": plugin_tasks,
             "plugin_habits": plugin_habits,
-            "plugin_languages": plugin_languages
+            "plugin_languages": plugin_languages,
+            "show_widget_tips": show_widget_tips,
+            "show_dedications": show_dedications
         }
 
     async def submit_form(self, category: str, text: str, dt: datetime, repeat: str = "none", repeat_end: str = "", sticker_data: Optional[Dict[str, Any]] = None, color: Optional[str] = None) -> Union[int, str, None]:

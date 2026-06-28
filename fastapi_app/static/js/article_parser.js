@@ -328,8 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedChat = localStorage.getItem('papanda_article_chat_history');
     const savedDict = localStorage.getItem('papanda_article_dict_history');
     if (chatHist && savedChat) {
-        chatHist.innerHTML = savedChat;
-        chatHist.scrollTop = chatHist.scrollHeight;
+        if (!savedChat.includes('Я превращаю любую статью')) {
+            localStorage.removeItem('papanda_article_chat_history');
+        } else {
+            chatHist.innerHTML = savedChat;
+            chatHist.scrollTop = chatHist.scrollHeight;
+        }
     }
     if (dictHist && savedDict) {
         dictHist.innerHTML = savedDict;

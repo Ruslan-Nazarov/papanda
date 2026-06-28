@@ -50,6 +50,36 @@
     font-size: 1.5rem;
 }
 
+.help-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-bg-subtle, #e0e0e0);
+    color: var(--color-text-muted, #666);
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 6px;
+    user-select: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.help-trigger:hover {
+    background: var(--color-primary, #4a90e2);
+    color: #fff;
+}
+
+/* Override word_stats.css which globally sets opacity:0 and position:absolute on .help-trigger */
+.widget-title .help-trigger {
+    position: static !important;
+    opacity: 1 !important;
+    top: auto !important;
+    right: auto !important;
+}
+
 .widget-body {
     flex: 1;
     overflow-y: auto;

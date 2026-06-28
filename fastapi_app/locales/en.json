@@ -450,6 +450,12 @@
         "plugins": {
             "title": "Active Plugins"
         },
+        "ui_tips": {
+            "title": "Tips and Dedications",
+            "widgets": "Widget feature hints",
+            "lang_stats": "Language statistics hints",
+            "dedications": "Footer dedication"
+        },
         "algo": {
             "title": "Algorithm Settings",
             "max_duration": "Max Wink time (minutes):",
@@ -561,6 +567,9 @@
         "dashboard": "Widgets",
         "relations": "Relations",
         "menu": "Menu",
+        "mode": "Mode",
+        "mode_dialectics": "Dialectical Note",
+        "mode_columns": "Two-Column View",
         "new": "New",
         "parser": "Parser",
         "example": "Example",

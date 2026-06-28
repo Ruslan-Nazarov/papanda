@@ -8,6 +8,7 @@ from ...services.auth import check_auth_dependency
 from ...database import get_db
 from ...services.word_service import WordService
 from ...dependencies import get_word_service
+from ...services.settings_service import get_setting
 from ...config import templates
 
 router = APIRouter()
@@ -64,9 +65,11 @@ async def word_stats_modal(
         return dict(raw)
 
     parsed_stats = [parse_snap_stats(s) for s in history_snapshots]
+    show_lang_tips = await get_setting(db, 'show_lang_tips', 'True') == 'True'
 
     response = templates.TemplateResponse(request, "partials/modals/_word_stats_content.html", {
         "request": request,
+        "show_lang_tips": show_lang_tips,
         "total_count": total_count,
         "learned_count": learned_count,
         "fully_learned_count": fully_learned_count,
@@ -157,8 +160,11 @@ async def language_learning(
             await db.refresh(new_anchor)
             lang_anchors[lang] = new_anchor.id
     
+    show_lang_tips = await get_setting(db, 'show_lang_tips', 'True') == 'True'
+
     return templates.TemplateResponse(request, "language_learning.html", {
         "request": request,
+        "show_lang_tips": show_lang_tips,
         "active_languages": active_langs,
         "all_languages": lang_names,
         "lang_anchors_json": json.dumps(lang_anchors),

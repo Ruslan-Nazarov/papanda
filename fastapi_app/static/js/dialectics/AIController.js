@@ -1,6 +1,7 @@
 import { DialecticsAPI } from './api.js';
 import { DialecticsUI } from './ui_utils.js';
 import { BlockManager } from './BlockManager.js';
+import { customConfirm } from '../modal_controller.js';
 
 class AIControllerClass {
     async runHintAI(hint) {
@@ -201,6 +202,9 @@ class AIControllerClass {
             const audioChunks = [];
             let isCancelled = false;
 
+            // Capture tiptap reference NOW, before any async/await or user interaction
+            const tiptap = this.editor && this.editor.tiptap;
+
             mediaRecorder.addEventListener("dataavailable", event => {
                 audioChunks.push(event.data);
             });
@@ -217,7 +221,6 @@ class AIControllerClass {
                 window.showToast(window._("toast.recognizing_and_generating_lat"), "info");
 
                 const formData = new FormData();
-                // append file
                 formData.append("file", audioBlob, "voice-math.webm");
 
                 try {
@@ -232,14 +235,18 @@ class AIControllerClass {
                     const latex = data.latex;
 
                     console.log("Transcribed text:", data.transcribed_text);
+                    console.log("LaTeX:", latex);
 
-                    // Insert into TipTap
-                    if (this.editor && this.editor.tiptap) {
-                        this.editor.tiptap.chain().focus().insertContent({
+                    // Use the reference captured before recording started
+                    if (tiptap) {
+                        tiptap.chain().focus().insertContent({
                             type: 'mathNode',
                             attrs: { latex: latex }
                         }).run();
                         window.showToast(window._("toast.formula_added"), "success");
+                    } else {
+                        console.warn("tiptap not available, cannot insert formula");
+                        window.showToast(`LaTeX: ${latex}`, "info");
                     }
 
                 } catch (error) {

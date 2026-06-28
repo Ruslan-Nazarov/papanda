@@ -16,3 +16,7 @@ class HintStepRequest(BaseModel):
 
 class ExplainConceptRequest(BaseModel):
     text: str
+
+class EditMathRequest(BaseModel):
+    current_latex: str
+    instruction: str

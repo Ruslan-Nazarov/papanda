@@ -17,3 +17,43 @@
         </div>
     </div>
 </div>
+
+<!-- Widget Help Modal -->
+<div id="widgetHelpModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); z-index: 99999;">
+    <div class="modal-content" style="max-width: 500px; width: 90%;">
+        <div class="modal-header">
+            <h2 id="widgetHelpModalTitle">💡 Особенности виджета</h2>
+            <button class="modal-close" onclick="closeWidgetHelpModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 24px; min-height: 100px; color: var(--color-text-muted);">
+            <div id="widgetHelpModalBody" style="line-height: 1.6;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openWidgetHelpModal(widgetName, content = '') {
+    const modal = document.getElementById('widgetHelpModal');
+    const titleEl = document.getElementById('widgetHelpModalTitle');
+    const bodyEl = document.getElementById('widgetHelpModalBody');
+    
+    if (titleEl) titleEl.innerText = widgetName ? `💡 ${widgetName}` : '💡 Особенности виджета';
+    if (bodyEl) bodyEl.innerHTML = content || '<p style="font-style: italic; opacity: 0.7;">Информация об особенностях этого виджета появится в ближайшее время...</p>';
+    
+    if (window.ModalManager) {
+        window.ModalManager.open('widgetHelpModal');
+    } else if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeWidgetHelpModal() {
+    const modal = document.getElementById('widgetHelpModal');
+    if (window.ModalManager) {
+        window.ModalManager.close('widgetHelpModal');
+    } else if (modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+

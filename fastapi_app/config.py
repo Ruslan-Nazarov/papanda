@@ -15,6 +15,7 @@ USER_DATA_ROOT = BASE_DIR
 
 # Шаблоны Jinja2
 templates: Jinja2Templates = Jinja2Templates(directory=str(INTERNAL_ROOT / "fastapi_app" / "templates"))
+templates.env.auto_reload = True
 templates.env.filters['from_json'] = json.loads
 
 from jinja2 import pass_context

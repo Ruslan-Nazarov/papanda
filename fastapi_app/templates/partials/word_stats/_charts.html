@@ -3,7 +3,9 @@
 <div class="charts-grid">
     {# Distribution by Knowledge Level #}
     <div class="chart-card card-relative">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Groups words by knowledge depth. 0 shows = discovery, 50+ = mastery.')">?</span>
+        {% endif %}
         <h3>Distribution by Knowledge Level</h3>
         <div style="position: relative; height: 250px">
             <canvas id="distChart"></canvas>
@@ -12,7 +14,9 @@
 
     {# Knowledge by Language #}
     <div class="chart-card card-relative">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'A breakdown of words marked as known vs unknown for each active language.')">?</span>
+        {% endif %}
         <h3>Knowledge by Language</h3>
         <div style="position: relative; height: 250px">
             <canvas id="knowledgePieChart"></canvas>
@@ -21,7 +25,9 @@
 
     {# Recognition Efficiency — full width #}
     <div class="chart-card card-relative" style="grid-column: 1 / -1">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Your success rate in Recognition sessions. Toggle between absolute count and percentage accuracy.')">?</span>
+        {% endif %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0">Recognition Efficiency</h3>
             <div class="chart-toggle-group">
@@ -36,7 +42,9 @@
 
     {# Daily word shows — full width #}
     <div class="chart-card card-relative" style="grid-column: 1 / -1">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Shows how many words were displayed each day over the last 30 days.')">?</span>
+        {% endif %}
         <h3>Words Shown Per Day (Last 30 days)</h3>
         <div style="position: relative; height: 200px">
             <canvas id="dailyShowsChart"></canvas>

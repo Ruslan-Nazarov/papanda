@@ -75,6 +75,7 @@ export const EventService = {
         const fields = {
             'editEventId': id || '',
             'editEventRecId': recId || '',
+            'editEventOriginalDate': dateStr || '',
             'editEventTitle': title || '',
             'editEventDate': dateStr ? dateStr.replace(' ', 'T').slice(0, 16) : this._getNowIso(),
             'editEventRecEnd': recEnd || '',
@@ -223,6 +224,7 @@ export const EventService = {
         try {
             const payload = {
                 id, title, date,
+                original_date: document.getElementById('editEventOriginalDate')?.value || date,
                 recurrence_rule: this._getRecRule(),
                 recurrence_end: this._getRecEnd(),
                 edit_mode: document.querySelector('input[name="edit_event_mode"]:checked')?.value || 'only',

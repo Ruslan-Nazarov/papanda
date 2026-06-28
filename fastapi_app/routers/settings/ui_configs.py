@@ -56,6 +56,21 @@ async def update_plugins(
     return RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
 
 
+@router.post("/settings/update_ui_tips", name="update_ui_tips")
+async def update_ui_tips(
+    data: schemas.UiTipsUpdateSchema = Depends(schemas.UiTipsUpdateSchema.as_form),
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    """Обновляет настройки отображения подсказок и посвящений."""
+    await set_setting(db, 'show_widget_tips', str(data.show_widget_tips))
+    await set_setting(db, 'show_lang_tips', str(data.show_lang_tips))
+    await set_setting(db, 'show_dedications', str(data.show_dedications))
+
+    await db.commit()
+    return RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
+
+
+
 @router.post("/settings/update_languages", name="update_languages")
 async def update_languages(
     data: schemas.LanguageUpdateSchema = Depends(schemas.LanguageUpdateSchema.as_form),

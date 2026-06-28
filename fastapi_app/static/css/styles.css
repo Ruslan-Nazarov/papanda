@@ -9,7 +9,7 @@
 /* 2. Unified UI Kit (Components) */
 @import 'components/forms.css';
 @import 'components/buttons.css';
-@import 'components/cards.css';
+@import 'components/cards.css?v=2.0';
 @import 'components/modals.css?v=2';
 @import 'components/stickers.css';
 

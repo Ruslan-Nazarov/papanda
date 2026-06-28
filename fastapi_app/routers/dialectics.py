@@ -31,8 +31,10 @@ async def view_dialectics(
 ) -> HTMLResponse:
     """Отображает главную страницу (Диалектика)."""
     plugin_dashboard = await get_setting(db, 'plugin_dashboard', 'True') == 'True'
+    show_dedications = await get_setting(db, 'show_dedications', 'True') == 'True'
     return templates.TemplateResponse(request, "index.html", {
-        "plugin_dashboard": plugin_dashboard
+        "plugin_dashboard": plugin_dashboard,
+        "show_dedications": show_dedications
     })
 
 def get_localized_markdown_html(prefix: str, fallback_file: str, request: Request) -> str:

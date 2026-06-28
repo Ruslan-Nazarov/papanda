@@ -157,6 +157,9 @@ export const BlockManager = {
 
         allElements.forEach((el) => {
             if (el.type === 'hint') {
+                const isNoDialectics = container.classList.contains('mode-no-dialectics') || 
+                                       (document.getElementById('toggleDialecticsMode') && !document.getElementById('toggleDialecticsMode').checked);
+                if (isNoDialectics) return;
                 const hint = el.data;
                 const div = document.createElement('div');
                 div.className = `dialectics-hint-block block-${hint.side}`;
@@ -198,7 +201,7 @@ export const BlockManager = {
                         if (step) titleText = step.title;
                     }
                     if (titleText) {
-                        extraHtml = `<div style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 0 14px; text-transform: uppercase;">${titleText}</div>`;
+                        extraHtml = `<div class="dialectics-step-title" style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 0 14px; text-transform: uppercase;">${titleText}</div>`;
                     }
                 }
 
@@ -273,6 +276,8 @@ export const BlockManager = {
                 logicalBlockIndex++;
             }
         });
+
+        if (typeof window.applyCanvasModes === 'function') window.applyCanvasModes();
     },
 
     getBlocks(container) {

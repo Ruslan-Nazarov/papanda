@@ -203,7 +203,9 @@ body {
 /* ── Help Tooltip ─────────────────────────────────────────────────────────── */
 .card-relative { position: relative; }
 
-.help-trigger {
+.metric-card .help-trigger,
+.chart-card .help-trigger,
+.data-card .help-trigger {
     position: absolute;
     top: 10px; right: 10px;
     width: 18px; height: 18px;
@@ -226,7 +228,9 @@ body {
 .chart-card:hover  .help-trigger,
 .data-card:hover   .help-trigger { opacity: 1; }
 
-.help-trigger:hover { background: #9b59b6; color: white; border-color: #8e44ad; }
+.metric-card .help-trigger:hover,
+.chart-card  .help-trigger:hover,
+.data-card   .help-trigger:hover { background: #9b59b6; color: white; border-color: #8e44ad; }
 
 #help-popup {
     display: none;

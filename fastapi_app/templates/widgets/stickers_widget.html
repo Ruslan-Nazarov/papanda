@@ -5,6 +5,9 @@
         <div class="widget-title">
             <div class="sticker-icon-mini"></div>
             <span>{{ _('dashboard.stickers') }}</span>
+            {% if show_widget_tips %}
+            <span class="help-trigger" onclick="openWidgetHelpModal('{{ _('dashboard.stickers') }}')">?</span>
+            {% endif %}
         </div>
         <div class="widget-actions">
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>

@@ -53,6 +53,24 @@ class PluginsUpdateSchema(BaseModel):
             plugin_events=plugin_events
         )
 
+class UiTipsUpdateSchema(BaseModel):
+    show_widget_tips: bool = Field(False)
+    show_lang_tips: bool = Field(False)
+    show_dedications: bool = Field(False)
+
+    @classmethod
+    def as_form(
+        cls, 
+        show_widget_tips: bool = Form(False),
+        show_lang_tips: bool = Form(False),
+        show_dedications: bool = Form(False)
+    ):
+        return cls(
+            show_widget_tips=show_widget_tips,
+            show_lang_tips=show_lang_tips,
+            show_dedications=show_dedications
+        )
+
 class LanguageUpdateSchema(BaseModel):
     """Схема обновления порядков языков (динамические имена обрабатываются отдельно)."""
     active_order: str = Field(..., description="Comma-separated language codes")

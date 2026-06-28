@@ -75,8 +75,19 @@
     pointer-events: none;
 }
 
-/* Minimize button in widget headers */
-.widget-btn-min {
+.floating-widget.maximized {
+    top: 30px !important;
+    left: 40px !important;
+    right: 40px !important;
+    bottom: 30px !important;
+    width: calc(100vw - 80px) !important;
+    height: calc(100vh - 60px) !important;
+    z-index: 2000 !important;
+    border-radius: 16px !important;
+}
+
+/* Minimize & Maximize buttons in widget headers */
+.widget-btn-min, .widget-btn-max {
     background: transparent;
     border: none;
     color: #94a3b8;
@@ -84,11 +95,11 @@
     font-size: 1.1rem;
     font-weight: 700;
     transition: color 0.2s;
-    padding: 4px 8px;
+    padding: 4px 6px;
     line-height: 1;
 }
 
-.widget-btn-min:hover {
+.widget-btn-min:hover, .widget-btn-max:hover {
     color: #38bdf8;
 }
 

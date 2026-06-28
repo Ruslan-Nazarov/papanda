@@ -72,8 +72,19 @@ class EventService(BaseService):
             event_class=models.Event
         )
 
-        # Фильтруем физические события для отображения (на дашборде только невыполненные)
-        physical_events = [ev for ev in physical_events_raw if ev.done == False]
+        # Фильтруем физические события для отображения
+        valid_physical = []
+        for ev in physical_events_raw:
+            if ev.done:
+                continue
+            ev_date = ev.date.date() if isinstance(ev.date, datetime) else ev.date
+            if ev.recurrence_rule is not None:
+                if ev.recurrence_end and ev.recurrence_end < ev_date:
+                    continue
+                if ev.recurrence_id and ev.recurrence_id in exc_map and ev_date in exc_map[ev.recurrence_id]:
+                    continue
+            valid_physical.append(ev)
+        physical_events = valid_physical
         
         combined = physical_events + virtual_events
         combined.sort(key=lambda x: (x.position or 0, x.date))
@@ -290,16 +301,21 @@ class EventService(BaseService):
             await self._update_single_event(e, data)
 
     async def _update_this_and_future(self, event: models.Event, data: Dict[str, Any]):
-        # Логика из старого метода, но чуть чище
         orig_date_str = data.get("original_date")
         orig_date = date.fromisoformat(orig_date_str.split('T')[0]) if orig_date_str else (event.date.date() if isinstance(event.date, datetime) else event.date)
         
-        # 1. Завершаем старую серию
         stmt = select(models.Event).where(models.Event.recurrence_id == event.recurrence_id, models.Event.recurrence_rule.isnot(None))
         tmpl = (await self.db.execute(stmt)).scalar_one_or_none()
-        if tmpl: tmpl.recurrence_end = orig_date - timedelta(days=1)
+        if tmpl:
+            tmpl_date = tmpl.date.date() if isinstance(tmpl.date, datetime) else tmpl.date
+            if orig_date <= tmpl_date:
+                await self._update_all_in_series(event.recurrence_id, data)
+                return
+            old_tmpl_end = tmpl.recurrence_end
+            tmpl.recurrence_end = orig_date - timedelta(days=1)
+        else:
+            old_tmpl_end = None
         
-        # 2. Создаем новую запись (серию или одиночное)
         new_rule = data.get("recurrence_rule")
         if new_rule is None and tmpl: new_rule = tmpl.recurrence_rule
         is_new_rec = new_rule not in (None, "none", "")
@@ -312,11 +328,10 @@ class EventService(BaseService):
             done=False,
             recurrence_id=str(uuid.uuid4())[:8] if is_new_rec else None,
             recurrence_rule=new_rule if is_new_rec else None,
-            recurrence_end=date.fromisoformat(data["recurrence_end"]) if is_new_rec and data.get("recurrence_end") else (tmpl.recurrence_end if is_new_rec and tmpl else None)
+            recurrence_end=date.fromisoformat(data["recurrence_end"]) if is_new_rec and data.get("recurrence_end") else (old_tmpl_end if is_new_rec else None)
         )
         self.db.add(new_tmpl)
         
-        # 3. Удаляем будущие физические клоны старой серии
         await self.db.execute(delete(models.Event).where(
             models.Event.recurrence_id == event.recurrence_id,
             models.Event.date >= datetime.combine(orig_date, datetime.min.time()),
@@ -327,22 +342,28 @@ class EventService(BaseService):
         orig_date_str = data.get("original_date")
         orig_date = date.fromisoformat(orig_date_str.split('T')[0]) if orig_date_str else (event.date.date() if isinstance(event.date, datetime) else event.date)
         
-        new_rule = data.get("recurrence_rule")
-        is_new_rec = new_rule not in (None, "none", "")
-        
-        new_event = models.Event(
-            title=str(data.get("title", event.title)),
-            date=parse_date_input(str(data.get("date"))) or event.date,
-            color=data.get("color") or event.color,
-            important=bool(data.get("important", event.important)),
-            done=bool(data.get("done", event.done)),
-            recurrence_id=str(uuid.uuid4())[:8] if is_new_rec else None,
-            recurrence_rule=new_rule if is_new_rec else None,
-            recurrence_end=date.fromisoformat(data["recurrence_end"]) if is_new_rec and data.get("recurrence_end") else None
-        )
-        self.db.add(new_event)
         self.db.add(models.RecurrenceException(recurrence_id=event.recurrence_id, exception_date=orig_date))
-        if not event.recurrence_rule: await self.db.delete(event)
+        
+        if event.recurrence_rule is None:
+            if "title" in data: event.title = str(data["title"])
+            if data.get("date"): event.date = parse_date_input(str(data["date"]))
+            if "color" in data: event.color = data["color"]
+            if "important" in data: event.important = bool(data["important"])
+            if "done" in data: event.done = bool(data["done"])
+            event.recurrence_id = None
+        else:
+            new_dt = parse_date_input(str(data.get("date"))) or (datetime.combine(orig_date, datetime.min.time()) if isinstance(event.date, datetime) else orig_date)
+            new_event = models.Event(
+                title=str(data.get("title", event.title)),
+                date=new_dt,
+                color=data.get("color") or event.color,
+                important=bool(data.get("important", event.important)),
+                done=bool(data.get("done", event.done)),
+                recurrence_id=None,
+                recurrence_rule=None,
+                recurrence_end=None
+            )
+            self.db.add(new_event)
 
     async def _process_inline_stickers(self, event: models.Event, stickers_data: List[Dict], rec_id: Optional[str]):
         if not stickers_data: return

@@ -4,7 +4,7 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=32">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics.css') }}?v=33">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics/article_parser.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', path='css/dialectics/widget_dock.css') }}?v=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -21,6 +21,26 @@
                     <option value="">Без категории</option>
                 </select>
                 <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Тема конспекта..." style="font-family: inherit; color: #ea580c; font-weight: 700;">
+                <div class="dialectics-menu-dropdown" id="modeMenuDropdown" style="position: relative;">
+                    <button class="badge-relations" id="modeMenuBtn" onclick="toggleModeMenu()" title="{{ _('dialectics.mode') | default('Режим') }}">🎛️ {{ _('dialectics.mode') | default('Режим') }}</button>
+                    <div class="dialectics-menu-content" id="modeMenuContent" style="display: none; min-width: 230px; padding: 10px; gap: 8px;">
+                        <label class="mode-toggle-row">
+                            <span>{{ _('dialectics.mode_dialectics') | default('Диалектический конспект') }}</span>
+                            <div class="custom-toggle-switch">
+                                <input type="checkbox" id="toggleDialecticsMode" checked onchange="window.applyCanvasModes(true)">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                        <div class="dropdown-divider"></div>
+                        <label class="mode-toggle-row">
+                            <span>{{ _('dialectics.mode_columns') | default('Двуколоночный вид') }}</span>
+                            <div class="custom-toggle-switch">
+                                <input type="checkbox" id="toggleColumnsMode" checked onchange="window.applyCanvasModes(true)">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
                 <div class="dialectics-menu-dropdown" id="parsersMenuDropdown" style="position: relative;">
                     <button class="badge-relations" id="parsersMenuBtn" onclick="toggleParsersMenu()" title="Парсеры">☰ Парсеры</button>
                     <div class="dialectics-menu-content" id="parsersMenuContent" style="display: none;">
@@ -67,7 +87,9 @@
                 <div class="canvas-divider" id="canvasDivider"></div>
                 <!-- Блоки будут вставляться сюда -->
             </div>
+            {% if show_dedications != False %}
             <div style="text-align: right; color: #cbd5e1; font-size: 12px; margin-top: 10px; padding-right: 20px; font-family: inherit;">made of Laos</div>
+            {% endif %}
 
 
             <!-- Backdrop for expanded mode -->
@@ -355,6 +377,35 @@
 
 {% block scripts %}
     <script>
+        window.applyCanvasModes = function(triggerRender) {
+            const canvas = document.getElementById('dialecticsCanvas');
+            if (!canvas) return;
+            const dialecticsToggle = document.getElementById('toggleDialecticsMode');
+            const columnsToggle = document.getElementById('toggleColumnsMode');
+            
+            if (dialecticsToggle && !dialecticsToggle.checked) {
+                canvas.classList.add('mode-no-dialectics');
+            } else {
+                canvas.classList.remove('mode-no-dialectics');
+            }
+            
+            if (columnsToggle && !columnsToggle.checked) {
+                canvas.classList.add('mode-single-column');
+            } else {
+                canvas.classList.remove('mode-single-column');
+            }
+
+            if (triggerRender && window.app && typeof window.app._blockCallbacks === 'function') {
+                import('/static/js/dialectics/BlockManager.js').then(m => {
+                    const blocks = m.BlockManager.getBlocks(canvas);
+                    m.BlockManager.render(canvas, blocks, window.app._blockCallbacks());
+                }).catch(() => {});
+            }
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            window.applyCanvasModes();
+        });
+
         function toggleDialecticsMenu() {
             const menu = document.getElementById('dialecticsMenuContent');
             if (menu.style.display === 'none' || menu.style.display === '') {
@@ -371,6 +422,14 @@
                 menu.style.display = 'none';
             }
         }
+        function toggleModeMenu() {
+            const menu = document.getElementById('modeMenuContent');
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'flex';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
         document.addEventListener('click', function(e) {
             const toolsDropdown = document.getElementById('toolsMenuDropdown');
             const toolsMenu = document.getElementById('dialecticsMenuContent');
@@ -381,6 +440,11 @@
             const parsersMenu = document.getElementById('parsersMenuContent');
             if (parsersDropdown && !parsersDropdown.contains(e.target) && parsersMenu) {
                 parsersMenu.style.display = 'none';
+            }
+            const modeDropdown = document.getElementById('modeMenuDropdown');
+            const modeMenu = document.getElementById('modeMenuContent');
+            if (modeDropdown && !modeDropdown.contains(e.target) && modeMenu) {
+                modeMenu.style.display = 'none';
             }
         });
     </script>

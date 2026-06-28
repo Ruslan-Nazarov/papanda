@@ -98,7 +98,10 @@ async def initialize_plugin_settings(db: AsyncSession) -> None:
         'plugin_languages',
         'plugin_tasks',
         'plugin_habits',
-        'plugin_events'
+        'plugin_events',
+        'show_widget_tips',
+        'show_lang_tips',
+        'show_dedications'
     ]
     for p in plugins:
         existing = await get_setting(db, p)
@@ -142,11 +145,15 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
     await initialize_language_settings(db)
     await initialize_plugin_settings(db)
     
-    plugin_dashboard = await get_setting(db, 'plugin_dashboard', 'True') == 'True'
-    plugin_languages = await get_setting(db, 'plugin_languages', 'True') == 'True'
-    plugin_tasks = await get_setting(db, 'plugin_tasks', 'True') == 'True'
-    plugin_habits = await get_setting(db, 'plugin_habits', 'True') == 'True'
-    plugin_events = await get_setting(db, 'plugin_events', 'True') == 'True'
+    plugin_dashboard = str(await get_setting(db, 'plugin_dashboard', 'True')).lower() in ('true', '1')
+    plugin_languages = str(await get_setting(db, 'plugin_languages', 'True')).lower() in ('true', '1')
+    plugin_tasks = str(await get_setting(db, 'plugin_tasks', 'True')).lower() in ('true', '1')
+    plugin_habits = str(await get_setting(db, 'plugin_habits', 'True')).lower() in ('true', '1')
+    plugin_events = str(await get_setting(db, 'plugin_events', 'True')).lower() in ('true', '1')
+    
+    show_widget_tips = str(await get_setting(db, 'show_widget_tips', 'True')).lower() in ('true', '1')
+    show_lang_tips = str(await get_setting(db, 'show_lang_tips', 'True')).lower() in ('true', '1')
+    show_dedications = str(await get_setting(db, 'show_dedications', 'True')).lower() in ('true', '1')
     
     active_langs_raw = await get_setting(db, 'active_languages', 'en,it,de')
     active_languages = [l.strip() for l in (active_langs_raw or 'en,it,de').split(',') if l.strip()]
@@ -183,6 +190,9 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
         "plugin_tasks": plugin_tasks,
         "plugin_habits": plugin_habits,
         "plugin_events": plugin_events,
+        "show_widget_tips": show_widget_tips,
+        "show_lang_tips": show_lang_tips,
+        "show_dedications": show_dedications,
     }
     if import_result is not None:
         ctx["import_result"] = import_result

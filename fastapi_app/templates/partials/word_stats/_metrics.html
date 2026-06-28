@@ -2,7 +2,9 @@
 
 <div class="metrics-grid">
     <div class="metric-card card-total card-relative">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Total number of unique words in your database across all languages.')">?</span>
+        {% endif %}
         <span class="metric-label">Total Volume</span>
         <span class="metric-value">{{ total_count }}</span>
         <div class="progress-bar-container">
@@ -11,7 +13,9 @@
     </div>
 
     <div class="metric-card card-coverage card-relative" style="padding-bottom: 30px;">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Percentage of words you have encountered at least once.')">?</span>
+        {% endif %}
         <span class="metric-label">Coverage</span>
         <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
             {% for lang_code in active_languages %}
@@ -30,7 +34,9 @@
     </div>
 
     <div class="metric-card card-imw card-relative" style="padding-bottom: 30px;">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Intelligent Memory Weight. Shows how close you are to the target of 80 repetitions per word.')">?</span>
+        {% endif %}
         <span class="metric-label">iMW Index</span>
         <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
             {% for lang_code in active_languages %}
@@ -46,7 +52,9 @@
     </div>
 
     <div class="metric-card card-relative" style="border-color: #27ae60; background-color: #f0fff4;">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Number of word triplets marked as fully known and excluded from regular training.')">?</span>
+        {% endif %}
         <span class="metric-label">Fully Learned</span>
         <span class="metric-value">{{ fully_learned_count }}</span>
         <span style="font-size: 0.85em; color: #888">Word triplets excluded</span>
@@ -60,7 +68,9 @@
     {% set colors = ['#3498DB', '#2ECC71', '#F1C40F'] %}
     {% for lang_code in active_languages %}
     <div class="metric-card card-relative" style="border-color: {{ colors[loop.index0 % 3] }}">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Number of words marked as Known for the {{ all_languages.get(lang_code, lang_code|upper) }} language.')">?</span>
+        {% endif %}
         <span class="metric-label">Known {{ all_languages.get(lang_code, lang_code|upper) }}</span>
         <span class="metric-value">{{ known_counts.get(lang_code, 0) }}</span>
         <div class="progress-bar-container">
@@ -72,7 +82,9 @@
     {% endfor %}
 
     <div class="metric-card card-relative">
+        {% if show_lang_tips != False %}
         <span class="help-trigger" onclick="showHelp(event, 'Number of times any word was displayed on your dashboard or in a workout today.')">?</span>
+        {% endif %}
         <span class="metric-label">Shown Today</span>
         <span class="metric-value">{{ shown_today }}</span>
         <div class="progress-bar-container">

@@ -249,3 +249,34 @@
     width: 70%;
 }
 
+/* --- Mode toggling styles --- */
+
+/* State 2 & 3: Dialectics Mode OFF */
+.dialectics-canvas.mode-no-dialectics .dialectics-hint-block {
+    display: none !important;
+}
+.dialectics-canvas.mode-no-dialectics .dialectics-step-title {
+    display: none !important;
+}
+.dialectics-canvas.mode-no-dialectics .btn-block-ai {
+    display: none !important;
+}
+
+/* State 3: Single Column Mode (Two-Column Mode OFF) */
+.dialectics-canvas.mode-single-column .canvas-divider {
+    display: none !important;
+}
+.dialectics-canvas.mode-single-column .dialectics-block {
+    align-self: center !important;
+    width: 80% !important;
+    max-width: 850px !important;
+}
+.dialectics-canvas.mode-single-column .insert-wrap--left,
+.dialectics-canvas.mode-single-column .insert-wrap--right {
+    display: none !important;
+}
+.dialectics-canvas.mode-single-column .insert-wrap--center .btn-insert-block {
+    border-radius: 50% !important;
+    width: 28px !important;
+    height: 28px !important;
+}

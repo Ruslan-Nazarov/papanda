@@ -32,7 +32,8 @@
                             bottom: el.style.bottom,
                             width: el.style.width,
                             height: el.style.height,
-                            dragged: el.dataset.dragged
+                            dragged: el.dataset.dragged,
+                            maximized: el.classList.contains('maximized')
                         };
                     }
                 });
@@ -53,6 +54,7 @@
                         const el = document.getElementById(id);
                         const pos = data.positions[id];
                         if (el && pos) {
+                            if (pos.maximized) el.classList.add('maximized');
                             if (pos.left) el.style.left = pos.left;
                             if (pos.top) el.style.top = pos.top;
                             if (pos.right) el.style.right = pos.right;
@@ -103,6 +105,7 @@
             this.bringToFront(id);
             this.recalculatePositions();
             this.renderDock();
+            this.saveState();
         }
 
         close(id) {
@@ -114,6 +117,7 @@
 
             this.recalculatePositions();
             this.renderDock();
+            this.saveState();
         }
 
         minimize(id) {
@@ -132,6 +136,7 @@
 
             this.recalculatePositions();
             this.renderDock();
+            this.saveState();
         }
 
         toggle(id) {
@@ -142,12 +147,39 @@
             }
         }
 
+        maximize(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            if (el.classList.contains('maximized')) {
+                el.classList.remove('maximized');
+                if (el.dataset.prevWidth !== undefined) el.style.width = el.dataset.prevWidth;
+                if (el.dataset.prevHeight !== undefined) el.style.height = el.dataset.prevHeight;
+                if (el.dataset.prevLeft !== undefined) el.style.left = el.dataset.prevLeft;
+                if (el.dataset.prevTop !== undefined) el.style.top = el.dataset.prevTop;
+                if (el.dataset.prevRight !== undefined) el.style.right = el.dataset.prevRight;
+                if (el.dataset.prevBottom !== undefined) el.style.bottom = el.dataset.prevBottom;
+            } else {
+                el.dataset.prevWidth = el.style.width || '';
+                el.dataset.prevHeight = el.style.height || '';
+                el.dataset.prevLeft = el.style.left || '';
+                el.dataset.prevTop = el.style.top || '';
+                el.dataset.prevRight = el.style.right || '';
+                el.dataset.prevBottom = el.style.bottom || '';
+
+                el.classList.add('maximized');
+            }
+            this.bringToFront(id);
+            this.saveState();
+        }
+
         recalculatePositions() {
             let dockIndex = 0;
             this.openWidgets.forEach((id) => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 
+                if (el.classList.contains('maximized')) return;
                 // Не переопределять координаты окон, которые пользователь перетащил вручную
                 if (el.dataset.dragged === 'true') return;
 
@@ -168,6 +200,7 @@
             if (this.minimizedWidgets.length === 0) {
                 dockContainer.style.display = 'none';
                 dockBar.innerHTML = '';
+                this.saveState();
                 return;
             }
 
@@ -199,6 +232,7 @@
 
         handle.addEventListener('mousedown', (e) => {
             if (['BUTTON', 'INPUT', 'SELECT', 'A'].includes(e.target.tagName)) return;
+            if (widget.classList.contains('maximized')) return;
             e.preventDefault();
 
             if (window.WidgetManager) window.WidgetManager.bringToFront(widgetId);
@@ -236,25 +270,26 @@
             document.addEventListener('mouseup', closeDragElement);
         });
 
-        // Двойной клик по заголовку возвращает виджет в исходную стыковку (док)
+        // Двойной клик по заголовку разворачивает / сворачивает окно
         handle.addEventListener('dblclick', (e) => {
             if (['BUTTON', 'INPUT', 'SELECT', 'A'].includes(e.target.tagName)) return;
-            widget.dataset.dragged = 'false';
-            widget.style.left = 'auto';
-            widget.style.top = 'auto';
-            widget.style.bottom = '20px';
             if (window.WidgetManager) {
-                window.WidgetManager.recalculatePositions();
-                window.WidgetManager.saveState();
+                window.WidgetManager.maximize(widgetId);
             }
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function initWidgets() {
         makeDraggable('articleParserWidget', 'articleParserDragHandle');
         makeDraggable('formulaParserWidget', 'formulaParserDragHandle');
         setTimeout(() => {
             if (window.WidgetManager) window.WidgetManager.loadState();
         }, 100);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWidgets);
+    } else {
+        initWidgets();
+    }
 })();

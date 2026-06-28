@@ -41,6 +41,7 @@ async def index(
     page_context["request"] = request
     return templates.TemplateResponse(request, "dashboard.html", page_context)
 
+# reload trigger
 
 
 @router.post("/save_dashboard_layout")

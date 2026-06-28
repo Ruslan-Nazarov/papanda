@@ -2,6 +2,9 @@
                         <div class="widget-header">
                             <h1 class="widget-title">
                                 <span class="drag-handle">⠿</span>{{ _('dashboard.language_rules') }}
+                                {% if show_widget_tips %}
+                                <span class="help-trigger" onclick="openWidgetHelpModal('{{ _('dashboard.language_rules') }}')">?</span>
+                                {% endif %}
                             </h1>
                             <div class="widget-controls">
                                 <button
