@@ -25,7 +25,8 @@ class DialecticsEngine {
             notesList: [],
             viewingNoteId: null,
             insertAfterIndex: null,   // null = append at end, number = insert after that index
-            categories: []
+            categories: [],
+            blockStickersCount: {}
         };
 
         this.dom = {
@@ -291,6 +292,83 @@ class DialecticsEngine {
         }
 
         bind('btnToggleFill', () => this.editor.toggleFillForSelected());
+
+        window.addEventListener('stickersUpdated', async (e) => {
+            const { parentType, parentId } = e.detail || {};
+            if (parentType === 'dialectics' && Number(parentId) === Number(this.state.currentNoteId)) {
+                let stickersCountMap = {};
+                try {
+                    const stickers = await fetch(`/api/stickers/dialectics/${this.state.currentNoteId}/`).then(r => r.json());
+                    if (Array.isArray(stickers)) {
+                        stickers.forEach(s => {
+                            if (s.dialectics_block_id) {
+                                stickersCountMap[s.dialectics_block_id] = (stickersCountMap[s.dialectics_block_id] || 0) + 1;
+                            }
+                        });
+                    }
+                } catch(err) {
+                    console.error("Failed to refresh block stickers:", err);
+                }
+                this.state.blockStickersCount = stickersCountMap;
+                
+                const blocks = BlockManager.getBlocks(this.dom.canvas);
+                BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+            }
+        });
+
+        if (this.dom.canvas) {
+            let draggedBlock = null;
+
+            this.dom.canvas.addEventListener('dragstart', (e) => {
+                const block = e.target.closest('.dialectics-block');
+                if (!block || block._preventDrag || block.getAttribute('draggable') !== 'true') {
+                    e.preventDefault();
+                    return;
+                }
+                
+                draggedBlock = block;
+                block.classList.add('is-dragging');
+                this.dom.canvas.classList.add('is-dragging-active');
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', block.dataset.blockId || '');
+                }
+            });
+
+            this.dom.canvas.addEventListener('drop', (e) => {
+                e.preventDefault();
+            });
+
+            this.dom.canvas.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!draggedBlock) return;
+
+                const targetBlock = e.target.closest('.dialectics-block');
+                if (!targetBlock || targetBlock === draggedBlock) return;
+
+                const rect = targetBlock.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+
+                if (e.clientY < midpoint) {
+                    this.dom.canvas.insertBefore(draggedBlock, targetBlock);
+                } else {
+                    this.dom.canvas.insertBefore(draggedBlock, targetBlock.nextSibling);
+                }
+            });
+
+            this.dom.canvas.addEventListener('dragend', async (e) => {
+                if (draggedBlock) {
+                    draggedBlock.classList.remove('is-dragging');
+                    draggedBlock.setAttribute('draggable', 'false');
+                }
+                this.dom.canvas.classList.remove('is-dragging-active');
+                draggedBlock = null;
+
+                const blocks = BlockManager.getBlocks(this.dom.canvas);
+                BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+                await this.saveGlobal(false, "toast.dialectics_updated");
+            });
+        }
     }
 
     _renderMarkdown(text) {
@@ -411,6 +489,61 @@ class DialecticsEngine {
         line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
         this.dom.debug.prepend(line);
     }
+
+    showWordDefinition(wordName) {
+        const blocks = BlockManager.getBlocks(document.getElementById('dialecticsCanvas'));
+        let foundWord = null;
+        let foundBlockId = null;
+        for (const b of blocks) {
+            if (b.words) {
+                const w = b.words.find(x => x.word.toLowerCase() === wordName.toLowerCase());
+                if (w) {
+                    foundWord = w;
+                    foundBlockId = b.id;
+                    break;
+                }
+            }
+        }
+
+        if (!foundWord) {
+            if (window.showToast) window.showToast("Слово не найдено в словаре этого конспекта", "warning");
+            return;
+        }
+
+        const modal = document.getElementById('explainConceptModal');
+        const titleEl = document.getElementById('explainConceptTitle');
+        const bodyEl = document.getElementById('explainConceptBody');
+        if (!modal || !bodyEl) return;
+
+        titleEl.innerText = `📖 ${foundWord.word}`;
+
+        let connHtml = '';
+        if (foundWord.connections) {
+            const parts = foundWord.connections.split(',').map(x => x.trim()).filter(Boolean);
+            if (parts.length > 0) {
+                connHtml = `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+                    <strong style="color: #475569; font-size: 0.85rem; display: block; margin-bottom: 6px;">Связи:</strong>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                `;
+                parts.forEach(p => {
+                    connHtml += `<span onclick="window.app && window.app.showWordDefinition('${p.replace(/'/g, "\\'")}')" style="cursor: pointer; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">📖 ${p}</span>`;
+                });
+                connHtml += `</div></div>`;
+            }
+        }
+
+        bodyEl.innerHTML = `
+            <div style="font-size: 1rem; color: #1e293b; line-height: 1.6;">
+                ${foundWord.definition.replace(/\n/g, '<br>')}
+            </div>
+            ${connHtml}
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn btn-secondary" onclick="document.getElementById('explainConceptModal').style.display='none'; const el = document.querySelector('[data-block-id=\\'${foundBlockId}\\']'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)'; setTimeout(() => el.style.boxShadow = '', 2000); }" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; background: #3b82f6; color: white; border: none; cursor: pointer; font-weight: 600;">🔍 Перейти к блоку</button>
+            </div>
+        `;
+
+        modal.style.display = 'flex';
+    }
 }
 
 Object.assign(DialecticsEngine.prototype, ModalsControllerMixin);
@@ -423,5 +556,15 @@ Object.assign(
     AIControllerMixin,
     BlocksOrchestratorMixin
 );
+
+window.toggleOnlyTitlesMode = function(onlyTitles) {
+    const canvas = document.getElementById('dialecticsCanvas');
+    if (!canvas) return;
+    if (onlyTitles) {
+        canvas.classList.add('mode-only-titles');
+    } else {
+        canvas.classList.remove('mode-only-titles');
+    }
+};
 
 window.app = new DialecticsEngine();

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Request
 from typing import Any, Optional
 import os
 import io
@@ -74,20 +74,46 @@ def get_bundled_prompt(target_key: str) -> str:
     texts = [get_cached_prompt(PROMPT_MAP.get(k, k)) for k in keys]
     return "\n\n---\n\n".join(texts)
 
+def get_language_instruction(locale: str) -> str:
+    if locale == "ru":
+        return (
+            "\n\n[ТРЕБОВАНИЕ ЯЗЫКА: Вы должны отвечать СТРОГО на русском языке. "
+            "Все описания, объяснения, названия полей и значений в выходном JSON должны быть на русском языке.]"
+        )
+    elif locale in ["kz", "kk"]:
+        return (
+            "\n\n[ТІЛДІК ТАЛАП: Сіз СТРОГО қазақ тілінде жауап беруіңіз керек. "
+            "Шығарылатын JSON-дағы барлық сипаттамалар, түсіндірмелер, өріс атаулары мен мәндері қазақ тілінде болуы тиіс.]"
+        )
+    else:
+        return (
+            "\n\n[LANGUAGE REQUIREMENT: You must translate the instructions and respond STRICTLY in English. "
+            "All descriptions, explanations, field names and values in the output JSON must be in English.]"
+        )
+
 @router.post("/dialectics/opposites")
 async def generate_opposites(
     request: OppositesRequest,
+    req: Request,
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
+    locale = req.cookies.get("locale", "en")
     prompt_template = get_bundled_prompt("opposites")
     system_prompt = prompt_template.replace("{ВСТАВИТЬ ПРОЦЕСС}", request.process_a).replace("{INSERT PROCESS}", request.process_a)
+    system_prompt += get_language_instruction(locale)
+
+    user_query = f"Generate opposites for the process: {request.process_a}"
+    if locale == "ru":
+        user_query = f"Сгенерируй противоположности для процесса: {request.process_a}"
+    elif locale in ["kz", "kk"]:
+        user_query = f"Процесс үшін қарама-қарсылықтарды жасаңыз: {request.process_a}"
 
     try:
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Generate opposites for the process: {request.process_a}"}
+                {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.7,
@@ -101,15 +127,24 @@ async def generate_opposites(
 @router.post("/dialectics/parser")
 async def parse_math_formula(
     request: ParserRequest,
+    req: Request,
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    system_prompt = get_bundled_prompt("formula")
+    locale = req.cookies.get("locale", "en")
+    system_prompt = get_bundled_prompt("formula") + get_language_instruction(locale)
+    
+    user_query = f"Analyze the following formula: {request.formula}"
+    if locale == "ru":
+        user_query = f"Проанализируй следующую формулу: {request.formula}"
+    elif locale in ["kz", "kk"]:
+        user_query = f"Келесі формуланы талдаңыз: {request.formula}"
+
     try:
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Analyze the following formula: {request.formula}"}
+                {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.3,
@@ -273,6 +308,7 @@ async def edit_math_from_voice(
 @router.post("/dialectics/hint-step")
 async def generate_hint_step(
     request: HintStepRequest,
+    req: Request,
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
@@ -280,15 +316,23 @@ async def generate_hint_step(
     if request.step_id not in valid_steps:
         raise HTTPException(status_code=400, detail="Invalid step_id")
 
+    locale = req.cookies.get("locale", "en")
     step_num = request.step_id.replace("step", "")
     prompt_template = get_bundled_prompt("hint")
     system_prompt = prompt_template.replace("{GOAL}", request.goal_text).replace("{CONTEXT}", request.context_text).replace("{CURRENT_STEP}", step_num)
+    system_prompt += get_language_instruction(locale)
+
+    user_query = f"Generate the content for {request.step_id}."
+    if locale == "ru":
+        user_query = f"Сгенерируй содержимое для {request.step_id}."
+    elif locale in ["kz", "kk"]:
+        user_query = f"{request.step_id} үшін мазмұнды жасаңыз."
 
     try:
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Generate the content for {request.step_id}."}
+                {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.7,
@@ -303,10 +347,14 @@ async def generate_hint_step(
 async def process_article_parser(
     message: str = Form(...),
     file: Optional[UploadFile] = File(None),
+    req: Request = None,
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    prompt_template = get_bundled_prompt("article")
+    locale = "en"
+    if req:
+        locale = req.cookies.get("locale", "en")
+    prompt_template = get_bundled_prompt("article") + get_language_instruction(locale)
     
     extracted_text = ""
     if file:
@@ -358,15 +406,24 @@ async def process_article_parser(
 @router.post("/dialectics/explain-concept")
 async def explain_concept(
     request: ExplainConceptRequest,
+    req: Request,
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
 ):
-    system_prompt = get_bundled_prompt("what_is")
+    locale = req.cookies.get("locale", "en")
+    system_prompt = get_bundled_prompt("what_is") + get_language_instruction(locale)
+    
+    user_query = f"Explain the following concept: {request.text}"
+    if locale == "ru":
+        user_query = f"Объясни следующее понятие: {request.text}"
+    elif locale in ["kz", "kk"]:
+        user_query = f"Келесі ұғымды түсіндіріңіз: {request.text}"
+
     try:
         chat_completion = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Explain the following concept: {request.text}"}
+                {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.7,
@@ -394,4 +451,58 @@ async def get_dialectics_hints():
     except Exception as e:
         logger.error(f"Error reading hints file: {e}")
         raise HTTPException(status_code=500, detail="Error reading hints file")
+
+@router.post("/dialectics/formula/ocr")
+async def ocr_math_formula(
+    file: UploadFile = File(...),
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
+):
+    """Распознает математическую формулу с картинки и возвращает в формате LaTeX."""
+    import base64
+    try:
+        contents = await file.read()
+        mime_type = file.content_type or "image/png"
+        base64_image = base64.b64encode(contents).decode("utf-8")
+        
+        prompt = (
+            "You are an expert mathematical OCR system. "
+            "Analyze the image and extract the mathematical formula written in it. "
+            "Convert it strictly to LaTeX format. "
+            "Do NOT include any explanations, surrounding text, or markdown code blocks like ```latex or ```. "
+            "Output ONLY the raw LaTeX string, ready for rendering."
+        )
+        
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            temperature=0.1,
+            max_tokens=512,
+        )
+        latex_result = chat_completion.choices[0].message.content.strip()
+        if latex_result.startswith("```"):
+            lines = latex_result.split("\n")
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            latex_result = "\n".join(lines).strip()
+            
+        return {"latex": latex_result}
+    except Exception as e:
+        logger.error(f"Error doing math formula OCR: {e}")
+        raise HTTPException(status_code=502, detail=f"Error transcribing formula image: {str(e)}")
 

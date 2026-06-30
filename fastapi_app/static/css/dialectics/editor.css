@@ -234,6 +234,26 @@
     overflow-y: auto;
 }
 
+.tiptap-editor .ProseMirror p {
+    margin-top: 0;
+    margin-bottom: 0.9em;
+}
+
+.tiptap-editor .ProseMirror p:last-child {
+    margin-bottom: 0;
+}
+
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+    margin-top: 0.4em;
+    margin-bottom: 0.9em;
+    padding-left: 1.5em;
+}
+
+.tiptap-editor .ProseMirror li {
+    margin-bottom: 0.35em;
+}
+
 .tiptap-editor.focused {
     box-shadow: inset 0 0 0 2px var(--color-blue);
 }

@@ -140,13 +140,13 @@ export class StickerModal {
             if (viewer) viewer.style.display = 'block';
             if (editBtn) editBtn.style.display = 'block';
             if (saveBtn) saveBtn.style.display = 'none';
-            if (modalTitle) modalTitle.innerText = 'View Sticker';
+            if (modalTitle) modalTitle.innerText = window._('modal.view_sticker', 'View Sticker');
         } else {
             if (editor) editor.style.display = 'block';
             if (viewer) viewer.style.display = 'none';
             if (editBtn) editBtn.style.display = 'none';
             if (saveBtn) saveBtn.style.display = 'block';
-            if (modalTitle) modalTitle.innerText = this.state.id ? 'Edit Sticker' : 'Create Sticker';
+            if (modalTitle) modalTitle.innerText = this.state.id ? window._('modal.edit_sticker', 'Edit Sticker') : window._('modal.create_sticker', 'Create Sticker');
         }
     }
 

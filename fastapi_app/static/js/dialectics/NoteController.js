@@ -7,17 +7,29 @@ class NoteControllerClass {
     async saveGlobal(shouldClose = true, toastKey = "toast.dialectics_saved") {
         const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const html = this.editor.getHTML();
+        const customBlockTitle = document.getElementById('editorBlockTitleInput')?.value?.trim() || "";
         console.log("TipTap HTML Output -> length:", html.length);
         if (this.state.editingBlock) {
             const inner = this.state.editingBlock.querySelector('.dialectics-content-inner');
             if (inner) {
                 inner.innerHTML = html;
-                BlockManager.renderMath(inner);
             }
+            if (customBlockTitle) {
+                this.state.editingBlock.dataset.title = customBlockTitle;
+            } else {
+                delete this.state.editingBlock.dataset.title;
+            }
+            const blocks = BlockManager.getBlocks(this.dom.canvas);
+            BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
         } else if (this.state.pendingSide) {
             if (html !== '<p></p>' && html.trim() !== '') {
                 const currentBlocks = BlockManager.getBlocks(this.dom.canvas);
-                const newBlock = { id: this.state.pendingBlockId, side: this.state.pendingSide, html };
+                const newBlock = { 
+                    id: this.state.pendingBlockId, 
+                    side: this.state.pendingSide, 
+                    html,
+                    title: customBlockTitle || undefined
+                };
                 if (this.state.pendingRole) {
                     newBlock.role = this.state.pendingRole;
                 }
@@ -47,7 +59,12 @@ class NoteControllerClass {
                 id: b.id,
                 side: b.side,
                 html: b.html,
-                role: b.role
+                role: b.role,
+                sources: b.sources || [],
+                title: b.title || undefined,
+                collapsed: b.collapsed || false,
+                words: b.words || [],
+                color: b.color || undefined
             })),
             is_pinned: this.state.isPinned || false,
             category_id: categoryId ? parseInt(categoryId) : null,
@@ -148,6 +165,27 @@ class NoteControllerClass {
 
             if (this.dom.categorySelect) {
                 this.dom.categorySelect.value = n.category_id || "";
+            }
+
+            let stickersCountMap = {};
+            try {
+                const stickers = await fetch(`/api/stickers/dialectics/${n.id}/`).then(r => r.json());
+                if (Array.isArray(stickers)) {
+                    stickers.forEach(s => {
+                        if (s.dialectics_block_id) {
+                            stickersCountMap[s.dialectics_block_id] = (stickersCountMap[s.dialectics_block_id] || 0) + 1;
+                        }
+                    });
+                }
+            } catch(e) {
+                console.error("Failed to load block stickers:", e);
+            }
+            this.state.blockStickersCount = stickersCountMap;
+
+            const toggleOnlyTitles = document.getElementById('toggleOnlyTitlesMode');
+            if (toggleOnlyTitles) {
+                toggleOnlyTitles.checked = false;
+                if (window.toggleOnlyTitlesMode) window.toggleOnlyTitlesMode(false);
             }
 
             BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());

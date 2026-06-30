@@ -1,36 +1,92 @@
-// Article Parser JavaScript Logic
+/**
+ * article_parser.js
+ * Frontend logic for floating AI Article Parser widget, powered by DialecticsBaseWidget.
+ */
 
-let articleParserActive = false;
+let articleWidget = null;
 let uploadedArticleFile = null;
-let recognition = null;
-let isRecording = false;
-let articleTextCache = ""; // To avoid sending the file every time if not needed, though we will just send it if it's there.
 
-// Toggle visibility of the widget
-window.toggleArticleParser = function() {
-    if (window.WidgetManager) {
-        window.WidgetManager.toggle('articleParserWidget');
-        const widget = document.getElementById('articleParserWidget');
-        articleParserActive = widget && widget.style.display !== 'none';
-        if (!articleParserActive && isRecording) toggleVoiceInput();
-        return;
-    }
-    const widget = document.getElementById('articleParserWidget');
-    if (!widget) return;
-    
-    if (widget.style.display === 'none' || widget.style.display === '') {
-        widget.style.display = 'flex';
-        articleParserActive = true;
-    } else {
-        widget.style.display = 'none';
-        articleParserActive = false;
-        if (isRecording) {
-            toggleVoiceInput();
+// Инициализация виджета
+function initArticleWidget() {
+    articleWidget = new DialecticsBaseWidget({
+        widgetId: 'articleParserWidget',
+        dragHandleId: 'articleParserDragHandle',
+        historyId: 'parserChatHistory',
+        inputId: 'parserPromptInput',
+        voiceBtnId: 'btnParserVoice',
+        storageKey: 'papanda_article_chat_history',
+        welcomeHtml: `
+            <div class="chat-message ai-message" style="margin-bottom: 6px;">
+                <div class="message-content">👋 <b>Привет!</b> Я превращаю любую статью в изложение процесса, которому она посвящена.</div>
+            </div>
+            <div class="chat-message ai-message" style="margin-bottom: 6px;">
+                <div class="message-content">💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <b>диалектическую</b>.</div>
+            </div>
+            <div class="chat-message ai-message">
+                <div class="message-content">🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <b>Словарь</b> для быстрого доступа.</div>
+            </div>
+        `,
+        saveHistoryCallback: () => {
+            const dictHist = document.getElementById('parserDictHistory');
+            if (dictHist) {
+                localStorage.setItem('papanda_article_dict_history', dictHist.innerHTML);
+            }
         }
+    });
+
+    // Восстанавливаем сохраненную историю
+    const chatHist = document.getElementById('parserChatHistory');
+    const savedChat = localStorage.getItem('papanda_article_chat_history');
+    if (chatHist && savedChat) {
+        if (!savedChat.includes('Я превращаю любую статью')) {
+            localStorage.removeItem('papanda_article_chat_history');
+        } else {
+            articleWidget.restoreHistory();
+        }
+    }
+
+    const dictHist = document.getElementById('parserDictHistory');
+    const savedDict = localStorage.getItem('papanda_article_dict_history');
+    if (dictHist && savedDict) {
+        dictHist.innerHTML = savedDict;
+    }
+
+    // Настраиваем отправку по Enter
+    const input = document.getElementById('parserPromptInput');
+    if (input) {
+        if (input.dataset.hasEnterHandler !== 'true') {
+            input.dataset.hasEnterHandler = 'true';
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendParserMessage();
+                }
+            });
+        }
+    }
+}
+
+// Заглушка для inline onclick-обработчика голосовой кнопки
+window.toggleVoiceInput = function() {
+    // Инициализируется автоматически в DialecticsBaseWidget
+};
+
+// Очистка истории чата и словаря
+window.clearArticleChatHistory = function() {
+    if (articleWidget) {
+        articleWidget.clearHistory(() => {
+            const dictHist = document.getElementById('parserDictHistory');
+            if (dictHist) {
+                dictHist.innerHTML = `<div class="dict-empty-state">Словарь пуст. Спросите значение любого понятия из статьи.</div>`;
+            }
+            localStorage.removeItem('papanda_article_dict_history');
+            window.removeUploadedArticle();
+            if (window.showToast) window.showToast("История и словарь очищены", "info");
+        });
     }
 };
 
-// Switch Tabs
+// Переключение табов "Чат" / "Словарь"
 window.switchParserTab = function(tabName) {
     const chatTab = document.querySelector('.parser-tab[onclick*="chat"]');
     const dictTab = document.querySelector('.parser-tab[onclick*="dict"]');
@@ -41,25 +97,25 @@ window.switchParserTab = function(tabName) {
     const inputArea = document.querySelector('.parser-input-area');
     
     if (tabName === 'chat') {
-        chatTab.classList.add('active');
-        dictTab.classList.remove('active');
+        if (chatTab) chatTab.classList.add('active');
+        if (dictTab) dictTab.classList.remove('active');
         
-        uploadSec.style.display = 'flex';
-        chatHist.style.display = 'flex';
-        inputArea.style.display = 'flex';
-        dictHist.style.display = 'none';
+        if (uploadSec) uploadSec.style.display = 'flex';
+        if (chatHist) chatHist.style.display = 'flex';
+        if (inputArea) inputArea.style.display = 'flex';
+        if (dictHist) dictHist.style.display = 'none';
     } else {
-        dictTab.classList.add('active');
-        chatTab.classList.remove('active');
+        if (dictTab) dictTab.classList.add('active');
+        if (chatTab) chatTab.classList.remove('active');
         
-        uploadSec.style.display = 'none';
-        chatHist.style.display = 'none';
-        inputArea.style.display = 'none';
-        dictHist.style.display = 'flex';
+        if (uploadSec) uploadSec.style.display = 'none';
+        if (chatHist) chatHist.style.display = 'none';
+        if (inputArea) inputArea.style.display = 'none';
+        if (dictHist) dictHist.style.display = 'flex';
     }
 };
 
-// Handle file upload selection
+// Выбор файла для прикрепления
 window.handleArticleUpload = function(input) {
     if (input.files && input.files[0]) {
         uploadedArticleFile = input.files[0];
@@ -67,133 +123,33 @@ window.handleArticleUpload = function(input) {
         const fileNameDisplay = document.getElementById('uploadedFileName');
         const nameText = document.querySelector('#uploadedFileName .file-name-text');
         
-        nameText.textContent = uploadedArticleFile.name;
-        btnUpload.style.display = 'none';
-        fileNameDisplay.style.display = 'flex';
+        if (nameText) nameText.textContent = uploadedArticleFile.name;
+        if (btnUpload) btnUpload.style.display = 'none';
+        if (fileNameDisplay) fileNameDisplay.style.display = 'flex';
         
-        appendMessage('system', `Статья "${uploadedArticleFile.name}" прикреплена. Задайте вопрос по ней!`);
+        if (articleWidget) {
+            articleWidget.appendMessage('system', `Статья "${uploadedArticleFile.name}" прикреплена. Задайте вопрос по ней!`);
+        }
     }
 };
 
-// Remove uploaded file
+// Удаление прикрепленного файла
 window.removeUploadedArticle = function() {
     uploadedArticleFile = null;
     const input = document.getElementById('articleFileInput');
-    input.value = ''; // clear input
+    if (input) input.value = '';
     
-    document.querySelector('.parser-upload-section .upload-btn').style.display = 'flex';
-    document.getElementById('uploadedFileName').style.display = 'none';
+    const btnUpload = document.querySelector('.parser-upload-section .upload-btn');
+    const fileNameDisplay = document.getElementById('uploadedFileName');
+    if (btnUpload) btnUpload.style.display = 'flex';
+    if (fileNameDisplay) fileNameDisplay.style.display = 'none';
 };
 
-// Auto resize textarea
-window.autoResizeTextarea = function(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = (textarea.scrollHeight) + 'px';
-};
-
-// Setup Voice Recognition
-function setupSpeechRecognition() {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert("Ваш браузер не поддерживает голосовой ввод. Пожалуйста, используйте Chrome, Edge или Safari.");
-        return null;
-    }
-    
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const rec = new SpeechRecognition();
-    rec.lang = 'ru-RU'; 
-    rec.interimResults = true;
-    rec.continuous = false;
-    
-    rec.onstart = function() {
-        isRecording = true;
-        document.getElementById('btnParserVoice').classList.add('recording');
-    };
-    
-    rec.onresult = function(event) {
-        let interimTranscript = '';
-        let finalTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript;
-            } else {
-                interimTranscript += event.results[i][0].transcript;
-            }
-        }
-        
-        const input = document.getElementById('parserPromptInput');
-        if (finalTranscript) {
-            input.value += (input.value ? ' ' : '') + finalTranscript;
-            autoResizeTextarea(input);
-        }
-    };
-    
-    rec.onerror = function(event) {
-        console.error("Speech recognition error", event.error);
-        stopRecording();
-    };
-    
-    rec.onend = function() {
-        stopRecording();
-    };
-    
-    return rec;
-}
-
-function stopRecording() {
-    isRecording = false;
-    document.getElementById('btnParserVoice').classList.remove('recording');
-}
-
-// Toggle Voice Input
-window.toggleVoiceInput = function() {
-    if (!recognition) {
-        recognition = setupSpeechRecognition();
-    }
-    
-    if (!recognition) return;
-    
-    if (isRecording) {
-        recognition.stop();
-    } else {
-        recognition.start();
-    }
-};
-
-// Append message to chat
-function appendMessage(sender, text) {
-    const chatHistory = document.getElementById('parserChatHistory');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `chat-message ${sender === 'user' ? 'user-message' : 'ai-message'}`;
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-    
-    // Parse markdown briefly (bold)
-    let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    formattedText = formattedText.replace(/\n/g, '<br>');
-    
-    contentDiv.innerHTML = formattedText;
-    
-    msgDiv.appendChild(contentDiv);
-    chatHistory.appendChild(msgDiv);
-    
-    // Scroll to bottom
-    chatHistory.scrollTop = chatHistory.scrollHeight;
-    saveArticleHistory();
-}
-
-function saveArticleHistory() {
-    const chatHist = document.getElementById('parserChatHistory');
-    const dictHist = document.getElementById('parserDictHistory');
-    if (chatHist) localStorage.setItem('papanda_article_chat_history', chatHist.innerHTML);
-    if (dictHist) localStorage.setItem('papanda_article_dict_history', dictHist.innerHTML);
-}
-
+// Добавление термина в словарь
 function appendToDictionary(title, content) {
     const dictHist = document.getElementById('parserDictHistory');
+    if (!dictHist || !articleWidget) return;
     
-    // Remove empty state if exists
     const emptyState = dictHist.querySelector('.dict-empty-state');
     if (emptyState) {
         emptyState.remove();
@@ -208,18 +164,19 @@ function appendToDictionary(title, content) {
     
     const contentDiv = document.createElement('div');
     contentDiv.className = 'dict-item-content';
-    let formattedText = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    let formattedText = articleWidget.renderMathInText(content);
+    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     formattedText = formattedText.replace(/\n/g, '<br>');
     contentDiv.innerHTML = formattedText;
     
     itemDiv.appendChild(titleDiv);
     itemDiv.appendChild(contentDiv);
     
-    dictHist.prepend(itemDiv); // Add to top
-    saveArticleHistory();
+    dictHist.prepend(itemDiv);
+    articleWidget.saveHistory();
 }
 
-// Parse AI response for [CONCEPT: ...] blocks
+// Парсинг тегов [CONCEPT] из ответа ИИ
 function processAiResponse(rawText) {
     const conceptRegex = /\[CONCEPT:\s*(.*?)\]([\s\S]*?)\[\/CONCEPT\]/g;
     let cleanText = rawText;
@@ -231,14 +188,13 @@ function processAiResponse(rawText) {
         
         appendToDictionary(title, content);
         
-        // Keep the content in the chat, but format it nicely with a badge
         const formattedBlock = `
             <div style="border-left: 3px solid #0ea5e9; padding-left: 10px; margin: 10px 0;">
                 <div style="font-size: 0.85em; color: #0284c7; font-weight: 600; margin-bottom: 4px;">
                     📌 Сохранено в Словарь
                 </div>
                 <strong>${title}</strong><br>
-                ${content.replace(/\n/g, '<br>')}
+                ${articleWidget ? articleWidget.renderMathInText(content).replace(/\n/g, '<br>') : content.replace(/\n/g, '<br>')}
             </div>
         `;
         cleanText = cleanText.replace(match[0], formattedBlock);
@@ -247,27 +203,29 @@ function processAiResponse(rawText) {
     return cleanText;
 }
 
-// Send Message
+// Отправка запроса по статье
 window.sendParserMessage = async function() {
     const input = document.getElementById('parserPromptInput');
-    const text = input.value.trim();
+    if (!input || !articleWidget) return;
     
+    const text = input.value.trim();
     if (!text && !uploadedArticleFile) return;
     
     if (text) {
-        appendMessage('user', text);
+        articleWidget.appendMessage('user', text);
     }
     
     input.value = '';
-    autoResizeTextarea(input);
+    if (window.autoResizeTextarea) autoResizeTextarea(input);
     
     input.disabled = true;
-    document.getElementById('btnParserSend').disabled = true;
+    const sendBtn = document.getElementById('btnParserSend');
+    if (sendBtn) sendBtn.disabled = true;
     
-    // Append loading state
-    appendMessage('system', '⏳ Анализирую...');
-    const chatHistory = document.getElementById('parserChatHistory');
-    const loadingNode = chatHistory.lastChild;
+    const aiMsg = articleWidget.appendMessage('ai', '⏳ Анализирую...', true);
+    if (aiMsg) {
+        aiMsg.classList.add('loading');
+    }
     
     try {
         const formData = new FormData();
@@ -279,7 +237,6 @@ window.sendParserMessage = async function() {
         const response = await fetch('/api/ai/dialectics/article-parser', {
             method: 'POST',
             body: formData
-            // Note: Don't set Content-Type header with FormData, fetch does it automatically with boundary
         });
         
         if (!response.ok) {
@@ -289,106 +246,35 @@ window.sendParserMessage = async function() {
         
         const data = await response.json();
         
-        // Remove loading node
-        loadingNode.remove();
-        
-        // Process response for dictionary definitions
-        const finalMessage = processAiResponse(data.result);
-        appendMessage('ai', finalMessage);
-        
-        // If we uploaded a file, we can optionally clear it so we don't send it again and waste tokens.
-        // But the user might want to ask multiple questions.
-        // We will keep it for now.
-        
+        if (aiMsg) {
+            aiMsg.classList.remove('loading');
+            const cleanMessage = processAiResponse(data.result);
+            
+            const contentDiv = aiMsg.querySelector('.message-content');
+            let formattedText = articleWidget.renderMathInText(cleanMessage);
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedText = formattedText.replace(/\n/g, '<br>');
+            
+            contentDiv.innerHTML = formattedText;
+            articleWidget.saveHistory();
+        }
     } catch (error) {
-        loadingNode.remove();
-        appendMessage('system', `❌ Ошибка: ${error.message}`);
+        if (aiMsg) {
+            aiMsg.classList.remove('loading');
+            const contentDiv = aiMsg.querySelector('.message-content');
+            contentDiv.textContent = `❌ Ошибка: ${error.message}`;
+            articleWidget.saveHistory();
+        }
     } finally {
         input.disabled = false;
-        document.getElementById('btnParserSend').disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
         input.focus();
-        saveArticleHistory();
     }
 };
 
-// Send message on Enter (but allow Shift+Enter for new lines)
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('parserPromptInput');
-    if (input) {
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendParserMessage();
-            }
-        });
-    }
-
-    const chatHist = document.getElementById('parserChatHistory');
-    const dictHist = document.getElementById('parserDictHistory');
-    const savedChat = localStorage.getItem('papanda_article_chat_history');
-    const savedDict = localStorage.getItem('papanda_article_dict_history');
-    if (chatHist && savedChat) {
-        if (!savedChat.includes('Я превращаю любую статью')) {
-            localStorage.removeItem('papanda_article_chat_history');
-        } else {
-            chatHist.innerHTML = savedChat;
-            chatHist.scrollTop = chatHist.scrollHeight;
-        }
-    }
-    if (dictHist && savedDict) {
-        dictHist.innerHTML = savedDict;
-    }
-    
-    // Draggable Widget Logic
-    const widget = document.getElementById('articleParserWidget');
-    const dragHandle = document.getElementById('articleParserDragHandle');
-    
-    if (widget && dragHandle) {
-        let isDragging = false;
-        let startX, startY, initialX, initialY;
-        
-        dragHandle.addEventListener('mousedown', dragStart);
-        
-        function dragStart(e) {
-            if (e.target.closest('button') || e.target.closest('.parser-tabs')) return; 
-            
-            initialX = widget.offsetLeft;
-            initialY = widget.offsetTop;
-            startX = e.clientX;
-            startY = e.clientY;
-            
-            isDragging = true;
-            
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', dragEnd);
-        }
-        
-        function drag(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-            
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            
-            // Convert right/bottom positioning to left/top to make dragging smooth
-            if (widget.style.right) {
-                const rect = widget.getBoundingClientRect();
-                widget.style.right = 'auto';
-                widget.style.bottom = 'auto';
-                widget.style.left = rect.left + 'px';
-                widget.style.top = rect.top + 'px';
-                initialX = rect.left;
-                initialY = rect.top;
-            }
-            
-            widget.style.left = (initialX + dx) + 'px';
-            widget.style.top = (initialY + dy) + 'px';
-        }
-        
-        function dragEnd() {
-            isDragging = false;
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', dragEnd);
-        }
-    }
-});
+// Запуск инициализации при загрузке страницы
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initArticleWidget);
+} else {
+    initArticleWidget();
+}

@@ -23,7 +23,14 @@
     </div>
 
     {# Active test screen #}
-    <div id="test-active-view" style="display: none; text-align: center; padding: 20px">
+    <div id="test-active-view" style="display: none; text-align: center; padding: 20px; position: relative;">
+        <label class="workout-hint-toggle" style="position: absolute; top: 10px; right: 15px; z-index: 5;" title="Hint">
+            <span style="font-size: 0.8rem;">💡</span>
+            <div class="workout-pill-switch">
+                <input type="checkbox" id="toggle-auto-hint" onchange="if(typeof window.onAutoHintToggle === 'function') window.onAutoHintToggle()">
+                <span class="workout-pill-slider"></span>
+            </div>
+        </label>
         <div id="test-lang-header" style="text-transform: uppercase; font-size: 0.8em; color: #9b59b6; font-weight: bold; margin-bottom: 5px;">Translate this:</div>
         <div id="word-show-count" style="font-size: 0.75em; color: #888; margin-bottom: 10px; background: #eee; display: inline-block; padding: 2px 12px; border-radius: 12px;">Seen: 0 times</div>
         <div>
@@ -31,12 +38,11 @@
             <span id="learned-icon" style="display:none; font-size: 1.1em; vertical-align: middle; margin-left: 10px; color: #27ae60;" title="Learned">✅</span>
             <span id="edit-word-trigger" class="edit-btn" style="display:none; cursor:pointer;" onclick="openWorkoutEditModal()">✎ edit</span>
         </div>
-        <div id="current-translation-display" style="font-size: 1.1em; color: #888; margin-bottom: 30px; visibility: hidden;">(Translation)</div>
+        <div id="current-translation-display" style="font-size: 1.1em; color: #888; margin-bottom: 24px; visibility: hidden;">(Translation)</div>
 
-        <div style="display: flex; gap: 15px; justify-content: center;">
-            <button id="btn-show-hint" style="background: #fdf5ff; border: 1px solid #9b59b6; color: #9b59b6; font-weight: bold; padding: 8px 15px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(155,89,182,0.1);">💡 Show Hint</button>
-            <button id="btn-known"     style="background: #27ae60; color: white; border: none; padding: 8px 25px; border-radius: 8px; cursor: pointer; font-weight: bold;">I Know This</button>
-            <button id="btn-unknown"   style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;">Don't Know</button>
+        <div style="display: flex; gap: 20px; justify-content: center; align-items: center;">
+            <button id="btn-known"     style="background: #16a34a; color: white; border: none; padding: 10px 32px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3); transition: transform 0.1s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">I Know This</button>
+            <button id="btn-unknown"   style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.25); transition: transform 0.1s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">Don't Know</button>
         </div>
     </div>
 

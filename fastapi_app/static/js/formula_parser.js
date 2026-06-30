@@ -1,33 +1,83 @@
 /**
  * formula_parser.js
- * Frontend logic for floating AI Formula Parser widget.
+ * Frontend logic for floating AI Formula Parser widget, powered by DialecticsBaseWidget.
  */
 
-window.sendFormulaMessage = async function() {
-    const input = document.getElementById('formulaPromptInput');
-    const history = document.getElementById('formulaChatHistory');
-    if (!input || !history) return;
+let formulaWidget = null;
 
-    const formula = input.value.trim();
+// Инициализация виджета
+function initFormulaWidget() {
+    formulaWidget = new DialecticsBaseWidget({
+        widgetId: 'formulaParserWidget',
+        dragHandleId: 'formulaParserDragHandle',
+        historyId: 'formulaChatHistory',
+        inputId: 'formulaPromptInput',
+        voiceBtnId: 'btnFormulaVoice',
+        storageKey: 'papanda_formula_chat_history',
+        welcomeHtml: `
+            <div class="chat-message ai-message">
+                <div class="message-content">Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.</div>
+            </div>
+        `
+    });
+
+    // Восстанавливаем сохраненную историю
+    formulaWidget.restoreHistory();
+
+    // Настраиваем отправку по Enter
+    const input = document.getElementById('formulaPromptInput');
+    if (input) {
+        // Предотвращаем дублирование обработчика Enter
+        if (input.dataset.hasEnterHandler !== 'true') {
+            input.dataset.hasEnterHandler = 'true';
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendFormulaMessage();
+                }
+            });
+        }
+    }
+
+    // Инициализируем обработку картинок из буфера
+    initFormulaPasteHandler();
+}
+
+// Заглушка для inline onclick-обработчика в HTML
+window.toggleFormulaVoiceInput = function() {
+    // Голосовой ввод автоматически инициализируется и привязывается к клику по кнопке базовым классом
+};
+
+// Очистка истории
+window.clearFormulaChatHistory = function() {
+    if (formulaWidget) {
+        formulaWidget.clearHistory(() => {
+            if (window.showToast) window.showToast("История переписки очищена", "info");
+        });
+    }
+};
+
+// Отправка формулы на диалектический разбор
+window.sendFormulaMessage = async function(formulaOverride) {
+    const input = document.getElementById('formulaPromptInput');
+    if (!input || !formulaWidget) return;
+
+    const formula = (formulaOverride !== undefined) ? formulaOverride.trim() : input.value.trim();
     if (!formula) return;
 
-    input.value = '';
-    if (window.autoResizeTextarea) autoResizeTextarea(input);
+    if (formulaOverride === undefined) {
+        input.value = '';
+        if (window.autoResizeTextarea) autoResizeTextarea(input);
+    }
 
-    // Append user message
-    const userMsg = document.createElement('div');
-    userMsg.className = 'chat-message user-message';
-    userMsg.innerHTML = `<div class="message-content">` + (window.DOMPurify ? DOMPurify.sanitize(formula) : formula) + `</div>`;
-    history.appendChild(userMsg);
-    history.scrollTop = history.scrollHeight;
+    // Отображаем сообщение пользователя в чате (с KaTeX-рендерингом)
+    formulaWidget.appendMessage('user', formula);
 
-    // Append AI loading message
-    const aiMsg = document.createElement('div');
-    aiMsg.className = 'chat-message ai-message loading';
-    aiMsg.innerHTML = `<div class="message-content">Разбираю диалектическую структуру формулы...</div>`;
-    history.appendChild(aiMsg);
-    history.scrollTop = history.scrollHeight;
-    saveFormulaHistory();
+    // Добавляем индикатор загрузки ИИ
+    const aiMsg = formulaWidget.appendMessage('ai', 'Разбираю диалектическую структуру формулы...', true);
+    if (aiMsg) {
+        aiMsg.classList.add('loading');
+    }
 
     try {
         const res = await fetch('/api/ai/dialectics/parser', {
@@ -74,52 +124,131 @@ window.sendFormulaMessage = async function() {
             }
         }
 
-        aiMsg.classList.remove('loading');
-        if (itemsList && itemsList.length > 0 && (itemsList[0].node || itemsList[0].symbol || itemsList[0].predecessor || itemsList[0].crisis_of_notation)) {
-            let html = `<div style="font-weight: 700; margin-bottom: 10px; color: #0f172a; font-size: 0.95rem;">🧬 Диалектический генезис формулы:</div>`;
-            itemsList.forEach(item => {
-                const title = item.node || item.symbol || item.title || 'Элемент формулы';
-                const predecessor = item.predecessor || item.process || item.thesis || '';
-                const crisis = item.crisis_of_notation || item.contradiction || item.crisis || '';
-                const resolution = item.resolution || item.synthesis || item.result || '';
-                const example = item.example || item.name || '';
+        if (aiMsg) {
+            aiMsg.classList.remove('loading');
+            const contentDiv = aiMsg.querySelector('.message-content');
+            
+            if (itemsList && itemsList.length > 0 && (itemsList[0].node || itemsList[0].symbol || itemsList[0].predecessor || itemsList[0].crisis_of_notation)) {
+                let html = `<div style="font-weight: 700; margin-bottom: 10px; color: #0f172a; font-size: 0.95rem;">🧬 Диалектический генезис формулы:</div>`;
+                itemsList.forEach(item => {
+                    const title = item.node || item.symbol || item.title || 'Элемент формулы';
+                    const predecessor = item.predecessor || item.process || item.thesis || '';
+                    const crisis = item.crisis_of_notation || item.contradiction || item.crisis || '';
+                    const resolution = item.resolution || item.synthesis || item.result || '';
+                    const example = item.example || item.name || '';
 
-                html += `<div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                            <div style="font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
-                                🧮 ${title} ${example ? `<span style="font-size:0.8rem; font-weight:400; color:#64748b;">(${example})</span>` : ''}
-                            </div>
-                            ${predecessor ? `<div style="margin-bottom: 6px; font-size: 0.88rem;"><span style="color: #475569; font-weight: 600;">Предшественник (А):</span> <span style="color: #1e293b;">${predecessor}</span></div>` : ''}
-                            ${crisis ? `<div style="margin-bottom: 6px; font-size: 0.88rem; background: #fef2f2; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #ef4444;"><span style="color: #991b1b; font-weight: 600;">Кризис записи (В):</span> <span style="color: #7f1d1d;">${crisis}</span></div>` : ''}
-                            ${resolution ? `<div style="font-size: 0.88rem; background: #f0fdf4; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #22c55e;"><span style="color: #166534; font-weight: 600;">Разрешение (С):</span> <span style="color: #14532d;">${resolution}</span></div>` : ''}
-                         </div>`;
-            });
-            aiMsg.innerHTML = `<div class="message-content">${window.DOMPurify ? DOMPurify.sanitize(html) : html}</div>`;
-        } else {
-            const cleanText = data.result ? data.result.replace(/```json/g, '').replace(/```/g, '') : "Анализ завершен.";
-            aiMsg.innerHTML = `<div class="message-content" style="white-space: pre-wrap;">${window.DOMPurify ? DOMPurify.sanitize(cleanText) : cleanText}</div>`;
+                    html += `<div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                <div style="font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                                    🧮 ${title} ${example ? `<span style="font-size:0.8rem; font-weight:400; color:#64748b;">(${example})</span>` : ''}
+                                </div>
+                                ${predecessor ? `<div style="margin-bottom: 6px; font-size: 0.88rem;"><span style="color: #475569; font-weight: 600;">Предшественник (А):</span> <span style="color: #1e293b;">${predecessor}</span></div>` : ''}
+                                ${crisis ? `<div style="margin-bottom: 6px; font-size: 0.88rem; background: #fef2f2; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #ef4444;"><span style="color: #991b1b; font-weight: 600;">Кризис записи (В):</span> <span style="color: #7f1d1d;">${crisis}</span></div>` : ''}
+                                ${resolution ? `<div style="font-size: 0.88rem; background: #f0fdf4; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #22c55e;"><span style="color: #166534; font-weight: 600;">Разрешение (С):</span> <span style="color: #14532d;">${resolution}</span></div>` : ''}
+                             </div>`;
+                });
+                contentDiv.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
+            } else {
+                const cleanText = data.result ? data.result.replace(/```json/g, '').replace(/```/g, '') : "Анализ завершен.";
+                contentDiv.textContent = cleanText;
+            }
+            formulaWidget.saveHistory();
         }
     } catch (err) {
-        aiMsg.classList.remove('loading');
-        aiMsg.innerHTML = `<div class="message-content" style="color: #ef4444;">Ошибка разбора: ${err.message}</div>`;
+        if (aiMsg) {
+            aiMsg.classList.remove('loading');
+            const contentDiv = aiMsg.querySelector('.message-content');
+            contentDiv.innerHTML = `<div style="color: #ef4444;">Ошибка разбора: ${err.message}</div>`;
+            formulaWidget.saveHistory();
+        }
     }
-    history.scrollTop = history.scrollHeight;
-    saveFormulaHistory();
 };
 
-function saveFormulaHistory() {
-    const history = document.getElementById('formulaChatHistory');
-    if (history) localStorage.setItem('papanda_formula_chat_history', history.innerHTML);
+// Загрузка изображений формул (OCR)
+window.triggerFormulaImageUpload = function() {
+    const input = document.getElementById('formulaImageFileInput');
+    if (input) input.click();
+};
+
+window.handleFormulaImageUpload = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    await processFormulaImageFile(file);
+    event.target.value = ''; // Сброс
+};
+
+async function processFormulaImageFile(file) {
+    if (!formulaWidget) return;
+
+    // Добавляем индикатор загрузки распознавания
+    const aiMsg = formulaWidget.appendMessage('ai', 'Распознаю формулу с изображения...', true);
+    if (aiMsg) {
+        aiMsg.classList.add('loading');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch('/api/ai/dialectics/formula/ocr', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.detail || 'Ошибка распознавания');
+        }
+
+        const data = await res.json();
+        const latex = data.latex || '';
+        
+        if (aiMsg) aiMsg.remove(); // Удаляем лоадер
+        
+        if (latex) {
+            await sendFormulaMessage(latex);
+            if (window.showToast) window.showToast("Формула распознана и отправлена на разбор!", "success");
+        } else {
+            if (window.showToast) window.showToast("Не удалось извлечь формулу", "warning");
+        }
+    } catch (err) {
+        if (aiMsg) {
+            aiMsg.classList.remove('loading');
+            const contentDiv = aiMsg.querySelector('.message-content');
+            contentDiv.innerHTML = `<div style="color: #ef4444;">Ошибка OCR: ${err.message}</div>`;
+            formulaWidget.saveHistory();
+        }
+    }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const history = document.getElementById('formulaChatHistory');
-    const saved = localStorage.getItem('papanda_formula_chat_history');
-    if (history && saved) {
-        history.innerHTML = saved;
-        history.scrollTop = history.scrollHeight;
+// Вставка скриншотов из буфера обмена (Ctrl+V)
+function initFormulaPasteHandler() {
+    const input = document.getElementById('formulaPromptInput');
+    if (input) {
+        if (input.dataset.hasPasteHandler === 'true') return;
+        input.dataset.hasPasteHandler = 'true';
+        
+        input.addEventListener('paste', async (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        e.preventDefault();
+                        await processFormulaImageFile(file);
+                        break;
+                    }
+                }
+            }
+        });
     }
-});
+}
 
-window.toggleFormulaVoiceInput = function() {
-    if (window.showToast) window.showToast("Голосовой ввод формулы активирован. Произнесите формулу...", "info");
-};
+// Запуск инициализации
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFormulaWidget);
+} else {
+    initFormulaWidget();
+}
+// Периодическая проверка привязки Ctrl+V (в случае пересоздания виджета)
+setInterval(initFormulaPasteHandler, 1000);

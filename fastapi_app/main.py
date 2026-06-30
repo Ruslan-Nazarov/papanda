@@ -34,6 +34,11 @@ async def lifespan(app: FastAPI):
             main_engine = get_engine("default")
             async with main_engine.begin() as conn:
                 await conn.run_sync(models.Base.metadata.create_all)
+                try:
+                    from sqlalchemy import text
+                    await conn.execute(text("ALTER TABLE observations ADD COLUMN set_id INTEGER REFERENCES observation_sets(id)"))
+                except Exception:
+                    pass
             logger.info("Database initialization successful. All tables verified.")
         
             # Гарантируем наличие примера конспекта в основной базе
@@ -69,7 +74,7 @@ mimetypes.add_type('text/css', '.css')
 app = FastAPI(
     title="Papanda API",
     description="Образовательное приложение",
-    version="0.6.10",
+    version="0.6.11",
     lifespan=lifespan
 )
 app.state.settings = settings

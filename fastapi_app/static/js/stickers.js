@@ -86,7 +86,7 @@ async function expandNoteOnSticker(noteId, cardEl, fullText = null) {
 
 // Actions
 async function archiveStickerGlobal(btn, id) {
-    const confirmed = await window.NotificationService.confirm('Archive this thought? (It will be hidden from the dashboard)', { okText: 'Archive' });
+    const confirmed = await window.NotificationService.confirm(window._('modal.archive_confirm', 'Archive this thought?'), { okText: window._('modal.archive', 'Archive') });
     if (!confirmed) return false;
     try {
         await StickerService.archive(id);

@@ -7,6 +7,7 @@
             <span class="widget-title-text">{{ _('dialectics.formula_parser') | default('Парсер формул', true) }}</span>
         </div>
         <div class="widget-controls">
+            <button class="widget-btn-clear" title="Очистить историю переписки" onclick="window.clearFormulaChatHistory && window.clearFormulaChatHistory()" style="margin-right: 6px; font-family: inherit; font-size: 0.8rem; background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.color='#ef4444'; this.style.background='rgba(239, 68, 68, 0.1)'" onmouseout="this.style.color='#94a3b8'; this.style.background='transparent'">🗑️</button>
             <button class="widget-btn-min" title="Свернуть" onclick="window.WidgetManager && window.WidgetManager.minimize('formulaParserWidget')">_</button>
             <button class="widget-btn-max" title="Развернуть" onclick="window.WidgetManager && window.WidgetManager.maximize('formulaParserWidget')">□</button>
             <button class="widget-btn-close" title="Закрыть" onclick="window.WidgetManager && window.WidgetManager.close('formulaParserWidget')">✖</button>
@@ -26,8 +27,12 @@
     <!-- Widget Footer (Input) -->
     <div class="widget-footer parser-input-area">
         <textarea id="formulaPromptInput" placeholder="Введите формулу..." rows="1" oninput="if(window.autoResizeTextarea) autoResizeTextarea(this); else {this.style.height='auto';this.style.height=this.scrollHeight+'px';}" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendFormulaMessage();}"></textarea>
+        <input type="file" id="formulaImageFileInput" accept="image/*" style="display:none;" onchange="handleFormulaImageUpload(event)">
         
         <div class="input-actions">
+            <button class="btn-icon upload-btn" id="btnFormulaUpload" title="Загрузить изображение формулы" onclick="triggerFormulaImageUpload()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </button>
             <button class="btn-icon voice-btn" id="btnFormulaVoice" title="Голосовой ввод формулы" onclick="toggleFormulaVoiceInput()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
             </button>

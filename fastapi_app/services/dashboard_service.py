@@ -103,6 +103,8 @@ class DashboardService:
         # 5. Обследования (Observation Tree) - Limit to 5 for widget
         try:
             data["observations"] = await self.observations_service.get_dashboard_observations(today_obj)
+            data["observation_sets"] = await self.observations_service.get_all_sets()
+            data["active_observation_set"] = await self.observations_service.ensure_active_set()
         except Exception as e:
             logger.error(f"Error fetching observations: {e}")
 
@@ -215,6 +217,8 @@ class DashboardService:
             "now_utc": datetime.now(timezone.utc).replace(tzinfo=None),
             "stickers": dash_data.get('stickers', []),
             "observations": dash_data.get('observations', []),
+            "observation_sets": dash_data.get('observation_sets', []),
+            "active_observation_set": dash_data.get('active_observation_set', None),
             "pinned_notes": dash_data.get('pinned_notes', []),
             "habits_count": lambda start_date: (today_obj.date() - start_date).days if start_date else 0,
             "lang_anchors_json": json.dumps(lang_anchors),

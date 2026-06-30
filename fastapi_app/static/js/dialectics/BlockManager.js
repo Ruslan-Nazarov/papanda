@@ -10,6 +10,29 @@ fetch('/api/ai/dialectics/hints')
     .then(data => { window.DIALECTICS_HINTS = data; })
     .catch(e => console.warn('Failed to load dialectics hints:', e));
 
+export const COLOR_PRESETS = {
+    blue: {
+        bg: 'linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)',
+        accent: '#3b82f6'
+    },
+    green: {
+        bg: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
+        accent: '#10b981'
+    },
+    red: {
+        bg: 'linear-gradient(135deg, #ffffff 0%, #fff1f2 100%)',
+        accent: '#ef4444'
+    },
+    yellow: {
+        bg: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
+        accent: '#f59e0b'
+    },
+    purple: {
+        bg: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+        accent: '#8b5cf6'
+    }
+};
+
 export const BlockManager = {
     renderMath(element) {
         const mathNodes = element.querySelectorAll('span[data-type="mathNode"]');
@@ -26,7 +49,7 @@ export const BlockManager = {
         });
     },
 
-    render(container, blocks, callbacks) {
+    render(container, blocks, callbacks = {}) {
         if (!container) return;
         const divider = document.getElementById('canvasDivider');
         container.innerHTML = '';
@@ -137,12 +160,45 @@ export const BlockManager = {
             ['left', 'right', 'center'].forEach(side => {
                 const wrap = document.createElement('div');
                 wrap.className = `insert-wrap insert-wrap--${side}`;
-                const isCenter = side === 'center';
-                wrap.innerHTML = `<button class="btn-insert-block ${isCenter ? 'btn-insert-square' : 'btn-insert-round'}" title="${isCenter ? 'Add summary' : 'Add block'}">+</button>`;
-                wrap.querySelector('button').onclick = (e) => {
-                    e.stopPropagation();
-                    callbacks.onInsertAfter(side, targetIndex - 1);
-                };
+                if (side === 'center') {
+                    wrap.innerHTML = `<button class="btn-insert-block btn-insert-square" title="Add summary">+</button>`;
+                    wrap.querySelector('button').onclick = (e) => {
+                        e.stopPropagation();
+                        callbacks.onInsertAfter('center', targetIndex - 1);
+                    };
+                } else if (side === 'right') {
+                    wrap.style.display = 'flex';
+                    wrap.style.gap = '8px';
+                    wrap.style.alignItems = 'center';
+                    wrap.style.justifyContent = 'center';
+                    wrap.innerHTML = `
+                        <button class="btn-insert-block btn-insert-round" title="Добавить блок">+</button>
+                        <button class="btn-insert-block btn-insert-section" title="Добавить раздел">📑 Раздел</button>
+                    `;
+                    const btns = wrap.querySelectorAll('button');
+                    btns[0].onclick = (e) => {
+                        e.stopPropagation();
+                        callbacks.onInsertAfter('right', targetIndex - 1);
+                    };
+                    btns[1].onclick = (e) => {
+                        e.stopPropagation();
+                        callbacks.onInsertAfter('section', targetIndex - 1);
+                    };
+                } else {
+                    wrap.style.display = 'flex';
+                    wrap.style.alignItems = 'center';
+                    wrap.style.justifyContent = 'center';
+                    wrap.innerHTML = `
+                        <button class="btn-insert-block btn-insert-round" title="Добавить блок">+</button>
+                    `;
+                    const btn = wrap.querySelector('button');
+                    if (btn) {
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            callbacks.onInsertAfter('left', targetIndex - 1);
+                        };
+                    }
+                }
                 zone.appendChild(wrap);
             });
             
@@ -187,42 +243,217 @@ export const BlockManager = {
             } else {
                 const b = el.data;
                 if (!b.id) b.id = 'block_' + Math.random().toString(36).substring(2, 9);
+                const isSection = b.isSection === true || b.side === 'section';
                 const blockEl = document.createElement('div');
-                blockEl.className = `dialectics-block block-${b.side || 'left'}`;
+                blockEl.className = `dialectics-block block-${b.side || 'left'}${isSection ? ' block-section' : ''}`;
                 blockEl.dataset.blockId = b.id;
                 if (b.role) blockEl.dataset.role = b.role;
+                if (isSection) blockEl.dataset.isSection = 'true';
                 
-                let extraHtml = '';
-                if (b.role) {
-                    let titleText = '';
+                let titleText = b.title || '';
+                if (isSection) {
+                    if (!titleText) titleText = 'Раздел';
+                    blockEl.className = 'dialectics-block block-section';
+                    blockEl.dataset.title = titleText;
+                    blockEl.innerHTML = `
+                        <div class="section-chapter-container" style="display: flex; align-items: baseline; justify-content: space-between; padding: 16px 8px 10px 8px; border-bottom: 2px solid #ea580c; cursor: pointer;" title="Нажмите, чтобы изменить название раздела">
+                            <div style="display: flex; align-items: baseline; gap: 12px;">
+                                <span style="color: #ea580c; font-size: 1.5rem; line-height: 1;">📑</span>
+                                <h2 class="block-title-text" style="margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2;">${titleText}</h2>
+                            </div>
+                            <div class="section-actions" style="display: flex; gap: 8px; opacity: 0; transition: opacity 0.2s;">
+                                <button class="btn-section-edit" title="Изменить название" style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; font-weight: 600; color: #ea580c; cursor: pointer;">✎ Изменить</button>
+                                <button class="btn-section-del" title="Удалить раздел" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; font-weight: 600; color: #dc2626; cursor: pointer;">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    blockEl.onmouseenter = () => {
+                        const actions = blockEl.querySelector('.section-actions');
+                        if (actions) actions.style.opacity = '1';
+                    };
+                    blockEl.onmouseleave = () => {
+                        const actions = blockEl.querySelector('.section-actions');
+                        if (actions) actions.style.opacity = '0';
+                    };
+
+                    if (callbacks) {
+                        const containerEl = blockEl.querySelector('.section-chapter-container');
+                        if (containerEl && callbacks.onEdit) {
+                            containerEl.onclick = (e) => {
+                                e.stopPropagation();
+                                callbacks.onEdit(blockEl);
+                            };
+                        }
+                        const editBtn = blockEl.querySelector('.btn-section-edit');
+                        if (editBtn) {
+                            editBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                if (callbacks.onEdit) callbacks.onEdit(blockEl);
+                            };
+                        }
+                        const delBtn = blockEl.querySelector('.btn-section-del');
+                        if (delBtn) {
+                            delBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                if (callbacks.onDelete) {
+                                    const nextEl = blockEl.nextElementSibling;
+                                    if (nextEl && nextEl.classList.contains('block-insert-row')) {
+                                        nextEl.remove();
+                                    }
+                                    blockEl.remove();
+                                    callbacks.onDelete();
+                                }
+                            };
+                        }
+                    }
+                    
+                    container.appendChild(blockEl);
+                    if (callbacks.onInsertAfter) {
+                        container.appendChild(createInsertRow(logicalBlockIndex + 1));
+                    }
+                    logicalBlockIndex++;
+                    return;
+                }
+
+                if (!titleText && b.role) {
                     if (b.role === 'anchor') titleText = ANCHOR_HINT.title;
                     else {
                         const step = STEPS.find(s => s.id === b.role);
                         if (step) titleText = step.title;
                     }
-                    if (titleText) {
-                        extraHtml = `<div class="dialectics-step-title" style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 0 14px; text-transform: uppercase;">${titleText}</div>`;
-                    }
                 }
+                if (!titleText) {
+                    titleText = isSection ? 'Раздел' : (b.side === 'center' ? 'Связующий блок' : 'Блок');
+                }
+
+                let infoIconHtml = '';
+                if (b.role) {
+                    let stepText = '';
+                    if (b.role === 'anchor') stepText = ANCHOR_HINT.text;
+                    else {
+                        const step = STEPS.find(s => s.id === b.role);
+                        if (step) stepText = step.text;
+                    }
+                    const cleanStepText = stepText.replace(/<[^>]*>/g, '').trim();
+                    infoIconHtml = `<span class="dialectics-step-info-trigger" title="${cleanStepText}" style="cursor:help; margin-left:6px; color:#94a3b8; font-size:0.9rem; font-weight:normal; vertical-align:middle; transition:color 0.2s;" onmouseover="this.style.color='#64748b'" onmouseout="this.style.color='#94a3b8'">ℹ️</span>`;
+                }
+
+                const isCollapsed = b.collapsed === true;
+                if (isCollapsed) {
+                    blockEl.classList.add('is-collapsed');
+                }
+                blockEl.dataset.collapsed = isCollapsed ? 'true' : 'false';
+                if (b.title) {
+                    blockEl.dataset.title = b.title;
+                }
+                if (b.color) {
+                    blockEl.dataset.color = b.color;
+                    const preset = COLOR_PRESETS[b.color];
+                    if (preset) {
+                        blockEl.style.setProperty('--block-custom-bg', preset.bg);
+                        blockEl.style.setProperty('--block-custom-accent', preset.accent);
+                    }
+                } else {
+                    delete blockEl.dataset.color;
+                    blockEl.style.removeProperty('--block-custom-bg');
+                    blockEl.style.removeProperty('--block-custom-accent');
+                }
+
+                const arrowChar = isCollapsed ? '▶' : '▼';
+                const foldBtnHtml = `<button class="btn-block-fold-toggle" title="Свернуть/Развернуть" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#64748b; padding:2px 6px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${arrowChar}</button>`;
+
+                let extraHtml = `
+                    <div class="dialectics-block-header" style="display:flex; align-items:center; justify-content:space-between; font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 6px 14px; border-bottom:1px solid #f1f5f9; text-transform: uppercase; background:#f8fafc; border-top-left-radius:12px; border-top-right-radius:12px; cursor: grab;" title="Зажмите заголовок для перетаскивания блока">
+                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
+                            ${foldBtnHtml}
+                            <span class="block-title-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${titleText}</span>
+                            ${infoIconHtml}
+                        </div>
+                    </div>
+                `;
 
                 let sourcesCountHtml = '';
                 if (b.sources && b.sources.length > 0) {
                     sourcesCountHtml = `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px;">${b.sources.length}</span>`;
                 }
 
+                let wordsCountHtml = '';
+                if (b.words && b.words.length > 0) {
+                    wordsCountHtml = `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px;">${b.words.length}</span>`;
+                }
+
+                let wordsHtml = '';
+                if (b.words && b.words.length > 0) {
+                    wordsHtml = `<div class="dialectics-block-words-row" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px 14px;">`;
+                    b.words.forEach(w => {
+                        wordsHtml += `<span class="dialectics-word-badge" onclick="event.stopPropagation(); window.app && window.app.showWordDefinition('${w.word.replace(/'/g, "\\'")}')" style="cursor: pointer; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;" title="Нажмите для просмотра определения">📖 ${w.word}</span>`;
+                    });
+                    wordsHtml += `</div>`;
+                }
+
+                let stickersCount = 0;
+                if (window.app && window.app.state && window.app.state.blockStickersCount) {
+                    stickersCount = window.app.state.blockStickersCount[b.id] || 0;
+                }
+                const stickersCountHtml = stickersCount > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#fde68a; border-radius:10px; padding:2px 5px; margin-left:4px; color:#b45309;">${stickersCount}</span>` : '';
+
                 blockEl.innerHTML = `
                     <div class="dialectics-block-actions">
                         <button class="btn-block-edit" title="Edit">✎</button>
                         ${b.role === 'step3' ? '<button class="btn-block-ai" title="Поиск противоположностей">✨</button>' : ''}
                         <button class="btn-block-sources" title="Sources">🔗${sourcesCountHtml}</button>
-                        <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div></button>
+                        <button class="btn-block-words" title="Словарь">📖${wordsCountHtml}</button>
+                        <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center; gap: 2px;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div>${stickersCountHtml}</button>
+                        <button class="btn-block-color" title="Цвет">🎨</button>
                         <button class="btn-block-del" title="Delete">🗑️</button>
+                        <button class="btn-block-hacks" title="${window._ ? window._('dialectics.hacks_title') : 'Хаки понимания'}">💡</button>
                     </div>
                     ${extraHtml}
                     <div class="dialectics-content-inner">${b.html}</div>
+                    ${wordsHtml}
                 `;
                 
                 this.renderMath(blockEl);
+
+                const headerEl = blockEl.querySelector('.dialectics-block-header');
+                if (headerEl) {
+                    headerEl.addEventListener('mouseenter', () => {
+                        blockEl.setAttribute('draggable', 'true');
+                    });
+                    headerEl.addEventListener('mouseleave', () => {
+                        if (!blockEl.classList.contains('is-dragging')) {
+                            blockEl.setAttribute('draggable', 'false');
+                        }
+                    });
+                    headerEl.addEventListener('mousedown', (e) => {
+                        if (e.target.closest('button') || e.target.closest('.dialectics-step-info-trigger')) {
+                            blockEl.setAttribute('draggable', 'false');
+                            blockEl._preventDrag = true;
+                        } else {
+                            blockEl.setAttribute('draggable', 'true');
+                            blockEl._preventDrag = false;
+                        }
+                    });
+                }
+
+                const foldBtnEl = blockEl.querySelector('.btn-block-fold-toggle');
+                if (foldBtnEl) {
+                    foldBtnEl.onclick = (e) => {
+                        e.stopPropagation();
+                        const currentlyCollapsed = blockEl.classList.contains('is-collapsed');
+                        if (currentlyCollapsed) {
+                            blockEl.classList.remove('is-collapsed');
+                            foldBtnEl.innerHTML = '▼';
+                            blockEl.dataset.collapsed = 'false';
+                        } else {
+                            blockEl.classList.add('is-collapsed');
+                            foldBtnEl.innerHTML = '▶';
+                            blockEl.dataset.collapsed = 'true';
+                        }
+                        if (callbacks.onFoldToggle) callbacks.onFoldToggle();
+                    };
+                }
 
                 const aiBtnEl = blockEl.querySelector('.btn-block-ai');
                 if (aiBtnEl) {
@@ -242,11 +473,25 @@ export const BlockManager = {
                 if (b.sources) {
                     blockEl.dataset.sources = JSON.stringify(b.sources);
                 }
+                if (b.words) {
+                    blockEl.dataset.words = JSON.stringify(b.words);
+                }
 
                 blockEl.querySelector('.btn-block-sources').onclick = (e) => {
                     e.stopPropagation();
                     if (callbacks.onSources) callbacks.onSources(blockEl);
                 };
+                blockEl.querySelector('.btn-block-words').onclick = (e) => {
+                    e.stopPropagation();
+                    if (callbacks.onWords) callbacks.onWords(blockEl);
+                };
+                const colorBtn = blockEl.querySelector('.btn-block-color');
+                if (colorBtn) {
+                    colorBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (callbacks.onColor) callbacks.onColor(blockEl);
+                    };
+                }
                 blockEl.querySelector('.btn-block-del').onclick = async (e) => {
                     e.stopPropagation();
                     const confirmed = await customConfirm({
@@ -267,6 +512,13 @@ export const BlockManager = {
                         if (callbacks.onDelete) callbacks.onDelete();
                     }
                 };
+                const hacksBtn = blockEl.querySelector('.btn-block-hacks');
+                if (hacksBtn) {
+                    hacksBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (callbacks.onHacks) callbacks.onHacks(blockEl);
+                    };
+                }
                 
                 container.appendChild(blockEl);
 
@@ -284,6 +536,19 @@ export const BlockManager = {
         if (!container) return [];
         const blocks = [];
         container.querySelectorAll('.dialectics-block').forEach(b => {
+            const isSection = b.dataset.isSection === 'true' || b.classList.contains('block-section') || b.dataset.side === 'section';
+            if (isSection) {
+                const titleEl = b.querySelector('.block-title-text');
+                const titleText = b.dataset.title || (titleEl ? titleEl.innerText : 'Раздел');
+                blocks.push({
+                    id: b.dataset.blockId || b.dataset.id || ('block_' + Math.random().toString(36).substring(2, 9)),
+                    side: 'section',
+                    isSection: true,
+                    title: titleText,
+                    html: `<p>${titleText}</p>`
+                });
+                return;
+            }
             const inner = b.querySelector('.dialectics-content-inner');
             if (inner) {
                 let sources = [];
@@ -293,13 +558,25 @@ export const BlockManager = {
                     }
                 } catch(e) {}
 
+                let words = [];
+                try {
+                    if (b.dataset.words) {
+                        words = JSON.parse(b.dataset.words);
+                    }
+                } catch(e) {}
+
                 blocks.push({
                     id: b.dataset.blockId || ('block_' + Math.random().toString(36).substring(2, 9)),
-                    side: b.classList.contains('block-left') ? 'left' : 
-                          b.classList.contains('block-center') ? 'center' : 'right',
+                    side: (b.classList.contains('block-left') ? 'left' : 
+                          b.classList.contains('block-center') ? 'center' : 'right'),
+                    isSection: false,
                     html: inner.innerHTML,
                     role: b.dataset.role || undefined,
-                    sources: sources
+                    sources: sources,
+                    title: b.dataset.title || undefined,
+                    collapsed: b.dataset.collapsed === 'true',
+                    words: words,
+                    color: b.dataset.color || undefined
                 });
             }
         });

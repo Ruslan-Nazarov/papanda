@@ -31,11 +31,11 @@
                     <div class="tree-footer">
                         <div class="tree-weekdays">
                             {% for i, day_key in [(0,'mon'), (1,'tue'), (2,'wed'), (3,'thu'), (4,'fri'), (5,'sat'), (6,'sun')] %}
-                                <span class="day-dot {{ 'active' if i in obs['done_days'] }}">{{ _('dashboard.' ~ day_key)[:1] | upper }}</span>
+                                <span class="day-dot {{ 'active' if i in obs['done_days'] }}">{{ _('modal.' ~ day_key)[:1] | upper }}</span>
                             {% endfor %}
                         </div>
                         <button class="btn-tree-edit" onclick="openObsEditModalFromTree({{ obs['id'] }})">
-                            <i class="fas fa-edit"></i> {{ _('dashboard.edit') }}
+                            <i class="fas fa-edit"></i> {{ _('dashboard.edit_short') }}
                         </button>
                     </div>
                 </div>

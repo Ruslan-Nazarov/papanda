@@ -210,10 +210,18 @@ class WordService:
 
     async def get_top_encountered_words(self, limit: int = 12) -> List[models.WordStats]:
         active_langs = await self.langs.get_active_languages()
-        sum_expr = " + ".join([f"COALESCE(JSON_EXTRACT(show_stats, '$.{l}'), 0)" for l in active_langs])
-        stmt = select(models.WordStats).order_by(text(f"({sum_expr}) DESC")).limit(limit)
+        stmt = select(models.WordStats).order_by(models.WordStats.count.desc()).limit(limit)
         res = await self.db.execute(stmt)
-        return list(res.scalars().all())
+        words = list(res.scalars().all())
+        for w in words:
+            stats = dict(w.show_stats or {})
+            active_cnt = sum(int(stats.get(l, 0)) for l in active_langs)
+            w.active_count = active_cnt
+            parts = [f"{l.upper()}: {stats.get(l, 0)}" for l in active_langs if int(stats.get(l, 0)) > 0]
+            tooltip_lang = " | ".join(parts) if parts else ""
+            eng_part = w.eng or w.word or ""
+            w.tooltip_text = f"{eng_part} ({tooltip_lang} | Всего: {w.count})" if tooltip_lang else (eng_part or f"Всего: {w.count}")
+        return words
 
     def get_sentences_json(self) -> str:
         from ..config import settings

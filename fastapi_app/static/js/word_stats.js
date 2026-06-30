@@ -433,17 +433,14 @@ function saveWorkoutSettings() {
     closeWorkoutSettingsModal();
 }
 
-async function startKnowledgeTest() {
+async function startKnowledgeTest(e) {
     if (reloadTimeout) { clearTimeout(reloadTimeout); reloadTimeout = null; }
     const oldHint = document.getElementById('reload-hint');
     if (oldHint) oldHint.remove();
-
-    document.getElementById('test-start-view').style.display  = 'none';
-    document.getElementById('test-finish-view').style.display = 'none';
-    document.getElementById('test-active-view').style.display = 'block';
-    document.getElementById('test-progress').style.display    = 'block';
-    document.getElementById('edit-word-trigger').style.display = 'inline-block';
     document.getElementById('test-log').innerText = '';
+
+    const btn = e && e.target && e.target.tagName === 'BUTTON' ? e.target : null;
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
     try {
         const url = `/get_test_words?limit=${workoutLimit}&max_known=${workoutMaxKnown}`;
@@ -454,13 +451,24 @@ async function startKnowledgeTest() {
         currentIdx = 0;
         score      = 0;
         if (!Array.isArray(testWords) || testWords.length === 0) throw new Error('No words received.');
+
+        document.getElementById('test-start-view').style.display  = 'none';
+        document.getElementById('test-finish-view').style.display = 'none';
+        document.getElementById('test-active-view').style.display = 'block';
+        const progressEl = document.getElementById('test-progress');
+        if (progressEl) progressEl.style.display = 'block';
+
         showNextWord();
     } catch (error) {
         document.getElementById('test-log').innerText = `Error: ${error.message}`;
         document.getElementById('test-start-view').style.display  = 'block';
         document.getElementById('test-active-view').style.display = 'none';
-        document.getElementById('test-progress').style.display    = 'none';
-        document.getElementById('edit-word-trigger').style.display = 'none';
+        const progressEl = document.getElementById('test-progress');
+        if (progressEl) progressEl.style.display = 'none';
+        const editTriggerEl = document.getElementById('edit-word-trigger');
+        if (editTriggerEl) editTriggerEl.style.display = 'none';
+    } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
     }
 }
 
@@ -469,7 +477,10 @@ function showNextWord() {
     const word = testWords[currentIdx];
     document.getElementById('test-lang-header').innerText     = `Translate from ${allLangNames[word.test_lang] || word.test_lang}:`;
     document.getElementById('current-word-display').innerText = word.word_to_test || '...';
-    document.getElementById('learned-icon').style.display     = word.is_lang_known ? 'inline-block' : 'none';
+    const learnedIconEl = document.getElementById('learned-icon');
+    if (learnedIconEl) learnedIconEl.style.display = word.is_lang_known ? 'inline-block' : 'none';
+    const editTriggerEl = document.getElementById('edit-word-trigger');
+    if (editTriggerEl) editTriggerEl.style.display = 'inline-block';
 
     let hintParts = [`🇷🇺 ${word.ru || '—'}`];
     activeLangs.forEach(code => {
@@ -483,14 +494,26 @@ function showNextWord() {
     });
 
     document.getElementById('current-translation-display').innerText   = hintParts.join(' | ');
-    document.getElementById('current-translation-display').style.visibility = 'hidden';
-    document.getElementById('test-progress').innerText    = `Word ${currentIdx + 1}/${testWords.length}`;
-    document.getElementById('word-show-count').innerText  = `Seen: ${word.count || 0} times`;
+    const autoToggle = document.getElementById('toggle-auto-hint');
+    document.getElementById('current-translation-display').style.visibility = (autoToggle && autoToggle.checked) ? 'visible' : 'hidden';
+    const progressEl = document.getElementById('test-progress');
+    if (progressEl) {
+        progressEl.style.visibility = 'visible';
+        progressEl.innerText = `Word ${currentIdx + 1}/${testWords.length}`;
+    }
+    const showCountEl = document.getElementById('word-show-count');
+    if (showCountEl) {
+        showCountEl.style.visibility = 'visible';
+        showCountEl.innerText = `Seen: ${word.count || 0} times`;
+    }
 }
 
-function toggleHint() {
+function onAutoHintToggle() {
+    const autoToggle = document.getElementById('toggle-auto-hint');
     const hint = document.getElementById('current-translation-display');
-    hint.style.visibility = (hint.style.visibility === 'hidden') ? 'visible' : 'hidden';
+    if (hint && autoToggle) {
+        hint.style.visibility = autoToggle.checked ? 'visible' : 'hidden';
+    }
 }
 
 async function recordResult(isKnown) {
@@ -637,7 +660,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // since some elements might be dynamically loaded in the modal
     document.addEventListener('click', (e) => {
         if(e.target.closest('#btn-start-test')) startKnowledgeTest();
-        if(e.target.closest('#btn-show-hint')) toggleHint();
         if(e.target.closest('#btn-known')) recordResult(true);
         if(e.target.closest('#btn-unknown')) recordResult(false);
         if(e.target.closest('#btn-try-again')) startKnowledgeTest();
@@ -662,6 +684,7 @@ window.setHealthMode      = setHealthMode;
 window.openWorkoutSettingsModal = openWorkoutSettingsModal;
 window.closeWorkoutSettingsModal = closeWorkoutSettingsModal;
 window.saveWorkoutSettings = saveWorkoutSettings;
+window.onAutoHintToggle    = onAutoHintToggle;
 window.toggleHint          = toggleHint;
 window.startKnowledgeTest  = startKnowledgeTest;
 window.recordResult        = recordResult;

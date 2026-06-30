@@ -11,6 +11,7 @@ class ObservationBase(BaseModel):
     end_time: Optional[str] = None
     no_time: bool = False
     task_id: Optional[int] = None
+    set_id: Optional[int] = None
 
 class ObservationCreate(ObservationBase):
     """Схема для создания наблюдения."""
@@ -27,4 +28,17 @@ class ObservationLogView(BaseModel):
     id: int
     observation_id: int
     done_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class ObservationSetCreate(BaseModel):
+    """Схема для создания набора наблюдений."""
+    name: str
+    clone_from_active: bool = False
+
+class ObservationSetView(BaseModel):
+    """Схема для отображения набора наблюдений."""
+    id: int
+    name: str
+    is_active: bool
+    created_at: datetime
     model_config = ConfigDict(from_attributes=True)

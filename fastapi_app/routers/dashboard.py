@@ -113,9 +113,13 @@ async def get_dashboard_observations_widget(
     """Возвращает обновленный HTML для виджета активностей."""
     today_obj = datetime.now().date()
     observations = await dashboard_service.observations_service.get_dashboard_observations(today_obj)
+    sets = await dashboard_service.observations_service.get_all_sets()
+    active_set = await dashboard_service.observations_service.ensure_active_set()
     return templates.TemplateResponse(request, "widgets/observation_wrapper.html", {
         "request": request,
-        "observations": observations
+        "observations": observations,
+        "observation_sets": sets,
+        "active_observation_set": active_set
     })
 
 @router.get("/api/dashboard/widget/stickers", response_class=HTMLResponse)

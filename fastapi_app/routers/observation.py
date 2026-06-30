@@ -8,6 +8,7 @@ import random
 from ..database import get_db
 from .. import models
 from ..services.auth import check_auth_dependency
+from ..services.observation_service import ObservationService
 from ..logger import logger
 
 router = APIRouter(
@@ -69,11 +70,15 @@ async def create_observation(
         
     created_at = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
     
+    service = ObservationService(db)
+    active_set = await service.ensure_active_set()
+    
     obs = models.Observation(
         text=text,
         created_at=created_at,
         no_time=no_time_val,
-        task_id=data.get("task_id")
+        task_id=data.get("task_id"),
+        set_id=active_set.id
     )
     if obs.task_id:
         obs.priority = 5 # Force high priority (bright) for tasks
@@ -200,14 +205,59 @@ async def get_full_tree(
     user: Any = Depends(check_auth_dependency)
 ):
     """Возвращает HTML-разметку ПОЛНОГО дерева наблюдений."""
-    from ..services.observation_service import ObservationService
     from ..config import templates
     from datetime import datetime
     
     service = ObservationService(db)
     today = datetime.now().date()
     observations = await service.get_dashboard_observations(today) # No limit
+    sets = await service.get_all_sets()
+    active_set = await service.ensure_active_set()
     
     return templates.TemplateResponse(request, "observation_widget.html", {
-        "observations": observations
+        "observations": observations,
+        "observation_sets": sets,
+        "active_observation_set": active_set
     })
+
+@router.get("/sets")
+async def get_observation_sets(
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Dict[str, Any]:
+    """Возвращает список наборов и активный набор."""
+    service = ObservationService(db)
+    sets = await service.get_all_sets()
+    active_set = await service.ensure_active_set()
+    return {
+        "sets": [{"id": s.id, "name": s.name, "is_active": s.is_active} for s in sets],
+        "active_id": active_set.id if active_set else None
+    }
+
+@router.post("/sets")
+async def create_observation_set(
+    data: Dict[str, Any] = Body(...),
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Dict[str, Any]:
+    """Создает новый набор."""
+    name = data.get("name")
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+    clone = bool(data.get("clone", False))
+    service = ObservationService(db)
+    new_set = await service.create_set(name, clone_from_active=clone)
+    return {"status": "success", "id": new_set.id, "name": new_set.name}
+
+@router.post("/sets/{set_id}/activate")
+async def activate_observation_set(
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Dict[str, Any]:
+    """Активирует набор."""
+    service = ObservationService(db)
+    target = await service.activate_set(set_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Set not found")
+    return {"status": "success"}

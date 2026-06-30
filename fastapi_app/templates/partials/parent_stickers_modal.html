@@ -2,8 +2,8 @@
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
             <div style="display: flex; flex-direction: column;">
-                <h3 id="parentStickersOverviewTitle" style="margin: 0; font-size: 1.25rem;">Associated Stickers</h3>
-                <span id="parentStickersOverviewSubtitle" style="font-size: 0.7em; font-weight: normal; color: var(--color-text-muted);">Manage thoughts for this item</span>
+                <h3 id="parentStickersOverviewTitle" style="margin: 0; font-size: 1.25rem;">{{ _('modal.associated_stickers') }}</h3>
+                <span id="parentStickersOverviewSubtitle" style="font-size: 0.7em; font-weight: normal; color: var(--color-text-muted);">{{ _('modal.manage_thoughts') }}</span>
             </div>
             <button class="modal-close" onclick="closeParentStickersOverview()">✕</button>
         </div>
@@ -14,13 +14,13 @@
             
             <div id="noParentStickersMessage" style="display: none; text-align: center; padding: 40px; color: var(--color-text-muted);">
                 <div style="font-size: 3em; margin-bottom: 10px; opacity: 0.3;">📋</div>
-                <p>No stickers found for this item.</p>
+                <p>{{ _('modal.no_stickers_found') }}</p>
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeParentStickersOverview()">Close</button>
+            <button type="button" class="btn btn-secondary" onclick="closeParentStickersOverview()">{{ _('modal.close') }}</button>
             <button type="button" class="btn btn-primary" onclick="createNewStickerForCurrentParent()">
-                <span style="font-size: 1.2em;">+</span> Add New Sticker
+                <span style="font-size: 1.2em;">+</span> {{ _('modal.add_new_sticker') }}
             </button>
         </div>
     </div>

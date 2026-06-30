@@ -160,7 +160,8 @@ export const MathNode = Node.create({
             dom.setAttribute('data-type', 'mathNode');
             
             try {
-                katex.render(node.attrs.latex, dom, {
+                const cleanLatex = (node.attrs.latex || "").replace(/\\softmax\b/g, '\\operatorname{softmax}');
+                katex.render(cleanLatex, dom, {
                     throwOnError: false,
                     displayMode: false
                 });

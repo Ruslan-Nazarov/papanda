@@ -50,18 +50,21 @@
             <h3>{{ _('modal.most_encountered_words') }}</h3>
             <div class="top-words-list">
                 {% for w in top_shown %}
-                <div class="word-tag" title="{{ w.ru }}">
+                <div class="word-tag" title="{{ w.tooltip_text or w.eng }}">
                     <div class="word-tag-top">
-                        <strong>{{ w.eng }}{% if w.is_learned or (w.knowledge_stats and w.knowledge_stats.values()|select('equalto', True)|list|length > 0) %} <span title="{{ _('modal.learned') }}" style="color:#27ae60; font-size: 0.9em;">✅</span>{% endif %}</strong>
+                        <strong>{{ w.ru or w.eng }}{% if w.is_learned or (w.knowledge_stats and w.knowledge_stats.values()|select('equalto', True)|list|length > 0) %} <span title="{{ _('modal.learned') }}" style="color:#27ae60; font-size: 0.9em;">✅</span>{% endif %}</strong>
                         <span class="word-count">{{ w.count }} {{ _('modal.shows') }}</span>
                     </div>
                     <div class="word-tag-langs">
+                        {% if 'en' in active_languages and w.eng %}<span>🇬🇧 {{ w.eng }}</span>{% endif %}
                         {% for lang_code in active_languages %}
-                        {% if lang_code != 'en' %}
-                        <span>{{ language_flags.get(lang_code, '') }} {{ (w.translations.get(lang_code, '') if w.translations else '') }}</span>
+                        {% if lang_code != 'en' and lang_code != 'ru' %}
+                        {% set trans = w.translations.get(lang_code, '') if w.translations else '' %}
+                        {% if trans %}
+                        <span>{{ language_flags.get(lang_code, '') }} {{ trans }}</span>
+                        {% endif %}
                         {% endif %}
                         {% endfor %}
-                        {% if w.ru %}<span>🇷🇺 {{ w.ru }}</span>{% endif %}
                     </div>
                 </div>
                 {% endfor %}

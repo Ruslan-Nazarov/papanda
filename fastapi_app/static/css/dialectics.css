@@ -1,10 +1,10 @@
-@import 'base_components.css?v=33';
-@import 'dialectics/animations.css?v=33';
-@import 'dialectics/core.css?v=33';
-@import 'dialectics/blocks.css?v=33';
-@import 'dialectics/editor.css?v=33';
-@import 'dialectics/dashboard.css?v=33';
-@import 'dialectics/article_parser.css?v=33';
+@import 'base_components.css?v=35';
+@import 'dialectics/animations.css?v=35';
+@import 'dialectics/core.css?v=35';
+@import 'dialectics/blocks.css?v=35';
+@import 'dialectics/editor.css?v=35';
+@import 'dialectics/dashboard.css?v=35';
+@import 'dialectics/article_parser.css?v=35';
 
 /* Entry point for Dialectics styles. 
    Decomposed into smaller modules for better maintainability. */

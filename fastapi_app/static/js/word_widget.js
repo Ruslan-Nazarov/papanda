@@ -343,7 +343,7 @@ window.switchWordsTab = function(tab) {
         btnWorkout.style.background = 'transparent';
     } else {
         listTab.style.display = 'none';
-        workoutTab.style.display = 'block';
+        workoutTab.style.display = 'flex';
         btnWorkout.classList.add('active');
         btnWorkout.style.background = 'var(--color-bg-subtle)';
         btnList.classList.remove('active');
@@ -397,20 +397,12 @@ window.saveWorkoutSettingsWidget = function() {
     window.closeWorkoutSettingsModalWidget();
 };
 
-window.startKnowledgeTestWidget = async function() {
+window.startKnowledgeTestWidget = async function(e) {
     if (reloadTimeout) { clearTimeout(reloadTimeout); reloadTimeout = null; }
-
-    document.getElementById('ww-test-start-view').style.display  = 'none';
-    document.getElementById('ww-test-finish-view').style.display = 'none';
-    document.getElementById('ww-test-active-view').style.display = 'block';
-    document.getElementById('ww-test-progress').style.display    = 'block';
-    document.getElementById('ww-workout-edit-trigger').style.display = 'inline-block';
     document.getElementById('ww-test-log').innerText = '';
-    
-    // Clear previous state before fetch
-    document.getElementById('ww-current-word-display').innerText = 'Loading...';
-    document.getElementById('ww-test-lang-header').innerText = 'Translate this:';
-    document.getElementById('ww-current-translation-display').style.visibility = 'hidden';
+
+    const btn = e && e.target && e.target.tagName === 'BUTTON' ? e.target : null;
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
     try {
         const url = `/get_test_words?limit=${workoutLimit}&max_known=${workoutMaxKnown}`;
@@ -421,13 +413,24 @@ window.startKnowledgeTestWidget = async function() {
         currentIdx = 0;
         score      = 0;
         if (!Array.isArray(testWords) || testWords.length === 0) throw new Error('No words received.');
+
+        document.getElementById('ww-test-start-view').style.display  = 'none';
+        document.getElementById('ww-test-finish-view').style.display = 'none';
+        document.getElementById('ww-test-active-view').style.display = 'block';
+        const progressEl = document.getElementById('ww-test-progress');
+        if (progressEl) progressEl.style.display = 'block';
+
         showNextWordWidget();
     } catch (error) {
         document.getElementById('ww-test-log').innerText = `Error: ${error.message}`;
         document.getElementById('ww-test-start-view').style.display  = 'block';
         document.getElementById('ww-test-active-view').style.display = 'none';
-        document.getElementById('ww-test-progress').style.display    = 'none';
-        document.getElementById('ww-workout-edit-trigger').style.display = 'none';
+        const progressEl = document.getElementById('ww-test-progress');
+        if (progressEl) progressEl.style.display = 'none';
+        const editTriggerEl = document.getElementById('ww-workout-edit-trigger');
+        if (editTriggerEl) editTriggerEl.style.display = 'none';
+    } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
     }
 };
 
@@ -450,10 +453,9 @@ window.openWorkoutEditWidget = function() {
             }
         });
     }
-    if (typeof window.openEditModalFromData === 'function') {
-        window.openEditModalFromData(mockBtn);
-    } else {
-        console.error("openEditModalFromData function not found");
+
+    if (typeof window.openWordStatsModal === 'function') {
+        window.openWordStatsModal(mockBtn);
     }
 };
 
@@ -465,7 +467,10 @@ window.showNextWordWidget = function() {
     
     document.getElementById('ww-test-lang-header').innerText     = `Translate from ${allLangNames[word.test_lang] || word.test_lang}:`;
     document.getElementById('ww-current-word-display').innerText = word.word_to_test || '...';
-    document.getElementById('ww-learned-icon').style.display     = word.is_lang_known ? 'inline-block' : 'none';
+    const learnedIconEl = document.getElementById('ww-learned-icon');
+    if (learnedIconEl) learnedIconEl.style.display = word.is_lang_known ? 'inline-block' : 'none';
+    const editTriggerEl = document.getElementById('ww-workout-edit-trigger');
+    if (editTriggerEl) editTriggerEl.style.display = 'inline-block';
 
     let hintParts = [`🇷🇺 ${word.ru || '—'}`];
     const languageFlags = window.DASHBOARD_LANG_FLAGS || {};
@@ -480,14 +485,26 @@ window.showNextWordWidget = function() {
     });
 
     document.getElementById('ww-current-translation-display').innerText   = hintParts.join(' | ');
-    document.getElementById('ww-current-translation-display').style.visibility = 'hidden';
-    document.getElementById('ww-test-progress').innerText    = `Word ${currentIdx + 1}/${testWords.length}`;
-    document.getElementById('ww-word-show-count').innerText  = `Seen: ${word.count || 0} times`;
+    const autoToggle = document.getElementById('ww-toggle-auto-hint');
+    document.getElementById('ww-current-translation-display').style.visibility = (autoToggle && autoToggle.checked) ? 'visible' : 'hidden';
+    const progressEl = document.getElementById('ww-test-progress');
+    if (progressEl) {
+        progressEl.style.visibility = 'visible';
+        progressEl.innerText = `Word ${currentIdx + 1}/${testWords.length}`;
+    }
+    const showCountEl = document.getElementById('ww-word-show-count');
+    if (showCountEl) {
+        showCountEl.style.visibility = 'visible';
+        showCountEl.innerText = `Seen: ${word.count || 0} times`;
+    }
 };
 
-window.toggleHintWidget = function() {
+window.onAutoHintToggleWidget = function() {
+    const autoToggle = document.getElementById('ww-toggle-auto-hint');
     const hint = document.getElementById('ww-current-translation-display');
-    hint.style.visibility = (hint.style.visibility === 'hidden') ? 'visible' : 'hidden';
+    if (hint && autoToggle) {
+        hint.style.visibility = autoToggle.checked ? 'visible' : 'hidden';
+    }
 };
 
 window.recordResultWidget = async function(isKnown) {
@@ -563,7 +580,6 @@ export function initWordWidget() {
         if (btnStart && !btnStart.dataset.bound) {
             btnStart.dataset.bound = "1";
             btnStart.addEventListener('click', window.startKnowledgeTestWidget);
-            document.getElementById('ww-btn-show-hint').addEventListener('click', window.toggleHintWidget);
             document.getElementById('ww-btn-known').addEventListener('click', () => window.recordResultWidget(true));
             document.getElementById('ww-btn-unknown').addEventListener('click', () => window.recordResultWidget(false));
             const btnLearnTriplet = document.getElementById('ww-btn-learn-triplet');

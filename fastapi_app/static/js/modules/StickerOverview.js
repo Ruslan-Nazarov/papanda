@@ -77,7 +77,7 @@ export class StickerOverview {
     }
 
     static async archive(btn, id) {
-        const confirmed = await window.NotificationService.confirm('Archive this thought?', { okText: 'Archive' });
+        const confirmed = await window.NotificationService.confirm(window._('modal.archive_confirm', 'Archive this thought?'), { okText: window._('modal.archive', 'Archive') });
         if (!confirmed) return;
         try {
             await StickerService.archive(id);

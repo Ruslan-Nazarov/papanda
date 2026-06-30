@@ -316,26 +316,125 @@ window.openObsOverviewModal = openObsOverviewModal;
 window.closeObsOverviewModal = closeObsOverviewModal;
 
 async function refreshDashboardObservations() {
-    const wrapper = document.querySelector('.observation-widget .widget-body');
-    if (!wrapper) return;
+    const widget = document.querySelector('.observation-widget');
+    if (!widget) return;
     try {
         const response = await fetch('/api/dashboard/widget/observations', { cache: 'no-store' });
         if (response.ok) {
             const html = await response.text();
-            // We only need the inner contents or we can replace the widget-body
-            // Since the endpoint returns widgets/observation_wrapper.html, we need to extract the widget-body content.
             const temp = document.createElement('div');
             temp.innerHTML = html;
-            const newBody = temp.querySelector('.widget-body');
-            if (newBody) {
-                wrapper.innerHTML = newBody.innerHTML;
+            const newWidget = temp.querySelector('.observation-widget');
+            if (newWidget) {
+                widget.innerHTML = newWidget.innerHTML;
                 setTimeout(scrollToCurrentTime, 100);
             }
         }
     } catch (e) { console.error('Failed to refresh dashboard observations', e); }
 }
 
+async function switchObservationSet(setId) {
+    try {
+        const res = await fetch(`/api/observations/sets/${setId}/activate`, { method: 'POST' });
+        if (res.ok) {
+            await refreshDashboardObservations();
+            safeShowToast('Набор переключен');
+        } else {
+            safeShowToast('Ошибка при переключении набора', 'error');
+        }
+    } catch (e) {
+        console.error('Switch set error:', e);
+        safeShowToast('Ошибка сети', 'error');
+    }
+}
+
+function openCreateObservationSetModal() {
+    let modal = document.getElementById('customCreateSetModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'customCreateSetModal';
+        modal.className = 'modal premium-modal';
+        modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000000; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);';
+        modal.innerHTML = `
+            <div class="modal-content premium-card" style="max-width: 440px; width: 90%; border-radius: 24px; padding: 0; overflow: hidden; background: var(--color-bg-card, #fff); box-shadow: 0 25px 50px rgba(0,0,0,0.25); border: 1px solid var(--color-border-light, #eee);">
+                <div class="modal-header" style="padding: 20px 24px; background: var(--color-bg-subtle, #f8f9fa); border-bottom: 1px solid var(--color-border-light, #eee); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 1.15em; font-weight: 600; color: var(--color-text-main, #222);">📁 Создать набор активностей</h3>
+                    <button type="button" onclick="closeCreateObservationSetModal()" style="background: none; border: none; font-size: 1.3em; cursor: pointer; color: var(--color-text-muted, #888);">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 0.9em; margin-bottom: 8px; font-weight: 500; color: var(--color-text-main, #333);">Название набора</label>
+                        <input type="text" id="newObservationSetNameInput" class="form-control" placeholder="Например: Выходные, Отпуск, Будни" style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--color-border, #ccc); font-size: 0.95em; outline: none; box-sizing: border-box; background: var(--color-bg-main, #fff); color: var(--color-text-main, #222);">
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9em; color: var(--color-text-main, #444); user-select: none;">
+                        <input type="checkbox" id="cloneObservationSetCheckbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-primary, #3b82f6);">
+                        <span>Скопировать текущие активности в новый набор</span>
+                    </label>
+                </div>
+                <div class="modal-footer" style="padding: 16px 24px; background: var(--color-bg-subtle, #f8f9fa); border-top: 1px solid var(--color-border-light, #eee); display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" class="btn btn-secondary" style="padding: 10px 18px; border-radius: 10px; font-weight: 500; cursor: pointer; border: 1px solid var(--color-border, #ccc); background: var(--color-bg-card, #fff); color: var(--color-text-main, #333);" onclick="closeCreateObservationSetModal()">Отмена</button>
+                    <button type="button" class="btn btn-primary" style="padding: 10px 20px; border-radius: 10px; font-weight: 500; cursor: pointer; background: var(--color-primary, #3b82f6); color: #fff; border: none; box-shadow: 0 4px 12px rgba(59,130,246,0.3);" onclick="submitCreateObservationSet()">Создать</button>
+                </div>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeCreateObservationSetModal();
+        });
+        document.body.appendChild(modal);
+        
+        const input = document.getElementById('newObservationSetNameInput');
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitCreateObservationSet();
+            if (e.key === 'Escape') closeCreateObservationSetModal();
+        });
+    }
+    document.getElementById('newObservationSetNameInput').value = '';
+    document.getElementById('cloneObservationSetCheckbox').checked = false;
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('newObservationSetNameInput').focus(), 50);
+}
+
+function closeCreateObservationSetModal() {
+    const modal = document.getElementById('customCreateSetModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function submitCreateObservationSet() {
+    const input = document.getElementById('newObservationSetNameInput');
+    const name = input ? input.value.trim() : '';
+    if (!name) {
+        safeShowToast('Введите название набора', 'error');
+        if (input) input.focus();
+        return;
+    }
+    const clone = document.getElementById('cloneObservationSetCheckbox')?.checked || false;
+    
+    fetch('/api/observations/sets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, clone: clone })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            closeCreateObservationSetModal();
+            safeShowToast('Набор создан и активирован');
+            refreshDashboardObservations();
+        } else {
+            safeShowToast('Ошибка при создании набора', 'error');
+        }
+    })
+    .catch(e => {
+        console.error('Create set error:', e);
+        safeShowToast('Ошибка сети', 'error');
+    });
+}
+
 window.refreshDashboardObservations = refreshDashboardObservations;
+window.switchObservationSet = switchObservationSet;
+window.openCreateObservationSetModal = openCreateObservationSetModal;
+window.closeCreateObservationSetModal = closeCreateObservationSetModal;
+window.submitCreateObservationSet = submitCreateObservationSet;
 
 function scrollToCurrentTime() {
     const container = document.querySelector('.observation-tree-container');

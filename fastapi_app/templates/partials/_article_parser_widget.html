@@ -7,6 +7,7 @@
             <span class="widget-title-text">{{ _('dialectics.article_parser') | default('Парсер статей', true) }}</span>
         </div>
         <div class="widget-controls">
+            <button class="widget-btn-min" style="cursor: pointer; background: transparent; border: none; color: #94a3b8; font-size: 1rem; margin-right: 4px;" title="Очистить историю" onclick="clearArticleChatHistory()">🗑️</button>
             <button class="widget-btn-min" title="Свернуть" onclick="window.WidgetManager && window.WidgetManager.minimize('articleParserWidget')">_</button>
             <button class="widget-btn-max" title="Развернуть" onclick="window.WidgetManager && window.WidgetManager.maximize('articleParserWidget')">□</button>
             <button class="widget-btn-close" id="btnArticleParserClose" title="Закрыть" onclick="window.WidgetManager ? window.WidgetManager.close('articleParserWidget') : toggleArticleParser()">✖</button>

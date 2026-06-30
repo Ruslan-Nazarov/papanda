@@ -60,11 +60,21 @@ class AIControllerClass {
 
     // Open editor to insert a new block after a specific index
     openInsertAfter(side, index) {
+        if (side === 'section') {
+            if (this.openSectionTitleModal) {
+                this.openSectionTitleModal(index);
+            }
+            return;
+        }
         this.state.editingBlock = null;
         this.state.pendingSide = side;
         this.state.pendingRole = null;
         this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
         this.state.insertAfterIndex = index;
+        const titleInput = document.getElementById('editorBlockTitleInput');
+        if (titleInput) {
+            titleInput.value = "";
+        }
         this.open();
     }
 
@@ -161,9 +171,9 @@ class AIControllerClass {
 
     async startTextMathDictation() {
         const text = await customPrompt({
-            title: '✍ Describe the formula in words',
-            message: 'Example: "square root of x squared plus y squared"',
-            placeholder: 'Your text...'
+            title: window._ ? window._('dialectics.describe_formula_prompt', '✍ Describe the formula in words') : '✍ Describe the formula in words',
+            message: window._ ? window._('dialectics.describe_formula_example', 'Example: "square root of x squared plus y squared"') : 'Example: "square root of x squared plus y squared"',
+            placeholder: window._ ? window._('dashboard.enter_title', 'Your text...') : 'Your text...'
         });
         if (!text || !text.trim()) return;
 
@@ -193,6 +203,53 @@ class AIControllerClass {
             console.error(error);
             window.showToast(window._("toast.error_generating_formula"), "error");
         }
+    }
+
+    async startImageMathDictation() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const tiptap = this.editor && this.editor.tiptap;
+            window.showToast(window._("toast.ai_is_parsing_formula", "🧮 Распознавание формулы с фото..."), "info");
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch('/api/ai/dialectics/formula/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.detail || await res.text());
+                }
+
+                const data = await res.json();
+                const latex = data.latex;
+
+                if (latex && tiptap) {
+                    tiptap.chain().focus().insertContent({
+                        type: 'mathNode',
+                        attrs: { latex: latex }
+                    }).run();
+                    window.showToast(window._("toast.formula_added", "✅ Формула добавлена"), "success");
+                } else if (latex) {
+                    window.showToast(`LaTeX: ${latex}`, "info");
+                } else {
+                    window.showToast(window._("toast.error_generating_formula", "❌ Не удалось распознать формулу"), "error");
+                }
+            } catch (error) {
+                console.error("Formula OCR error:", error);
+                window.showToast(window._("toast.error_generating_formula", "❌ Ошибка при распознавании формулы"), "error");
+            }
+        };
+        input.click();
     }
 
     async startVoiceMathDictation() {

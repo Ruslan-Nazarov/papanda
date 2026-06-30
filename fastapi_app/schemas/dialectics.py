@@ -2,12 +2,27 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional, List, Any
 
+class DialecticsSource(BaseModel):
+    url: Optional[str] = None
+    title: Optional[str] = None
+    quote: Optional[str] = None
+
+class DialecticsWord(BaseModel):
+    word: str
+    definition: str
+    connections: Optional[str] = ""
+
 class DialecticsBlock(BaseModel):
     """Блок содержимого 'Диалектики'."""
     id: Optional[str] = None
     side: str
     html: str
     role: Optional[str] = None
+    sources: Optional[List[DialecticsSource]] = []
+    title: Optional[str] = None
+    collapsed: Optional[bool] = False
+    words: Optional[List[DialecticsWord]] = []
+    color: Optional[str] = None
 
 class DialecticsCreate(BaseModel):
     """Схема для создания 'Диалектики'."""

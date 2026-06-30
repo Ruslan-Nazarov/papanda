@@ -117,10 +117,10 @@
     
     <script type="module" src="{{ url_for('static', path='js/stickers.js') }}?v=19"></script>
     <script type="module" src="{{ url_for('static', path='js/language_learning.js') }}?v=1"></script>
-    <script src="{{ url_for('static', path='js/word_stats.js') }}?v=5"></script>
-    <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v=6"></script>
+    <script src="{{ url_for('static', path='js/word_stats.js') }}?v=7"></script>
+    <script type="module" src="{{ url_for('static', path='dist/dialectics.bundle.js') }}?v={{ range(1, 9999) | random }}"></script>
     <script src="{{ url_for('static', path='js/notes_widget.js') }}?v=10"></script>
-    <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=7"></script>
+    <script src="{{ url_for('static', path='js/observation_widget.js') }}?v=9"></script>
     <script type="module" src="{{ url_for('static', path='js/db_view_core.js') }}?v=31"></script>
-    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=35"></script>
+    <script type="module" src="{{ url_for('static', path='js/dashboard_index.js') }}?v=38"></script>
 {% endblock %}

@@ -3,6 +3,7 @@
  */
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
 import { ResizableImage, MathNode } from './editor_setup.js';
 import { GraphTool } from './tools/graph.js';
 import { ShapeTool } from './tools/shapes.js';
@@ -42,11 +43,19 @@ export class EditorManager {
             this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
-                extensions: [StarterKit, ResizableImage.configure({ allowBase64: true }), MathNode],
+                extensions: [StarterKit, Underline, ResizableImage.configure({ allowBase64: true }), MathNode],
                 content: '<p></p>',
                 autofocus: 'end',
-                onFocus: () => el.classList.add('focused'),
-                onBlur: () => el.classList.remove('focused'),
+                onFocus: () => {
+                    el.classList.add('focused');
+                    this.updateFormattingToolbarStates();
+                },
+                onBlur: () => {
+                    el.classList.remove('focused');
+                    setTimeout(() => {
+                        this.updateFormattingToolbarStates();
+                    }, 200);
+                },
                 editorProps: {
                     handleDOMEvents: {
                         mousedown: (view, event) => {
@@ -56,7 +65,7 @@ export class EditorManager {
                     }
                 },
                 onSelectionUpdate: ({ editor }) => {
-                    // Selection logic for bold button removed
+                    this.updateFormattingToolbarStates();
                 },
                 onUpdate: ({ editor }) => {
                     try {
@@ -64,12 +73,57 @@ export class EditorManager {
                         current.content = editor.getHTML();
                         localStorage.setItem('papanda_editor_open_state', JSON.stringify(current));
                     } catch (e) {}
+                    this.updateFormattingToolbarStates();
                 }
             });
+
+            // Bind formatting toolbar buttons
+            const toolbar = document.getElementById('editorFormattingToolbar');
+            if (toolbar) {
+                toolbar.querySelectorAll('.format-btn').forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const format = btn.dataset.format;
+                        if (!format) return;
+                        
+                        let chain = this.tiptap.chain().focus();
+                        if (format === 'bold') chain.toggleBold().run();
+                        else if (format === 'italic') chain.toggleItalic().run();
+                        else if (format === 'underline') chain.toggleUnderline().run();
+                        else if (format === 'strike') chain.toggleStrike().run();
+                        else if (format === 'code') chain.toggleCode().run();
+                        else if (format === 'clear') chain.unsetAllMarks().clearNodes().run();
+
+                        this.updateFormattingToolbarStates();
+                    };
+                });
+            }
+
             this.engine.logDebug("[EditorManager] TipTap initialized successfully.");
         } catch (e) {
             this.engine.logDebug(`[EditorManager] TipTap init error: ${e.message}`);
             console.error("TipTap init error:", e);
+        }
+    }
+
+    updateFormattingToolbarStates() {
+        const toolbar = document.getElementById('editorFormattingToolbar');
+        if (!toolbar || !this.tiptap) return;
+
+        const activeTab = document.querySelector('.editor-tab.active')?.dataset.tab;
+        const { from, to } = this.tiptap.state.selection;
+        const isSelected = (from !== to) && (activeTab === 'text');
+
+        if (isSelected) {
+            toolbar.style.display = 'inline-flex';
+            toolbar.querySelectorAll('.format-btn').forEach(btn => {
+                const format = btn.dataset.format;
+                const isActive = this.tiptap.isActive(format);
+                btn.classList.toggle('active', isActive);
+            });
+        } else {
+            toolbar.style.display = 'none';
         }
     }
 
@@ -81,6 +135,7 @@ export class EditorManager {
             el.classList.toggle('active', isTarget);
             el.style.display = isTarget ? 'flex' : 'none';
         });
+        this.updateFormattingToolbarStates();
 
         if (tab === 'text') {
             await this.init();
@@ -152,7 +207,7 @@ export class EditorManager {
         `;
 
         const btnVoice = document.createElement('button');
-        btnVoice.innerHTML = '🎙 Dictate formula';
+        btnVoice.innerHTML = window._ ? window._('dialectics.dictate_formula', '🎙 Dictate formula') : '🎙 Dictate formula';
         btnVoice.style.cssText = btnStyle;
         btnVoice.onmouseover = () => btnVoice.style.background = '#f1f5f9';
         btnVoice.onmouseout = () => btnVoice.style.background = 'transparent';
@@ -162,7 +217,7 @@ export class EditorManager {
         };
 
         const btnText = document.createElement('button');
-        btnText.innerHTML = '✍ Write formula in text';
+        btnText.innerHTML = window._ ? window._('dialectics.write_formula_in_text', '✍ Write formula in text') : '✍ Write formula in text';
         btnText.style.cssText = btnStyle;
         btnText.onmouseover = () => btnText.style.background = '#f1f5f9';
         btnText.onmouseout = () => btnText.style.background = 'transparent';
@@ -171,8 +226,19 @@ export class EditorManager {
             this.engine.startTextMathDictation();
         };
 
+        const btnImage = document.createElement('button');
+        btnImage.innerHTML = window._ ? window._('dialectics.insert_formula_image', '📷 Insert formula image') : '📷 Insert formula image';
+        btnImage.style.cssText = btnStyle;
+        btnImage.onmouseover = () => btnImage.style.background = '#f1f5f9';
+        btnImage.onmouseout = () => btnImage.style.background = 'transparent';
+        btnImage.onclick = () => {
+            menu.remove();
+            this.engine.startImageMathDictation();
+        };
+
         menu.appendChild(btnVoice);
         menu.appendChild(btnText);
+        menu.appendChild(btnImage);
         document.body.appendChild(menu);
 
         setTimeout(() => {

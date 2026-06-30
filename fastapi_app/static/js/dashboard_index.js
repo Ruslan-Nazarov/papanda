@@ -5,7 +5,7 @@ import { NotificationService, showToast } from './modules/NotificationService.js
 import { ModalManager } from './modules/ModalManager.js';
 
 import { initEventWidget } from './event_widget.js?v=2';
-import { initWordWidget } from './word_widget.js?v=5';
+import { initWordWidget } from './word_widget.js?v=8';
 import { initRecurrenceForm } from './recurrence_form.js';
 import { initStickerWidget } from './sticker_widget.js';
 import { initNoteChronoWidget } from './note_chrono_widget.js';
