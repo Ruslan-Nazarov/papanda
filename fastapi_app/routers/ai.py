@@ -38,7 +38,13 @@ PROMPT_MAP = {
     "hint": "7 помощник_промпт.md"
 }
 
+# Модульный кэш: файлы читаются один раз за время жизни процесса
+_prompt_cache: Dict[str, str] = {}
+
 def get_cached_prompt(filename: str) -> str:
+    if filename in _prompt_cache:
+        return _prompt_cache[filename]
+
     prompts_dir = BASE_DIR / "prompts"
     prompt_path = prompts_dir / filename
     if not prompt_path.exists():
@@ -53,7 +59,9 @@ def get_cached_prompt(filename: str) -> str:
             logger.error(f"Prompt file not found: {filename}")
             raise HTTPException(status_code=500, detail=f"Prompt file {filename} not found.")
     try:
-        return prompt_path.read_text(encoding="utf-8")
+        text = prompt_path.read_text(encoding="utf-8")
+        _prompt_cache[filename] = text
+        return text
     except Exception as e:
         logger.error(f"Error reading prompt file {filename}: {e}")
         raise HTTPException(status_code=500, detail="Error reading prompt file.")

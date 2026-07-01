@@ -3,6 +3,7 @@ from sqlalchemy import select, update, func, or_, delete, text
 from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
+from collections import OrderedDict
 
 from .. import models
 from ..logger import logger
@@ -10,29 +11,32 @@ from .language_service import LanguageService
 from .word_stats_service import WordStatsService
 from .word_test_service import WordTestService
 
+_SEARCH_CACHE_MAX = 256
+
 class WordService:
     """
     Service for word management (CRUD) and dictionary operations.
     Acts as a coordinator for specialized word sub-services.
     """
-    
-    # Simple search cache
-    _search_cache: Dict[str, List[Any]] = {}
 
     def __init__(self, db: AsyncSession):
         self.db = db
         self.langs = LanguageService(db)
         self.stats = WordStatsService(db)
         self.test = WordTestService(db)
+        # Instance-level LRU-кэш для поиска: не удерживает ORM-объекты между запросами
+        self._search_cache: OrderedDict[str, List[Any]] = OrderedDict()
 
     # --- Search with Cache ---
     async def search_words(self, query: str, limit: int = 10) -> List[models.WordStats]:
-        """Searches words by pattern with in-memory caching."""
+        """Searches words by pattern with in-memory LRU caching (max 256 entries)."""
         query_cleaned = query.strip().lower()
         if not query_cleaned: return []
         
         cache_key = f"{query_cleaned}_{limit}"
         if cache_key in self._search_cache:
+            # Перемещаем в конец (LRU логика)
+            self._search_cache.move_to_end(cache_key)
             return self._search_cache[cache_key]
 
         try:
@@ -51,6 +55,9 @@ class WordService:
             words = list(result.scalars().all())
             
             self._search_cache[cache_key] = words
+            # Выталкиваем старейшую запись если превышен лимит
+            if len(self._search_cache) > _SEARCH_CACHE_MAX:
+                self._search_cache.popitem(last=False)
             return words
         except Exception as e:
             logger.error(f"Error searching words: {e}")

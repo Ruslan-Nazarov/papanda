@@ -1,5 +1,6 @@
 import json
 import asyncio
+import weakref
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +9,9 @@ from .. import models
 from .settings_service import get_setting, set_settings_batch
 from ..logger import logger
 
-_state_locks: Dict[asyncio.AbstractEventLoop, asyncio.Lock] = {}
+# WeakKeyDictionary — устаревшие event loop-объекты будут автоматически
+# удалены GC, предотвращая накопление мёртвых ссылок при hot-reload.
+_state_locks: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
 def _get_state_lock() -> asyncio.Lock:
     """Лази-инициализация лока, привязанного к текущему циклу событий."""
