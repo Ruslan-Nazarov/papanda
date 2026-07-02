@@ -19,9 +19,9 @@
 
             <div class="title-and-relations" style="display: flex; gap: 8px; align-items: center;">
                 <select class="badge-relations dialectics-category-select" id="dialecticsCategorySelect" style="max-width: 150px; text-overflow: ellipsis;">
-                    <option value="">Без категории</option>
+                    <option value="">{{ _('dialectics.no_category') | default('Без категории') }}</option>
                 </select>
-                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="Тема конспекта..." style="font-family: inherit; color: #ea580c; font-weight: 700;">
+                <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="{{ _('dialectics.topic_placeholder') | default('Тема конспекта...') }}" style="font-family: inherit; color: #ea580c; font-weight: 700;">
                 <div class="dialectics-menu-dropdown" id="modeMenuDropdown" style="position: relative;">
                     <button class="badge-relations" id="modeMenuBtn" onclick="toggleModeMenu()" title="{{ _('dialectics.mode') | default('Режим') }}">🎛️ {{ _('dialectics.mode') | default('Режим') }}</button>
                     <div class="dialectics-menu-content" id="modeMenuContent" style="display: none; min-width: 230px; padding: 10px; gap: 8px;">
@@ -42,7 +42,7 @@
                         </label>
                         <div class="dropdown-divider"></div>
                         <label class="mode-toggle-row">
-                            <span>Оставить заголовки</span>
+                            <span>{{ _('dialectics.keep_headers') | default('Оставить заголовки') }}</span>
                             <div class="custom-toggle-switch">
                                 <input type="checkbox" id="toggleOnlyTitlesMode" onchange="window.toggleOnlyTitlesMode && window.toggleOnlyTitlesMode(this.checked)">
                                 <span class="toggle-slider"></span>
@@ -51,10 +51,10 @@
                     </div>
                 </div>
                 <div class="dialectics-menu-dropdown" id="parsersMenuDropdown" style="position: relative;">
-                    <button class="badge-relations" id="parsersMenuBtn" onclick="toggleParsersMenu()" title="Парсеры">☰ Парсеры</button>
+                    <button class="badge-relations" id="parsersMenuBtn" onclick="toggleParsersMenu()" title="{{ _('dialectics.parsers') | default('Парсеры') }}">☰ {{ _('dialectics.parsers') | default('Парсеры') }}</button>
                     <div class="dialectics-menu-content" id="parsersMenuContent" style="display: none;">
-                        <button class="dropdown-item" id="btnGlobalParser" title="AI Formula Parser" onclick="document.getElementById('parsersMenuContent').style.display='none';">🧮 Парсер формул</button>
-                        <button class="dropdown-item" id="btnArticleParser" title="AI Article Parser" onclick="toggleArticleParser(); document.getElementById('parsersMenuContent').style.display='none';">📄 Парсер статей</button>
+                        <button class="dropdown-item" id="btnGlobalParser" title="{{ _('dialectics.formula_parser') | default('Парсер формул') }}" onclick="window.WidgetManager && window.WidgetManager.toggle('formulaParserWidget'); document.getElementById('parsersMenuContent').style.display='none';">🧮 {{ _('dialectics.formula_parser') | default('Парсер формул') }}</button>
+                        <button class="dropdown-item" id="btnArticleParser" title="{{ _('dialectics.article_parser') | default('Парсер статей') }}" onclick="toggleArticleParser(); document.getElementById('parsersMenuContent').style.display='none';">📄 {{ _('dialectics.article_parser') | default('Парсер статей') }}</button>
                     </div>
                 </div>
                 {% if plugin_dashboard %}
@@ -67,6 +67,7 @@
                         <button class="dropdown-item" id="btnNewDialectics" title="Create new note">📄 Новый</button>
                         <div class="dropdown-divider"></div>
                         <button class="dropdown-item" id="btnLoadDialectics">📂 {{ _('dialectics.open') }}</button>
+                        <button class="dropdown-item" id="btnTrashDialectics">🗑️ Корзина</button>
                         <button class="dropdown-item" id="btnPrevDialectics">↩️ {{ _('dialectics.previous') }}</button>
                         <button class="dropdown-item" id="btnSaveDialectics" style="color: #2563eb; font-weight: 600;">💾 {{ _('dialectics.save') }}</button>
                         <button class="dropdown-item" id="btnDeleteDialectics" style="display: none; color: #ef4444;">🗑️ {{ _('dialectics.delete') }}</button>
@@ -92,11 +93,12 @@
             <!-- Main Dialectics Interface -->
             <div class="note-interface" style="position: relative;">
                 <div class="canvas-top-toolbar" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 24px 4px 24px;">
-                    <button class="badge-relations" id="btnToggleTOC" onclick="if(window.app) window.app.toggleTableOfContents(event)" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" title="Оглавление конспекта">📋 Оглавление</button>
+                    <button class="badge-relations" id="btnHistoryDialectics" onclick="if(window.app) window.app.showHistoryModal()" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" title="История версий">🕒 История версий</button>
+                    <button class="badge-relations" id="btnToggleTOC" onclick="if(window.app) window.app.toggleTableOfContents(event)" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" title="{{ _('dialectics.toc') | default('Оглавление') }}">📋 {{ _('dialectics.toc') | default('Оглавление') }}</button>
                 </div>
                 <div class="dialectics-menu-content" id="tableOfContentsMenu" style="display: none; position: absolute; right: 24px; top: 50px; z-index: 1000; width: 340px; max-height: 480px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); padding: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
-                        <span style="font-weight: 800; color: #1e293b; font-size: 0.95rem;">📋 Оглавление конспекта</span>
+                        <span style="font-weight: 800; color: #1e293b; font-size: 0.95rem;">📋 {{ _('dialectics.toc_title') | default('Оглавление конспекта') }}</span>
                         <button onclick="document.getElementById('tableOfContentsMenu').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:1.1rem; color:#94a3b8; font-weight:bold;">✕</button>
                     </div>
                     <div id="tableOfContentsList" style="display: flex; flex-direction: column; gap: 4px;"></div>
@@ -108,16 +110,16 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 1.4rem;">📑</span>
-                                <span style="font-weight: 700; font-size: 1.1rem; color: #1e293b;">Название раздела</span>
+                                <span style="font-weight: 700; font-size: 1.1rem; color: #1e293b;">{{ _('dialectics.section_title') | default('Название раздела') }}</span>
                             </div>
                             <button onclick="window.app && window.app.closeSectionTitleModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #94a3b8; line-height: 1;">✕</button>
                         </div>
                         <div style="margin-bottom: 20px;">
-                            <input type="text" id="sectionTitleInputField" placeholder="Введите название раздела..." style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 2px solid #ea580c; font-size: 1rem; outline: none; box-sizing: border-box; color: #0f172a;" onkeydown="if(event.key==='Enter') { event.preventDefault(); window.app && window.app.saveSectionTitle(); }">
+                            <input type="text" id="sectionTitleInputField" placeholder="{{ _('dialectics.section_title_placeholder') | default('Введите название раздела...') }}" style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 2px solid #ea580c; font-size: 1rem; outline: none; box-sizing: border-box; color: #0f172a;" onkeydown="if(event.key==='Enter') { event.preventDefault(); window.app && window.app.saveSectionTitle(); }">
                         </div>
                         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                            <button onclick="window.app && window.app.closeSectionTitleModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">Отмена</button>
-                            <button onclick="window.app && window.app.saveSectionTitle()" style="padding: 8px 18px; border-radius: 8px; border: none; background: #ea580c; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2);">Сохранить</button>
+                            <button onclick="window.app && window.app.closeSectionTitleModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">{{ _('dialectics.cancel') | default('Отмена') }}</button>
+                            <button onclick="window.app && window.app.saveSectionTitle()" style="padding: 8px 18px; border-radius: 8px; border: none; background: #ea580c; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2);">{{ _('dialectics.save') | default('Сохранить') }}</button>
                         </div>
                     </div>
                 </div>
@@ -147,6 +149,8 @@
                             <button type="button" class="format-btn" data-format="underline" title="Подчеркивание (Underline)">U</button>
                             <button type="button" class="format-btn" data-format="strike" title="Зачеркнутый (Strike)">S</button>
                             <button type="button" class="format-btn" data-format="code" title="Код (Code)">&lt;&gt;</button>
+                            <button type="button" class="format-btn" data-format="quote" title="Цитата (Quote)">”</button>
+                            <button type="button" class="format-btn" data-format="question" title="Отметить вопрос / непонятно" style="color: #d97706;">❓</button>
                             <span style="width: 1px; height: 16px; background: #e2e8f0; margin: 0 2px;"></span>
                             <button type="button" class="format-btn" data-format="clear" title="Сбросить форматирование">🧹</button>
                         </div>
@@ -185,8 +189,8 @@
                         </div>
 
                         <div class="editor-block-title-row" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                            <span style="font-size: 0.85rem; font-weight: 600; color: #475569; white-space: nowrap;">Заголовок:</span>
-                            <input type="text" id="editorBlockTitleInput" placeholder="Введите заголовок блока..." style="flex-grow: 1; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 0.9rem; outline: none; transition: border 0.15s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #475569; white-space: nowrap;">{{ _('dialectics.block_title') | default('Заголовок:') }}</span>
+                            <input type="text" id="editorBlockTitleInput" placeholder="{{ _('dialectics.block_title_placeholder') | default('Введите заголовок блока...') }}" style="flex-grow: 1; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 0.9rem; outline: none; transition: border 0.15s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'">
                         </div>
 
                         <div id="tiptap-editor" class="tiptap-editor" style="min-height: 250px; cursor: text;"></div>
@@ -345,6 +349,42 @@
         </div>
     </div>
 
+    <!-- History Dialectics Modal -->
+    <div id="historyDialecticsModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 style="margin-top: 0;"><span class="modal-icon">🕒</span> История версий конспекта</h2>
+                <button class="modal-close" onclick="document.getElementById('historyDialecticsModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="historyDialecticsList" class="load-notes-list" style="max-height: 400px; overflow-y: auto;">
+                    <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка истории...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('historyDialecticsModal').style.display='none'" style="font-family: inherit;">{{ _('dialectics.close') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trash Dialectics Modal -->
+    <div id="trashDialecticsModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 style="margin-top: 0;"><span class="modal-icon">🗑️</span> Корзина удалённых конспектов</h2>
+                <button class="modal-close" onclick="document.getElementById('trashDialecticsModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="trashDialecticsList" class="load-notes-list" style="max-height: 400px; overflow-y: auto;">
+                    <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка корзины...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('trashDialecticsModal').style.display='none'" style="font-family: inherit;">{{ _('dialectics.close') }}</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Guide Dialectics Modal -->
     <div id="guideDialecticsModal" class="modal">
         <div class="modal-content" style="max-width: 800px; width: 90%;">
@@ -480,10 +520,15 @@
             }
 
             if (triggerRender && window.app && typeof window.app._blockCallbacks === 'function') {
-                import('/static/js/dialectics/BlockManager.js').then(m => {
-                    const blocks = m.BlockManager.getBlocks(canvas);
-                    m.BlockManager.render(canvas, blocks, window.app._blockCallbacks());
-                }).catch(() => {});
+                if (window.BlockManager) {
+                    const blocks = window.BlockManager.getBlocks(canvas);
+                    window.BlockManager.render(canvas, blocks, window.app._blockCallbacks());
+                } else {
+                    import('/static/js/dialectics/BlockManager.js').then(m => {
+                        const blocks = m.BlockManager.getBlocks(canvas);
+                        m.BlockManager.render(canvas, blocks, window.app._blockCallbacks());
+                    }).catch(() => {});
+                }
             }
         };
         document.addEventListener('DOMContentLoaded', function() {
