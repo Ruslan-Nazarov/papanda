@@ -332,6 +332,14 @@
                     <p style="margin: 0; display: flex; align-items: center; gap: 15px;">
                         <span style="color: #666;">{{ _('modal.learn_structural_logic') }}</span>
                     </p>
+                    <div style="display: flex; gap: 10px; margin-top: 14px;">
+                        <button class="btn-action btn-toggle" style="padding: 7px 16px; font-size: 0.8rem;" onclick="window.openSentenceEditor(false)" title="{{ _('modal.edit_sentence') }}">
+                            ✏️ {{ _('modal.edit_sentence') }}
+                        </button>
+                        <button class="btn-action btn-toggle" style="padding: 7px 16px; font-size: 0.8rem;" onclick="window.openSentenceEditor(true)" title="{{ _('modal.add_sentence') }}">
+                            ＋ {{ _('modal.add_sentence') }}
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="sticker-canvas-wrapper">
