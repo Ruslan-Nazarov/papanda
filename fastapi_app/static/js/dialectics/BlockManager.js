@@ -35,6 +35,66 @@ export const COLOR_PRESETS = {
 
 export const BlockManager = {
     renderMath(element) {
+        // Convert raw text like $formula$ into <span data-type="mathNode">
+        const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        let textNode;
+        const nodesToReplace = [];
+        
+        while (textNode = walk.nextNode()) {
+            const parent = textNode.parentNode;
+            if (parent && 
+                parent.tagName !== 'SCRIPT' && 
+                parent.tagName !== 'STYLE' && 
+                parent.tagName !== 'CODE' && 
+                parent.tagName !== 'PRE' && 
+                parent.getAttribute('data-type') !== 'mathNode' &&
+                !parent.closest('.ProseMirror')) {
+                
+                const text = textNode.nodeValue;
+                if (text.includes('$')) {
+                    nodesToReplace.push(textNode);
+                }
+            }
+        }
+        
+        nodesToReplace.forEach(node => {
+            const text = node.nodeValue;
+            const mathRegex = /(\$\$[\s\S]+?\$\$|\$[^\$]+?\$)/g;
+            let lastIndex = 0;
+            let match;
+            const fragments = document.createDocumentFragment();
+            let hasMatches = false;
+            
+            while ((match = mathRegex.exec(text)) !== null) {
+                hasMatches = true;
+                const matchIndex = match.index;
+                const rawMatch = match[0];
+                
+                if (matchIndex > lastIndex) {
+                    fragments.appendChild(document.createTextNode(text.substring(lastIndex, matchIndex)));
+                }
+                
+                const isDisplay = rawMatch.startsWith('$$');
+                const latex = isDisplay ? rawMatch.slice(2, -2) : rawMatch.slice(1, -1);
+                
+                const mathSpan = document.createElement('span');
+                mathSpan.setAttribute('data-type', 'mathNode');
+                mathSpan.setAttribute('latex', latex.trim());
+                mathSpan.className = 'math-node';
+                fragments.appendChild(mathSpan);
+                
+                lastIndex = mathRegex.lastIndex;
+            }
+            
+            if (hasMatches) {
+                if (lastIndex < text.length) {
+                    fragments.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+                node.parentNode.replaceChild(fragments, node);
+            }
+        });
+
+        // Now render all mathNode spans
         const mathNodes = element.querySelectorAll('span[data-type="mathNode"]');
         mathNodes.forEach(node => {
             const latex = node.getAttribute('latex');
@@ -47,6 +107,21 @@ export const BlockManager = {
                 }
             }
         });
+
+        // Render quotes authors/sources
+        const quotes = element.querySelectorAll('blockquote[data-type="quoteBlock"]');
+        quotes.forEach(quote => {
+            const author = quote.getAttribute('data-author');
+            if (author) {
+                if (!quote.querySelector('.quote-author-line')) {
+                    const authorLine = document.createElement('div');
+                    authorLine.className = 'quote-author-line';
+                    authorLine.contentEditable = 'false';
+                    authorLine.innerHTML = `<span class="quote-author-text">— ${author}</span>`;
+                    quote.appendChild(authorLine);
+                }
+            }
+        });
     },
 
     render(container, blocks, callbacks = {}) {
@@ -56,13 +131,13 @@ export const BlockManager = {
         if (divider) container.appendChild(divider);
 
         const getHint = (key, defaultVal) => {
+            if (typeof window._ === 'function') {
+                const trans = window._(key);
+                if (trans && trans !== key) return trans;
+            }
             const shortKey = key.replace('dialectics.hints.', '');
             if (window.DIALECTICS_HINTS && window.DIALECTICS_HINTS[shortKey]) {
                 return window.DIALECTICS_HINTS[shortKey];
-            }
-            if (typeof window._ === 'function') {
-                const trans = window._(key);
-                return trans !== key ? trans : defaultVal;
             }
             return defaultVal;
         };
@@ -110,8 +185,18 @@ export const BlockManager = {
 
         const specialBlocks = {};
         const normalBlocks = [];
+        let curSideRoles = { left: 'step1', right: 'step2', center: 'step5' };
 
         blocks.forEach(b => {
+            const isSec = b.isSection === true || b.side === 'section';
+            if (b.role && b.role !== 'anchor') {
+                if (b.side && curSideRoles[b.side]) {
+                    curSideRoles[b.side] = b.role;
+                }
+            } else if (!b.role && !isSec) {
+                b.role = curSideRoles[b.side || 'left'] || (b.side === 'right' ? 'step2' : b.side === 'center' ? 'step5' : 'step1');
+            }
+
             if (b.role) {
                 specialBlocks[b.role] = b;
                 if (b.role !== 'anchor') {
@@ -400,14 +485,15 @@ export const BlockManager = {
 
                 blockEl.innerHTML = `
                     <div class="dialectics-block-actions">
-                        <button class="btn-block-edit" title="Edit">✎</button>
-                        ${b.role === 'step3' ? '<button class="btn-block-ai" title="Поиск противоположностей">✨</button>' : ''}
                         <button class="btn-block-sources" title="Sources">🔗${sourcesCountHtml}</button>
                         <button class="btn-block-words" title="Словарь">📖${wordsCountHtml}</button>
+                        <button class="btn-block-hacks" title="${window._ ? window._('dialectics.hacks_title') : 'Хаки понимания'}">💡</button>
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center; gap: 2px;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div>${stickersCountHtml}</button>
+                        <span class="btn-block-sep" style="width: 1px; height: 16px; background-color: #cbd5e1; margin: 0 4px; align-self: center;"></span>
+                        <button class="btn-block-edit" title="Edit">✎</button>
+                        ${b.role === 'step3' ? '<button class="btn-block-ai" title="Поиск противоположностей">✨</button>' : ''}
                         <button class="btn-block-color" title="Цвет">🎨</button>
                         <button class="btn-block-del" title="Delete">🗑️</button>
-                        <button class="btn-block-hacks" title="${window._ ? window._('dialectics.hacks_title') : 'Хаки понимания'}">💡</button>
                     </div>
                     ${extraHtml}
                     <div class="dialectics-content-inner">${b.html}</div>

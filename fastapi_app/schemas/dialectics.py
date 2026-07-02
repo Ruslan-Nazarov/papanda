@@ -67,10 +67,21 @@ class DialecticsView(BaseModel):
     title: str
     content_json: Any
     is_pinned: bool
+    is_deleted: Optional[bool] = False
+    deleted_at: Optional[datetime] = None
     category_id: Optional[int] = None
     category: Optional[DialecticsCategoryBase] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class DialecticsHistoryView(BaseModel):
+    """Схема для отображения версии истории конспекта."""
+    id: int
+    dialectics_id: int
+    title: str
+    content_json: Any
+    created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 class DialecticsGuideResponse(BaseModel):

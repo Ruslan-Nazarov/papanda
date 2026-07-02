@@ -16,7 +16,7 @@ function initFormulaWidget() {
         storageKey: 'papanda_formula_chat_history',
         welcomeHtml: `
             <div class="chat-message ai-message">
-                <div class="message-content">Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.</div>
+                <div class="message-content">${window._ ? window._('dialectics.formula_welcome', 'Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.') : 'Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.'}</div>
             </div>
         `
     });
@@ -129,21 +129,26 @@ window.sendFormulaMessage = async function(formulaOverride) {
             const contentDiv = aiMsg.querySelector('.message-content');
             
             if (itemsList && itemsList.length > 0 && (itemsList[0].node || itemsList[0].symbol || itemsList[0].predecessor || itemsList[0].crisis_of_notation)) {
-                let html = `<div style="font-weight: 700; margin-bottom: 10px; color: #0f172a; font-size: 0.95rem;">🧬 Диалектический генезис формулы:</div>`;
+                const genesisTitle = window._ ? window._('dialectics.formula_genesis', 'Диалектический генезис формулы:') : 'Диалектический генезис формулы:';
+                let html = `<div style="font-weight: 700; margin-bottom: 10px; color: #0f172a; font-size: 0.95rem;">🧬 ${genesisTitle}</div>`;
                 itemsList.forEach(item => {
-                    const title = item.node || item.symbol || item.title || 'Элемент формулы';
+                    const title = item.node || item.symbol || item.title || (window._ ? window._('dialectics.formula_element', 'Элемент формулы') : 'Элемент формулы');
                     const predecessor = item.predecessor || item.process || item.thesis || '';
                     const crisis = item.crisis_of_notation || item.contradiction || item.crisis || '';
                     const resolution = item.resolution || item.synthesis || item.result || '';
                     const example = item.example || item.name || '';
 
+                    const predLabel = window._ ? window._('dialectics.formula_predecessor', 'Предшественник (А):') : 'Предшественник (А):';
+                    const crisisLabel = window._ ? window._('dialectics.formula_crisis', 'Кризис записи (В):') : 'Кризис записи (В):';
+                    const resLabel = window._ ? window._('dialectics.formula_resolution', 'Разрешение (С):') : 'Разрешение (С):';
+
                     html += `<div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
                                 <div style="font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
                                     🧮 ${title} ${example ? `<span style="font-size:0.8rem; font-weight:400; color:#64748b;">(${example})</span>` : ''}
                                 </div>
-                                ${predecessor ? `<div style="margin-bottom: 6px; font-size: 0.88rem;"><span style="color: #475569; font-weight: 600;">Предшественник (А):</span> <span style="color: #1e293b;">${predecessor}</span></div>` : ''}
-                                ${crisis ? `<div style="margin-bottom: 6px; font-size: 0.88rem; background: #fef2f2; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #ef4444;"><span style="color: #991b1b; font-weight: 600;">Кризис записи (В):</span> <span style="color: #7f1d1d;">${crisis}</span></div>` : ''}
-                                ${resolution ? `<div style="font-size: 0.88rem; background: #f0fdf4; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #22c55e;"><span style="color: #166534; font-weight: 600;">Разрешение (С):</span> <span style="color: #14532d;">${resolution}</span></div>` : ''}
+                                ${predecessor ? `<div style="margin-bottom: 6px; font-size: 0.88rem;"><span style="color: #475569; font-weight: 600;">${predLabel}</span> <span style="color: #1e293b;">${predecessor}</span></div>` : ''}
+                                ${crisis ? `<div style="margin-bottom: 6px; font-size: 0.88rem; background: #fef2f2; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #ef4444;"><span style="color: #991b1b; font-weight: 600;">${crisisLabel}</span> <span style="color: #7f1d1d;">${crisis}</span></div>` : ''}
+                                ${resolution ? `<div style="font-size: 0.88rem; background: #f0fdf4; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #22c55e;"><span style="color: #166534; font-weight: 600;">${resLabel}</span> <span style="color: #14532d;">${resolution}</span></div>` : ''}
                              </div>`;
                 });
                 contentDiv.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
@@ -206,9 +211,9 @@ async function processFormulaImageFile(file) {
         
         if (latex) {
             await sendFormulaMessage(latex);
-            if (window.showToast) window.showToast("Формула распознана и отправлена на разбор!", "success");
+            if (window.showToast) window.showToast(window._ ? window._('toast.formula_recognized', "Формула распознана и отправлена на разбор!") : "Формула распознана и отправлена на разбор!", "success");
         } else {
-            if (window.showToast) window.showToast("Не удалось извлечь формулу", "warning");
+            if (window.showToast) window.showToast(window._ ? window._('toast.formula_failed', "Не удалось извлечь формулу") : "Не удалось извлечь формулу", "warning");
         }
     } catch (err) {
         if (aiMsg) {

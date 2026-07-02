@@ -4,9 +4,10 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
-import { ResizableImage, MathNode } from './editor_setup.js';
+import { ResizableImage, MathNode, QuestionMark, QuoteBlock } from './editor_setup.js';
 import { GraphTool } from './tools/graph.js';
 import { ShapeTool } from './tools/shapes.js';
+import { customPrompt } from '../modal_controller.js';
 
 export class EditorManager {
     constructor(engine) {
@@ -43,7 +44,7 @@ export class EditorManager {
             this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
-                extensions: [StarterKit, Underline, ResizableImage.configure({ allowBase64: true }), MathNode],
+                extensions: [StarterKit.configure({ blockquote: false }), Underline, QuestionMark, ResizableImage.configure({ allowBase64: true }), MathNode, QuoteBlock],
                 content: '<p></p>',
                 autofocus: 'end',
                 onFocus: () => {
@@ -81,7 +82,7 @@ export class EditorManager {
             const toolbar = document.getElementById('editorFormattingToolbar');
             if (toolbar) {
                 toolbar.querySelectorAll('.format-btn').forEach(btn => {
-                    btn.onclick = (e) => {
+                    btn.onclick = async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         const format = btn.dataset.format;
@@ -93,6 +94,25 @@ export class EditorManager {
                         else if (format === 'underline') chain.toggleUnderline().run();
                         else if (format === 'strike') chain.toggleStrike().run();
                         else if (format === 'code') chain.toggleCode().run();
+                        else if (format === 'question') {
+                            if (this.tiptap.isActive('questionMark')) {
+                                this.tiptap.chain().focus().unsetMark('questionMark').run();
+                            } else {
+                                const qText = await customPrompt({
+                                    title: 'Вопрос к выделенному тексту',
+                                    message: 'В чём заключается вопрос или неясность?',
+                                    placeholder: 'Например: Не совсем ясен вывод формулы / Откуда взялось это утверждение...',
+                                    okLabel: 'Сохранить',
+                                    cancelLabel: 'Отмена'
+                                });
+                                if (qText !== null && qText.trim() !== '') {
+                                    this.tiptap.chain().focus().setMark('questionMark', { title: qText.trim() }).run();
+                                } else if (qText !== null) {
+                                    this.tiptap.chain().focus().setMark('questionMark', { title: 'Есть вопрос, непонятно' }).run();
+                                }
+                            }
+                        }
+                        else if (format === 'quote') chain.toggleQuoteBlock().run();
                         else if (format === 'clear') chain.unsetAllMarks().clearNodes().run();
 
                         this.updateFormattingToolbarStates();
@@ -119,7 +139,9 @@ export class EditorManager {
             toolbar.style.display = 'inline-flex';
             toolbar.querySelectorAll('.format-btn').forEach(btn => {
                 const format = btn.dataset.format;
-                const isActive = this.tiptap.isActive(format);
+                const isActive = format === 'question' ? this.tiptap.isActive('questionMark') : 
+                                 format === 'quote' ? this.tiptap.isActive('quoteBlock') :
+                                 this.tiptap.isActive(format);
                 btn.classList.toggle('active', isActive);
             });
         } else {

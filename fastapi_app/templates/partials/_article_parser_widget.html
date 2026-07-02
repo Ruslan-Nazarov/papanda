@@ -17,27 +17,27 @@
     <!-- Widget Body -->
     <div class="widget-body">
         <div class="parser-tabs">
-            <button class="parser-tab active" onclick="switchParserTab('chat')">Чат</button>
-            <button class="parser-tab" onclick="switchParserTab('dict')">Словарь</button>
+            <button class="parser-tab active" onclick="switchParserTab('chat')">{{ _('dialectics.chat') | default('Чат') }}</button>
+            <button class="parser-tab" onclick="switchParserTab('dict')">{{ _('dialectics.dictionary') | default('Словарь') }}</button>
         </div>
         
         <!-- Chat History -->
         <div class="parser-chat-history" id="parserChatHistory">
             <div class="chat-message ai-message" style="margin-bottom: 6px;">
-                <div class="message-content">👋 <b>Привет!</b> Я превращаю любую статью в изложение процесса, которому она посвящена.</div>
+                <div class="message-content">{{ _('dialectics.article_welcome_1') | default('👋 <b>Привет!</b> Я превращаю любую статью в изложение процесса, которому она посвящена.', true) | safe }}</div>
             </div>
             <div class="chat-message ai-message" style="margin-bottom: 6px;">
-                <div class="message-content">💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <b>диалектическую</b>.</div>
+                <div class="message-content">{{ _('dialectics.article_welcome_2') | default('💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <b>диалектическую</b>.', true) | safe }}</div>
             </div>
             <div class="chat-message ai-message">
-                <div class="message-content">🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <b>Словарь</b> для быстрого доступа.</div>
+                <div class="message-content">{{ _('dialectics.article_welcome_3') | default('🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <b>Словарь</b> для быстрого доступа.', true) | safe }}</div>
             </div>
         </div>
 
         <!-- Dictionary View (Hidden by default) -->
         <div class="parser-dict-history" id="parserDictHistory" style="display: none;">
             <!-- Dict items will go here -->
-            <div class="dict-empty-state">Словарь пуст. Спросите значение любого понятия из статьи.</div>
+            <div class="dict-empty-state">{{ _('dialectics.dict_empty') | default('Словарь пуст. Спросите значение любого понятия из статьи.') }}</div>
         </div>
     </div>
 
@@ -46,7 +46,7 @@
         <input type="file" id="articleFileInput" accept=".pdf,.txt,.md" style="display: none;" onchange="handleArticleUpload(this)">
         <button class="upload-btn" onclick="document.getElementById('articleFileInput').click()" style="padding: 8px 12px; font-size: 0.85rem; background: #ffffff; border: 1px dashed #94a3b8; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: #334155; transition: all 0.2s;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            📎 Прикрепить статью (PDF, TXT)
+            📎 {{ _('dialectics.attach_article') | default('Прикрепить статью (PDF, TXT)') }}
         </button>
         <div id="uploadedFileName" class="uploaded-file-name" style="display: none; margin-bottom: 4px; background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 6px; justify-content: space-between; align-items: center;">
             <span class="file-name-text" style="font-weight: 600; font-size: 0.85rem;"></span>
@@ -56,7 +56,7 @@
 
     <!-- Widget Footer (Input) -->
     <div class="widget-footer parser-input-area" style="background: #f8fafc; padding-top: 8px;">
-        <textarea id="parserPromptInput" placeholder="Задайте вопрос по статье..." rows="1" oninput="autoResizeTextarea(this)"></textarea>
+        <textarea id="parserPromptInput" placeholder="{{ _('dialectics.ask_article') | default('Задайте вопрос по статье...') }}" rows="1" oninput="autoResizeTextarea(this)"></textarea>
         
         <div class="input-actions">
             <button class="btn-icon voice-btn" id="btnParserVoice" title="Голосовой ввод" onclick="toggleVoiceInput()">

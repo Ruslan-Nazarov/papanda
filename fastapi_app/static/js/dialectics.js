@@ -191,6 +191,16 @@ class DialecticsEngine {
 
 
         bind('btnNewDialectics', this.createNewNote);
+        bind('btnHistoryDialectics', () => {
+            const menu = document.getElementById('dialecticsMenuContent');
+            if (menu) menu.style.display = 'none';
+            this.showHistoryModal();
+        });
+        bind('btnTrashDialectics', () => {
+            const menu = document.getElementById('dialecticsMenuContent');
+            if (menu) menu.style.display = 'none';
+            this.showTrashModal();
+        });
         bind('btnGlobalParser', this.runGlobalParser);
         bind('btnExampleDialectics', this.loadExample);
         bind('btnPrevDialectics', this.loadPreviousNote);
@@ -538,16 +548,13 @@ class DialecticsEngine {
             </div>
             ${connHtml}
             <div style="margin-top: 20px; text-align: right;">
-                <button class="btn btn-secondary" onclick="document.getElementById('explainConceptModal').style.display='none'; const el = document.querySelector('[data-block-id=\\'${foundBlockId}\\']'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)'; setTimeout(() => el.style.boxShadow = '', 2000); }" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; background: #3b82f6; color: white; border: none; cursor: pointer; font-weight: 600;">🔍 Перейти к блоку</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('explainConceptModal').style.display='none'; const el = document.querySelector('[data-block-id=\\'${foundBlockId}\\']'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)'; setTimeout(() => el.style.boxShadow = '', 2000); }" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; background: #3b82f6; color: white; border: none; cursor: pointer; font-weight: 600;">🔍 ${(window._ && window._('dialectics.go_to_block')) || 'Перейти к блоку'}</button>
             </div>
         `;
 
         modal.style.display = 'flex';
     }
 }
-
-Object.assign(DialecticsEngine.prototype, ModalsControllerMixin);
-
 
 Object.assign(
     DialecticsEngine.prototype,
@@ -567,4 +574,6 @@ window.toggleOnlyTitlesMode = function(onlyTitles) {
     }
 };
 
+window.BlockManager = BlockManager;
+window.CanvasManager = CanvasManager;
 window.app = new DialecticsEngine();

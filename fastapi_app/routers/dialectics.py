@@ -10,9 +10,10 @@ from ..database import get_db
 from ..services.auth import check_auth_dependency
 from ..config import templates, INTERNAL_ROOT
 from ..logger import logger
-from ..models.dialectics import Dialectics, DialecticsCategory
-from ..schemas.dialectics import DialecticsCreate, DialecticsView, DialecticsUpdate, DialecticsGuideResponse, DialecticsCategoryBase, CategoryCreate
+from ..models.dialectics import Dialectics, DialecticsCategory, DialecticsHistory
+from ..schemas.dialectics import DialecticsCreate, DialecticsView, DialecticsUpdate, DialecticsGuideResponse, DialecticsCategoryBase, CategoryCreate, DialecticsHistoryView
 from ..schemas import StickyNoteCreate, SuccessResponse, DialecticsIdResponse
+from datetime import datetime, timezone
 from ..services.sticky_note_service import StickyNoteService
 from ..services.settings_service import get_setting
 from ..dependencies import get_sticky_note_service
@@ -88,6 +89,15 @@ async def save_dialectics(
     db.add(new_note)
     await db.commit()
     
+    # Save initial version to history
+    hist = DialecticsHistory(
+        dialectics_id=new_note.id,
+        title=new_note.title,
+        content_json=new_note.content_json
+    )
+    db.add(hist)
+    await db.commit()
+    
     # Reload with category
     query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == new_note.id)
     result = await db.execute(query)
@@ -113,7 +123,7 @@ async def list_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Any:
     """Возвращает список записей 'Диалектики'."""
-    query = select(Dialectics).options(selectinload(Dialectics.category))
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.is_deleted == False)
     if search:
         query = query.where(Dialectics.title.ilike(f"%{search}%"))
     result = await db.execute(query.order_by(func.coalesce(Dialectics.updated_at, Dialectics.created_at).desc()))
@@ -179,7 +189,7 @@ async def get_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Dialectics:
     """Возвращает содержимое конкретной записи."""
-    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id, Dialectics.is_deleted == False)
     result = await db.execute(query)
     note = result.scalar_one_or_none()
     
@@ -238,6 +248,14 @@ async def update_dialectics(
     if hasattr(data, 'category_id'):
         note.category_id = data.category_id
     
+    # Save snapshot to history
+    hist = DialecticsHistory(
+        dialectics_id=note.id,
+        title=note.title,
+        content_json=note.content_json
+    )
+    db.add(hist)
+    
     await db.commit()
     
     # Reload with category after commit
@@ -263,7 +281,7 @@ async def get_pinned_dialectics(
     user: Any = Depends(check_auth_dependency)
 ) -> Optional[Dialectics]:
     """Возвращает закрепленную запись."""
-    result = await db.execute(select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.is_pinned == True).limit(1))
+    result = await db.execute(select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.is_pinned == True, Dialectics.is_deleted == False).limit(1))
     return result.scalar_one_or_none()
 
 @router.post("/api/dialectics/{id}/pin", response_model=DialecticsView)
@@ -304,14 +322,102 @@ async def delete_dialectics(
     db: AsyncSession = Depends(get_db),
     user: Any = Depends(check_auth_dependency)
 ):
-    """Удаляет запись."""
+    """Удаляет запись в корзину (soft delete)."""
     note = await db.get(Dialectics, id)
     if not note:
         raise HTTPException(status_code=404, detail="Entry not found")
     
+    note.is_deleted = True
+    note.deleted_at = datetime.now(timezone.utc)
+    note.is_pinned = False
+    await db.commit()
+    return schemas.SuccessResponse(message="Dialectics entry moved to trash")
+
+@router.get("/api/dialectics/trash/list", response_model=List[DialecticsView])
+async def list_trash_dialectics(
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Возвращает список удалённых в корзину конспектов."""
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.is_deleted == True).order_by(Dialectics.deleted_at.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.post("/api/dialectics/{id}/restore", response_model=DialecticsView)
+async def restore_dialectics(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Dialectics:
+    """Восстанавливает конспект из корзины."""
+    note = await db.get(Dialectics, id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    note.is_deleted = False
+    note.deleted_at = None
+    await db.commit()
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    result = await db.execute(query)
+    return result.scalar_one()
+
+@router.delete("/api/dialectics/{id}/permanent", response_model=schemas.SuccessResponse)
+async def permanent_delete_dialectics(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+):
+    """Окончательно удаляет запись из базы данных."""
+    note = await db.get(Dialectics, id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Entry not found")
     await db.delete(note)
     await db.commit()
-    return schemas.SuccessResponse(message="Dialectics entry deleted")
+    return schemas.SuccessResponse(message="Dialectics entry permanently deleted")
+
+@router.get("/api/dialectics/{id}/history", response_model=List[DialecticsHistoryView])
+async def get_dialectics_history(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Возвращает историю версий конспекта."""
+    query = select(DialecticsHistory).where(DialecticsHistory.dialectics_id == id).order_by(DialecticsHistory.created_at.desc()).limit(30)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.post("/api/dialectics/{id}/history/{history_id}/restore", response_model=DialecticsView)
+async def restore_dialectics_history(
+    id: int,
+    history_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Dialectics:
+    """Восстанавливает конспект до выбранной версии из истории."""
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    result = await db.execute(query)
+    note = result.scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Entry not found")
+        
+    hist = await db.get(DialecticsHistory, history_id)
+    if not hist or hist.dialectics_id != id:
+        raise HTTPException(status_code=404, detail="History version not found")
+        
+    note.title = hist.title
+    note.content_json = hist.content_json
+    
+    # Save new history entry recording the restore
+    new_hist = DialecticsHistory(
+        dialectics_id=note.id,
+        title=note.title,
+        content_json=note.content_json
+    )
+    db.add(new_hist)
+    await db.commit()
+    
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    result = await db.execute(query)
+    return result.scalar_one()
 
 @router.get("/api/dialectics/categories/all", response_model=List[DialecticsCategoryBase])
 async def list_dialectics_categories(
@@ -359,6 +465,7 @@ async def search_dialectics(
     from sqlalchemy import cast, String
     
     query = select(Dialectics).options(selectinload(Dialectics.category)).where(
+        Dialectics.is_deleted == False,
         or_(
             Dialectics.title.ilike(search_term),
             cast(Dialectics.content_json, String).ilike(search_term)

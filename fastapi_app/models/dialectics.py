@@ -24,8 +24,24 @@ class Dialectics(Base):
     category_id: Mapped[int | None] = mapped_column(ForeignKey("dialectics_category.id", ondelete="SET NULL"), nullable=True)
     content_json: Mapped[list | dict] = mapped_column(JSON, default=list)
     is_pinned: Mapped[bool] = mapped_column(default=False)
+    is_deleted: Mapped[bool] = mapped_column(default=False, index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     
     category = relationship("DialecticsCategory")
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+
+class DialecticsHistory(Base):
+    """
+    Модель истории промежуточных версий (слепков) конспекта 'Диалектики'.
+    """
+    __tablename__ = "dialectics_history"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    dialectics_id: Mapped[int] = mapped_column(ForeignKey("dialectics.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String, default="")
+    content_json: Mapped[list | dict] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+

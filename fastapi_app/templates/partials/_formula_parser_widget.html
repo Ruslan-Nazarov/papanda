@@ -19,14 +19,14 @@
         <!-- Chat History -->
         <div class="parser-chat-history" id="formulaChatHistory">
             <div class="chat-message ai-message">
-                <div class="message-content">Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.</div>
+                <div class="message-content">{{ _('dialectics.formula_welcome') | default('Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.') }}</div>
             </div>
         </div>
     </div>
 
     <!-- Widget Footer (Input) -->
     <div class="widget-footer parser-input-area">
-        <textarea id="formulaPromptInput" placeholder="Введите формулу..." rows="1" oninput="if(window.autoResizeTextarea) autoResizeTextarea(this); else {this.style.height='auto';this.style.height=this.scrollHeight+'px';}" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendFormulaMessage();}"></textarea>
+        <textarea id="formulaPromptInput" placeholder="{{ _('dialectics.formula_placeholder') | default('Введите формулу...') }}" rows="1" oninput="if(window.autoResizeTextarea) autoResizeTextarea(this); else {this.style.height='auto';this.style.height=this.scrollHeight+'px';}" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendFormulaMessage();}"></textarea>
         <input type="file" id="formulaImageFileInput" accept="image/*" style="display:none;" onchange="handleFormulaImageUpload(event)">
         
         <div class="input-actions">

@@ -168,6 +168,153 @@ export const ModalsControllerMixin = {
         });
     },
 
+    async showHistoryModal() {
+        if (!this.state.currentNoteId) {
+            window.showToast("Сначала сохраните или откройте конспект для просмотра истории", "warning");
+            return;
+        }
+        const modal = document.getElementById('historyDialecticsModal');
+        const listContainer = document.getElementById('historyDialecticsList');
+        if (modal && listContainer) {
+            modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
+            listContainer.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Загрузка истории...</div>';
+            try {
+                const history = await DialecticsAPI.getHistory(this.state.currentNoteId);
+                this.renderHistoryList(history, listContainer);
+            } catch (err) {
+                listContainer.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Ошибка загрузки истории</div>';
+            }
+        }
+    },
+
+    renderHistoryList(history, container) {
+        if (!history || !history.length) {
+            container.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">История версий пока пуста</div>';
+            return;
+        }
+        container.innerHTML = '';
+        history.forEach(h => {
+            const i = document.createElement('div');
+            i.className = 'load-note-item';
+            const d = new Date(h.created_at);
+            const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            i.innerHTML = `
+                <div class="load-note-item-content" style="flex: 1;">
+                    <div class="load-note-item-title" style="color: #1e293b; font-size: 1.02em; margin-bottom: 4px;"><strong>${h.title || "Без названия"}</strong></div>
+                    <div class="load-note-item-date" style="color: #64748b; font-size: 0.85em;">🕒 ${dateStr}</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.85em; border-radius: 6px;">Восстановить</button>
+            `;
+            
+            const restoreBtn = i.querySelector('button');
+            restoreBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const confirmed = await customConfirm({
+                    title: "Восстановление версии",
+                    message: `Восставить конспект до версии от ${dateStr}?`,
+                    icon: '🕒',
+                    buttons: [
+                        { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Восстановить', value: true, class: 'confirm-btn-primary' }
+                    ]
+                });
+                if (confirmed) {
+                    const res = await DialecticsAPI.restoreHistory(this.state.currentNoteId, h.id);
+                    if (res) {
+                        window.showToast("Версия успешно восстановлена", "success");
+                        document.getElementById('historyDialecticsModal').style.display = 'none';
+                        await this.loadNoteToEditor(this.state.currentNoteId);
+                    }
+                }
+            };
+            container.appendChild(i);
+        });
+    },
+
+    async showTrashModal() {
+        const modal = document.getElementById('trashDialecticsModal');
+        const listContainer = document.getElementById('trashDialecticsList');
+        if (modal && listContainer) {
+            modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
+            listContainer.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Загрузка корзины...</div>';
+            try {
+                const trash = await DialecticsAPI.listTrash();
+                this.renderTrashList(trash, listContainer);
+            } catch (err) {
+                listContainer.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Ошибка загрузки корзины</div>';
+            }
+        }
+    },
+
+    renderTrashList(trash, container) {
+        if (!trash || !trash.length) {
+            container.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Корзина пуста</div>';
+            return;
+        }
+        container.innerHTML = '';
+        trash.forEach(n => {
+            const i = document.createElement('div');
+            i.className = 'load-note-item';
+            const d = new Date(n.deleted_at || n.updated_at || n.created_at);
+            const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            i.innerHTML = `
+                <div class="load-note-item-content" style="flex: 1;">
+                    <div class="load-note-item-title" style="color: #64748b; text-decoration: line-through; font-size: 1.02em; margin-bottom: 4px;"><strong>${n.title || "Без названия"}</strong></div>
+                    <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">Удалено: ${dateStr}</div>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-secondary btn-sm restore-trash-btn" title="Восстановить из корзины" style="padding: 4px 8px;">♻️</button>
+                    <button class="btn btn-danger btn-sm permanent-del-btn" title="Удалить навсегда" style="padding: 4px 8px; background: #fee2e2; border: 1px solid #fca5a5; color: #dc2626; border-radius: 6px;">🔥</button>
+                </div>
+            `;
+            
+            const restoreBtn = i.querySelector('.restore-trash-btn');
+            restoreBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const res = await DialecticsAPI.restoreTrash(n.id);
+                if (res) {
+                    window.showToast("Конспект восстановлен из корзины", "success");
+                    i.remove();
+                    if (!container.children.length) {
+                        container.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Корзина пуста</div>';
+                    }
+                }
+            };
+
+            const delBtn = i.querySelector('.permanent-del-btn');
+            delBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const confirmed = await customConfirm({
+                    title: "Окончательное удаление",
+                    message: `Удалить конспект "${n.title}" навсегда? Это действие необратимо!`,
+                    icon: '🔥',
+                    buttons: [
+                        { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                        { label: 'Удалить навсегда', value: true, class: 'confirm-btn-danger' }
+                    ]
+                });
+                if (confirmed) {
+                    const ok = await DialecticsAPI.permanentDelete(n.id);
+                    if (ok) {
+                        window.showToast("Конспект удалён окончательно", "info");
+                        i.remove();
+                        if (!container.children.length) {
+                            container.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Корзина пуста</div>';
+                        }
+                    }
+                }
+            };
+
+            container.appendChild(i);
+        });
+    },
+
     async deleteGlobal() {
         if (!this.state.currentNoteId) return;
         if (this.dom.title && (this.dom.title.value === "Example Note" || this.dom.title.value === "Пример конспекта" || this.dom.title.value === "Конспект мысалы")) {

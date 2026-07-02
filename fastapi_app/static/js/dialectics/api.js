@@ -41,5 +41,25 @@ export const DialecticsAPI = {
         if (!q || q.length < 2) return [];
         const res = await fetch(`/api/dialectics/search/notes?q=${encodeURIComponent(q)}`);
         return res.ok ? await res.json() : [];
+    },
+    async listTrash() {
+        const res = await fetch('/api/dialectics/trash/list');
+        return res.ok ? await res.json() : [];
+    },
+    async restoreTrash(id) {
+        const res = await fetch(`/api/dialectics/${id}/restore`, { method: 'POST' });
+        return res.ok ? await res.json() : null;
+    },
+    async permanentDelete(id) {
+        const res = await fetch(`/api/dialectics/${id}/permanent`, { method: 'DELETE' });
+        return res.ok;
+    },
+    async getHistory(id) {
+        const res = await fetch(`/api/dialectics/${id}/history`);
+        return res.ok ? await res.json() : [];
+    },
+    async restoreHistory(id, historyId) {
+        const res = await fetch(`/api/dialectics/${id}/history/${historyId}/restore`, { method: 'POST' });
+        return res.ok ? await res.json() : null;
     }
 };

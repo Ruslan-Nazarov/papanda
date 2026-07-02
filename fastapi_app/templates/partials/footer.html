@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="footer-version">
-            papanda version 0.6.11 (est. 21.11.2023; last update 30.06.2026)<br>
+            papanda version 0.6.12 (est. 21.11.2023; last update 03.07.2026)<br>
             <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" style="color: inherit; text-decoration: none; opacity: 0.8; font-size: 0.9em;">CC BY-NC 4.0 License</a>
         </div>
     </div>
@@ -162,7 +162,7 @@ function closeTutorialModal() {
                 <span style="font-size: 1.8rem;">📖</span>
                 <div>
                     <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.instructions') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Пошаговая инструкция по методу диалектического конспекта</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.instructions_desc') | default('Пошаговая инструкция по методу диалектического конспекта') }}</div>
                 </div>
             </button>
 
@@ -170,7 +170,7 @@ function closeTutorialModal() {
                 <span style="font-size: 1.8rem;">📚</span>
                 <div>
                     <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.reference') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Справочник по интерфейсу и функциям приложения</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.reference_desc') | default('Справочник по интерфейсу и функциям приложения') }}</div>
                 </div>
             </button>
 
@@ -178,15 +178,15 @@ function closeTutorialModal() {
                 <span style="font-size: 1.8rem;">💡</span>
                 <div>
                     <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.example') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Загрузить демонстрационный готовый разбор проблемы</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.example_desc') | default('Загрузить демонстрационный готовый разбор проблемы') }}</div>
                 </div>
             </button>
 
             <a href="https://www.youtube.com/playlist?list=PLcw81HMAarVIV8u5MSVgEhk8i5iS3VXwj" target="_blank" onclick="closeTutorialModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: rgba(255,0,0,0.04); border: 1px solid rgba(255,0,0,0.2); border-radius: 12px; text-decoration: none; transition: all 0.2s; color: inherit;">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="2rem" height="2rem" style="color: #ff0000; flex-shrink: 0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                 <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">YouTube-плейлист</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">Смотреть подробные видеоуроки по работе с системой</div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.youtube_title') | default('YouTube-плейлист') }}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.youtube_desc') | default('Смотреть подробные видеоуроки по работе с системой') }}</div>
                 </div>
             </a>
         </div>

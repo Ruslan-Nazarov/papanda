@@ -613,3 +613,92 @@ canvas#shapesCanvas {
     pointer-events: none;
     font-size: 1.1rem;
 }
+
+/* --- Question / Unclear Highlight --- */
+.dialectics-question-highlight {
+    background-color: rgba(254, 240, 138, 0.85);
+    color: #92400e;
+    border-bottom: 2px dashed #f59e0b;
+    padding: 1px 4px;
+    border-radius: 4px;
+    cursor: help;
+    font-weight: 500;
+}
+.dialectics-question-highlight:hover {
+    background-color: rgba(253, 224, 71, 0.95);
+    color: #78350f;
+}
+.dialectics-question-highlight::after {
+    content: " ❓";
+    font-size: 0.8em;
+    vertical-align: super;
+}
+
+/* --- Modern Quote Block --- */
+.modern-blockquote {
+    border-left: 4px solid #3b82f6 !important;
+    background: #f8fafc !important;
+    padding: 14px 20px !important;
+    margin: 16px 0 !important;
+    border-radius: 0 12px 12px 0 !important;
+    font-style: italic !important;
+    color: #334155 !important;
+    position: relative !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+.modern-blockquote::before {
+    content: "“" !important;
+    font-family: Georgia, serif !important;
+    font-size: 3rem !important;
+    color: #3b82f6 !important;
+    position: absolute !important;
+    left: 8px !important;
+    top: -12px !important;
+    line-height: 1 !important;
+    opacity: 0.15 !important;
+    pointer-events: none !important;
+}
+
+.quote-content {
+    margin-bottom: 6px !important;
+    font-family: inherit !important;
+    font-size: 1.05rem !important;
+    line-height: 1.6 !important;
+}
+
+.quote-author-line {
+    display: flex !important;
+    justify-content: flex-end !important;
+    font-size: 0.85rem !important;
+    font-style: normal !important;
+    color: #64748b !important;
+    font-family: inherit !important;
+    margin-top: 6px !important;
+}
+
+.quote-author-text {
+    cursor: pointer !important;
+    font-weight: 700 !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    transition: all 0.2s !important;
+    user-select: none !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+.quote-author-text:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+.quote-author-text.empty {
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+    font-style: italic !important;
+    background-color: transparent !important;
+    border: 1px dashed #cbd5e1 !important;
+}

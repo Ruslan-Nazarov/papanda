@@ -1,75 +1,71 @@
-# 🧠 Smart Notes Guide (Dialectics) in papanda
+# 🧠 Smart Notes Guide (Dialectics) in Papanda
 
-A **Dialectics** smart note is a tool for dialectical analysis, assisted by AI-powered search for opposites and an AI-powered formula parser (at the current stage, general-purpose models are used, which will be replaced by specialized ones in the future).
+A **Dialectics** smart note is a tool for deep dialectical analysis, assisted by an advanced suite of AI-powered modules: opposites generator, contextual concept explanation, formula parser, and scientific article parser.
 
-The layout is based on splitting the screen into two parts: we capture facts on the left, and show the development of these facts on the right.
-
-The analysis process is structured as follows. We start with the simplest concept that belongs to the subject under study — the fact. It is placed on the left side. To the right of it, we provide its development: showing exactly how it unfolds. In the course of this unfolding, we aim to detect an element that contradicts the initial fact. To do this, we must first find opposites — AI can help with this step, but only with this step.
-
-Once the opposites are found, we test them for contradiction. To do this, we unite them with the simplest concept and see how they interact. If the contradiction test succeeds, we move this element to the left.
-
-After that, we show how this discovered contradiction unfolds and develops on the right side. In the process of this development, we find the leap to resolving the contradiction. The result of such a leap will be reflected on the left side, but the result on the canvas is always preceded by a central block showing exactly how this leap is carried out.
+The layout is structured around splitting the canvas into two sides: on the left, we capture initial facts and base theses; on the right, we trace the internal unfolding and development of those facts.
 
 ---
 
-## 📋 Key Features
+## 🔬 Methodology of Dialectical Analysis
 
-### 1. Two-Sided Canvas (Facts and their development)
-
-* **Screen Division**: The left side is designed for capturing facts, contradicting elements, and the results of resolving contradictions. The right side is for reflecting the process of their development and unfolding.
-* **Dialectical Process**: The block structure clearly demonstrates the transition from the simplest fact to its development, finding opposites using AI, capturing the contradiction, and making the leap to its resolution.
-
-### 2. Math Editor
-
-* **AI Transformation**: The editor works based on dictation or plain text input, which is then converted by artificial intelligence into beautiful LaTeX layout (KaTeX) for rendering formulas of any complexity.
-
-### 3. Creating Graphs and Shapes
-
-* **Embedding into the Note**: You can construct mathematical graphs from formulas and create vector shapes directly in the editor, and then instantly insert them into the body of text blocks.
-
-### 4. Sticker Integration (Sticky Thoughts)
-
-* **Guides through Layers of Knowledge**: Just like in the rest of the application, stickers serve not only to capture immediate thoughts and considerations, but also to create anchors for future reflection. The learning process cannot happen "all at once or deep into it" — knowledge is infinite, so we absorb it layer by layer. Stickers in this process act as guides through these layers of comprehension.
+The process follows strict steps of structured knowledge acquisition:
+1. **Fact (Thesis)**: We begin with the simplest concept or observable fact belonging to the subject under study. It is placed on the left side of the canvas.
+2. **Development (Unfolding)**: To the right of the fact, we demonstrate its internal movement—how it naturally unfolds and reveals deeper properties.
+3. **Searching for Opposites**: During unfolding, we aim to detect an element or force that enters into contradiction with the original thesis. AI helps at this stage (via the ✨ button), generating candidate opposing dynamics.
+4. **Capturing Contradiction**: Once an opposite is discovered, we verify it for true contradiction by uniting it with the initial concept and observing their interaction. If verified, the opposite element is moved to the left column.
+5. **Qualitative Leap (Synthesis)**: On the right side, we show how the contradiction itself intensifies and develops, leading inevitably to a leap. A central block illustrates the exact mechanism of this transformation, and the newly synthesized result takes its place on the left as the foundation for the next dialectical spiral.
 
 ---
 
-## 🚀 Step-by-Step Guide on Working with the Note
+## 📋 Core Features & Interface Modes
 
-### Step 1. Creating and Managing the Note
+### 1. Flexible Two-Sided Canvas
+* **Display Modes (`🎛️ Mode`)**: Easily toggle between classic two-column dialectical view, linear single-column layout, or "Keep Titles Only" outline mode for rapid structural review.
+* **Block Enhancements**: Every block supports color customization, literature source attachments (`🔗 Sources`), localized terminology glossaries (`📖 Block Dictionary`), and margin notes via stickers.
 
-1. Open the **Dialectics** section in the main menu of the application.
-2. Set the topic of the note in the **"Note topic..."** field on the top panel.
-3. To save your work, use the menu in the upper right corner: **Menu** -> **Save**.
-4. The **Menu** button also allows you to:
-    * **New** — clear the canvas and start a new note from scratch.
-    * **Open** — open a list of previously saved notes.
-    * **Parser** — launch the AI formula parser, which breaks down a mathematical expression into three dialectical stages (thesis, notation crisis, and resolution).
-    * **Example** — load a demonstration example note.
+### 2. Multi-Tab Editor: Text, Graphs & Shapes
+* **Text Tab**: Full rich-text editing environment complete with KaTeX mathematical formula rendering.
+* **Graphs Tab**: Instant 2D mathematical function plotting and curve generator with one-click export into your text block.
+* **Shapes Tab**: Integrated vector graphics drawing suite featuring geometric primitives, freehand sketching, arrows, object grouping, and layer management.
 
-### Step 2. Adding and Placing Blocks
+### 3. Sticker Integration (Sticky Thoughts)
+Stickers act as guides navigating through layers of comprehension. Knowledge cannot be absorbed all at once; stickers provide cognitive hooks for iterative reflection.
 
-You can add new blocks to the canvas in two ways:
+---
 
-1. **Click on an empty space on the canvas**: creates a block with automatic side selection (sides alternate: if the previous block was on the left, the new one will be on the right, and vice versa).
-2. **Insertion buttons in divider rows (`+`)**: hover between blocks (or at the beginning/end of the canvas) to see a row with three buttons:
-    * **Left round `+`**: adds a block to the left side (for capturing base facts and contradicting elements).
-    * **Right round `+`**: adds a block to the right side (for development and unfolding).
-    * **Center square `+`**: adds a block in the center (for displaying the results of the leap to resolve contradictions).
+## 🤖 Dedicated AI Section: Prompt Logic & Algorithmic Architecture
 
-### Step 3. Filling Blocks in the Editor
+Papanda utilizes specialized, deeply structured system prompts that transform AI into a rigorous scientific collaborator. Below is a detailed breakdown of how each AI module operates:
 
-To open a block for editing, **double-click** on it or click the **✎ (Edit)** icon on its top panel. In the editor window that opens:
+### 1. ✨ AI Opposites Search (`противоположности_промпт.md`)
+* **What it means**: Formal logic often treats an opposite as a simple verbal negation (e.g., "hot vs. not hot"). In dialectics, an opposite is an independent, active force or process that coexists with the thesis while maintaining mutual exclusion and tension.
+* **How the prompt works**: The model inspects your block's text and analyzes its underlying mechanics. The system prompt strictly prohibits generating superficial negations using the word "not". Instead, the AI searches natural, social, or conceptual domains for real-world opposing processes.
+* **Human Role**: AI handles the exploratory brainstorming. Final verification of the contradiction and constructing the synthesis leap remains purely the researcher's intellectual responsibility.
 
-* **Text Tab**:
-    * Enter text and formulas.
-    * For entering formulas, you can use **AI dictation or text conversion**: describe the formula in words (e.g., "integral of x over dx"), and the AI will translate it into LaTeX.
-* **Graphs Tab**: Enter a function (e.g., `x^2`) and click **Plot** to generate an interactive graph, then transfer it into the note using the **"Insert to text"** button.
-* **Shapes Tab**: Work with the built-in vector editor (drawing geometric shapes, arrows, grouping, managing layers) and insert the finished drawing into the block using the **"Insert to text"** button.
-* **Saving Changes**: Click the **"OK"** button in the lower right corner of the editor to apply changes to the block on the canvas.
+### 2. ❓ Contextual Concept Explanation (`контекстный_промпт.md`)
+* **What it means**: The "What is this?" button in the editor avoids generic encyclopedia definitions. It explains highlighted terms specifically within the framing of the research topic you are currently developing.
+* **How the prompt works**: The AI receives the entire document text along with your highlighted phrase. The prompt directs the model to explain how the term functions within your specific theoretical system and how it relates to surrounding blocks.
 
-### Step 4. Managing Structure and Analysis
+### 3. 🧮 Dialectical Math Formula Parser (`формулы_промпт.md`)
+* **What it means**: Mathematical formulas are not arbitrary rules; they emerge as resolutions to historical crises in mathematical language.
+* **How the prompt works**: The AI breaks down any formula into a three-stage progression:
+  1. **Initial Thesis / Notation**: A simple mathematical operation or elementary definition.
+  2. **Notation Crisis**: A stage of rising problem complexity where old notation becomes clumsy, restrictive, or leads to paradoxes (e.g., transitioning from rational numbers to irrational numbers).
+  3. **Resolution (Synthesis)**: The emergence of a new formula or syntax as an elegant qualitative leap overcoming the crisis.
 
-* **Finding Opposites**: Click the **✨ (Ask AI)** icon on the top panel of any block describing a process — the AI will analyze the text and suggest opposite sides to study the contradiction.
-* **Linking with Stickers**: Click the sticker icon on a block or inside the editor to capture current thoughts and considerations, creating anchors for layer-by-layer learning.
-* **Relations**: The **"Relations"** button on the top panel is designed to manage connections of the note. Currently it is a placeholder, but in the future, the feature will combine AI search across all notes and manual links created by the author to integrate knowledge into a unified system.
-* **Deleting Blocks**: Click the trash can icon **🗑️ (Delete)** on a block to remove it from the canvas.
+### 4. 📄 Scientific Article Parser (`статьи_промпт.md`)
+* **What it means**: An automated pipeline that transforms dense scientific publications or lecture notes into a structured dialectical map.
+* **How the prompt works**: The algorithm strips away secondary detail to isolate core authorial facts (theses), conflicting viewpoints or experimental discrepancies (antitheses), and concluding leaps (synthesis), formatting them for direct canvas import.
+
+### 5. 🎙️ Voice & Colloquial Text to LaTeX Conversion
+* **How it works**: Dictate complex equations aloud or write them in plain words (e.g., "square root of a squared plus b squared"). The AI immediately converts your description into standard KaTeX notation.
+
+---
+
+## 🚀 Step-by-Step Workflow
+
+1. **Document Setup**: Set your topic and assign a category via the top toolbar selector.
+2. **Adding Blocks**: Click `+` insertion buttons between blocks or click open canvas areas. Choose left for facts, right for development, center for leaps.
+3. **Editing & Graphics**: Double-click any block to open the multi-tab editor. Utilize **Text**, **Graphs**, and **Shapes** tabs to combine prose, math equations, function plots, and vector illustrations.
+4. **AI Analysis**: Highlight difficult terms and click **❓ What is this?** for contextual analysis. Click **✨** on any block header to generate candidate opposites.
+5. **Navigation**: Open **📋 Table of Contents** for instant structured navigation across extensive research documents.

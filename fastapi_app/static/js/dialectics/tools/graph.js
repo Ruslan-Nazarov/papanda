@@ -19,10 +19,10 @@ export const GraphTool = {
             if (window.app?.logDebug) window.app.logDebug("Loading dependencies (D3 + FunctionPlot)...");
 
             // 1. Загружаем D3 (локально)
-            await loadScript('/static/js/vendor/d3.min.js');
+            await loadScript('/static/libs/d3.min.js');
 
             // 2. Загружаем FunctionPlot (локально)
-            await loadScript('/static/js/vendor/function-plot.js');
+            await loadScript('/static/libs/function-plot.js');
 
             this.isLoaded = true;
             if (window.app?.logDebug) window.app.logDebug("Graph libraries initialized.");
@@ -33,14 +33,8 @@ export const GraphTool = {
     },
 
     plot(target, formula) {
-        const fn = formula.trim() || 'x^2';
+        const inputStr = formula.trim();
         target.innerHTML = '';
-
-        if (window.app && window.app.logDebug) {
-            window.app.logDebug(`Plotting: ${fn}`);
-            window.app.logDebug(`functionPlot type: ${typeof window.functionPlot}`);
-            window.app.logDebug(`d3 version: ${window.d3 ? window.d3.version : 'MISSING'}`);
-        }
 
         if (!this.isLoaded) {
             target.innerHTML = `<div style="color:red; padding:20px;">Error: Graph library is not loaded.</div>`;
@@ -52,17 +46,81 @@ export const GraphTool = {
             return;
         }
 
-        const config = {
-            target: target,
-            width: target.clientWidth > 100 ? target.clientWidth - 20 : 450,
-            height: 300,
-            grid: true,
-            data: [{ 
-                fn: fn,
-                range: [-10, 10],
-                color: '#3b82f6'
-            }]
-        };
+        if (window.app && window.app.logDebug) {
+            window.app.logDebug(`Plotting: ${inputStr}`);
+        }
+
+        // Try to parse points (e.g. "[5,7]" or "1,2; 3,4" or "5, 7")
+        let points = [];
+        const isPointsInput = !/[a-wy-z]/i.test(inputStr) && (inputStr.includes(',') || inputStr.includes('[') || inputStr.includes('('));
+
+        if (isPointsInput) {
+            const pointRegex = /(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)/g;
+            let match;
+            while ((match = pointRegex.exec(inputStr)) !== null) {
+                const x = parseFloat(match[1]);
+                const y = parseFloat(match[2]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    points.push([x, y]);
+                }
+            }
+        }
+
+        let config;
+        if (points.length > 0) {
+            // Find domain and range
+            const xs = points.map(p => p[0]);
+            const ys = points.map(p => p[1]);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            
+            const paddingX = Math.max(2, (maxX - minX) * 0.2);
+            const paddingY = Math.max(2, (maxY - minY) * 0.2);
+            
+            const xDomain = [minX - paddingX, maxX + paddingX];
+            const yDomain = [minY - paddingY, maxY + paddingY];
+
+            const plotData = [];
+            if (points.length > 1) {
+                plotData.push({
+                    points: points,
+                    fnType: 'points',
+                    graphType: 'polyline',
+                    color: '#3b82f6'
+                });
+            }
+            plotData.push({
+                points: points,
+                fnType: 'points',
+                graphType: 'scatter',
+                color: '#ef4444'
+            });
+
+            config = {
+                target: target,
+                width: target.clientWidth > 100 ? target.clientWidth - 20 : 450,
+                height: 300,
+                grid: true,
+                xAxis: { domain: xDomain },
+                yAxis: { domain: yDomain },
+                data: plotData
+            };
+        } else {
+            const fn = inputStr || 'x^2';
+            config = {
+                target: target,
+                width: target.clientWidth > 100 ? target.clientWidth - 20 : 450,
+                height: 300,
+                grid: true,
+                data: [{ 
+                    fn: fn,
+                    range: [-10, 10],
+                    color: '#3b82f6'
+                }]
+            };
+        }
 
         try {
             window.functionPlot(config);

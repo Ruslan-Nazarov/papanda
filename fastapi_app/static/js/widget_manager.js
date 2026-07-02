@@ -19,6 +19,17 @@
             this.minimizedWidgets = [];
         }
 
+        getMeta(id) {
+            const meta = this.registry[id] || { title: id, icon: '📦' };
+            if (id === 'articleParserWidget') {
+                return { ...meta, title: window._ ? window._('dialectics.article_parser', meta.title) : meta.title };
+            }
+            if (id === 'formulaParserWidget') {
+                return { ...meta, title: window._ ? window._('dialectics.formula_parser', meta.title) : meta.title };
+            }
+            return meta;
+        }
+
         saveState() {
             try {
                 const positions = {};
@@ -206,9 +217,10 @@
 
             dockContainer.style.display = 'block';
             dockBar.innerHTML = this.minimizedWidgets.map(id => {
-                const meta = this.registry[id] || { title: id, icon: '📦' };
+                const meta = this.getMeta(id);
                 const cleanTitle = meta.title.replace(/^[\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF📄🧮📦\s]+/g, '');
-                return `<button class="dock-widget-btn" onclick="window.WidgetManager && window.WidgetManager.open('${id}')" title="Развернуть">
+                const expandTitle = window._ ? window._('dialectics.expand', 'Развернуть') : 'Развернуть';
+                return `<button class="dock-widget-btn" onclick="window.WidgetManager && window.WidgetManager.open('${id}')" title="${expandTitle}">
                             <span class="dock-icon">${meta.icon}</span>
                             <span>${cleanTitle}</span>
                         </button>`;

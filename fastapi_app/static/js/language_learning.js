@@ -31,9 +31,12 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
     } catch (e) {
         console.error("Failed to parse sentences JSON:", e);
     }
+    window.rawSentences = rawSentences;
 
     let currentLang = 'English';
+    window.currentLang = currentLang;
     let currentSentenceIndex = 0;
+    window.currentSentenceIndex = currentSentenceIndex;
     let activeSentences = [];
     let currentStepIndex = -1; // -1: hidden, 0: Step 1, etc.
     let isFlashActive = false;
@@ -43,11 +46,25 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
 
     function setLanguage(lang, btn) {
         currentLang = lang;
+        window.currentLang = lang;
         document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
         if (btn) btn.classList.add('active');
 
         activeSentences = rawSentences.filter(s => s.language === lang);
+        // Shuffle activeSentences
+        for (let i = activeSentences.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [activeSentences[i], activeSentences[j]] = [activeSentences[j], activeSentences[i]];
+        }
         currentSentenceIndex = 0;
+        
+        const activeSents = rawSentences.filter(s => s.language === lang);
+        if (activeSentences.length > 0) {
+            window.currentSentenceIndex = activeSents.findIndex(s => s.id === activeSentences[0].id);
+        } else {
+            window.currentSentenceIndex = 0;
+        }
+
         renderCurrentSentence();
         loadLanguageStickers();
     }
@@ -160,7 +177,13 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
     }
 
     function nextSentence() {
+        if (activeSentences.length === 0) return;
         currentSentenceIndex = (currentSentenceIndex + 1) % activeSentences.length;
+        
+        const activeSents = rawSentences.filter(s => s.language === currentLang);
+        const currentSent = activeSentences[currentSentenceIndex];
+        window.currentSentenceIndex = activeSents.findIndex(s => s.id === currentSent.id);
+
         renderCurrentSentence();
     }
 
@@ -253,6 +276,8 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
                 const idx = activeSentences.findIndex(s => s.id == sentenceId);
                 if (idx !== -1) {
                     currentSentenceIndex = idx;
+                    const activeSents = rawSentences.filter(s => s.language === targetSentence.language);
+                    window.currentSentenceIndex = activeSents.findIndex(s => s.id == sentenceId);
                     renderCurrentSentence();
                 }
             }

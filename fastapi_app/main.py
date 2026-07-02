@@ -39,6 +39,16 @@ async def lifespan(app: FastAPI):
                     await conn.execute(text("ALTER TABLE observations ADD COLUMN set_id INTEGER REFERENCES observation_sets(id)"))
                 except Exception:
                     pass
+                try:
+                    from sqlalchemy import text
+                    await conn.execute(text("ALTER TABLE dialectics ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
+                except Exception:
+                    pass
+                try:
+                    from sqlalchemy import text
+                    await conn.execute(text("ALTER TABLE dialectics ADD COLUMN deleted_at DATETIME"))
+                except Exception:
+                    pass
             logger.info("Database initialization successful. All tables verified.")
         
             # Гарантируем наличие примера конспекта в основной базе
@@ -74,7 +84,7 @@ mimetypes.add_type('text/css', '.css')
 app = FastAPI(
     title="Papanda API",
     description="Образовательное приложение",
-    version="0.6.11",
+    version="0.6.12",
     lifespan=lifespan
 )
 app.state.settings = settings
@@ -228,6 +238,15 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Database error"}
     )
+
+@app.middleware("http")
+async def add_no_cache_headers(request: Request, call_next: Callable[[Request], Any]):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/dist/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 @app.websocket("/ws/ping")
 async def websocket_ping(websocket: WebSocket):

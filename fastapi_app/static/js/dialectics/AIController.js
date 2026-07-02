@@ -68,7 +68,25 @@ class AIControllerClass {
         }
         this.state.editingBlock = null;
         this.state.pendingSide = side;
-        this.state.pendingRole = null;
+        let inheritedRole = null;
+        if (window.BlockManager && this.dom && this.dom.canvas) {
+            const currentBlocks = window.BlockManager.getBlocks(this.dom.canvas);
+            if (index !== null && index !== undefined && index >= 0 && currentBlocks[index]) {
+                inheritedRole = currentBlocks[index].role || null;
+                if (!inheritedRole) {
+                    for (let i = index; i >= 0; i--) {
+                        if (currentBlocks[i].role && currentBlocks[i].role !== 'anchor') {
+                            inheritedRole = currentBlocks[i].role;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!inheritedRole) {
+            inheritedRole = side === 'right' ? 'step2' : side === 'center' ? 'step5' : 'step1';
+        }
+        this.state.pendingRole = inheritedRole;
         this.state.pendingBlockId = 'block_' + Math.random().toString(36).substr(2, 9);
         this.state.insertAfterIndex = index;
         const titleInput = document.getElementById('editorBlockTitleInput');
