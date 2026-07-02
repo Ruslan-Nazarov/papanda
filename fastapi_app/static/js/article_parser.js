@@ -17,13 +17,13 @@ function initArticleWidget() {
         storageKey: 'papanda_article_chat_history',
         welcomeHtml: `
             <div class="chat-message ai-message" style="margin-bottom: 6px;">
-                <div class="message-content">👋 <b>Привет!</b> Я превращаю любую статью в изложение процесса, которому она посвящена.</div>
+                <div class="message-content">${window._ ? window._('dialectics.article_welcome_1', '👋 <b>Привет!</b> Я превращаю любую статью в изложение процесса, которому она посвящена.') : '👋 <b>Привет!</b> Я превращаю любую статью в изложение процесса, которому она посвящена.'}</div>
             </div>
             <div class="chat-message ai-message" style="margin-bottom: 6px;">
-                <div class="message-content">💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <b>диалектическую</b>.</div>
+                <div class="message-content">${window._ ? window._('dialectics.article_welcome_2', '💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <b>диалектическую</b>.') : '💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <b>диалектическую</b>.'}</div>
             </div>
             <div class="chat-message ai-message">
-                <div class="message-content">🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <b>Словарь</b> для быстрого доступа.</div>
+                <div class="message-content">${window._ ? window._('dialectics.article_welcome_3', '🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <b>Словарь</b> для быстрого доступа.') : '🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <b>Словарь</b> для быстрого доступа.'}</div>
             </div>
         `,
         saveHistoryCallback: () => {
@@ -66,6 +66,19 @@ function initArticleWidget() {
     }
 }
 
+// Открытие и закрытие виджета парсера статей
+window.toggleArticleParser = function() {
+    if (window.WidgetManager) {
+        window.WidgetManager.toggle('articleParserWidget');
+    } else {
+        const widget = document.getElementById('articleParserWidget');
+        if (widget) {
+            const isHidden = window.getComputedStyle(widget).display === 'none';
+            widget.style.display = isHidden ? 'flex' : 'none';
+        }
+    }
+};
+
 // Заглушка для inline onclick-обработчика голосовой кнопки
 window.toggleVoiceInput = function() {
     // Инициализируется автоматически в DialecticsBaseWidget
@@ -77,11 +90,12 @@ window.clearArticleChatHistory = function() {
         articleWidget.clearHistory(() => {
             const dictHist = document.getElementById('parserDictHistory');
             if (dictHist) {
-                dictHist.innerHTML = `<div class="dict-empty-state">Словарь пуст. Спросите значение любого понятия из статьи.</div>`;
+                const emptyMsg = window._ ? window._('dialectics.dict_empty', 'Словарь пуст. Спросите значение любого понятия из статьи.') : 'Словарь пуст. Спросите значение любого понятия из статьи.';
+                dictHist.innerHTML = `<div class="dict-empty-state">${emptyMsg}</div>`;
             }
             localStorage.removeItem('papanda_article_dict_history');
             window.removeUploadedArticle();
-            if (window.showToast) window.showToast("История и словарь очищены", "info");
+            if (window.showToast) window.showToast(window._ ? window._('toast.history_cleared', "История и словарь очищены") : "История и словарь очищены", "info");
         });
     }
 };
