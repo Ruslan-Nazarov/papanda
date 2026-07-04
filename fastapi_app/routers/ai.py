@@ -19,14 +19,19 @@ router = APIRouter(
     prefix="/api/ai"
 )
 
+_groq_client: Optional[AsyncGroq] = None
+
 def get_groq_client() -> AsyncGroq:
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key or api_key == "your_groq_api_key_here":
-        raise HTTPException(
-            status_code=500, 
-            detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file."
-        )
-    return AsyncGroq(api_key=api_key)
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key or api_key == "your_groq_api_key_here":
+            raise HTTPException(
+                status_code=500, 
+                detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file."
+            )
+        _groq_client = AsyncGroq(api_key=api_key)
+    return _groq_client
 
 PROMPT_MAP = {
     "base": "1 главный промпт.md",
@@ -277,6 +282,7 @@ async def edit_math_from_voice(
 ):
     try:
         content = await file.read()
+        await file.close()
         transcription = await client.audio.transcriptions.create(
             file=(file.filename, content, file.content_type),
             model="whisper-large-v3-turbo",
@@ -366,26 +372,29 @@ async def process_article_parser(
     
     extracted_text = ""
     if file:
-        content = await file.read()
-        if file.filename.endswith('.pdf'):
-            try:
-                reader = PdfReader(io.BytesIO(content))
-                for page in reader.pages:
-                    text = page.extract_text()
-                    if text:
-                        extracted_text += text + "\n"
-            except Exception as e:
-                logger.error(f"Error parsing PDF: {e}")
-                raise HTTPException(status_code=400, detail="Could not parse PDF file.")
-        else:
-            try:
-                extracted_text = content.decode('utf-8')
-            except Exception as e:
-                logger.error(f"Error reading text file: {e}")
-                raise HTTPException(status_code=400, detail="Could not read text file.")
-                
-        if len(extracted_text) > 15000:
-            extracted_text = extracted_text[:15000] + "... [Text truncated due to length limits]"
+        try:
+            content = await file.read()
+            if file.filename.endswith('.pdf'):
+                try:
+                    reader = PdfReader(io.BytesIO(content))
+                    for page in reader.pages:
+                        text = page.extract_text()
+                        if text:
+                            extracted_text += text + "\n"
+                except Exception as e:
+                    logger.error(f"Error parsing PDF: {e}")
+                    raise HTTPException(status_code=400, detail="Could not parse PDF file.")
+            else:
+                try:
+                    extracted_text = content.decode('utf-8')
+                except Exception as e:
+                    logger.error(f"Error reading text file: {e}")
+                    raise HTTPException(status_code=400, detail="Could not read text file.")
+                    
+            if len(extracted_text) > 15000:
+                extracted_text = extracted_text[:15000] + "... [Text truncated due to length limits]"
+        finally:
+            await file.close()
     else:
         extracted_text = ""
 
@@ -470,6 +479,7 @@ async def ocr_math_formula(
     import base64
     try:
         contents = await file.read()
+        await file.close()
         mime_type = file.content_type or "image/png"
         base64_image = base64.b64encode(contents).decode("utf-8")
         

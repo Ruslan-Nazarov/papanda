@@ -46,14 +46,17 @@ async def upload_db(db_file: UploadFile = File(...)) -> RedirectResponse:
         raise HTTPException(status_code=400, detail="Invalid file type. Only .db allowed.")
     
     # Проверяем SQLite magic bytes
-    header = await db_file.read(16)
-    if not header.startswith(b"SQLite format 3\x00"):
-        raise HTTPException(status_code=400, detail="Invalid SQLite file format")
-    await db_file.seek(0)
-    
-    file_path = settings.db_dir / safe_name
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(db_file.file, buffer)
+    try:
+        header = await db_file.read(16)
+        if not header.startswith(b"SQLite format 3\x00"):
+            raise HTTPException(status_code=400, detail="Invalid SQLite file format")
+        await db_file.seek(0)
+        
+        file_path = settings.db_dir / safe_name
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(db_file.file, buffer)
+    finally:
+        await db_file.close()
     
     return RedirectResponse(url="/settings", status_code=status.HTTP_303_SEE_OTHER)
 
