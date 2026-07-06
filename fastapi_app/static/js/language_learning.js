@@ -41,8 +41,8 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
     let currentStepIndex = -1; // -1: hidden, 0: Step 1, etc.
     let isFlashActive = false;
 
-    // Strict Order: Predicate -> Subject -> Attribute -> Attribute_Subject -> Object -> Attribute_Object -> Circumstance -> Adverbial
-    const roleOrder = ['Predicate', 'Subject', 'Attribute', 'Attribute_Subject', 'Object', 'Attribute_Object', 'Circumstance', 'Adverbial'];
+    // Strict Order: Predicate -> Subject -> Attribute -> Attribute_Subject -> Object -> Attribute_Object -> Circumstance -> Adverbial -> Conjunction -> Preposition -> Particle -> Other
+    const roleOrder = ['Predicate', 'Subject', 'Attribute', 'Attribute_Subject', 'Object', 'Attribute_Object', 'Circumstance', 'Adverbial', 'Conjunction', 'Preposition', 'Particle', 'Other'];
 
     function setLanguage(lang, btn) {
         currentLang = lang;
@@ -158,7 +158,13 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
         }
 
         currentStepIndex++;
-        if (currentStepIndex >= roleOrder.length) return;
+        if (currentStepIndex >= roleOrder.length) {
+            const hiddenSlots = document.querySelectorAll('.word-slot:not(.visible)');
+            if (hiddenSlots.length > 0) {
+                hiddenSlots.forEach(s => s.classList.add('visible'));
+            }
+            return;
+        }
 
         const targetRole = roleOrder[currentStepIndex];
         const slots = document.querySelectorAll(`.word-slot[data-role="${targetRole}"]`);
@@ -170,10 +176,23 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
         }
     }
 
-    function toggleTranslation() {
+    function toggleTranslation(forceState) {
         const display = document.getElementById('sentence-display');
-        display.classList.toggle('show-translation');
-        document.getElementById('toggle-translation').classList.toggle('active');
+        if (!display) return;
+        
+        let isShow;
+        if (typeof forceState === 'boolean') {
+            isShow = forceState;
+            display.classList.toggle('show-translation', isShow);
+        } else {
+            isShow = display.classList.toggle('show-translation');
+        }
+        
+        document.querySelectorAll('.toggle-translation-checkbox').forEach(cb => {
+            cb.checked = isShow;
+        });
+        const oldBtn = document.getElementById('toggle-translation');
+        if (oldBtn) oldBtn.classList.toggle('active', isShow);
     }
 
     function nextSentence() {

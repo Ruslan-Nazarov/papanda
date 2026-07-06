@@ -48,6 +48,14 @@
                                 <span class="toggle-slider"></span>
                             </div>
                         </label>
+                        <div class="dropdown-divider"></div>
+                        <label class="mode-toggle-row">
+                            <span>{{ _('dialectics.compressed_left') | default('Свернуть левую колонку') }}</span>
+                            <div class="custom-toggle-switch">
+                                <input type="checkbox" id="toggleCompressedMode" onchange="window.toggleCompressedMode && window.toggleCompressedMode(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
                     </div>
                 </div>
                 <div class="dialectics-menu-dropdown" id="parsersMenuDropdown" style="position: relative;">
@@ -71,6 +79,9 @@
                         <button class="dropdown-item" id="btnPrevDialectics">↩️ {{ _('dialectics.previous') }}</button>
                         <button class="dropdown-item" id="btnSaveDialectics" style="color: #2563eb; font-weight: 600;">💾 {{ _('dialectics.save') }}</button>
                         <button class="dropdown-item" id="btnDeleteDialectics" style="display: none; color: #ef4444;">🗑️ {{ _('dialectics.delete') }}</button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" id="btnExportMarkdown" title="Export to Markdown">📝 {{ _('dialectics.export_md') | default('Экспорт в Markdown') }}</button>
+                        <button class="dropdown-item" id="btnExportPDF" title="Export to PDF">📑 {{ _('dialectics.export_pdf') | default('Экспорт в PDF') }}</button>
                     </div>
                 </div>
 
@@ -93,8 +104,30 @@
             <!-- Main Dialectics Interface -->
             <div class="note-interface" style="position: relative;">
                 <div class="canvas-top-toolbar" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 24px 4px 24px;">
-                    <button class="badge-relations" id="btnHistoryDialectics" onclick="if(window.app) window.app.showHistoryModal()" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" title="История версий">🕒 История версий</button>
+                    <button class="badge-relations" id="btnVersionsMenu" onclick="if(window.app) window.app.toggleVersionsMenu(event)" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; display: flex; align-items: center; gap: 6px;" title="История версий">
+                        <span>⏱️</span>
+                        <span id="currentVersionLabel" style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Текущая версия</span>
+                        <span style="font-size: 0.7rem; opacity: 0.7;">▼</span>
+                    </button>
                     <button class="badge-relations" id="btnToggleTOC" onclick="if(window.app) window.app.toggleTableOfContents(event)" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" title="{{ _('dialectics.toc') | default('Оглавление') }}">📋 {{ _('dialectics.toc') | default('Оглавление') }}</button>
+                </div>
+                <div class="dialectics-menu-content" id="versionsMenu" style="display: none; position: absolute; right: 150px; top: 50px; z-index: 1000; width: 380px; max-height: 520px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 1.1rem;">⏱️</span>
+                            <span style="font-weight: 800; color: #1e293b; font-size: 0.95rem;">История версий</span>
+                        </div>
+                        <button onclick="document.getElementById('versionsMenu').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:1.1rem; color:#94a3b8; font-weight:bold;">✕</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 14px; display: flex; gap: 8px;">
+                        <input type="text" id="newVersionTitleInput" placeholder="Название версии (опционально)..." style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none;">
+                        <button onclick="if(window.app) window.app.saveManualVersion()" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">+ Сохранить</button>
+                    </div>
+
+                    <div id="versionsListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 20px 0;">Загрузка версий...</div>
+                    </div>
                 </div>
                 <div class="dialectics-menu-content" id="tableOfContentsMenu" style="display: none; position: absolute; right: 24px; top: 50px; z-index: 1000; width: 340px; max-height: 480px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); padding: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
@@ -150,7 +183,10 @@
                             <button type="button" class="format-btn" data-format="strike" title="Зачеркнутый (Strike)">S</button>
                             <button type="button" class="format-btn" data-format="code" title="Код (Code)">&lt;&gt;</button>
                             <button type="button" class="format-btn" data-format="quote" title="Цитата (Quote)">”</button>
+                            <button type="button" class="format-btn" data-format="alternatives" title="Альтернативные формулировки" style="color: #10b981;">🔀</button>
                             <button type="button" class="format-btn" data-format="question" title="Отметить вопрос / непонятно" style="color: #d97706;">❓</button>
+                            <button type="button" class="format-btn" data-format="hiddenPhrase" title="Скрытая фраза (пояснение)" style="color: #8b5cf6;">👁</button>
+                            <button type="button" class="format-btn" data-format="blockLink" title="Ссылка на блок" style="color: #3b82f6;">🔗</button>
                             <span style="width: 1px; height: 16px; background: #e2e8f0; margin: 0 2px;"></span>
                             <button type="button" class="format-btn" data-format="clear" title="Сбросить форматирование">🧹</button>
                         </div>
@@ -349,23 +385,7 @@
         </div>
     </div>
 
-    <!-- History Dialectics Modal -->
-    <div id="historyDialecticsModal" class="modal">
-        <div class="modal-content" style="max-width: 550px;">
-            <div class="modal-header">
-                <h2 style="margin-top: 0;"><span class="modal-icon">🕒</span> История версий конспекта</h2>
-                <button class="modal-close" onclick="document.getElementById('historyDialecticsModal').style.display='none'">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 20px;">
-                <div id="historyDialecticsList" class="load-notes-list" style="max-height: 400px; overflow-y: auto;">
-                    <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка истории...</div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('historyDialecticsModal').style.display='none'" style="font-family: inherit;">{{ _('dialectics.close') }}</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Trash Dialectics Modal -->
     <div id="trashDialecticsModal" class="modal">
@@ -506,6 +526,7 @@
             if (!canvas) return;
             const dialecticsToggle = document.getElementById('toggleDialecticsMode');
             const columnsToggle = document.getElementById('toggleColumnsMode');
+            const compressedToggle = document.getElementById('toggleCompressedMode');
             
             if (dialecticsToggle && !dialecticsToggle.checked) {
                 canvas.classList.add('mode-no-dialectics');
@@ -517,6 +538,12 @@
                 canvas.classList.add('mode-single-column');
             } else {
                 canvas.classList.remove('mode-single-column');
+            }
+
+            if (compressedToggle && compressedToggle.checked) {
+                canvas.classList.add('mode-compressed-left');
+            } else {
+                canvas.classList.remove('mode-compressed-left');
             }
 
             if (triggerRender && window.app && typeof window.app._blockCallbacks === 'function') {

@@ -42,6 +42,10 @@ export const DialecticsAPI = {
         const res = await fetch(`/api/dialectics/search/notes?q=${encodeURIComponent(q)}`);
         return res.ok ? await res.json() : [];
     },
+    async listByCategory(categoryId) {
+        const res = await fetch(`/api/dialectics?category_id=${encodeURIComponent(categoryId)}`);
+        return res.ok ? await res.json() : [];
+    },
     async listTrash() {
         const res = await fetch('/api/dialectics/trash/list');
         return res.ok ? await res.json() : [];
@@ -54,12 +58,30 @@ export const DialecticsAPI = {
         const res = await fetch(`/api/dialectics/${id}/permanent`, { method: 'DELETE' });
         return res.ok;
     },
-    async getHistory(id) {
-        const res = await fetch(`/api/dialectics/${id}/history`);
+    async getVersions(id) {
+        const res = await fetch(`/api/dialectics/${id}/versions`);
         return res.ok ? await res.json() : [];
     },
-    async restoreHistory(id, historyId) {
-        const res = await fetch(`/api/dialectics/${id}/history/${historyId}/restore`, { method: 'POST' });
+    async createVersion(id, title) {
+        const res = await fetch(`/api/dialectics/${id}/versions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title })
+        });
         return res.ok ? await res.json() : null;
+    },
+    async restoreVersion(id, versionId) {
+        const res = await fetch(`/api/dialectics/${id}/versions/${versionId}/restore`, { method: 'POST' });
+        return res.ok ? await res.json() : null;
+    },
+    async togglePinVersion(id, versionId) {
+        const res = await fetch(`/api/dialectics/${id}/versions/${versionId}/pin`, { method: 'POST' });
+        return res.ok ? await res.json() : null;
+    },
+    async deleteVersion(id, versionId) {
+        const res = await fetch(`/api/dialectics/${id}/versions/${versionId}`, { method: 'DELETE' });
+        return res.ok;
     }
 };
+
+

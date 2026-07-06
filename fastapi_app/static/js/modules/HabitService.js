@@ -6,6 +6,11 @@ import { ModalManager } from './ModalManager.js';
 
 export const HabitService = {
     openEdit(id, title, start, end, read) {
+        if (typeof end === 'boolean') {
+            const temp = read;
+            read = end;
+            end = temp;
+        }
         document.getElementById('editHabitId').value = id || '';
         document.getElementById('editHabitTitle').value = title || '';
         document.getElementById('editHabitStartDate').value = start || '';

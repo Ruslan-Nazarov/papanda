@@ -1,0 +1,131 @@
+{
+  "title": "Суммалау",
+  "content_json": [
+    {
+      "id": "block_8um63cusu",
+      "side": "left",
+      "html": "<p>1+1</p>",
+      "role": "step1",
+      "sources": [],
+      "title": "Простая сумма единиц",
+      "collapsed": false,
+      "words": [],
+      "color": null,
+      "tabs": [
+        {
+          "id": "tab_95cvhry",
+          "title": "Черновик",
+          "content": "<p>1+1</p>",
+          "status": "draft",
+          "is_locked": false
+        }
+      ],
+      "active_tab_id": "tab_95cvhry"
+    },
+    {
+      "id": "block_ovt3teyw4",
+      "side": "right",
+      "html": "<p>Сумма 1+1 усложняется за счет добавления новых единиц 1+1+1+1+1...</p>",
+      "role": "step2",
+      "sources": [],
+      "title": "Усложнение записи суммы единиц",
+      "collapsed": false,
+      "words": [],
+      "color": null,
+      "tabs": [
+        {
+          "id": "tab_qos2bgy",
+          "title": "Черновик",
+          "content": "<p>Сумма 1+1 усложняется за счет добавления новых единиц 1+1+1+1+1...</p>",
+          "status": "draft",
+          "is_locked": false
+        }
+      ],
+      "active_tab_id": "tab_qos2bgy"
+    },
+    {
+      "id": "block_rsw8q4vwr",
+      "side": "left",
+      "html": "<p>Усложнение записи суммы по мере увеличения количества единиц.</p>",
+      "role": "step3",
+      "sources": [],
+      "title": "Усложнение записи как противоположность упрощению",
+      "collapsed": false,
+      "words": [],
+      "color": null,
+      "tabs": [
+        {
+          "id": "tab_xrb5tmp",
+          "title": "Черновик",
+          "content": "<p>Усложнение записи суммы по мере увеличения количества единиц.</p>",
+          "status": "draft",
+          "is_locked": false
+        }
+      ],
+      "active_tab_id": "tab_xrb5tmp"
+    },
+    {
+      "id": "block_pljx3zr15",
+      "side": "right",
+      "html": "<p>Если суммирование само по себе должно упростить подсчет, то, развиваясь, оно само усложняется. Упрощение и усложнение – это противоположности. Мы берем их вместе.</p>",
+      "role": "step4",
+      "sources": [],
+      "title": "Развитие противоположности",
+      "collapsed": false,
+      "words": [],
+      "color": null,
+      "tabs": [
+        {
+          "id": "tab_deqqpoh",
+          "title": "Черновик",
+          "content": "<p>Если суммирование само по себе должно упростить подсчет, то, развиваясь, оно само усложняется. Упрощение и усложнение – это противоположности. Мы берем их вместе.</p>",
+          "status": "draft",
+          "is_locked": false
+        }
+      ],
+      "active_tab_id": "tab_deqqpoh"
+    },
+    {
+      "id": "block_fcfh6p6ii",
+      "side": "center",
+      "html": "<p>Суммирование должно упрощать подсчет, но в самой природе суммирования заложена возможность неограниченного роста при записи. Это требует упрощения, так как задача упростить подсчет никуда не исчезла. Для этого требуется придумать другую математическую операцию упрощения. Такой операцией выступает умножение.</p>",
+      "role": "step5",
+      "sources": [],
+      "title": null,
+      "collapsed": false,
+      "words": [],
+      "color": null,
+      "tabs": [
+        {
+          "id": "tab_gy9jmqj",
+          "title": "Черновик",
+          "content": "<p>Суммирование должно упрощать подсчет, но в самой природе суммирования заложена возможность неограниченного роста при записи. Это требует упрощения, так как задача упростить подсчет никуда не исчезла. Для этого требуется придумать другую математическую операцию упрощения. Такой операцией выступает умножение.</p>",
+          "status": "draft",
+          "is_locked": false
+        }
+      ],
+      "active_tab_id": "tab_gy9jmqj"
+    },
+    {
+      "id": "block_vp27ahmcb",
+      "side": "left",
+      "html": "<p>Умножение, то есть, например, <span latex=\"5 \\times 5\" data-type=\"mathNode\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>5</mn><mo>×</mo><mn>5</mn></mrow><annotation encoding=\"application/x-tex\">5 \\times 5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.7278em; vertical-align: -0.0833em;\"></span><span class=\"mord\">5</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.6444em;\"></span><span class=\"mord\">5</span></span></span></span></span></p>",
+      "role": "anchor",
+      "sources": [],
+      "title": "Умножение",
+      "collapsed": false,
+      "words": [],
+      "color": null,
+      "tabs": [
+        {
+          "id": "tab_shlwei4",
+          "title": "Черновик",
+          "content": "<p>Умножение, то есть, например, <span latex=\"5 \\times 5\" data-type=\"mathNode\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>5</mn><mo>×</mo><mn>5</mn></mrow><annotation encoding=\"application/x-tex\">5 \\times 5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height: 0.7278em; vertical-align: -0.0833em;\"></span><span class=\"mord\">5</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right: 0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height: 0.6444em;\"></span><span class=\"mord\">5</span></span></span></span></span></p>",
+          "status": "draft",
+          "is_locked": false
+        }
+      ],
+      "active_tab_id": "tab_shlwei4"
+    }
+  ]
+}

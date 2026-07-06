@@ -112,7 +112,8 @@ async def word_lookup(q: str, word_service: WordService = Depends(get_word_servi
     active_langs = await word_service.get_active_languages()
     for w in results:
         w_data = {
-            "eng": w.eng, "ru": w.ru, "meaning": w.meaning, "count": w.count,
+            "word": w.word,
+            "eng": w.eng or w.word, "ru": w.ru, "meaning": w.meaning, "count": w.count,
             "show_stats": w.show_stats or {}, "knowledge_stats": w.knowledge_stats or {},
             "is_learned": w.is_learned, "has_any_knowledge": any((w.knowledge_stats or {}).values()),
             "last_shown": w.last_shown.isoformat() if w.last_shown else None,

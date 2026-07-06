@@ -41,6 +41,26 @@ export const NotificationService = {
 
     show(message, type = 'success', duration = 3500) {
         this.init();
+
+        // Prevent duplicate active toasts with the exact same message and type
+        const existingToasts = this.container.querySelectorAll('.premium-toast');
+        for (const existing of existingToasts) {
+            const msgEl = existing.querySelector('.toast-message');
+            if (msgEl && msgEl.textContent === message && existing.classList.contains(type)) {
+                // Flash existing toast slightly to indicate repeated action without stacking duplicates
+                existing.style.transform = 'scale(1.05)';
+                setTimeout(() => { existing.style.transform = ''; }, 150);
+                return;
+            }
+        }
+
+        // Limit maximum visible toasts on screen to 3
+        if (existingToasts.length >= 3) {
+            const oldest = existingToasts[0];
+            oldest.classList.remove('active');
+            setTimeout(() => oldest.remove(), 200);
+        }
+
         const toast = document.createElement('div');
         toast.className = `premium-toast ${type}`;
         

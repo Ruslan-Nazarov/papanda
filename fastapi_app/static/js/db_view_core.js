@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply local time to all .local-time elements
     applyLocalTimeGlobally();
 
-    console.log("[Papanda] DB View Core initialized.");
+    console.log("[papanda] DB View Core initialized.");
 });
 
 // --- Window Attachments for Legacy HTML Compatibility ---

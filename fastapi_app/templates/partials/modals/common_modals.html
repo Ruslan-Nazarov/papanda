@@ -20,26 +20,127 @@
 
 <!-- Widget Help Modal -->
 <div id="widgetHelpModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); z-index: 99999;">
-    <div class="modal-content" style="max-width: 500px; width: 90%;">
+    <div class="modal-content" style="max-width: 550px; width: 90%;">
         <div class="modal-header">
             <h2 id="widgetHelpModalTitle">💡 Особенности виджета</h2>
             <button class="modal-close" onclick="closeWidgetHelpModal()">&times;</button>
         </div>
         <div class="modal-body" style="padding: 24px; min-height: 100px; color: var(--color-text-muted);">
-            <div id="widgetHelpModalBody" style="line-height: 1.6;"></div>
+            <div id="widgetHelpModalBody" style="line-height: 1.6; font-size: 0.95rem;"></div>
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border, #eee); text-align: center;">
+                <button type="button" class="btn btn-primary" onclick="closeWidgetHelpModal(); showDashboardGuideModal();" style="width: 100%; padding: 12px 16px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-primary, #4f46e5); color: white; border: none; cursor: pointer; transition: opacity 0.2s;">
+                    <span id="widgetHelpGuideBtnText">🧭 Открыть полное руководство по дашборду</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Guide Modal -->
+<div id="dashboardGuideModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); z-index: 99999;">
+    <div class="modal-content" style="max-width: 800px; width: 90%; max-height: 85vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <h2 style="margin-top: 0;"><span class="modal-icon">🧭</span> <span id="dashboardGuideModalTitle">Руководство по дашборду</span></h2>
+            <button class="modal-close" onclick="closeDashboardGuideModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 24px; overflow-y: auto; flex: 1;">
+            <div id="dashboardGuideContent" class="guide-markdown-content">
+                <div style="color: #64748b; text-align: center; padding: 20px;">Загрузка руководства...</div>
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--color-border, #eee); text-align: right;">
+            <button class="btn btn-secondary" onclick="closeDashboardGuideModal()" style="font-family: inherit; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
         </div>
     </div>
 </div>
 
 <script>
+window.WIDGET_HELP_TEXTS = {
+    ru: {
+        stickers: `<p><strong>Стикеры</strong> играют связующую роль в дашборде — через них провязываются различные виджеты и происходит глубокое осознание задач.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Два вида</strong>: списки задач/пунктов или небольшие текстовые заметки.</li><li><strong>Доска стикеров</strong>: здесь крепятся все стикеры, добавленные через виджет.</li><li><strong>Глобальный доступ</strong>: управление <em>вообще всеми стикерами</em> приложения (включая созданные внутри календаря, задач или привычек).</li><li><strong>Управление</strong>: меняйте цвет, перетаскивайте зажатием курсора/пальца, редактируйте и удаляйте.</li></ul>`,
+        words: `<p><strong>Слова</strong> — самостоятельный модуль изучения иностранных языков прямо на дашборде.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Тройки слов</strong>: создают языковой контекст и тренируют «насмотренность» без зубрежки. Добавляйте свои ассоциации и смыслы!</li><li><strong>Тест на узнавание</strong>: проверяет зрительный образ слова и узнавание в тексте, а не механическую память.</li><li><strong>Тренажер фраз</strong>: изучение языка через предложения. Тапом по центру выставляйте слова в правильном порядке.</li><li><strong>Стикеры и Статистика</strong>: прикрепляйте заметки по грамматике и изучайте частые слова.</li></ul>`,
+        today: `<p><strong>Сегодня</strong> — оперативный календарь для контроля дел на ближайшее время.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Главный экран</strong>: отображает события на <em>сегодня</em> и чуть ниже — на <em>завтра</em>.</li><li><strong>Полный календарь</strong>: тапните на значок календаря в заголовке, чтобы открыть расширенный вид на любые даты.</li><li><strong>Управление делами</strong>: перетаскивайте дела, редактируйте, удаляйте, отмечайте выполненными или прикрепляйте стикеры.</li><li><strong>Деревья событий</strong>: в полном календаре доступна группировка событий по цветовой метке и глобальный поиск.</li></ul>`,
+        live_observation: `<p><strong>Обзор занятий</strong> служит одновременно для планирования и оценки реального распределения времени.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Древовидная структура</strong>: составляйте желаемое расписание или фиксируйте фактическую занятость в течение дня.</li><li><strong>Несколько деревьев</strong>: создавайте независимые деревья активности и быстро переключайтесь между ними.</li><li><strong>Параметры</strong>: привязывайте занятия к задачам из виджета <em>Задачи</em>, задавайте время и дни недели.</li><li><strong>Автофокус</strong>: при перезагрузке страницы дерево автоматически фокусируется на актуальном для текущего времени занятии.</li></ul>`,
+        tasks: `<p><strong>Задачи</strong> помогают держать фокус на главных целях и выстраивать иерархию шагов.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Главная задача</strong>: установите главную цель и резервную задачу (если с главной что-то пойдет не так).</li><li><strong>Счетчик дней</strong>: для Главной задачи автоматически ведется счетчик дней непрерывного фокуса.</li><li><strong>Декомпозиция</strong>: формируйте подзадачи со своими независимыми счетчиками.</li><li><strong>Интеграция</strong>: задачи тесно связаны с модулем <em>Обзора жизни</em> и поддерживают прикрепление стикеров.</li></ul>`,
+        notes: `<p><strong>Заметки</strong> — персональная база знаний для сбора идей на любые темы.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Категории и поиск</strong>: структурируйте заметки по темам, используйте быструю сортировку и глобальный поиск.</li><li><strong>Закрепление</strong>: самые важные или текущие заметки можно закрепить прямо на главном экране дашборда.</li><li><strong>Редактор</strong>: редактируйте в быстром режиме или в полноценном редакторе с форматированием.</li><li><strong>Стикеры</strong>: прикрепляйте стикеры к любой заметке (например, чек-лист или план статьи).</li></ul>`,
+        habits: `<p><strong>Привычки</strong> работают как счетчик непрерывных дней выполнения полезных рутин или регулярных событий.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Осознанность через стикеры</strong>: прикрепляйте к привычкам стикеры для фиксации наблюдений, сбоев или идей по улучшению.</li><li><strong>Быстрый контроль</strong>: отмечайте выполнение за сегодня в один клик прямо из виджета.</li><li><strong>Полный список</strong>: переходите к полному списку всех привычек со встроенным поиском.</li></ul>`,
+        chronology: `<p><strong>Хронология</strong> предназначена для фиксации событий, воспоминаний и важных моментов жизни.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Регулярная практика</strong>: записывайте свои воспоминания за прошлый день ежедневно (желательно утром).</li><li><strong>Календарь по умолчанию</strong>: при открытии виджета календарь установлен на <em>дату предыдущего дня</em> — идеально для утренней рефлексии!</li><li><strong>Лента и поиск</strong>: просматривайте всю ленту событий с удобным поиском и используйте расширенный редактор.</li></ul>`,
+        language_rules: `<p><strong>Языковые правила</strong> показывают случайные полезные правила и грамматические закономерности изучаемого языка.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Переключение языков (RU ⇄ EN)</strong>: мгновенно переключайте язык объяснения правила.</li><li><strong>Обновление</strong>: нажмите кнопку <strong>↻</strong>, чтобы загрузить новое правило.</li><li><strong>Контекст</strong>: помогает развивать языковую интуицию и повторять грамматику без отрыва от дашборда.</li></ul>`
+    },
+    en: {
+        stickers: `<p><strong>Stickers</strong> play a vital unifying role on the dashboard—they link different widgets together and promote deep mindfulness regarding your tasks and habits.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Two Types</strong>: action/task lists or concise text notes.</li><li><strong>Sticker Board</strong>: dedicated board where stickers created here are pinned.</li><li><strong>Global Management</strong>: access and manage <em>all stickers across the entire application</em> (including those from calendars, tasks, or habits).</li><li><strong>Control</strong>: change colors, drag smoothly by clicking and holding, edit and delete.</li></ul>`,
+        words: `<p><strong>Words</strong> is an independent language learning module integrated directly into your dashboard.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Word Triplets</strong>: build context and visual familiarity without rote memorization. Add your own personal associations!</li><li><strong>Recognition Test</strong>: checks visual recognition and memory of encountering words rather than mechanical translation.</li><li><strong>Phrase Trainer</strong>: learn through sentence structure. Tap the center to make words appear in grammatical order.</li><li><strong>Stickers & Statistics</strong>: attach grammar notes and explore frequent words.</li></ul>`,
+        today: `<p><strong>Today</strong> serves as your operational calendar for keeping track of your upcoming schedule.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Main View</strong>: displays events for <em>Today</em>, followed directly by events for <em>Tomorrow</em>.</li><li><strong>Full Calendar</strong>: tap the calendar icon in the header to open the expanded view for any date.</li><li><strong>Task Control</strong>: drag tasks, edit, delete, mark as completed, or attach stickers.</li><li><strong>Event Trees</strong>: group events by color tag and use global search inside the full calendar.</li></ul>`,
+        live_observation: `<p><strong>Activity Overview</strong> serves a dual purpose: planning your time and evaluating your actual daily time distribution.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Tree Structure</strong>: build a tree to design your ideal daily schedule or record actual time spent.</li><li><strong>Multiple Trees</strong>: create independent activity trees and switch between them effortlessly.</li><li><strong>Parameters</strong>: link activities to specific goals from the <em>Tasks</em> widget, set durations and weekdays.</li><li><strong>Auto-focus</strong>: on page reload, the tree automatically scrolls and focuses on the activity relevant to the current time of day.</li></ul>`,
+        tasks: `<p><strong>Tasks</strong> helps you maintain unwavering focus on your primary goals and build clear action hierarchies.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Main Task</strong>: set your primary goal along with a backup goal (in case your primary plan changes).</li><li><strong>Day Counter</strong>: an automatic streak counter runs for your Main Task to track how long you maintain focus.</li><li><strong>Decomposition</strong>: break down goals into smaller sub-tasks, each tracked with its own independent counter.</li><li><strong>Integration</strong>: tightly integrated with the <em>Life Overview</em> module and supports attached stickers.</li></ul>`,
+        notes: `<p><strong>Notes</strong> is your personal knowledge base for capturing ideas on any topic.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Categories & Search</strong>: structure thoughts by topic, use sorting and powerful global search.</li><li><strong>Dashboard Pinning</strong>: pin your most important or work-in-progress notes directly to the widget for instant access.</li><li><strong>Rich Editor</strong>: edit in quick mode or use the full rich text editor with formatting tools.</li><li><strong>Stickers</strong>: attach stickers to any note (e.g., for outlines or editing checklists).</li></ul>`,
+        habits: `<p><strong>Habits</strong> tracks continuous day streaks for your habits, beneficial routines, or recurring events.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Mindfulness via Stickers</strong>: attach stickers to record observations, track triggers, and brainstorm improvements.</li><li><strong>Quick Control</strong>: mark a habit as completed for today with a single click directly from the widget.</li><li><strong>Full List</strong>: jump to the complete habit list with built-in search functionality.</li></ul>`,
+        chronology: `<p><strong>Chronology</strong> is designed for recording events, memories, and important moments of your life.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Daily Practice</strong>: aim to write down your memories of the previous day every morning.</li><li><strong>Default Calendar Date</strong>: when opened, the calendar defaults to <em>yesterday's date</em>, making it ideal for morning reflection!</li><li><strong>Timeline & Search</strong>: view your entire event timeline with powerful search and use the rich text editor.</li></ul>`,
+        language_rules: `<p><strong>Language Rules</strong> displays random helpful grammar rules and language patterns for your studied language.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Language Switch (RU ⇄ EN)</strong>: instantly toggle the explanation language of the rule.</li><li><strong>Refresh</strong>: click the <strong>↻</strong> button to load a new random grammar rule.</li><li><strong>Context</strong>: helps build linguistic intuition and review grammar without leaving the dashboard.</li></ul>`
+    },
+    kz: {
+        stickers: `<p><strong>Стикерлер</strong> дашбордта маңызды байланыстырушы рөл атқарады — олар арқылы әртүрлі виджеттер байланысады және тапсырмаларды терең түсіну жүзеге асады.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Екі түрі</strong>: тапсырмалар/тармақтар тізімдері немесе шағын мәтіндік жазбалар.</li><li><strong>Стикерлер тақтасы</strong>: осы виджет арқылы қосылған стикерлер бекітіледі.</li><li><strong>Глобалды қолжетімділік</strong>: қолданбадағы <em>барлық стикерлерді</em> (күнтізбе, тапсырмалар, әдеттер ішіндегілерді де) басқару.</li><li><strong>Басқару</strong>: түсін өзгертіңіз, курсорды/саусақты басып тұрып жылжытыңыз, өңдеңіз және жойыңыз.</li></ul>`,
+        words: `<p><strong>Сөздер</strong> — тікелей дашбордқа кіріктірілген шет тілдерін үйренуге арналған дербес модуль.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Сөздер үштігі</strong>: жаттаусыз тілдік контекст пен «көзбасшылықты» дамытады. Жеке ассоциацияларыңызды қосыңыз!</li><li><strong>Тану тесті</strong>: механикалық жадыны емес, сөздің визуалды бейнесін тануды тексеру.</li><li><strong>Фразалар тренажері</strong>: сөйлемдер арқылы тіл үйрену. Ортасын басу арқылы сөздерді дұрыс ретпен шығарыңыз.</li><li><strong>Стикерлер мен Статистика</strong>: грамматикалық жазбаларды тіркеңіз және жиі кездесетін сөздерді зерттеңіз.</li></ul>`,
+        today: `<p><strong>Бүгін</strong> — алдағы уақыттағы істерді бақылауға арналған жедел күнтізбеңіз.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Негізгі экран</strong>: <em>бүгінгі</em> және сәл төменірек <em>ертеңгі</em> оқиғаларды көрсетеді.</li><li><strong>Толық күнтізбе</strong>: кез келген күндерді көру үшін тақырыптағы күнтізбе белгішесін басыңыз.</li><li><strong>Істерді басқару</strong>: істерді жылжытыңыз, өңдеңіз, жойыңыз, орындалған деп белгілеңіз немесе стикерлер тіркеңіз.</li><li><strong>Оқиғалар ағаштары</strong>: толық күнтізбеде түсті белгілер бойынша топтастыру және глобалды іздеу қолжетімді.</li></ul>`,
+        live_observation: `<p><strong>Сабақтарды шолу</strong> бір уақытта жоспарлауға да, уақытыңыздың нақты бөлінуін бағалауға да қызмет етеді.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Ағаш құрылымы</strong>: күнделікті сабақтардың кестесін жасаңыз немесе нақты немен айналысқаныңызды тіркеңіз.</li><li><strong>Бірнеше ағаш</strong>: тәуелсіз белсенділік ағаштарын жасаңыз және олардың арасында жылдам ауысыңыз.</li><li><strong>Параметрлер</strong>: сабақтарды <em>Тапсырмалар</em> виджетіндегі мақсаттармен байланыстырыңыз, уақыт пен күндерді белгілеңіз.</li><li><strong>Автофокус</strong>: бетті қайта жүктегенде ағаш автоматты түрде ағымдағы уақытқа сәйкес сабаққа фокусталады.</li></ul>`,
+        tasks: `<p><strong>Тапсырмалар</strong> негізгі мақсаттарға назар аударуға және қадамдар иерархиясын құруға көмектеседі.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Негізгі тапсырма</strong>: басты мақсатты және резервтік мақсатты (жоспар өзгерген жағдайда) орнатыңыз.</li><li><strong>Күндер есептегіші</strong>: Негізгі тапсырма үшін автоматты түрде үзіліссіз фокус күндері есептеледі.</li><li><strong>Декомпозиция</strong>: өздерінің тәуелсіз есептегіштері бар кішірек тапсырмалар құрыңыз.</li><li><strong>Интеграция</strong>: <em>Өмірді шолу</em> модулімен тығыз байланысты және стикерлер тіркеуді қолдайды.</li></ul>`,
+        notes: `<p><strong>Жазбалар</strong> — кез келген тақырыптағы идеяларды жинауға арналған жеке білім базаңыз.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Санаттар мен іздеу</strong>: жазбаларды тақырыптар бойынша құрылымдаңыз, сұрыптауды және глобалды іздеуді пайдаланыңыз.</li><li><strong>Бекіту</strong>: ең маңызды немесе ағымдағы жазбаларды тікелей дашбордтың басты экранына бекітуге болады.</li><li><strong>Редактор</strong>: жылдам режимде немесе пішімдеу құралдары бар толыққанды редакторда өңдеңіз.</li><li><strong>Стикерлер</strong>: кез келген жазбаға стикерлер тіркеңіз (мысалы, тексеру тізімі немесе мақала жоспары).</li></ul>`,
+        habits: `<p><strong>Әдеттер</strong> пайдалы сабақтардың немесе тұрақты оқиғалардың үздіксіз орындалу күндерінің есептегіші ретінде жұмыс істейді.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Стикерлер арқылы саналылық</strong>: бақылауларды, сәтсіздіктерді немесе жақсарту идеяларын жазу үшін стикерлер тіркеңіз.</li><li><strong>Жылдам бақылау</strong>: виджеттен бір рет басу арқылы бүгінгі орындалуды белгілеңіз.</li><li><strong>Толық тізім</strong>: кіріктірілген іздеуі бар барлық әдеттердің толық тізіміне өтіңіз.</li></ul>`,
+        chronology: `<p><strong>Жылнама</strong> өміріңіздегі оқиғаларды, естеліктерді және маңызды сәттерді тіркеуге арналған.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Тұрақты тәжірибе</strong>: күн сайын (мүмкіндігінше таңертең) өткен күннің естеліктерін жазып отырыңыз.</li><li><strong>Әдепкі күнтізбе</strong>: виджетті ашқанда күнтізбе <em>кешегі күнге</em> орнатылады — таңғы рефлексия үшін өте қолайлы!</li><li><strong>Таспа және іздеу</strong>: ыңғайлы іздеуі бар барлық оқиғалар таспасын қараңыз және кеңейтілген редакторды пайдаланыңыз.</li></ul>`,
+        language_rules: `<p><strong>Тіл ережелері</strong> үйреніп жатқан тіліңіздің кездейсоқ пайдалы ережелері мен грамматикалық заңдылықтарын көрсетеді.</p><ul style="margin-left: 20px; margin-top: 10px;"><li><strong>Тілді ауыстыру (RU ⇄ EN)</strong>: ережені түсіндіру тілін лезде ауыстырыңыз.</li><li><strong>Жаңарту</strong>: жаңа ережені жүктеу үшін <strong>↻</strong> батырмасын басыңыз.</li><li><strong>Контекст</strong>: дашбордтан ажырамай тілдік интуицияны дамытуға және грамматиканы қайталауға көмектеседі.</li></ul>`
+    }
+};
+
+const CANONICAL_WIDGET_MAP = {
+    "стикеры": "stickers", "stickers": "stickers", "стикерлер": "stickers",
+    "слова": "words", "words": "words", "сөздер": "words",
+    "сегодня": "today", "today": "today", "бүгін": "today",
+    "обзор занятий": "live_observation", "live observation": "live_observation", "бақылау күнделігі": "live_observation", "activity overview": "live_observation", "live_observation": "live_observation",
+    "задачи": "tasks", "tasks": "tasks", "тапсырмалар": "tasks",
+    "заметки": "notes", "notes": "notes", "жазбалар": "notes",
+    "привычки": "habits", "habits": "habits", "әдеттер": "habits",
+    "хронология": "chronology", "chronology": "chronology", "жылнама": "chronology",
+    "языковые правила": "language_rules", "language rules": "language_rules", "тіл ережелері": "language_rules", "language_rules": "language_rules"
+};
+
 function openWidgetHelpModal(widgetName, content = '') {
     const modal = document.getElementById('widgetHelpModal');
     const titleEl = document.getElementById('widgetHelpModalTitle');
     const bodyEl = document.getElementById('widgetHelpModalBody');
+    const guideBtnTextEl = document.getElementById('widgetHelpGuideBtnText');
+    
+    let locale = (window.currentLocale || document.documentElement.lang || 'ru').toLowerCase().slice(0, 2);
+    if (locale === 'kk') locale = 'kz';
+    if (!['ru', 'en', 'kz'].includes(locale)) locale = 'ru';
+
+    const texts = window.WIDGET_HELP_TEXTS[locale] || window.WIDGET_HELP_TEXTS['ru'];
+    
+    let cleanKey = widgetName ? widgetName.replace(/^dashboard\./, '').trim().toLowerCase() : '';
+    let canonicalKey = CANONICAL_WIDGET_MAP[cleanKey] || cleanKey;
+    
+    let helpContent = content;
+    if (!helpContent) {
+        if (texts[canonicalKey]) {
+            helpContent = texts[canonicalKey];
+        } else if (texts[cleanKey]) {
+            helpContent = texts[cleanKey];
+        } else if (window.WIDGET_HELP_TEXTS['ru'][canonicalKey]) {
+            helpContent = window.WIDGET_HELP_TEXTS['ru'][canonicalKey];
+        }
+    }
     
     if (titleEl) titleEl.innerText = widgetName ? `💡 ${widgetName}` : '💡 Особенности виджета';
-    if (bodyEl) bodyEl.innerHTML = content || '<p style="font-style: italic; opacity: 0.7;">Информация об особенностях этого виджета появится в ближайшее время...</p>';
+    if (bodyEl) bodyEl.innerHTML = helpContent || '<p style="font-style: italic; opacity: 0.7;">Информация об особенностях этого виджета появится в ближайшее время...</p>';
     
+    const btnTexts = {
+        ru: "🧭 Открыть полное руководство по дашборду",
+        en: "🧭 Open Complete Dashboard Guide",
+        kz: "🧭 Дашбордтың толық нұсқаулығын ашу"
+    };
+    if (guideBtnTextEl) {
+        guideBtnTextEl.innerText = btnTexts[locale] || btnTexts.ru;
+    }
+
     if (window.ModalManager) {
         window.ModalManager.open('widgetHelpModal');
     } else if (modal) {
@@ -55,5 +156,119 @@ function closeWidgetHelpModal() {
         modal.style.display = 'none';
     }
 }
+
+async function showDashboardGuideModal() {
+    const modal = document.getElementById('dashboardGuideModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    if (window.ModalManager && typeof window.ModalManager.open === 'function') {
+        window.ModalManager.open('dashboardGuideModal');
+    }
+
+    let locale = (window.currentLocale || document.documentElement.lang || 'ru').toLowerCase().slice(0, 2);
+    if (locale === 'kk') locale = 'kz';
+    if (!['ru', 'en', 'kz'].includes(locale)) locale = 'ru';
+
+    const titles = {
+        ru: "Руководство по дашборду",
+        en: "Dashboard Guide",
+        kz: "Дашборд нұсқаулығы"
+    };
+    const titleEl = document.getElementById('dashboardGuideModalTitle');
+    if (titleEl) titleEl.innerText = titles[locale] || titles.ru;
+
+    const contentEl = document.getElementById('dashboardGuideContent');
+    if (!contentEl) return;
+
+    if (contentEl.dataset.loadedLocale === locale && contentEl.dataset.loaded === 'true') return;
+
+    try {
+        const loadingTexts = {
+            ru: "Загрузка руководства...",
+            en: "Loading guide...",
+            kz: "Нұсқаулық жүктелуде..."
+        };
+        contentEl.innerHTML = `<div style="color: #64748b; text-align: center; padding: 20px;">${loadingTexts[locale] || loadingTexts.ru}</div>`;
+        const res = await fetch('/api/dashboard/guide');
+        if (!res.ok) throw new Error("Failed to load dashboard guide");
+        const data = await res.json();
+        contentEl.innerHTML = `<div class="guide-markdown-content">${data.html}</div>`;
+        contentEl.dataset.loaded = 'true';
+        contentEl.dataset.loadedLocale = locale;
+    } catch (err) {
+        console.error(err);
+        const errTexts = {
+            ru: "Не удалось загрузить руководство.",
+            en: "Failed to load dashboard guide.",
+            kz: "Нұсқаулықты жүктеу мүмкін болмады."
+        };
+        contentEl.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 20px;">${errTexts[locale] || errTexts.ru}</div>`;
+    }
+}
+
+function closeDashboardGuideModal() {
+    const modal = document.getElementById('dashboardGuideModal');
+    if (modal) {
+        modal.style.display = 'none';
+        if (window.ModalManager && typeof window.ModalManager.close === 'function') {
+            window.ModalManager.close('dashboardGuideModal');
+        }
+    }
+}
+</script>
+
+<!-- Example Choice Modal -->
+<div id="exampleChoiceModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); z-index: 99999;">
+    <div class="modal-content" style="max-width: 550px; width: 90%; padding: 0; overflow: hidden; border-radius: 16px; background: var(--color-bg, #ffffff);">
+        <div class="modal-header" style="padding: 20px 24px; border-bottom: 1px solid var(--color-border, #e2e8f0); display: flex; align-items: center; justify-content: space-between;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--color-text-dark, #0f172a); display: flex; align-items: center; gap: 8px;">
+                <span>💡</span>
+                <span>{{ _('tutorial.choose_example') | default('Выберите пример для изучения') }}</span>
+            </h2>
+            <button class="modal-close" onclick="closeExampleChoiceModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted, #64748b);">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <!-- 1. Теорема Пифагора -->
+            <button type="button" onclick="closeExampleChoiceModal(); if(window.app) window.app.loadExampleNoteByType('pythagoras');" class="tutorial-item-btn" style="text-align: left; padding: 16px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; background: var(--color-bg-subtle, #f8fafc); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 14px; width: 100%;">
+                <span style="font-size: 1.8rem; line-height: 1;">🔺</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a); margin-bottom: 4px;">{{ _('tutorial.pythagoras_title') | default('Теорема Пифагора') }}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); line-height: 1.4;">{{ _('tutorial.pythagoras_desc') | default('Геометрическое доказательство: почему сумма квадратов катетов равна квадрату гипотенузы') }}</div>
+                </div>
+            </button>
+            
+            <!-- 2. Суммирование -->
+            <button type="button" onclick="closeExampleChoiceModal(); if(window.app) window.app.loadExampleNoteByType('summation');" class="tutorial-item-btn" style="text-align: left; padding: 16px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; background: var(--color-bg-subtle, #f8fafc); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 14px; width: 100%;">
+                <span style="font-size: 1.8rem; line-height: 1;">➕</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a); margin-bottom: 4px;">{{ _('tutorial.summation_title') | default('Суммирование') }}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); line-height: 1.4;">{{ _('tutorial.summation_desc') | default('Математический закон: как от простого сложения единиц (1+1) перейти к бесконечным рядам') }}</div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openExampleChoiceModal() {
+    const m = document.getElementById('exampleChoiceModal');
+    if (m) {
+        m.style.display = 'flex';
+        if (window.ModalManager && typeof window.ModalManager.open === 'function') {
+            window.ModalManager.open('exampleChoiceModal');
+        }
+    }
+}
+function closeExampleChoiceModal() {
+    const m = document.getElementById('exampleChoiceModal');
+    if (m) {
+        m.style.display = 'none';
+        if (window.ModalManager && typeof window.ModalManager.close === 'function') {
+            window.ModalManager.close('exampleChoiceModal');
+        }
+    }
+}
+window.openExampleChoiceModal = openExampleChoiceModal;
+window.closeExampleChoiceModal = closeExampleChoiceModal;
 </script>
 

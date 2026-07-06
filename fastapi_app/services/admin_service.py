@@ -17,7 +17,7 @@ class AdminService:
             'Event': models.Event, 'Habit': models.Habit, 'Task': models.Task, 
             'HabitsDone': models.HabitsDone, 'Chronology': models.Chronology, 
             'Notes': models.Notes, 'Wink': models.Wink, 'WordStats': models.WordStats,
-            'Stickers': models.StickyNote
+            'Stickers': models.StickyNote, 'Counter': models.Counter
         }
 
     def get_model(self, name: str) -> Optional[Type[Any]]:
@@ -82,6 +82,8 @@ class AdminService:
             records, extra_ctx = await self.builders.get_notes_view(Model, category, sort, search)
         elif model_name == 'Wink':
             records, extra_ctx = await self.builders.get_wink_view(Model, search)
+        elif model_name == 'Counter':
+            records, extra_ctx = await self.builders.get_counter_view(Model, search)
         elif model_name == 'Stickers':
             records, extra_ctx = await self.builders.get_stickers_view(Model, category, sort, search, page, page_size)
         else:

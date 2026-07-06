@@ -1,7 +1,7 @@
 {
   "name": "papanda-smart-notes",
   "version": "1.0.0",
-  "description": "Smart Notes component for Papanda",
+  "description": "Smart Notes component for papanda",
   "main": "index.js",
   "type": "module",
   "scripts": {

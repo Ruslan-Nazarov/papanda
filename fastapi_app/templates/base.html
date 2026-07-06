@@ -20,8 +20,11 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
 
+    <!-- Driver.js for interactive onboarding tours -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css">
+
     <style>
-        /* Flatpickr Papanda overrides */
+        /* Flatpickr papanda overrides */
         .flatpickr-calendar {
             border-radius: 16px !important;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
@@ -156,6 +159,9 @@
         }
     </script>
     {% endif %}
+    {% include 'partials/modals/_assistant_modal.html' ignore missing %}
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    {% include 'partials/_onboarding_tours.html' ignore missing %}
     {% include 'partials/analytics.html' ignore missing %}
 </body>
 

@@ -161,6 +161,8 @@ async def get_dashboard_tasks_widget(
     return templates.TemplateResponse(request, "partials/tasks_widget.html", {
         "request": request,
         "tasks": dash_data['tasks'],
+        "task_sets": dash_data.get('task_sets', []),
+        "active_task_set": dash_data.get('active_task_set', None),
         "now_utc": datetime.now(timezone.utc).replace(tzinfo=None),
         "one_thing": one_thing,
         "one_thing_date": one_thing_date,

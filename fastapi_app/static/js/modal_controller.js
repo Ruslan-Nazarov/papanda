@@ -195,7 +195,7 @@ export function customChoice({ title = 'Select Option', messageHTML = '', option
     });
 }
 
-export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = '', cancelLabel = '', watermark = '', width = '' }) {
+export function customPrompt({ title = 'Input Required', message = '', value = '', placeholder = '', okLabel = '', cancelLabel = '', watermark = '', width = '', multiline = false }) {
     return new Promise((resolve) => {
         try {
             const modal = document.getElementById('customConfirmModal');
@@ -228,8 +228,15 @@ export function customPrompt({ title = 'Input Required', message = '', value = '
                 container.appendChild(msg);
             }
 
-            const input = document.createElement('input');
-            input.type = 'text';
+            const input = multiline ? document.createElement('textarea') : document.createElement('input');
+            if (!multiline) {
+                input.type = 'text';
+            } else {
+                input.rows = 5;
+                input.style.resize = 'vertical';
+                input.style.minHeight = '100px';
+                input.style.fontFamily = 'inherit';
+            }
             input.value = value;
             input.placeholder = placeholder;
             input.className = 'form-input-premium';
@@ -689,3 +696,132 @@ export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', 
     });
 }
 
+export function customSelectBlockPrompt({ title = 'Выберите целевой блок', blocks = [] }) {
+    return new Promise((resolve) => {
+        try {
+            const modal = document.getElementById('customConfirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const messageEl = document.getElementById('confirmModalMessage');
+            const iconWrapper = document.getElementById('confirmModalIconWrapper');
+            const footerEl = document.getElementById('confirmModalFooter');
+
+            if (!modal || !titleEl || !messageEl || !footerEl) {
+                resolve(null);
+                return;
+            }
+
+            if (iconWrapper) iconWrapper.style.display = 'none';
+
+            titleEl.innerText = title;
+            const container = document.createElement('div');
+            container.style.cssText = 'display: flex; flex-direction: column; gap: 12px; width: 100%;';
+
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = '🔍 Поиск по названию блока...';
+            searchInput.className = 'form-control';
+            searchInput.style.cssText = 'width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;';
+            searchInput.onfocus = () => searchInput.style.borderColor = '#3b82f6';
+            searchInput.onblur = () => searchInput.style.borderColor = '#cbd5e1';
+
+            const listEl = document.createElement('div');
+            listEl.style.cssText = 'display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; padding-right: 4px;';
+
+            let selectedBlock = null;
+
+            const renderList = (filterText = '') => {
+                listEl.innerHTML = '';
+                const lower = filterText.toLowerCase().trim();
+                let hasResults = false;
+
+                blocks.forEach(b => {
+                    if (lower && !b.title.toLowerCase().includes(lower)) return;
+                    hasResults = true;
+
+                    const item = document.createElement('div');
+                    item.style.cssText = `
+                        padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
+                        cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 10px;
+                        background: ${selectedBlock === b ? '#eff6ff' : 'white'};
+                        border-color: ${selectedBlock === b ? '#3b82f6' : '#e2e8f0'};
+                        box-shadow: ${selectedBlock === b ? '0 2px 8px rgba(59, 130, 246, 0.15)' : 'none'};
+                    `;
+
+                    item.onmouseover = () => { if (selectedBlock !== b) item.style.background = '#f8fafc'; };
+                    item.onmouseout = () => { if (selectedBlock !== b) item.style.background = 'white'; };
+
+                    item.innerHTML = `
+                        <span style="font-size: 1.1rem;">${b.icon || '▪️'}</span>
+                        <span style="font-weight: 600; color: #1e293b; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">${b.title}</span>
+                    `;
+
+                    item.onclick = () => {
+                        selectedBlock = b;
+                        renderList(searchInput.value);
+                    };
+
+                    item.ondblclick = () => {
+                        selectedBlock = b;
+                        submit();
+                    };
+
+                    listEl.appendChild(item);
+                });
+
+                if (!hasResults) {
+                    listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">Блоки не найдены</div>';
+                }
+            };
+
+            searchInput.oninput = () => renderList(searchInput.value);
+            renderList();
+
+            container.appendChild(searchInput);
+            container.appendChild(listEl);
+
+            messageEl.innerHTML = '';
+            messageEl.appendChild(container);
+
+            footerEl.innerHTML = '';
+            const btnCancel = document.createElement('button');
+            btnCancel.className = 'btn btn-secondary';
+            btnCancel.innerText = window._ ? window._('modal.cancel') || 'Отмена' : 'Отмена';
+            btnCancel.onclick = (e) => {
+                e.stopPropagation();
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 200);
+                resolve(null);
+            };
+
+            const btnOk = document.createElement('button');
+            btnOk.className = 'btn btn-primary';
+            btnOk.innerText = window._ ? window._('modal.save_entry') || 'Выбрать' : 'Выбрать';
+
+            const submit = () => {
+                if (!selectedBlock) {
+                    if (window.app && window.app.toast) window.app.toast('Выберите блок из списка', 'warning');
+                    return;
+                }
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 200);
+                resolve(selectedBlock);
+            };
+
+            btnOk.onclick = (e) => {
+                e.stopPropagation();
+                submit();
+            };
+
+            footerEl.appendChild(btnCancel);
+            footerEl.appendChild(btnOk);
+
+            modal.style.display = 'flex';
+            modal.offsetHeight;
+            modal.classList.add('active');
+            setTimeout(() => searchInput.focus(), 100);
+        } catch (err) {
+            console.error(err);
+            resolve(null);
+        }
+    });
+}

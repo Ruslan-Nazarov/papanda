@@ -123,6 +123,8 @@ class DialecticsEngine {
 
         bind('btnDeleteDialectics', this.deleteGlobal);
         bind('btnSaveDialectics', this.saveGlobal);
+        bind('btnExportMarkdown', this.exportMarkdown);
+        bind('btnExportPDF', this.exportPDF);
         bind('btnMathFormula', () => this.editor.showMathMenu()); // Need to add showMathMenu to EditorManager or keep here
 
         if (this.dom.editor.classList.contains('embedded')) {
@@ -191,11 +193,6 @@ class DialecticsEngine {
 
 
         bind('btnNewDialectics', this.createNewNote);
-        bind('btnHistoryDialectics', () => {
-            const menu = document.getElementById('dialecticsMenuContent');
-            if (menu) menu.style.display = 'none';
-            this.showHistoryModal();
-        });
         bind('btnTrashDialectics', () => {
             const menu = document.getElementById('dialecticsMenuContent');
             if (menu) menu.style.display = 'none';
@@ -231,6 +228,8 @@ class DialecticsEngine {
                     if (newCatName && newCatName.trim()) {
                         await this.createNewCategory(newCatName.trim());
                     }
+                } else if (this.state.currentNoteId) {
+                    await this.saveGlobal(false, "toast.dialectics_updated");
                 }
             });
         }
@@ -571,6 +570,16 @@ window.toggleOnlyTitlesMode = function(onlyTitles) {
         canvas.classList.add('mode-only-titles');
     } else {
         canvas.classList.remove('mode-only-titles');
+    }
+};
+
+window.toggleCompressedMode = function(compressed) {
+    const canvas = document.getElementById('dialecticsCanvas');
+    if (!canvas) return;
+    if (compressed) {
+        canvas.classList.add('mode-compressed-left');
+    } else {
+        canvas.classList.remove('mode-compressed-left');
     }
 };
 

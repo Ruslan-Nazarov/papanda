@@ -19,7 +19,14 @@
             {% for habits in habits_all %}
             <li class="premium-list-item" data-id="{{ habits.id }}">
                 <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                    <span class="premium-item-name">{{ habits.title }}</span>
+                    <span class="premium-item-name" style="cursor: pointer;"
+                          data-id="{{ habits.id }}"
+                          data-title="{{ habits.title|e }}"
+                          data-start="{{ habits.start_date.isoformat() if habits.start_date else '' }}"
+                          data-end="{{ habits.end_date.isoformat() if habits.end_date else '' }}"
+                          data-read="{{ 'true' if habits.read else 'false' }}"
+                          onclick="openEditHabitModal(this.dataset.id, this.dataset.title, this.dataset.start, this.dataset.end, this.dataset.read === 'true')"
+                          title="{{ _('dashboard.edit') }}">{{ habits.title }}</span>
                     <div class="premium-badge muted">
                         {{ habits_count(habits.start_date) }} {{ _('header.days')|capitalize }}
                     </div>
@@ -33,6 +40,14 @@
                             {% endif %}
                         </div>
                     </button>
+                    <button type="button" class="btn-row-action"
+                            data-id="{{ habits.id }}"
+                            data-title="{{ habits.title|e }}"
+                            data-start="{{ habits.start_date.isoformat() if habits.start_date else '' }}"
+                            data-end="{{ habits.end_date.isoformat() if habits.end_date else '' }}"
+                            data-read="{{ 'true' if habits.read else 'false' }}"
+                            onclick="openEditHabitModal(this.dataset.id, this.dataset.title, this.dataset.start, this.dataset.end, this.dataset.read === 'true')"
+                            title="{{ _('dashboard.edit') }}">✎</button>
                     <form method="post" action="/mark_as_done/{{ habits.id }}" style="margin: 0;" onsubmit="event.preventDefault(); markHabitDone(this, '{{ habits.id }}')">
                         <button type="submit" class="btn-row-action done" title="{{ _('dashboard.mark_as_done') }}">✓</button>
                     </form>

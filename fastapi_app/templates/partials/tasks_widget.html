@@ -1,15 +1,28 @@
 <div class="premium-card tasks-widget">
     <div class="widget-header" style="margin-bottom: 8px;">
-        <div class="widget-title">
-            <span class="widget-icon">🎯</span>
-            <span>{{ _('dashboard.tasks') }}</span>
+        <div class="widget-title" style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; overflow: hidden;">
+            <span class="widget-icon" style="flex-shrink: 0;">🎯</span>
+            <span style="flex-shrink: 0;">{{ _('dashboard.tasks') }}</span>
+            {% if task_sets %}
+            <div style="display: inline-flex; align-items: center; gap: 4px; overflow: hidden;">
+                <select id="task-set-selector" class="form-select form-select-sm" style="width: auto; max-width: 130px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding: 2px 24px 2px 8px; font-size: 0.85em; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); cursor: pointer;" onchange="switchTaskSet(this.value)">
+                    {% for s in task_sets %}
+                    <option value="{{ s.id }}" {% if active_task_set and s.id == active_task_set.id %}selected{% endif %} title="{{ s.name }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-secondary btn-icon" style="padding: 2px 6px; font-size: 0.8em; border-radius: 4px; flex-shrink: 0;" onclick="openCreateTaskSetModal()" title="Создать новый набор">📁+</button>
+            </div>
+            {% else %}
+            <button type="button" class="btn btn-secondary btn-icon" style="padding: 2px 6px; font-size: 0.8em; border-radius: 4px; flex-shrink: 0;" onclick="openCreateTaskSetModal()" title="Создать новый набор">📁+</button>
+            {% endif %}
             {% if show_widget_tips %}
-            <span class="help-trigger" onclick="openWidgetHelpModal('{{ _('dashboard.tasks') }}')">?</span>
+            <span class="help-trigger" style="flex-shrink: 0;" onclick="openWidgetHelpModal('{{ _('dashboard.tasks') }}')">?</span>
             {% endif %}
         </div>
-        <div class="widget-actions">
+        <div class="widget-actions" style="flex-shrink: 0;">
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="openDbViewModal('Task')" title="{{ _('dashboard.full_view') }}">☰</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="openTaskAddModal()" title="Добавить задачу">+</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
@@ -38,7 +51,12 @@
         <ul class="premium-list">
             {% for task in tasks %}
             <li class="premium-list-item" data-id="{{ task.id }}">
-                <span class="premium-item-name" title="{{ task.name|e }}">{{ task.name }}</span>
+                <span class="premium-item-name" style="cursor: pointer;"
+                      data-id="{{ task.id }}"
+                      data-name="{{ task.name|e }}"
+                      data-done="{{ 'true' if task.done else 'false' }}"
+                      onclick="openEditTaskModal(this.dataset.id, this.dataset.name, this.dataset.done === 'true')"
+                      title="{{ _('dashboard.edit') }}">{{ task.name }}</span>
                 <span class="task-meta">
                     {% if task.created_at %}
                         {% set diff = now_utc - task.created_at %}
@@ -57,6 +75,12 @@
                             {% endif %}
                         </div>
                     </button>
+                    <button type="button" class="btn-row-action"
+                            data-id="{{ task.id }}"
+                            data-name="{{ task.name|e }}"
+                            data-done="{{ 'true' if task.done else 'false' }}"
+                            onclick="openEditTaskModal(this.dataset.id, this.dataset.name, this.dataset.done === 'true')"
+                            title="{{ _('dashboard.edit') }}">✎</button>
                     <form action="/mark_done/{{ task.id }}" method="post" style="margin: 0" onsubmit="event.preventDefault(); markTaskDone(this, '{{ task.id }}')">
                         <button type="submit" class="btn-row-action done" title="{{ _('dashboard.complete_task') }}">✓</button>
                     </form>

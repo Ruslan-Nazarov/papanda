@@ -5,6 +5,16 @@
                 <span style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-faint); letter-spacing: 1px;">{{ _('dashboard.total_tasks') }}</span>
                 <span style="font-size: 1.1rem; color: #3B82F6; line-height: 1;"><b>{{ total_in_db }}</b></span>
             </div>
+            {% if task_sets %}
+            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--glass-border); padding-left: 15px;">
+                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main);">Набор:</span>
+                <select class="form-select form-select-sm" style="width: auto; max-width: 150px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding: 2px 24px 2px 8px; font-size: 0.85em; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); cursor: pointer;" onchange="switchTaskSetFromModal(this.value)">
+                    {% for s in task_sets %}
+                    <option value="{{ s.id }}" {% if active_task_set and s.id == active_task_set.id %}selected{% endif %} title="{{ s.name }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
         </div>
     </div>
 

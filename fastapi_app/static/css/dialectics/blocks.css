@@ -79,7 +79,7 @@
     width: 46%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .dialectics-block::before {
@@ -90,6 +90,7 @@
     width: 4px;
     height: 100%;
     border-radius: 12px 0 0 12px;
+    z-index: 20;
 }
 
 .dialectics-block:hover {
@@ -156,191 +157,6 @@
     line-height: 1.6;
 }
 
-.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker, .btn-block-sources {
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    color: #94a3b8;
-    height: 24px;
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    cursor: pointer;
-    font-size: 0.78rem;
-    font-weight: 500;
-    transition: all 0.15s ease;
-    padding: 0 8px;
-    white-space: nowrap;
-}
-
-.btn-block-edit:hover {
-    color: #6366f1;
-    border-color: #c7d2fe;
-    background: #eef2ff;
-}
-
-.btn-block-del:hover {
-    color: #ef4444;
-    border-color: #fecaca;
-    background: #fef2f2;
-}
-
-.btn-block-ai:hover {
-    color: #8b5cf6;
-    border-color: #ddd6fe;
-    background: #f5f3ff;
-}
-
-.btn-block-sources:hover {
-    color: #2563eb;
-    border-color: #bfdbfe;
-    background: #eff6ff;
-}
-
-.btn-block-sticker:hover {
-    color: #f59e0b;
-    border-color: #fde68a;
-    background: #fef3c7;
-}
-
-/* --- Hint/Prompt Blocks --- */
-.dialectics-hint-block {
-    position: relative;
-    z-index: 2;
-    padding: 48px 24px 28px 24px;
-    background: #f1f5f9;
-    border: none;
-    border-radius: 12px;
-    color: #64748b;
-    font-size: 1.1rem;
-    font-weight: 500;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 46%;
-    align-self: flex-start;
-    margin: 4px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 80px;
-}
-.dialectics-hint-block:hover {
-    background: #e2e8f0;
-    color: #475569;
-    transform: translateY(-2px);
-}
-.dialectics-hint-block.block-right {
-    align-self: flex-end;
-}
-.dialectics-hint-block.block-center {
-    align-self: center;
-    width: 70%;
-}
-
-/* --- Mode toggling styles --- */
-
-/* State 2 & 3: Dialectics Mode OFF */
-.dialectics-canvas.mode-no-dialectics .dialectics-hint-block {
-    display: none !important;
-}
-.dialectics-canvas.mode-no-dialectics .dialectics-step-title {
-    display: none !important;
-}
-.dialectics-canvas.mode-no-dialectics .btn-block-ai {
-    display: none !important;
-}
-
-/* State 3: Single Column Mode (Two-Column Mode OFF) */
-.dialectics-canvas.mode-single-column .canvas-divider {
-    display: none !important;
-}
-.dialectics-canvas.mode-single-column .dialectics-block {
-    align-self: center !important;
-    width: 80% !important;
-    max-width: 850px !important;
-    word-wrap: break-word;
-    width: 46%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.dialectics-block::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    border-radius: 12px 0 0 12px;
-}
-
-.dialectics-block:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
-}
-
-.block-left {
-    align-self: flex-start;
-    background: var(--block-custom-bg, linear-gradient(135deg, #ffffff 0%, #f8faff 100%));
-}
-
-.block-left::before {
-    background: var(--block-custom-accent, linear-gradient(180deg, #6366f1, #8b5cf6));
-}
-
-.block-right {
-    align-self: flex-end;
-    background: var(--block-custom-bg, linear-gradient(135deg, #ffffff 0%, #fff8f5 100%));
-}
-
-.block-right::before {
-    background: var(--block-custom-accent, linear-gradient(180deg, #f97316, #fb923c));
-}
-
-.block-center {
-    align-self: center;
-    background: var(--block-custom-bg, linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%));
-    width: 70%;
-    text-align: left;
-}
-
-.block-center::before {
-    background: var(--block-custom-accent, linear-gradient(180deg, #22c55e, #4ade80));
-}
-
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-/* --- Block Actions --- */
-.dialectics-block .block-actions,
-.dialectics-block-actions {
-    display: flex;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    gap: 6px;
-    padding: 6px 10px 0 14px;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.2s ease, max-height 0.2s ease, padding 0.2s ease;
-    justify-content: flex-start;
-}
-
-.dialectics-block:hover .dialectics-block-actions,
-.dialectics-block:hover .block-actions {
-    opacity: 1;
-    max-height: 40px;
-    padding: 8px 10px 4px 14px;
-    overflow: visible;
-}
-
-.dialectics-block .dialectics-content-inner {
-    padding: 12px 14px 12px 14px;
-    line-height: 1.6;
-}
-
 .dialectics-block .dialectics-content-inner p {
     margin-top: 0;
     margin-bottom: 0.9em;
@@ -362,7 +178,7 @@
 }
 
 
-.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker, .btn-block-sources, .btn-block-words, .btn-block-color {
+.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker, .btn-block-sources, .btn-block-words, .btn-block-color, .btn-block-pin {
     background: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -377,6 +193,12 @@
     transition: all 0.15s ease;
     padding: 0 8px;
     white-space: nowrap;
+}
+
+.btn-block-pin:hover {
+    color: #4338ca;
+    border-color: #c7d2fe;
+    background: #e0e7ff;
 }
 
 .btn-block-edit:hover {
@@ -488,6 +310,132 @@
     height: 28px !important;
 }
 
+/* State 4: Compressed Left Column Mode */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .canvas-divider {
+    left: 80px !important;
+}
+
+/* Компактный вид левых блоков в неактивном (несвернутом по ховеру) состоянии */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover),
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover) {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    cursor: pointer;
+    z-index: 10;
+    position: relative;
+    align-self: flex-start !important;
+}
+
+/* Скрываем всё внутреннее содержимое блока (заголовки, текст, бейджи, полоски) когда он сжат */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover) > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover) > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover)::before,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover)::before {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Вместо обрезанного текста показываем аккуратную иконку-кнопку через ::after */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover)::after {
+    content: "📝";
+    position: absolute;
+    top: 0; left: 0; width: 44px; height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    color: #3b82f6;
+    transition: all 0.2s ease;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover):hover::after {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    transform: scale(1.05);
+}
+
+/* Иконка для подсказок ИИ */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover)::after {
+    content: "💡";
+    position: absolute;
+    top: 0; left: 0; width: 44px; height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: #fdf4ff;
+    border: 1px solid #e879f9;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    color: #c084fc;
+    transition: all 0.2s ease;
+}
+
+/* При наведении (Hover) — блок раскрывается в полную карточку */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:hover,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):hover {
+    width: 45% !important;
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: 800px !important;
+    overflow: visible !important;
+    z-index: 100 !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22), 0 0 0 2px rgba(99, 102, 241, 0.4) !important;
+    white-space: normal;
+    align-self: flex-start !important;
+}
+
+/* При наведении убираем иконку ::after и возвращаем видимость внутренним элементам */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:hover::after,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):hover::after {
+    content: none !important;
+    display: none !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:hover > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):hover > * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* Правая колонка и секции */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-right,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block.block-right {
+    width: calc(100% - 100px) !important;
+    max-width: none !important;
+    align-self: flex-end !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .insert-wrap--left {
+    width: 44px !important;
+    align-self: flex-start !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .insert-wrap--left .btn-insert-block {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50% !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .insert-wrap--right {
+    width: calc(100% - 100px) !important;
+    align-self: flex-end !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-block.block-section {
+    width: calc(100% - 100px) !important;
+    align-self: flex-end !important;
+}
+
 /* --- Block Collapse & Fold Styles --- */
 .dialectics-block.is-collapsed .dialectics-content-inner,
 .dialectics-block.is-collapsed .dialectics-stickers-container {
@@ -583,3 +531,175 @@
     box-shadow: none !important;
     transform: none !important;
 }
+
+/* --- Sticky / Floating Left Block --- */
+.dialectics-block.is-sticky,
+.block-left.is-sticky,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky:not(:hover) {
+    position: sticky !important;
+    top: 24px !important;
+    z-index: 50 !important;
+    width: 46% !important;
+    height: auto !important;
+    min-height: 50px !important;
+    max-height: none !important;
+    padding: 0 !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%) !important;
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.22), 0 0 0 2px #6366f1 !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.dialectics-block-header {
+    position: sticky !important;
+    top: 0;
+    z-index: 15;
+    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dialectics-block.is-sticky:hover,
+.block-left.is-sticky:hover {
+    transform: translateY(-2px);
+    z-index: 55 !important;
+}
+
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky::before {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky::after {
+    display: none !important;
+}
+
+/* --- Block Tabs (Draft / Clean Copies & Split View) --- */
+.dialectics-block-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px 6px 14px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.dialectics-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.15s ease-in-out;
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    user-select: none;
+}
+
+.dialectics-tab-btn:hover:not(.active):not(.split-active) {
+    background: rgba(255, 255, 255, 0.6);
+    color: #334155;
+}
+
+.dialectics-tab-btn.active {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border-bottom: 2px solid #3b82f6 !important;
+}
+
+.dialectics-tab-btn.split-active {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #0284c7 !important;
+}
+
+.tab-lock-toggle {
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0 2px;
+    transition: transform 0.15s;
+    display: inline-block;
+}
+
+.tab-lock-toggle:hover {
+    transform: scale(1.2);
+}
+
+.btn-block-add-tab {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-block-add-tab:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: scale(1.05);
+}
+
+.btn-block-split-view {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-block-split-view:hover {
+    background: #f0fdf4;
+    border-color: #10b981;
+    color: #059669;
+}
+
+/* --- Split View Columns --- */
+.dialectics-split-container {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
+}
+
+.dialectics-split-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.dialectics-split-col:first-child {
+    border-right: 1px solid #e2e8f0;
+    padding-right: 10px;
+}
+
+.dialectics-split-col:last-child {
+    padding-left: 2px;
+}
+

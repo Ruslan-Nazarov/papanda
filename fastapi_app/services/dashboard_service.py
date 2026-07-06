@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, update
 from datetime import datetime, timedelta, date, timezone
 from typing import Optional, List, Dict, Any, Union
 
@@ -75,6 +75,8 @@ class DashboardService:
         try:
             data["habits_all"] = await self.habits.get_active_habits()
             data["tasks"] = await self.tasks.get_active_tasks()
+            data["task_sets"] = await self.tasks.get_all_sets()
+            data["active_task_set"] = await self.tasks.ensure_active_set()
         except Exception as e:
             logger.error(f"Error fetching dashboard items: {e}")
 
@@ -83,14 +85,34 @@ class DashboardService:
             dashboard_items_res = await self.db.execute(select(models.Dashboard))
             dashboard_map = {item.key: item for item in dashboard_items_res.scalars().all()}
 
-            for key, attr in [("count_until", "days_remaining"), ("count_after", "days_passed")]:
-                if key in dashboard_map:
-                    item = dashboard_map[key]
-                    prefix = "title_until" if key == "count_until" else "title_after"
+            counters_res = await self.db.execute(select(models.Counter).where(models.Counter.is_active == True))
+            active_counters = counters_res.scalars().all()
+            counter_map = {c.type: c for c in active_counters}
+
+            # Автомиграция из старой таблицы Dashboard, если в Counter пусто
+            if not counter_map:
+                for old_key, c_type in [("count_until", "until"), ("count_after", "after")]:
+                    if old_key in dashboard_map:
+                        old_item = dashboard_map[old_key]
+                        new_counter = models.Counter(
+                            title=old_item.title or "",
+                            date=old_item.date or today_obj.date(),
+                            type=c_type,
+                            is_active=True
+                        )
+                        self.db.add(new_counter)
+                        counter_map[c_type] = new_counter
+                if counter_map:
+                    await self.db.commit()
+
+            for c_type, attr in [("until", "days_remaining"), ("after", "days_passed")]:
+                if c_type in counter_map:
+                    item = counter_map[c_type]
+                    prefix = "title_until" if c_type == "until" else "title_after"
                     data[prefix] = item.title
                     dt = normalize_date(item.date)
                     if dt:
-                        data[attr] = abs((dt - today_obj).days) if key == "count_until" else abs((today_obj - dt).days)
+                        data[attr] = abs((dt - today_obj).days) if c_type == "until" else abs((today_obj - dt).days)
         except Exception as e:
             logger.error(f"Error fetching dashboard widgets: {e}")
 
@@ -203,6 +225,8 @@ class DashboardService:
             "date_important": dash_data.get('date_important', []),
             "habits_all": dash_data['habits_all'],
             "tasks": dash_data['tasks'],
+            "task_sets": dash_data.get('task_sets', []),
+            "active_task_set": dash_data.get('active_task_set', None),
             "title_until": dash_data.get('title_until', '...'),
             "days_remaining": dash_data.get('days_remaining', 0),
             "title_after": dash_data.get('title_after', '...'),
@@ -242,7 +266,19 @@ class DashboardService:
                 return await self.habits.add_habit(text, dt.date())
             elif category == "wink":
                 return await self.winks.add_wink(text, dt)
-            elif category in ("count until", "count after", "one_thing", "replacement"):
+            elif category in ("count until", "count after"):
+                c_type = "until" if category == "count until" else "after"
+                await self.db.execute(
+                    update(models.Counter).where(models.Counter.type == c_type).values(is_active=False)
+                )
+                target_date = dt.date() if isinstance(dt, datetime) else dt
+                obj = models.Counter(title=text, date=target_date, type=c_type, is_active=True)
+                self.db.add(obj)
+                await self.db.commit()
+                await self.db.refresh(obj)
+                await self._update_dashboard_widget(category, text, dt)
+                return obj.id
+            elif category in ("one_thing", "replacement"):
                 return await self._update_dashboard_widget(category, text, dt)
             return None
         except Exception as e:

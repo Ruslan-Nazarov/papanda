@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_, and_
+from sqlalchemy import select, func, or_, and_, update
 from typing import List, Dict, Any
 
 from ...database import get_db
@@ -81,6 +81,59 @@ async def edit_sticker_inline(
     success = await as_service.update_item("StickyNote", data.id, data.model_dump())
     if success: return schemas.SuccessResponse()
     return JSONResponse(status_code=400, content={"status": "error"})
+
+@router.post("/edit_counter_inline", response_model=schemas.SuccessResponse)
+async def edit_counter_inline(
+    data: schemas.GenericUpdateSchema, 
+    as_service: AdminService = Depends(get_admin_service)
+):
+    success = await as_service.update_item("Counter", data.id, data.model_dump())
+    if success: return schemas.SuccessResponse()
+    return JSONResponse(status_code=400, content={"status": "error"})
+
+@router.post("/set_active_counter/{counter_id}", response_model=schemas.SuccessResponse)
+async def set_active_counter(
+    counter_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    res = await db.execute(select(models.Counter).where(models.Counter.id == counter_id))
+    counter = res.scalar_one_or_none()
+    if not counter:
+        return JSONResponse(status_code=404, content={"status": "error", "message": "Counter not found"})
+    await db.execute(
+        update(models.Counter).where(models.Counter.type == counter.type).values(is_active=False)
+    )
+    counter.is_active = True
+    await db.commit()
+    return schemas.SuccessResponse()
+
+@router.post("/restart_counter/{counter_id}", response_model=schemas.SuccessResponse)
+async def restart_counter(
+    counter_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    res = await db.execute(select(models.Counter).where(models.Counter.id == counter_id))
+    counter = res.scalar_one_or_none()
+    if not counter:
+        return JSONResponse(status_code=404, content={"status": "error", "message": "Counter not found"})
+    try:
+        body = await request.json()
+        date_str = body.get("date")
+    except Exception:
+        date_str = None
+
+    from datetime import datetime, date
+    if date_str:
+        try:
+            counter.date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            counter.date = date.today()
+    else:
+        counter.date = date.today()
+
+    await db.commit()
+    return schemas.SuccessResponse()
 
 @router.get("/api/events/tree/{color}", response_model=schemas.SuccessResponse)
 async def get_event_tree(color: str, db: AsyncSession = Depends(get_db)):

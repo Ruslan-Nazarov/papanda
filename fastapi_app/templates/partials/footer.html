@@ -3,10 +3,8 @@
         <div class="footer-nav main-nav" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
             <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
                 <a href="/settings" class="footer-btn">⚙️ {{ _('dashboard.settings') }}</a>
-                <button type="button" class="footer-btn" onclick="openTutorialModal()">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="1.3em" height="1.3em" style="color: #ff0000; flex-shrink: 0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                    {{ _('dashboard.tutorial') }}
-                </button>
+                <button type="button" class="footer-btn" onclick="openTutorialModal()">🎓 {{ _('dashboard.tutorial') }}</button>
+                <button type="button" class="footer-btn" onclick="if(window.startPapandaTour) window.startPapandaTour(true);" style="color: #a855f7; font-weight: 700;">✨ {{ _('dashboard.interactive_tour') | default('Интерактивный гид') }}</button>
                 <button type="button" class="footer-btn" onclick="openAboutModal()">📖 {{ _('dashboard.about') }}</button>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
@@ -16,7 +14,7 @@
             </div>
         </div>
         <div class="footer-version">
-            papanda version 0.6.12 (est. 21.11.2023; last update 03.07.2026)<br>
+            papanda version 0.6.13 (est. 21.11.2023; last update 06.07.2026)<br>
             <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" style="color: inherit; text-decoration: none; opacity: 0.8; font-size: 0.9em;">CC BY-NC 4.0 License</a>
         </div>
     </div>
@@ -64,6 +62,86 @@
 {% include 'partials/about_modal.html' %}
 {% include 'partials/_widget_dock.html' %}
 {% include 'partials/_formula_parser_widget.html' %}
+
+<!-- Scroll to Top Button -->
+<button id="scrollTopBtn" class="scroll-top-btn" onclick="scrollToTop()" title="{{ _('common.scroll_top') | default('Наверх') }}" aria-label="Прокрутить наверх">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 15l-6-6-6 6"/>
+    </svg>
+</button>
+
+<style>
+.scroll-top-btn {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.45), 0 8px 10px -6px rgba(99, 102, 241, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1500;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.9);
+    pointer-events: none;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    outline: none;
+}
+
+.scroll-top-btn.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.scroll-top-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 14px 30px -5px rgba(99, 102, 241, 0.6), 0 10px 12px -5px rgba(99, 102, 241, 0.4);
+}
+
+.scroll-top-btn:active {
+    transform: translateY(0) scale(0.95);
+    box-shadow: 0 5px 15px -3px rgba(99, 102, 241, 0.4);
+}
+</style>
+
+<script>
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+    document.body.scrollTo({ top: 0, behavior: 'smooth' });
+    const modalContainers = document.querySelectorAll('.parser-modal-container, .modal-body, .dialectics-canvas');
+    modalContainers.forEach(el => {
+        if (el && el.scrollTop > 0) {
+            el.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+}
+
+window.addEventListener('scroll', function(e) {
+    const btn = document.getElementById('scrollTopBtn');
+    if (!btn) return;
+    let scrolled = (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0) > 300;
+    if (!scrolled && e && e.target && e.target.scrollTop > 300) {
+        scrolled = true;
+    }
+    if (scrolled) {
+        btn.classList.add('is-visible');
+    } else {
+        btn.classList.remove('is-visible');
+    }
+}, { passive: true, capture: true });
+</script>
 
 <style>
 #changelogModalBody h1 { margin-bottom: 1rem; font-size: 1.5rem; }
@@ -152,43 +230,92 @@ function closeTutorialModal() {
 
 <!-- Tutorial & Help Modal -->
 <div id="tutorialModal" class="modal">
-    <div class="modal-content" style="max-width: 520px; width: 92%;">
+    <div class="modal-content" style="max-width: 560px; width: 92%;">
         <div class="modal-header">
             <h2>🎓 {{ _('dashboard.tutorial') }}</h2>
             <button class="modal-close" onclick="closeTutorialModal()">&times;</button>
         </div>
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px; padding: 24px;">
-            <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.showGuideModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--color-bg-white, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; color: inherit;">
-                <span style="font-size: 1.8rem;">📖</span>
-                <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.instructions') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.instructions_desc') | default('Пошаговая инструкция по методу диалектического конспекта') }}</div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 28px; padding: 24px; max-height: 80vh; overflow-y: auto;">
+            
+            <!-- 1. Конспекты -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary, #6366f1); text-transform: uppercase; letter-spacing: 0.08em; padding-left: 4px;">📝 {{ _('tutorial.section_notes') | default('Конспекты') }}</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.showGuideModal();" class="tutorial-item-btn">
+                        <span style="font-size: 1.5rem;">📖</span>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.method_title') | default('Метод') }}</div>
+                            <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.method_desc') | default('Пошаговая инструкция по методу диалектического конспекта') }}</div>
+                        </div>
+                    </button>
+                    <button type="button" onclick="closeTutorialModal(); if(window.openExampleChoiceModal) window.openExampleChoiceModal(); else if(window.app) window.app.loadExample();" class="tutorial-item-btn">
+                        <span style="font-size: 1.5rem;">💡</span>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.example_title') | default('Пример') }}</div>
+                            <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.example_desc') | default('Загрузить демонстрационный готовый разбор проблемы') }}</div>
+                        </div>
+                    </button>
+                    <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.showReferenceModal();" class="tutorial-item-btn">
+                        <span style="font-size: 1.5rem;">📚</span>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.all_features_title') | default('Руководство по всем функциям') }}</div>
+                            <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.all_features_desc') | default('Справочник по интерфейсу и функциям приложения') }}</div>
+                        </div>
+                    </button>
                 </div>
-            </button>
+            </div>
 
-            <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.showReferenceModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--color-bg-white, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; color: inherit;">
-                <span style="font-size: 1.8rem;">📚</span>
-                <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.reference') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.reference_desc') | default('Справочник по интерфейсу и функциям приложения') }}</div>
+            <!-- 2. Дашборд -->
+            <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--color-border, #e2e8f0); padding-top: 24px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary, #6366f1); text-transform: uppercase; letter-spacing: 0.08em; padding-left: 4px;">🏠 {{ _('tutorial.section_dashboard') | default('Дашборд') }}</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button type="button" onclick="closeTutorialModal(); if(typeof showDashboardGuideModal === 'function') showDashboardGuideModal();" class="tutorial-item-btn">
+                        <span style="font-size: 1.5rem;">🧭</span>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.dashboard_guide_title') | default('Руководство по дашборду') }}</div>
+                            <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.dashboard_guide_desc') | default('Подробное руководство по виджетам и управлению дашбордом') }}</div>
+                        </div>
+                    </button>
                 </div>
-            </button>
+            </div>
 
-            <button type="button" onclick="closeTutorialModal(); if(window.app) window.app.loadExample();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--color-bg-white, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; color: inherit;">
-                <span style="font-size: 1.8rem;">💡</span>
-                <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('dialectics.example') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.example_desc') | default('Загрузить демонстрационный готовый разбор проблемы') }}</div>
+            <!-- 3. Видеоуроки -->
+            <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--color-border, #e2e8f0); padding-top: 24px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary, #6366f1); text-transform: uppercase; letter-spacing: 0.08em; padding-left: 4px;">📺 {{ _('tutorial.section_video') | default('Видеоуроки') }}</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="https://www.youtube.com/playlist?list=PLcw81HMAarVIV8u5MSVgEhk8i5iS3VXwj" target="_blank" onclick="closeTutorialModal();" class="tutorial-item-btn" style="text-decoration: none;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="1.8rem" height="1.8rem" style="color: #ff0000; flex-shrink: 0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.youtube_title') | default('YouTube-плейлист') }}</div>
+                            <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.youtube_desc') | default('Смотреть подробные видеоуроки по работе с системой') }}</div>
+                        </div>
+                    </a>
                 </div>
-            </button>
+            </div>
 
-            <a href="https://www.youtube.com/playlist?list=PLcw81HMAarVIV8u5MSVgEhk8i5iS3VXwj" target="_blank" onclick="closeTutorialModal();" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: rgba(255,0,0,0.04); border: 1px solid rgba(255,0,0,0.2); border-radius: 12px; text-decoration: none; transition: all 0.2s; color: inherit;">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="2rem" height="2rem" style="color: #ff0000; flex-shrink: 0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-text-dark, #0f172a);">{{ _('tutorial.youtube_title') | default('YouTube-плейлист') }}</div>
-                    <div style="font-size: 0.85rem; color: var(--color-text-muted, #64748b); margin-top: 2px;">{{ _('tutorial.youtube_desc') | default('Смотреть подробные видеоуроки по работе с системой') }}</div>
-                </div>
-            </a>
         </div>
+        <style>
+        .tutorial-item-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: var(--color-bg-white, #ffffff);
+            border: 1px solid var(--color-border, #e2e8f0);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: inherit;
+            width: 100%;
+        }
+        .tutorial-item-btn:hover {
+            border-color: var(--color-primary, #6366f1);
+            background: var(--color-bg-subtle, #f8fafc);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        </style>
     </div>
 </div>

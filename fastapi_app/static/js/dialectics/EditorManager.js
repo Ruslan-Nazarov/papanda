@@ -4,10 +4,10 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
-import { ResizableImage, MathNode, QuestionMark, QuoteBlock } from './editor_setup.js';
+import { ResizableImage, MathNode, QuestionMark, QuoteBlock, AlternativesBlock, HiddenPhraseMark, BlockLinkMark } from './editor_setup.js';
 import { GraphTool } from './tools/graph.js';
 import { ShapeTool } from './tools/shapes.js';
-import { customPrompt } from '../modal_controller.js';
+import { customPrompt, customSelectBlockPrompt } from '../modal_controller.js';
 
 export class EditorManager {
     constructor(engine) {
@@ -44,7 +44,7 @@ export class EditorManager {
             this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
-                extensions: [StarterKit.configure({ blockquote: false }), Underline, QuestionMark, ResizableImage.configure({ allowBase64: true }), MathNode, QuoteBlock],
+                extensions: [StarterKit.configure({ blockquote: false }), Underline, QuestionMark, HiddenPhraseMark, BlockLinkMark, ResizableImage.configure({ allowBase64: true }), MathNode, QuoteBlock, AlternativesBlock],
                 content: '<p></p>',
                 autofocus: 'end',
                 onFocus: () => {
@@ -98,6 +98,7 @@ export class EditorManager {
                             if (this.tiptap.isActive('questionMark')) {
                                 this.tiptap.chain().focus().unsetMark('questionMark').run();
                             } else {
+                                const { from, to } = this.tiptap.state.selection;
                                 const qText = await customPrompt({
                                     title: 'Вопрос к выделенному тексту',
                                     message: 'В чём заключается вопрос или неясность?',
@@ -106,13 +107,73 @@ export class EditorManager {
                                     cancelLabel: 'Отмена'
                                 });
                                 if (qText !== null && qText.trim() !== '') {
-                                    this.tiptap.chain().focus().setMark('questionMark', { title: qText.trim() }).run();
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('questionMark', { title: qText.trim() }).run();
                                 } else if (qText !== null) {
-                                    this.tiptap.chain().focus().setMark('questionMark', { title: 'Есть вопрос, непонятно' }).run();
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('questionMark', { title: 'Есть вопрос, непонятно' }).run();
+                                }
+                            }
+                        }
+                        else if (format === 'hiddenPhrase') {
+                            if (this.tiptap.isActive('hiddenPhrase')) {
+                                this.tiptap.chain().focus().unsetMark('hiddenPhrase').run();
+                            } else {
+                                const { from, to } = this.tiptap.state.selection;
+                                const noteText = await customPrompt({
+                                    title: window._ ? window._('dialectics.add_hidden_phrase', '👁 Добавить скрытую фразу') : '👁 Добавить скрытую фразу',
+                                    message: window._ ? window._('dialectics.hidden_phrase_prompt', 'Введите текст пояснения или сноски, который будет разворачиваться по клику:') : 'Введите текст пояснения или сноски, который будет разворачиваться по клику:',
+                                    placeholder: 'Например: наука о всеобщих законах развития...',
+                                    okLabel: window._ ? window._('ok', 'Сохранить') : 'Сохранить',
+                                    cancelLabel: window._ ? window._('cancel', 'Отмена') : 'Отмена'
+                                });
+                                if (noteText !== null && noteText.trim() !== '') {
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('hiddenPhrase', { note: noteText.trim(), expanded: 'false' }).run();
+                                }
+                            }
+                        }
+                        else if (format === 'blockLink') {
+                            if (this.tiptap.isActive('blockLink')) {
+                                this.tiptap.chain().focus().unsetMark('blockLink').run();
+                            } else {
+                                const { from, to } = this.tiptap.state.selection;
+                                if (from === to) {
+                                    if (window.showToast) window.showToast('Сначала выделите текст для ссылки', 'warning');
+                                    return;
+                                }
+
+                                const blocks = [];
+                                const currentId = this.engine && this.engine.state && this.engine.state.editingBlock ? (this.engine.state.editingBlock.dataset.blockId || this.engine.state.editingBlock.dataset.id) : null;
+                                if (this.engine && this.engine.dom && this.engine.dom.canvas) {
+                                    const allEls = this.engine.dom.canvas.querySelectorAll('.dialectics-block');
+                                    allEls.forEach((b, idx) => {
+                                        const id = b.dataset.blockId || b.dataset.id;
+                                        const isSection = b.classList.contains('block-section') || b.dataset.isSection === 'true';
+                                        let title = b.dataset.title;
+                                        if (!title) {
+                                            const headerSpan = b.querySelector('.dialectics-block-header span:first-child');
+                                            title = headerSpan ? headerSpan.innerText : (isSection ? 'Раздел' : `Блок ${idx + 1}`);
+                                        }
+                                        if (id && id !== currentId) {
+                                            blocks.push({ id, title: title.trim(), icon: isSection ? '📑' : '▪️' });
+                                        }
+                                    });
+                                }
+
+                                if (blocks.length === 0) {
+                                    if (window.showToast) window.showToast('Нет других блоков для создания ссылки', 'warning');
+                                    return;
+                                }
+
+                                const selected = await customSelectBlockPrompt({
+                                    title: '🔗 Выберите блок для ссылки',
+                                    blocks: blocks
+                                });
+                                if (selected) {
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('blockLink', { targetId: selected.id, targetTitle: selected.title }).run();
                                 }
                             }
                         }
                         else if (format === 'quote') chain.toggleQuoteBlock().run();
+                        else if (format === 'alternatives') chain.insertAlternativesBlock().run();
                         else if (format === 'clear') chain.unsetAllMarks().clearNodes().run();
 
                         this.updateFormattingToolbarStates();
@@ -140,7 +201,10 @@ export class EditorManager {
             toolbar.querySelectorAll('.format-btn').forEach(btn => {
                 const format = btn.dataset.format;
                 const isActive = format === 'question' ? this.tiptap.isActive('questionMark') : 
+                                 format === 'hiddenPhrase' ? this.tiptap.isActive('hiddenPhrase') :
+                                 format === 'blockLink' ? this.tiptap.isActive('blockLink') :
                                  format === 'quote' ? this.tiptap.isActive('quoteBlock') :
+                                 format === 'alternatives' ? this.tiptap.isActive('alternativesBlock') :
                                  this.tiptap.isActive(format);
                 btn.classList.toggle('active', isActive);
             });
@@ -261,6 +325,37 @@ export class EditorManager {
         menu.appendChild(btnVoice);
         menu.appendChild(btnText);
         menu.appendChild(btnImage);
+
+        const divider = document.createElement('div');
+        divider.style.cssText = 'height: 1px; background: #e2e8f0; margin: 4px 0;';
+        menu.appendChild(divider);
+
+        const btnQuote = document.createElement('button');
+        btnQuote.innerHTML = window._ ? window._('dialectics.insert_quote', '💬 Вставить цитату') : '💬 Вставить цитату';
+        btnQuote.style.cssText = btnStyle;
+        btnQuote.onmouseover = () => btnQuote.style.background = '#f1f5f9';
+        btnQuote.onmouseout = () => btnQuote.style.background = 'transparent';
+        btnQuote.onclick = () => {
+            menu.remove();
+            if (this.tiptap) {
+                this.tiptap.chain().focus().toggleQuoteBlock().run();
+            }
+        };
+        menu.appendChild(btnQuote);
+
+        const btnAlt = document.createElement('button');
+        btnAlt.innerHTML = window._ ? window._('dialectics.insert_alternatives', '🔀 Вставить альтернативы') : '🔀 Вставить альтернативы';
+        btnAlt.style.cssText = btnStyle;
+        btnAlt.onmouseover = () => btnAlt.style.background = '#f1f5f9';
+        btnAlt.onmouseout = () => btnAlt.style.background = 'transparent';
+        btnAlt.onclick = () => {
+            menu.remove();
+            if (this.tiptap) {
+                this.tiptap.chain().focus().insertAlternativesBlock().run();
+            }
+        };
+        menu.appendChild(btnAlt);
+
         document.body.appendChild(menu);
 
         setTimeout(() => {

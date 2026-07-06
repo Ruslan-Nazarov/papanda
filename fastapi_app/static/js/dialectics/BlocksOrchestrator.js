@@ -33,6 +33,18 @@ class BlocksOrchestratorClass {
         this.open(html);
     }
 
+    openEditAltCard(altCardEl, blockEl) {
+        this.state.editingBlock = blockEl;
+        this.state.editingAltCard = altCardEl;
+        const html = altCardEl.querySelector('.dialectics-content-inner')?.innerHTML || "";
+        const titleInput = document.getElementById('editorBlockTitleInput');
+        if (titleInput) {
+            const titleSpan = altCardEl.querySelector('.alt-title');
+            titleInput.value = titleSpan ? titleSpan.innerText : "";
+        }
+        this.open(html);
+    }
+
     close() {
         if (this.dom.editor) {
             this.dom.editor.style.display = 'none';
@@ -40,6 +52,7 @@ class BlocksOrchestratorClass {
         }
         this.editor.setContent('');
         this.state.editingBlock = null;
+        this.state.editingAltCard = null;
         this.state.pendingSide = null;
         this.state.pendingRole = null;
         this.state.pendingBlockId = null;
@@ -296,6 +309,7 @@ class BlocksOrchestratorClass {
         if (window.BlockManager) {
             window.BlockManager.setCallbacks({
                 onEdit: (block) => this.openEdit(block),
+                onEditAltCard: (altCardEl, blockEl) => this.openEditAltCard(altCardEl, blockEl),
                 onDelete: async () => { await this.saveGlobal(false, "toast.dialectics_updated"); const blocks = BlockManager.getBlocks(this.dom.canvas); BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks()); },
                 onHintClick: (hint) => this.openHintEditor(hint),
                 onHintAI: (hint) => (hint && hint.id === 'step3' ? this.runAI(this.dom.canvas) : this.runHintAI(hint)),
@@ -369,6 +383,7 @@ class BlocksOrchestratorClass {
                 this.state.editingBlock = b; 
                 this.openEdit(b); 
             },
+            onEditAltCard: (altCardEl, blockEl) => { this.openEditAltCard(altCardEl, blockEl); },
             onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
             onDelete: async () => { await this.saveGlobal(false, "toast.dialectics_updated"); const blocks = BlockManager.getBlocks(this.dom.canvas); BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks()); },
             onAI: (b) => { this.runAI(b); },
@@ -723,9 +738,11 @@ class BlocksOrchestratorClass {
             }
             
             const item = document.createElement('div');
+            item.setAttribute('draggable', 'true');
+            item.dataset.index = idx;
             item.style.cssText = `
                 display: flex; align-items: center; gap: 8px; padding: 8px 12px; 
-                border-radius: 8px; cursor: pointer; transition: background 0.15s;
+                border-radius: 8px; cursor: grab; transition: background 0.15s;
                 font-size: ${isSection ? '0.9rem' : '0.8rem'};
                 font-weight: ${isSection ? '700' : '500'};
                 color: ${isSection ? '#ea580c' : '#334155'};
@@ -736,9 +753,10 @@ class BlocksOrchestratorClass {
             item.onmouseout = () => item.style.background = isSection ? '#fff7ed' : 'transparent';
             
             const icon = isSection ? '📑' : (b.classList.contains('block-left') ? '▫️' : '▪️');
-            item.innerHTML = `<span>${icon}</span><span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>`;
+            item.innerHTML = `<span style="opacity: 0.3; cursor: grab; font-size: 0.8rem;" title="Перетащите для изменения порядка">⋮⋮</span><span>${icon}</span><span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>`;
             
             item.onclick = () => {
+                if (this._wasDragging) { this._wasDragging = false; return; }
                 document.getElementById('tableOfContentsMenu').style.display = 'none';
                 b.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 b.style.transition = 'box-shadow 0.5s ease';
@@ -746,6 +764,106 @@ class BlocksOrchestratorClass {
                 b.style.boxShadow = '0 0 0 4px #ea580c';
                 setTimeout(() => { b.style.boxShadow = origBoxShadow; }, 1500);
             };
+
+            item.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                this._wasDragging = true;
+                this._draggedTocIndex = idx;
+                e.dataTransfer.effectAllowed = 'move';
+                item.style.opacity = '0.5';
+            });
+
+            item.addEventListener('dragend', (e) => {
+                e.stopPropagation();
+                item.style.opacity = '1';
+                setTimeout(() => { this._wasDragging = false; }, 100);
+                listEl.querySelectorAll('div').forEach(el => {
+                    el.style.borderTop = '';
+                    el.style.borderBottom = '';
+                });
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+                
+                listEl.querySelectorAll('div').forEach(el => {
+                    if (el !== item) {
+                        el.style.borderTop = '';
+                        el.style.borderBottom = '';
+                    }
+                });
+
+                const bounding = item.getBoundingClientRect();
+                const offset = e.clientY - bounding.top;
+                const isAfter = offset > bounding.height / 2;
+                if (isAfter) {
+                    item.style.borderBottom = '2px solid #ea580c';
+                    item.style.borderTop = '';
+                } else {
+                    item.style.borderTop = '2px solid #ea580c';
+                    item.style.borderBottom = '';
+                }
+            });
+
+            item.addEventListener('dragleave', (e) => {
+                e.stopPropagation();
+                item.style.borderTop = '';
+                item.style.borderBottom = '';
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                item.style.borderTop = '';
+                item.style.borderBottom = '';
+                setTimeout(() => { this._wasDragging = false; }, 100);
+                
+                const fromIdx = this._draggedTocIndex;
+                const toIdx = idx;
+                if (fromIdx === undefined || fromIdx === null || fromIdx === toIdx) return;
+                
+                const bounding = item.getBoundingClientRect();
+                const offset = e.clientY - bounding.top;
+                const isAfter = offset > bounding.height / 2;
+                
+                const allBlocks = BlockManager.getBlocks(this.dom.canvas);
+                if (!allBlocks || !allBlocks[fromIdx] || !allBlocks[toIdx]) return;
+
+                const isSectionDrag = allBlocks[fromIdx].isSection;
+                let count = 1;
+                if (isSectionDrag) {
+                    for (let i = fromIdx + 1; i < allBlocks.length; i++) {
+                        if (allBlocks[i].isSection) break;
+                        count++;
+                    }
+                }
+
+                let insertIdx = toIdx;
+                if (isAfter) {
+                    if (isSectionDrag && allBlocks[toIdx].isSection) {
+                        let j = toIdx + 1;
+                        while (j < allBlocks.length && !allBlocks[j].isSection) {
+                            j++;
+                        }
+                        insertIdx = j;
+                    } else {
+                        insertIdx = toIdx + 1;
+                    }
+                }
+
+                const chunk = allBlocks.splice(fromIdx, count);
+                if (insertIdx > fromIdx) {
+                    insertIdx -= count;
+                }
+                
+                allBlocks.splice(insertIdx, 0, ...chunk);
+                
+                BlockManager.render(this.dom.canvas, allBlocks, this._blockCallbacks());
+                this.saveGlobal(false, "toast.dialectics_updated");
+                this.updateTableOfContents();
+            });
             
             listEl.appendChild(item);
         });

@@ -125,22 +125,39 @@ function selectSearchResult(w) {
 }
 
 async function deleteSearchWord() {
-    if (!searchSelected || !searchSelected.eng) return;
+    const wordKey = (searchSelected && (searchSelected.word || searchSelected.eng)) ? (searchSelected.word || searchSelected.eng) : null;
+    if (!wordKey) return;
     const confirmed = await customConfirm({
         title: 'Delete Word',
-        message: `Delete "${searchSelected.eng}" entirely from dictionary?`,
+        message: `Delete "${wordKey}" entirely from dictionary?`,
         buttons: [
             { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
             { label: 'Delete', value: true, class: 'confirm-btn-danger' }
         ]
     });
     if (!confirmed) return;
-    const res = await fetch(`/delete_word?eng=${encodeURIComponent(searchSelected.eng)}`, { method: 'DELETE' });
-    if (res.ok) { 
-        window.closeWordStatsEdit();
-        openDictionarySearch(); 
+    try {
+        const res = await fetch(`/delete_word?eng=${encodeURIComponent(wordKey)}`, { method: 'DELETE' });
+        if (res.ok) { 
+            window.closeWordStatsEdit();
+            if (typeof window.openWordStatsModal === 'function' && document.getElementById('wordStatsModal')?.style.display === 'flex') {
+                window.openWordStatsModal();
+            }
+            if (typeof window.refreshWords === 'function') {
+                window.refreshWords();
+            }
+            if (typeof searchWord === 'function' && document.getElementById('searchQuery')?.value.trim()) {
+                searchWord();
+            } else {
+                openDictionarySearch();
+            }
+            showToast('Word deleted successfully', 'success');
+        } else {
+            alert(window._("toast.error_deleting_word") || "Error deleting word");
+        }
+    } catch (e) {
+        alert(window._("toast.network_error") || "Network error");
     }
-    else { alert(window._("toast.error_deleting_word")); }
 }
 
 
@@ -158,17 +175,25 @@ function openWorkoutEditModal() {
         const group = document.createElement('div');
         group.className = 'form-group';
         const langName = allLangNames[code] || allLangNames[code.toLowerCase()] || code.toUpperCase();
-        group.innerHTML = `<label class="form-label">${langName}:</label>`
-            + `<input type="text" name="lang_${code}" value="${(word.translations && word.translations[code] || '').replace(/"/g, '&quot;')}" class="form-input" />`;
+        const lookupCode = code.toLowerCase().trim();
+        let val = '';
+        if (word.translations && word.translations[code] !== undefined) {
+            val = word.translations[code];
+        } else if (word.translations) {
+            const foundKey = Object.keys(word.translations).find(k => k.toLowerCase().trim() === lookupCode);
+            if (foundKey) val = word.translations[foundKey];
+        } else {
+            val = word[code] || '';
+        }
+        if (!val && (lookupCode === 'en' || lookupCode === 'eng')) val = word.eng;
+        group.innerHTML = `<label class="form-label">${langName}</label>`
+            + `<input type="text" id="wsWorkoutInput_${code}" value="${(val || '').replace(/"/g, '&quot;')}" class="form-input" />`;
         container.appendChild(group);
     });
 
-    document.getElementById('wsInputWordRu').value = word.ru || '';
-    document.getElementById('wsInputWordMeaning').value = word.meaning || '';
-    
-    // Hide delete button when editing from workout
+    document.getElementById('wsWorkoutInputRu').value = word.ru || '';
+    document.getElementById('wsWorkoutInputMeaning').value = word.meaning || '';
     document.getElementById('btnDeleteWordModal').style.display = 'none';
-    
     document.getElementById('wordStatsEditModal').style.display = 'flex';
 }
 
@@ -217,29 +242,45 @@ window.saveWordStatsEdit = async function() {
     }
 };
 
-window.deleteSearchWord = async function() {
-    if (!searchSelected) return;
-    const confirmed = await customConfirm({
-        title: 'Delete Word',
-        message: `Are you sure you want to delete "${searchSelected.eng}"?`,
-        buttons: [
-            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
-            { label: 'Delete', value: true, class: 'confirm-btn-danger' }
-        ]
+async function saveWorkoutWordEdit() {
+    if (!testWords || currentIdx >= testWords.length) return;
+    const word = testWords[currentIdx];
+    const ru = document.getElementById('wsWorkoutInputRu').value.trim();
+    const meaning = document.getElementById('wsWorkoutInputMeaning').value.trim();
+
+    const translations = {};
+    activeLangs.forEach(code => {
+        const input = document.getElementById(`wsWorkoutInput_${code}`);
+        if (input) translations[code] = input.value.trim();
     });
-    if (!confirmed) return;
+
     try {
-        const res = await fetch('/delete_word_data', {
+        const res = await fetch('/upsert_word', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ eng: searchSelected.eng })
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                word_eng: word.eng,
+                new_ru: ru,
+                new_meaning: meaning,
+                ...Object.fromEntries(Object.entries(translations).map(([k, v]) => [`lang_${k}`, v]))
+            })
         });
         if (res.ok) {
+            word.ru = ru;
+            word.meaning = meaning;
+            if (!word.translations) word.translations = {};
+            Object.assign(word.translations, translations);
+            activeLangs.forEach(code => { word[code] = translations[code]; });
+            if (word.test_lang && translations[word.test_lang]) {
+                word.word_to_test = translations[word.test_lang];
+            }
             window.closeWordStatsEdit();
+            renderCard();
         } else {
-            alert(window._("toast.delete_failed"));
+            alert(window._("toast.error_saving_changes"));
         }
     } catch (e) {
+        console.error('Save failed', e);
         alert(window._("toast.network_error"));
     }
 };

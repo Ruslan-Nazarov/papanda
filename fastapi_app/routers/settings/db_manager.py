@@ -137,7 +137,8 @@ async def api_ui_db_view(
         'Habit': 'partials/db_habit_view.html',
         'Task': 'partials/db_task_view.html',
         'Chronology': 'partials/db_chrono_view.html',
-        'Wink': 'partials/db_wink_view.html'
+        'Wink': 'partials/db_wink_view.html',
+        'Counter': 'partials/db_counter_view.html'
     }
     
     template_name = partial_map.get(model_name)

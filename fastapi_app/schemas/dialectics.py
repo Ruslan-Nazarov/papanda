@@ -14,6 +14,7 @@ class DialecticsWord(BaseModel):
 
 class DialecticsBlock(BaseModel):
     """Блок содержимого 'Диалектики'."""
+    model_config = ConfigDict(extra="allow")
     id: Optional[str] = None
     side: str
     html: str
@@ -23,6 +24,8 @@ class DialecticsBlock(BaseModel):
     collapsed: Optional[bool] = False
     words: Optional[List[DialecticsWord]] = []
     color: Optional[str] = None
+    tabs: Optional[List[Any]] = None
+    active_tab_id: Optional[str] = None
 
 class DialecticsCreate(BaseModel):
     """Схема для создания 'Диалектики'."""
@@ -51,6 +54,7 @@ class DialecticsUpdate(BaseModel):
     sticker_color: Optional[str] = "#fff9c4"
     sticker_type: Optional[str] = "text"
 
+
 class CategoryCreate(BaseModel):
     name: str
     color: Optional[str] = None
@@ -75,14 +79,7 @@ class DialecticsView(BaseModel):
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
-class DialecticsHistoryView(BaseModel):
-    """Схема для отображения версии истории конспекта."""
-    id: int
-    dialectics_id: int
-    title: str
-    content_json: Any
-    created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+
 
 class DialecticsGuideResponse(BaseModel):
     """Схема ответа для руководства по диалектике."""
@@ -91,3 +88,16 @@ class DialecticsGuideResponse(BaseModel):
 class DialecticsIdResponse(BaseModel):
     """Схема ответа с ID 'Диалектики'."""
     id: int
+
+class DialecticsVersionView(BaseModel):
+    id: int
+    dialectics_id: int
+    title: str
+    content_json: Any
+    is_manual: bool
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class DialecticsVersionCreate(BaseModel):
+    title: Optional[str] = "Ручное сохранение"
+    is_manual: Optional[bool] = True

@@ -1,21 +1,25 @@
 <div class="premium-card observation-widget">
     <div class="widget-header">
-        <div class="widget-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span class="widget-icon">🌲</span>
-            <span>{{ _('dashboard.live_observation') }}</span>
+        <div class="widget-title" style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; overflow: hidden;">
+            <span class="widget-icon" style="flex-shrink: 0;">🌲</span>
+            <span style="flex-shrink: 0;">{{ _('dashboard.live_observation') }}</span>
             {% if observation_sets %}
-            <select id="observation-set-selector" class="form-select form-select-sm" style="width: auto; padding: 2px 24px 2px 8px; font-size: 0.85em; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); cursor: pointer;" onchange="switchObservationSet(this.value)">
-                {% for s in observation_sets %}
-                <option value="{{ s.id }}" {% if active_observation_set and s.id == active_observation_set.id %}selected{% endif %}>{{ s.name }}</option>
-                {% endfor %}
-            </select>
+            <div style="display: inline-flex; align-items: center; gap: 4px; overflow: hidden;">
+                <select id="observation-set-selector" class="form-select form-select-sm" style="width: auto; max-width: 130px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding: 2px 24px 2px 8px; font-size: 0.85em; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); cursor: pointer;" onchange="switchObservationSet(this.value)">
+                    {% for s in observation_sets %}
+                    <option value="{{ s.id }}" {% if active_observation_set and s.id == active_observation_set.id %}selected{% endif %} title="{{ s.name }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-secondary btn-icon" style="padding: 2px 6px; font-size: 0.8em; border-radius: 4px; flex-shrink: 0;" onclick="openCreateObservationSetModal()" title="Создать новый набор">📁+</button>
+            </div>
+            {% else %}
+            <button type="button" class="btn btn-secondary btn-icon" style="padding: 2px 6px; font-size: 0.8em; border-radius: 4px; flex-shrink: 0;" onclick="openCreateObservationSetModal()" title="Создать новый набор">📁+</button>
             {% endif %}
-            <button type="button" class="btn btn-secondary btn-icon" style="padding: 2px 6px; font-size: 0.8em; border-radius: 4px;" onclick="openCreateObservationSetModal()" title="Создать новый набор">📁+</button>
             {% if show_widget_tips %}
-            <span class="help-trigger" onclick="openWidgetHelpModal('{{ _('dashboard.live_observation') }}')">?</span>
+            <span class="help-trigger" style="flex-shrink: 0;" onclick="openWidgetHelpModal('{{ _('dashboard.live_observation') }}')">?</span>
             {% endif %}
         </div>
-        <div class="widget-actions">
+        <div class="widget-actions" style="flex-shrink: 0;">
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="openObsOverviewModal()" title="{{ _('dashboard.tree_overview') }}">🌳</button>
             <button type="button" class="btn btn-secondary btn-icon" onclick="scrollToCurrentTime()" title="{{ _('dashboard.scroll_to_current_time') }}">🎯</button>

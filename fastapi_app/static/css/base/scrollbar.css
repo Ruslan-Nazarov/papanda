@@ -19,7 +19,7 @@
 
 /* Thumb: Branded 'Soft Gold' */
 ::-webkit-scrollbar-thumb {
-    background: #FFB74D !important; /* Papanda Primary Accent */
+    background: #FFB74D !important; /* papanda Primary Accent */
     border-radius: 10px !important;
     border: 2px solid #ffffff !important; /* Inset effect */
     min-height: 40px !important;

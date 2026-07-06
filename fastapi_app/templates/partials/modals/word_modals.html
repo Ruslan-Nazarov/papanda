@@ -24,9 +24,12 @@
                 </div>
             </div>
 
-            <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl); display: flex; justify-content: flex-end; gap: 12px;">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">{{ _('modal.cancel') }}</button>
-                <button type="submit" class="btn btn-primary" style="min-width: 140px;">{{ _('modal.update_word') }}</button>
+            <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl); display: flex; justify-content: space-between; gap: 12px;">
+                <button type="button" class="btn btn-danger" style="min-width: 100px;" onclick="deleteDashboardWord()">🗑 Delete</button>
+                <div style="display: flex; gap: 12px; margin-left: auto;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">{{ _('modal.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary" style="min-width: 140px;">{{ _('modal.update_word') }}</button>
+                </div>
             </div>
         </form>
     </div>

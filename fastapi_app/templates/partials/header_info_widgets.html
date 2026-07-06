@@ -1,8 +1,8 @@
-<div class="premium-badge badge-orange" title="{{ title_until }}">
+<div class="premium-badge badge-orange" title="{{ title_until }}" onclick="openDbViewModal('Counter')" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(230, 126, 34, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
     <span class="badge-label">⏳ {{ title_until }}</span>
     <span class="badge-value">{{ days_remaining }} <span style="font-size: 0.7rem; opacity: 0.6;">{{ _('header.days') }}</span></span>
 </div>
-<div class="premium-badge badge-green" title="{{ title_after }}">
+<div class="premium-badge badge-green" title="{{ title_after }}" onclick="openDbViewModal('Counter')" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(46, 204, 113, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
     <span class="badge-label">⌛ {{ title_after }}</span>
     <span class="badge-value">{{ days_passed }} <span style="font-size: 0.7rem; opacity: 0.6;">{{ _('header.days') }}</span></span>
 </div>

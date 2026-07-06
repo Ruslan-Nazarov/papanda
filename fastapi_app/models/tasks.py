@@ -1,7 +1,17 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Date, DateTime, Boolean, Integer
+from sqlalchemy import String, Date, DateTime, Boolean, Integer, ForeignKey
 from datetime import datetime, date, timezone
 from ..database import Base
+
+class TaskSet(Base):
+    """
+    Модель набора (пресета) задач (например, Общие, Рабочие).
+    """
+    __tablename__ = 'task_sets'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
 class Task(Base):
     """
@@ -13,6 +23,7 @@ class Task(Base):
     done: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     position: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    set_id: Mapped[int | None] = mapped_column(ForeignKey('task_sets.id', ondelete='CASCADE'), nullable=True, index=True)
 
 class Habit(Base):
     """

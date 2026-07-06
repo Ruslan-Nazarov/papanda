@@ -6,6 +6,14 @@ import { DialecticsUI } from './ui_utils.js';
 import { BlockManager } from './BlockManager.js';
 import { customConfirm } from '../modal_controller.js';
 
+function parseUTCDate(dateStr) {
+    if (!dateStr) return new Date();
+    if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
+        dateStr += 'Z';
+    }
+    return new Date(dateStr);
+}
+
 export const ModalsControllerMixin = {
     async showReferenceModal() {
         const modal = document.getElementById('referenceDialecticsModal');
@@ -105,14 +113,16 @@ export const ModalsControllerMixin = {
             const i = document.createElement('div');
             i.className = 'load-note-item';
 
-            const d = new Date(n.updated_at || n.created_at);
+            const d = parseUTCDate(n.updated_at || n.created_at);
             let dateStr = "";
             if (d.getFullYear() > 1970) {
                 dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
 
             const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Pinned">📌</span>' : '';
-            const delBtnHTML = (n.title === "Example Note" || n.title === "Пример конспекта" || n.title === "Конспект мысалы") ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
+            const cleanTitle = (n.title || "").trim().toLowerCase();
+            const isDefaultNote = ["example note", "пример конспекта", "конспект мысалы", "summation", "суммирование", "суммалау"].includes(cleanTitle) || cleanTitle.includes("сумм") || cleanTitle.includes("summation") || cleanTitle.includes("пример конспекта");
+            const delBtnHTML = isDefaultNote ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
 
             i.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
@@ -168,71 +178,7 @@ export const ModalsControllerMixin = {
         });
     },
 
-    async showHistoryModal() {
-        if (!this.state.currentNoteId) {
-            window.showToast("Сначала сохраните или откройте конспект для просмотра истории", "warning");
-            return;
-        }
-        const modal = document.getElementById('historyDialecticsModal');
-        const listContainer = document.getElementById('historyDialecticsList');
-        if (modal && listContainer) {
-            modal.style.display = 'flex';
-            modal.offsetHeight;
-            modal.classList.add('active');
-            listContainer.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Загрузка истории...</div>';
-            try {
-                const history = await DialecticsAPI.getHistory(this.state.currentNoteId);
-                this.renderHistoryList(history, listContainer);
-            } catch (err) {
-                listContainer.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Ошибка загрузки истории</div>';
-            }
-        }
-    },
 
-    renderHistoryList(history, container) {
-        if (!history || !history.length) {
-            container.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">История версий пока пуста</div>';
-            return;
-        }
-        container.innerHTML = '';
-        history.forEach(h => {
-            const i = document.createElement('div');
-            i.className = 'load-note-item';
-            const d = new Date(h.created_at);
-            const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
-            i.innerHTML = `
-                <div class="load-note-item-content" style="flex: 1;">
-                    <div class="load-note-item-title" style="color: #1e293b; font-size: 1.02em; margin-bottom: 4px;"><strong>${h.title || "Без названия"}</strong></div>
-                    <div class="load-note-item-date" style="color: #64748b; font-size: 0.85em;">🕒 ${dateStr}</div>
-                </div>
-                <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.85em; border-radius: 6px;">Восстановить</button>
-            `;
-            
-            const restoreBtn = i.querySelector('button');
-            restoreBtn.onclick = async (e) => {
-                e.stopPropagation();
-                const confirmed = await customConfirm({
-                    title: "Восстановление версии",
-                    message: `Восставить конспект до версии от ${dateStr}?`,
-                    icon: '🕒',
-                    buttons: [
-                        { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
-                        { label: 'Восстановить', value: true, class: 'confirm-btn-primary' }
-                    ]
-                });
-                if (confirmed) {
-                    const res = await DialecticsAPI.restoreHistory(this.state.currentNoteId, h.id);
-                    if (res) {
-                        window.showToast("Версия успешно восстановлена", "success");
-                        document.getElementById('historyDialecticsModal').style.display = 'none';
-                        await this.loadNoteToEditor(this.state.currentNoteId);
-                    }
-                }
-            };
-            container.appendChild(i);
-        });
-    },
 
     async showTrashModal() {
         const modal = document.getElementById('trashDialecticsModal');
@@ -260,7 +206,7 @@ export const ModalsControllerMixin = {
         trash.forEach(n => {
             const i = document.createElement('div');
             i.className = 'load-note-item';
-            const d = new Date(n.deleted_at || n.updated_at || n.created_at);
+            const d = parseUTCDate(n.deleted_at || n.updated_at || n.created_at);
             const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             i.innerHTML = `
@@ -317,7 +263,8 @@ export const ModalsControllerMixin = {
 
     async deleteGlobal() {
         if (!this.state.currentNoteId) return;
-        if (this.dom.title && (this.dom.title.value === "Example Note" || this.dom.title.value === "Пример конспекта" || this.dom.title.value === "Конспект мысалы")) {
+        const cleanTitle = (this.dom.title && this.dom.title.value ? this.dom.title.value : "").trim().toLowerCase();
+        if (cleanTitle && (["example note", "пример конспекта", "конспект мысалы", "summation", "суммирование", "суммалау"].includes(cleanTitle) || cleanTitle.includes("сумм") || cleanTitle.includes("summation") || cleanTitle.includes("пример конспекта"))) {
             if(window.showToast) window.showToast(window._("toast.cannot_delete_the_example_note"), "error");
             return;
         }
@@ -347,12 +294,14 @@ export const ModalsControllerMixin = {
 
         const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const blocks = BlockManager.getBlocks(this.dom.canvas);
+        const categoryId = this.dom.categorySelect ? this.dom.categorySelect.value : null;
 
         const payload = {
             id: this.state.currentNoteId,
             title,
             blocks,
-            is_pinned: true
+            is_pinned: true,
+            category_id: categoryId ? parseInt(categoryId) : null
         };
 
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
@@ -434,10 +383,8 @@ export const ModalsControllerMixin = {
             `;
             li.addEventListener('click', () => {
                 const searchInput = document.getElementById('connections-search-input');
-                if (searchInput) {
-                    searchInput.value = cat.name;
-                    this.searchConnections(cat.name);
-                }
+                if (searchInput) searchInput.value = '';
+                this.searchConnectionsByCategory(cat.id, cat.name);
             });
             this.dom.connCategoriesList.appendChild(li);
         });
@@ -489,6 +436,8 @@ export const ModalsControllerMixin = {
             modal.classList.add('active');
             this.dom.connectionsModal = modal;
             this.renderConnectionsCategories();
+            const searchInput = document.getElementById('connections-search-input');
+            if (searchInput) searchInput.value = '';
             this.searchConnections('');
         } else {
             console.error("Connections modal element not found in DOM!");
@@ -505,6 +454,15 @@ export const ModalsControllerMixin = {
 
     async searchConnections(query) {
         if (!this.dom.connResultsContainer) return;
+        
+        const titleEl = document.getElementById('connections-pane-title');
+        if (titleEl) {
+            if (!query || query.trim().length === 0) {
+                titleEl.textContent = 'Все конспекты';
+            } else {
+                titleEl.textContent = 'Результаты поиска';
+            }
+        }
         
         this.dom.connResultsContainer.innerHTML = '<div style="color:#64748b; padding:20px; text-align:center; font-style: italic;"><i class="fas fa-circle-notch fa-spin" style="margin-right: 8px;"></i> Поиск...</div>';
         
@@ -542,7 +500,7 @@ export const ModalsControllerMixin = {
                         <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
                         <span class="connections-result-cat" style="background-color: ${catColor}15; color: ${catColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${catColor}30;">${catName}</span>
                     </div>
-                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${new Date(note.created_at).toLocaleDateString()}</div>
+                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${parseUTCDate(note.created_at).toLocaleDateString()}</div>
                 `;
                 
                 item.addEventListener('click', () => {
@@ -556,6 +514,54 @@ export const ModalsControllerMixin = {
             
         } catch (e) {
             console.error("Search error", e);
+            this.dom.connResultsContainer.innerHTML = '<p class="connections-empty-state">Ошибка поиска</p>';
+        }
+    },
+
+    async searchConnectionsByCategory(categoryId, categoryName) {
+        if (!this.dom.connResultsContainer) return;
+        
+        const titleEl = document.getElementById('connections-pane-title');
+        if (titleEl) {
+            titleEl.textContent = `Конспекты раздела «${categoryName}»`;
+        }
+        
+        this.dom.connResultsContainer.innerHTML = '<div style="color:#64748b; padding:20px; text-align:center; font-style: italic;"><i class="fas fa-circle-notch fa-spin" style="margin-right: 8px;"></i> Поиск...</div>';
+        try {
+            const results = await DialecticsAPI.listByCategory(categoryId);
+            if (!results || results.length === 0) {
+                this.dom.connResultsContainer.innerHTML = `
+                    <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-light); opacity: 0.7; padding: 40px 0;">
+                        <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 16px; color: var(--color-bg-app);"></i>
+                        <p class="connections-empty-state" style="margin: 0; font-size: 0.95rem;">Нет конспектов в категории «${categoryName}»</p>
+                    </div>`;
+                return;
+            }
+            this.dom.connResultsContainer.innerHTML = '';
+            results.forEach(note => {
+                const item = document.createElement('div');
+                item.className = 'connections-result-item';
+                item.style.cssText = 'padding: 16px; border-radius: var(--radius-lg); background: var(--color-bg-white); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px;';
+                item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = '0 6px 12px rgba(0,0,0,0.05)'; item.style.borderColor = 'var(--color-primary)'; };
+                item.onmouseout = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'; item.style.borderColor = 'var(--color-border)'; };
+                const title = note.title || "Untitled";
+                const catColor = note.category && note.category.color ? note.category.color : "#cbd5e1";
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
+                        <span style="background-color: ${catColor}15; color: ${catColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${catColor}30;">${categoryName}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${parseUTCDate(note.created_at).toLocaleDateString()}</div>
+                `;
+                item.addEventListener('click', () => {
+                    this.loadNoteToEditor(note.id);
+                    if (this.dom.connectionsModal) this.dom.connectionsModal.classList.remove('active');
+                    setTimeout(() => { if(this.dom.connectionsModal) this.dom.connectionsModal.style.display = 'none'; }, 200);
+                });
+                this.dom.connResultsContainer.appendChild(item);
+            });
+        } catch (e) {
+            console.error("Category search error", e);
             this.dom.connResultsContainer.innerHTML = '<p class="connections-empty-state">Ошибка поиска</p>';
         }
     }

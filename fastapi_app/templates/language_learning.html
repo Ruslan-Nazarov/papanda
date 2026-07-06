@@ -35,23 +35,29 @@
     </div>
 
     <div class="learning-card" style="position: relative;">
-        <span id="sentence-progress"
-            style="position: absolute; top: 40px; right: 40px; font-size: 0.85em; background: #f5f5f5; border: 1px solid #eee; padding: 6px 14px; border-radius: 12px; color: #888; font-weight: 600; display: none; white-space: nowrap;"></span>
+        <div style="position: absolute; top: 35px; right: 40px; display: flex; align-items: center; gap: 15px; z-index: 10;">
+            <label class="workout-hint-toggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;" title="Translation">
+                <span style="font-size: 0.85rem; color: #666; font-weight: 600;">Translation</span>
+                <div class="workout-pill-switch">
+                    <input type="checkbox" id="toggle-translation-checkbox" class="toggle-translation-checkbox" checked onchange="toggleTranslation(this.checked)">
+                    <span class="workout-pill-slider"></span>
+                </div>
+            </label>
+            <span id="sentence-progress"
+                style="font-size: 0.85em; background: #f5f5f5; border: 1px solid #eee; padding: 6px 14px; border-radius: 12px; color: #888; font-weight: 600; display: none; white-space: nowrap;"></span>
+        </div>
 
         <div id="lang-selector" class="lang-selector">
             <!-- Buttons dynamically generated -->
         </div>
 
-        <div id="sentence-display" class="sentence-display" onclick="handleDisplayClick()">
+        <div id="sentence-display" class="sentence-display show-translation" onclick="handleDisplayClick()">
             <!-- Words injected here -->
         </div>
 
         <div class="controls">
             <button class="btn-action btn-run" onclick="runFlash()">
                 <span>▶</span> Run
-            </button>
-            <button id="toggle-translation" class="btn-action btn-toggle" onclick="toggleTranslation()">
-                👁 Translation
             </button>
             <button class="btn-action" style="background: #eee;" onclick="nextSentence()">
                 Next ➜

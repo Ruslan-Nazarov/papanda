@@ -9,6 +9,14 @@ export const CalendarRenderer = {
         const grid = document.getElementById(containerId);
         if (!grid) return;
 
+        if (this._sortables && this._sortables[containerId]) {
+            this._sortables[containerId].forEach(s => {
+                try { s.destroy(); } catch (e) {}
+            });
+        }
+        if (!this._sortables) this._sortables = {};
+        this._sortables[containerId] = [];
+
         grid.innerHTML = '';
         const y = currentYear;
         const m = currentMonth;
@@ -32,6 +40,8 @@ export const CalendarRenderer = {
 
         const today = new Date();
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        const fragment = document.createDocumentFragment();
 
         for (let i = 1; i <= totalCells; i++) {
             const cellDate = new Date(y, m - 1, i - first + 1);
@@ -118,16 +128,17 @@ export const CalendarRenderer = {
                 eventsContainer.appendChild(moreChip);
             }
 
-            grid.appendChild(cell);
+            fragment.appendChild(cell);
         }
 
-        this._initSortable();
+        grid.appendChild(fragment);
+        this._initSortable(grid, containerId);
     },
 
-    _initSortable() {
-        if (typeof Sortable === 'undefined') return;
-        document.querySelectorAll('.cell-body').forEach(el => {
-            Sortable.create(el, {
+    _initSortable(grid, containerId) {
+        if (typeof Sortable === 'undefined' || !grid) return;
+        grid.querySelectorAll('.cell-body').forEach(el => {
+            const s = Sortable.create(el, {
                 group: 'events',
                 animation: 150,
                 ghostClass: 'sortable-ghost',
@@ -159,6 +170,9 @@ export const CalendarRenderer = {
                     }
                 }
             });
+            if (this._sortables && this._sortables[containerId]) {
+                this._sortables[containerId].push(s);
+            }
         });
     }
 };

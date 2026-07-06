@@ -94,19 +94,32 @@ class ViewBuilders:
         return records, {"search_query": search}
 
     async def get_tasks_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
-        query = select(Model)
+        from ..task_service import TaskService
+        task_service = TaskService(self.db)
+        active_set = await task_service.ensure_active_set()
+        task_sets = await task_service.get_all_sets()
+        
+        query = select(Model).where(Model.set_id == active_set.id)
         if search:
             query = query.where(Model.name.ilike(f"%{search}%"))
         res = await self.db.execute(query.order_by(Model.done.asc(), Model.created_at.desc()))
         records = list(res.scalars().all())
         await attach_stickers_count(self.db, records, 'task_id', models.StickyNote)
-        return records, {"search_query": search}
+        return records, {"search_query": search, "task_sets": task_sets, "active_task_set": active_set}
 
     async def get_wink_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
         query = select(Model)
         if search:
             query = query.where(Model.title.ilike(f"%{search}%"))
         res = await self.db.execute(query.order_by(Model.date.desc()))
+        records = list(res.scalars().all())
+        return records, {"search_query": search}
+
+    async def get_counter_view(self, Model, search: Optional[str] = None) -> Tuple[List[Any], Dict[str, Any]]:
+        query = select(Model)
+        if search:
+            query = query.where(Model.title.ilike(f"%{search}%"))
+        res = await self.db.execute(query.order_by(Model.is_active.desc(), Model.date.desc()))
         records = list(res.scalars().all())
         return records, {"search_query": search}
 

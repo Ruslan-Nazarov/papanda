@@ -634,6 +634,84 @@ canvas#shapesCanvas {
     vertical-align: super;
 }
 
+/* --- Hidden Phrase / Inline Footnote --- */
+.dialectics-hidden-phrase {
+    background-color: rgba(139, 92, 246, 0.12);
+    color: inherit;
+    border-bottom: 1.5px dotted #8b5cf6;
+    padding: 1px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline;
+}
+.dialectics-hidden-phrase:hover {
+    background-color: rgba(139, 92, 246, 0.22);
+}
+.dialectics-hidden-phrase[data-expanded="false"]::after,
+.dialectics-hidden-phrase:not([data-expanded="true"])::after {
+    content: " ▾";
+    font-size: 0.8em;
+    color: #8b5cf6;
+    font-weight: bold;
+    margin-left: 2px;
+    vertical-align: baseline;
+}
+.dialectics-hidden-phrase[data-expanded="true"] {
+    background-color: rgba(139, 92, 246, 0.18);
+    border-bottom: 1.5px solid #8b5cf6;
+}
+.dialectics-hidden-phrase[data-expanded="true"]::after {
+    content: " ▴ 💡 " attr(data-note);
+    display: inline;
+    background: #f5f3ff;
+    color: #4c1d95;
+    padding: 2px 8px;
+    margin: 0 4px;
+    border-radius: 6px;
+    border: 1px solid #ddd6fe;
+    font-size: 0.9em;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.1);
+    white-space: normal;
+}
+
+/* --- Block Link / Smart Chip --- */
+.dialectics-block-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95em;
+    cursor: pointer;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    vertical-align: baseline;
+    margin: 0 2px;
+}
+.dialectics-block-link:hover {
+    background: rgba(59, 130, 246, 0.22);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+.dialectics-block-link::before {
+    content: "🔗";
+    font-size: 0.85em;
+    margin-right: 2px;
+}
+.dialectics-block-link::after {
+    content: "↗";
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+
 /* --- Modern Quote Block --- */
 .modern-blockquote {
     border-left: 4px solid #3b82f6 !important;

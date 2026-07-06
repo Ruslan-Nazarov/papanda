@@ -1,5 +1,5 @@
 """
-Главный файл FastAPI-приложения Papanda.
+Главный файл FastAPI-приложения papanda.
 Здесь ТОЛЬКО инициализация. Вся логика — в папке routers/.
 """
 
@@ -16,7 +16,7 @@ from .exceptions import PapandaError
 from . import models
 from .database import get_engine
 from .routers import settings as settings_router, auth as auth_router
-from .routers import dashboard, words, notes, actions, dnd, stickers, observation, dialectics, ai
+from .routers import dashboard, words, notes, actions, dnd, stickers, observation, dialectics, ai, tasks, assistant
 from .config import settings, BASE_DIR, templates, INTERNAL_ROOT
 from .services.auth import get_current_user_from_cookie
 from .logger import logger
@@ -37,6 +37,11 @@ async def lifespan(app: FastAPI):
                 try:
                     from sqlalchemy import text
                     await conn.execute(text("ALTER TABLE observations ADD COLUMN set_id INTEGER REFERENCES observation_sets(id)"))
+                except Exception:
+                    pass
+                try:
+                    from sqlalchemy import text
+                    await conn.execute(text("ALTER TABLE task ADD COLUMN set_id INTEGER REFERENCES task_sets(id)"))
                 except Exception:
                     pass
                 try:
@@ -82,9 +87,9 @@ mimetypes.add_type('text/css', '.css')
 
 # Настройка приложения
 app = FastAPI(
-    title="Papanda API",
+    title="papanda API",
     description="Образовательное приложение",
-    version="0.6.12",
+    version="0.6.13",
     lifespan=lifespan
 )
 app.state.settings = settings
@@ -285,7 +290,9 @@ app.include_router(actions.router)           # /submit_form, /submit_chrono, /ma
 app.include_router(dnd.router)               # /api/dnd/...
 app.include_router(stickers.router)          # /api/stickers/...
 app.include_router(observation.router)       # /api/observations/...
+app.include_router(tasks.router)             # /api/tasks/...
 app.include_router(dialectics.router)       # /dialectics
 app.include_router(ai.router)               # /api/ai/...
+app.include_router(assistant.router)        # /api/v1/assistant
 
 

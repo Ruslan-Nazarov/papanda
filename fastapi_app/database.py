@@ -214,6 +214,37 @@ async def seed_example_note(db: AsyncSession, locale: str = "en") -> None:
         else:
             logger.warning(f"Example Note JSON file not found at {json_path}")
 
+    summation_map = {
+        "en": ("Summation", "summation_note_content.json"),
+        "ru": ("Суммирование", "summation_note_content_ru.json"),
+        "kz": ("Суммалау", "summation_note_content_kz.json")
+    }
+    sum_title, sum_file = summation_map.get(locale, summation_map["en"])
+    stmt_sum = select(Dialectics).where(Dialectics.title.in_(["Summation", "Суммирование", "Суммалау"]))
+    res_sum = await db.execute(stmt_sum)
+    existing_sum = res_sum.scalars().first()
+    if not existing_sum:
+        sum_path = INTERNAL_ROOT / "fastapi_app" / "static" / sum_file
+        if not sum_path.exists():
+            sum_path = INTERNAL_ROOT / "fastapi_app" / "static" / "summation_note_content_ru.json"
+        
+        if sum_path.exists():
+            try:
+                with open(sum_path, "r", encoding="utf-8") as f:
+                    data_sum = json.load(f)
+                new_sum_note = Dialectics(
+                    title=data_sum.get("title", sum_title),
+                    content_json=data_sum.get("content_json", []),
+                    is_pinned=data_sum.get("is_pinned", False)
+                )
+                db.add(new_sum_note)
+                await db.commit()
+                logger.info("Summation Note successfully seeded.")
+            except Exception as e:
+                logger.error(f"Failed to seed Summation Note: {e}", exc_info=True)
+        else:
+            logger.warning(f"Summation Note JSON file not found at {sum_path}")
+
 async def get_main_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Всегда возвращает сессию ОСНОВНОЙ базы данных.

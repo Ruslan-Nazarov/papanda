@@ -46,37 +46,6 @@
                 </div>
                 {% endif %}
 
-                <!-- 3. Algorithm Settings -->
-                <div class="grid-stack-item" gs-id="set_algo" gs-w="6" gs-h="6">
-                    <div class="grid-stack-item-content">
-                        <div class="premium-card settings-algo-widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">⚙️</span>
-                                    <span>{{ _('settings.algo.title') }}</span>
-                                </div>
-                                <div class="widget-actions">
-                                    <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'settings')">▼</button>
-                                </div>
-                            </div>
-                            <div class="widget-body">
-                                <div class="settings-grid" style="gap: 32px; grid-template-columns: 1fr;">
-                                    <div class="settings-algo-form">
-                                        <form action="{{ url_for('update_settings') }}" method="post">
-                                            <label class="form-label">{{ _('settings.algo.max_duration') }}</label>
-                                            <input type="number" name="max_duration" value="{{ max_duration }}" required class="form-input" style="font-family: inherit; margin-bottom: 16px;" />
-                                            
-                                            <label class="form-label">{{ _('settings.algo.interval') }}</label>
-                                            <input type="number" name="max_random_minutes" value="{{ max_random_minutes }}" required class="form-input" style="font-family: inherit;" />
-                                            
-                                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; font-family: inherit;">{{ _('settings.save') }}</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
 
 

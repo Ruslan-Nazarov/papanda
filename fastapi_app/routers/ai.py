@@ -129,8 +129,8 @@ async def generate_opposites(
                 {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
-            temperature=0.7,
-            max_tokens=2048,
+            temperature=0.4,
+            max_tokens=1500,
         )
         return {"result": chat_completion.choices[0].message.content}
     except Exception as e:
@@ -160,8 +160,8 @@ async def parse_math_formula(
                 {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
-            temperature=0.3,
-            max_tokens=2048,
+            temperature=0.1,
+            max_tokens=1000,
             response_format={"type": "json_object"}
         )
         return {"result": chat_completion.choices[0].message.content}
@@ -349,8 +349,8 @@ async def generate_hint_step(
                 {"role": "user", "content": user_query}
             ],
             model="llama-3.3-70b-versatile",
-            temperature=0.7,
-            max_tokens=2048,
+            temperature=0.2,
+            max_tokens=600,
         )
         return {"result": chat_completion.choices[0].message.content}
     except Exception as e:
@@ -412,8 +412,8 @@ async def process_article_parser(
                 {"role": "user", "content": message}
             ],
             model="llama-3.3-70b-versatile",
-            temperature=0.7,
-            max_tokens=2048,
+            temperature=0.1,
+            max_tokens=4000,
         )
         return {"result": chat_completion.choices[0].message.content}
     except Exception as e:
@@ -442,9 +442,9 @@ async def explain_concept(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_query}
             ],
-            model="llama-3.3-70b-versatile",
-            temperature=0.7,
-            max_tokens=2048,
+            model="llama-3.1-8b-instant",
+            temperature=0.2,
+            max_tokens=500,
         )
         return {"result": chat_completion.choices[0].message.content}
     except Exception as e:

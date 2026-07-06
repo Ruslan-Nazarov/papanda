@@ -161,6 +161,38 @@ window.saveDashboardWordEdit = async function() {
     }
 };
 
+window.deleteDashboardWord = async function() {
+    const engInput = document.getElementById('inputWordEng');
+    const wordKey = engInput ? engInput.value : null;
+    if (!wordKey) return;
+    const confirmed = await customConfirm({
+        title: 'Delete Word',
+        message: `Delete "${wordKey}" entirely from dictionary?`,
+        buttons: [
+            { label: 'Cancel', value: false, class: 'confirm-btn-secondary' },
+            { label: 'Delete', value: true, class: 'confirm-btn-danger' }
+        ]
+    });
+    if (!confirmed) return;
+    try {
+        const res = await fetch(`/delete_word?eng=${encodeURIComponent(wordKey)}`, { method: 'DELETE' });
+        if (res.ok) {
+            window.closeEditModal();
+            if (typeof window.refreshWords === 'function') {
+                await window.refreshWords();
+            }
+            if (typeof window.openWordStatsModal === 'function' && document.getElementById('wordStatsModal')?.style.display === 'flex') {
+                window.openWordStatsModal();
+            }
+            showToast('Word deleted successfully', 'success');
+        } else {
+            alert(window._("toast.error_deleting_word") || "Error deleting word");
+        }
+    } catch (e) {
+        alert(window._("toast.network_error") || "Network error");
+    }
+};
+
 window.showAddCategory = function () {
     document.getElementById('addCategoryForm').style.display = 'block';
 };
@@ -357,6 +389,9 @@ window.resetTestWidget = function() {
     document.getElementById('ww-test-active-view').style.display = 'none';
     document.getElementById('ww-test-finish-view').style.display = 'none';
     document.getElementById('ww-test-progress').style.display = 'none';
+    const undoBtn = document.getElementById('ww-btn-undo');
+    if (undoBtn) undoBtn.style.display = 'none';
+    window._workoutHistory = [];
     if (reloadTimeout) { clearTimeout(reloadTimeout); reloadTimeout = null; }
 };
 
@@ -412,6 +447,9 @@ window.startKnowledgeTestWidget = async function(e) {
         testWords  = data.words;
         currentIdx = 0;
         score      = 0;
+        window._workoutHistory = [];
+        const undoBtn = document.getElementById('ww-btn-undo');
+        if (undoBtn) undoBtn.style.display = 'none';
         if (!Array.isArray(testWords) || testWords.length === 0) throw new Error('No words received.');
 
         document.getElementById('ww-test-start-view').style.display  = 'none';
@@ -510,8 +548,21 @@ window.onAutoHintToggleWidget = function() {
 window.recordResultWidget = async function(isKnown) {
     if (testWords.length === 0 || currentIdx >= testWords.length) return;
     const word = testWords[currentIdx];
+    
+    if (!window._workoutHistory) window._workoutHistory = [];
+    window._workoutHistory.push({
+        idx: currentIdx,
+        prevIsKnown: word.is_lang_known,
+        word: word,
+        prevScore: score,
+        choice: isKnown
+    });
+    const undoBtn = document.getElementById('ww-btn-undo');
+    if (undoBtn) undoBtn.style.display = 'inline-block';
+
     currentIdx++;
     if (isKnown) score++;
+    word.is_lang_known = isKnown;
 
     try {
         await fetch('/mark_word_known', {
@@ -525,6 +576,29 @@ window.recordResultWidget = async function(isKnown) {
         if (!res2.ok) console.error('Failed to record result');
     } catch (error) {
         console.error('Network error saving test result:', error);
+    }
+    showNextWordWidget();
+};
+
+window.undoLastResultWidget = async function() {
+    if (!window._workoutHistory || window._workoutHistory.length === 0) return;
+    const last = window._workoutHistory.pop();
+    currentIdx = last.idx;
+    score = last.prevScore;
+    last.word.is_lang_known = last.prevIsKnown;
+    
+    if (window._workoutHistory.length === 0) {
+        const undoBtn = document.getElementById('ww-btn-undo');
+        if (undoBtn) undoBtn.style.display = 'none';
+    }
+    
+    try {
+        await fetch('/mark_word_known', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eng: last.word.eng, lang: last.word.test_lang, is_known: !!last.prevIsKnown })
+        });
+    } catch (error) {
+        console.error('Error reverting word status:', error);
     }
     showNextWordWidget();
 };
@@ -582,6 +656,8 @@ export function initWordWidget() {
             btnStart.addEventListener('click', window.startKnowledgeTestWidget);
             document.getElementById('ww-btn-known').addEventListener('click', () => window.recordResultWidget(true));
             document.getElementById('ww-btn-unknown').addEventListener('click', () => window.recordResultWidget(false));
+            const btnUndo = document.getElementById('ww-btn-undo');
+            if (btnUndo) btnUndo.addEventListener('click', window.undoLastResultWidget);
             const btnLearnTriplet = document.getElementById('ww-btn-learn-triplet');
             if (btnLearnTriplet) btnLearnTriplet.addEventListener('click', window.markWorkoutTripletLearnedWidget);
             document.getElementById('ww-btn-try-again').addEventListener('click', window.startKnowledgeTestWidget);

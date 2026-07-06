@@ -28,58 +28,10 @@ class ContextService:
 
     async def get_runtime_context(self, force_update: bool = False) -> Dict[str, Any]:
         """
-        Получает текущий контекст из кэша БД или генерирует новый.
+        Получает текущий контекст (обновляет слова и винк при каждом запросе).
         Гарантирует атомарность обновления через asyncio.Lock.
         """
         async with _get_state_lock():
-            interval = int(await get_setting(self.db, 'max_random_minutes', '60'))
-            last_update_str = await get_setting(self.db, 'last_update_ts', None)
-
-            need_update = force_update
-            now = datetime.now(timezone.utc)
-
-            if not need_update:
-                current_words_json = await get_setting(self.db, 'current_words_cache', None)
-                if not last_update_str or not current_words_json:
-                    need_update = True
-                else:
-                    try:
-                        last_dt = datetime.fromisoformat(last_update_str)
-                        if last_dt.tzinfo is None: last_dt = last_dt.replace(tzinfo=timezone.utc)
-                        diff = (now - last_dt).total_seconds() / 60
-                        if diff >= interval:
-                            need_update = True
-                    except Exception as e:
-                        logger.warning(f"Time parsing failed: {e}")
-                        need_update = True
-
-            if not need_update:
-                try:
-                    words_str = await get_setting(self.db, 'current_words_cache', '[]')
-                    words = json.loads(words_str if words_str else '[]')
-                    wink = await get_setting(self.db, 'current_wink_cache', '...')
-                    count = int(await get_setting(self.db, 'total_words_count', '0'))
-                    imw = float(await get_setting(self.db, 'current_imw_cache', '0'))
-                    coverage = float(await get_setting(self.db, 'current_coverage_cache', '100.0'))
-                    
-                    plugin_dashboard = await get_setting(self.db, 'plugin_dashboard', 'True') == 'True'
-                    plugin_languages = await get_setting(self.db, 'plugin_languages', 'True') == 'True'
-                    plugin_tasks = await get_setting(self.db, 'plugin_tasks', 'True') == 'True'
-                    plugin_habits = await get_setting(self.db, 'plugin_habits', 'True') == 'True'
-                    plugin_events = await get_setting(self.db, 'plugin_events', 'True') == 'True'
-                    
-                    return {
-                        'words': words, 'wink': wink, 'count': count, 'coverage': coverage, 'imw': imw,
-                        'plugin_dashboard': plugin_dashboard,
-                        'plugin_languages': plugin_languages,
-                        'plugin_tasks': plugin_tasks,
-                        'plugin_habits': plugin_habits,
-                        'plugin_events': plugin_events
-                    }
-                except Exception as e:
-                    logger.warning(f"Cache read failed: {e}")
-                    need_update = True
-
             return await self._update_runtime_context_from_db()
 
     async def _update_runtime_context_from_db(self) -> Dict[str, Any]:

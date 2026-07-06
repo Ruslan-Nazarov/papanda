@@ -1,0 +1,260 @@
+<style>
+    /* papanda custom theme for Driver.js */
+    .driver-popover.papanda-driver-popover {
+        background: #0f172a !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(168, 85, 247, 0.4) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(168, 85, 247, 0.2) !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        padding: 18px !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-title {
+        color: #f97316 !important;
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 8px !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-description {
+        color: #cbd5e1 !important;
+        font-size: 0.95rem !important;
+        line-height: 1.5 !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-footer {
+        margin-top: 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-footer button {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 8px !important;
+        padding: 6px 14px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        transition: all 0.2s !important;
+        text-shadow: none !important;
+        cursor: pointer !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-footer button:hover {
+        background: rgba(168, 85, 247, 0.3) !important;
+        border-color: #a855f7 !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-footer .driver-popover-next-btn {
+        background: linear-gradient(135deg, #f97316, #a855f7) !important;
+        border: none !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-footer .driver-popover-next-btn:hover {
+        opacity: 0.9 !important;
+    }
+    .driver-popover.papanda-driver-popover .driver-popover-progress-text {
+        color: #94a3b8 !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+    }
+</style>
+
+<script>
+    (function() {
+        if (typeof window.driver === 'undefined') {
+            console.warn("Driver.js not loaded.");
+            return;
+        }
+
+        const driver = window.driver.js.driver;
+
+        const tours = {
+            "/dashboard": [
+                {
+                    element: ".header-main-input",
+                    popover: {
+                        title: "⚡ Быстрый ввод",
+                        description: "Здесь вы можете мгновенно создавать события, заметки или задачи. Просто начните вводить текст, выберите дату или настройте повторение с помощью кнопки 🔁.",
+                        side: "bottom",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#chrono",
+                    popover: {
+                        title: "⏱️ Хронология и события",
+                        description: "Виджет Хронологии показывает ваши предстоящие события, дедлайны и таймлайн дня. Вы можете отмечать выполнение или добавлять новые события прямо отсюда.",
+                        side: "right",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#notes",
+                    popover: {
+                        title: "📝 Быстрые заметки",
+                        description: "Сохраняйте мысли, идеи и короткие записи. Кликните по заметке или используйте верхнее меню для перехода в полноценный редактор Диалектики.",
+                        side: "left",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#observation",
+                    popover: {
+                        title: "🔍 Наблюдения и фокус",
+                        description: "Отслеживайте важные метрические показатели, состояния или идеи, которые требуют регулярного внимания.",
+                        side: "top",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#words",
+                    popover: {
+                        title: "🌍 Изучение языков",
+                        description: "Модуль для пополнения словарного запаса. Учите новые слова каждый день, проверяйте себя и отслеживайте прогресс.",
+                        side: "top",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#papanda-assistant-fab",
+                    popover: {
+                        title: "✨ ИИ-помощник papanda",
+                        description: "Наш умный гид всегда под рукой! Нажмите на эту кнопку, чтобы задать любой вопрос по функционалу, настройке виджетов или методологии papanda.",
+                        side: "top",
+                        align: "end"
+                    }
+                }
+            ],
+            "/": [
+                {
+                    element: "#globalDialecticsTitle",
+                    popover: {
+                        title: "📑 Тема конспекта",
+                        description: "Введите название вашего конспекта или исследования. Оно автоматически сохранится и будет доступно в списке заметок.",
+                        side: "bottom",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#modeMenuBtn",
+                    popover: {
+                        title: "🎛️ Режимы отображения",
+                        description: "Переключайтесь между классическим диалектическим видом (тезис-антитезис) и двухколоночным форматом для удобного структурирования мыслей.",
+                        side: "bottom",
+                        align: "center"
+                    }
+                },
+                {
+                    element: "#parsersMenuBtn",
+                    popover: {
+                        title: "☰ Парсеры и инструменты",
+                        description: "Используйте парсер статей для извлечения текста из веб-страниц или парсер формул для работы с математическими выражениями в LaTeX.",
+                        side: "bottom",
+                        align: "center"
+                    }
+                },
+                {
+                    element: "#dialecticsCanvas",
+                    popover: {
+                        title: "📝 Рабочее поле",
+                        description: "Здесь рождаются ваши идеи. Создавайте блоки, связывайте тезисы, добавляйте стикеры и форматируйте текст с помощью всплывающей панели.",
+                        side: "top",
+                        align: "center"
+                    }
+                },
+                {
+                    element: "#papanda-assistant-fab",
+                    popover: {
+                        title: "✨ Помощь по методологии",
+                        description: "Если хотите узнать больше о том, как правильно вести диалектические конспекты и связывать идеи — спросите нашего ИИ-помощника!",
+                        side: "top",
+                        align: "end"
+                    }
+                }
+            ],
+            "/settings": [
+                {
+                    element: "[gs-id='set_langs']",
+                    popover: {
+                        title: "🌐 Настройки языков",
+                        description: "Выбирайте изучаемые языки, настраивайте ежедневные цели и управляйте словарем для модуля изучения слов.",
+                        side: "bottom",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "[gs-id='set_plugins']",
+                    popover: {
+                        title: "🧩 Плагины и модули",
+                        description: "Включайте или отключайте виджеты на дашборде (Задачи, Привычки, События, Изучение языков) под свой рабочий стиль.",
+                        side: "top",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "[gs-id='set_db']",
+                    popover: {
+                        title: "💾 Резервное копирование",
+                        description: "Создавайте бэкапы своей базы данных или восстанавливайте данные из резервных копий.",
+                        side: "top",
+                        align: "start"
+                    }
+                },
+                {
+                    element: "#papanda-assistant-fab",
+                    popover: {
+                        title: "✨ ИИ-помощник papanda",
+                        description: "Не знаете, за что отвечает та или иная настройка? Спросите помощника — он подробно всё объяснит!",
+                        side: "top",
+                        align: "end"
+                    }
+                }
+            ]
+        };
+
+        window.startPapandaTour = function(manual = false) {
+            const path = window.location.pathname;
+            const steps = tours[path] || tours["/dashboard"];
+
+            // Filter out elements that are not currently in the DOM or not visible
+            const activeSteps = steps.filter(step => {
+                const el = document.querySelector(step.element);
+                return el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el !== null);
+            });
+
+            if (activeSteps.length === 0) {
+                if (manual) {
+                    alert("Интерактивный тур недоступен на этой странице.");
+                }
+                return;
+            }
+
+            const driverObj = driver({
+                showProgress: true,
+                animate: true,
+                allowClose: true,
+                popoverClass: 'papanda-driver-popover',
+                nextBtnText: 'Далее →',
+                prevBtnText: '← Назад',
+                doneBtnText: '✨ Готово',
+                progressText: 'Шаг {{current}} из {{total}}',
+                steps: activeSteps,
+                onDestroyStarted: () => {
+                    localStorage.setItem("papanda_tour_done_" + path, "true");
+                    driverObj.destroy();
+                }
+            });
+
+            driverObj.drive();
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const path = window.location.pathname;
+            const isDone = localStorage.getItem("papanda_tour_done_" + path);
+            
+            // Auto-start only on Dashboard, Dialectics, and Settings if not done
+            if (!isDone && tours[path]) {
+                setTimeout(() => {
+                    window.startPapandaTour(false);
+                }, 1800);
+            }
+        });
+    })();
+</script>

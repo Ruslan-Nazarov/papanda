@@ -117,16 +117,6 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
     ms = await get_maintenance_service(db)
     db_files = await ms.list_backups()
 
-    try:
-        max_dur = int(await get_setting(db, 'max_duration', '360'))
-    except (ValueError, TypeError):
-        max_dur = 360
-
-    try:
-        max_rand = int(await get_setting(db, 'max_random_minutes', '60'))
-    except (ValueError, TypeError):
-        max_rand = 60
-
     today = datetime.now().date()
     
     chrono_res = await db.execute(select(models.Chronology).order_by(models.Chronology.id.desc()).limit(1))
@@ -174,8 +164,6 @@ async def get_settings_context(db: AsyncSession, request: Request, import_result
 
     ctx = {
         "request": request,
-        "max_duration": max_dur,
-        "max_random_minutes": max_rand,
         "wink_last": wink_last,
         "notes_last": notes_last,
         "last_chrono": last_chrono,

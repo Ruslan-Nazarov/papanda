@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Text, DateTime, JSON, ForeignKey
+from sqlalchemy import String, Text, DateTime, JSON, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from datetime import datetime
 from ..database import Base
@@ -27,21 +27,20 @@ class Dialectics(Base):
     is_deleted: Mapped[bool] = mapped_column(default=False, index=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     
-    category = relationship("DialecticsCategory")
+    category = relationship("DialecticsCategory", lazy="selectin")
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-
-class DialecticsHistory(Base):
+class DialecticsVersion(Base):
     """
-    Модель истории промежуточных версий (слепков) конспекта 'Диалектики'.
+    Модель снимка (версии) конспекта 'Диалектики'.
     """
-    __tablename__ = "dialectics_history"
+    __tablename__ = "dialectics_versions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     dialectics_id: Mapped[int] = mapped_column(ForeignKey("dialectics.id", ondelete="CASCADE"), index=True)
-    title: Mapped[str] = mapped_column(String, default="")
+    title: Mapped[str] = mapped_column(String, default="Автосохранение")
     content_json: Mapped[list | dict] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
+    is_manual: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

@@ -17,6 +17,7 @@ export const DashboardActionService = {
     },
 
     async _handleMarkDone(e) {
+        if (e.defaultPrevented) return;
         const form = e.target;
         if (!form.action) return;
 

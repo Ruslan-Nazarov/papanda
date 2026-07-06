@@ -67,7 +67,7 @@ class WordService:
     async def upsert_word_dynamic(self, eng: str, translations: Dict[str, str], meaning: str) -> Optional[models.WordStats]:
         """Creates or updates a word with dynamic translations."""
         try:
-            res = await self.db.execute(select(models.WordStats).where(models.WordStats.eng == eng))
+            res = await self.db.execute(select(models.WordStats).where(or_(models.WordStats.word == eng, models.WordStats.eng == eng)))
             w = res.scalar_one_or_none()
             
             if w:
@@ -106,7 +106,7 @@ class WordService:
     async def delete_word(self, word_eng: str) -> bool:
         """Deletes a word and invalidates cache."""
         try:
-            await self.db.execute(delete(models.WordStats).where(models.WordStats.eng == word_eng))
+            await self.db.execute(delete(models.WordStats).where(or_(models.WordStats.word == word_eng, models.WordStats.eng == word_eng)))
             await self.db.commit()
             self._search_cache.clear()
             return True
@@ -118,7 +118,7 @@ class WordService:
     async def mark_word_known(self, word_eng: str, lang: str, is_known: bool = True) -> Optional[models.WordStats]:
         """Marks a translation as known and updates learning status."""
         try:
-            res = await self.db.execute(select(models.WordStats).where(models.WordStats.eng == word_eng))
+            res = await self.db.execute(select(models.WordStats).where(or_(models.WordStats.word == word_eng, models.WordStats.eng == word_eng)))
             w = res.scalar_one_or_none()
             if w:
                 stats = dict(w.knowledge_stats or {})
@@ -139,7 +139,7 @@ class WordService:
     async def toggle_active_triplet_known(self, word_eng: str, is_known: bool = True) -> Optional[models.WordStats]:
         """Toggles known status for all currently active languages for a word."""
         try:
-            res = await self.db.execute(select(models.WordStats).where(models.WordStats.eng == word_eng))
+            res = await self.db.execute(select(models.WordStats).where(or_(models.WordStats.word == word_eng, models.WordStats.eng == word_eng)))
             w = res.scalar_one_or_none()
             if w:
                 active_langs = await self.langs.get_active_languages()
