@@ -83,6 +83,7 @@ class NoteControllerClass {
             })),
             is_pinned: this.state.isPinned || false,
             category_id: categoryId ? parseInt(categoryId) : null,
+            status: this.state.currentNoteStatus || "none",
             sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
             sticker_title: document.getElementById('dialecticsStickerTitle')?.value || "",
             sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
@@ -149,6 +150,7 @@ class NoteControllerClass {
             blocks: [{ side: 'left', html }],
             is_pinned: true,
             category_id: categoryId ? parseInt(categoryId) : null,
+            status: this.state.currentNoteStatus || "none",
             sticker_text: document.getElementById('dialecticsStickerText')?.value || "",
             sticker_title: document.getElementById('dialecticsStickerTitle')?.value || "",
             sticker_color: document.getElementById('dialecticsStickerColor')?.value || "#fff9c4",
@@ -341,6 +343,7 @@ class NoteControllerClass {
     }
 
     updateCurrentVersionDisplay(note) {
+        this.updateStatusButtonDisplay(note ? (note.status || 'none') : 'none');
         const label = document.getElementById('currentVersionLabel');
         if (!label) return;
         if (!note) {
@@ -353,6 +356,44 @@ class NoteControllerClass {
             label.innerText = `Сохранено: ${dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         } else {
             label.innerText = 'Сохранено';
+        }
+    }
+
+    updateStatusButtonDisplay(status = 'none') {
+        if (this.state) this.state.currentNoteStatus = status;
+        const btn = document.getElementById('currentNoteStatusBtn');
+        if (!btn) return;
+        btn.className = `note-status-circle status-${status}`;
+        let tooltip = 'Статус: Не указано (нажмите для смены)';
+        if (status === 'in_progress') tooltip = 'В работе';
+        else if (status === 'ready') tooltip = 'Готовый конспект';
+        btn.title = tooltip;
+    }
+
+    async toggleCurrentNoteStatus(e) {
+        if (e) e.stopPropagation();
+        const current = (this.state && this.state.currentNoteStatus) || 'none';
+        let next = 'none';
+        if (current === 'none') next = 'in_progress';
+        else if (current === 'in_progress') next = 'ready';
+        else if (current === 'ready') next = 'none';
+        
+        this.updateStatusButtonDisplay(next);
+        if (this.state && this.state.currentNoteId) {
+            await DialecticsAPI.updateStatus(this.state.currentNoteId, next);
+            if (window.showToast) {
+                let msg = 'Статус изменён: Не указано';
+                if (next === 'in_progress') msg = 'Статус изменён: В работе';
+                if (next === 'ready') msg = 'Статус изменён: Готовый конспект';
+                window.showToast(msg, 'success');
+            }
+        } else {
+            if (window.showToast) {
+                let msg = 'Статус установлен: Не указано (сохранится с конспектом)';
+                if (next === 'in_progress') msg = 'Статус установлен: В работе (сохранится с конспектом)';
+                if (next === 'ready') msg = 'Статус установлен: Готовый конспект (сохранится с конспектом)';
+                window.showToast(msg, 'info');
+            }
         }
     }
 

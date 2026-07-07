@@ -107,7 +107,8 @@ async def save_dialectics(
         title=data.title or "",
         content_json=content_json,
         is_pinned=data.is_pinned,
-        category_id=data.category_id
+        category_id=data.category_id,
+        status=data.status or "none"
     )
     db.add(new_note)
     await db.commit()
@@ -303,13 +304,18 @@ async def update_dialectics(
     if not note:
         raise HTTPException(status_code=404, detail="Entry not found")
     
-    # Use list for JSON column
-    content_json = [b.model_dump() for b in data.blocks]
-    
-    note.title = data.title
-    note.content_json = content_json
+    if data.title is not None:
+        note.title = data.title
+    if data.status is not None:
+        note.status = data.status
+        
+    if data.blocks is not None:
+        # Use list for JSON column
+        content_json = [b.model_dump() for b in data.blocks]
+        note.content_json = content_json
+        flag_modified(note, "content_json")
+        
     note.updated_at = datetime.now(timezone.utc)
-    flag_modified(note, "content_json")
     
     if data.is_pinned is not None:
         note.is_pinned = data.is_pinned
@@ -319,39 +325,40 @@ async def update_dialectics(
     
     await db.commit()
     
-    # Handle versioning with 15 min cooldown and max 30 auto versions limit
-    ver_query = select(DialecticsVersion).where(
-        DialecticsVersion.dialectics_id == note.id,
-        DialecticsVersion.is_manual == False
-    ).order_by(DialecticsVersion.created_at.desc()).limit(1)
-    ver_res = await db.execute(ver_query)
-    latest_ver = ver_res.scalar_one_or_none()
-    
-    now_utc = datetime.now(timezone.utc)
-    if latest_ver and (now_utc - latest_ver.created_at) < timedelta(minutes=15):
-        latest_ver.content_json = copy.deepcopy(content_json)
-        latest_ver.created_at = now_utc
-        flag_modified(latest_ver, "content_json")
-    else:
-        new_ver = DialecticsVersion(
-            dialectics_id=note.id,
-            title="Автосохранение",
-            content_json=copy.deepcopy(content_json),
-            is_manual=False
-        )
-        db.add(new_ver)
-        await db.commit()
-        
-        # Enforce limit of 30 auto versions
-        count_query = select(DialecticsVersion).where(
+    # Handle versioning only if blocks were updated
+    if data.blocks is not None:
+        ver_query = select(DialecticsVersion).where(
             DialecticsVersion.dialectics_id == note.id,
             DialecticsVersion.is_manual == False
-        ).order_by(DialecticsVersion.created_at.desc())
-        all_auto_res = await db.execute(count_query)
-        all_auto_vers = all_auto_res.scalars().all()
-        if len(all_auto_vers) > 30:
-            for old_ver in all_auto_vers[30:]:
-                await db.delete(old_ver)
+        ).order_by(DialecticsVersion.created_at.desc()).limit(1)
+        ver_res = await db.execute(ver_query)
+        latest_ver = ver_res.scalar_one_or_none()
+        
+        now_utc = datetime.now(timezone.utc)
+        if latest_ver and (now_utc - latest_ver.created_at) < timedelta(minutes=15):
+            latest_ver.content_json = copy.deepcopy(content_json)
+            latest_ver.created_at = now_utc
+            flag_modified(latest_ver, "content_json")
+        else:
+            new_ver = DialecticsVersion(
+                dialectics_id=note.id,
+                title="Автосохранение",
+                content_json=copy.deepcopy(content_json),
+                is_manual=False
+            )
+            db.add(new_ver)
+            await db.commit()
+            
+            # Enforce limit of 30 auto versions
+            count_query = select(DialecticsVersion).where(
+                DialecticsVersion.dialectics_id == note.id,
+                DialecticsVersion.is_manual == False
+            ).order_by(DialecticsVersion.created_at.desc())
+            all_auto_res = await db.execute(count_query)
+            all_auto_vers = all_auto_res.scalars().all()
+            if len(all_auto_vers) > 30:
+                for old_ver in all_auto_vers[30:]:
+                    await db.delete(old_ver)
     await db.commit()
     
     # Reload with category after commit
@@ -369,6 +376,24 @@ async def update_dialectics(
             type=data.sticker_type or "text"
         )
 
+    return note
+
+@router.post("/api/dialectics/{id}/status", response_model=DialecticsView)
+async def update_dialectics_status(
+    id: int,
+    status: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    user: Any = Depends(check_auth_dependency)
+) -> Any:
+    """Быстро обновляет статус конспекта."""
+    query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == id)
+    result = await db.execute(query)
+    note = result.scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    note.status = status
+    note.updated_at = datetime.now(timezone.utc)
+    await db.commit()
     return note
 
 @router.get("/api/dialectics/pinned/active", response_model=Optional[DialecticsView])

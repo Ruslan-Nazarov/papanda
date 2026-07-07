@@ -24,6 +24,7 @@ class Dialectics(Base):
     category_id: Mapped[int | None] = mapped_column(ForeignKey("dialectics_category.id", ondelete="SET NULL"), nullable=True)
     content_json: Mapped[list | dict] = mapped_column(JSON, default=list)
     is_pinned: Mapped[bool] = mapped_column(default=False)
+    status: Mapped[str] = mapped_column(String(20), default="none", index=True)
     is_deleted: Mapped[bool] = mapped_column(default=False, index=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     

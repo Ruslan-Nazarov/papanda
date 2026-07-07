@@ -54,6 +54,11 @@ async def lifespan(app: FastAPI):
                     await conn.execute(text("ALTER TABLE dialectics ADD COLUMN deleted_at DATETIME"))
                 except Exception:
                     pass
+                try:
+                    from sqlalchemy import text
+                    await conn.execute(text("ALTER TABLE dialectics ADD COLUMN status VARCHAR(20) DEFAULT 'none'"))
+                except Exception:
+                    pass
             logger.info("Database initialization successful. All tables verified.")
         
             # Гарантируем наличие примера конспекта в основной базе

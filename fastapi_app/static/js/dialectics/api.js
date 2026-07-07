@@ -25,6 +25,10 @@ export const DialecticsAPI = {
         const res = await fetch(`/api/dialectics/${id}`, { method: 'DELETE' });
         return res.ok;
     },
+    async updateStatus(id, status) {
+        const res = await fetch(`/api/dialectics/${id}/status?status=${encodeURIComponent(status)}`, { method: 'POST' });
+        return res.ok ? await res.json() : null;
+    },
     async listCategories() {
         const res = await fetch('/api/dialectics/categories/all');
         return res.ok ? await res.json() : [];

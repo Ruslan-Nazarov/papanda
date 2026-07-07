@@ -124,9 +124,17 @@ export const ModalsControllerMixin = {
             const isDefaultNote = ["example note", "пример конспекта", "конспект мысалы", "summation", "суммирование", "суммалау"].includes(cleanTitle) || cleanTitle.includes("сумм") || cleanTitle.includes("summation") || cleanTitle.includes("пример конспекта");
             const delBtnHTML = isDefaultNote ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
 
+            const status = n.status || 'none';
+            let tooltip = 'Статус: Не указано (нажмите для смены)';
+            if (status === 'in_progress') tooltip = 'В работе';
+            else if (status === 'ready') tooltip = 'Готовый конспект';
+
             i.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
-                    <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${pinnedIcon}<strong>${n.title || (window._ ? window._('dialectics.topic_placeholder') : "Untitled")}</strong></div>
+                    <div class="load-note-item-title" style="display: flex; align-items: center; gap: 8px; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">
+                        <button class="note-status-circle status-${status}" data-status="${status}" title="${tooltip}" onclick="if(window.app) window.app.toggleListNoteStatus(event, ${n.id}, this);"></button>
+                        ${pinnedIcon}<strong>${n.title || (window._ ? window._('dialectics.topic_placeholder') : "Untitled")}</strong>
+                    </div>
                     <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">${dateStr}</div>
                 </div>
                 ${delBtnHTML}
@@ -301,7 +309,8 @@ export const ModalsControllerMixin = {
             title,
             blocks,
             is_pinned: true,
-            category_id: categoryId ? parseInt(categoryId) : null
+            category_id: categoryId ? parseInt(categoryId) : null,
+            status: this.state.currentNoteStatus || "none"
         };
 
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
@@ -495,9 +504,17 @@ export const ModalsControllerMixin = {
                 const catName = note.category ? note.category.name : "Без категории";
                 const catColor = note.category && note.category.color ? note.category.color : "#cbd5e1";
                 
+                const status = note.status || 'none';
+                let tooltip = 'Статус: Не указано (нажмите для смены)';
+                if (status === 'in_progress') tooltip = 'В работе';
+                else if (status === 'ready') tooltip = 'Готовый конспект';
+
                 item.innerHTML = `
                     <div class="connections-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="note-status-circle status-${status}" data-status="${status}" title="${tooltip}" onclick="if(window.app) window.app.toggleListNoteStatus(event, ${note.id}, this);"></button>
+                            <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
+                        </div>
                         <span class="connections-result-cat" style="background-color: ${catColor}15; color: ${catColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${catColor}30;">${catName}</span>
                     </div>
                     <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${parseUTCDate(note.created_at).toLocaleDateString()}</div>
@@ -546,9 +563,17 @@ export const ModalsControllerMixin = {
                 item.onmouseout = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'; item.style.borderColor = 'var(--color-border)'; };
                 const title = note.title || "Untitled";
                 const catColor = note.category && note.category.color ? note.category.color : "#cbd5e1";
+                const status = note.status || 'none';
+                let tooltip = 'Статус: Не указано (нажмите для смены)';
+                if (status === 'in_progress') tooltip = 'В работе';
+                else if (status === 'ready') tooltip = 'Готовый конспект';
+
                 item.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="note-status-circle status-${status}" data-status="${status}" title="${tooltip}" onclick="if(window.app) window.app.toggleListNoteStatus(event, ${note.id}, this);"></button>
+                            <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${title}</strong>
+                        </div>
                         <span style="background-color: ${catColor}15; color: ${catColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${catColor}30;">${categoryName}</span>
                     </div>
                     <div style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${parseUTCDate(note.created_at).toLocaleDateString()}</div>
@@ -563,6 +588,35 @@ export const ModalsControllerMixin = {
         } catch (e) {
             console.error("Category search error", e);
             this.dom.connResultsContainer.innerHTML = '<p class="connections-empty-state">Ошибка поиска</p>';
+        }
+    },
+
+    async toggleListNoteStatus(e, noteId, el) {
+        if (e) e.stopPropagation();
+        let current = el.dataset.status || 'none';
+        let next = 'none';
+        if (current === 'none') next = 'in_progress';
+        else if (current === 'in_progress') next = 'ready';
+        else if (current === 'ready') next = 'none';
+        
+        el.dataset.status = next;
+        el.className = `note-status-circle status-${next}`;
+        let tooltip = 'Статус: Не указано (нажмите для смены)';
+        if (next === 'in_progress') tooltip = 'В работе';
+        else if (next === 'ready') tooltip = 'Готовый конспект';
+        el.title = tooltip;
+        
+        await DialecticsAPI.updateStatus(noteId, next);
+        
+        if (this.state && Number(this.state.currentNoteId) === Number(noteId)) {
+            if (this.updateStatusButtonDisplay) this.updateStatusButtonDisplay(next);
+        }
+        
+        if (window.showToast) {
+            let msg = 'Статус изменён: Не указано';
+            if (next === 'in_progress') msg = 'Статус изменён: В работе';
+            if (next === 'ready') msg = 'Статус изменён: Готовый конспект';
+            window.showToast(msg, 'success');
         }
     }
 };

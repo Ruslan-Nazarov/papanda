@@ -22,6 +22,7 @@
                     <option value="">{{ _('dialectics.no_category') | default('Без категории') }}</option>
                 </select>
                 <input type="text" class="note-title-input" id="globalDialecticsTitle" placeholder="{{ _('dialectics.topic_placeholder') | default('Тема конспекта...') }}" style="font-family: inherit; color: #ea580c; font-weight: 700;">
+                <button class="badge-relations badge-help-premium" id="howItHelpsBtn" onclick="openHowItHelpsModal()" title="Как это вам поможет?">✨ Как это вам поможет?</button>
                 <div class="dialectics-menu-dropdown" id="modeMenuDropdown" style="position: relative;">
                     <button class="badge-relations" id="modeMenuBtn" onclick="toggleModeMenu()" title="{{ _('dialectics.mode') | default('Режим') }}">🎛️ {{ _('dialectics.mode') | default('Режим') }}</button>
                     <div class="dialectics-menu-content" id="modeMenuContent" style="display: none; min-width: 230px; padding: 10px; gap: 8px;">
@@ -104,6 +105,7 @@
             <!-- Main Dialectics Interface -->
             <div class="note-interface" style="position: relative;">
                 <div class="canvas-top-toolbar" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 24px 4px 24px;">
+                    <button class="note-status-circle status-none" id="currentNoteStatusBtn" onclick="if(window.app) window.app.toggleCurrentNoteStatus(event)" title="Статус: Не указано (нажмите для смены)" style="margin-right: 4px;"></button>
                     <button class="badge-relations" id="btnVersionsMenu" onclick="if(window.app) window.app.toggleVersionsMenu(event)" style="background: white; border: 1px solid #cbd5e1; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; display: flex; align-items: center; gap: 6px;" title="История версий">
                         <span>⏱️</span>
                         <span id="currentVersionLabel" style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Текущая версия</span>
@@ -448,6 +450,137 @@
     {% include 'partials/modals/common_modals.html' %}
     {% include 'partials/_article_parser_widget.html' %}
 
+    <!-- How It Helps Modal -->
+    <div id="howItHelpsModal" class="modal premium-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.65); z-index: 99999;">
+        <div class="modal-content" style="max-width: 650px; border-radius: var(--radius-xl); border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--color-border-light); padding: 24px; position: relative; background: linear-gradient(135deg, rgba(255, 243, 224, 0.4), rgba(255, 255, 255, 0));">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background: linear-gradient(135deg, #f97316 0%, #a855f7 50%, #6366f1 100%); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.2);">
+                        ✨
+                    </div>
+                    <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0; color: var(--color-text-dark);">Как это вам поможет?</h2>
+                </div>
+                <span class="close-btn" onclick="closeHowItHelpsModal()" style="position: absolute; right: 24px; top: 24px; cursor: pointer; font-size: 1.5rem; color: var(--color-text-muted); transition: color 0.2s; line-height: 1;">&times;</span>
+            </div>
+
+            <div class="modal-body" style="padding: 28px; max-height: 65vh; overflow-y: auto; color: var(--color-text-body); line-height: 1.6; font-size: 0.975rem;">
+                <p style="margin-top: 0; margin-bottom: 20px; font-weight: 700; color: var(--color-text-dark); font-size: 1.1rem; text-align: center;">
+                    🐼 papanda — это:
+                </p>
+                
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">🤝</span>
+                        <span class="help-accordion-title">1. Протокол общения ИИ и человека</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>Много образовательных организаций пытаются бороться с применением ИИ или, если соглашаются с применением ИИ, стараются его ограничить. Много компаний увольняют работников, заменяя их ИИ, а затем возвращают работников, потому что заменить их ИИ не получилось.</p>
+                        <p>Ни компании, ни образовательные организации, ни специалисты пока не до конца осознают, что нельзя заменить человека ИИ, но нельзя и лишить человека такого инструмента, как ИИ. Нужен просто правильный протокол взаимодействия человека и ИИ. papanda таким протоколом и является, потому что:</p>
+                        <ul>
+                            <li>определяет роль каждого: ИИ поставляет знания, а человек — их анализирует;</li>
+                            <li>устанавливает границы применимости ИИ: только человек может понять процессы, развитие, ИИ на это неспособен принципиально.</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">🌀</span>
+                        <span class="help-accordion-title">2. Алгоритм понимания процессов</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>papanda предлагает диалектический анализ для понимания процессов. ИИ поставляет знания о процессах, человек проводит диалектический анализ, выявляя законы развития этих процессов. Конкретные шаги — поиск простейшего процесса, его раскрытие, поиск противоположностей, противоречия, перехода к разрешению противоречия — позволяют любой процесс представить как диалектический, понять его.</p>
+                        <p>Что дает такое понимание процессов? Это позволяет:</p>
+                        <ul>
+                            <li>лучше усвоить, осознать, запомнить процессы, что важно для образования;</li>
+                            <li>сознательно изменять, улучшать процессы, что важно для производства.</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">📝</span>
+                        <span class="help-accordion-title">3. Новый тип конспектов</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>Есть несколько признанных типов конспектирования, каждый из них хорош в своей области. papanda предлагает универсальный тип конспектов, который позволяет собирать, структурировать знания, а главное — извлекать из знаний смысл, выстраивать понимание. Конспекты в papanda — это не пассивное потребление информации, а активное взаимодействие студента, специалиста с ИИ, знаниями.</p>
+                        <p>papanda — это не просто рабочее пространство, поделенное на две колонки. Нет, это набор инструментов, которые подобраны так, чтобы можно было переходить от абстрактного понимания — к конкретным знаниям, и обратно. Например, такой инструмент, как "скрытый текст", позволяет расширять или сжимать текст моментально: в расширенном варианте вы получаете больше конкретики, а в сжатом — больше общих идей.</p>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">🌍</span>
+                        <span class="help-accordion-title">4. Инструмент изучения иностранных языков</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>Знание иностранных языков полезно и само по себе. Однако значимость иностранных языков и в том, что усвоение грамматики разных языков позволяет лучше понимать, как язык описывает действительность. ИИ строится вокруг отображения языком действительности. Поэтому невозможно понять и применять ИИ без правильного понимания языка.</p>
+                        <p>papanda содержит инструменты изучения иностранных языков, которые выстроены вокруг особой методики. Иизчение языков должно начинаться с изучения предложений, того, как строятся предложения. Уже в ходе освоения предложений нужно и можно усваивать склонения, спряжения и прочие элементы, с которых, как правило, начинают в традиционных методиках. Поэтому центральное место в изучении языков в papanda занимает тренажер предложений.</p>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">⏱️</span>
+                        <span class="help-accordion-title">5. Тайм-менеджмент</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>Для эффективной учебы необходима эффективная организация времени. Организовать эффективно время занятий можно, если не только планировать, но и контролировать выполнение планов, анализировать хронологию своей жизни, собирать инсайты, заметки, которые "рождаются" по ходу занятий. Все это позволяет делать отдельный набор виджетов papanda.</p>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">🏫</span>
+                        <span class="help-accordion-title">6. Единая площадка для обучения</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>papanda содержит большинство необходимых для эффективной учебы инструментов — от конспектирования до организации учебного времени. Единая точка позволяет эффективно организовать занятия, а также позволяет в перспективе, за счет внедрения ИИ на дополнительных уровнях, лучше анализировать успехи, понимать трудности в освоении предметов у студента.</p>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">🚀</span>
+                        <span class="help-accordion-title">7. (В перспективе) новый тип ИИ</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>Сейчас ИИ в большей степени опирается на вероятностное понимание мира. По сути, ИИ ничего и не говорит о мире, только "рассуждая" в рамках тех текстов, на которых был обучен. Новый тип ИИ должен быть принципиально иным — он должен основываться на диалектическом подходе, должен давать не вероятностные модели мира, а модели мира, построенные на законах развития процессов, выявленных во взаимодействии с человеком. Такой новый ИИ будет действительно "имитировать" работу человека.</p>
+                        <p>В papanda пока нет этого ИИ в полной мере. На пути его создания пока стоят нерешенные задачи из области математики и программирования. Однако решить эти задачи вполне возможно, причем не в таком далеком будущем.</p>
+                    </div>
+                </details>
+
+                <details class="help-accordion-item">
+                    <summary class="help-accordion-summary">
+                        <span class="help-accordion-icon">🎓</span>
+                        <span class="help-accordion-title">8. (В перспективе) новый тип организации образования</span>
+                        <span class="help-accordion-arrow">▼</span>
+                    </summary>
+                    <div class="help-accordion-content">
+                        <p>Сейчас образование — это лекции, учебники, зубрежка и бесконечная "проверка знаний". Возможно, это было эффективным раньше. Точно — это неэффективно теперь. Во времена, когда ИИ способен лучше, эффективнее собрать, предоставить данные — в эти времена нужно изменить образование. Все образование должно быть нацелено не на запоминание, решение сотен и тысяч задач, примеров, а на:</p>
+                        <ul>
+                            <li>умение взаимодействовать с ИИ;</li>
+                            <li>в этом взаимодействии извлекать из процессов, знания о которых дает ИИ, понимание.</li>
+                        </ul>
+                        <p>papanda вполне может стать одним из способов организации образования. Студенты могут получать знания на лекциях, из книг, но они активно, с помощью ИИ, преобразуют эти знания в конспекты по учебным дисциплинам. Именно ведение таких конспектов оценивается образовательной организацией. Не решение типовых задач, а умение извлекать смыслы из информации — вот что может и должно стать костяком образования будущего. Только в этом случае студенты могут не бояться, что их "заменит" ИИ.</p>
+                    </div>
+                </details>
+            </div>
+
+            <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl); display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--color-border-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeHowItHelpsModal()" style="font-weight: 600; border-radius: var(--radius-md); padding: 10px 20px; font-size: 0.9rem;">Понятно</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Explain Concept Modal -->
     <div id="explainConceptModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:99999;">
         <div style="background:#fff; border-radius:16px; width:min(680px, 92vw); max-height:80vh; display:flex; flex-direction:column; box-shadow:0 25px 50px rgba(0,0,0,0.25);">
@@ -584,6 +717,22 @@
                 menu.style.display = 'flex';
             } else {
                 menu.style.display = 'none';
+            }
+        }
+        function openHowItHelpsModal() {
+            const modal = document.getElementById('howItHelpsModal');
+            if (window.ModalManager) {
+                window.ModalManager.open('howItHelpsModal');
+            } else if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+        function closeHowItHelpsModal() {
+            const modal = document.getElementById('howItHelpsModal');
+            if (window.ModalManager) {
+                window.ModalManager.close('howItHelpsModal');
+            } else if (modal) {
+                modal.style.display = 'none';
             }
         }
         document.addEventListener('click', function(e) {

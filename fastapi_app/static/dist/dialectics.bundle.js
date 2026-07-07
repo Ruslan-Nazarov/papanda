@@ -20,6 +20,10 @@ var t = {
 	async delete(e) {
 		return (await fetch(`/api/dialectics/${e}`, { method: "DELETE" })).ok;
 	},
+	async updateStatus(e, t) {
+		let n = await fetch(`/api/dialectics/${e}/status?status=${encodeURIComponent(t)}`, { method: "POST" });
+		return n.ok ? await n.json() : null;
+	},
 	async listCategories() {
 		let e = await fetch("/api/dialectics/categories/all");
 		return e.ok ? await e.json() : [];
@@ -35322,16 +35326,19 @@ var Gv = {
 				"summation",
 				"суммирование",
 				"суммалау"
-			].includes(s) || s.includes("сумм") || s.includes("summation") || s.includes("пример конспекта") ? "" : "<button class=\"load-note-item-delete\" title=\"Delete\">🗑️</button>";
-			n.innerHTML = `
+			].includes(s) || s.includes("сумм") || s.includes("summation") || s.includes("пример конспекта") ? "" : "<button class=\"load-note-item-delete\" title=\"Delete\">🗑️</button>", l = e.status || "none", u = "Статус: Не указано (нажмите для смены)";
+			l === "in_progress" ? u = "В работе" : l === "ready" && (u = "Готовый конспект"), n.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
-                    <div class="load-note-item-title" style="display: flex; align-items: center; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">${o}<strong>${e.title || (window._ ? window._("dialectics.topic_placeholder") : "Untitled")}</strong></div>
+                    <div class="load-note-item-title" style="display: flex; align-items: center; gap: 8px; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">
+                        <button class="note-status-circle status-${l}" data-status="${l}" title="${u}" onclick="if(window.app) window.app.toggleListNoteStatus(event, ${e.id}, this);"></button>
+                        ${o}<strong>${e.title || (window._ ? window._("dialectics.topic_placeholder") : "Untitled")}</strong>
+                    </div>
                     <div class="load-note-item-date" style="color: #94a3b8; font-size: 0.85em;">${a}</div>
                 </div>
                 ${c}
             `, n.onclick = () => this.loadNoteToEditor(e.id);
-			let l = n.querySelector(".load-note-item-delete");
-			l && (l.onclick = async (i) => {
+			let d = n.querySelector(".load-note-item-delete");
+			d && (d.onclick = async (i) => {
 				i.stopPropagation();
 				let a = window._ ? window._("dialectics.delete", "Confirm Deletion") : "Confirm Deletion", o = window._ ? window._("dialectics.confirm_delete", "Delete note \"%s\"?") : "Delete note \"%s\"?", s = window._ ? window._("dialectics.cancel", "Cancel") : "Cancel", c = window._ ? window._("dialectics.delete", "Delete") : "Delete";
 				await r({
@@ -35447,7 +35454,8 @@ var Gv = {
 			title: e,
 			blocks: n,
 			is_pinned: !0,
-			category_id: r ? parseInt(r) : null
+			category_id: r ? parseInt(r) : null,
+			status: this.state.currentNoteStatus || "none"
 		};
 		await t.save(i, this.state.currentNoteId) && window.showToast(window._("toast.pinned_successfully"), "success");
 	},
@@ -35540,10 +35548,13 @@ var Gv = {
 				}, t.onmouseout = () => {
 					t.style.transform = "translateY(0)", t.style.boxShadow = "0 2px 4px rgba(0,0,0,0.02)", t.style.borderColor = "var(--color-border)";
 				};
-				let n = e.title || "Untitled", r = e.category ? e.category.name : "Без категории", i = e.category && e.category.color ? e.category.color : "#cbd5e1";
-				t.innerHTML = `
+				let n = e.title || "Untitled", r = e.category ? e.category.name : "Без категории", i = e.category && e.category.color ? e.category.color : "#cbd5e1", a = e.status || "none", o = "Статус: Не указано (нажмите для смены)";
+				a === "in_progress" ? o = "В работе" : a === "ready" && (o = "Готовый конспект"), t.innerHTML = `
                     <div class="connections-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${n}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="note-status-circle status-${a}" data-status="${a}" title="${o}" onclick="if(window.app) window.app.toggleListNoteStatus(event, ${e.id}, this);"></button>
+                            <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${n}</strong>
+                        </div>
                         <span class="connections-result-cat" style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${r}</span>
                     </div>
                     <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${Wv(e.created_at).toLocaleDateString()}</div>
@@ -35578,10 +35589,13 @@ var Gv = {
 				}, t.onmouseout = () => {
 					t.style.transform = "translateY(0)", t.style.boxShadow = "0 2px 4px rgba(0,0,0,0.02)", t.style.borderColor = "var(--color-border)";
 				};
-				let r = e.title || "Untitled", i = e.category && e.category.color ? e.category.color : "#cbd5e1";
-				t.innerHTML = `
+				let r = e.title || "Untitled", i = e.category && e.category.color ? e.category.color : "#cbd5e1", a = e.status || "none", o = "Статус: Не указано (нажмите для смены)";
+				a === "in_progress" ? o = "В работе" : a === "ready" && (o = "Готовый конспект"), t.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                        <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${r}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="note-status-circle status-${a}" data-status="${a}" title="${o}" onclick="if(window.app) window.app.toggleListNoteStatus(event, ${e.id}, this);"></button>
+                            <strong style="font-size: 1.05rem; font-weight: 700; color: var(--color-text); line-height: 1.3;">${r}</strong>
+                        </div>
                         <span style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${n}</span>
                     </div>
                     <div style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${Wv(e.created_at).toLocaleDateString()}</div>
@@ -35593,6 +35607,16 @@ var Gv = {
 			});
 		} catch (e) {
 			console.error("Category search error", e), this.dom.connResultsContainer.innerHTML = "<p class=\"connections-empty-state\">Ошибка поиска</p>";
+		}
+	},
+	async toggleListNoteStatus(e, n, r) {
+		e && e.stopPropagation();
+		let i = r.dataset.status || "none", a = "none";
+		i === "none" ? a = "in_progress" : i === "in_progress" ? a = "ready" : i === "ready" && (a = "none"), r.dataset.status = a, r.className = `note-status-circle status-${a}`;
+		let o = "Статус: Не указано (нажмите для смены)";
+		if (a === "in_progress" ? o = "В работе" : a === "ready" && (o = "Готовый конспект"), r.title = o, await t.updateStatus(n, a), this.state && Number(this.state.currentNoteId) === Number(n) && this.updateStatusButtonDisplay && this.updateStatusButtonDisplay(a), window.showToast) {
+			let e = "Статус изменён: Не указано";
+			a === "in_progress" && (e = "Статус изменён: В работе"), a === "ready" && (e = "Статус изменён: Готовый конспект"), window.showToast(e, "success");
 		}
 	}
 }, Kv = class {
@@ -35644,6 +35668,7 @@ var Gv = {
 			})),
 			is_pinned: this.state.isPinned || !1,
 			category_id: s ? parseInt(s) : null,
+			status: this.state.currentNoteStatus || "none",
 			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
 			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
 			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
@@ -35675,6 +35700,7 @@ var Gv = {
 			}],
 			is_pinned: !0,
 			category_id: r ? parseInt(r) : null,
+			status: this.state.currentNoteStatus || "none",
 			sticker_text: document.getElementById("dialecticsStickerText")?.value || "",
 			sticker_title: document.getElementById("dialecticsStickerTitle")?.value || "",
 			sticker_color: document.getElementById("dialecticsStickerColor")?.value || "#fff9c4",
@@ -35793,6 +35819,7 @@ var Gv = {
 		} else window.location.href = "/";
 	}
 	updateCurrentVersionDisplay(e) {
+		this.updateStatusButtonDisplay(e && e.status || "none");
 		let t = document.getElementById("currentVersionLabel");
 		if (!t) return;
 		if (!e) {
@@ -35804,6 +35831,27 @@ var Gv = {
 			hour: "2-digit",
 			minute: "2-digit"
 		})}` : t.innerText = "Сохранено";
+	}
+	updateStatusButtonDisplay(e = "none") {
+		this.state && (this.state.currentNoteStatus = e);
+		let t = document.getElementById("currentNoteStatusBtn");
+		if (!t) return;
+		t.className = `note-status-circle status-${e}`;
+		let n = "Статус: Не указано (нажмите для смены)";
+		e === "in_progress" ? n = "В работе" : e === "ready" && (n = "Готовый конспект"), t.title = n;
+	}
+	async toggleCurrentNoteStatus(e) {
+		e && e.stopPropagation();
+		let n = this.state && this.state.currentNoteStatus || "none", r = "none";
+		if (n === "none" ? r = "in_progress" : n === "in_progress" ? r = "ready" : n === "ready" && (r = "none"), this.updateStatusButtonDisplay(r), this.state && this.state.currentNoteId) {
+			if (await t.updateStatus(this.state.currentNoteId, r), window.showToast) {
+				let e = "Статус изменён: Не указано";
+				r === "in_progress" && (e = "Статус изменён: В работе"), r === "ready" && (e = "Статус изменён: Готовый конспект"), window.showToast(e, "success");
+			}
+		} else if (window.showToast) {
+			let e = "Статус установлен: Не указано (сохранится с конспектом)";
+			r === "in_progress" && (e = "Статус установлен: В работе (сохранится с конспектом)"), r === "ready" && (e = "Статус установлен: Готовый конспект (сохранится с конспектом)"), window.showToast(e, "info");
+		}
 	}
 	toggleVersionsMenu(e) {
 		if (e && e.stopPropagation(), !this.state.currentNoteId) {
