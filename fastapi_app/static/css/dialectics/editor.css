@@ -712,6 +712,14 @@ canvas#shapesCanvas {
     margin-left: 2px;
 }
 
+/* Prevent duplicate icons when mark is split across multiple inline segments inside the same block/paragraph */
+.dialectics-question-highlight:has(~ .dialectics-question-highlight)::after,
+.dialectics-hidden-phrase:has(~ .dialectics-hidden-phrase)::after,
+.dialectics-block-link + .dialectics-block-link::before,
+.dialectics-block-link:has(~ .dialectics-block-link)::after {
+    content: none !important;
+}
+
 /* --- Modern Quote Block --- */
 .modern-blockquote {
     border-left: 4px solid #3b82f6 !important;

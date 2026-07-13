@@ -1,13 +1,14 @@
 /**
  * editor_setup.js - Настройка TipTap и кастомных узлов
  */
-import { Node, Mark, mergeAttributes, InputRule } from '@tiptap/core';
+import { Node, Mark, Extension, mergeAttributes, InputRule } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import katex from 'katex';
 import { customPrompt, customLatexPrompt } from '../modal_controller.js';
 
 export const QuestionMark = Mark.create({
     name: 'questionMark',
+    inclusive: false,
 
     addAttributes() {
         return {
@@ -58,6 +59,7 @@ export const QuestionMark = Mark.create({
 
 export const HiddenPhraseMark = Mark.create({
     name: 'hiddenPhrase',
+    inclusive: false,
 
     addAttributes() {
         return {
@@ -117,6 +119,7 @@ export const HiddenPhraseMark = Mark.create({
 
 export const BlockLinkMark = Mark.create({
     name: 'blockLink',
+    inclusive: false,
 
     addAttributes() {
         return {
@@ -132,6 +135,22 @@ export const BlockLinkMark = Mark.create({
                 parseHTML: element => element.getAttribute('data-target-title') || '',
                 renderHTML: attributes => {
                     return { 'data-target-title': attributes.targetTitle };
+                },
+            },
+            targetNoteId: {
+                default: '',
+                parseHTML: element => element.getAttribute('data-target-note-id') || '',
+                renderHTML: attributes => {
+                    if (!attributes.targetNoteId) return {};
+                    return { 'data-target-note-id': attributes.targetNoteId };
+                },
+            },
+            targetNoteTitle: {
+                default: '',
+                parseHTML: element => element.getAttribute('data-target-note-title') || '',
+                renderHTML: attributes => {
+                    if (!attributes.targetNoteTitle) return {};
+                    return { 'data-target-note-title': attributes.targetNoteTitle };
                 },
             },
         };
@@ -551,6 +570,9 @@ if (typeof window !== 'undefined' && !window._hiddenPhraseHandlerInitialized) {
     document.addEventListener('click', (e) => {
         const hiddenPhraseEl = e.target.closest('.dialectics-hidden-phrase');
         if (hiddenPhraseEl) {
+            if (hiddenPhraseEl.closest('[contenteditable="true"]')) {
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             const current = hiddenPhraseEl.getAttribute('data-expanded') === 'true';
@@ -622,24 +644,45 @@ if (typeof window !== 'undefined' && !window._hiddenPhraseHandlerInitialized) {
 if (typeof window !== 'undefined' && !window._blockLinkHandlerInitialized) {
     window._blockLinkHandlerInitialized = true;
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
         const linkEl = e.target.closest('.dialectics-block-link');
         if (linkEl) {
             e.preventDefault();
             e.stopPropagation();
             const targetId = linkEl.getAttribute('data-target-id');
+            const targetNoteId = linkEl.getAttribute('data-target-note-id');
             if (!targetId) return;
 
-            const targetBlock = document.querySelector(`.dialectics-block[data-block-id="${targetId}"], .dialectics-block[data-id="${targetId}"]`);
-            if (targetBlock) {
-                targetBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targetBlock.style.transition = 'box-shadow 0.5s ease';
-                const origBoxShadow = targetBlock.style.boxShadow;
-                targetBlock.style.boxShadow = '0 0 0 4px #3b82f6, 0 0 25px rgba(59, 130, 246, 0.5)';
-                setTimeout(() => { targetBlock.style.boxShadow = origBoxShadow; }, 2000);
+            const scrollAndHighlight = (blockId) => {
+                const targetBlock = document.querySelector(`.dialectics-block[data-block-id="${blockId}"], .dialectics-block[data-id="${blockId}"]`);
+                if (targetBlock) {
+                    targetBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetBlock.style.transition = 'box-shadow 0.5s ease';
+                    const origBoxShadow = targetBlock.style.boxShadow;
+                    targetBlock.style.boxShadow = '0 0 0 4px #3b82f6, 0 0 25px rgba(59, 130, 246, 0.5)';
+                    setTimeout(() => { targetBlock.style.boxShadow = origBoxShadow; }, 2000);
+                    return true;
+                }
+                return false;
+            };
+
+            if (targetNoteId) {
+                if (window.app && typeof window.app.loadNoteToEditor === 'function') {
+                    await window.app.loadNoteToEditor(targetNoteId);
+                    // Wait a bit for rendering
+                    setTimeout(() => {
+                        if (!scrollAndHighlight(targetId)) {
+                            if (window.showToast) window.showToast('Целевой блок не найден в загруженном конспекте', 'warning');
+                        }
+                    }, 300);
+                } else {
+                    if (window.showToast) window.showToast('Не удалось загрузить целевой конспект', 'warning');
+                }
             } else {
-                if (window.showToast) {
-                    window.showToast('Целевой блок не найден на холсте', 'warning');
+                if (!scrollAndHighlight(targetId)) {
+                    if (window.showToast) {
+                        window.showToast('Целевой блок не найден на холсте', 'warning');
+                    }
                 }
             }
         }
@@ -662,11 +705,44 @@ if (typeof window !== 'undefined' && !window._blockLinkHandlerInitialized) {
             removePreview();
 
             const targetId = linkEl.getAttribute('data-target-id');
-            const targetTitle = linkEl.getAttribute('data-target-title') || 'Связанный блок';
+            const targetNoteId = linkEl.getAttribute('data-target-note-id');
+            const targetNoteTitle = linkEl.getAttribute('data-target-note-title');
+            let targetTitle = linkEl.getAttribute('data-target-title') || 'Связанный блок';
+            
+            if (targetNoteTitle) {
+                targetTitle += ` (в "${targetNoteTitle}")`;
+            }
+
             const targetBlock = document.querySelector(`.dialectics-block[data-block-id="${targetId}"], .dialectics-block[data-id="${targetId}"]`);
 
             let previewText = 'Текст блока отсутствует или блок удалён';
-            if (targetBlock) {
+            
+            if (targetNoteId) {
+                previewText = 'Загрузка превью...';
+                // Asynchronously fetch block preview from external note content
+                fetch(`/api/dialectics/${targetNoteId}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(n => {
+                        if (!n) return;
+                        const blocks = typeof n.content_json === 'string' ? JSON.parse(n.content_json) : n.content_json;
+                        if (Array.isArray(blocks)) {
+                            const b = blocks.find(x => x.id === targetId);
+                            if (b) {
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = b.html || '';
+                                let text = tempDiv.innerText.trim();
+                                if (text.length > 180) text = text.substring(0, 180) + '...';
+                                previewText = text || 'Пустой блок';
+                                
+                                if (previewPopover) {
+                                    const bodyTextEl = previewPopover.querySelector('.preview-body-text');
+                                    if (bodyTextEl) bodyTextEl.innerText = previewText;
+                                }
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Preview load error:", err));
+            } else if (targetBlock) {
                 const inner = targetBlock.querySelector('.dialectics-content-inner');
                 if (inner) {
                     previewText = inner.innerText.trim();
@@ -688,7 +764,7 @@ if (typeof window !== 'undefined' && !window._blockLinkHandlerInitialized) {
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 700; color: #1d4ed8; font-size: 0.9rem; border-bottom: 1px solid #eff6ff; padding-bottom: 6px;">
                     <span>🔗</span><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${targetTitle}</span>
                 </div>
-                <div style="color: #475569; line-height: 1.45; font-size: 0.82rem; max-height: 90px; overflow: hidden; text-overflow: ellipsis;">
+                <div class="preview-body-text" style="color: #475569; line-height: 1.45; font-size: 0.82rem; max-height: 90px; overflow: hidden; text-overflow: ellipsis;">
                     ${previewText}
                 </div>
             `;
@@ -962,6 +1038,25 @@ export const AlternativesBlock = Node.create({
                     return true;
                 }
             };
+        };
+    }
+});
+
+export const ClearMarksOnEnter = Extension.create({
+    name: 'clearMarksOnEnter',
+    addKeyboardShortcuts() {
+        return {
+            Enter: ({ editor }) => {
+                if (!editor.state.selection.empty) {
+                    return false;
+                }
+                const split = editor.commands.splitBlock();
+                if (split) {
+                    editor.view.dispatch(editor.state.tr.setStoredMarks([]));
+                    return true;
+                }
+                return false;
+            }
         };
     }
 });

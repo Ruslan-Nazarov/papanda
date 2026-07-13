@@ -15,7 +15,7 @@ export const NotificationService = {
         const style = document.createElement('style');
         style.innerHTML = `
             #premium-toast-container {
-                position: fixed; bottom: 24px; right: 24px;
+                position: fixed; bottom: 90px; right: 24px;
                 display: flex; flex-direction: column; gap: 12px;
                 z-index: 20000; pointer-events: none;
             }

@@ -122,7 +122,7 @@ export const ModalsControllerMixin = {
             const pinnedIcon = n.is_pinned ? '<span style="color: #f59e0b; margin-right: 8px;" title="Pinned">📌</span>' : '';
             const cleanTitle = (n.title || "").trim().toLowerCase();
             const isDefaultNote = ["example note", "пример конспекта", "конспект мысалы", "summation", "суммирование", "суммалау"].includes(cleanTitle) || cleanTitle.includes("сумм") || cleanTitle.includes("summation") || cleanTitle.includes("пример конспекта");
-            const delBtnHTML = isDefaultNote ? '' : '<button class="load-note-item-delete" title="Delete">🗑️</button>';
+            const delBtnHTML = isDefaultNote ? '' : '<button class="load-note-item-delete" title="Delete">✕</button>';
 
             const status = n.status || 'none';
             let tooltip = 'Статус: Не указано (нажмите для смены)';
@@ -155,7 +155,7 @@ export const ModalsControllerMixin = {
                     const confirmed = await customConfirm({
                         title: titleText,
                         message: msgTemplate.replace('%s', n.title),
-                        icon: '🗑️',
+                        icon: '',
                         buttons: [
                             { label: cancelText, value: false, class: 'confirm-btn-secondary' },
                             { label: deleteText, value: true, class: 'confirm-btn-danger' }
@@ -171,7 +171,7 @@ export const ModalsControllerMixin = {
                                 this.dom.loadList.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">Nothing found</div>';
                             }
                             if (this.state.currentNoteId === n.id) {
-                                this.close();
+                                await this.close(false);
                                 this.dom.title.value = "";
                                 BlockManager.render(this.dom.canvas, []);
                                 this.state.currentNoteId = null;
@@ -279,7 +279,7 @@ export const ModalsControllerMixin = {
         const confirmed = await customConfirm({
             title: window._ ? window._('dialectics.delete_note_title') : 'Удаление конспекта',
             message: window._ ? window._('dialectics.delete_note_msg') : 'Вы уверены, что хотите удалить этот конспект?',
-            icon: '🗑️',
+            icon: '',
             buttons: [
                 { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
                 { label: window._ ? window._('dialectics.delete') : 'Удалить', value: true, class: 'confirm-btn-danger' }

@@ -35,6 +35,10 @@ export const COLOR_PRESETS = {
 };
 
 export const BlockManager = {
+    globalCallbacks: {},
+    setCallbacks(callbacks) {
+        this.globalCallbacks = callbacks;
+    },
     renderMath(element) {
         // Convert raw text like $formula$ into <span data-type="mathNode">
         const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
@@ -171,11 +175,59 @@ export const BlockManager = {
         });
     },
 
+    updateProgressWidget(blocks) {
+        const container = document.getElementById('noteProgressWidget');
+        if (!container) return;
+
+        const nonSections = (blocks || []).filter(b => b && !b.isSection && b.side !== 'section' && b.role !== 'anchor');
+        const total = nonSections.length;
+        const ready = nonSections.filter(b => b.status === 'ready').length;
+        const working = nonSections.filter(b => b.status === 'in_progress').length;
+
+        const readyCountEl = document.getElementById('noteProgressReadyCount');
+        const workingCountEl = document.getElementById('noteProgressWorkingCount');
+        const totalCountEl = document.getElementById('noteProgressTotalCount');
+        const percentEl = document.getElementById('noteProgressPercent');
+        const readyBar = document.getElementById('noteProgressReadyBar');
+        const workingBar = document.getElementById('noteProgressWorkingBar');
+
+        if (readyCountEl) readyCountEl.innerText = ready;
+        if (workingCountEl) workingCountEl.innerText = working;
+        if (totalCountEl) totalCountEl.innerText = total;
+
+        if (total === 0) {
+            container.style.opacity = '0.5';
+            if (percentEl) percentEl.innerText = '0%';
+            if (readyBar) readyBar.style.width = '0%';
+            if (workingBar) workingBar.style.width = '0%';
+            return;
+        }
+
+        container.style.opacity = '1';
+        const readyPercent = (ready / total) * 100;
+        const workingPercent = (working / total) * 100;
+
+        if (percentEl) {
+            percentEl.innerText = Math.round(readyPercent) + '%';
+        }
+        if (readyBar) {
+            readyBar.style.width = `${readyPercent}%`;
+        }
+        if (workingBar) {
+            workingBar.style.width = `${workingPercent}%`;
+        }
+    },
+
     render(container, blocks, callbacks = {}) {
         if (!container) return;
+        
+        callbacks = { ...this.globalCallbacks, ...callbacks };
         const divider = document.getElementById('canvasDivider');
         container.innerHTML = '';
         if (divider) container.appendChild(divider);
+
+        this.updateProgressWidget(blocks);
+
 
         const getHint = (key, defaultVal) => {
             if (typeof window._ === 'function') {
@@ -240,8 +292,6 @@ export const BlockManager = {
                 if (b.side && curSideRoles[b.side]) {
                     curSideRoles[b.side] = b.role;
                 }
-            } else if (!b.role && !isSec) {
-                b.role = curSideRoles[b.side || 'left'] || (b.side === 'right' ? 'step2' : b.side === 'center' ? 'step5' : 'step1');
             }
 
             if (b.role) {
@@ -263,7 +313,9 @@ export const BlockManager = {
         } else {
             let nextHint = null;
             for (const step of STEPS) {
-                if (!specialBlocks[step.id]) {
+                const isDismissed = window.app && window.app.state && window.app.state.dismissedHints && window.app.state.dismissedHints.includes(step.id);
+                const showHidden = document.getElementById('toggleShowHiddenHints')?.checked;
+                if (!specialBlocks[step.id] && !(isDismissed && !showHidden)) {
                     nextHint = step;
                     break;
                 }
@@ -298,12 +350,12 @@ export const BlockManager = {
                     wrap.style.alignItems = 'center';
                     wrap.style.justifyContent = 'center';
                     wrap.innerHTML = `
-                        <button class="btn-insert-block btn-insert-square" title="Add summary">+</button>
+                        <button class="btn-insert-block btn-insert-round" title="Добавить блок">+</button>
                     `;
                     const btns = wrap.querySelectorAll('button');
                     btns[0].onclick = (e) => {
                         e.stopPropagation();
-                        callbacks.onInsertAfter('center', targetIndex - 1);
+                        callbacks.onInsertAfter('left', targetIndex - 1);
                     };
                 } else if (side === 'right') {
                     wrap.style.display = 'flex';
@@ -329,12 +381,12 @@ export const BlockManager = {
                     wrap.style.alignItems = 'center';
                     wrap.style.justifyContent = 'center';
                     wrap.innerHTML = `
-                        <button class="btn-insert-block btn-insert-round" title="Добавить блок">+</button>
+                        <button class="btn-insert-block btn-insert-square" title="Add summary">+</button>
                     `;
                     const btns = wrap.querySelectorAll('button');
                     btns[0].onclick = (e) => {
                         e.stopPropagation();
-                        callbacks.onInsertAfter('left', targetIndex - 1);
+                        callbacks.onInsertAfter('center', targetIndex - 1);
                     };
                 }
                 zone.appendChild(wrap);
@@ -361,6 +413,7 @@ export const BlockManager = {
                 div.dataset.side = hint.side;
                 const aiHelpText = hint.id === 'step3' ? getHint('dialectics.ai_opposites', 'ИИ-противоположности') : getHint('dialectics.ai_help', 'Помощь ИИ');
                 div.innerHTML = `
+                    <button class="btn-hint-dismiss" title="Скрыть подсказку" style="position:absolute; left: 12px; top: 12px; background:none; border:none; cursor:pointer; font-size:1rem; color:#94a3b8; transition:color 0.2s; display:flex; align-items:center; justify-content:center; padding:2px; z-index:10;">✕</button>
                     <div class="dialectics-hint-text">${hint.text}</div>
                     <button class="btn-hint-ai" title="${aiHelpText}" style="position:absolute; right: 12px; top: 12px; background:rgba(255,255,255,0.7); border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; cursor:pointer; opacity:0.85; transition:all 0.2s; font-size: 0.82rem; display:flex; align-items:center; gap:5px; color:#334155; font-weight:500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"><span style="font-size:1rem;">✨</span> <span>${aiHelpText}</span></button>
                 `;
@@ -368,6 +421,15 @@ export const BlockManager = {
                     e.stopPropagation();
                     if (callbacks.onHintClick) callbacks.onHintClick(hint);
                 };
+                const dismissBtn = div.querySelector('.btn-hint-dismiss');
+                if (dismissBtn) {
+                    dismissBtn.onmouseover = () => dismissBtn.style.color = '#ef4444';
+                    dismissBtn.onmouseleave = () => dismissBtn.style.color = '#94a3b8';
+                    dismissBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (callbacks.onHintDismiss) callbacks.onHintDismiss(hint.id);
+                    };
+                }
                 const aiBtn = div.querySelector('.btn-hint-ai');
                 if (aiBtn) {
                     aiBtn.onmouseover = () => aiBtn.style.opacity = '1';
@@ -488,6 +550,9 @@ export const BlockManager = {
                     blockEl.classList.add('is-sticky');
                 }
                 blockEl.dataset.pinned = (isPinned && (b.side === 'left' || !b.side)) ? 'true' : 'false';
+                
+                const blockStatus = b.status || 'none';
+                blockEl.dataset.status = blockStatus;
 
                 if (b.title) {
                     blockEl.dataset.title = b.title;
@@ -508,6 +573,13 @@ export const BlockManager = {
                 const arrowChar = isCollapsed ? '▶' : '▼';
                 const foldBtnHtml = `<button class="btn-block-fold-toggle" title="Свернуть/Развернуть" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#64748b; padding:2px 6px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${arrowChar}</button>`;
 
+                const statusCircleHtml = `<span class="note-status-circle status-${blockStatus} btn-block-status" title="Статус блока: ${blockStatus === 'ready' ? 'Готово (Заблокировано)' : (blockStatus === 'in_progress' ? 'В работе' : 'Не указан')}" style="width: 14px; height: 14px; margin-right: 4px; flex-shrink: 0; display: inline-block; cursor: pointer; box-sizing: border-box; border-radius: 50%; padding: 0; background-clip: padding-box;"></span>`;
+                
+                let lockIconHtml = '';
+                if (blockStatus === 'ready') {
+                    lockIconHtml = `<span class="block-lock-icon" title="Блок заблокирован от изменений" style="font-size: 0.85rem; margin-left: 6px; cursor: default; user-select: none;">🔒</span>`;
+                }
+
                 let pinHeaderBtnHtml = '';
                 let pinActionBtnHtml = '';
                 if (b.side === 'left' || !b.side) {
@@ -515,63 +587,25 @@ export const BlockManager = {
                     const pinClass = isPinned ? "is-pinned" : "";
                     const pinText = isPinned ? "📌 Закреплен" : "📌";
                     pinHeaderBtnHtml = `<button class="btn-block-pin-header ${pinClass}" title="${pinTitle}" style="margin-left:auto; background: ${isPinned ? '#e0e7ff' : 'transparent'}; border: 1px solid ${isPinned ? '#6366f1' : 'transparent'}; color: ${isPinned ? '#4338ca' : '#94a3b8'}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s;">${pinText}</button>`;
-                    pinActionBtnHtml = `<button class="btn-block-pin ${pinClass}" title="${pinTitle}" style="color: ${isPinned ? '#6366f1' : 'inherit'};">📌</button>`;
+                    pinActionBtnHtml = '';
                 }
 
-                if (!b.tabs || !Array.isArray(b.tabs) || b.tabs.length === 0) {
-                    b.tabs = [
-                        {
-                            id: 'tab_' + Math.random().toString(36).substring(2, 9),
-                            title: 'Черновик',
-                            content: b.html || '<p></p>',
-                            status: 'draft',
-                            is_locked: false
-                        }
-                    ];
+                let blockHtml = b.html || '<p></p>';
+                if (b.tabs && b.active_tab_id) {
+                    const activeT = b.tabs.find(t => t.id === b.active_tab_id);
+                    if (activeT) {
+                        blockHtml = activeT.content || activeT.html || blockHtml;
+                    }
                 }
-                if (!b.active_tab_id || !b.tabs.some(t => t.id === b.active_tab_id)) {
-                    b.active_tab_id = b.tabs[0].id;
-                }
-                const activeTab = b.tabs.find(t => t.id === b.active_tab_id) || b.tabs[0];
-                const isLocked = activeTab.status === 'clean' && activeTab.is_locked !== false;
-
-                blockEl.dataset.tabs = JSON.stringify(b.tabs);
-                blockEl.dataset.activeTabId = b.active_tab_id;
-                if (b.split_view_tab_id) {
-                    blockEl.dataset.splitViewTabId = b.split_view_tab_id;
-                } else {
-                    delete blockEl.dataset.splitViewTabId;
-                }
-
-                let tabsHtml = `<div class="dialectics-block-tabs" style="display: flex; align-items: center; gap: 4px; padding: 8px 14px 6px 14px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; border-top-left-radius: 12px; border-top-right-radius: 12px; flex-wrap: wrap; overflow-x: auto;">`;
-                b.tabs.forEach((tab, idx) => {
-                    const isActive = tab.id === b.active_tab_id;
-                    const isSplit = tab.id === b.split_view_tab_id;
-                    const isClean = tab.status === 'clean';
-                    const tabLocked = isClean && tab.is_locked !== false;
-                    const lockIcon = isClean ? (tabLocked ? '🔒' : '🔓') : '';
-                    
-                    const bgStyle = isActive ? 'background: #ffffff; color: #0f172a; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-bottom: 2px solid #3b82f6;' : 
-                                    (isSplit ? 'background: #e0f2fe; color: #0369a1; font-weight: 600; border-bottom: 2px solid #0284c7;' : 'background: transparent; color: #64748b; font-weight: 500;');
-                    
-                    tabsHtml += `
-                        <div class="dialectics-tab-btn ${isActive ? 'active' : ''} ${isSplit ? 'split-active' : ''}" data-tab-id="${tab.id}" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; ${bgStyle}">
-                            <span class="tab-title-text" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${tab.title || (isClean ? 'Чистовик ' + idx : 'Черновик')}</span>
-                            ${isClean ? `<span class="tab-lock-toggle" data-tab-id="${tab.id}" title="${tabLocked ? 'Нажмите, чтобы разблокировать для редактирования' : 'Нажмите, чтобы заблокировать чистовик'}" style="cursor: pointer; font-size: 0.8rem; padding: 0 2px;">${lockIcon}</span>` : ''}
-                        </div>
-                    `;
-                });
-                tabsHtml += `
-                    <button class="btn-block-add-tab" title="Создать новый чистовик" style="background: #ffffff; border: 1px dashed #cbd5e1; color: #64748b; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">+</button>
-                    <button class="btn-block-split-view" title="${b.split_view_tab_id ? 'Выключить режим сравнения' : 'Сравнить в две колонки (сплит-вью)'}" style="margin-left: auto; background: ${b.split_view_tab_id ? '#e0f2fe' : 'transparent'}; border: 1px solid ${b.split_view_tab_id ? '#0284c7' : '#cbd5e1'}; color: ${b.split_view_tab_id ? '#0369a1' : '#64748b'}; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">⚖ Сравнить</button>
-                </div>`;
 
                 let extraHtml = `
-                    <div class="dialectics-block-header" style="display:flex; align-items:center; justify-content:space-between; font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 6px 14px; border-bottom:1px solid #f1f5f9; text-transform: uppercase; background:#f8fafc; border-top-left-radius:0; border-top-right-radius:0; cursor: grab; position: sticky; top: 0; z-index: 15; box-shadow: 0 2px 6px -1px rgba(0,0,0,0.05);" title="Зажмите заголовок для перетаскивания блока">
+                    <div class="dialectics-block-header" style="display:flex; align-items:center; justify-content:space-between; font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 6px 14px; border-bottom:1px solid #f1f5f9; text-transform: uppercase; background:#f8fafc; border-top-left-radius:12px; border-top-right-radius:12px; cursor: grab; position: sticky; top: 0; z-index: 15; box-shadow: 0 2px 6px -1px rgba(0,0,0,0.05);" title="Зажмите заголовок для перетаскивания блока">
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
+                            ${statusCircleHtml}
                             ${foldBtnHtml}
                             <span class="block-title-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${titleText}</span>
                             ${infoIconHtml}
+                            ${lockIconHtml}
                         </div>
                         ${pinHeaderBtnHtml}
                     </div>
@@ -602,24 +636,7 @@ export const BlockManager = {
                 }
                 const stickersCountHtml = stickersCount > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#fde68a; border-radius:10px; padding:2px 5px; margin-left:4px; color:#b45309;">${stickersCount}</span>` : '';
 
-                let contentHtml = '';
-                const splitTab = b.split_view_tab_id ? b.tabs.find(t => t.id === b.split_view_tab_id) : null;
-                if (splitTab && splitTab.id !== activeTab.id) {
-                    contentHtml = `
-                        <div class="dialectics-split-container" style="display: flex; gap: 12px; padding: 10px; border-bottom: 1px solid #f1f5f9;">
-                            <div class="dialectics-split-col" style="flex: 1; min-width: 0; border-right: 1px solid #e2e8f0; padding-right: 10px;">
-                                <div style="font-size: 0.75rem; font-weight: bold; color: #3b82f6; margin-bottom: 6px; text-transform: uppercase;">${activeTab.title || 'Черновик'} ${activeTab.status === 'clean' && activeTab.is_locked !== false ? '🔒' : ''}</div>
-                                <div class="dialectics-content-inner dialectics-col-active" data-tab-id="${activeTab.id}">${activeTab.content || '<p></p>'}</div>
-                            </div>
-                            <div class="dialectics-split-col" style="flex: 1; min-width: 0; padding-left: 2px;">
-                                <div style="font-size: 0.75rem; font-weight: bold; color: #0369a1; margin-bottom: 6px; text-transform: uppercase;">${splitTab.title || 'Чистовик'} ${splitTab.status === 'clean' && splitTab.is_locked !== false ? '🔒' : ''}</div>
-                                <div class="dialectics-content-inner dialectics-col-split" data-tab-id="${splitTab.id}">${splitTab.content || '<p></p>'}</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    contentHtml = `<div class="dialectics-content-inner" data-tab-id="${activeTab.id}">${activeTab.content || '<p></p>'}</div>`;
-                }
+                let contentHtml = `<div class="dialectics-content-inner">${blockHtml}</div>`;
 
                 blockEl.innerHTML = `
                     <div class="dialectics-block-actions">
@@ -630,12 +647,13 @@ export const BlockManager = {
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center; gap: 2px;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div>${stickersCountHtml}</button>
                         <button class="btn-block-hidden-phrases" title="Развернуть/свернуть сноски">👁</button>
                         <span class="btn-block-sep" style="width: 1px; height: 16px; background-color: #cbd5e1; margin: 0 4px; align-self: center;"></span>
-                        <button class="btn-block-edit" title="Edit" ${isLocked ? 'style="opacity:0.3; cursor:not-allowed;"' : ''}>✎</button>
+                        <button class="btn-block-edit" title="Edit">✎</button>
                         ${b.role === 'step3' ? '<button class="btn-block-ai" title="Поиск противоположностей">✨</button>' : ''}
+                        <button class="btn-block-check-ai" title="${window._ ? window._('dialectics.check_ai') : 'Проверить ИИ'}">🔬</button>
+                        <button class="btn-block-copy" title="${window._ ? window._('dialectics.copy_text') : 'Скопировать текст'}">📋</button>
                         <button class="btn-block-color" title="Цвет">🎨</button>
-                        <button class="btn-block-del" title="Delete" ${isLocked ? 'style="opacity:0.3; cursor:not-allowed;"' : ''}>🗑️</button>
+                        <button class="btn-block-del" title="Delete">🗑️</button>
                     </div>
-                    ${tabsHtml}
                     ${extraHtml}
                     ${contentHtml}
                     ${wordsHtml}
@@ -662,6 +680,19 @@ export const BlockManager = {
                             blockEl._preventDrag = false;
                         }
                     });
+                }
+
+                // Status Toggle Click Handler
+                const statusBtn = blockEl.querySelector('.btn-block-status');
+                if (statusBtn) {
+                    statusBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (callbacks.onStatusToggle) callbacks.onStatusToggle(blockEl);
+                    };
+                    statusBtn.onmousedown = (e) => {
+                        e.stopPropagation();
+                    };
                 }
 
                 const foldBtnEl = blockEl.querySelector('.btn-block-fold-toggle');
@@ -763,11 +794,42 @@ export const BlockManager = {
                 if (aiBtnEl) {
                     aiBtnEl.onclick = (e) => {
                         e.stopPropagation();
+                        if (blockStatus === 'ready') {
+                            if (window.showToast) window.showToast('Этот блок заблокирован от изменений.', 'warning');
+                            return;
+                        }
                         if (callbacks.onAI) callbacks.onAI(blockEl);
+                    };
+                }
+                const checkAiBtnEl = blockEl.querySelector('.btn-block-check-ai');
+                if (checkAiBtnEl) {
+                    checkAiBtnEl.onclick = (e) => {
+                        e.stopPropagation();
+                        if (callbacks.onCheckAI) callbacks.onCheckAI(blockEl);
+                    };
+                }
+                const copyBtnEl = blockEl.querySelector('.btn-block-copy');
+                if (copyBtnEl) {
+                    copyBtnEl.onclick = (e) => {
+                        e.stopPropagation();
+                        const innerEl = blockEl.querySelector('.dialectics-content-inner');
+                        if (innerEl) {
+                            const text = innerEl.innerText || innerEl.textContent || '';
+                            navigator.clipboard.writeText(text).then(() => {
+                                const copiedMsg = window._ ? window._('dialectics.text_copied') : 'Текст скопирован в буфер обмена';
+                                if (window.showToast) window.showToast(copiedMsg, 'success');
+                            }).catch(err => {
+                                console.error('Failed to copy: ', err);
+                            });
+                        }
                     };
                 }
                 blockEl.querySelector('.btn-block-edit').onclick = (e) => {
                     e.stopPropagation();
+                    if (blockStatus === 'ready') {
+                        if (window.showToast) window.showToast('Этот блок заблокирован. Смените статус на «В работе», чтобы изменить его.', 'warning');
+                        return;
+                    }
                     const activeT = b.tabs && b.tabs.find(t => t.id === b.active_tab_id);
                     if (activeT && activeT.status === 'clean' && activeT.is_locked !== false) {
                         if (window.showToast) window.showToast('Для редактирования чистовика сперва нажмите на иконку замка 🔒 в шапке вкладки', 'warning');
@@ -777,6 +839,10 @@ export const BlockManager = {
                 };
                 blockEl.querySelector('.btn-block-sticker').onclick = (e) => {
                     e.stopPropagation();
+                    if (blockStatus === 'ready') {
+                        if (window.showToast) window.showToast('Этот блок заблокирован от изменений.', 'warning');
+                        return;
+                    }
                     if(window.app) window.app.openStickersForCurrent(b.id);
                 };
                 const hiddenPhrasesBtn = blockEl.querySelector('.btn-block-hidden-phrases');
@@ -807,30 +873,41 @@ export const BlockManager = {
 
                 blockEl.querySelector('.btn-block-sources').onclick = (e) => {
                     e.stopPropagation();
+                    if (blockStatus === 'ready') {
+                        if (window.showToast) window.showToast('Этот блок заблокирован от изменений.', 'warning');
+                        return;
+                    }
                     if (callbacks.onSources) callbacks.onSources(blockEl);
                 };
                 blockEl.querySelector('.btn-block-words').onclick = (e) => {
                     e.stopPropagation();
+                    if (blockStatus === 'ready') {
+                        if (window.showToast) window.showToast('Этот блок заблокирован от изменений.', 'warning');
+                        return;
+                    }
                     if (callbacks.onWords) callbacks.onWords(blockEl);
                 };
                 const colorBtn = blockEl.querySelector('.btn-block-color');
                 if (colorBtn) {
                     colorBtn.onclick = (e) => {
                         e.stopPropagation();
+                        if (blockStatus === 'ready') {
+                            if (window.showToast) window.showToast('Этот блок заблокирован от изменений.', 'warning');
+                            return;
+                        }
                         if (callbacks.onColor) callbacks.onColor(blockEl);
                     };
                 }
                 blockEl.querySelector('.btn-block-del').onclick = async (e) => {
                     e.stopPropagation();
-                    const activeT = b.tabs && b.tabs.find(t => t.id === b.active_tab_id);
-                    if (activeT && activeT.status === 'clean' && activeT.is_locked !== false) {
-                        if (window.showToast) window.showToast('Удаление заблокировано: сперва снимите замок 🔒 с активного чистовика', 'warning');
+                    if (blockStatus === 'ready') {
+                        if (window.showToast) window.showToast('Этот блок заблокирован от удаления. Смените статус на «В работе», чтобы удалить его.', 'warning');
                         return;
                     }
                     const confirmed = await customConfirm({
                         title: window._ ? window._('dialectics.delete_block_title') : 'Удаление блока',
                         message: window._ ? window._('dialectics.delete_block_msg') : 'Вы уверены, что хотите удалить этот блок?',
-                        icon: '🗑️',
+                        icon: '',
                         buttons: [
                             { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
                             { label: window._ ? window._('dialectics.delete') : 'Удалить', value: true, class: 'confirm-btn-danger' }
@@ -842,124 +919,19 @@ export const BlockManager = {
                             nextEl.remove();
                         }
                         blockEl.remove();
-                        if (callbacks.onDelete) callbacks.onDelete();
+                        if (callbacks.onDelete) callbacks.onDelete(blockEl.dataset.blockId || blockEl.dataset.id);
                     }
                 };
                 const hacksBtn = blockEl.querySelector('.btn-block-hacks');
                 if (hacksBtn) {
                     hacksBtn.onclick = (e) => {
                         e.stopPropagation();
+                        if (blockStatus === 'ready') {
+                            if (window.showToast) window.showToast('Этот блок заблокирован от изменений.', 'warning');
+                            return;
+                        }
                         if (callbacks.onHacks) callbacks.onHacks(blockEl);
                     };
-                }
-
-                const tabsContainer = blockEl.querySelector('.dialectics-block-tabs');
-                if (tabsContainer) {
-                    tabsContainer.querySelectorAll('.dialectics-tab-btn').forEach(btn => {
-                        btn.onclick = (e) => {
-                            e.stopPropagation();
-                            if (e.target.closest('.tab-lock-toggle')) return;
-                            const tabId = btn.getAttribute('data-tab-id');
-                            if (tabId === b.active_tab_id) return;
-                            
-                            const allBlocks = BlockManager.getBlocks(container);
-                            const targetBlock = allBlocks.find(blk => blk.id === b.id);
-                            if (targetBlock) {
-                                targetBlock.active_tab_id = tabId;
-                                BlockManager.render(container, allBlocks, callbacks);
-                                if (callbacks.onSave) callbacks.onSave(); else if (window.app && window.app.saveNote) window.app.saveNote();
-                            }
-                        };
-                        btn.ondblclick = async (e) => {
-                            e.stopPropagation();
-                            const tabId = btn.getAttribute('data-tab-id');
-                            const targetTab = b.tabs.find(t => t.id === tabId);
-                            if (!targetTab) return;
-                            const newTitle = await customPrompt({
-                                title: 'Переименование вкладки',
-                                label: 'Название вкладки:',
-                                defaultValue: targetTab.title || ''
-                            });
-                            if (newTitle && newTitle.trim() && newTitle.trim() !== targetTab.title) {
-                                const allBlocks = BlockManager.getBlocks(container);
-                                const blk = allBlocks.find(x => x.id === b.id);
-                                if (blk) {
-                                    const tb = blk.tabs.find(t => t.id === tabId);
-                                    if (tb) tb.title = newTitle.trim();
-                                    BlockManager.render(container, allBlocks, callbacks);
-                                    if (callbacks.onSave) callbacks.onSave(); else if (window.app && window.app.saveNote) window.app.saveNote();
-                                }
-                            }
-                        };
-                    });
-
-                    tabsContainer.querySelectorAll('.tab-lock-toggle').forEach(toggleBtn => {
-                        toggleBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            const tabId = toggleBtn.getAttribute('data-tab-id');
-                            const allBlocks = BlockManager.getBlocks(container);
-                            const targetBlock = allBlocks.find(blk => blk.id === b.id);
-                            if (targetBlock) {
-                                const targetTab = targetBlock.tabs.find(t => t.id === tabId);
-                                if (targetTab) {
-                                    targetTab.is_locked = !(targetTab.is_locked !== false);
-                                    BlockManager.render(container, allBlocks, callbacks);
-                                    if (callbacks.onSave) callbacks.onSave(); else if (window.app && window.app.saveNote) window.app.saveNote();
-                                    if (window.showToast) {
-                                        window.showToast(targetTab.is_locked ? 'Чистовик заблокирован 🔒' : 'Замок снят: чистовик доступен для редактирования 🔓', 'info');
-                                    }
-                                }
-                            }
-                        };
-                    });
-
-                    const addTabBtn = tabsContainer.querySelector('.btn-block-add-tab');
-                    if (addTabBtn) {
-                        addTabBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            const allBlocks = BlockManager.getBlocks(container);
-                            const targetBlock = allBlocks.find(blk => blk.id === b.id);
-                            if (targetBlock && targetBlock.tabs) {
-                                const cleanCount = targetBlock.tabs.filter(t => t.status === 'clean').length + 1;
-                                const newTabId = 'tab_' + Math.random().toString(36).substring(2, 9);
-                                targetBlock.tabs.push({
-                                    id: newTabId,
-                                    title: 'Чистовик ' + cleanCount,
-                                    content: '<p></p>',
-                                    status: 'clean',
-                                    is_locked: true
-                                });
-                                targetBlock.active_tab_id = newTabId;
-                                BlockManager.render(container, allBlocks, callbacks);
-                                if (callbacks.onSave) callbacks.onSave(); else if (window.app && window.app.saveNote) window.app.saveNote();
-                                if (window.showToast) window.showToast('Создан новый чистовик 🔒', 'success');
-                            }
-                        };
-                    }
-
-                    const splitBtn = tabsContainer.querySelector('.btn-block-split-view');
-                    if (splitBtn) {
-                        splitBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            const allBlocks = BlockManager.getBlocks(container);
-                            const targetBlock = allBlocks.find(blk => blk.id === b.id);
-                            if (targetBlock && targetBlock.tabs) {
-                                if (targetBlock.split_view_tab_id) {
-                                    delete targetBlock.split_view_tab_id;
-                                } else {
-                                    const otherTab = targetBlock.tabs.find(t => t.id !== targetBlock.active_tab_id);
-                                    if (otherTab) {
-                                        targetBlock.split_view_tab_id = otherTab.id;
-                                    } else {
-                                        if (window.showToast) window.showToast('Для сравнения нужна хотя бы еще одна вкладка. Создайте чистовик (+)', 'warning');
-                                        return;
-                                    }
-                                }
-                                BlockManager.render(container, allBlocks, callbacks);
-                                if (callbacks.onSave) callbacks.onSave(); else if (window.app && window.app.saveNote) window.app.saveNote();
-                            }
-                        };
-                    }
                 }
                 
                 container.appendChild(blockEl);
@@ -991,30 +963,8 @@ export const BlockManager = {
                 });
                 return;
             }
-            let tabs = [];
-            let activeTabId = b.dataset.activeTabId || null;
-            let splitViewTabId = b.dataset.splitViewTabId || null;
-            try {
-                if (b.dataset.tabs) {
-                    tabs = JSON.parse(b.dataset.tabs);
-                }
-            } catch(e) {}
-
-            if (tabs && tabs.length > 0) {
-                const activeInner = b.querySelector('.dialectics-col-active') || b.querySelector('.dialectics-content-inner');
-                if (activeInner && activeTabId) {
-                    const t = tabs.find(tab => tab.id === activeTabId);
-                    if (t) t.content = activeInner.innerHTML;
-                }
-                const splitInner = b.querySelector('.dialectics-col-split');
-                if (splitInner && splitViewTabId) {
-                    const st = tabs.find(tab => tab.id === splitViewTabId);
-                    if (st) st.content = splitInner.innerHTML;
-                }
-            }
-
             const inner = b.querySelector('.dialectics-content-inner');
-            if (inner || (tabs && tabs.length > 0)) {
+            if (inner) {
                 let sources = [];
                 try {
                     if (b.dataset.sources) {
@@ -1029,10 +979,17 @@ export const BlockManager = {
                     }
                 } catch(e) {}
 
-                let htmlContent = inner ? inner.innerHTML : '<p></p>';
-                if (tabs && tabs.length > 0 && activeTabId) {
-                    const activeT = tabs.find(tab => tab.id === activeTabId);
-                    if (activeT) htmlContent = activeT.content;
+                let html = inner.innerHTML;
+                if (b._tiptapEditor) {
+                    html = b._tiptapEditor.getHTML();
+                }
+
+                let title = b.dataset.title || undefined;
+                if (b.classList.contains('is-editing')) {
+                    const inlineTitleInput = b.querySelector('.inline-title-input');
+                    if (inlineTitleInput) {
+                        title = inlineTitleInput.value.trim() || undefined;
+                    }
                 }
 
                 blocks.push({
@@ -1040,17 +997,15 @@ export const BlockManager = {
                     side: (b.classList.contains('block-left') ? 'left' : 
                           b.classList.contains('block-center') ? 'center' : 'right'),
                     isSection: false,
-                    html: htmlContent,
+                    html: html,
                     role: b.dataset.role || undefined,
                     sources: sources,
-                    title: b.dataset.title || undefined,
+                    title: title,
                     collapsed: b.dataset.collapsed === 'true',
                     pinned: b.dataset.pinned === 'true' || b.classList.contains('is-sticky'),
                     words: words,
                     color: b.dataset.color || undefined,
-                    tabs: tabs.length > 0 ? tabs : undefined,
-                    active_tab_id: activeTabId || undefined,
-                    split_view_tab_id: splitViewTabId || undefined
+                    status: b.dataset.status || "none"
                 });
             }
         });

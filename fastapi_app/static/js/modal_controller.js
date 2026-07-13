@@ -695,7 +695,6 @@ export function customLatexPrompt({ title = 'Edit formula (LaTeX)', value = '', 
         }
     });
 }
-
 export function customSelectBlockPrompt({ title = 'Выберите целевой блок', blocks = [] }) {
     return new Promise((resolve) => {
         try {
@@ -716,6 +715,40 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
             const container = document.createElement('div');
             container.style.cssText = 'display: flex; flex-direction: column; gap: 12px; width: 100%;';
 
+            // Add note selection dropdown
+            const currentNoteId = window.app && window.app.state ? window.app.state.currentNoteId : null;
+            const currentNoteTitle = window.app && window.app.dom && window.app.dom.title && window.app.dom.title.value ? window.app.dom.title.value : "Текущий конспект";
+
+            const noteSelectGroup = document.createElement('div');
+            noteSelectGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+            noteSelectGroup.innerHTML = `<label style="font-size: 0.8rem; font-weight: 600; color: #64748b;">Конспект:</label>`;
+
+            const noteSelect = document.createElement('select');
+            noteSelect.style.cssText = 'width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; background: white;';
+            
+            const currentOpt = document.createElement('option');
+            currentOpt.value = 'current';
+            currentOpt.innerText = `Этот конспект: ${currentNoteTitle}`;
+            noteSelect.appendChild(currentOpt);
+            noteSelectGroup.appendChild(noteSelect);
+            container.appendChild(noteSelectGroup);
+
+            // Fetch other notes
+            let allNotes = [];
+            fetch('/api/dialectics')
+                .then(r => r.ok ? r.json() : [])
+                .then(notes => {
+                    allNotes = notes;
+                    notes.forEach(n => {
+                        if (currentNoteId && String(n.id) === String(currentNoteId)) return;
+                        const opt = document.createElement('option');
+                        opt.value = n.id;
+                        opt.innerText = n.title || `Конспект #${n.id}`;
+                        noteSelect.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Error loading note list:", err));
+
             const searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.placeholder = '🔍 Поиск по названию блока...';
@@ -725,16 +758,19 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
             searchInput.onblur = () => searchInput.style.borderColor = '#cbd5e1';
 
             const listEl = document.createElement('div');
-            listEl.style.cssText = 'display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; padding-right: 4px;';
+            listEl.style.cssText = 'display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; padding-right: 4px;';
 
             let selectedBlock = null;
+            let currentBlocks = [...blocks];
+            let selectedNoteId = "";
+            let selectedNoteTitle = "";
 
             const renderList = (filterText = '') => {
                 listEl.innerHTML = '';
                 const lower = filterText.toLowerCase().trim();
                 let hasResults = false;
 
-                blocks.forEach(b => {
+                currentBlocks.forEach(b => {
                     if (lower && !b.title.toLowerCase().includes(lower)) return;
                     hasResults = true;
 
@@ -773,6 +809,56 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
                 }
             };
 
+            noteSelect.onchange = async () => {
+                const val = noteSelect.value;
+                selectedBlock = null;
+                
+                if (val === 'current') {
+                    currentBlocks = [...blocks];
+                    selectedNoteId = "";
+                    selectedNoteTitle = "";
+                    renderList(searchInput.value);
+                } else {
+                    selectedNoteId = val;
+                    const foundNote = allNotes.find(x => String(x.id) === String(val));
+                    selectedNoteTitle = foundNote ? foundNote.title : "";
+                    
+                    listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">Загрузка блоков...</div>';
+                    
+                    try {
+                        const res = await fetch(`/api/dialectics/${val}`);
+                        if (!res.ok) throw new Error("Failed to load blocks");
+                        const noteData = await res.json();
+                        if (noteData) {
+                            const rawBlocks = typeof noteData.content_json === 'string' ? JSON.parse(noteData.content_json) : noteData.content_json;
+                            currentBlocks = [];
+                            if (Array.isArray(rawBlocks)) {
+                                rawBlocks.forEach((b, idx) => {
+                                    const isSection = b.role === 'section' || b.isSection === true;
+                                    let title = b.title;
+                                    if (!title) {
+                                        const tempDiv = document.createElement('div');
+                                        tempDiv.innerHTML = b.html || '';
+                                        title = tempDiv.innerText.trim();
+                                        if (title.length > 50) title = title.substring(0, 50) + '...';
+                                        if (!title) title = isSection ? 'Раздел' : `Блок ${idx + 1}`;
+                                    }
+                                    currentBlocks.push({
+                                        id: b.id,
+                                        title: title.trim(),
+                                        icon: isSection ? '📑' : '▪️'
+                                    });
+                                });
+                            }
+                        }
+                    } catch(err) {
+                        currentBlocks = [];
+                        console.error(err);
+                    }
+                    renderList(searchInput.value);
+                }
+            };
+
             searchInput.oninput = () => renderList(searchInput.value);
             renderList();
 
@@ -804,7 +890,12 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
                 }
                 modal.classList.remove('active');
                 setTimeout(() => { modal.style.display = 'none'; }, 200);
-                resolve(selectedBlock);
+                resolve({
+                    id: selectedBlock.id,
+                    title: selectedBlock.title,
+                    noteId: selectedNoteId,
+                    noteTitle: selectedNoteTitle
+                });
             };
 
             btnOk.onclick = (e) => {
@@ -824,4 +915,11 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
             resolve(null);
         }
     });
+}
+
+if (typeof window !== 'undefined') {
+    window.customConfirm = customConfirm;
+    window.customChoice = customChoice;
+    window.customPrompt = customPrompt;
+    window.customSelectBlockPrompt = customSelectBlockPrompt;
 }

@@ -26,6 +26,7 @@ class DialecticsBlock(BaseModel):
     color: Optional[str] = None
     tabs: Optional[List[Any]] = None
     active_tab_id: Optional[str] = None
+    status: Optional[str] = "none"
 
 class DialecticsCreate(BaseModel):
     """Схема для создания 'Диалектики'."""

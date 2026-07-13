@@ -38,6 +38,7 @@ export const DialecticsUI = {
         let isResizing = false;
         let startW, startH, startX, startY;
         handle.addEventListener('mousedown', (e) => {
+            if (el.classList.contains('expanded')) return;
             e.preventDefault();
             isResizing = true;
             startW = el.offsetWidth;

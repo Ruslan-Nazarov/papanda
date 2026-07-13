@@ -19,8 +19,13 @@ export const DialecticsAPI = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        if (!res.ok) {
+            const errBody = await res.text().catch(() => '');
+            console.error(`[DialecticsAPI.save] ${method} ${url} → ${res.status}`, errBody);
+        }
         return res.ok ? await res.json() : null;
     },
+
     async delete(id) {
         const res = await fetch(`/api/dialectics/${id}`, { method: 'DELETE' });
         return res.ok;

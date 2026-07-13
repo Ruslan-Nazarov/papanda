@@ -9,7 +9,6 @@ class NoteControllerClass {
         const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
         const html = this.editor.getHTML();
         const customBlockTitle = document.getElementById('editorBlockTitleInput')?.value?.trim() || "";
-        console.log("TipTap HTML Output -> length:", html.length);
         if (this.state.editingAltCard && this.state.editingBlock) {
             const inner = this.state.editingAltCard.querySelector('.dialectics-content-inner');
             if (inner) {
@@ -21,7 +20,12 @@ class NoteControllerClass {
             }
             const blocks = BlockManager.getBlocks(this.dom.canvas);
             BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
-        } else if (this.state.editingBlock) {
+        } else if (this.state.editingBlock && this.dom.editor && this.dom.editor.style.display !== 'none' && !this.state.editingBlock.classList.contains('is-editing') && !this.state.editingBlock._floatingEditorWindow) {
+            if (typeof this.cleanUpInlineEditForBlock === 'function') {
+                this.cleanUpInlineEditForBlock(this.state.editingBlock);
+            } else if (typeof this.cleanUpInlineEdit === 'function') {
+                this.cleanUpInlineEdit();
+            }
             const inner = this.state.editingBlock.querySelector('.dialectics-content-inner');
             if (inner) {
                 inner.innerHTML = html;
@@ -77,9 +81,7 @@ class NoteControllerClass {
                 collapsed: b.collapsed || false,
                 words: b.words || [],
                 color: b.color || undefined,
-                tabs: b.tabs || undefined,
-                active_tab_id: b.active_tab_id || undefined,
-                split_view_tab_id: b.split_view_tab_id || undefined
+                status: b.status || "none"
             })),
             is_pinned: this.state.isPinned || false,
             category_id: categoryId ? parseInt(categoryId) : null,
@@ -95,6 +97,7 @@ class NoteControllerClass {
 
         const res = await DialecticsAPI.save(payload, this.state.currentNoteId);
         if (res) {
+            this.state.isDirty = false;
             this.state.currentNoteId = res.id;
             localStorage.setItem('dialectics_last_note_id', res.id);
             this.updateCurrentVersionDisplay(res);
@@ -106,20 +109,24 @@ class NoteControllerClass {
                 window.history.pushState({}, '', url);
             }
 
-            window.showToast(window._(toastKey) || window._("toast.dialectics_saved"), "success");
+            if (toastKey !== null) {
+                window.showToast(window._(toastKey, window._("toast.dialectics_saved", "Сохранено")), "success");
+            }
             if (shouldClose) {
-                this.close();
+                await this.close(false);
             }
             if (this.dom.deleteBtn) this.dom.deleteBtn.style.display = 'block';
             return res.id;
         }
+        // Save failed — show error and keep editor open
+        if (window.showToast) window.showToast(window._("toast.save_error", "Ошибка сохранения. Попробуйте ещё раз."), "error");
         return null;
     }
 
     async openStickersForCurrent(forceBlockId = null) {
         if (!this.state.currentNoteId) {
             if (window.showToast) window.showToast(window._("toast.saving_note_to_attach_sticker"), "info");
-            const savedId = await this.saveGlobal(false);
+            const savedId = await this.saveGlobal(false, null);
             if (!savedId) {
                 if (window.showToast) window.showToast(window._("toast.failed_to_save_note"), "error");
                 return;
@@ -142,7 +149,7 @@ class NoteControllerClass {
 
     async saveAndPin() {
         const title = this.dom.title.value || (window._ ? window._('dialectics.topic_placeholder') : "Untitled Dialectics");
-        let html = this.editor.getHTML() || (this.dom.dashboardTextarea?.value.replace(/\n/g, '<br>') || "");
+        let html = this.editor.getHTML() || "";
         const categoryId = this.dom.categorySelect ? this.dom.categorySelect.value : null;
 
         const payload = {
@@ -164,14 +171,15 @@ class NoteControllerClass {
         if (res) {
             this.updateCurrentVersionDisplay(res);
             window.showToast(window._("toast.saved_and_pinned"), "success");
-            this.close();
+            await this.close(false);
             setTimeout(() => location.reload(), 500);
         }
     }
 
     async loadNoteToEditor(id, addToHistory = true, noteData = null) {
         if (typeof this.close === 'function') {
-            this.close();
+            // Must await so the dirty-check dialog completes before loading new note
+            await this.close();
         }
         const n = noteData || await DialecticsAPI.get(id);
         if (n) {
@@ -183,6 +191,7 @@ class NoteControllerClass {
                 }
             }
             this.state.currentNoteId = n.id;
+            this.state.dismissedHints = JSON.parse(localStorage.getItem('dialectics_dismissed_hints_' + n.id) || '[]');
             localStorage.setItem('dialectics_last_note_id', n.id);
             this.updateCurrentVersionDisplay(n);
             this.dom.title.value = n.title;
@@ -193,12 +202,34 @@ class NoteControllerClass {
             }
 
             let stickersCountMap = {};
+            let globalStickersCount = 0;
             try {
+                let presentBlockIds = new Set();
+                if (n.content) {
+                    try {
+                        const parsedBlocks = typeof n.content === 'string' ? JSON.parse(n.content) : n.content;
+                        if (Array.isArray(parsedBlocks)) {
+                            parsedBlocks.forEach(b => {
+                                if (b.id) presentBlockIds.add(String(b.id));
+                            });
+                        }
+                    } catch(e) {
+                        console.error("Failed to parse note content for block IDs:", e);
+                    }
+                }
+
                 const stickers = await fetch(`/api/stickers/dialectics/${n.id}/`).then(r => r.json());
                 if (Array.isArray(stickers)) {
                     stickers.forEach(s => {
                         if (s.dialectics_block_id) {
-                            stickersCountMap[s.dialectics_block_id] = (stickersCountMap[s.dialectics_block_id] || 0) + 1;
+                            if (presentBlockIds.has(String(s.dialectics_block_id))) {
+                                stickersCountMap[s.dialectics_block_id] = (stickersCountMap[s.dialectics_block_id] || 0) + 1;
+                            } else {
+                                // Orphaned block sticker! Clean it up (archive it) in the background
+                                fetch(`/api/stickers/${s.id}/archive/`, { method: 'POST' }).catch(() => {});
+                            }
+                        } else {
+                            globalStickersCount++;
                         }
                     });
                 }
@@ -206,6 +237,8 @@ class NoteControllerClass {
                 console.error("Failed to load block stickers:", e);
             }
             this.state.blockStickersCount = stickersCountMap;
+            this.state.globalStickersCount = globalStickersCount;
+            this.updateGlobalStickersBadge();
 
             const toggleOnlyTitles = document.getElementById('toggleOnlyTitlesMode');
             if (toggleOnlyTitles) {
@@ -234,6 +267,101 @@ class NoteControllerClass {
             localStorage.removeItem('dialectics_last_note_id');
             this.updateCurrentVersionDisplay(null);
             this._revealInterface();
+        }
+    }
+
+    updateGlobalStickersBadge() {
+        const badge = document.getElementById('globalStickersCountBadge');
+        if (badge) {
+            const count = this.state.globalStickersCount || 0;
+            badge.innerText = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+    }
+
+    async refreshStickers() {
+        if (!this.state.currentNoteId) return;
+        let stickersCountMap = {};
+        let globalStickersCount = 0;
+        let presentBlockIds = new Set();
+        if (this.dom.canvas && window.BlockManager) {
+            const blocks = window.BlockManager.getBlocks(this.dom.canvas);
+            blocks.forEach(b => {
+                if (b.id) presentBlockIds.add(String(b.id));
+            });
+        }
+
+        try {
+            const stickers = await fetch(`/api/stickers/dialectics/${this.state.currentNoteId}/`).then(r => r.json());
+            if (Array.isArray(stickers)) {
+                stickers.forEach(s => {
+                    if (s.dialectics_block_id) {
+                        if (presentBlockIds.has(String(s.dialectics_block_id))) {
+                            stickersCountMap[s.dialectics_block_id] = (stickersCountMap[s.dialectics_block_id] || 0) + 1;
+                        } else {
+                            // Orphaned block sticker! Clean it up (archive it) in the background
+                            fetch(`/api/stickers/${s.id}/archive/`, { method: 'POST' }).catch(() => {});
+                        }
+                    } else {
+                        globalStickersCount++;
+                    }
+                });
+            }
+        } catch(e) {
+            console.error("Failed to load block stickers:", e);
+        }
+        this.state.blockStickersCount = stickersCountMap;
+        this.state.globalStickersCount = globalStickersCount;
+        this.updateGlobalStickersBadge();
+
+        // Re-render blocks to update block-level badges
+        if (window.BlockManager && this.dom.canvas) {
+            const blocks = window.BlockManager.getBlocks(this.dom.canvas);
+            window.BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+        }
+    }
+
+    goToBlock(blockId) {
+        if (window.closeParentStickersOverview) {
+            window.closeParentStickersOverview();
+        }
+        const canvas = document.getElementById('dialecticsCanvas');
+        if (!canvas) return;
+        const blockEl = canvas.querySelector(`[data-block-id="${blockId}"]`);
+        if (blockEl) {
+            blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Highlight block briefly
+            blockEl.style.boxShadow = '0 0 0 4px #3b82f6, 0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+            blockEl.style.transform = 'scale(1.02)';
+            blockEl.style.transition = 'all 0.3s ease';
+            setTimeout(() => {
+                blockEl.style.boxShadow = '';
+                blockEl.style.transform = '';
+            }, 2000);
+        } else {
+            if (window.showToast) window.showToast("Блок не найден на холсте", "warning");
+        }
+    }
+
+    async deleteStickersForBlock(blockId) {
+        if (!this.state.currentNoteId) return;
+        try {
+            const res = await fetch(`/api/stickers/dialectics/${this.state.currentNoteId}/?recurrence_id=${blockId}`);
+            if (res.ok) {
+                const stickers = await res.json();
+                if (Array.isArray(stickers)) {
+                    await Promise.all(stickers.map(s => 
+                        fetch(`/api/stickers/${s.id}/archive/`, { method: 'POST' })
+                    ));
+                    
+                    window.dispatchEvent(new CustomEvent('stickersUpdated', { 
+                        detail: { parentType: 'dialectics', parentId: this.state.currentNoteId } 
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error("Failed to delete stickers for block:", blockId, e);
         }
     }
 
@@ -276,7 +404,7 @@ class NoteControllerClass {
             const confirmed = await customConfirm({
                 title: window._ ? window._('dialectics.unsaved_title') : "Внимание",
                 message: window._ ? window._('dialectics.unsaved_new_msg') : "Есть несохранённые изменения. Создать новый конспект?",
-                icon: '⚠️',
+                icon: '',
                 buttons: [
                     { label: window._ ? window._('dialectics.cancel') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
                     { label: window._ ? window._('dialectics.create_btn') : 'Создать', value: true, class: 'confirm-btn-primary' }
@@ -300,6 +428,7 @@ class NoteControllerClass {
             }
         }
         this.state.currentNoteId = null;
+        this.state.dismissedHints = [];
         localStorage.removeItem('dialectics_last_note_id');
         this.updateCurrentVersionDisplay(null);
         if (this.dom.title) this.dom.title.value = "";
@@ -330,7 +459,21 @@ class NoteControllerClass {
         } catch (e) {}
     }
 
-    loadPreviousNote() {
+    async loadPreviousNote() {
+        if (this.state.isDirty) {
+            const confirmed = await customConfirm({
+                title: window._ ? window._('dialectics.unsaved_title', 'Внимание') : "Внимание",
+                message: window._ ? window._('dialectics.unsaved_msg', 'Есть несохранённые изменения. Продолжить?') : "Есть несохранённые изменения. Продолжить?",
+                icon: '',
+                buttons: [
+                    { label: window._ ? window._('dialectics.cancel', 'Отмена') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                    { label: window._ ? window._('dialectics.continue_btn', 'Продолжить') : 'Продолжить', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+            if (!confirmed) return;
+        }
+        this.state.isDirty = false;
+
         const history = this.getNoteHistory();
         if (history.length > 0) {
             const prevId = history.pop();
@@ -461,7 +604,7 @@ class NoteControllerClass {
                 <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
                     <button onclick="if(window.app) window.app.restoreVersion(${v.id})" style="background: #10b981; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="Восстановить эту версию">↩️ Восстановить</button>
                     <button onclick="if(window.app) window.app.togglePinVersion(${v.id})" style="background: white; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="${pinTitle}">${pinIcon}</button>
-                    <button onclick="if(window.app) window.app.deleteVersion(${v.id})" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="Удалить версию">🗑️</button>
+                    <button onclick="if(window.app) window.app.deleteVersion(${v.id})" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="Удалить версию">✕</button>
                 </div>
             `;
             container.appendChild(el);
@@ -529,7 +672,7 @@ class NoteControllerClass {
         const confirmed = await customConfirm({
             title: "Удаление версии",
             message: "Вы уверены, что хотите удалить эту версию из истории?",
-            icon: '🗑️',
+            icon: '',
             buttons: [
                 { label: 'Отмена', value: false, class: 'confirm-btn-secondary' },
                 { label: 'Удалить', value: true, class: 'confirm-btn-danger' }

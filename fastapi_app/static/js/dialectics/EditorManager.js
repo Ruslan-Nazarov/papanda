@@ -4,7 +4,7 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
-import { ResizableImage, MathNode, QuestionMark, QuoteBlock, AlternativesBlock, HiddenPhraseMark, BlockLinkMark } from './editor_setup.js';
+import { ResizableImage, MathNode, QuestionMark, QuoteBlock, AlternativesBlock, HiddenPhraseMark, BlockLinkMark, ClearMarksOnEnter } from './editor_setup.js';
 import { GraphTool } from './tools/graph.js';
 import { ShapeTool } from './tools/shapes.js';
 import { customPrompt, customSelectBlockPrompt } from '../modal_controller.js';
@@ -44,7 +44,7 @@ export class EditorManager {
             this.engine.logDebug("[EditorManager] Initializing TipTap...");
             this.tiptap = new Editor({
                 element: el,
-                extensions: [StarterKit.configure({ blockquote: false }), Underline, QuestionMark, HiddenPhraseMark, BlockLinkMark, ResizableImage.configure({ allowBase64: true }), MathNode, QuoteBlock, AlternativesBlock],
+                extensions: [StarterKit.configure({ blockquote: false }), Underline, QuestionMark, HiddenPhraseMark, BlockLinkMark, ResizableImage.configure({ allowBase64: true }), MathNode, QuoteBlock, AlternativesBlock, ClearMarksOnEnter],
                 content: '<p></p>',
                 autofocus: 'end',
                 onFocus: () => {
@@ -73,10 +73,31 @@ export class EditorManager {
                         const current = JSON.parse(localStorage.getItem('papanda_editor_open_state') || '{}');
                         current.content = editor.getHTML();
                         localStorage.setItem('papanda_editor_open_state', JSON.stringify(current));
+                        if (this.engine && this.engine.state && !this.engine.state.isProgrammaticUpdate) {
+                            this.engine.state.isDirty = true;
+                        }
                     } catch (e) {}
                     this.updateFormattingToolbarStates();
                 }
             });
+            this.mainTiptap = this.tiptap;
+
+            // Bind title input change to isDirty and localStorage
+            const titleInput = document.getElementById('editorBlockTitleInput');
+            if (titleInput) {
+                titleInput.addEventListener('input', (e) => {
+                    if (this.engine && this.engine.state) {
+                        this.engine.state.isDirty = true;
+                    }
+                    try {
+                        const current = JSON.parse(localStorage.getItem('papanda_editor_open_state') || '{}');
+                        if (current.isOpen) {
+                            current.blockTitle = e.target.value;
+                            localStorage.setItem('papanda_editor_open_state', JSON.stringify(current));
+                        }
+                    } catch (err) {}
+                });
+            }
 
             // Bind formatting toolbar buttons
             const toolbar = document.getElementById('editorFormattingToolbar');
@@ -95,10 +116,30 @@ export class EditorManager {
                         else if (format === 'strike') chain.toggleStrike().run();
                         else if (format === 'code') chain.toggleCode().run();
                         else if (format === 'question') {
+                            const { from, to } = this.tiptap.state.selection;
                             if (this.tiptap.isActive('questionMark')) {
-                                this.tiptap.chain().focus().unsetMark('questionMark').run();
+                                const attrs = this.tiptap.getAttributes('questionMark');
+                                const currentTitle = attrs.title || '';
+                                const qText = await customPrompt({
+                                    title: 'Вопрос к выделенному тексту',
+                                    message: 'Измените текст вопроса или неясности (оставьте пустым для удаления отметки):',
+                                    placeholder: 'Например: Не совсем ясен вывод формулы...',
+                                    value: currentTitle,
+                                    okLabel: 'Сохранить',
+                                    cancelLabel: 'Отмена'
+                                });
+                                if (qText === null) {
+                                    // Cancel
+                                } else if (qText.trim() === '') {
+                                    this.tiptap.chain().focus().unsetMark('questionMark').run();
+                                } else {
+                                    this.tiptap.chain().focus().updateAttributes('questionMark', { title: qText.trim() }).run();
+                                }
                             } else {
-                                const { from, to } = this.tiptap.state.selection;
+                                if (from === to) {
+                                    if (window.showToast) window.showToast('Сначала выделите текст для отметки вопроса', 'warning');
+                                    return;
+                                }
                                 const qText = await customPrompt({
                                     title: 'Вопрос к выделенному тексту',
                                     message: 'В чём заключается вопрос или неясность?',
@@ -107,17 +148,37 @@ export class EditorManager {
                                     cancelLabel: 'Отмена'
                                 });
                                 if (qText !== null && qText.trim() !== '') {
-                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('questionMark', { title: qText.trim() }).run();
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('questionMark', { title: qText.trim() }).setTextSelection(to).unsetMark('questionMark').run();
                                 } else if (qText !== null) {
-                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('questionMark', { title: 'Есть вопрос, непонятно' }).run();
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('questionMark', { title: 'Есть вопрос, непонятно' }).setTextSelection(to).unsetMark('questionMark').run();
                                 }
                             }
                         }
                         else if (format === 'hiddenPhrase') {
+                            const { from, to } = this.tiptap.state.selection;
                             if (this.tiptap.isActive('hiddenPhrase')) {
-                                this.tiptap.chain().focus().unsetMark('hiddenPhrase').run();
+                                const attrs = this.tiptap.getAttributes('hiddenPhrase');
+                                const currentNote = attrs.note || '';
+                                const noteText = await customPrompt({
+                                    title: window._ ? window._('dialectics.edit_hidden_phrase', '👁 Изменить скрытую фразу') : '👁 Изменить скрытую фразу',
+                                    message: window._ ? window._('dialectics.hidden_phrase_prompt', 'Введите новый текст пояснения или сноски (оставьте пустым для удаления):') : 'Введите новый текст пояснения или сноски (оставьте пустым для удаления):',
+                                    placeholder: 'Например: наука о всеобщих законах развития...',
+                                    value: currentNote,
+                                    okLabel: window._ ? window._('ok', 'Сохранить') : 'Сохранить',
+                                    cancelLabel: window._ ? window._('cancel', 'Отмена') : 'Отмена'
+                                });
+                                if (noteText === null) {
+                                    // Cancel
+                                } else if (noteText.trim() === '') {
+                                    this.tiptap.chain().focus().unsetMark('hiddenPhrase').run();
+                                } else {
+                                    this.tiptap.chain().focus().updateAttributes('hiddenPhrase', { note: noteText.trim() }).run();
+                                }
                             } else {
-                                const { from, to } = this.tiptap.state.selection;
+                                if (from === to) {
+                                    if (window.showToast) window.showToast('Сначала выделите текст для скрытой фразы', 'warning');
+                                    return;
+                                }
                                 const noteText = await customPrompt({
                                     title: window._ ? window._('dialectics.add_hidden_phrase', '👁 Добавить скрытую фразу') : '👁 Добавить скрытую фразу',
                                     message: window._ ? window._('dialectics.hidden_phrase_prompt', 'Введите текст пояснения или сноски, который будет разворачиваться по клику:') : 'Введите текст пояснения или сноски, который будет разворачиваться по клику:',
@@ -126,7 +187,7 @@ export class EditorManager {
                                     cancelLabel: window._ ? window._('cancel', 'Отмена') : 'Отмена'
                                 });
                                 if (noteText !== null && noteText.trim() !== '') {
-                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('hiddenPhrase', { note: noteText.trim(), expanded: 'false' }).run();
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('hiddenPhrase', { note: noteText.trim(), expanded: 'false' }).setTextSelection(to).unsetMark('hiddenPhrase').run();
                                 }
                             }
                         }
@@ -168,7 +229,12 @@ export class EditorManager {
                                     blocks: blocks
                                 });
                                 if (selected) {
-                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('blockLink', { targetId: selected.id, targetTitle: selected.title }).run();
+                                    this.tiptap.chain().focus().setTextSelection({ from, to }).setMark('blockLink', { 
+                                        targetId: selected.id, 
+                                        targetTitle: selected.title,
+                                        targetNoteId: selected.noteId || '',
+                                        targetNoteTitle: selected.noteTitle || ''
+                                    }).setTextSelection(to).run();
                                 }
                             }
                         }
@@ -192,7 +258,11 @@ export class EditorManager {
         const toolbar = document.getElementById('editorFormattingToolbar');
         if (!toolbar || !this.tiptap) return;
 
-        const activeTab = document.querySelector('.editor-tab.active')?.dataset.tab;
+        const windowEl = this.tiptap.options.element ? this.tiptap.options.element.closest('.dialectics-floating-editor') : null;
+        const context = windowEl || document;
+
+        const activeTabEl = context.querySelector('.editor-tab.active');
+        const activeTab = activeTabEl ? activeTabEl.dataset.tab : 'text';
         const { from, to } = this.tiptap.state.selection;
         const isSelected = (from !== to) && (activeTab === 'text');
 
@@ -213,11 +283,16 @@ export class EditorManager {
         }
     }
 
-    async switchTab(tab) {
+    async switchTab(tab, windowEl = null) {
         this.engine.logDebug(`[EditorManager] Switching tab to: ${tab}`);
-        document.querySelectorAll('.editor-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
-        document.querySelectorAll('.tab-content').forEach(el => {
-            const isTarget = el.id === `editor-${tab}`;
+        const context = windowEl || document;
+        context.querySelectorAll('.editor-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+        context.querySelectorAll('.tab-content').forEach(el => {
+            const isTarget = el.id === `editor-${tab}` || el.classList.contains(`editor-${tab}`) || el.classList.contains(`tab-content-${tab}`);
+            if (el.id === `editor-${tab}`) {
+                el.removeAttribute('id');
+                el.classList.add(`tab-content-${tab}`);
+            }
             el.classList.toggle('active', isTarget);
             el.style.display = isTarget ? 'flex' : 'none';
         });
@@ -597,12 +672,62 @@ export class EditorManager {
 
     setContent(content) {
         if (this.tiptap) {
+            if (this.engine && this.engine.state) {
+                this.engine.state.isProgrammaticUpdate = true;
+            }
             this.tiptap.commands.setContent(content);
             this.tiptap.commands.focus();
+            if (this.engine && this.engine.state) {
+                this.engine.state.isProgrammaticUpdate = false;
+            }
         }
     }
 
     getHTML() {
         return this.tiptap ? this.tiptap.getHTML() : "";
+    }
+
+    createEditor(element, content, onFocusCallback, onUpdateCallback) {
+        const editor = new Editor({
+            element: element,
+            extensions: [
+                StarterKit.configure({ blockquote: false }),
+                Underline,
+                QuestionMark,
+                HiddenPhraseMark,
+                BlockLinkMark,
+                ResizableImage.configure({ allowBase64: true }),
+                MathNode,
+                QuoteBlock,
+                AlternativesBlock,
+                ClearMarksOnEnter
+            ],
+            content: content || '<p></p>',
+            autofocus: 'end',
+            onFocus: ({ editor }) => {
+                this.tiptap = editor;
+                if (onFocusCallback) onFocusCallback();
+                this.updateFormattingToolbarStates();
+            },
+            onBlur: () => {
+                this.updateFormattingToolbarStates();
+            },
+            editorProps: {
+                handleDOMEvents: {
+                    mousedown: (view, event) => {
+                        event.stopPropagation();
+                        return false;
+                    }
+                }
+            },
+            onSelectionUpdate: ({ editor }) => {
+                this.updateFormattingToolbarStates();
+            },
+            onUpdate: ({ editor }) => {
+                if (onUpdateCallback) onUpdateCallback();
+                this.updateFormattingToolbarStates();
+            }
+        });
+        return editor;
     }
 }

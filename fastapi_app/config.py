@@ -7,8 +7,13 @@ import secrets
 import json
 import sys
 
+from dotenv import load_dotenv
+
 # Корень проекта
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
+
+# Загружаем переменные из .env файла
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 INTERNAL_ROOT = BASE_DIR
 USER_DATA_ROOT = BASE_DIR

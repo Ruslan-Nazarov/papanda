@@ -42,15 +42,19 @@
     </div>
 
     <!-- File Upload Section moved near footer -->
-    <div class="parser-upload-section" id="parserUploadSection" style="padding: 10px 16px 0 16px; background: #f8fafc; border-bottom: none; border-top: 1px solid #e2e8f0;">
+    <div class="parser-upload-section" id="parserUploadSection" style="padding: 10px 16px 0 16px; background: #f8fafc; border-bottom: none; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; flex-wrap: wrap;">
         <input type="file" id="articleFileInput" accept=".pdf,.txt,.md" style="display: none;" onchange="handleArticleUpload(this)">
-        <button class="upload-btn" onclick="document.getElementById('articleFileInput').click()" style="padding: 8px 12px; font-size: 0.85rem; background: #ffffff; border: 1px dashed #94a3b8; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: #334155; transition: all 0.2s;">
+        <button class="upload-btn" id="btnUploadArticleFile" onclick="document.getElementById('articleFileInput').click()" style="padding: 8px 12px; font-size: 0.85rem; background: #ffffff; border: 1px dashed #94a3b8; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: #334155; transition: all 0.2s; cursor: pointer; display: flex; align-items: center;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            📎 {{ _('dialectics.attach_article') | default('Прикрепить статью (PDF, TXT)') }}
+            <span>{{ _('dialectics.attach_file') | default('Файл') }}</span>
         </button>
-        <div id="uploadedFileName" class="uploaded-file-name" style="display: none; margin-bottom: 4px; background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 6px; justify-content: space-between; align-items: center;">
-            <span class="file-name-text" style="font-weight: 600; font-size: 0.85rem;"></span>
-            <button class="remove-file-btn" onclick="removeUploadedArticle()" title="Remove">×</button>
+        <button class="upload-btn" id="btnPasteArticleText" onclick="openPasteArticleTextModal()" style="padding: 8px 12px; font-size: 0.85rem; background: #ffffff; border: 1px dashed #94a3b8; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: #334155; transition: all 0.2s; cursor: pointer; display: flex; align-items: center;">
+            <span style="margin-right: 6px;">✍️</span>
+            <span>{{ _('dialectics.paste_text') | default('Вставить текст') }}</span>
+        </button>
+        <div id="uploadedFileName" class="uploaded-file-name" style="display: none; margin-bottom: 4px; background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 6px; justify-content: space-between; align-items: center; width: 100%;">
+            <span class="file-name-text" style="font-weight: 600; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+            <button class="remove-file-btn" onclick="removeUploadedArticle()" title="Remove" style="background: none; border: none; cursor: pointer; color: #ef4444; font-size: 1.2rem; font-weight: bold; padding: 0 4px; line-height: 1;">&times;</button>
         </div>
     </div>
 

@@ -57,13 +57,13 @@
                 <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); gap: 8px;">
                     <!-- Foreign Words (Top Row) -->
                     {% for lang_code in active_languages %}
-                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';" oncontextmenu="event.preventDefault(); this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';">
+                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal'; this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';" oncontextmenu="event.preventDefault(); this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal'; this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';">
                         {{ word.translations.get(lang_code, '') }}
                     </span>
                     {% endfor %}
                     
                     <!-- Russian sub-text (Bottom Row, under first column only) -->
-                    <div style="grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';">
+                    <div style="grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal'; this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';">
                         <span style="font-weight: 600; color: var(--color-text-faint); font-size: 0.7rem; line-height: 1.2; opacity: 0.7;">
                             {{ word.ru }}
                         </span>

@@ -252,9 +252,14 @@ function createWordRow(word) {
         span.className = 'font-study';
         span.style.cssText = 'font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;';
         span.textContent = (word.translations && word.translations[lang]) || word[lang] || '';
+        span.onclick = function() {
+            this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';
+            this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';
+        };
         span.oncontextmenu = function(e) {
             e.preventDefault();
             this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';
+            this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';
         };
         grid.appendChild(span);
     });
@@ -262,6 +267,10 @@ function createWordRow(word) {
     // Russian Subtext
     const subtext = document.createElement('div');
     subtext.style.cssText = 'grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+    subtext.onclick = function() {
+        this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal';
+        this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';
+    };
     const ruSpan = document.createElement('span');
     ruSpan.style.cssText = 'font-weight: 600; color: var(--color-text-faint); font-size: 0.7rem; line-height: 1.2; opacity: 0.7;';
     ruSpan.textContent = word.ru || '';
@@ -706,11 +715,11 @@ window.applySentenceDots = function() {
                 
                 const dot = document.createElement('span');
                 dot.className = 'sentence-dot';
-                dot.style.cssText = 'display:inline-block; width:6px; height:6px; background:#f1c40f; border-radius:50%; vertical-align:super; margin-left:2px; box-shadow: 0 0 4px #f1c40f;';
+                dot.style.cssText = 'display:inline-block; width:6px; height:6px; background:#f1c40f; border-radius:50%; vertical-align:super; margin-left:4px; box-shadow: 0 0 4px #f1c40f; cursor:pointer;';
                 // Leave dot title for debugging/hint if needed, or remove it so span.title takes over
                 span.appendChild(dot);
                 
-                span.onclick = (e) => {
+                dot.onclick = (e) => {
                     e.stopPropagation();
                     if (window.openLanguageLearningModalForSentence) {
                         window.openLanguageLearningModalForSentence(sentenceId);

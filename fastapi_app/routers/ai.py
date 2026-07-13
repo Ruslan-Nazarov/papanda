@@ -11,7 +11,8 @@ from ..config import BASE_DIR
 from ..logger import logger
 from ..schemas.ai import (
     OppositesRequest, ParserRequest, TextMathRequest, 
-    HintStepRequest, ExplainConceptRequest, EditMathRequest
+    HintStepRequest, ExplainConceptRequest, EditMathRequest,
+    CheckAIRequest
 )
 
 router = APIRouter(
@@ -40,14 +41,17 @@ PROMPT_MAP = {
     "formula": "4 формулы_промпт.md",
     "article": "5 статьи_промпт.md",
     "opposites": "6 противоположности_промпт.md",
-    "hint": "7 помощник_промпт.md"
+    "hint": "7 помощник_промпт.md",
+    "check_ai": "9 проверка_промпт.md"
 }
 
 # Модульный кэш: файлы читаются один раз за время жизни процесса
 _prompt_cache: Dict[str, str] = {}
 
 def get_cached_prompt(filename: str) -> str:
-    if filename in _prompt_cache:
+    import os
+    is_reload = os.getenv("RELOAD", "False").lower() == "true"
+    if not is_reload and filename in _prompt_cache:
         return _prompt_cache[filename]
 
     prompts_dir = BASE_DIR / "prompts"
@@ -81,7 +85,8 @@ def get_bundled_prompt(target_key: str) -> str:
         "formula": ["base", "restore", "what_is", "formula"],
         "hint": ["base", "restore", "hint"],
         "article": ["base", "restore", "what_is", "formula", "article"],
-        "what_is": ["base", "restore", "what_is"]
+        "what_is": ["base", "restore", "what_is"],
+        "check_ai": ["base", "restore", "check_ai"]
     }
     keys = bundles.get(target_key, [target_key])
     texts = [get_cached_prompt(PROMPT_MAP.get(k, k)) for k in keys]
@@ -91,17 +96,17 @@ def get_language_instruction(locale: str) -> str:
     if locale == "ru":
         return (
             "\n\n[ТРЕБОВАНИЕ ЯЗЫКА: Вы должны отвечать СТРОГО на русском языке. "
-            "Все описания, объяснения, названия полей и значений в выходном JSON должны быть на русском языке.]"
+            "Все описания, объяснения, названия полей и значений в ответе должны быть на русском языке.]"
         )
     elif locale in ["kz", "kk"]:
         return (
             "\n\n[ТІЛДІК ТАЛАП: Сіз СТРОГО қазақ тілінде жауап беруіңіз керек. "
-            "Шығарылатын JSON-дағы барлық сипаттамалар, түсіндірмелер, өріс атаулары мен мәндері қазақ тілінде болуы тиіс.]"
+            "Жауаптағы барлық сипаттамалар, түсіндірмелер, өріс атаулары мен мәндері қазақ тілінде болуы тиіс.]"
         )
     else:
         return (
             "\n\n[LANGUAGE REQUIREMENT: You must translate the instructions and respond STRICTLY in English. "
-            "All descriptions, explanations, field names and values in the output JSON must be in English.]"
+            "All descriptions, explanations, field names and values in the response must be in English.]"
         )
 
 @router.post("/dialectics/opposites")
@@ -161,8 +166,7 @@ async def parse_math_formula(
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.1,
-            max_tokens=1000,
-            response_format={"type": "json_object"}
+            max_tokens=1000
         )
         return {"result": chat_completion.choices[0].message.content}
     except Exception as e:
@@ -361,6 +365,7 @@ async def generate_hint_step(
 async def process_article_parser(
     message: str = Form(...),
     file: Optional[UploadFile] = File(None),
+    article_text: Optional[str] = Form(None),
     req: Request = None,
     user: Any = Depends(check_auth_dependency),
     client: AsyncGroq = Depends(get_groq_client)
@@ -395,6 +400,10 @@ async def process_article_parser(
                 extracted_text = extracted_text[:15000] + "... [Text truncated due to length limits]"
         finally:
             await file.close()
+    elif article_text:
+        extracted_text = article_text
+        if len(extracted_text) > 15000:
+            extracted_text = extracted_text[:15000] + "... [Text truncated due to length limits]"
     else:
         extracted_text = ""
 
@@ -430,23 +439,50 @@ async def explain_concept(
     locale = req.cookies.get("locale", "en")
     system_prompt = get_bundled_prompt("what_is") + get_language_instruction(locale)
     
-    user_query = f"Explain the following concept: {request.text}"
-    if locale == "ru":
-        user_query = f"Объясни следующее понятие: {request.text}"
-    elif locale in ["kz", "kk"]:
-        user_query = f"Келесі ұғымды түсіндіріңіз: {request.text}"
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    if request.history:
+        for msg in request.history:
+            messages.append({"role": msg.get("role"), "content": msg.get("content")})
+    else:
+        context_str = ""
+        if request.context_before or request.context_after:
+            before = request.context_before or ""
+            after = request.context_after or ""
+            
+            # Truncate context if too long
+            if len(before) > 1000:
+                before = "..." + before[-1000:]
+            if len(after) > 1000:
+                after = after[:1000] + "..."
+                
+            if locale == "ru":
+                context_str = f"\n\nКонтекст, в котором употреблено выделенное слово/словосочетание:\n... {before} === {request.text} === {after} ..."
+            elif locale in ["kz", "kk"]:
+                context_str = f"\n\nБөлінген сөз/сөз тіркесі қолданылған контекст:\n... {before} === {request.text} === {after} ..."
+            else:
+                context_str = f"\n\nContext in which the selected word/phrase is used:\n... {before} === {request.text} === {after} ..."
+
+        if locale == "ru":
+            user_query = f"Объясни следующее понятие: {request.text}{context_str}"
+        elif locale in ["kz", "kk"]:
+            user_query = f"Келесі ұғымды түсіндіріңіз: {request.text}{context_str}"
+        else:
+            user_query = f"Explain the following concept: {request.text}{context_str}"
+            
+        messages.append({"role": "user", "content": user_query})
 
     try:
         chat_completion = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_query}
-            ],
+            messages=messages,
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            max_tokens=500,
+            max_tokens=1000,
         )
-        return {"result": chat_completion.choices[0].message.content}
+        return {
+            "result": chat_completion.choices[0].message.content,
+            "user_query": messages[-1]["content"] if not request.history else None
+        }
     except Exception as e:
         logger.error(f"Error calling Groq API for explain-concept: {e}")
         raise HTTPException(status_code=502, detail=f"Error generating explanation: {str(e)}")
@@ -523,4 +559,39 @@ async def ocr_math_formula(
     except Exception as e:
         logger.error(f"Error doing math formula OCR: {e}")
         raise HTTPException(status_code=502, detail=f"Error transcribing formula image: {str(e)}")
+
+
+@router.post("/dialectics/check-ai")
+async def check_ai_content(
+    request: CheckAIRequest,
+    req: Request,
+    user: Any = Depends(check_auth_dependency),
+    client: AsyncGroq = Depends(get_groq_client)
+):
+    locale = req.cookies.get("locale", "en")
+    system_prompt = get_bundled_prompt("check_ai") + get_language_instruction(locale)
+    
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    if request.history:
+        for msg in request.history:
+            messages.append({"role": msg.get("role"), "content": msg.get("content")})
+    else:
+        user_query = f"Проверь следующий текст:\n{request.text}"
+        if locale != "ru":
+            user_query = f"Verify the following text:\n{request.text}"
+        messages.append({"role": "user", "content": user_query})
+        
+    try:
+        chat_completion = await client.chat.completions.create(
+            messages=messages,
+            model="llama-3.3-70b-versatile",
+            temperature=0.2,
+            max_tokens=2000,
+        )
+        return {"result": chat_completion.choices[0].message.content}
+    except Exception as e:
+        logger.error(f"Error calling Groq API for check-ai: {e}")
+        raise HTTPException(status_code=502, detail=f"Error checking text: {str(e)}")
+
 

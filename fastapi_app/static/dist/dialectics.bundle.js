@@ -10,12 +10,16 @@ var t = {
 		return t.ok ? await t.json() : null;
 	},
 	async save(e, t = null) {
-		let n = t ? `/api/dialectics/${t}` : "/api/dialectics/save", r = await fetch(n, {
-			method: t ? "PATCH" : "POST",
+		let n = t ? `/api/dialectics/${t}` : "/api/dialectics/save", r = t ? "PATCH" : "POST", i = await fetch(n, {
+			method: r,
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(e)
 		});
-		return r.ok ? await r.json() : null;
+		if (!i.ok) {
+			let e = await i.text().catch(() => "");
+			console.error(`[DialecticsAPI.save] ${r} ${n} → ${i.status}`, e);
+		}
+		return i.ok ? await i.json() : null;
 	},
 	async delete(e) {
 		return (await fetch(`/api/dialectics/${e}`, { method: "DELETE" })).ok;
@@ -115,7 +119,7 @@ var t = {
 		if (!e || !t) return;
 		let n = !1, r, i, a, o;
 		t.addEventListener("mousedown", (t) => {
-			t.preventDefault(), n = !0, r = e.offsetWidth, i = e.offsetHeight, a = t.clientX, o = t.clientY, e.style.transition = "none";
+			e.classList.contains("expanded") || (t.preventDefault(), n = !0, r = e.offsetWidth, i = e.offsetHeight, a = t.clientX, o = t.clientY, e.style.transition = "none");
 		}), document.addEventListener("mousemove", (t) => {
 			if (!n) return;
 			let s = r + (t.clientX - a), c = i + (t.clientY - o);
@@ -557,63 +561,114 @@ function s({ title: e = "Выберите целевой блок", blocks: t = 
 			o && (o.style.display = "none"), i.innerText = e;
 			let c = document.createElement("div");
 			c.style.cssText = "display: flex; flex-direction: column; gap: 12px; width: 100%;";
-			let l = document.createElement("input");
-			l.type = "text", l.placeholder = "🔍 Поиск по названию блока...", l.className = "form-control", l.style.cssText = "width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;", l.onfocus = () => l.style.borderColor = "#3b82f6", l.onblur = () => l.style.borderColor = "#cbd5e1";
-			let u = document.createElement("div");
-			u.style.cssText = "display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; padding-right: 4px;";
-			let d = null, f = (e = "") => {
-				u.innerHTML = "";
-				let n = e.toLowerCase().trim(), r = !1;
-				t.forEach((e) => {
-					if (n && !e.title.toLowerCase().includes(n)) return;
-					r = !0;
-					let t = document.createElement("div");
-					t.style.cssText = `
+			let l = window.app && window.app.state ? window.app.state.currentNoteId : null, u = window.app && window.app.dom && window.app.dom.title && window.app.dom.title.value ? window.app.dom.title.value : "Текущий конспект", d = document.createElement("div");
+			d.style.cssText = "display: flex; flex-direction: column; gap: 4px;", d.innerHTML = "<label style=\"font-size: 0.8rem; font-weight: 600; color: #64748b;\">Конспект:</label>";
+			let f = document.createElement("select");
+			f.style.cssText = "width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; background: white;";
+			let p = document.createElement("option");
+			p.value = "current", p.innerText = `Этот конспект: ${u}`, f.appendChild(p), d.appendChild(f), c.appendChild(d);
+			let m = [];
+			fetch("/api/dialectics").then((e) => e.ok ? e.json() : []).then((e) => {
+				m = e, e.forEach((e) => {
+					if (l && String(e.id) === String(l)) return;
+					let t = document.createElement("option");
+					t.value = e.id, t.innerText = e.title || `Конспект #${e.id}`, f.appendChild(t);
+				});
+			}).catch((e) => console.error("Error loading note list:", e));
+			let h = document.createElement("input");
+			h.type = "text", h.placeholder = "🔍 Поиск по названию блока...", h.className = "form-control", h.style.cssText = "width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;", h.onfocus = () => h.style.borderColor = "#3b82f6", h.onblur = () => h.style.borderColor = "#cbd5e1";
+			let g = document.createElement("div");
+			g.style.cssText = "display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; padding-right: 4px;";
+			let _ = null, v = [...t], y = "", b = "", x = (e = "") => {
+				g.innerHTML = "";
+				let t = e.toLowerCase().trim(), n = !1;
+				v.forEach((e) => {
+					if (t && !e.title.toLowerCase().includes(t)) return;
+					n = !0;
+					let r = document.createElement("div");
+					r.style.cssText = `
                         padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
                         cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 10px;
-                        background: ${d === e ? "#eff6ff" : "white"};
-                        border-color: ${d === e ? "#3b82f6" : "#e2e8f0"};
-                        box-shadow: ${d === e ? "0 2px 8px rgba(59, 130, 246, 0.15)" : "none"};
-                    `, t.onmouseover = () => {
-						d !== e && (t.style.background = "#f8fafc");
-					}, t.onmouseout = () => {
-						d !== e && (t.style.background = "white");
-					}, t.innerHTML = `
+                        background: ${_ === e ? "#eff6ff" : "white"};
+                        border-color: ${_ === e ? "#3b82f6" : "#e2e8f0"};
+                        box-shadow: ${_ === e ? "0 2px 8px rgba(59, 130, 246, 0.15)" : "none"};
+                    `, r.onmouseover = () => {
+						_ !== e && (r.style.background = "#f8fafc");
+					}, r.onmouseout = () => {
+						_ !== e && (r.style.background = "white");
+					}, r.innerHTML = `
                         <span style="font-size: 1.1rem;">${e.icon || "▪️"}</span>
                         <span style="font-weight: 600; color: #1e293b; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">${e.title}</span>
-                    `, t.onclick = () => {
-						d = e, f(l.value);
-					}, t.ondblclick = () => {
-						d = e, h();
-					}, u.appendChild(t);
-				}), r || (u.innerHTML = "<div style=\"padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;\">Блоки не найдены</div>");
+                    `, r.onclick = () => {
+						_ = e, x(h.value);
+					}, r.ondblclick = () => {
+						_ = e, w();
+					}, g.appendChild(r);
+				}), n || (g.innerHTML = "<div style=\"padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;\">Блоки не найдены</div>");
 			};
-			l.oninput = () => f(l.value), f(), c.appendChild(l), c.appendChild(u), a.innerHTML = "", a.appendChild(c), s.innerHTML = "";
-			let p = document.createElement("button");
-			p.className = "btn btn-secondary", p.innerText = window._ && window._("modal.cancel") || "Отмена", p.onclick = (e) => {
+			f.onchange = async () => {
+				let e = f.value;
+				if (_ = null, e === "current") v = [...t], y = "", b = "", x(h.value);
+				else {
+					y = e;
+					let t = m.find((t) => String(t.id) === String(e));
+					b = t ? t.title : "", g.innerHTML = "<div style=\"padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;\">Загрузка блоков...</div>";
+					try {
+						let t = await fetch(`/api/dialectics/${e}`);
+						if (!t.ok) throw Error("Failed to load blocks");
+						let n = await t.json();
+						if (n) {
+							let e = typeof n.content_json == "string" ? JSON.parse(n.content_json) : n.content_json;
+							v = [], Array.isArray(e) && e.forEach((e, t) => {
+								let n = e.role === "section" || e.isSection === !0, r = e.title;
+								if (!r) {
+									let i = document.createElement("div");
+									i.innerHTML = e.html || "", r = i.innerText.trim(), r.length > 50 && (r = r.substring(0, 50) + "..."), r ||= n ? "Раздел" : `Блок ${t + 1}`;
+								}
+								v.push({
+									id: e.id,
+									title: r.trim(),
+									icon: n ? "📑" : "▪️"
+								});
+							});
+						}
+					} catch (e) {
+						v = [], console.error(e);
+					}
+					x(h.value);
+				}
+			}, h.oninput = () => x(h.value), x(), c.appendChild(h), c.appendChild(g), a.innerHTML = "", a.appendChild(c), s.innerHTML = "";
+			let S = document.createElement("button");
+			S.className = "btn btn-secondary", S.innerText = window._ && window._("modal.cancel") || "Отмена", S.onclick = (e) => {
 				e.stopPropagation(), r.classList.remove("active"), setTimeout(() => {
 					r.style.display = "none";
 				}, 200), n(null);
 			};
-			let m = document.createElement("button");
-			m.className = "btn btn-primary", m.innerText = window._ && window._("modal.save_entry") || "Выбрать";
-			let h = () => {
-				if (!d) {
+			let C = document.createElement("button");
+			C.className = "btn btn-primary", C.innerText = window._ && window._("modal.save_entry") || "Выбрать";
+			let w = () => {
+				if (!_) {
 					window.app && window.app.toast && window.app.toast("Выберите блок из списка", "warning");
 					return;
 				}
 				r.classList.remove("active"), setTimeout(() => {
 					r.style.display = "none";
-				}, 200), n(d);
+				}, 200), n({
+					id: _.id,
+					title: _.title,
+					noteId: y,
+					noteTitle: b
+				});
 			};
-			m.onclick = (e) => {
-				e.stopPropagation(), h();
-			}, s.appendChild(p), s.appendChild(m), r.style.display = "flex", r.offsetHeight, r.classList.add("active"), setTimeout(() => l.focus(), 100);
+			C.onclick = (e) => {
+				e.stopPropagation(), w();
+			}, s.appendChild(S), s.appendChild(C), r.style.display = "flex", r.offsetHeight, r.classList.add("active"), setTimeout(() => h.focus(), 100);
 		} catch (e) {
 			console.error(e), n(null);
 		}
 	});
 }
+typeof window < "u" && (window.customConfirm = r, window.customChoice = i, window.customPrompt = a, window.customSelectBlockPrompt = s);
 //#endregion
 //#region node_modules/orderedmap/dist/index.js
 function c(e) {
@@ -31994,6 +32049,7 @@ var n_ = function(e, t) {
 	}
 }, s_ = Wc.create({
 	name: "questionMark",
+	inclusive: !1,
 	addAttributes() {
 		return { title: {
 			default: "Есть вопрос, непонятно",
@@ -32019,6 +32075,7 @@ var n_ = function(e, t) {
 	}
 }), c_ = Wc.create({
 	name: "hiddenPhrase",
+	inclusive: !1,
 	addAttributes() {
 		return {
 			note: {
@@ -32051,6 +32108,7 @@ var n_ = function(e, t) {
 	}
 }), l_ = Wc.create({
 	name: "blockLink",
+	inclusive: !1,
 	addAttributes() {
 		return {
 			targetId: {
@@ -32062,6 +32120,16 @@ var n_ = function(e, t) {
 				default: "",
 				parseHTML: (e) => e.getAttribute("data-target-title") || "",
 				renderHTML: (e) => ({ "data-target-title": e.targetTitle })
+			},
+			targetNoteId: {
+				default: "",
+				parseHTML: (e) => e.getAttribute("data-target-note-id") || "",
+				renderHTML: (e) => e.targetNoteId ? { "data-target-note-id": e.targetNoteId } : {}
+			},
+			targetNoteTitle: {
+				default: "",
+				parseHTML: (e) => e.getAttribute("data-target-note-title") || "",
+				renderHTML: (e) => e.targetNoteTitle ? { "data-target-note-title": e.targetNoteTitle } : {}
 			}
 		};
 	},
@@ -32287,6 +32355,7 @@ var n_ = function(e, t) {
 if (typeof window < "u" && !window._hiddenPhraseHandlerInitialized && (window._hiddenPhraseHandlerInitialized = !0, document.addEventListener("click", (e) => {
 	let t = e.target.closest(".dialectics-hidden-phrase");
 	if (t) {
+		if (t.closest("[contenteditable=\"true\"]")) return;
 		e.preventDefault(), e.stopPropagation();
 		let n = t.getAttribute("data-expanded") === "true" ? "false" : "true";
 		if (t.setAttribute("data-expanded", n), window.app && window.app.editor && window.app.editor.tiptap) {
@@ -32326,23 +32395,29 @@ if (typeof window < "u" && !window._hiddenPhraseHandlerInitialized && (window._h
 		}), i && e.view.dispatch(r);
 	}
 }), typeof window < "u" && !window._blockLinkHandlerInitialized) {
-	window._blockLinkHandlerInitialized = !0, document.addEventListener("click", (e) => {
+	window._blockLinkHandlerInitialized = !0, document.addEventListener("click", async (e) => {
 		let t = e.target.closest(".dialectics-block-link");
 		if (t) {
 			e.preventDefault(), e.stopPropagation();
-			let n = t.getAttribute("data-target-id");
+			let n = t.getAttribute("data-target-id"), r = t.getAttribute("data-target-note-id");
 			if (!n) return;
-			let r = document.querySelector(`.dialectics-block[data-block-id="${n}"], .dialectics-block[data-id="${n}"]`);
-			if (r) {
-				r.scrollIntoView({
-					behavior: "smooth",
-					block: "center"
-				}), r.style.transition = "box-shadow 0.5s ease";
-				let e = r.style.boxShadow;
-				r.style.boxShadow = "0 0 0 4px #3b82f6, 0 0 25px rgba(59, 130, 246, 0.5)", setTimeout(() => {
-					r.style.boxShadow = e;
-				}, 2e3);
-			} else window.showToast && window.showToast("Целевой блок не найден на холсте", "warning");
+			let i = (e) => {
+				let t = document.querySelector(`.dialectics-block[data-block-id="${e}"], .dialectics-block[data-id="${e}"]`);
+				if (t) {
+					t.scrollIntoView({
+						behavior: "smooth",
+						block: "center"
+					}), t.style.transition = "box-shadow 0.5s ease";
+					let e = t.style.boxShadow;
+					return t.style.boxShadow = "0 0 0 4px #3b82f6, 0 0 25px rgba(59, 130, 246, 0.5)", setTimeout(() => {
+						t.style.boxShadow = e;
+					}, 2e3), !0;
+				}
+				return !1;
+			};
+			r ? window.app && typeof window.app.loadNoteToEditor == "function" ? (await window.app.loadNoteToEditor(r), setTimeout(() => {
+				i(n) || window.showToast && window.showToast("Целевой блок не найден в загруженном конспекте", "warning");
+			}, 300)) : window.showToast && window.showToast("Не удалось загрузить целевой конспект", "warning") : i(n) || window.showToast && window.showToast("Целевой блок не найден на холсте", "warning");
 		}
 	});
 	let e = null, t = null;
@@ -32353,21 +32428,39 @@ if (typeof window < "u" && !window._hiddenPhraseHandlerInitialized && (window._h
 		let i = r.target.closest(".dialectics-block-link");
 		if (i) {
 			e && clearTimeout(e), n();
-			let r = i.getAttribute("data-target-id"), a = i.getAttribute("data-target-title") || "Связанный блок", o = document.querySelector(`.dialectics-block[data-block-id="${r}"], .dialectics-block[data-id="${r}"]`), s = "Текст блока отсутствует или блок удалён";
-			if (o) {
-				let e = o.querySelector(".dialectics-content-inner");
-				e && (s = e.innerText.trim(), s.length > 180 && (s = s.substring(0, 180) + "..."));
+			let r = i.getAttribute("data-target-id"), a = i.getAttribute("data-target-note-id"), o = i.getAttribute("data-target-note-title"), s = i.getAttribute("data-target-title") || "Связанный блок";
+			o && (s += ` (в "${o}")`);
+			let c = document.querySelector(`.dialectics-block[data-block-id="${r}"], .dialectics-block[data-id="${r}"]`), l = "Текст блока отсутствует или блок удалён";
+			if (a) l = "Загрузка превью...", fetch(`/api/dialectics/${a}`).then((e) => e.ok ? e.json() : null).then((e) => {
+				if (!e) return;
+				let n = typeof e.content_json == "string" ? JSON.parse(e.content_json) : e.content_json;
+				if (Array.isArray(n)) {
+					let e = n.find((e) => e.id === r);
+					if (e) {
+						let n = document.createElement("div");
+						n.innerHTML = e.html || "";
+						let r = n.innerText.trim();
+						if (r.length > 180 && (r = r.substring(0, 180) + "..."), l = r || "Пустой блок", t) {
+							let e = t.querySelector(".preview-body-text");
+							e && (e.innerText = l);
+						}
+					}
+				}
+			}).catch((e) => console.error("Preview load error:", e));
+			else if (c) {
+				let e = c.querySelector(".dialectics-content-inner");
+				e && (l = e.innerText.trim(), l.length > 180 && (l = l.substring(0, 180) + "..."));
 			}
 			t = document.createElement("div"), t.className = "dialectics-link-preview-popover", t.style.cssText = "\n                position: absolute; z-index: 10000; width: 300px; background: white;\n                border: 1px solid #93c5fd; border-radius: 12px; padding: 14px;\n                box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.25);\n                font-size: 0.85rem; pointer-events: none; opacity: 0;\n                transition: opacity 0.15s ease, transform 0.15s ease;\n                transform: translateY(4px); font-family: inherit;\n            ", t.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 700; color: #1d4ed8; font-size: 0.9rem; border-bottom: 1px solid #eff6ff; padding-bottom: 6px;">
-                    <span>🔗</span><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${a}</span>
+                    <span>🔗</span><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s}</span>
                 </div>
-                <div style="color: #475569; line-height: 1.45; font-size: 0.82rem; max-height: 90px; overflow: hidden; text-overflow: ellipsis;">
-                    ${s}
+                <div class="preview-body-text" style="color: #475569; line-height: 1.45; font-size: 0.82rem; max-height: 90px; overflow: hidden; text-overflow: ellipsis;">
+                    ${l}
                 </div>
             `, document.body.appendChild(t);
-			let c = i.getBoundingClientRect(), l = Math.max(10, c.left + window.scrollX);
-			l + 300 > window.innerWidth && (l = window.innerWidth - 310), t.style.left = `${l}px`, t.style.top = `${c.bottom + window.scrollY + 6}px`, requestAnimationFrame(() => {
+			let u = i.getBoundingClientRect(), d = Math.max(10, u.left + window.scrollX);
+			d + 300 > window.innerWidth && (d = window.innerWidth - 310), t.style.left = `${d}px`, t.style.top = `${u.bottom + window.scrollY + 6}px`, requestAnimationFrame(() => {
 				t && (t.style.opacity = "1", t.style.transform = "translateY(0)");
 			});
 		}
@@ -32512,11 +32605,16 @@ var m_ = td.create({
 			};
 		};
 	}
+}), h_ = el.create({
+	name: "clearMarksOnEnter",
+	addKeyboardShortcuts() {
+		return { Enter: ({ editor: e }) => e.state.selection.empty && e.commands.splitBlock() ? (e.view.dispatch(e.state.tr.setStoredMarks([])), !0) : !1 };
+	}
 });
 window.DIALECTICS_HINTS = null, fetch("/api/ai/dialectics/hints").then((e) => e.json()).then((e) => {
 	window.DIALECTICS_HINTS = e;
 }).catch((e) => console.warn("Failed to load dialectics hints:", e));
-var h_ = {
+var g_ = {
 	blue: {
 		bg: "linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)",
 		accent: "#3b82f6"
@@ -32538,6 +32636,10 @@ var h_ = {
 		accent: "#8b5cf6"
 	}
 }, $ = {
+	globalCallbacks: {},
+	setCallbacks(e) {
+		this.globalCallbacks = e;
+	},
 	renderMath(e) {
 		let t = document.createTreeWalker(e, NodeFilter.SHOW_TEXT, null, !1), n, r = [];
 		for (; n = t.nextNode();) {
@@ -32600,100 +32702,118 @@ var h_ = {
 			});
 		});
 	},
+	updateProgressWidget(e) {
+		let t = document.getElementById("noteProgressWidget");
+		if (!t) return;
+		let n = (e || []).filter((e) => e && !e.isSection && e.side !== "section" && e.role !== "anchor"), r = n.length, i = n.filter((e) => e.status === "ready").length, a = n.filter((e) => e.status === "in_progress").length, o = document.getElementById("noteProgressReadyCount"), s = document.getElementById("noteProgressWorkingCount"), c = document.getElementById("noteProgressTotalCount"), l = document.getElementById("noteProgressPercent"), u = document.getElementById("noteProgressReadyBar"), d = document.getElementById("noteProgressWorkingBar");
+		if (o && (o.innerText = i), s && (s.innerText = a), c && (c.innerText = r), r === 0) {
+			t.style.opacity = "0.5", l && (l.innerText = "0%"), u && (u.style.width = "0%"), d && (d.style.width = "0%");
+			return;
+		}
+		t.style.opacity = "1";
+		let f = i / r * 100, p = a / r * 100;
+		l && (l.innerText = Math.round(f) + "%"), u && (u.style.width = `${f}%`), d && (d.style.width = `${p}%`);
+	},
 	render(e, t, n = {}) {
 		if (!e) return;
+		n = {
+			...this.globalCallbacks,
+			...n
+		};
 		let i = document.getElementById("canvasDivider");
-		e.innerHTML = "", i && e.appendChild(i);
-		let o = (e, t) => {
+		e.innerHTML = "", i && e.appendChild(i), this.updateProgressWidget(t);
+		let a = (e, t) => {
 			if (typeof window._ == "function") {
 				let t = window._(e);
 				if (t && t !== e) return t;
 			}
 			let n = e.replace("dialectics.hints.", "");
 			return window.DIALECTICS_HINTS && window.DIALECTICS_HINTS[n] ? window.DIALECTICS_HINTS[n] : t;
-		}, s = {
+		}, o = {
 			id: "anchor",
 			side: "left",
-			text: o("dialectics.hints.anchor", "Что вам нужно понять?"),
-			title: o("dialectics.hints.anchor", "Что вам нужно понять?")
-		}, c = [
+			text: a("dialectics.hints.anchor", "Что вам нужно понять?"),
+			title: a("dialectics.hints.anchor", "Что вам нужно понять?")
+		}, s = [
 			{
 				id: "step1",
 				side: "left",
-				text: o("dialectics.hints.step1", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Опишите простейший процесс, который, по вашему мнению, лежит в основе проблемы, которую вы хотите понять.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Примером простейшего процесса может быть суммирование. Если вы затрудняетесь, то нажмите кнопку Помощь ИИ. Помните, что ИИ не способен к пониманию, но может предоставить вам знания.</div>"),
-				title: o("dialectics.hints.step1_title", "Простейший процесс")
+				text: a("dialectics.hints.step1", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Опишите простейший процесс, который, по вашему мнению, лежит в основе проблемы, которую вы хотите понять.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Примером простейшего процесса может быть суммирование. Если вы затрудняетесь, то нажмите кнопку Помощь ИИ. Помните, что ИИ не способен к пониманию, но может предоставить вам знания.</div>"),
+				title: a("dialectics.hints.step1_title", "Простейший процесс")
 			},
 			{
 				id: "step2",
 				side: "right",
-				text: o("dialectics.hints.step2", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Опишите, как развивается этот простейший процесс.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Развитие – это взаимодействие процесса с другими процессами в мире. Например, если простейшим является суммирование, то его развитием будет суммирование пяти, десяти и т.п. единиц, использование суммирования в торговле, праве, науке. Если вы сомневаетесь или не знаете, то можете нажать кнопку Помощь ИИ. Однако помните, что ИИ не может заменить человека в понимании процессов, ИИ может только предоставить знания.</div>"),
-				title: o("dialectics.hints.step2_title", "Опишите как развивается этот простейший процесс")
+				text: a("dialectics.hints.step2", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Опишите, как развивается этот простейший процесс.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Развитие – это взаимодействие процесса с другими процессами в мире. Например, если простейшим является суммирование, то его развитием будет суммирование пяти, десяти и т.п. единиц, использование суммирования в торговле, праве, науке. Если вы сомневаетесь или не знаете, то можете нажать кнопку Помощь ИИ. Однако помните, что ИИ не может заменить человека в понимании процессов, ИИ может только предоставить знания.</div>"),
+				title: a("dialectics.hints.step2_title", "Опишите как развивается этот простейший процесс")
 			},
 			{
 				id: "step3",
 				side: "left",
-				text: o("dialectics.hints.step3", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Вы уже нашли простейший процесс, посмотрели, как он развивается. В этом развитии вы должны отыскать противоположный процесс.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Вы можете сделать это через специальный ИИ под кнопкой ✨. А можете сделать это самостоятельно. Противоположным является такой процесс, который сам остается самостоятельным, но полностью исключает другой.</div>"),
-				title: o("dialectics.hints.step3_title", "Найти противоположный процесс")
+				text: a("dialectics.hints.step3", "<div style=\"font-size:1.02em; font-weight:500; color:#1e293b; margin-bottom:8px;\">Вы уже нашли простейший процесс, посмотрели, как он развивается. В этом развитии вы должны отыскать противоположный процесс.</div><div style=\"font-size:0.85em; color:#64748b; font-weight:400; line-height:1.35;\">Вы можете сделать это через специальный ИИ под кнопкой ✨. А можете сделать это самостоятельно. Противоположным является такой процесс, который сам остается самостоятельным, но полностью исключает другой.</div>"),
+				title: a("dialectics.hints.step3_title", "Найти противоположный процесс")
 			},
 			{
 				id: "step4",
 				side: "right",
-				text: o("dialectics.hints.step4", "Опишите развитие противоположного процесса"),
-				title: o("dialectics.hints.step4", "Опишите развитие противоположного процесса")
+				text: a("dialectics.hints.step4", "Опишите развитие противоположного процесса"),
+				title: a("dialectics.hints.step4", "Опишите развитие противоположного процесса")
 			},
 			{
 				id: "step5",
 				side: "center",
-				text: o("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?"),
-				title: o("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?")
+				text: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?"),
+				title: a("dialectics.hints.step5", "Объедините оба противоположных процесса в одно общее развитие. К каким противоречиям это приводит? Как могут быть разрешены противоречия?")
 			}
-		], l = {}, u = [], d = {
+		], c = {}, l = [], u = {
 			left: "step1",
 			right: "step2",
 			center: "step5"
 		};
 		t.forEach((e) => {
-			let t = e.isSection === !0 || e.side === "section";
-			e.role && e.role !== "anchor" ? e.side && d[e.side] && (d[e.side] = e.role) : !e.role && !t && (e.role = d[e.side || "left"] || (e.side === "right" ? "step2" : e.side === "center" ? "step5" : "step1")), e.role ? (l[e.role] = e, e.role !== "anchor" && u.push(e)) : u.push(e);
+			e.isSection === !0 || e.side, e.role && e.role !== "anchor" && e.side && u[e.side] && (u[e.side] = e.role), e.role ? (c[e.role] = e, e.role !== "anchor" && l.push(e)) : l.push(e);
 		});
-		let f = {
+		let d = {
 			step1: 1,
 			step2: 2,
 			step3: 3,
 			step4: 4,
 			step5: 5
-		}, p = [];
-		if (!l.anchor) u.forEach((e) => p.push({
+		}, f = [];
+		if (!c.anchor) l.forEach((e) => f.push({
 			type: "block",
 			data: e
-		})), p.push({
+		})), f.push({
 			type: "hint",
-			data: s
+			data: o
 		});
 		else {
 			let e = null;
-			for (let t of c) if (!l[t.id]) {
-				e = t;
-				break;
+			for (let t of s) {
+				let n = window.app && window.app.state && window.app.state.dismissedHints && window.app.state.dismissedHints.includes(t.id), r = document.getElementById("toggleShowHiddenHints")?.checked;
+				if (!c[t.id] && !(n && !r)) {
+					e = t;
+					break;
+				}
 			}
 			let t = !1;
-			u.forEach((n) => {
-				e && !t && n.role && f[n.role] && f[n.role] > f[e.id] && (p.push({
+			l.forEach((n) => {
+				e && !t && n.role && d[n.role] && d[n.role] > d[e.id] && (f.push({
 					type: "hint",
 					data: e
-				}), t = !0), p.push({
+				}), t = !0), f.push({
 					type: "block",
 					data: n
 				});
-			}), e && !t && p.push({
+			}), e && !t && f.push({
 				type: "hint",
 				data: e
-			}), p.push({
+			}), f.push({
 				type: "block",
-				data: l.anchor
+				data: c.anchor
 			});
 		}
-		let m = (e) => {
+		let p = (e) => {
 			let t = document.createElement("div");
 			return t.className = "block-insert-row", [
 				"left",
@@ -32702,10 +32822,10 @@ var h_ = {
 			].forEach((r) => {
 				let i = document.createElement("div");
 				if (i.className = `insert-wrap insert-wrap--${r}`, r === "left") {
-					i.style.display = "flex", i.style.gap = "8px", i.style.alignItems = "center", i.style.justifyContent = "center", i.innerHTML = "\n                        <button class=\"btn-insert-block btn-insert-square\" title=\"Add summary\">+</button>\n                    ";
+					i.style.display = "flex", i.style.gap = "8px", i.style.alignItems = "center", i.style.justifyContent = "center", i.innerHTML = "\n                        <button class=\"btn-insert-block btn-insert-round\" title=\"Добавить блок\">+</button>\n                    ";
 					let t = i.querySelectorAll("button");
 					t[0].onclick = (t) => {
-						t.stopPropagation(), n.onInsertAfter("center", e - 1);
+						t.stopPropagation(), n.onInsertAfter("left", e - 1);
 					};
 				} else if (r === "right") {
 					i.style.display = "flex", i.style.gap = "8px", i.style.alignItems = "center", i.style.justifyContent = "center", i.innerHTML = "\n                        <button class=\"btn-insert-block btn-insert-round\" title=\"Добавить блок\">+</button>\n                        <button class=\"btn-insert-block btn-insert-section\" title=\"Добавить раздел\">📑 Раздел</button>\n                    ";
@@ -32716,136 +32836,127 @@ var h_ = {
 						t.stopPropagation(), n.onInsertAfter("section", e - 1);
 					};
 				} else {
-					i.style.display = "flex", i.style.gap = "8px", i.style.alignItems = "center", i.style.justifyContent = "center", i.innerHTML = "\n                        <button class=\"btn-insert-block btn-insert-round\" title=\"Добавить блок\">+</button>\n                    ";
+					i.style.display = "flex", i.style.gap = "8px", i.style.alignItems = "center", i.style.justifyContent = "center", i.innerHTML = "\n                        <button class=\"btn-insert-block btn-insert-square\" title=\"Add summary\">+</button>\n                    ";
 					let t = i.querySelectorAll("button");
 					t[0].onclick = (t) => {
-						t.stopPropagation(), n.onInsertAfter("left", e - 1);
+						t.stopPropagation(), n.onInsertAfter("center", e - 1);
 					};
 				}
 				t.appendChild(i);
 			}), t;
 		};
-		n.onInsertAfter && e.appendChild(m(0));
-		let h = 0;
-		p.forEach((t) => {
+		n.onInsertAfter && e.appendChild(p(0));
+		let m = 0;
+		f.forEach((t) => {
 			if (t.type === "hint") {
 				if (e.classList.contains("mode-no-dialectics") || document.getElementById("toggleDialecticsMode") && !document.getElementById("toggleDialecticsMode").checked) return;
 				let r = t.data, i = document.createElement("div");
 				i.className = `dialectics-hint-block block-${r.side}`, i.dataset.hintId = r.id, i.dataset.side = r.side;
-				let a = r.id === "step3" ? o("dialectics.ai_opposites", "ИИ-противоположности") : o("dialectics.ai_help", "Помощь ИИ");
+				let o = r.id === "step3" ? a("dialectics.ai_opposites", "ИИ-противоположности") : a("dialectics.ai_help", "Помощь ИИ");
 				i.innerHTML = `
+                    <button class="btn-hint-dismiss" title="Скрыть подсказку" style="position:absolute; left: 12px; top: 12px; background:none; border:none; cursor:pointer; font-size:1rem; color:#94a3b8; transition:color 0.2s; display:flex; align-items:center; justify-content:center; padding:2px; z-index:10;">✕</button>
                     <div class="dialectics-hint-text">${r.text}</div>
-                    <button class="btn-hint-ai" title="${a}" style="position:absolute; right: 12px; top: 12px; background:rgba(255,255,255,0.7); border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; cursor:pointer; opacity:0.85; transition:all 0.2s; font-size: 0.82rem; display:flex; align-items:center; gap:5px; color:#334155; font-weight:500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"><span style="font-size:1rem;">✨</span> <span>${a}</span></button>
+                    <button class="btn-hint-ai" title="${o}" style="position:absolute; right: 12px; top: 12px; background:rgba(255,255,255,0.7); border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; cursor:pointer; opacity:0.85; transition:all 0.2s; font-size: 0.82rem; display:flex; align-items:center; gap:5px; color:#334155; font-weight:500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"><span style="font-size:1rem;">✨</span> <span>${o}</span></button>
                 `, i.onclick = (e) => {
 					e.stopPropagation(), n.onHintClick && n.onHintClick(r);
 				};
-				let s = i.querySelector(".btn-hint-ai");
-				s && (s.onmouseover = () => s.style.opacity = "1", s.onmouseout = () => s.style.opacity = "0.6", s.onclick = (e) => {
+				let s = i.querySelector(".btn-hint-dismiss");
+				s && (s.onmouseover = () => s.style.color = "#ef4444", s.onmouseleave = () => s.style.color = "#94a3b8", s.onclick = (e) => {
+					e.stopPropagation(), n.onHintDismiss && n.onHintDismiss(r.id);
+				});
+				let c = i.querySelector(".btn-hint-ai");
+				c && (c.onmouseover = () => c.style.opacity = "1", c.onmouseout = () => c.style.opacity = "0.6", c.onclick = (e) => {
 					e.stopPropagation(), n.onHintAI && n.onHintAI(r);
 				}), e.appendChild(i);
 			} else {
 				let i = t.data;
 				i.id ||= "block_" + Math.random().toString(36).substring(2, 9);
-				let o = i.isSection === !0 || i.side === "section", l = document.createElement("div");
-				l.className = `dialectics-block block-${i.side || "left"}${o ? " block-section" : ""}`, l.dataset.blockId = i.id, i.role && (l.dataset.role = i.role), o && (l.dataset.isSection = "true");
-				let u = i.title || "";
-				if (o) {
-					if (u ||= "Раздел", l.className = "dialectics-block block-section", l.dataset.title = u, l.innerHTML = `
+				let a = i.isSection === !0 || i.side === "section", c = document.createElement("div");
+				c.className = `dialectics-block block-${i.side || "left"}${a ? " block-section" : ""}`, c.dataset.blockId = i.id, i.role && (c.dataset.role = i.role), a && (c.dataset.isSection = "true");
+				let l = i.title || "";
+				if (a) {
+					if (l ||= "Раздел", c.className = "dialectics-block block-section", c.dataset.title = l, c.innerHTML = `
                         <div class="section-chapter-container" style="display: flex; align-items: baseline; justify-content: space-between; padding: 16px 8px 10px 8px; border-bottom: 2px solid #ea580c; cursor: pointer;" title="Нажмите, чтобы изменить название раздела">
                             <div style="display: flex; align-items: baseline; gap: 12px;">
                                 <span style="color: #ea580c; font-size: 1.5rem; line-height: 1;">📑</span>
-                                <h2 class="block-title-text" style="margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2;">${u}</h2>
+                                <h2 class="block-title-text" style="margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2;">${l}</h2>
                             </div>
                             <div class="section-actions" style="display: flex; gap: 8px; opacity: 0; transition: opacity 0.2s;">
                                 <button class="btn-section-edit" title="Изменить название" style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; font-weight: 600; color: #ea580c; cursor: pointer;">✎ Изменить</button>
                                 <button class="btn-section-del" title="Удалить раздел" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; font-weight: 600; color: #dc2626; cursor: pointer;">🗑️</button>
                             </div>
                         </div>
-                    `, l.onmouseenter = () => {
-						let e = l.querySelector(".section-actions");
+                    `, c.onmouseenter = () => {
+						let e = c.querySelector(".section-actions");
 						e && (e.style.opacity = "1");
-					}, l.onmouseleave = () => {
-						let e = l.querySelector(".section-actions");
+					}, c.onmouseleave = () => {
+						let e = c.querySelector(".section-actions");
 						e && (e.style.opacity = "0");
 					}, n) {
-						let e = l.querySelector(".section-chapter-container");
+						let e = c.querySelector(".section-chapter-container");
 						e && n.onEdit && (e.onclick = (e) => {
-							e.stopPropagation(), n.onEdit(l);
+							e.stopPropagation(), n.onEdit(c);
 						});
-						let t = l.querySelector(".btn-section-edit");
+						let t = c.querySelector(".btn-section-edit");
 						t && (t.onclick = (e) => {
-							e.stopPropagation(), n.onEdit && n.onEdit(l);
+							e.stopPropagation(), n.onEdit && n.onEdit(c);
 						});
-						let r = l.querySelector(".btn-section-del");
+						let r = c.querySelector(".btn-section-del");
 						r && (r.onclick = (e) => {
 							if (e.stopPropagation(), n.onDelete) {
-								let e = l.nextElementSibling;
-								e && e.classList.contains("block-insert-row") && e.remove(), l.remove(), n.onDelete();
+								let e = c.nextElementSibling;
+								e && e.classList.contains("block-insert-row") && e.remove(), c.remove(), n.onDelete();
 							}
 						});
 					}
-					e.appendChild(l), n.onInsertAfter && e.appendChild(m(h + 1)), h++;
+					e.appendChild(c), n.onInsertAfter && e.appendChild(p(m + 1)), m++;
 					return;
 				}
-				if (!u && i.role) if (i.role === "anchor") u = s.title;
+				if (!l && i.role) if (i.role === "anchor") l = o.title;
 				else {
-					let e = c.find((e) => e.id === i.role);
-					e && (u = e.title);
+					let e = s.find((e) => e.id === i.role);
+					e && (l = e.title);
 				}
-				u ||= o ? "Раздел" : i.side === "center" ? "Связующий блок" : "Блок";
-				let d = "";
+				l ||= a ? "Раздел" : i.side === "center" ? "Связующий блок" : "Блок";
+				let u = "";
 				if (i.role) {
 					let e = "";
-					if (i.role === "anchor") e = s.text;
+					if (i.role === "anchor") e = o.text;
 					else {
-						let t = c.find((e) => e.id === i.role);
+						let t = s.find((e) => e.id === i.role);
 						t && (e = t.text);
 					}
-					d = `<span class="dialectics-step-info-trigger" title="${e.replace(/<[^>]*>/g, "").trim()}" style="cursor:help; margin-left:6px; color:#94a3b8; font-size:0.9rem; font-weight:normal; vertical-align:middle; transition:color 0.2s;" onmouseover="this.style.color='#64748b'" onmouseout="this.style.color='#94a3b8'">ℹ️</span>`;
+					u = `<span class="dialectics-step-info-trigger" title="${e.replace(/<[^>]*>/g, "").trim()}" style="cursor:help; margin-left:6px; color:#94a3b8; font-size:0.9rem; font-weight:normal; vertical-align:middle; transition:color 0.2s;" onmouseover="this.style.color='#64748b'" onmouseout="this.style.color='#94a3b8'">ℹ️</span>`;
 				}
-				let f = i.collapsed === !0;
-				f && l.classList.add("is-collapsed"), l.dataset.collapsed = f ? "true" : "false";
-				let p = i.pinned === !0 || i.isPinned === !0 || i.isSticky === !0 || i.dataset?.pinned === "true";
-				if (p && (i.side === "left" || !i.side) && l.classList.add("is-sticky"), l.dataset.pinned = p && (i.side === "left" || !i.side) ? "true" : "false", i.title && (l.dataset.title = i.title), i.color) {
-					l.dataset.color = i.color;
-					let e = h_[i.color];
-					e && (l.style.setProperty("--block-custom-bg", e.bg), l.style.setProperty("--block-custom-accent", e.accent));
-				} else delete l.dataset.color, l.style.removeProperty("--block-custom-bg"), l.style.removeProperty("--block-custom-accent");
-				let g = `<button class="btn-block-fold-toggle" title="Свернуть/Развернуть" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#64748b; padding:2px 6px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${f ? "▶" : "▼"}</button>`, _ = "", v = "";
-				if (i.side === "left" || !i.side) {
-					let e = p ? "Открепить блок при прокрутке" : "Заставить блок плавать при прокрутке", t = p ? "is-pinned" : "";
-					_ = `<button class="btn-block-pin-header ${t}" title="${e}" style="margin-left:auto; background: ${p ? "#e0e7ff" : "transparent"}; border: 1px solid ${p ? "#6366f1" : "transparent"}; color: ${p ? "#4338ca" : "#94a3b8"}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s;">${p ? "📌 Закреплен" : "📌"}</button>`, v = `<button class="btn-block-pin ${t}" title="${e}" style="color: ${p ? "#6366f1" : "inherit"};">📌</button>`;
+				let d = i.collapsed === !0;
+				d && c.classList.add("is-collapsed"), c.dataset.collapsed = d ? "true" : "false";
+				let f = i.pinned === !0 || i.isPinned === !0 || i.isSticky === !0 || i.dataset?.pinned === "true";
+				f && (i.side === "left" || !i.side) && c.classList.add("is-sticky"), c.dataset.pinned = f && (i.side === "left" || !i.side) ? "true" : "false";
+				let h = i.status || "none";
+				if (c.dataset.status = h, i.title && (c.dataset.title = i.title), i.color) {
+					c.dataset.color = i.color;
+					let e = g_[i.color];
+					e && (c.style.setProperty("--block-custom-bg", e.bg), c.style.setProperty("--block-custom-accent", e.accent));
+				} else delete c.dataset.color, c.style.removeProperty("--block-custom-bg"), c.style.removeProperty("--block-custom-accent");
+				let g = `<button class="btn-block-fold-toggle" title="Свернуть/Развернуть" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#64748b; padding:2px 6px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${d ? "▶" : "▼"}</button>`, _ = `<span class="note-status-circle status-${h} btn-block-status" title="Статус блока: ${h === "ready" ? "Готово (Заблокировано)" : h === "in_progress" ? "В работе" : "Не указан"}" style="width: 14px; height: 14px; margin-right: 4px; flex-shrink: 0; display: inline-block; cursor: pointer; box-sizing: border-box; border-radius: 50%; padding: 0; background-clip: padding-box;"></span>`, v = "";
+				h === "ready" && (v = "<span class=\"block-lock-icon\" title=\"Блок заблокирован от изменений\" style=\"font-size: 0.85rem; margin-left: 6px; cursor: default; user-select: none;\">🔒</span>");
+				let y = "", b = "";
+				(i.side === "left" || !i.side) && (y = `<button class="btn-block-pin-header ${f ? "is-pinned" : ""}" title="${f ? "Открепить блок при прокрутке" : "Заставить блок плавать при прокрутке"}" style="margin-left:auto; background: ${f ? "#e0e7ff" : "transparent"}; border: 1px solid ${f ? "#6366f1" : "transparent"}; color: ${f ? "#4338ca" : "#94a3b8"}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s;">${f ? "📌 Закреплен" : "📌"}</button>`, b = "");
+				let x = i.html || "<p></p>";
+				if (i.tabs && i.active_tab_id) {
+					let e = i.tabs.find((e) => e.id === i.active_tab_id);
+					e && (x = e.content || e.html || x);
 				}
-				(!i.tabs || !Array.isArray(i.tabs) || i.tabs.length === 0) && (i.tabs = [{
-					id: "tab_" + Math.random().toString(36).substring(2, 9),
-					title: "Черновик",
-					content: i.html || "<p></p>",
-					status: "draft",
-					is_locked: !1
-				}]), (!i.active_tab_id || !i.tabs.some((e) => e.id === i.active_tab_id)) && (i.active_tab_id = i.tabs[0].id);
-				let y = i.tabs.find((e) => e.id === i.active_tab_id) || i.tabs[0], b = y.status === "clean" && y.is_locked !== !1;
-				l.dataset.tabs = JSON.stringify(i.tabs), l.dataset.activeTabId = i.active_tab_id, i.split_view_tab_id ? l.dataset.splitViewTabId = i.split_view_tab_id : delete l.dataset.splitViewTabId;
-				let x = "<div class=\"dialectics-block-tabs\" style=\"display: flex; align-items: center; gap: 4px; padding: 8px 14px 6px 14px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; border-top-left-radius: 12px; border-top-right-radius: 12px; flex-wrap: wrap; overflow-x: auto;\">";
-				i.tabs.forEach((e, t) => {
-					let n = e.id === i.active_tab_id, r = e.id === i.split_view_tab_id, a = e.status === "clean", o = a && e.is_locked !== !1, s = a ? o ? "🔒" : "🔓" : "", c = n ? "background: #ffffff; color: #0f172a; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-bottom: 2px solid #3b82f6;" : r ? "background: #e0f2fe; color: #0369a1; font-weight: 600; border-bottom: 2px solid #0284c7;" : "background: transparent; color: #64748b; font-weight: 500;";
-					x += `
-                        <div class="dialectics-tab-btn ${n ? "active" : ""} ${r ? "split-active" : ""}" data-tab-id="${e.id}" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; ${c}">
-                            <span class="tab-title-text" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${e.title || (a ? "Чистовик " + t : "Черновик")}</span>
-                            ${a ? `<span class="tab-lock-toggle" data-tab-id="${e.id}" title="${o ? "Нажмите, чтобы разблокировать для редактирования" : "Нажмите, чтобы заблокировать чистовик"}" style="cursor: pointer; font-size: 0.8rem; padding: 0 2px;">${s}</span>` : ""}
-                        </div>
-                    `;
-				}), x += `
-                    <button class="btn-block-add-tab" title="Создать новый чистовик" style="background: #ffffff; border: 1px dashed #cbd5e1; color: #64748b; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">+</button>
-                    <button class="btn-block-split-view" title="${i.split_view_tab_id ? "Выключить режим сравнения" : "Сравнить в две колонки (сплит-вью)"}" style="margin-left: auto; background: ${i.split_view_tab_id ? "#e0f2fe" : "transparent"}; border: 1px solid ${i.split_view_tab_id ? "#0284c7" : "#cbd5e1"}; color: ${i.split_view_tab_id ? "#0369a1" : "#64748b"}; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">⚖ Сравнить</button>
-                </div>`;
 				let S = `
-                    <div class="dialectics-block-header" style="display:flex; align-items:center; justify-content:space-between; font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 6px 14px; border-bottom:1px solid #f1f5f9; text-transform: uppercase; background:#f8fafc; border-top-left-radius:0; border-top-right-radius:0; cursor: grab; position: sticky; top: 0; z-index: 15; box-shadow: 0 2px 6px -1px rgba(0,0,0,0.05);" title="Зажмите заголовок для перетаскивания блока">
+                    <div class="dialectics-block-header" style="display:flex; align-items:center; justify-content:space-between; font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 12px 14px 6px 14px; border-bottom:1px solid #f1f5f9; text-transform: uppercase; background:#f8fafc; border-top-left-radius:12px; border-top-right-radius:12px; cursor: grab; position: sticky; top: 0; z-index: 15; box-shadow: 0 2px 6px -1px rgba(0,0,0,0.05);" title="Зажмите заголовок для перетаскивания блока">
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
+                            ${_}
                             ${g}
-                            <span class="block-title-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${u}</span>
-                            ${d}
+                            <span class="block-title-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l}</span>
+                            ${u}
+                            ${v}
                         </div>
-                        ${_}
+                        ${y}
                     </div>
                 `, C = "";
 				i.sources && i.sources.length > 0 && (C = `<span style="font-size:0.7rem; font-weight:bold; background:#e2e8f0; border-radius:10px; padding:2px 5px; margin-left:4px;">${i.sources.length}</span>`);
@@ -32857,54 +32968,50 @@ var h_ = {
 				}), T += "</div>");
 				let E = 0;
 				window.app && window.app.state && window.app.state.blockStickersCount && (E = window.app.state.blockStickersCount[i.id] || 0);
-				let ee = E > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#fde68a; border-radius:10px; padding:2px 5px; margin-left:4px; color:#b45309;">${E}</span>` : "", te = "", ne = i.split_view_tab_id ? i.tabs.find((e) => e.id === i.split_view_tab_id) : null;
-				te = ne && ne.id !== y.id ? `
-                        <div class="dialectics-split-container" style="display: flex; gap: 12px; padding: 10px; border-bottom: 1px solid #f1f5f9;">
-                            <div class="dialectics-split-col" style="flex: 1; min-width: 0; border-right: 1px solid #e2e8f0; padding-right: 10px;">
-                                <div style="font-size: 0.75rem; font-weight: bold; color: #3b82f6; margin-bottom: 6px; text-transform: uppercase;">${y.title || "Черновик"} ${y.status === "clean" && y.is_locked !== !1 ? "🔒" : ""}</div>
-                                <div class="dialectics-content-inner dialectics-col-active" data-tab-id="${y.id}">${y.content || "<p></p>"}</div>
-                            </div>
-                            <div class="dialectics-split-col" style="flex: 1; min-width: 0; padding-left: 2px;">
-                                <div style="font-size: 0.75rem; font-weight: bold; color: #0369a1; margin-bottom: 6px; text-transform: uppercase;">${ne.title || "Чистовик"} ${ne.status === "clean" && ne.is_locked !== !1 ? "🔒" : ""}</div>
-                                <div class="dialectics-content-inner dialectics-col-split" data-tab-id="${ne.id}">${ne.content || "<p></p>"}</div>
-                            </div>
-                        </div>
-                    ` : `<div class="dialectics-content-inner" data-tab-id="${y.id}">${y.content || "<p></p>"}</div>`, l.innerHTML = `
+				let ee = E > 0 ? `<span style="font-size:0.7rem; font-weight:bold; background:#fde68a; border-radius:10px; padding:2px 5px; margin-left:4px; color:#b45309;">${E}</span>` : "", te = `<div class="dialectics-content-inner">${x}</div>`;
+				c.innerHTML = `
                     <div class="dialectics-block-actions">
-                        ${v}
+                        ${b}
                         <button class="btn-block-sources" title="Sources">🔗${C}</button>
                         <button class="btn-block-words" title="Словарь">📖${w}</button>
                         <button class="btn-block-hacks" title="${window._ ? window._("dialectics.hacks_title") : "Хаки понимания"}">💡</button>
                         <button class="btn-block-sticker" title="Stickers" style="display: flex; align-items: center; justify-content: center; gap: 2px;"><div class="sticker-icon-mini" style="transform: scale(0.65); margin: 0;"></div>${ee}</button>
                         <button class="btn-block-hidden-phrases" title="Развернуть/свернуть сноски">👁</button>
                         <span class="btn-block-sep" style="width: 1px; height: 16px; background-color: #cbd5e1; margin: 0 4px; align-self: center;"></span>
-                        <button class="btn-block-edit" title="Edit" ${b ? "style=\"opacity:0.3; cursor:not-allowed;\"" : ""}>✎</button>
+                        <button class="btn-block-edit" title="Edit">✎</button>
                         ${i.role === "step3" ? "<button class=\"btn-block-ai\" title=\"Поиск противоположностей\">✨</button>" : ""}
+                        <button class="btn-block-check-ai" title="${window._ ? window._("dialectics.check_ai") : "Проверить ИИ"}">🔬</button>
+                        <button class="btn-block-copy" title="${window._ ? window._("dialectics.copy_text") : "Скопировать текст"}">📋</button>
                         <button class="btn-block-color" title="Цвет">🎨</button>
-                        <button class="btn-block-del" title="Delete" ${b ? "style=\"opacity:0.3; cursor:not-allowed;\"" : ""}>🗑️</button>
+                        <button class="btn-block-del" title="Delete">🗑️</button>
                     </div>
-                    ${x}
                     ${S}
                     ${te}
                     ${T}
-                `, this.renderMath(l);
-				let re = l.querySelector(".dialectics-block-header");
-				re && (re.addEventListener("mouseenter", () => {
-					l.setAttribute("draggable", "true");
-				}), re.addEventListener("mouseleave", () => {
-					l.classList.contains("is-dragging") || l.setAttribute("draggable", "false");
-				}), re.addEventListener("mousedown", (e) => {
-					e.target.closest("button") || e.target.closest(".dialectics-step-info-trigger") ? (l.setAttribute("draggable", "false"), l._preventDrag = !0) : (l.setAttribute("draggable", "true"), l._preventDrag = !1);
+                `, this.renderMath(c);
+				let ne = c.querySelector(".dialectics-block-header");
+				ne && (ne.addEventListener("mouseenter", () => {
+					c.setAttribute("draggable", "true");
+				}), ne.addEventListener("mouseleave", () => {
+					c.classList.contains("is-dragging") || c.setAttribute("draggable", "false");
+				}), ne.addEventListener("mousedown", (e) => {
+					e.target.closest("button") || e.target.closest(".dialectics-step-info-trigger") ? (c.setAttribute("draggable", "false"), c._preventDrag = !0) : (c.setAttribute("draggable", "true"), c._preventDrag = !1);
 				}));
-				let ie = l.querySelector(".btn-block-fold-toggle");
+				let re = c.querySelector(".btn-block-status");
+				re && (re.onclick = (e) => {
+					e.stopPropagation(), e.preventDefault(), n.onStatusToggle && n.onStatusToggle(c);
+				}, re.onmousedown = (e) => {
+					e.stopPropagation();
+				});
+				let ie = c.querySelector(".btn-block-fold-toggle");
 				ie && (ie.onclick = (e) => {
-					e.stopPropagation(), l.classList.contains("is-collapsed") ? (l.classList.remove("is-collapsed"), ie.innerHTML = "▼", l.dataset.collapsed = "false") : (l.classList.add("is-collapsed"), ie.innerHTML = "▶", l.dataset.collapsed = "true"), n.onFoldToggle && n.onFoldToggle();
+					e.stopPropagation(), c.classList.contains("is-collapsed") ? (c.classList.remove("is-collapsed"), ie.innerHTML = "▼", c.dataset.collapsed = "false") : (c.classList.add("is-collapsed"), ie.innerHTML = "▶", c.dataset.collapsed = "true"), n.onFoldToggle && n.onFoldToggle();
 				});
 				let ae = (t) => {
 					t.stopPropagation();
-					let r = l.dataset.pinned === "true" || l.classList.contains("is-sticky");
+					let r = c.dataset.pinned === "true" || c.classList.contains("is-sticky");
 					r || e.querySelectorAll(".dialectics-block.is-sticky").forEach((e) => {
-						if (e !== l) {
+						if (e !== c) {
 							e.classList.remove("is-sticky"), e.dataset.pinned = "false";
 							let t = e.querySelector(".btn-block-pin-header");
 							t && (t.innerHTML = "📌", t.classList.remove("is-pinned"), t.style.background = "transparent", t.style.borderColor = "transparent", t.style.color = "#94a3b8", t.title = "Заставить блок плавать при прокрутке");
@@ -32913,33 +33020,62 @@ var h_ = {
 						}
 					});
 					let i = !r;
-					l.dataset.pinned = i ? "true" : "false", i ? l.classList.add("is-sticky") : l.classList.remove("is-sticky");
-					let a = l.querySelector(".btn-block-pin-header");
+					c.dataset.pinned = i ? "true" : "false", i ? c.classList.add("is-sticky") : c.classList.remove("is-sticky");
+					let a = c.querySelector(".btn-block-pin-header");
 					a && (a.innerHTML = i ? "📌 Закреплен" : "📌", i ? (a.classList.add("is-pinned"), a.style.background = "#e0e7ff", a.style.borderColor = "#6366f1", a.style.color = "#4338ca") : (a.classList.remove("is-pinned"), a.style.background = "transparent", a.style.borderColor = "transparent", a.style.color = "#94a3b8"), a.title = i ? "Открепить блок при прокрутке" : "Заставить блок плавать при прокрутке");
-					let o = l.querySelector(".btn-block-pin");
+					let o = c.querySelector(".btn-block-pin");
 					o && (i ? (o.classList.add("is-pinned"), o.style.color = "#6366f1") : (o.classList.remove("is-pinned"), o.style.color = "inherit"), o.title = i ? "Открепить блок при прокрутке" : "Заставить блок плавать при прокрутке"), n.onSave ? n.onSave() : window.app && window.app.saveNote && window.app.saveNote();
-				}, oe = l.querySelector(".btn-block-pin");
+				}, oe = c.querySelector(".btn-block-pin");
 				oe && (oe.onclick = ae);
-				let se = l.querySelector(".btn-block-pin-header");
+				let se = c.querySelector(".btn-block-pin-header");
 				se && (se.onclick = ae);
-				let ce = l.querySelector(".btn-block-ai");
+				let ce = c.querySelector(".btn-block-ai");
 				ce && (ce.onclick = (e) => {
-					e.stopPropagation(), n.onAI && n.onAI(l);
-				}), l.querySelector(".btn-block-edit").onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от изменений.", "warning");
+						return;
+					}
+					n.onAI && n.onAI(c);
+				});
+				let le = c.querySelector(".btn-block-check-ai");
+				le && (le.onclick = (e) => {
+					e.stopPropagation(), n.onCheckAI && n.onCheckAI(c);
+				});
+				let ue = c.querySelector(".btn-block-copy");
+				ue && (ue.onclick = (e) => {
 					e.stopPropagation();
+					let t = c.querySelector(".dialectics-content-inner");
+					if (t) {
+						let e = t.innerText || t.textContent || "";
+						navigator.clipboard.writeText(e).then(() => {
+							let e = window._ ? window._("dialectics.text_copied") : "Текст скопирован в буфер обмена";
+							window.showToast && window.showToast(e, "success");
+						}).catch((e) => {
+							console.error("Failed to copy: ", e);
+						});
+					}
+				}), c.querySelector(".btn-block-edit").onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован. Смените статус на «В работе», чтобы изменить его.", "warning");
+						return;
+					}
 					let t = i.tabs && i.tabs.find((e) => e.id === i.active_tab_id);
 					if (t && t.status === "clean" && t.is_locked !== !1) {
 						window.showToast && window.showToast("Для редактирования чистовика сперва нажмите на иконку замка 🔒 в шапке вкладки", "warning");
 						return;
 					}
-					n.onEdit(l);
-				}, l.querySelector(".btn-block-sticker").onclick = (e) => {
-					e.stopPropagation(), window.app && window.app.openStickersForCurrent(i.id);
+					n.onEdit(c);
+				}, c.querySelector(".btn-block-sticker").onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от изменений.", "warning");
+						return;
+					}
+					window.app && window.app.openStickersForCurrent(i.id);
 				};
-				let le = l.querySelector(".btn-block-hidden-phrases");
-				le && (le.onclick = (e) => {
+				let de = c.querySelector(".btn-block-hidden-phrases");
+				de && (de.onclick = (e) => {
 					e.stopPropagation();
-					let t = l.querySelectorAll(".dialectics-hidden-phrase");
+					let t = c.querySelectorAll(".dialectics-hidden-phrase");
 					if (!t.length) {
 						window.showToast && window.showToast("В этом блоке нет сносок / скрытого текста", "info");
 						return;
@@ -32952,25 +33088,35 @@ var h_ = {
 					t.forEach((e) => {
 						e.setAttribute("data-expanded", r);
 					});
-				}), i.sources && (l.dataset.sources = JSON.stringify(i.sources)), i.words && (l.dataset.words = JSON.stringify(i.words)), l.querySelector(".btn-block-sources").onclick = (e) => {
-					e.stopPropagation(), n.onSources && n.onSources(l);
-				}, l.querySelector(".btn-block-words").onclick = (e) => {
-					e.stopPropagation(), n.onWords && n.onWords(l);
+				}), i.sources && (c.dataset.sources = JSON.stringify(i.sources)), i.words && (c.dataset.words = JSON.stringify(i.words)), c.querySelector(".btn-block-sources").onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от изменений.", "warning");
+						return;
+					}
+					n.onSources && n.onSources(c);
+				}, c.querySelector(".btn-block-words").onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от изменений.", "warning");
+						return;
+					}
+					n.onWords && n.onWords(c);
 				};
-				let ue = l.querySelector(".btn-block-color");
-				ue && (ue.onclick = (e) => {
-					e.stopPropagation(), n.onColor && n.onColor(l);
-				}), l.querySelector(".btn-block-del").onclick = async (e) => {
-					e.stopPropagation();
-					let t = i.tabs && i.tabs.find((e) => e.id === i.active_tab_id);
-					if (t && t.status === "clean" && t.is_locked !== !1) {
-						window.showToast && window.showToast("Удаление заблокировано: сперва снимите замок 🔒 с активного чистовика", "warning");
+				let fe = c.querySelector(".btn-block-color");
+				fe && (fe.onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от изменений.", "warning");
+						return;
+					}
+					n.onColor && n.onColor(c);
+				}), c.querySelector(".btn-block-del").onclick = async (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от удаления. Смените статус на «В работе», чтобы удалить его.", "warning");
 						return;
 					}
 					if (await r({
 						title: window._ ? window._("dialectics.delete_block_title") : "Удаление блока",
 						message: window._ ? window._("dialectics.delete_block_msg") : "Вы уверены, что хотите удалить этот блок?",
-						icon: "🗑️",
+						icon: "",
 						buttons: [{
 							label: window._ ? window._("dialectics.cancel") : "Отмена",
 							value: !1,
@@ -32981,84 +33127,18 @@ var h_ = {
 							class: "confirm-btn-danger"
 						}]
 					})) {
-						let e = l.nextElementSibling;
-						e && e.classList.contains("block-insert-row") && e.remove(), l.remove(), n.onDelete && n.onDelete();
+						let e = c.nextElementSibling;
+						e && e.classList.contains("block-insert-row") && e.remove(), c.remove(), n.onDelete && n.onDelete(c.dataset.blockId || c.dataset.id);
 					}
 				};
-				let de = l.querySelector(".btn-block-hacks");
-				de && (de.onclick = (e) => {
-					e.stopPropagation(), n.onHacks && n.onHacks(l);
-				});
-				let fe = l.querySelector(".dialectics-block-tabs");
-				if (fe) {
-					fe.querySelectorAll(".dialectics-tab-btn").forEach((t) => {
-						t.onclick = (r) => {
-							if (r.stopPropagation(), r.target.closest(".tab-lock-toggle")) return;
-							let a = t.getAttribute("data-tab-id");
-							if (a === i.active_tab_id) return;
-							let o = $.getBlocks(e), s = o.find((e) => e.id === i.id);
-							s && (s.active_tab_id = a, $.render(e, o, n), n.onSave ? n.onSave() : window.app && window.app.saveNote && window.app.saveNote());
-						}, t.ondblclick = async (r) => {
-							r.stopPropagation();
-							let o = t.getAttribute("data-tab-id"), s = i.tabs.find((e) => e.id === o);
-							if (!s) return;
-							let c = await a({
-								title: "Переименование вкладки",
-								label: "Название вкладки:",
-								defaultValue: s.title || ""
-							});
-							if (c && c.trim() && c.trim() !== s.title) {
-								let t = $.getBlocks(e), r = t.find((e) => e.id === i.id);
-								if (r) {
-									let i = r.tabs.find((e) => e.id === o);
-									i && (i.title = c.trim()), $.render(e, t, n), n.onSave ? n.onSave() : window.app && window.app.saveNote && window.app.saveNote();
-								}
-							}
-						};
-					}), fe.querySelectorAll(".tab-lock-toggle").forEach((t) => {
-						t.onclick = (r) => {
-							r.stopPropagation();
-							let a = t.getAttribute("data-tab-id"), o = $.getBlocks(e), s = o.find((e) => e.id === i.id);
-							if (s) {
-								let t = s.tabs.find((e) => e.id === a);
-								t && (t.is_locked = t.is_locked === !1, $.render(e, o, n), n.onSave ? n.onSave() : window.app && window.app.saveNote && window.app.saveNote(), window.showToast && window.showToast(t.is_locked ? "Чистовик заблокирован 🔒" : "Замок снят: чистовик доступен для редактирования 🔓", "info"));
-							}
-						};
-					});
-					let t = fe.querySelector(".btn-block-add-tab");
-					t && (t.onclick = (t) => {
-						t.stopPropagation();
-						let r = $.getBlocks(e), a = r.find((e) => e.id === i.id);
-						if (a && a.tabs) {
-							let t = a.tabs.filter((e) => e.status === "clean").length + 1, i = "tab_" + Math.random().toString(36).substring(2, 9);
-							a.tabs.push({
-								id: i,
-								title: "Чистовик " + t,
-								content: "<p></p>",
-								status: "clean",
-								is_locked: !0
-							}), a.active_tab_id = i, $.render(e, r, n), n.onSave ? n.onSave() : window.app && window.app.saveNote && window.app.saveNote(), window.showToast && window.showToast("Создан новый чистовик 🔒", "success");
-						}
-					});
-					let r = fe.querySelector(".btn-block-split-view");
-					r && (r.onclick = (t) => {
-						t.stopPropagation();
-						let r = $.getBlocks(e), a = r.find((e) => e.id === i.id);
-						if (a && a.tabs) {
-							if (a.split_view_tab_id) delete a.split_view_tab_id;
-							else {
-								let e = a.tabs.find((e) => e.id !== a.active_tab_id);
-								if (e) a.split_view_tab_id = e.id;
-								else {
-									window.showToast && window.showToast("Для сравнения нужна хотя бы еще одна вкладка. Создайте чистовик (+)", "warning");
-									return;
-								}
-							}
-							$.render(e, r, n), n.onSave ? n.onSave() : window.app && window.app.saveNote && window.app.saveNote();
-						}
-					});
-				}
-				e.appendChild(l), n.onInsertAfter && e.appendChild(m(h + 1)), h++;
+				let pe = c.querySelector(".btn-block-hacks");
+				pe && (pe.onclick = (e) => {
+					if (e.stopPropagation(), h === "ready") {
+						window.showToast && window.showToast("Этот блок заблокирован от изменений.", "warning");
+						return;
+					}
+					n.onHacks && n.onHacks(c);
+				}), e.appendChild(c), n.onInsertAfter && e.appendChild(p(m + 1)), m++;
 			}
 		}), typeof window.applyCanvasModes == "function" && window.applyCanvasModes();
 	},
@@ -33077,52 +33157,36 @@ var h_ = {
 				});
 				return;
 			}
-			let n = [], r = e.dataset.activeTabId || null, i = e.dataset.splitViewTabId || null;
-			try {
-				e.dataset.tabs && (n = JSON.parse(e.dataset.tabs));
-			} catch {}
-			if (n && n.length > 0) {
-				let t = e.querySelector(".dialectics-col-active") || e.querySelector(".dialectics-content-inner");
-				if (t && r) {
-					let e = n.find((e) => e.id === r);
-					e && (e.content = t.innerHTML);
-				}
-				let a = e.querySelector(".dialectics-col-split");
-				if (a && i) {
-					let e = n.find((e) => e.id === i);
-					e && (e.content = a.innerHTML);
-				}
-			}
-			let a = e.querySelector(".dialectics-content-inner");
-			if (a || n && n.length > 0) {
-				let o = [];
+			let n = e.querySelector(".dialectics-content-inner");
+			if (n) {
+				let r = [];
 				try {
-					e.dataset.sources && (o = JSON.parse(e.dataset.sources));
+					e.dataset.sources && (r = JSON.parse(e.dataset.sources));
 				} catch {}
-				let s = [];
+				let i = [];
 				try {
-					e.dataset.words && (s = JSON.parse(e.dataset.words));
+					e.dataset.words && (i = JSON.parse(e.dataset.words));
 				} catch {}
-				let c = a ? a.innerHTML : "<p></p>";
-				if (n && n.length > 0 && r) {
-					let e = n.find((e) => e.id === r);
-					e && (c = e.content);
+				let a = n.innerHTML;
+				e._tiptapEditor && (a = e._tiptapEditor.getHTML());
+				let o = e.dataset.title || void 0;
+				if (e.classList.contains("is-editing")) {
+					let t = e.querySelector(".inline-title-input");
+					t && (o = t.value.trim() || void 0);
 				}
 				t.push({
 					id: e.dataset.blockId || "block_" + Math.random().toString(36).substring(2, 9),
 					side: e.classList.contains("block-left") ? "left" : e.classList.contains("block-center") ? "center" : "right",
 					isSection: !1,
-					html: c,
+					html: a,
 					role: e.dataset.role || void 0,
-					sources: o,
-					title: e.dataset.title || void 0,
+					sources: r,
+					title: o,
 					collapsed: e.dataset.collapsed === "true",
 					pinned: e.dataset.pinned === "true" || e.classList.contains("is-sticky"),
-					words: s,
+					words: i,
 					color: e.dataset.color || void 0,
-					tabs: n.length > 0 ? n : void 0,
-					active_tab_id: r || void 0,
-					split_view_tab_id: i || void 0
+					status: e.dataset.status || "none"
 				});
 			}
 		}), t;
@@ -33132,7 +33196,7 @@ var h_ = {
 		let t = e.querySelectorAll(".dialectics-block");
 		return t.length === 0 ? null : t[t.length - 1].classList.contains("block-left") ? "left" : "right";
 	}
-}, g_ = { init(e, t) {
+}, __ = { init(e, t) {
 	if (!e) return;
 	let n = 0, r = (r, i) => {
 		let a = Date.now();
@@ -33156,7 +33220,7 @@ var h_ = {
 		let o = Date.now();
 		o - i < 350 && (a === n || n.closest(".dialectics-block") === a?.closest(".dialectics-block")) ? (e.cancelable && e.preventDefault(), i = 0, a = null, r(n, t.clientX)) : (i = o, a = n);
 	});
-} }, __ = /^\s*>\s$/, v_ = td.create({
+} }, v_ = /^\s*>\s$/, y_ = td.create({
 	name: "blockquote",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -33186,11 +33250,11 @@ var h_ = {
 	},
 	addInputRules() {
 		return [ed({
-			find: __,
+			find: v_,
 			type: this.type
 		})];
 	}
-}), y_ = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))$/, b_ = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))/g, x_ = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))$/, S_ = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))/g, C_ = Wc.create({
+}), b_ = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))$/, x_ = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))/g, S_ = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))$/, C_ = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))/g, w_ = Wc.create({
 	name: "bold",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -33234,23 +33298,23 @@ var h_ = {
 	},
 	addInputRules() {
 		return [Zu({
-			find: y_,
+			find: b_,
 			type: this.type
 		}), Zu({
-			find: x_,
+			find: S_,
 			type: this.type
 		})];
 	},
 	addPasteRules() {
 		return [nd({
-			find: b_,
+			find: x_,
 			type: this.type
 		}), nd({
-			find: S_,
+			find: C_,
 			type: this.type
 		})];
 	}
-}), w_ = "listItem", T_ = "textStyle", E_ = /^\s*([-+*])\s$/, D_ = td.create({
+}), T_ = "listItem", E_ = "textStyle", D_ = /^\s*([-+*])\s$/, O_ = td.create({
 	name: "bulletList",
 	addOptions() {
 		return {
@@ -33275,26 +33339,26 @@ var h_ = {
 		];
 	},
 	addCommands() {
-		return { toggleBulletList: () => ({ commands: e, chain: t }) => this.options.keepAttributes ? t().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(w_, this.editor.getAttributes(T_)).run() : e.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks) };
+		return { toggleBulletList: () => ({ commands: e, chain: t }) => this.options.keepAttributes ? t().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(T_, this.editor.getAttributes(E_)).run() : e.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks) };
 	},
 	addKeyboardShortcuts() {
 		return { "Mod-Shift-8": () => this.editor.commands.toggleBulletList() };
 	},
 	addInputRules() {
 		let e = ed({
-			find: E_,
+			find: D_,
 			type: this.type
 		});
 		return (this.options.keepMarks || this.options.keepAttributes) && (e = ed({
-			find: E_,
+			find: D_,
 			type: this.type,
 			keepMarks: this.options.keepMarks,
 			keepAttributes: this.options.keepAttributes,
-			getAttributes: () => this.editor.getAttributes(T_),
+			getAttributes: () => this.editor.getAttributes(E_),
 			editor: this.editor
 		})), [e];
 	}
-}), O_ = /(^|[^`])`([^`]+)`(?!`)/, k_ = /(^|[^`])`([^`]+)`(?!`)/g, A_ = Wc.create({
+}), k_ = /(^|[^`])`([^`]+)`(?!`)/, A_ = /(^|[^`])`([^`]+)`(?!`)/g, j_ = Wc.create({
 	name: "code",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -33324,17 +33388,17 @@ var h_ = {
 	},
 	addInputRules() {
 		return [Zu({
-			find: O_,
+			find: k_,
 			type: this.type
 		})];
 	},
 	addPasteRules() {
 		return [nd({
-			find: k_,
+			find: A_,
 			type: this.type
 		})];
 	}
-}), j_ = /^```([a-z]+)?[\s\n]$/, M_ = /^~~~([a-z]+)?[\s\n]$/, N_ = td.create({
+}), M_ = /^```([a-z]+)?[\s\n]$/, N_ = /^~~~([a-z]+)?[\s\n]$/, P_ = td.create({
 	name: "codeBlock",
 	addOptions() {
 		return {
@@ -33408,11 +33472,11 @@ var h_ = {
 	},
 	addInputRules() {
 		return [$u({
-			find: j_,
+			find: M_,
 			type: this.type,
 			getAttributes: (e) => ({ language: e[1] })
 		}), $u({
-			find: M_,
+			find: N_,
 			type: this.type,
 			getAttributes: (e) => ({ language: e[1] })
 		})];
@@ -33429,19 +33493,19 @@ var h_ = {
 			} }
 		})];
 	}
-}), P_ = td.create({
+}), F_ = td.create({
 	name: "doc",
 	topNode: !0,
 	content: "block+"
 });
 //#endregion
 //#region node_modules/prosemirror-dropcursor/dist/index.js
-function F_(e = {}) {
+function I_(e = {}) {
 	return new zn({ view(t) {
-		return new I_(t, e);
+		return new L_(t, e);
 	} });
 }
-var I_ = class {
+var L_ = class {
 	constructor(e, t) {
 		this.editorView = e, this.cursorPos = null, this.element = null, this.timeout = -1, this.width = t.width ?? 1, this.color = t.color === !1 ? void 0 : t.color || "black", this.class = t.class, this.handlers = [
 			"dragover",
@@ -33532,7 +33596,7 @@ var I_ = class {
 	dragleave(e) {
 		this.editorView.dom.contains(e.relatedTarget) || this.setCursor(null);
 	}
-}, L_ = el.create({
+}, R_ = el.create({
 	name: "dropCursor",
 	addOptions() {
 		return {
@@ -33542,9 +33606,9 @@ var I_ = class {
 		};
 	},
 	addProseMirrorPlugins() {
-		return [F_(this.options)];
+		return [I_(this.options)];
 	}
-}), R_ = class e extends D {
+}), z_ = class e extends D {
 	constructor(e) {
 		super(e, e);
 	}
@@ -33569,11 +33633,11 @@ var I_ = class {
 		return new e(t.resolve(n.pos));
 	}
 	getBookmark() {
-		return new z_(this.anchor);
+		return new B_(this.anchor);
 	}
 	static valid(e) {
 		let t = e.parent;
-		if (t.inlineContent || !V_(e) || !H_(e)) return !1;
+		if (t.inlineContent || !H_(e) || !U_(e)) return !1;
 		let n = t.type.spec.allowGapCursor;
 		if (n != null) return n;
 		let r = t.contentMatchAt(e.index()).defaultType;
@@ -33610,8 +33674,8 @@ var I_ = class {
 		}
 	}
 };
-R_.prototype.visible = !1, R_.findFrom = R_.findGapCursorFrom, D.jsonID("gapcursor", R_);
-var z_ = class e {
+z_.prototype.visible = !1, z_.findFrom = z_.findGapCursorFrom, D.jsonID("gapcursor", z_);
+var B_ = class e {
 	constructor(e) {
 		this.pos = e;
 	}
@@ -33620,13 +33684,13 @@ var z_ = class e {
 	}
 	resolve(e) {
 		let t = e.resolve(this.pos);
-		return R_.valid(t) ? new R_(t) : D.near(t);
+		return z_.valid(t) ? new z_(t) : D.near(t);
 	}
 };
-function B_(e) {
+function V_(e) {
 	return e.isAtom || e.spec.isolating || e.spec.createGapCursor;
 }
-function V_(e) {
+function H_(e) {
 	for (let t = e.depth; t >= 0; t--) {
 		let n = e.index(t), r = e.node(t);
 		if (n == 0) {
@@ -33634,13 +33698,13 @@ function V_(e) {
 			continue;
 		}
 		for (let e = r.child(n - 1);; e = e.lastChild) {
-			if (e.childCount == 0 && !e.inlineContent || B_(e.type)) return !0;
+			if (e.childCount == 0 && !e.inlineContent || V_(e.type)) return !0;
 			if (e.inlineContent) return !1;
 		}
 	}
 	return !0;
 }
-function H_(e) {
+function U_(e) {
 	for (let t = e.depth; t >= 0; t--) {
 		let n = e.indexAfter(t), r = e.node(t);
 		if (n == r.childCount) {
@@ -33648,30 +33712,30 @@ function H_(e) {
 			continue;
 		}
 		for (let e = r.child(n);; e = e.firstChild) {
-			if (e.childCount == 0 && !e.inlineContent || B_(e.type)) return !0;
+			if (e.childCount == 0 && !e.inlineContent || V_(e.type)) return !0;
 			if (e.inlineContent) return !1;
 		}
 	}
 	return !0;
 }
-function U_() {
+function W_() {
 	return new zn({ props: {
-		decorations: J_,
+		decorations: Y_,
 		createSelectionBetween(e, t, n) {
-			return t.pos == n.pos && R_.valid(n) ? new R_(n) : null;
+			return t.pos == n.pos && z_.valid(n) ? new z_(n) : null;
 		},
-		handleClick: K_,
-		handleKeyDown: W_,
-		handleDOMEvents: { beforeinput: q_ }
+		handleClick: q_,
+		handleKeyDown: G_,
+		handleDOMEvents: { beforeinput: J_ }
 	} });
 }
-var W_ = Ds({
-	ArrowLeft: G_("horiz", -1),
-	ArrowRight: G_("horiz", 1),
-	ArrowUp: G_("vert", -1),
-	ArrowDown: G_("vert", 1)
+var G_ = Ds({
+	ArrowLeft: K_("horiz", -1),
+	ArrowRight: K_("horiz", 1),
+	ArrowUp: K_("vert", -1),
+	ArrowDown: K_("vert", 1)
 });
-function G_(e, t) {
+function K_(e, t) {
 	let n = e == "vert" ? t > 0 ? "down" : "up" : t > 0 ? "right" : "left";
 	return function(e, r, i) {
 		let a = e.selection, o = t > 0 ? a.$to : a.$from, s = a.empty;
@@ -33679,22 +33743,22 @@ function G_(e, t) {
 			if (!i.endOfTextblock(n) || o.depth == 0) return !1;
 			s = !1, o = e.doc.resolve(t > 0 ? o.after() : o.before());
 		}
-		let c = R_.findGapCursorFrom(o, t, s);
-		return c ? (r && r(e.tr.setSelection(new R_(c))), !0) : !1;
+		let c = z_.findGapCursorFrom(o, t, s);
+		return c ? (r && r(e.tr.setSelection(new z_(c))), !0) : !1;
 	};
 }
-function K_(e, t, n) {
+function q_(e, t, n) {
 	if (!e || !e.editable) return !1;
 	let r = e.state.doc.resolve(t);
-	if (!R_.valid(r)) return !1;
+	if (!z_.valid(r)) return !1;
 	let i = e.posAtCoords({
 		left: n.clientX,
 		top: n.clientY
 	});
-	return i && i.inside > -1 && k.isSelectable(e.state.doc.nodeAt(i.inside)) ? !1 : (e.dispatch(e.state.tr.setSelection(new R_(r))), !0);
+	return i && i.inside > -1 && k.isSelectable(e.state.doc.nodeAt(i.inside)) ? !1 : (e.dispatch(e.state.tr.setSelection(new z_(r))), !0);
 }
-function q_(e, t) {
-	if (t.inputType != "insertCompositionText" || !(e.state.selection instanceof R_)) return !1;
+function J_(e, t) {
+	if (t.inputType != "insertCompositionText" || !(e.state.selection instanceof z_)) return !1;
 	let { $from: n } = e.state.selection, r = n.parent.contentMatchAt(n.index()).findWrapping(e.state.schema.nodes.text);
 	if (!r) return !1;
 	let i = d.empty;
@@ -33702,17 +33766,17 @@ function q_(e, t) {
 	let a = e.state.tr.replace(n.pos, n.pos, new _(i, 0, 0));
 	return a.setSelection(O.near(a.doc.resolve(n.pos + 1))), e.dispatch(a), !1;
 }
-function J_(e) {
-	if (!(e.selection instanceof R_)) return null;
+function Y_(e) {
+	if (!(e.selection instanceof z_)) return null;
 	let t = document.createElement("div");
 	return t.className = "ProseMirror-gapcursor", To.create(e.doc, [So.widget(e.selection.head, t, { key: "gapcursor" })]);
 }
 //#endregion
 //#region node_modules/@tiptap/extension-gapcursor/dist/index.js
-var Y_ = el.create({
+var X_ = el.create({
 	name: "gapCursor",
 	addProseMirrorPlugins() {
-		return [U_()];
+		return [W_()];
 	},
 	extendNodeSchema(e) {
 		return { allowGapCursor: j(A(e, "allowGapCursor", {
@@ -33721,7 +33785,7 @@ var Y_ = el.create({
 			storage: e.storage
 		})) ?? null };
 	}
-}), X_ = td.create({
+}), Z_ = td.create({
 	name: "hardBreak",
 	addOptions() {
 		return {
@@ -33762,7 +33826,7 @@ var Y_ = el.create({
 			"Shift-Enter": () => this.editor.commands.setHardBreak()
 		};
 	}
-}), Z_ = td.create({
+}), Q_ = td.create({
 	name: "heading",
 	addOptions() {
 		return {
@@ -33818,29 +33882,29 @@ var Y_ = el.create({
 			getAttributes: { level: e }
 		}));
 	}
-}), Q_ = 200, $_ = function() {};
-$_.prototype.append = function(e) {
-	return e.length ? (e = $_.from(e), !this.length && e || e.length < Q_ && this.leafAppend(e) || this.length < Q_ && e.leafPrepend(this) || this.appendInner(e)) : this;
-}, $_.prototype.prepend = function(e) {
-	return e.length ? $_.from(e).append(this) : this;
-}, $_.prototype.appendInner = function(e) {
-	return new tv(this, e);
-}, $_.prototype.slice = function(e, t) {
-	return e === void 0 && (e = 0), t === void 0 && (t = this.length), e >= t ? $_.empty : this.sliceInner(Math.max(0, e), Math.min(this.length, t));
-}, $_.prototype.get = function(e) {
+}), $_ = 200, ev = function() {};
+ev.prototype.append = function(e) {
+	return e.length ? (e = ev.from(e), !this.length && e || e.length < $_ && this.leafAppend(e) || this.length < $_ && e.leafPrepend(this) || this.appendInner(e)) : this;
+}, ev.prototype.prepend = function(e) {
+	return e.length ? ev.from(e).append(this) : this;
+}, ev.prototype.appendInner = function(e) {
+	return new nv(this, e);
+}, ev.prototype.slice = function(e, t) {
+	return e === void 0 && (e = 0), t === void 0 && (t = this.length), e >= t ? ev.empty : this.sliceInner(Math.max(0, e), Math.min(this.length, t));
+}, ev.prototype.get = function(e) {
 	if (!(e < 0 || e >= this.length)) return this.getInner(e);
-}, $_.prototype.forEach = function(e, t, n) {
+}, ev.prototype.forEach = function(e, t, n) {
 	t === void 0 && (t = 0), n === void 0 && (n = this.length), t <= n ? this.forEachInner(e, t, n, 0) : this.forEachInvertedInner(e, t, n, 0);
-}, $_.prototype.map = function(e, t, n) {
+}, ev.prototype.map = function(e, t, n) {
 	t === void 0 && (t = 0), n === void 0 && (n = this.length);
 	var r = [];
 	return this.forEach(function(t, n) {
 		return r.push(e(t, n));
 	}, t, n), r;
-}, $_.from = function(e) {
-	return e instanceof $_ ? e : e && e.length ? new ev(e) : $_.empty;
+}, ev.from = function(e) {
+	return e instanceof ev ? e : e && e.length ? new tv(e) : ev.empty;
 };
-var ev = /* @__PURE__ */ function(e) {
+var tv = /* @__PURE__ */ function(e) {
 	function t(t) {
 		e.call(this), this.values = t;
 	}
@@ -33860,17 +33924,17 @@ var ev = /* @__PURE__ */ function(e) {
 	}, t.prototype.forEachInvertedInner = function(e, t, n, r) {
 		for (var i = t - 1; i >= n; i--) if (e(this.values[i], r + i) === !1) return !1;
 	}, t.prototype.leafAppend = function(e) {
-		if (this.length + e.length <= Q_) return new t(this.values.concat(e.flatten()));
+		if (this.length + e.length <= $_) return new t(this.values.concat(e.flatten()));
 	}, t.prototype.leafPrepend = function(e) {
-		if (this.length + e.length <= Q_) return new t(e.flatten().concat(this.values));
+		if (this.length + e.length <= $_) return new t(e.flatten().concat(this.values));
 	}, n.length.get = function() {
 		return this.values.length;
 	}, n.depth.get = function() {
 		return 0;
 	}, Object.defineProperties(t.prototype, n), t;
-}($_);
-$_.empty = new ev([]);
-var tv = /* @__PURE__ */ function(e) {
+}(ev);
+ev.empty = new tv([]);
+var nv = /* @__PURE__ */ function(e) {
 	function t(t, n) {
 		e.call(this), this.left = t, this.right = n, this.length = t.length + n.length, this.depth = Math.max(t.depth, n.depth) + 1;
 	}
@@ -33897,7 +33961,7 @@ var tv = /* @__PURE__ */ function(e) {
 	}, t.prototype.appendInner = function(e) {
 		return this.left.depth >= Math.max(this.right.depth, e.depth) + 1 ? new t(this.left, new t(this.right, e)) : new t(this, e);
 	}, t;
-}($_), nv = 500, rv = class e {
+}(ev), rv = 500, iv = class e {
 	constructor(e, t) {
 		this.items = e, this.eventCount = t;
 	}
@@ -33917,9 +33981,9 @@ var tv = /* @__PURE__ */ function(e) {
 				return;
 			}
 			if (i) {
-				u.push(new av(t.map));
+				u.push(new ov(t.map));
 				let e = t.step.map(i.slice(a)), n;
-				e && o.maybeStep(e).doc && (n = o.mapping.maps[o.mapping.maps.length - 1], l.push(new av(n, void 0, void 0, l.length + u.length))), a--, n && i.appendMap(n, a);
+				e && o.maybeStep(e).doc && (n = o.mapping.maps[o.mapping.maps.length - 1], l.push(new ov(n, void 0, void 0, l.length + u.length))), a--, n && i.appendMap(n, a);
 			} else o.maybeStep(t.step);
 			if (t.selection) return s = i ? t.selection.map(i.slice(a)) : t.selection, c = new e(this.items.slice(0, r).append(u.reverse().concat(l)), this.eventCount - 1), !1;
 		}, this.items.length, 0), {
@@ -33931,11 +33995,11 @@ var tv = /* @__PURE__ */ function(e) {
 	addTransform(t, n, r, i) {
 		let a = [], o = this.eventCount, s = this.items, c = !i && s.length ? s.get(s.length - 1) : null;
 		for (let e = 0; e < t.steps.length; e++) {
-			let r = t.steps[e].invert(t.docs[e]), l = new av(t.mapping.maps[e], r, n), u;
+			let r = t.steps[e].invert(t.docs[e]), l = new ov(t.mapping.maps[e], r, n), u;
 			(u = c && c.merge(l)) && (l = u, e ? a.pop() : s = s.slice(0, s.length - 1)), a.push(l), n &&= (o++, void 0), i || (c = l);
 		}
 		let l = o - r.depth;
-		return l > sv && (s = iv(s, l), o -= l), new e(s.append(a), o);
+		return l > cv && (s = av(s, l), o -= l), new e(s.append(a), o);
 	}
 	remapping(e, t) {
 		let n = new gt();
@@ -33945,7 +34009,7 @@ var tv = /* @__PURE__ */ function(e) {
 		}, e, t), n;
 	}
 	addMaps(t) {
-		return this.eventCount == 0 ? this : new e(this.items.append(t.map((e) => new av(e))), this.eventCount);
+		return this.eventCount == 0 ? this : new e(this.items.append(t.map((e) => new ov(e))), this.eventCount);
 	}
 	rebased(t, n) {
 		if (!this.eventCount) return this;
@@ -33961,13 +34025,13 @@ var tv = /* @__PURE__ */ function(e) {
 			let i = a.maps[n];
 			if (e.step) {
 				let o = t.steps[n].invert(t.docs[n]), l = e.selection && e.selection.map(a.slice(c + 1, n));
-				l && s++, r.push(new av(i, o, l));
-			} else r.push(new av(i));
+				l && s++, r.push(new ov(i, o, l));
+			} else r.push(new ov(i));
 		}, i);
 		let l = [];
-		for (let e = n; e < o; e++) l.push(new av(a.maps[e]));
+		for (let e = n; e < o; e++) l.push(new ov(a.maps[e]));
 		let u = new e(this.items.slice(0, i).append(l).append(r), s);
-		return u.emptyItemCount() > nv && (u = u.compress(this.items.length - r.length)), u;
+		return u.emptyItemCount() > rv && (u = u.compress(this.items.length - r.length)), u;
 	}
 	emptyItemCount() {
 		let e = 0;
@@ -33984,21 +34048,21 @@ var tv = /* @__PURE__ */ function(e) {
 				if (r--, o && n.appendMap(o, r), t) {
 					let s = e.selection && e.selection.map(n.slice(r));
 					s && a++;
-					let c = new av(o.invert(), t, s), l, u = i.length - 1;
+					let c = new ov(o.invert(), t, s), l, u = i.length - 1;
 					(l = i.length && i[u].merge(c)) ? i[u] = l : i.push(c);
 				}
 			} else e.map && r--;
-		}, this.items.length, 0), new e($_.from(i.reverse()), a);
+		}, this.items.length, 0), new e(ev.from(i.reverse()), a);
 	}
 };
-rv.empty = new rv($_.empty, 0);
-function iv(e, t) {
+iv.empty = new iv(ev.empty, 0);
+function av(e, t) {
 	let n;
 	return e.forEach((e, r) => {
 		if (e.selection && t-- == 0) return n = r, !1;
 	}), e.slice(n);
 }
-var av = class e {
+var ov = class e {
 	constructor(e, t, n, r) {
 		this.map = e, this.step = t, this.selection = n, this.mirrorOffset = r;
 	}
@@ -34008,25 +34072,25 @@ var av = class e {
 			if (n) return new e(n.getMap().invert(), n, this.selection);
 		}
 	}
-}, ov = class {
+}, sv = class {
 	constructor(e, t, n, r, i) {
 		this.done = e, this.undone = t, this.prevRanges = n, this.prevTime = r, this.prevComposition = i;
 	}
-}, sv = 20;
-function cv(e, t, n, r) {
-	let i = n.getMeta(gv), a;
+}, cv = 20;
+function lv(e, t, n, r) {
+	let i = n.getMeta(_v), a;
 	if (i) return i.historyState;
-	n.getMeta(_v) && (e = new ov(e.done, e.undone, null, 0, -1));
+	n.getMeta(vv) && (e = new sv(e.done, e.undone, null, 0, -1));
 	let o = n.getMeta("appendedTransaction");
 	if (n.steps.length == 0) return e;
-	if (o && o.getMeta(gv)) return o.getMeta(gv).redo ? new ov(e.done.addTransform(n, void 0, r, hv(t)), e.undone, uv(n.mapping.maps), e.prevTime, e.prevComposition) : new ov(e.done, e.undone.addTransform(n, void 0, r, hv(t)), null, e.prevTime, e.prevComposition);
+	if (o && o.getMeta(_v)) return o.getMeta(_v).redo ? new sv(e.done.addTransform(n, void 0, r, gv(t)), e.undone, dv(n.mapping.maps), e.prevTime, e.prevComposition) : new sv(e.done, e.undone.addTransform(n, void 0, r, gv(t)), null, e.prevTime, e.prevComposition);
 	if (n.getMeta("addToHistory") !== !1 && !(o && o.getMeta("addToHistory") === !1)) {
-		let i = n.getMeta("composition"), a = e.prevTime == 0 || !o && e.prevComposition != i && (e.prevTime < (n.time || 0) - r.newGroupDelay || !lv(n, e.prevRanges)), s = o ? dv(e.prevRanges, n.mapping) : uv(n.mapping.maps);
-		return new ov(e.done.addTransform(n, a ? t.selection.getBookmark() : void 0, r, hv(t)), rv.empty, s, n.time, i ?? e.prevComposition);
-	} else if (a = n.getMeta("rebased")) return new ov(e.done.rebased(n, a), e.undone.rebased(n, a), dv(e.prevRanges, n.mapping), e.prevTime, e.prevComposition);
-	else return new ov(e.done.addMaps(n.mapping.maps), e.undone.addMaps(n.mapping.maps), dv(e.prevRanges, n.mapping), e.prevTime, e.prevComposition);
+		let i = n.getMeta("composition"), a = e.prevTime == 0 || !o && e.prevComposition != i && (e.prevTime < (n.time || 0) - r.newGroupDelay || !uv(n, e.prevRanges)), s = o ? fv(e.prevRanges, n.mapping) : dv(n.mapping.maps);
+		return new sv(e.done.addTransform(n, a ? t.selection.getBookmark() : void 0, r, gv(t)), iv.empty, s, n.time, i ?? e.prevComposition);
+	} else if (a = n.getMeta("rebased")) return new sv(e.done.rebased(n, a), e.undone.rebased(n, a), fv(e.prevRanges, n.mapping), e.prevTime, e.prevComposition);
+	else return new sv(e.done.addMaps(n.mapping.maps), e.undone.addMaps(n.mapping.maps), fv(e.prevRanges, n.mapping), e.prevTime, e.prevComposition);
 }
-function lv(e, t) {
+function uv(e, t) {
 	if (!t) return !1;
 	if (!e.docChanged) return !0;
 	let n = !1;
@@ -34034,12 +34098,12 @@ function lv(e, t) {
 		for (let i = 0; i < t.length; i += 2) e <= t[i + 1] && r >= t[i] && (n = !0);
 	}), n;
 }
-function uv(e) {
+function dv(e) {
 	let t = [];
 	for (let n = e.length - 1; n >= 0 && t.length == 0; n--) e[n].forEach((e, n, r, i) => t.push(r, i));
 	return t;
 }
-function dv(e, t) {
+function fv(e, t) {
 	if (!e) return null;
 	let n = [];
 	for (let r = 0; r < e.length; r += 2) {
@@ -34048,61 +34112,61 @@ function dv(e, t) {
 	}
 	return n;
 }
-function fv(e, t, n) {
-	let r = hv(t), i = gv.get(t).spec.config, a = (n ? e.undone : e.done).popEvent(t, r);
+function pv(e, t, n) {
+	let r = gv(t), i = _v.get(t).spec.config, a = (n ? e.undone : e.done).popEvent(t, r);
 	if (!a) return null;
-	let o = a.selection.resolve(a.transform.doc), s = (n ? e.done : e.undone).addTransform(a.transform, t.selection.getBookmark(), i, r), c = new ov(n ? s : a.remaining, n ? a.remaining : s, null, 0, -1);
-	return a.transform.setSelection(o).setMeta(gv, {
+	let o = a.selection.resolve(a.transform.doc), s = (n ? e.done : e.undone).addTransform(a.transform, t.selection.getBookmark(), i, r), c = new sv(n ? s : a.remaining, n ? a.remaining : s, null, 0, -1);
+	return a.transform.setSelection(o).setMeta(_v, {
 		redo: n,
 		historyState: c
 	});
 }
-var pv = !1, mv = null;
-function hv(e) {
+var mv = !1, hv = null;
+function gv(e) {
 	let t = e.plugins;
-	if (mv != t) {
-		pv = !1, mv = t;
+	if (hv != t) {
+		mv = !1, hv = t;
 		for (let e = 0; e < t.length; e++) if (t[e].spec.historyPreserveItems) {
-			pv = !0;
+			mv = !0;
 			break;
 		}
 	}
-	return pv;
+	return mv;
 }
-var gv = new Hn("history"), _v = new Hn("closeHistory");
-function vv(e = {}) {
+var _v = new Hn("history"), vv = new Hn("closeHistory");
+function yv(e = {}) {
 	return e = {
 		depth: e.depth || 100,
 		newGroupDelay: e.newGroupDelay || 500
 	}, new zn({
-		key: gv,
+		key: _v,
 		state: {
 			init() {
-				return new ov(rv.empty, rv.empty, null, 0, -1);
+				return new sv(iv.empty, iv.empty, null, 0, -1);
 			},
 			apply(t, n, r) {
-				return cv(n, r, t, e);
+				return lv(n, r, t, e);
 			}
 		},
 		config: e,
 		props: { handleDOMEvents: { beforeinput(e, t) {
-			let n = t.inputType, r = n == "historyUndo" ? bv : n == "historyRedo" ? xv : null;
+			let n = t.inputType, r = n == "historyUndo" ? xv : n == "historyRedo" ? Sv : null;
 			return !r || !e.editable ? !1 : (t.preventDefault(), r(e.state, e.dispatch));
 		} } }
 	});
 }
-function yv(e, t) {
+function bv(e, t) {
 	return (n, r) => {
-		let i = gv.getState(n);
+		let i = _v.getState(n);
 		if (!i || (e ? i.undone : i.done).eventCount == 0) return !1;
 		if (r) {
-			let a = fv(i, n, e);
+			let a = pv(i, n, e);
 			a && r(t ? a.scrollIntoView() : a);
 		}
 		return !0;
 	};
 }
-var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
+var xv = bv(!1, !0), Sv = bv(!0, !0), Cv = el.create({
 	name: "history",
 	addOptions() {
 		return {
@@ -34112,12 +34176,12 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 	},
 	addCommands() {
 		return {
-			undo: () => ({ state: e, dispatch: t }) => bv(e, t),
-			redo: () => ({ state: e, dispatch: t }) => xv(e, t)
+			undo: () => ({ state: e, dispatch: t }) => xv(e, t),
+			redo: () => ({ state: e, dispatch: t }) => Sv(e, t)
 		};
 	},
 	addProseMirrorPlugins() {
-		return [vv(this.options)];
+		return [yv(this.options)];
 	},
 	addKeyboardShortcuts() {
 		return {
@@ -34128,7 +34192,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 			"Shift-Mod-я": () => this.editor.commands.redo()
 		};
 	}
-}), Cv = td.create({
+}), wv = td.create({
 	name: "horizontalRule",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -34167,7 +34231,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 			type: this.type
 		})];
 	}
-}), wv = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))$/, Tv = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))/g, Ev = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))$/, Dv = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))/g, Ov = Wc.create({
+}), Tv = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))$/, Ev = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))/g, Dv = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))$/, Ov = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))/g, kv = Wc.create({
 	name: "italic",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -34208,23 +34272,23 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 	},
 	addInputRules() {
 		return [Zu({
-			find: wv,
+			find: Tv,
 			type: this.type
 		}), Zu({
-			find: Ev,
+			find: Dv,
 			type: this.type
 		})];
 	},
 	addPasteRules() {
 		return [nd({
-			find: Tv,
+			find: Ev,
 			type: this.type
 		}), nd({
-			find: Dv,
+			find: Ov,
 			type: this.type
 		})];
 	}
-}), kv = td.create({
+}), Av = td.create({
 	name: "listItem",
 	addOptions() {
 		return {
@@ -34252,7 +34316,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 			"Shift-Tab": () => this.editor.commands.liftListItem(this.name)
 		};
 	}
-}), Av = "listItem", jv = "textStyle", Mv = /^(\d+)\.\s$/, Nv = td.create({
+}), jv = "listItem", Mv = "textStyle", Nv = /^(\d+)\.\s$/, Pv = td.create({
 	name: "orderedList",
 	addOptions() {
 		return {
@@ -34294,32 +34358,32 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 		];
 	},
 	addCommands() {
-		return { toggleOrderedList: () => ({ commands: e, chain: t }) => this.options.keepAttributes ? t().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(Av, this.editor.getAttributes(jv)).run() : e.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks) };
+		return { toggleOrderedList: () => ({ commands: e, chain: t }) => this.options.keepAttributes ? t().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(jv, this.editor.getAttributes(Mv)).run() : e.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks) };
 	},
 	addKeyboardShortcuts() {
 		return { "Mod-Shift-7": () => this.editor.commands.toggleOrderedList() };
 	},
 	addInputRules() {
 		let e = ed({
-			find: Mv,
+			find: Nv,
 			type: this.type,
 			getAttributes: (e) => ({ start: +e[1] }),
 			joinPredicate: (e, t) => t.childCount + t.attrs.start === +e[1]
 		});
 		return (this.options.keepMarks || this.options.keepAttributes) && (e = ed({
-			find: Mv,
+			find: Nv,
 			type: this.type,
 			keepMarks: this.options.keepMarks,
 			keepAttributes: this.options.keepAttributes,
 			getAttributes: (e) => ({
 				start: +e[1],
-				...this.editor.getAttributes(jv)
+				...this.editor.getAttributes(Mv)
 			}),
 			joinPredicate: (e, t) => t.childCount + t.attrs.start === +e[1],
 			editor: this.editor
 		})), [e];
 	}
-}), Pv = td.create({
+}), Fv = td.create({
 	name: "paragraph",
 	priority: 1e3,
 	addOptions() {
@@ -34343,7 +34407,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 	addKeyboardShortcuts() {
 		return { "Mod-Alt-0": () => this.editor.commands.setParagraph() };
 	}
-}), Fv = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))$/, Iv = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))/g, Lv = Wc.create({
+}), Iv = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))$/, Lv = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))/g, Rv = Wc.create({
 	name: "strike",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -34379,26 +34443,26 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 	},
 	addInputRules() {
 		return [Zu({
-			find: Fv,
+			find: Iv,
 			type: this.type
 		})];
 	},
 	addPasteRules() {
 		return [nd({
-			find: Iv,
+			find: Lv,
 			type: this.type
 		})];
 	}
-}), Rv = td.create({
+}), zv = td.create({
 	name: "text",
 	group: "inline"
-}), zv = el.create({
+}), Bv = el.create({
 	name: "starterKit",
 	addExtensions() {
 		let e = [];
-		return this.options.bold !== !1 && e.push(C_.configure(this.options.bold)), this.options.blockquote !== !1 && e.push(v_.configure(this.options.blockquote)), this.options.bulletList !== !1 && e.push(D_.configure(this.options.bulletList)), this.options.code !== !1 && e.push(A_.configure(this.options.code)), this.options.codeBlock !== !1 && e.push(N_.configure(this.options.codeBlock)), this.options.document !== !1 && e.push(P_.configure(this.options.document)), this.options.dropcursor !== !1 && e.push(L_.configure(this.options.dropcursor)), this.options.gapcursor !== !1 && e.push(Y_.configure(this.options.gapcursor)), this.options.hardBreak !== !1 && e.push(X_.configure(this.options.hardBreak)), this.options.heading !== !1 && e.push(Z_.configure(this.options.heading)), this.options.history !== !1 && e.push(Sv.configure(this.options.history)), this.options.horizontalRule !== !1 && e.push(Cv.configure(this.options.horizontalRule)), this.options.italic !== !1 && e.push(Ov.configure(this.options.italic)), this.options.listItem !== !1 && e.push(kv.configure(this.options.listItem)), this.options.orderedList !== !1 && e.push(Nv.configure(this.options.orderedList)), this.options.paragraph !== !1 && e.push(Pv.configure(this.options.paragraph)), this.options.strike !== !1 && e.push(Lv.configure(this.options.strike)), this.options.text !== !1 && e.push(Rv.configure(this.options.text)), e;
+		return this.options.bold !== !1 && e.push(w_.configure(this.options.bold)), this.options.blockquote !== !1 && e.push(y_.configure(this.options.blockquote)), this.options.bulletList !== !1 && e.push(O_.configure(this.options.bulletList)), this.options.code !== !1 && e.push(j_.configure(this.options.code)), this.options.codeBlock !== !1 && e.push(P_.configure(this.options.codeBlock)), this.options.document !== !1 && e.push(F_.configure(this.options.document)), this.options.dropcursor !== !1 && e.push(R_.configure(this.options.dropcursor)), this.options.gapcursor !== !1 && e.push(X_.configure(this.options.gapcursor)), this.options.hardBreak !== !1 && e.push(Z_.configure(this.options.hardBreak)), this.options.heading !== !1 && e.push(Q_.configure(this.options.heading)), this.options.history !== !1 && e.push(Cv.configure(this.options.history)), this.options.horizontalRule !== !1 && e.push(wv.configure(this.options.horizontalRule)), this.options.italic !== !1 && e.push(kv.configure(this.options.italic)), this.options.listItem !== !1 && e.push(Av.configure(this.options.listItem)), this.options.orderedList !== !1 && e.push(Pv.configure(this.options.orderedList)), this.options.paragraph !== !1 && e.push(Fv.configure(this.options.paragraph)), this.options.strike !== !1 && e.push(Rv.configure(this.options.strike)), this.options.text !== !1 && e.push(zv.configure(this.options.text)), e;
 	}
-}), Bv = Wc.create({
+}), Vv = Wc.create({
 	name: "underline",
 	addOptions() {
 		return { HTMLAttributes: {} };
@@ -34430,7 +34494,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 			"Mod-U": () => this.editor.commands.toggleUnderline()
 		};
 	}
-}), Vv = {
+}), Hv = {
 	async init() {
 		if (window.functionPlotLoaded) return;
 		let e = (e) => new Promise((t, n) => {
@@ -34535,7 +34599,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 			console.error("Graph export error:", e);
 		}
 	}
-}, Hv = {
+}, Uv = {
 	async init(t, n) {
 		try {
 			let r = await import("./fabric-B26mpxRe.js").then((t) => /* @__PURE__ */ e(t.default, 1)), i = r.fabric || r, a = document.getElementById(n), o = a.clientWidth - 20, s = new i.Canvas(t, {
@@ -34908,7 +34972,7 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 			}
 		}).createParagraphNear().focus("end").run(), n && n();
 	}
-}, Uv = class {
+}, Wv = class {
 	constructor(e) {
 		this.engine = e, this.tiptap = null, this.fabricCanvas = null;
 	}
@@ -34931,15 +34995,16 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 				this.engine.logDebug("[EditorManager] Initializing TipTap..."), this.tiptap = new Xu({
 					element: e,
 					extensions: [
-						zv.configure({ blockquote: !1 }),
-						Bv,
+						Bv.configure({ blockquote: !1 }),
+						Vv,
 						s_,
 						c_,
 						l_,
 						u_.configure({ allowBase64: !0 }),
 						d_,
 						f_,
-						m_
+						m_,
+						h_
 					],
 					content: "<p></p>",
 					autofocus: "end",
@@ -34958,13 +35023,21 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 					onUpdate: ({ editor: e }) => {
 						try {
 							let t = JSON.parse(localStorage.getItem("papanda_editor_open_state") || "{}");
-							t.content = e.getHTML(), localStorage.setItem("papanda_editor_open_state", JSON.stringify(t));
+							t.content = e.getHTML(), localStorage.setItem("papanda_editor_open_state", JSON.stringify(t)), this.engine && this.engine.state && !this.engine.state.isProgrammaticUpdate && (this.engine.state.isDirty = !0);
 						} catch {}
 						this.updateFormattingToolbarStates();
 					}
+				}), this.mainTiptap = this.tiptap;
+				let t = document.getElementById("editorBlockTitleInput");
+				t && t.addEventListener("input", (e) => {
+					this.engine && this.engine.state && (this.engine.state.isDirty = !0);
+					try {
+						let t = JSON.parse(localStorage.getItem("papanda_editor_open_state") || "{}");
+						t.isOpen && (t.blockTitle = e.target.value, localStorage.setItem("papanda_editor_open_state", JSON.stringify(t)));
+					} catch {}
 				});
-				let t = document.getElementById("editorFormattingToolbar");
-				t && t.querySelectorAll(".format-btn").forEach((e) => {
+				let n = document.getElementById("editorFormattingToolbar");
+				n && n.querySelectorAll(".format-btn").forEach((e) => {
 					e.onclick = async (t) => {
 						t.preventDefault(), t.stopPropagation();
 						let n = e.dataset.format;
@@ -34975,41 +35048,71 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 						else if (n === "underline") r.toggleUnderline().run();
 						else if (n === "strike") r.toggleStrike().run();
 						else if (n === "code") r.toggleCode().run();
-						else if (n === "question") if (this.tiptap.isActive("questionMark")) this.tiptap.chain().focus().unsetMark("questionMark").run();
-						else {
-							let { from: e, to: t } = this.tiptap.state.selection, n = await a({
-								title: "Вопрос к выделенному тексту",
-								message: "В чём заключается вопрос или неясность?",
-								placeholder: "Например: Не совсем ясен вывод формулы / Откуда взялось это утверждение...",
-								okLabel: "Сохранить",
-								cancelLabel: "Отмена"
-							});
-							n !== null && n.trim() !== "" ? this.tiptap.chain().focus().setTextSelection({
-								from: e,
-								to: t
-							}).setMark("questionMark", { title: n.trim() }).run() : n !== null && this.tiptap.chain().focus().setTextSelection({
-								from: e,
-								to: t
-							}).setMark("questionMark", { title: "Есть вопрос, непонятно" }).run();
-						}
-						else if (n === "hiddenPhrase") if (this.tiptap.isActive("hiddenPhrase")) this.tiptap.chain().focus().unsetMark("hiddenPhrase").run();
-						else {
-							let { from: e, to: t } = this.tiptap.state.selection, n = await a({
-								title: window._ ? window._("dialectics.add_hidden_phrase", "👁 Добавить скрытую фразу") : "👁 Добавить скрытую фразу",
-								message: window._ ? window._("dialectics.hidden_phrase_prompt", "Введите текст пояснения или сноски, который будет разворачиваться по клику:") : "Введите текст пояснения или сноски, который будет разворачиваться по клику:",
-								placeholder: "Например: наука о всеобщих законах развития...",
-								okLabel: window._ ? window._("ok", "Сохранить") : "Сохранить",
-								cancelLabel: window._ ? window._("cancel", "Отмена") : "Отмена"
-							});
-							n !== null && n.trim() !== "" && this.tiptap.chain().focus().setTextSelection({
-								from: e,
-								to: t
-							}).setMark("hiddenPhrase", {
-								note: n.trim(),
-								expanded: "false"
-							}).run();
-						}
-						else if (n === "blockLink") if (this.tiptap.isActive("blockLink")) this.tiptap.chain().focus().unsetMark("blockLink").run();
+						else if (n === "question") {
+							let { from: e, to: t } = this.tiptap.state.selection;
+							if (this.tiptap.isActive("questionMark")) {
+								let e = await a({
+									title: "Вопрос к выделенному тексту",
+									message: "Измените текст вопроса или неясности (оставьте пустым для удаления отметки):",
+									placeholder: "Например: Не совсем ясен вывод формулы...",
+									value: this.tiptap.getAttributes("questionMark").title || "",
+									okLabel: "Сохранить",
+									cancelLabel: "Отмена"
+								});
+								e === null || (e.trim() === "" ? this.tiptap.chain().focus().unsetMark("questionMark").run() : this.tiptap.chain().focus().updateAttributes("questionMark", { title: e.trim() }).run());
+							} else {
+								if (e === t) {
+									window.showToast && window.showToast("Сначала выделите текст для отметки вопроса", "warning");
+									return;
+								}
+								let n = await a({
+									title: "Вопрос к выделенному тексту",
+									message: "В чём заключается вопрос или неясность?",
+									placeholder: "Например: Не совсем ясен вывод формулы / Откуда взялось это утверждение...",
+									okLabel: "Сохранить",
+									cancelLabel: "Отмена"
+								});
+								n !== null && n.trim() !== "" ? this.tiptap.chain().focus().setTextSelection({
+									from: e,
+									to: t
+								}).setMark("questionMark", { title: n.trim() }).setTextSelection(t).unsetMark("questionMark").run() : n !== null && this.tiptap.chain().focus().setTextSelection({
+									from: e,
+									to: t
+								}).setMark("questionMark", { title: "Есть вопрос, непонятно" }).setTextSelection(t).unsetMark("questionMark").run();
+							}
+						} else if (n === "hiddenPhrase") {
+							let { from: e, to: t } = this.tiptap.state.selection;
+							if (this.tiptap.isActive("hiddenPhrase")) {
+								let e = this.tiptap.getAttributes("hiddenPhrase").note || "", t = await a({
+									title: window._ ? window._("dialectics.edit_hidden_phrase", "👁 Изменить скрытую фразу") : "👁 Изменить скрытую фразу",
+									message: window._ ? window._("dialectics.hidden_phrase_prompt", "Введите новый текст пояснения или сноски (оставьте пустым для удаления):") : "Введите новый текст пояснения или сноски (оставьте пустым для удаления):",
+									placeholder: "Например: наука о всеобщих законах развития...",
+									value: e,
+									okLabel: window._ ? window._("ok", "Сохранить") : "Сохранить",
+									cancelLabel: window._ ? window._("cancel", "Отмена") : "Отмена"
+								});
+								t === null || (t.trim() === "" ? this.tiptap.chain().focus().unsetMark("hiddenPhrase").run() : this.tiptap.chain().focus().updateAttributes("hiddenPhrase", { note: t.trim() }).run());
+							} else {
+								if (e === t) {
+									window.showToast && window.showToast("Сначала выделите текст для скрытой фразы", "warning");
+									return;
+								}
+								let n = await a({
+									title: window._ ? window._("dialectics.add_hidden_phrase", "👁 Добавить скрытую фразу") : "👁 Добавить скрытую фразу",
+									message: window._ ? window._("dialectics.hidden_phrase_prompt", "Введите текст пояснения или сноски, который будет разворачиваться по клику:") : "Введите текст пояснения или сноски, который будет разворачиваться по клику:",
+									placeholder: "Например: наука о всеобщих законах развития...",
+									okLabel: window._ ? window._("ok", "Сохранить") : "Сохранить",
+									cancelLabel: window._ ? window._("cancel", "Отмена") : "Отмена"
+								});
+								n !== null && n.trim() !== "" && this.tiptap.chain().focus().setTextSelection({
+									from: e,
+									to: t
+								}).setMark("hiddenPhrase", {
+									note: n.trim(),
+									expanded: "false"
+								}).setTextSelection(t).unsetMark("hiddenPhrase").run();
+							}
+						} else if (n === "blockLink") if (this.tiptap.isActive("blockLink")) this.tiptap.chain().focus().unsetMark("blockLink").run();
 						else {
 							let { from: e, to: t } = this.tiptap.state.selection;
 							if (e === t) {
@@ -35041,8 +35144,10 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 								to: t
 							}).setMark("blockLink", {
 								targetId: i.id,
-								targetTitle: i.title
-							}).run();
+								targetTitle: i.title,
+								targetNoteId: i.noteId || "",
+								targetNoteTitle: i.noteTitle || ""
+							}).setTextSelection(t).run();
 						}
 						else n === "quote" ? r.toggleQuoteBlock().run() : n === "alternatives" ? r.insertAlternativesBlock().run() : n === "clear" && r.unsetAllMarks().clearNodes().run();
 						this.updateFormattingToolbarStates();
@@ -35056,20 +35161,22 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 	updateFormattingToolbarStates() {
 		let e = document.getElementById("editorFormattingToolbar");
 		if (!e || !this.tiptap) return;
-		let t = document.querySelector(".editor-tab.active")?.dataset.tab, { from: n, to: r } = this.tiptap.state.selection;
-		n !== r && t === "text" ? (e.style.display = "inline-flex", e.querySelectorAll(".format-btn").forEach((e) => {
+		let t = ((this.tiptap.options.element ? this.tiptap.options.element.closest(".dialectics-floating-editor") : null) || document).querySelector(".editor-tab.active"), n = t ? t.dataset.tab : "text", { from: r, to: i } = this.tiptap.state.selection;
+		r !== i && n === "text" ? (e.style.display = "inline-flex", e.querySelectorAll(".format-btn").forEach((e) => {
 			let t = e.dataset.format, n = t === "question" ? this.tiptap.isActive("questionMark") : t === "hiddenPhrase" ? this.tiptap.isActive("hiddenPhrase") : t === "blockLink" ? this.tiptap.isActive("blockLink") : t === "quote" ? this.tiptap.isActive("quoteBlock") : t === "alternatives" ? this.tiptap.isActive("alternativesBlock") : this.tiptap.isActive(t);
 			e.classList.toggle("active", n);
 		})) : e.style.display = "none";
 	}
-	async switchTab(e) {
-		if (this.engine.logDebug(`[EditorManager] Switching tab to: ${e}`), document.querySelectorAll(".editor-tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === e)), document.querySelectorAll(".tab-content").forEach((t) => {
-			let n = t.id === `editor-${e}`;
-			t.classList.toggle("active", n), t.style.display = n ? "flex" : "none";
+	async switchTab(e, t = null) {
+		this.engine.logDebug(`[EditorManager] Switching tab to: ${e}`);
+		let n = t || document;
+		if (n.querySelectorAll(".editor-tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === e)), n.querySelectorAll(".tab-content").forEach((t) => {
+			let n = t.id === `editor-${e}` || t.classList.contains(`editor-${e}`) || t.classList.contains(`tab-content-${e}`);
+			t.id === `editor-${e}` && (t.removeAttribute("id"), t.classList.add(`tab-content-${e}`)), t.classList.toggle("active", n), t.style.display = n ? "flex" : "none";
 		}), this.updateFormattingToolbarStates(), e === "text") await this.init();
-		else if (e === "graph") await Vv.init();
+		else if (e === "graph") await Hv.init();
 		else if (e === "shapes" && !this.fabricCanvas) {
-			this.fabricCanvas = await Hv.init("shapesCanvas", "shapesCanvasWrapper"), this.shapeHistory = [], this.isHistoryProcessing = !1;
+			this.fabricCanvas = await Uv.init("shapesCanvas", "shapesCanvasWrapper"), this.shapeHistory = [], this.isHistoryProcessing = !1;
 			let e = () => {
 				this.isHistoryProcessing || (this.shapeHistory.push(JSON.stringify(this.fabricCanvas.toJSON())), this.shapeHistory.length > 50 && this.shapeHistory.shift());
 			};
@@ -35114,17 +35221,17 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 		}, 10);
 	}
 	plotGraph() {
-		Vv.plot(document.getElementById("graphPreview"), document.getElementById("graphFuncInput").value);
+		Hv.plot(document.getElementById("graphPreview"), document.getElementById("graphFuncInput").value);
 	}
 	async insertGraphToNote() {
 		let e = document.getElementById("graphPreview").querySelector("svg");
-		e && this.tiptap && await Vv.exportToPNG(e, this.tiptap, () => this.switchTab("text"));
+		e && this.tiptap && await Hv.exportToPNG(e, this.tiptap, () => this.switchTab("text"));
 	}
 	setShapeTool(e) {
-		Hv.setTool(this.fabricCanvas, e, document.getElementById("shapeColor").value);
+		Uv.setTool(this.fabricCanvas, e, document.getElementById("shapeColor").value);
 	}
 	async addShape(e) {
-		await Hv.add(this.fabricCanvas, e, document.getElementById("shapeColor").value);
+		await Uv.add(this.fabricCanvas, e, document.getElementById("shapeColor").value);
 	}
 	deleteSelectedShape() {
 		if (!this.fabricCanvas) return;
@@ -35132,10 +35239,10 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 		this.fabricCanvas.discardActiveObject(), this.fabricCanvas.remove(...e);
 	}
 	async toggleShapeGrid() {
-		await Hv.toggleGrid(this.fabricCanvas);
+		await Uv.toggleGrid(this.fabricCanvas);
 	}
 	async copySelectedShape() {
-		await Hv.copySelectedShape(this.fabricCanvas);
+		await Uv.copySelectedShape(this.fabricCanvas);
 	}
 	undoShape() {
 		if (!this.fabricCanvas || !this.shapeHistory || this.shapeHistory.length <= 1) return;
@@ -35244,21 +35351,53 @@ var bv = yv(!1, !0), xv = yv(!0, !0), Sv = el.create({
 		});
 	}
 	insertShapesToNote() {
-		Hv.exportToPNG(this.fabricCanvas, this.tiptap, () => this.switchTab("text"));
+		Uv.exportToPNG(this.fabricCanvas, this.tiptap, () => this.switchTab("text"));
 	}
 	setContent(e) {
-		this.tiptap && (this.tiptap.commands.setContent(e), this.tiptap.commands.focus());
+		this.tiptap && (this.engine && this.engine.state && (this.engine.state.isProgrammaticUpdate = !0), this.tiptap.commands.setContent(e), this.tiptap.commands.focus(), this.engine && this.engine.state && (this.engine.state.isProgrammaticUpdate = !1));
 	}
 	getHTML() {
 		return this.tiptap ? this.tiptap.getHTML() : "";
 	}
+	createEditor(e, t, n, r) {
+		return new Xu({
+			element: e,
+			extensions: [
+				Bv.configure({ blockquote: !1 }),
+				Vv,
+				s_,
+				c_,
+				l_,
+				u_.configure({ allowBase64: !0 }),
+				d_,
+				f_,
+				m_,
+				h_
+			],
+			content: t || "<p></p>",
+			autofocus: "end",
+			onFocus: ({ editor: e }) => {
+				this.tiptap = e, n && n(), this.updateFormattingToolbarStates();
+			},
+			onBlur: () => {
+				this.updateFormattingToolbarStates();
+			},
+			editorProps: { handleDOMEvents: { mousedown: (e, t) => (t.stopPropagation(), !1) } },
+			onSelectionUpdate: ({ editor: e }) => {
+				this.updateFormattingToolbarStates();
+			},
+			onUpdate: ({ editor: e }) => {
+				r && r(), this.updateFormattingToolbarStates();
+			}
+		});
+	}
 };
 //#endregion
 //#region fastapi_app/static/js/dialectics/ModalsController.js
-function Wv(e) {
+function Gv(e) {
 	return e ? (typeof e == "string" && !e.endsWith("Z") && !e.includes("+") && !e.includes("-", 10) && (e += "Z"), new Date(e)) : /* @__PURE__ */ new Date();
 }
-var Gv = {
+var Kv = {
 	async showReferenceModal() {
 		let e = document.getElementById("referenceDialecticsModal");
 		if (!e) return;
@@ -35314,7 +35453,7 @@ var Gv = {
 		this.dom.loadList.innerHTML = e.length ? "" : "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>", e.forEach((e) => {
 			let n = document.createElement("div");
 			n.className = "load-note-item";
-			let i = Wv(e.updated_at || e.created_at), a = "";
+			let i = Gv(e.updated_at || e.created_at), a = "";
 			i.getFullYear() > 1970 && (a = i.toLocaleDateString() + " " + i.toLocaleTimeString([], {
 				hour: "2-digit",
 				minute: "2-digit"
@@ -35326,7 +35465,7 @@ var Gv = {
 				"summation",
 				"суммирование",
 				"суммалау"
-			].includes(s) || s.includes("сумм") || s.includes("summation") || s.includes("пример конспекта") ? "" : "<button class=\"load-note-item-delete\" title=\"Delete\">🗑️</button>", l = e.status || "none", u = "Статус: Не указано (нажмите для смены)";
+			].includes(s) || s.includes("сумм") || s.includes("summation") || s.includes("пример конспекта") ? "" : "<button class=\"load-note-item-delete\" title=\"Delete\">✕</button>", l = e.status || "none", u = "Статус: Не указано (нажмите для смены)";
 			l === "in_progress" ? u = "В работе" : l === "ready" && (u = "Готовый конспект"), n.innerHTML = `
                 <div class="load-note-item-content" style="flex: 1;">
                     <div class="load-note-item-title" style="display: flex; align-items: center; gap: 8px; color: #1e293b; font-size: 1.05em; margin-bottom: 4px;">
@@ -35344,7 +35483,7 @@ var Gv = {
 				await r({
 					title: a,
 					message: o.replace("%s", e.title),
-					icon: "🗑️",
+					icon: "",
 					buttons: [{
 						label: s,
 						value: !1,
@@ -35354,7 +35493,7 @@ var Gv = {
 						value: !0,
 						class: "confirm-btn-danger"
 					}]
-				}) && await t.delete(e.id) && (window.showToast(window._("toast.record_deleted"), "info"), n.remove(), this.dom.loadList.children.length === 0 && (this.dom.loadList.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>"), this.state.currentNoteId === e.id && (this.close(), this.dom.title.value = "", $.render(this.dom.canvas, []), this.state.currentNoteId = null, this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none")));
+				}) && await t.delete(e.id) && (window.showToast(window._("toast.record_deleted"), "info"), n.remove(), this.dom.loadList.children.length === 0 && (this.dom.loadList.innerHTML = "<div style=\"color: #64748b; text-align: center; padding: 20px;\">Nothing found</div>"), this.state.currentNoteId === e.id && (await this.close(!1), this.dom.title.value = "", $.render(this.dom.canvas, []), this.state.currentNoteId = null, this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none")));
 			}), this.dom.loadList.appendChild(n);
 		});
 	},
@@ -35378,7 +35517,7 @@ var Gv = {
 		n.innerHTML = "", e.forEach((e) => {
 			let i = document.createElement("div");
 			i.className = "load-note-item";
-			let a = Wv(e.deleted_at || e.updated_at || e.created_at), o = a.toLocaleDateString() + " " + a.toLocaleTimeString([], {
+			let a = Gv(e.deleted_at || e.updated_at || e.created_at), o = a.toLocaleDateString() + " " + a.toLocaleTimeString([], {
 				hour: "2-digit",
 				minute: "2-digit"
 			});
@@ -35432,7 +35571,7 @@ var Gv = {
 		await r({
 			title: window._ ? window._("dialectics.delete_note_title") : "Удаление конспекта",
 			message: window._ ? window._("dialectics.delete_note_msg") : "Вы уверены, что хотите удалить этот конспект?",
-			icon: "🗑️",
+			icon: "",
 			buttons: [{
 				label: window._ ? window._("dialectics.cancel") : "Отмена",
 				value: !1,
@@ -35557,7 +35696,7 @@ var Gv = {
                         </div>
                         <span class="connections-result-cat" style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${r}</span>
                     </div>
-                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${Wv(e.created_at).toLocaleDateString()}</div>
+                    <div class="connections-result-date" style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${Gv(e.created_at).toLocaleDateString()}</div>
                 `, t.addEventListener("click", () => {
 					this.loadNoteToEditor(e.id), this.dom.connectionsModal && this.dom.connectionsModal.classList.remove("active"), setTimeout(() => {
 						this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
@@ -35598,7 +35737,7 @@ var Gv = {
                         </div>
                         <span style="background-color: ${i}15; color: ${i}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; border: 1px solid ${i}30;">${n}</span>
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${Wv(e.created_at).toLocaleDateString()}</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-light);"><i class="far fa-clock" style="margin-right: 4px;"></i>${Gv(e.created_at).toLocaleDateString()}</div>
                 `, t.addEventListener("click", () => {
 					this.loadNoteToEditor(e.id), this.dom.connectionsModal && this.dom.connectionsModal.classList.remove("active"), setTimeout(() => {
 						this.dom.connectionsModal && (this.dom.connectionsModal.style.display = "none");
@@ -35619,10 +35758,10 @@ var Gv = {
 			a === "in_progress" && (e = "Статус изменён: В работе"), a === "ready" && (e = "Статус изменён: Готовый конспект"), window.showToast(e, "success");
 		}
 	}
-}, Kv = class {
+}, qv = class {
 	async saveGlobal(e = !0, n = "toast.dialectics_saved") {
 		let r = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), i = this.editor.getHTML(), a = document.getElementById("editorBlockTitleInput")?.value?.trim() || "";
-		if (console.log("TipTap HTML Output -> length:", i.length), this.state.editingAltCard && this.state.editingBlock) {
+		if (this.state.editingAltCard && this.state.editingBlock) {
 			let e = this.state.editingAltCard.querySelector(".dialectics-content-inner");
 			if (e && (e.innerHTML = i), a) {
 				let e = this.state.editingAltCard.querySelector(".alt-title");
@@ -35630,7 +35769,8 @@ var Gv = {
 			}
 			let t = $.getBlocks(this.dom.canvas);
 			$.render(this.dom.canvas, t, this._blockCallbacks());
-		} else if (this.state.editingBlock) {
+		} else if (this.state.editingBlock && this.dom.editor && this.dom.editor.style.display !== "none" && !this.state.editingBlock.classList.contains("is-editing") && !this.state.editingBlock._floatingEditorWindow) {
+			typeof this.cleanUpInlineEditForBlock == "function" ? this.cleanUpInlineEditForBlock(this.state.editingBlock) : typeof this.cleanUpInlineEdit == "function" && this.cleanUpInlineEdit();
 			let e = this.state.editingBlock.querySelector(".dialectics-content-inner");
 			e && (e.innerHTML = i), a ? this.state.editingBlock.dataset.title = a : delete this.state.editingBlock.dataset.title;
 			let t = $.getBlocks(this.dom.canvas);
@@ -35662,9 +35802,7 @@ var Gv = {
 				collapsed: e.collapsed || !1,
 				words: e.words || [],
 				color: e.color || void 0,
-				tabs: e.tabs || void 0,
-				active_tab_id: e.active_tab_id || void 0,
-				split_view_tab_id: e.split_view_tab_id || void 0
+				status: e.status || "none"
 			})),
 			is_pinned: this.state.isPinned || !1,
 			category_id: s ? parseInt(s) : null,
@@ -35677,14 +35815,14 @@ var Gv = {
 		this.state.currentNoteId && (c.id = Number(this.state.currentNoteId));
 		let l = await t.save(c, this.state.currentNoteId);
 		if (l) {
-			this.state.currentNoteId = l.id, localStorage.setItem("dialectics_last_note_id", l.id), this.updateCurrentVersionDisplay(l);
+			this.state.isDirty = !1, this.state.currentNoteId = l.id, localStorage.setItem("dialectics_last_note_id", l.id), this.updateCurrentVersionDisplay(l);
 			let t = new URL(window.location);
-			return t.searchParams.get("id") !== String(l.id) && (t.searchParams.set("id", l.id), window.history.pushState({}, "", t)), window.showToast(window._(n) || window._("toast.dialectics_saved"), "success"), e && this.close(), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), l.id;
+			return t.searchParams.get("id") !== String(l.id) && (t.searchParams.set("id", l.id), window.history.pushState({}, "", t)), n !== null && window.showToast(window._(n, window._("toast.dialectics_saved", "Сохранено")), "success"), e && await this.close(!1), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "block"), l.id;
 		}
-		return null;
+		return window.showToast && window.showToast(window._("toast.save_error", "Ошибка сохранения. Попробуйте ещё раз."), "error"), null;
 	}
 	async openStickersForCurrent(e = null) {
-		if (!this.state.currentNoteId && (window.showToast && window.showToast(window._("toast.saving_note_to_attach_sticker"), "info"), !await this.saveGlobal(!1))) {
+		if (!this.state.currentNoteId && (window.showToast && window.showToast(window._("toast.saving_note_to_attach_sticker"), "info"), !await this.saveGlobal(!1, null))) {
 			window.showToast && window.showToast(window._("toast.failed_to_save_note"), "error");
 			return;
 		}
@@ -35692,7 +35830,7 @@ var Gv = {
 		t || (this.state.editingBlock ? t = this.state.editingBlock.dataset.blockId : this.state.pendingBlockId && (t = this.state.pendingBlockId)), window.openParentStickers && window.openParentStickers("dialectics", this.state.currentNoteId, t);
 	}
 	async saveAndPin() {
-		let e = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), n = this.editor.getHTML() || this.dom.dashboardTextarea?.value.replace(/\n/g, "<br>") || "", r = this.dom.categorySelect ? this.dom.categorySelect.value : null, i = {
+		let e = this.dom.title.value || (window._ ? window._("dialectics.topic_placeholder") : "Untitled Dialectics"), n = this.editor.getHTML() || "", r = this.dom.categorySelect ? this.dom.categorySelect.value : null, i = {
 			title: e,
 			blocks: [{
 				side: "left",
@@ -35708,31 +35846,40 @@ var Gv = {
 		};
 		this.state.currentNoteId && (i.id = this.state.currentNoteId);
 		let a = await t.save(i, this.state.currentNoteId);
-		a && (this.updateCurrentVersionDisplay(a), window.showToast(window._("toast.saved_and_pinned"), "success"), this.close(), setTimeout(() => location.reload(), 500));
+		a && (this.updateCurrentVersionDisplay(a), window.showToast(window._("toast.saved_and_pinned"), "success"), await this.close(!1), setTimeout(() => location.reload(), 500));
 	}
 	async loadNoteToEditor(e, n = !0, r = null) {
-		typeof this.close == "function" && this.close();
+		typeof this.close == "function" && await this.close();
 		let i = r || await t.get(e);
 		if (i) {
 			if (n && this.state.currentNoteId && this.state.currentNoteId !== i.id) {
 				let e = this.getNoteHistory();
 				(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
 			}
-			this.state.currentNoteId = i.id, localStorage.setItem("dialectics_last_note_id", i.id), this.updateCurrentVersionDisplay(i), this.dom.title.value = i.title;
+			this.state.currentNoteId = i.id, this.state.dismissedHints = JSON.parse(localStorage.getItem("dialectics_dismissed_hints_" + i.id) || "[]"), localStorage.setItem("dialectics_last_note_id", i.id), this.updateCurrentVersionDisplay(i), this.dom.title.value = i.title;
 			let e = typeof i.content_json == "string" ? JSON.parse(i.content_json) : i.content_json;
 			this.dom.categorySelect && (this.dom.categorySelect.value = i.category_id || "");
-			let t = {};
+			let t = {}, r = 0;
 			try {
-				let e = await fetch(`/api/stickers/dialectics/${i.id}/`).then((e) => e.json());
-				Array.isArray(e) && e.forEach((e) => {
-					e.dialectics_block_id && (t[e.dialectics_block_id] = (t[e.dialectics_block_id] || 0) + 1);
+				let e = /* @__PURE__ */ new Set();
+				if (i.content) try {
+					let t = typeof i.content == "string" ? JSON.parse(i.content) : i.content;
+					Array.isArray(t) && t.forEach((t) => {
+						t.id && e.add(String(t.id));
+					});
+				} catch (e) {
+					console.error("Failed to parse note content for block IDs:", e);
+				}
+				let n = await fetch(`/api/stickers/dialectics/${i.id}/`).then((e) => e.json());
+				Array.isArray(n) && n.forEach((n) => {
+					n.dialectics_block_id ? e.has(String(n.dialectics_block_id)) ? t[n.dialectics_block_id] = (t[n.dialectics_block_id] || 0) + 1 : fetch(`/api/stickers/${n.id}/archive/`, { method: "POST" }).catch(() => {}) : r++;
 				});
 			} catch (e) {
 				console.error("Failed to load block stickers:", e);
 			}
-			this.state.blockStickersCount = t;
-			let r = document.getElementById("toggleOnlyTitlesMode");
-			if (r && (r.checked = !1, window.toggleOnlyTitlesMode && window.toggleOnlyTitlesMode(!1)), $.render(this.dom.canvas, e, this._blockCallbacks()), this._revealInterface(), this.hideLoadModal(), this.dom.deleteBtn) {
+			this.state.blockStickersCount = t, this.state.globalStickersCount = r, this.updateGlobalStickersBadge();
+			let a = document.getElementById("toggleOnlyTitlesMode");
+			if (a && (a.checked = !1, window.toggleOnlyTitlesMode && window.toggleOnlyTitlesMode(!1)), $.render(this.dom.canvas, e, this._blockCallbacks()), this._revealInterface(), this.hideLoadModal(), this.dom.deleteBtn) {
 				let e = (i.title || "").trim().toLowerCase(), t = [
 					"example note",
 					"пример конспекта",
@@ -35743,9 +35890,61 @@ var Gv = {
 				].includes(e) || e.includes("сумм") || e.includes("summation") || e.includes("пример конспекта");
 				this.dom.deleteBtn.style.display = t ? "none" : "block";
 			}
-			let a = new URL(window.location);
-			a.searchParams.get("id") !== String(i.id) && (a.searchParams.set("id", i.id), window.history.pushState({}, "", a));
+			let o = new URL(window.location);
+			o.searchParams.get("id") !== String(i.id) && (o.searchParams.set("id", i.id), window.history.pushState({}, "", o));
 		} else localStorage.removeItem("dialectics_last_note_id"), this.updateCurrentVersionDisplay(null), this._revealInterface();
+	}
+	updateGlobalStickersBadge() {
+		let e = document.getElementById("globalStickersCountBadge");
+		if (e) {
+			let t = this.state.globalStickersCount || 0;
+			e.innerText = t, e.style.display = t > 0 ? "inline-block" : "none";
+		}
+	}
+	async refreshStickers() {
+		if (!this.state.currentNoteId) return;
+		let e = {}, t = 0, n = /* @__PURE__ */ new Set();
+		this.dom.canvas && window.BlockManager && window.BlockManager.getBlocks(this.dom.canvas).forEach((e) => {
+			e.id && n.add(String(e.id));
+		});
+		try {
+			let r = await fetch(`/api/stickers/dialectics/${this.state.currentNoteId}/`).then((e) => e.json());
+			Array.isArray(r) && r.forEach((r) => {
+				r.dialectics_block_id ? n.has(String(r.dialectics_block_id)) ? e[r.dialectics_block_id] = (e[r.dialectics_block_id] || 0) + 1 : fetch(`/api/stickers/${r.id}/archive/`, { method: "POST" }).catch(() => {}) : t++;
+			});
+		} catch (e) {
+			console.error("Failed to load block stickers:", e);
+		}
+		if (this.state.blockStickersCount = e, this.state.globalStickersCount = t, this.updateGlobalStickersBadge(), window.BlockManager && this.dom.canvas) {
+			let e = window.BlockManager.getBlocks(this.dom.canvas);
+			window.BlockManager.render(this.dom.canvas, e, this._blockCallbacks());
+		}
+	}
+	goToBlock(e) {
+		window.closeParentStickersOverview && window.closeParentStickersOverview();
+		let t = document.getElementById("dialecticsCanvas");
+		if (!t) return;
+		let n = t.querySelector(`[data-block-id="${e}"]`);
+		n ? (n.scrollIntoView({
+			behavior: "smooth",
+			block: "center"
+		}), n.style.boxShadow = "0 0 0 4px #3b82f6, 0 20px 25px -5px rgba(0, 0, 0, 0.1)", n.style.transform = "scale(1.02)", n.style.transition = "all 0.3s ease", setTimeout(() => {
+			n.style.boxShadow = "", n.style.transform = "";
+		}, 2e3)) : window.showToast && window.showToast("Блок не найден на холсте", "warning");
+	}
+	async deleteStickersForBlock(e) {
+		if (this.state.currentNoteId) try {
+			let t = await fetch(`/api/stickers/dialectics/${this.state.currentNoteId}/?recurrence_id=${e}`);
+			if (t.ok) {
+				let e = await t.json();
+				Array.isArray(e) && (await Promise.all(e.map((e) => fetch(`/api/stickers/${e.id}/archive/`, { method: "POST" }))), window.dispatchEvent(new CustomEvent("stickersUpdated", { detail: {
+					parentType: "dialectics",
+					parentId: this.state.currentNoteId
+				} })));
+			}
+		} catch (t) {
+			console.error("Failed to delete stickers for block:", e, t);
+		}
 	}
 	async loadExample(e = null) {
 		if (typeof e != "string" || !e) {
@@ -35777,7 +35976,7 @@ var Gv = {
 		this.state.isDirty ? await r({
 			title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
 			message: window._ ? window._("dialectics.unsaved_new_msg") : "Есть несохранённые изменения. Создать новый конспект?",
-			icon: "⚠️",
+			icon: "",
 			buttons: [{
 				label: window._ ? window._("dialectics.cancel") : "Отмена",
 				value: !1,
@@ -35794,7 +35993,7 @@ var Gv = {
 			let e = this.getNoteHistory();
 			(e.length === 0 || e[e.length - 1] !== this.state.currentNoteId) && (e.push(this.state.currentNoteId), this.saveNoteHistory(e));
 		}
-		this.state.currentNoteId = null, localStorage.removeItem("dialectics_last_note_id"), this.updateCurrentVersionDisplay(null), this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && $.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none");
+		this.state.currentNoteId = null, this.state.dismissedHints = [], localStorage.removeItem("dialectics_last_note_id"), this.updateCurrentVersionDisplay(null), this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && $.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none");
 		let e = new URL(window.location);
 		e.searchParams.delete("id"), window.history.pushState({}, "", e), window.showToast(window._("toast.created_a_new_blank_note"), "success");
 	}
@@ -35811,7 +36010,22 @@ var Gv = {
 			sessionStorage.setItem("dialectics_note_history", JSON.stringify(e));
 		} catch {}
 	}
-	loadPreviousNote() {
+	async loadPreviousNote() {
+		if (this.state.isDirty && !await r({
+			title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+			icon: "",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
+		})) return;
+		this.state.isDirty = !1;
 		let e = this.getNoteHistory();
 		if (e.length > 0) {
 			let t = e.pop();
@@ -35892,7 +36106,7 @@ var Gv = {
                 <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
                     <button onclick="if(window.app) window.app.restoreVersion(${t.id})" style="background: #10b981; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="Восстановить эту версию">↩️ Восстановить</button>
                     <button onclick="if(window.app) window.app.togglePinVersion(${t.id})" style="background: white; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="${s}">${o}</button>
-                    <button onclick="if(window.app) window.app.deleteVersion(${t.id})" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="Удалить версию">🗑️</button>
+                    <button onclick="if(window.app) window.app.deleteVersion(${t.id})" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" title="Удалить версию">✕</button>
                 </div>
             `, e.appendChild(c);
 		});
@@ -35936,7 +36150,7 @@ var Gv = {
 		this.state.currentNoteId && await r({
 			title: "Удаление версии",
 			message: "Вы уверены, что хотите удалить эту версию из истории?",
-			icon: "🗑️",
+			icon: "",
 			buttons: [{
 				label: "Отмена",
 				value: !1,
@@ -36133,13 +36347,13 @@ var Gv = {
 </html>`;
 		a.document.open(), a.document.write(o), a.document.close(), window.showToast(window._ && window._("toast.export_pdf_success") || "Открыто окно для печати в PDF!", "info");
 	}
-}, qv = {};
-Object.getOwnPropertyNames(Kv.prototype).forEach((e) => {
-	e !== "constructor" && (qv[e] = Kv.prototype[e]);
+}, Jv = {};
+Object.getOwnPropertyNames(qv.prototype).forEach((e) => {
+	e !== "constructor" && (Jv[e] = qv.prototype[e]);
 });
 //#endregion
 //#region fastapi_app/static/js/dialectics/AIController.js
-var Jv = class {
+var Yv = class {
 	async runHintAI(e) {
 		if (!e || e.id === "anchor") {
 			window.showToast("Cannot run AI on the main goal block before it is created.", "info");
@@ -36170,8 +36384,22 @@ var Jv = class {
 			console.error("AI Error:", e), window.showToast("AI Error: " + e.message, "error");
 		}
 	}
-	openInsertAfter(e, t) {
-		if (e === "section") {
+	async openInsertAfter(e, t) {
+		if (this.state.isDirty && !await r({
+			title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+			icon: "",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
+		})) return;
+		if (this.state.isDirty = !1, e === "section") {
 			this.openSectionTitleModal && this.openSectionTitleModal(t);
 			return;
 		}
@@ -36187,8 +36415,8 @@ var Jv = class {
 			}
 		}
 		n ||= e === "right" ? "step2" : e === "center" ? "step5" : "step1", this.state.pendingRole = n, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = t;
-		let r = document.getElementById("editorBlockTitleInput");
-		r && (r.value = ""), this.open();
+		let i = document.getElementById("editorBlockTitleInput");
+		i && (i.value = ""), this.open();
 	}
 	async runAI(e) {
 		let t = e.closest(".dialectics-editor") || document, n = (e) => {
@@ -36214,7 +36442,10 @@ var Jv = class {
 					throw Error(t.detail || "API Error");
 				}
 				let t = await e.json(), n = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
-				n && i && a ? (i.innerText = window._ && window._("analysis_result") || "Результат анализа", a.innerHTML = this._renderMarkdown(t.result), n.style.display = "flex") : r({
+				if (n && i && a) {
+					let e = document.getElementById("explainConceptDefaultFooter"), r = document.getElementById("explainConceptChatFooter");
+					e && (e.style.display = "block"), r && (r.style.display = "none"), i.innerText = window._ && window._("analysis_result") || "Результат анализа", a.innerHTML = this._renderMarkdown(t.result), n.style.display = "flex";
+				} else r({
 					title: "Результат анализа",
 					message: `<div style="white-space: pre-wrap; text-align: left; font-family: monospace; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">${t.result.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
 					buttons: [{
@@ -36226,7 +36457,10 @@ var Jv = class {
 			} catch (e) {
 				console.error(e);
 				let t = document.getElementById("explainConceptModal"), n = document.getElementById("explainConceptTitle"), i = document.getElementById("explainConceptBody");
-				t && n && i ? (n.innerText = "Ошибка", i.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex") : r({
+				if (t && n && i) {
+					let r = document.getElementById("explainConceptDefaultFooter"), a = document.getElementById("explainConceptChatFooter");
+					r && (r.style.display = "block"), a && (a.style.display = "none"), n.innerText = "Ошибка", i.innerHTML = `<div style="color:#ef4444;">${e.message}</div>`, t.style.display = "flex";
+				} else r({
 					title: "Ошибка",
 					message: `<div style="color: red;">${e.message}</div>`,
 					buttons: [{
@@ -36345,46 +36579,402 @@ var Jv = class {
 			console.error("Microphone access denied or error:", e), window.showToast(window._("toast.no_microphone_access"), "error");
 		}
 	}
-}, Yv = {};
-Object.getOwnPropertyNames(Jv.prototype).forEach((e) => {
-	e !== "constructor" && (Yv[e] = Jv.prototype[e]);
+	async checkAI(e) {
+		let t = e.querySelector(".block-title-text"), n = t ? t.innerText.trim() : "", r = e.querySelector(".dialectics-content-inner"), i = r ? (r.innerText || r.textContent).trim() : "", a = n ? `Заголовок: ${n}\n\nТекст:\n${i}` : i;
+		if (!a.trim()) {
+			window.showToast && window.showToast("Блок пуст. Нечего проверять.", "warning");
+			return;
+		}
+		window.showToast && window.showToast("🤖 Анализирую текст...", "info");
+		let o = document.getElementById("explainConceptModal"), s = document.getElementById("explainConceptTitle"), c = document.getElementById("explainConceptBody"), l = document.getElementById("explainConceptDefaultFooter"), u = document.getElementById("explainConceptChatFooter"), d = document.getElementById("explainConceptInput"), f = document.getElementById("explainConceptSendBtn");
+		if (!o || !c || !d || !f) return;
+		let p = [];
+		s.innerText = window._ && window._("dialectics.ai_checking") || "Проверка ИИ", c.innerHTML = "", d.value = "", d.disabled = !0, f.disabled = !0, l && (l.style.display = "none"), u && (u.style.display = "block"), o.style.display = "flex";
+		let m = (e, t) => {
+			let n = document.createElement("div");
+			e === "user" ? (n.style.cssText = "margin-left: auto; margin-right: 0; max-width: 80%; background: #3b82f6; color: #fff; padding: 10px 14px; border-radius: 12px 12px 0 12px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15); margin-bottom: 12px; word-break: break-word;", n.innerText = t) : e === "assistant" ? (n.style.cssText = "margin-left: 0; margin-right: auto; max-width: 85%; background: #f1f5f9; color: #1e293b; padding: 12px 16px; border-radius: 12px 12px 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 12px; word-break: break-word;", n.innerHTML = this._renderMarkdown ? this._renderMarkdown(t) : t) : e === "loading" && (n.id = "explainConceptLoading", n.style.cssText = "margin-left: 0; margin-right: auto; max-width: 85%; background: #f1f5f9; color: #94a3b8; padding: 12px 16px; border-radius: 12px 12px 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;", n.innerHTML = "<span class=\"spinner\" style=\"border: 2px solid #cbd5e1; border-top: 2px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; display: inline-block;\"></span><span>Думаю...</span>"), c.appendChild(n), c.scrollTop = c.scrollHeight;
+		};
+		m("loading");
+		try {
+			let e = await fetch("/api/ai/dialectics/check-ai", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ text: a })
+			}), t = document.getElementById("explainConceptLoading");
+			if (t && t.remove(), !e.ok) throw Error(`HTTP ${e.status}`);
+			let n = await e.json();
+			p.push({
+				role: "user",
+				content: `Проверь следующий текст:\n${a}`
+			}), p.push({
+				role: "assistant",
+				content: n.result
+			}), m("assistant", n.result), d.disabled = !1, f.disabled = !1, d.focus();
+		} catch (e) {
+			let t = document.getElementById("explainConceptLoading");
+			t && t.remove(), c.innerHTML = `<div style="color:#ef4444; padding:10px;">Ошибка: ${e.message}</div>`;
+		}
+		let h = document.getElementById("explainConceptForm");
+		h && (h.onsubmit = async (e) => {
+			e.preventDefault();
+			let t = d.value.trim();
+			if (!(!t || d.disabled)) {
+				m("user", t), p.push({
+					role: "user",
+					content: t
+				}), d.value = "", d.disabled = !0, f.disabled = !0, m("loading");
+				try {
+					let e = await fetch("/api/ai/dialectics/check-ai", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							text: a,
+							history: p
+						})
+					}), t = document.getElementById("explainConceptLoading");
+					if (t && t.remove(), !e.ok) throw Error(`HTTP ${e.status}`);
+					let n = await e.json();
+					p.push({
+						role: "assistant",
+						content: n.result
+					}), m("assistant", n.result);
+				} catch (e) {
+					let t = document.getElementById("explainConceptLoading");
+					t && t.remove();
+					let n = document.createElement("div");
+					n.style.cssText = "margin-left: 0; margin-right: auto; max-width: 85%; color: #ef4444; padding: 10px 12px; margin-bottom: 12px;", n.innerText = `Ошибка: ${e.message}`, c.appendChild(n), c.scrollTop = c.scrollHeight;
+				} finally {
+					d.disabled = !1, f.disabled = !1, d.focus();
+				}
+			}
+		});
+	}
+}, Xv = {};
+Object.getOwnPropertyNames(Yv.prototype).forEach((e) => {
+	e !== "constructor" && (Xv[e] = Yv.prototype[e]);
 });
 //#endregion
 //#region fastapi_app/static/js/dialectics/BlocksOrchestrator.js
-var Xv = class {
+var Zv = class {
 	open(e = "") {
-		this.dom.editor && !this.dom.editor.classList.contains("embedded") && n.toggleDisplay(this.dom.editor, !0, !0);
-		let t = document.getElementById("tab-ai");
-		if (t && (t.style.display = "none"), this.editor.switchTab("text"), this.editor.setContent(e), !this.editor.tiptap && this.dom.dashboardTextarea) {
-			let t = document.createElement("div");
-			t.innerHTML = e, this.dom.dashboardTextarea.value = t.innerText || t.textContent || "", this.dom.dashboardTextarea.dispatchEvent(new Event("input"));
+		if (this.state.editingBlock) {
+			let t = this.state.editingBlock, n = this.state.originalTitle || t.dataset.title || "";
+			this.createFloatingEditor(t, e, n, this.state.isExpanded);
+		} else {
+			let t = { dataset: {
+				id: "new_block_" + (this.state.pendingSide || "left"),
+				side: this.state.pendingSide || "left",
+				role: this.state.pendingRole || void 0
+			} }, n = this.state.originalTitle || "";
+			this.createFloatingEditor(t, e, n, this.state.isExpanded);
 		}
+	}
+	createFloatingEditor(e, t, r, i = !1) {
+		let a = document.getElementById("inlineEditor");
+		a && (a.style.display = "none");
+		let o = e.dataset ? e.dataset.id || e.dataset.blockId : e.id || "new_block", s = document.querySelector(`.dialectics-floating-editor[data-block-id="${o}"]`);
+		if (s) return this.bringToFront(s), s._tiptapEditor && s._tiptapEditor.commands.setContent(t), s;
+		s = a.cloneNode(!0), s.removeAttribute("id"), s.classList.add("dialectics-floating-editor"), s.dataset.blockId = o;
+		let c = document.querySelectorAll(".dialectics-floating-editor").length, l = 40 + c * 30, u = 120 + c * 25;
+		s.style.left = `${l}px`, s.style.top = `${u}px`, s.style.position = "fixed", s.style.display = "flex", s.style.zIndex = String(this.getNextZIndex()), document.body.appendChild(s);
+		let d = s.querySelector(".editor-drag-handle");
+		d && (d.removeAttribute("id"), n.setupDraggable(s, d, this.state));
+		let f = s.querySelector("#editorResizeHandle") || s.querySelector(".editor-resize-handle");
+		f && (f.removeAttribute("id"), n.setupResizable(s, f));
+		let p = s.querySelector("#tiptap-editor");
+		p && (p.removeAttribute("id"), p.classList.add("tiptap-editor"));
+		let m = s.querySelector("#editorBlockTitleInput");
+		m && (m.removeAttribute("id"), m.classList.add("editor-block-title-input"), m.value = r || "", m.addEventListener("input", () => {
+			this.state.isDirty = !0, this.saveAllEditorsState();
+		}));
+		let h = s.querySelector("#dialecticsStickerBtn");
+		h && (h.removeAttribute("id"), h.onclick = (e) => {
+			e.stopPropagation(), window.app && window.app.openStickersForCurrent(o);
+		});
+		let g = s.querySelector("#btnEditorExpand");
+		g && (g.removeAttribute("id"), g.onclick = () => {
+			s.classList.toggle("expanded"), this.saveAllEditorsState();
+		});
+		let _ = s.querySelector("#btnEditorClose");
+		_ && (_.removeAttribute("id"), _.onclick = async () => {
+			await this.closeFloatingEditor(e);
+		});
+		let v = s.querySelector("#btnEditorSave") || s.querySelector(".btn-primary");
+		v && (v.removeAttribute("id"), v.onclick = async () => {
+			await this.saveFloatingEditor(e);
+		}), this.setupWindowTabs(s);
+		let y = this.editor.createEditor(p, t, () => {
+			this.editor.tiptap = y, o.startsWith("new_block") ? this.state.editingBlock = null : this.state.editingBlock = e, this.bringToFront(s);
+			let t = document.getElementById("editorFormattingToolbar");
+			if (t) {
+				let e = s.querySelector(".editor-header-controls");
+				e && !e.contains(t) && (e.parentNode.insertBefore(t, e), t.style.marginLeft = "20px", t.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)", t.style.border = "1px solid #e2e8f0", t.style.padding = "2px 8px", t.style.display = "flex");
+			}
+		}, () => {
+			this.state.isDirty = !0, this.saveAllEditorsState();
+		});
+		return s._tiptapEditor = y, e._floatingEditorWindow = s, e._tiptapEditor = y, this.switchWindowTab(s, "text"), i && s.classList.add("expanded"), this.saveAllEditorsState(), s;
+	}
+	setupWindowTabs(e) {
+		let t = e.querySelector(".editor-tabs");
+		t && (t.removeAttribute("id"), t.querySelectorAll(".editor-tab").forEach((t) => {
+			t.removeAttribute("id"), t.onclick = () => {
+				this.switchWindowTab(e, t.dataset.tab);
+			};
+		}));
+	}
+	async switchWindowTab(e, t) {
+		e.querySelectorAll(".editor-tab").forEach((e) => e.classList.toggle("active", e.dataset.tab === t)), e.querySelectorAll(".tab-content").forEach((e) => {
+			let n = e.id === `editor-${t}` || e.classList.contains(`editor-${t}`) || e.classList.contains(`tab-content-${t}`);
+			e.id === `editor-${t}` && (e.removeAttribute("id"), e.classList.add(`tab-content-${t}`)), e.classList.toggle("active", n), e.style.display = n ? "flex" : "none";
+		}), t === "text" && this.editor && await this.editor.init();
+	}
+	bringToFront(e) {
+		let t = Array.from(document.querySelectorAll(".dialectics-floating-editor"));
+		if (t.length <= 1) return;
+		let n = 1e4;
+		t.forEach((e) => {
+			let t = parseInt(e.style.zIndex) || 1e4;
+			t > n && (n = t);
+		}), parseInt(e.style.zIndex) < n && (e.style.zIndex = String(n + 1));
+	}
+	getNextZIndex() {
+		let e = Array.from(document.querySelectorAll(".dialectics-floating-editor")), t = 1e4;
+		return e.forEach((e) => {
+			let n = parseInt(e.style.zIndex) || 1e4;
+			n > t && (t = n);
+		}), t + 1;
+	}
+	async closeFloatingEditor(e) {
+		let t = e.dataset ? e.dataset.id || e.dataset.blockId : e.id || "new_block", n = document.querySelector(`.dialectics-floating-editor[data-block-id="${t}"]`);
+		n && (this.state.isDirty && !await r({
+			title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+			icon: "",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
+		}) || this.destroyFloatingEditorWindow(n, e));
+	}
+	destroyFloatingEditorWindow(e, t) {
+		if (e._tiptapEditor) try {
+			e._tiptapEditor.destroy();
+		} catch {}
+		let n = document.getElementById("editorFormattingToolbar"), r = document.getElementById("editorDragHandle");
+		n && e.contains(n) && r && (r.appendChild(n), n.style.marginLeft = "20px", n.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)", n.style.border = "1px solid #e2e8f0", n.style.padding = "2px 8px", n.style.display = "none"), e.remove(), t && (delete t._floatingEditorWindow, delete t._tiptapEditor), this.saveAllEditorsState();
+	}
+	async saveFloatingEditor(e) {
+		let t = e.dataset ? e.dataset.id || e.dataset.blockId : e.id || "new_block", n = document.querySelector(`.dialectics-floating-editor[data-block-id="${t}"]`);
+		if (!n) return;
+		let r = n.querySelector(".editor-block-title-input"), i = r ? r.value.trim() : "", a = n._tiptapEditor ? n._tiptapEditor.getHTML() : "";
+		if (!t.startsWith("new_block") && e.dataset) {
+			i ? e.dataset.title = i : delete e.dataset.title;
+			let t = e.querySelector(".dialectics-content-inner");
+			t && (t.innerHTML = a), this.state.editingBlock = e;
+			let n = document.getElementById("editorBlockTitleInput");
+			n && (n.value = i), this.editor && this.editor.tiptap && this.editor.tiptap.commands.setContent(a), await this.saveGlobal(!1), this.state.editingBlock = null;
+			let r = $.getBlocks(this.dom.canvas);
+			$.render(this.dom.canvas, r, this._blockCallbacks());
+		} else if (a !== "<p></p>" && a.trim() !== "") {
+			let e = $.getBlocks(this.dom.canvas), t = {
+				id: this.state.pendingBlockId || "block_" + Math.random().toString(36).substring(2, 9),
+				side: this.state.pendingSide || "left",
+				html: a,
+				title: i || void 0
+			};
+			this.state.pendingRole && (t.role = this.state.pendingRole);
+			let n;
+			n = this.state.insertAfterIndex === null ? [...e, t] : [
+				...e.slice(0, this.state.insertAfterIndex + 1),
+				t,
+				...e.slice(this.state.insertAfterIndex + 1)
+			], this.state.insertAfterIndex = null, this.state.pendingRole = null, $.render(this.dom.canvas, n, this._blockCallbacks()), await this.saveGlobal(!1);
+		}
+		this.destroyFloatingEditorWindow(n, e);
+	}
+	saveAllEditorsState() {
 		try {
-			localStorage.setItem("papanda_editor_open_state", JSON.stringify({
-				isOpen: !0,
-				content: e
-			}));
+			let e = [];
+			Array.from(document.querySelectorAll(".dialectics-floating-editor")).forEach((t) => {
+				let n = t.dataset.blockId, r = t.querySelector(".editor-block-title-input"), i = r ? r.value : "", a = t._tiptapEditor ? t._tiptapEditor.getHTML() : "";
+				e.push({
+					blockId: n,
+					title: i,
+					content: a,
+					isExpanded: t.classList.contains("expanded"),
+					styleLeft: t.style.left,
+					styleTop: t.style.top,
+					styleWidth: t.style.width,
+					styleHeight: t.style.height
+				});
+			}), localStorage.setItem("papanda_multiple_editors_state", JSON.stringify(e));
 		} catch {}
 	}
-	openEdit(e) {
-		let t = e.querySelector(".dialectics-content-inner")?.innerHTML || "", n = document.getElementById("editorBlockTitleInput");
-		n && (n.value = e.dataset.title || ""), this.open(t);
+	cleanUpInlineEdit() {
+		this.cleanUpAllInlineEditors();
 	}
-	openEditAltCard(e, t) {
-		this.state.editingBlock = t, this.state.editingAltCard = e;
-		let n = e.querySelector(".dialectics-content-inner")?.innerHTML || "", r = document.getElementById("editorBlockTitleInput");
+	cleanUpAllInlineEditors() {
+		this.dom.canvas && Array.from(this.dom.canvas.querySelectorAll(".dialectics-block.is-editing")).forEach((e) => {
+			this.cleanUpInlineEditForBlock(e);
+		});
+	}
+	cleanUpInlineEditForBlock(e) {
+		if (!e) return;
+		if (e._tiptapEditor) {
+			try {
+				e._tiptapEditor.destroy();
+			} catch {}
+			e._tiptapEditor = null;
+		}
+		let t = document.getElementById("editorFormattingToolbar"), n = document.getElementById("editorDragHandle"), r = e.querySelector(".dialectics-inline-editor-container");
+		t && r && r.contains(t) && n && (n.appendChild(t), t.style.marginLeft = "20px", t.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)", t.style.border = "1px solid #e2e8f0", t.style.padding = "2px 8px", t.style.display = "none"), e.classList.remove("is-editing"), r && r.remove(), this.state.editingBlock === e && (this.state.editingBlock = null);
+	}
+	async saveInlineEdit() {
+		this.state.editingBlock && await this.saveInlineEditForBlock(this.state.editingBlock);
+	}
+	async saveInlineEditForBlock(e) {
+		if (!e) return;
+		let t = e.querySelector(".dialectics-inline-editor-container"), n = e._originalTitle;
+		if (t) {
+			let e = t.querySelector(".inline-title-input");
+			e && (n = e.value.trim());
+		}
+		let r = e._tiptapEditor ? e._tiptapEditor.getHTML() : e._originalHtml || "";
+		this.cleanUpInlineEditForBlock(e), n ? e.dataset.title = n : delete e.dataset.title;
+		let i = e.querySelector(".dialectics-content-inner");
+		i && (i.innerHTML = r), this.state.editingBlock = e, await this.saveGlobal(!1), this.state.editingBlock = null;
+		let a = $.getBlocks(this.dom.canvas);
+		$.render(this.dom.canvas, a, this._blockCallbacks());
+	}
+	cancelInlineEdit() {
+		this.state.editingBlock && this.cancelInlineEditForBlock(this.state.editingBlock);
+	}
+	cancelInlineEditForBlock(e) {
+		if (!e) return;
+		let t = e.querySelector(".dialectics-content-inner");
+		t && e._originalHtml !== void 0 && (t.innerHTML = e._originalHtml), e._originalTitle !== void 0 && (e.dataset.title = e._originalTitle), this.cleanUpInlineEditForBlock(e);
+		let n = $.getBlocks(this.dom.canvas);
+		$.render(this.dom.canvas, n, this._blockCallbacks());
+	}
+	detachInlineEdit(e = !1) {
+		this.state.editingBlock && this.detachInlineEditForBlock(this.state.editingBlock, e);
+	}
+	detachInlineEditForBlock(e, t = !1) {
+		if (!e) return;
+		let n = e._tiptapEditor ? e._tiptapEditor.getHTML() : e._originalHtml || "", r = e.querySelector(".dialectics-inline-editor-container"), i = e._originalTitle || "";
 		if (r) {
+			let e = r.querySelector(".inline-title-input");
+			e && (i = e.value);
+		}
+		this.cleanUpInlineEditForBlock(e), this.createFloatingEditor(e, n, i, t);
+	}
+	async openEdit(e) {
+		if (e.classList.contains("is-editing")) return;
+		this.dom.editor && (this.dom.editor.style.display = "none"), this.dom.backdrop && (this.dom.backdrop.style.display = "none"), this.state.isDirty = !1, e.classList.add("is-editing");
+		let t = e.querySelector(".dialectics-inline-editor-container");
+		if (!t) {
+			t = document.createElement("div"), t.className = "dialectics-inline-editor-container";
+			let n = e.querySelector(".dialectics-content-inner");
+			n ? n.after(t) : e.appendChild(t);
+		}
+		let n = e.dataset.title || "", r = e.querySelector(".dialectics-content-inner")?.innerHTML || "<p></p>";
+		e._originalHtml = r, e._originalTitle = n, t.innerHTML = `
+            <div class="inline-edit-toolbar" style="display:flex; justify-content:space-between; align-items:center; padding: 6px 12px; background:#f1f5f9; border-bottom:1px solid #cbd5e1; border-top-left-radius:12px; border-top-right-radius:12px; gap:8px;">
+                <div class="inline-format-placeholder" style="display:flex; align-items:center; gap:4px;"></div>
+                <div style="display:flex; align-items:center; gap:6px; margin-left:auto;">
+                    <button type="button" class="btn-inline-action btn-inline-detach" title="Открыть в отдельном окне" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px 6px; border-radius:6px; transition:background 0.15s; display:flex; align-items:center; justify-content:center;">↗️</button>
+                    <button type="button" class="btn-inline-action btn-inline-fullscreen" title="Во весь экран" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px 6px; border-radius:6px; transition:background 0.15s; display:flex; align-items:center; justify-content:center;">⛶</button>
+                    <span style="width:1px; height:16px; background:#cbd5e1; margin:0 2px;"></span>
+                    <button type="button" class="btn-inline-action btn-inline-save" title="Сохранить" style="background:#10b981; border:none; color:white; font-weight:600; cursor:pointer; font-size:0.85rem; padding:6px 12px; border-radius:8px; transition:opacity 0.15s;">OK</button>
+                    <button type="button" class="btn-inline-action btn-inline-cancel" title="Отмена" style="background:#ef4444; border:none; color:white; font-weight:600; cursor:pointer; font-size:0.85rem; padding:6px 12px; border-radius:8px; transition:opacity 0.15s;">Отмена</button>
+                </div>
+            </div>
+            <div class="inline-edit-title-row" style="padding: 10px 14px; display:flex; align-items:center; gap:8px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:0.85rem; font-weight:600; color:#475569;">Заголовок:</span>
+                <input type="text" class="inline-title-input" value="${n}" placeholder="Введите заголовок блока..." style="flex-grow:1; padding:6px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; font-family:inherit; outline:none; transition:border 0.15s;">
+            </div>
+            <div class="inline-tiptap-wrapper">
+                <div class="block-tiptap-editor"></div>
+            </div>
+        `, [t.querySelector(".btn-inline-detach"), t.querySelector(".btn-inline-fullscreen")].forEach((e) => {
+			e && (e.onmouseenter = () => e.style.background = "#e2e8f0", e.onmouseleave = () => e.style.background = "none");
+		});
+		let i = t.querySelector(".block-tiptap-editor");
+		e._tiptapEditor = this.editor.createEditor(i, r, () => {
+			let n = document.getElementById("editorFormattingToolbar");
+			if (n) {
+				let e = t.querySelector(".inline-format-placeholder");
+				e && !e.contains(n) && (e.appendChild(n), n.style.marginLeft = "0", n.style.boxShadow = "none", n.style.border = "none", n.style.padding = "0", n.style.display = "flex");
+			}
+			this.state.editingBlock = e;
+		}, () => {
+			this.state.isDirty = !0;
+		}), t.querySelector(".inline-title-input").addEventListener("input", (e) => {
+			this.state.isDirty = !0;
+		}), t.querySelector(".btn-inline-save").onclick = async (t) => {
+			t.stopPropagation(), await this.saveInlineEditForBlock(e);
+		}, t.querySelector(".btn-inline-cancel").onclick = (t) => {
+			t.stopPropagation(), this.cancelInlineEditForBlock(e);
+		}, t.querySelector(".btn-inline-detach").onclick = (t) => {
+			t.stopPropagation(), this.detachInlineEditForBlock(e, !1);
+		}, t.querySelector(".btn-inline-fullscreen").onclick = (t) => {
+			t.stopPropagation(), this.detachInlineEditForBlock(e, !0);
+		};
+	}
+	async openEditAltCard(e, t) {
+		if (this.state.isDirty && (this.state.editingBlock !== t || this.state.editingAltCard !== e) && !await r({
+			title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+			icon: "",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
+		})) return;
+		this.state.isDirty = !1, this.state.editingBlock = t, this.state.editingAltCard = e;
+		let n = e.querySelector(".dialectics-content-inner")?.innerHTML || "", i = document.getElementById("editorBlockTitleInput");
+		if (i) {
 			let t = e.querySelector(".alt-title");
-			r.value = t ? t.innerText : "";
+			i.value = t ? t.innerText : "";
 		}
 		this.open(n);
 	}
-	close() {
-		this.dom.editor && (this.dom.editor.style.display = "none", this.dom.editor.classList.remove("embedded")), this.editor.setContent(""), this.state.editingBlock = null, this.state.editingAltCard = null, this.state.pendingSide = null, this.state.pendingRole = null, this.state.pendingBlockId = null;
-		try {
-			localStorage.setItem("papanda_editor_open_state", JSON.stringify({ isOpen: !1 }));
-		} catch {}
-		this.state.insertAfterIndex = null;
+	async close(e = !0) {
+		if (!this._isClosing) {
+			if (this._isClosing = !0, e && this.state.isDirty && !await r({
+				title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+				message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+				icon: "",
+				buttons: [{
+					label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+					value: !1,
+					class: "confirm-btn-secondary"
+				}, {
+					label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+					value: !0,
+					class: "confirm-btn-primary"
+				}]
+			})) {
+				this._isClosing = !1;
+				return;
+			}
+			typeof this.cleanUpInlineEdit == "function" && this.cleanUpInlineEdit(), this.state.isDirty = !1, this.state.editingBlock = null, this.state.editingAltCard = null, this.state.pendingSide = null, this.state.pendingRole = null, this.state.pendingBlockId = null, this.state.insertAfterIndex = null, this.state.isExpanded = !1, this.editor.setContent(""), this.dom.editor && (this.dom.editor.classList.remove("expanded"), this.dom.editor.style.display = "none"), this.dom.backdrop && (this.dom.backdrop.style.display = "none");
+			try {
+				localStorage.setItem("papanda_editor_open_state", JSON.stringify({ isOpen: !1 }));
+			} catch {}
+			this._isClosing = !1;
+		}
 	}
 	save() {
 		this.saveGlobal(!1, "toast.dialectics_saved");
@@ -36414,7 +37004,7 @@ var Xv = class {
 	attachBlockEvents(e) {
 		let t = e.querySelector(".btn-block-edit"), n = e.querySelector(".btn-block-del"), r = e.querySelector(".btn-block-stickers"), i = e.querySelector(".btn-block-sources");
 		t && (t.onclick = () => {
-			this.state.editingBlock = e, this.openEdit(e);
+			this.openEdit(e);
 		}), n && (n.onclick = () => {
 			e.remove(), window.showToast && window.showToast(window._("toast.dialectics_updated", "Обновлено"), "success");
 		}), r && (r.onclick = () => {
@@ -36510,7 +37100,7 @@ var Xv = class {
 		});
 	}
 	bindEvents() {
-		this.dom.btnSave && (this.dom.btnSave.onclick = () => this.save()), this.dom.btnCancel && (this.dom.btnCancel.onclick = () => this.close()), this.dom.btnClose && (this.dom.btnClose.onclick = () => this.close()), document.addEventListener("click", (e) => {
+		this.dom.btnSave && (this.dom.btnSave.onclick = () => this.save()), this.dom.btnCancel && (this.dom.btnCancel.onclick = async () => await this.close()), this.dom.btnClose && (this.dom.btnClose.onclick = async () => await this.close()), document.addEventListener("click", (e) => {
 			let t = e.target.closest(".dialectics-hint-badge");
 			if (t) {
 				e.preventDefault(), e.stopPropagation();
@@ -36534,39 +37124,71 @@ var Xv = class {
 		}), window.BlockManager && window.BlockManager.setCallbacks({
 			onEdit: (e) => this.openEdit(e),
 			onEditAltCard: (e, t) => this.openEditAltCard(e, t),
-			onDelete: async () => {
-				await this.saveGlobal(!1, "toast.dialectics_updated");
-				let e = $.getBlocks(this.dom.canvas);
-				$.render(this.dom.canvas, e, this._blockCallbacks());
+			onDelete: async (e) => {
+				e && await this.deleteStickersForBlock(e), await this.saveGlobal(!1, "toast.dialectics_updated");
+				let t = $.getBlocks(this.dom.canvas);
+				$.render(this.dom.canvas, t, this._blockCallbacks());
 			},
 			onHintClick: (e) => this.openHintEditor(e),
 			onHintAI: (e) => e && e.id === "step3" ? this.runAI(this.dom.canvas) : this.runHintAI(e),
 			onHacks: (e) => this.openHacksPopover(e)
 		});
 	}
-	openHintEditor(e, t = "", n = null) {
-		this.state.editingBlock = null, this.state.pendingSide = e.side, this.state.pendingRole = e.id, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = null;
-		let r = document.getElementById("editorBlockTitleInput");
-		r && (r.value = ""), this.open(t);
-		let i = document.getElementById("tab-ai");
+	async openHintEditor(e, t = "", n = null) {
+		if (this.state.isDirty && !await r({
+			title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+			message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+			icon: "",
+			buttons: [{
+				label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+				value: !1,
+				class: "confirm-btn-secondary"
+			}, {
+				label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+				value: !0,
+				class: "confirm-btn-primary"
+			}]
+		})) return;
+		this.state.isDirty = !1, this.state.editingBlock = null, this.state.pendingSide = e.side, this.state.pendingRole = e.id, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.insertAfterIndex = null;
+		let i = document.getElementById("editorBlockTitleInput");
+		i && (i.value = ""), this.open(t);
+		let a = document.getElementById("tab-ai");
 		if (n) {
-			i && (i.style.display = "flex");
+			a && (a.style.display = "flex");
 			let e = document.getElementById("aiHelpContent");
 			e && (e.innerHTML = n);
 			let t = document.getElementById("btnCopyAiToText");
 			t && (t.onclick = () => {
 				this.editor.setContent(n), this.editor.switchTab("text"), window.showToast && window.showToast(window._("dialectics.ai_transferred", "Текст от ИИ перенесен в редактор"), "success");
 			}), this.editor.switchTab("ai");
-		} else i && (i.style.display = "none");
+		} else a && (a.style.display = "none");
 	}
 	toggleExpand() {
-		this.state.isExpanded = !this.state.isExpanded, this.dom.editor && (this.dom.editor.classList.toggle("expanded", this.state.isExpanded), this.dom.backdrop && n.toggleDisplay(this.dom.backdrop, this.state.isExpanded)), setTimeout(() => {
+		this.state.isExpanded = !this.state.isExpanded, this.dom.editor && (this.dom.editor.classList.toggle("expanded", this.state.isExpanded), this.dom.backdrop && (this.dom.backdrop.style.display = this.state.isExpanded ? "block" : "none")), setTimeout(() => {
 			let e = document.getElementById("shapesCanvasWrapper"), t = this.editor && this.editor.fabricCanvas;
 			if (e && t) {
 				let n = e.clientWidth, r = e.clientHeight;
 				n > 10 && r > 10 && (t.setWidth(n), t.setHeight(r), t.calcOffset(), t.renderAll());
 			}
 		}, 320);
+	}
+	dismissHint(e) {
+		if (this.state.dismissedHints || (this.state.dismissedHints = []), !this.state.dismissedHints.includes(e)) {
+			this.state.dismissedHints.push(e);
+			try {
+				let e = this.state.currentNoteId ? "dialectics_dismissed_hints_" + this.state.currentNoteId : "dialectics_dismissed_hints_temp";
+				localStorage.setItem(e, JSON.stringify(this.state.dismissedHints));
+			} catch {}
+		}
+		let t = $.getBlocks(this.dom.canvas);
+		$.render(this.dom.canvas, t, this._blockCallbacks());
+	}
+	toggleShowHiddenHints(e) {
+		try {
+			localStorage.setItem("dialectics_show_hidden_hints", e ? "true" : "false");
+		} catch {}
+		let t = $.getBlocks(this.dom.canvas);
+		$.render(this.dom.canvas, t, this._blockCallbacks());
 	}
 	_blockCallbacks() {
 		return {
@@ -36575,7 +37197,11 @@ var Xv = class {
 					this.openSectionTitleModal(null, e);
 					return;
 				}
-				this.state.editingBlock = e, this.openEdit(e);
+				if ((e.dataset.status || "none") === "ready") {
+					window.showToast && window.showToast("Этот блок заблокирован. Смените статус на «В работе», чтобы изменить его.", "warning");
+					return;
+				}
+				this.openEdit(e);
 			},
 			onEditAltCard: (e, t) => {
 				this.openEditAltCard(e, t);
@@ -36583,13 +37209,16 @@ var Xv = class {
 			onInsertAfter: (e, t) => {
 				this.openInsertAfter(e, t);
 			},
-			onDelete: async () => {
-				await this.saveGlobal(!1, "toast.dialectics_updated");
-				let e = $.getBlocks(this.dom.canvas);
-				$.render(this.dom.canvas, e, this._blockCallbacks());
+			onDelete: async (e) => {
+				e && await this.deleteStickersForBlock(e), await this.saveGlobal(!1, "toast.dialectics_updated");
+				let t = $.getBlocks(this.dom.canvas);
+				$.render(this.dom.canvas, t, this._blockCallbacks());
 			},
 			onAI: (e) => {
 				this.runAI(e);
+			},
+			onCheckAI: (e) => {
+				this.checkAI(e);
 			},
 			onSources: (e) => {
 				this.openSourcesModal(e);
@@ -36606,11 +37235,23 @@ var Xv = class {
 			onHintAI: (e) => {
 				e && e.id === "step3" ? this.runAI(this.dom.canvas) : this.runHintAI(e);
 			},
+			onHintDismiss: (e) => {
+				this.dismissHint(e);
+			},
 			onFoldToggle: () => {
-				this.saveGlobal(!1, "toast.dialectics_updated");
+				this.saveGlobal(!1, null);
 			},
 			onHacks: (e) => {
 				this.openHacksPopover(e);
+			},
+			onStatusToggle: async (e) => {
+				let t = e.dataset.status || "none", n = "none";
+				if (t === "none" ? n = "in_progress" : t === "in_progress" ? n = "ready" : t === "ready" && (n = "none"), e.dataset.status = n, window.showToast) {
+					let e = "Статус блока: Не указан";
+					n === "in_progress" && (e = "Статус блока: В работе"), n === "ready" && (e = "Статус блока: Готово (Заблокировано)"), window.showToast(e, "info");
+				}
+				let r = $.getBlocks(this.dom.canvas);
+				$.render(this.dom.canvas, r, this._blockCallbacks()), await this.saveGlobal(!1, null);
 			}
 		};
 	}
@@ -36753,7 +37394,7 @@ var Xv = class {
 			let t = n === "default" ? "" : n;
 			if (t) {
 				e.dataset.color = t;
-				let n = h_[t];
+				let n = g_[t];
 				n && (e.style.setProperty("--block-custom-bg", n.bg), e.style.setProperty("--block-custom-accent", n.accent));
 			} else delete e.dataset.color, e.style.removeProperty("--block-custom-bg"), e.style.removeProperty("--block-custom-accent");
 			await this.saveGlobal(!1, "toast.dialectics_updated");
@@ -36958,13 +37599,82 @@ var Xv = class {
 			});
 		}, 10);
 	}
-}, Zv = {};
-Object.getOwnPropertyNames(Xv.prototype).forEach((e) => {
-	e !== "constructor" && (Zv[e] = Xv.prototype[e]);
+	toggleSearchInNote(e) {
+		e && e.stopPropagation();
+		let t = document.getElementById("searchInNoteMenu");
+		if (t) if (t.style.display === "none" || !t.style.display) {
+			let e = document.getElementById("tableOfContentsMenu");
+			e && (e.style.display = "none");
+			let n = document.getElementById("versionsMenu");
+			n && (n.style.display = "none"), t.style.display = "block";
+			let r = document.getElementById("searchInNoteInput");
+			r && (r.value = "", r.focus());
+			let i = document.getElementById("searchInNoteResults");
+			i && (i.innerHTML = "<div style=\"text-align: center; color: #64748b; font-size: 0.85rem; padding: 10px 0;\">Введите текст для начала поиска</div>");
+			let a = (e) => {
+				!t.contains(e.target) && e.target.id !== "btnToggleSearch" && (t.style.display = "none", document.removeEventListener("click", a));
+			};
+			setTimeout(() => document.addEventListener("click", a), 10);
+		} else t.style.display = "none";
+	}
+	performSearchInNote(e) {
+		let t = document.getElementById("searchInNoteResults");
+		if (!t || !this.dom.canvas) return;
+		if (e = (e || "").trim().toLowerCase(), !e) {
+			t.innerHTML = "<div style=\"text-align: center; color: #64748b; font-size: 0.85rem; padding: 10px 0;\">Введите текст для начала поиска</div>";
+			return;
+		}
+		let n = Array.from(this.dom.canvas.querySelectorAll(".dialectics-block"));
+		t.innerHTML = "";
+		let r = 0;
+		n.forEach((n, i) => {
+			let a = n.classList.contains("block-section") || n.dataset.isSection === "true", o = n.dataset.title || "";
+			if (!o) {
+				let e = n.querySelector(".block-title-text");
+				o = e ? e.innerText : "";
+			}
+			if (!o) {
+				let e = n.querySelector(".dialectics-block-header span:first-child");
+				o = e ? e.innerText : a ? "Раздел" : `Блок ${i + 1}`;
+			}
+			let s = n.querySelector(".dialectics-content-inner"), c = s && (s.innerText || s.textContent) || "", l = o.toLowerCase().includes(e), u = c.toLowerCase().includes(e);
+			if (l || u) {
+				r++;
+				let i = document.createElement("div");
+				i.style.cssText = "\n                    display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; \n                    border-radius: 8px; cursor: pointer; transition: background 0.15s;\n                    border: 1px solid #e2e8f0; background: #fff; text-align: left;\n                ", i.onmouseover = () => i.style.background = "#f8fafc", i.onmouseout = () => i.style.background = "#fff";
+				let s = a ? "📑" : n.classList.contains("block-left") ? "▫️" : "▪️", l = "";
+				if (u) {
+					let t = c.toLowerCase().indexOf(e), n = Math.max(0, t - 30), r = Math.min(c.length, t + e.length + 30);
+					l = (n > 0 ? "..." : "") + c.substring(n, r) + (r < c.length ? "..." : ""), l = l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+					let i = e.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+					l = l.replace(RegExp(`(${i})`, "gi"), "<mark style=\"background: #fef08a; padding: 0 2px; border-radius: 2px;\">$1</mark>");
+				} else l = c.substring(0, 60) + (c.length > 60 ? "..." : "");
+				i.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; color: ${a ? "#ea580c" : "#1e293b"};">
+                        <span>${s}</span>
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${o}</span>
+                    </div>
+                    ${l ? `<div style="font-size: 0.75rem; color: #64748b; line-height: 1.3; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${l}</div>` : ""}
+                `, i.onclick = () => {
+					document.getElementById("searchInNoteMenu").style.display = "none", n.scrollIntoView({
+						behavior: "smooth",
+						block: "center"
+					}), n.style.transition = "box-shadow 0.5s ease";
+					let e = n.style.boxShadow;
+					n.style.boxShadow = "0 0 0 4px #3b82f6", setTimeout(() => {
+						n.style.boxShadow = e;
+					}, 2e3);
+				}, t.appendChild(i);
+			}
+		}), r === 0 && (t.innerHTML = "<div style=\"text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 20px 0;\">Ничего не найдено</div>");
+	}
+}, Qv = {};
+Object.getOwnPropertyNames(Zv.prototype).forEach((e) => {
+	e !== "constructor" && (Qv[e] = Zv.prototype[e]);
 });
 //#endregion
 //#region fastapi_app/static/js/dialectics.js
-var Qv = class {
+var $v = class {
 	constructor() {
 		window.showToast = window.showToast || ((e) => console.log("Toast:", e)), this.state = {
 			currentNoteId: null,
@@ -36976,7 +37686,8 @@ var Qv = class {
 			viewingNoteId: null,
 			insertAfterIndex: null,
 			categories: [],
-			blockStickersCount: {}
+			blockStickersCount: {},
+			dismissedHints: []
 		}, this.dom = {
 			canvas: document.getElementById("dialecticsCanvas"),
 			editor: document.getElementById("inlineEditor"),
@@ -36992,28 +37703,51 @@ var Qv = class {
 			viewTitle: document.getElementById("dialecticsViewTitle"),
 			viewBody: document.getElementById("dialecticsViewBody"),
 			debug: document.getElementById("debugLogContent"),
-			dashboardTextarea: document.getElementById("dashboard-note-editor"),
 			connectionsModal: document.getElementById("dialectics-connections-modal"),
 			categorySelect: document.getElementById("dialecticsCategorySelect"),
 			connCategoriesList: document.getElementById("connections-categories-list"),
 			connResultsContainer: document.getElementById("connections-results-container"),
 			newCategoryInput: document.getElementById("new-category-input")
-		}, this.editor = new Uv(this), this.dom.editor && this.init();
+		}, this.editor = new Wv(this), this.dom.editor && this.init();
 	}
 	async init() {
-		if (this.logDebug("Engine init..."), this._bindEvents(), await this.loadCategories(), this.dom.editor.classList.contains("embedded") && this.dom.dashboardTextarea) this.setupDashboardTextarea(), this._revealInterface();
-		else {
-			let e = new URLSearchParams(window.location.search).get("id");
-			if (!e && (e = localStorage.getItem("dialectics_last_note_id"), e)) {
-				let t = new URL(window.location);
-				t.searchParams.set("id", e), window.history.replaceState({}, "", t);
-			}
-			e ? await this.loadNoteToEditor(e, !1) : (this.state.currentNoteId = null, this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && $.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none"), this._revealInterface());
+		this.logDebug("Engine init..."), this._bindEvents(), window.addEventListener("stickersUpdated", async (e) => {
+			e.detail && e.detail.parentType === "dialectics" && String(e.detail.parentId) === String(this.state.currentNoteId) && typeof this.refreshStickers == "function" && await this.refreshStickers();
+		}), await this.loadCategories();
+		let e = new URLSearchParams(window.location.search).get("id");
+		if (!e && (e = localStorage.getItem("dialectics_last_note_id"), e)) {
+			let t = new URL(window.location);
+			t.searchParams.set("id", e), window.history.replaceState({}, "", t);
 		}
-		await this.editor.switchTab("text");
+		e ? await this.loadNoteToEditor(e, !1) : (this.state.currentNoteId = null, this.state.dismissedHints = JSON.parse(localStorage.getItem("dialectics_dismissed_hints_temp") || "[]"), this.dom.title && (this.dom.title.value = ""), this.dom.categorySelect && (this.dom.categorySelect.value = ""), this.dom.canvas && $.render(this.dom.canvas, [], this._blockCallbacks()), this.dom.deleteBtn && (this.dom.deleteBtn.style.display = "none"), this._revealInterface());
+		let t = document.getElementById("toggleShowHiddenHints");
+		t && (t.checked = localStorage.getItem("dialectics_show_hidden_hints") === "true"), await this.editor.switchTab("text");
 		try {
-			let e = JSON.parse(localStorage.getItem("papanda_editor_open_state") || "null");
-			e && e.isOpen && this.open(e.content || "");
+			let e = JSON.parse(localStorage.getItem("papanda_multiple_editors_state") || "[]");
+			if (Array.isArray(e) && e.length > 0) setTimeout(() => {
+				e.forEach((e) => {
+					let t = null;
+					if (e.blockId && !e.blockId.startsWith("new_block") && (t = this.dom.canvas.querySelector(`[data-block-id="${e.blockId}"], [data-id="${e.blockId}"]`)), t || e.blockId && e.blockId.startsWith("new_block")) {
+						let n = t || { dataset: { id: e.blockId } }, r = this.createFloatingEditor(n, e.content, e.title, e.isExpanded);
+						r && (e.styleLeft && (r.style.left = e.styleLeft), e.styleTop && (r.style.top = e.styleTop), e.styleWidth && (r.style.width = e.styleWidth), e.styleHeight && (r.style.height = e.styleHeight));
+					}
+				});
+			}, 300);
+			else {
+				let e = JSON.parse(localStorage.getItem("papanda_editor_open_state") || "null");
+				if (e && e.isOpen) {
+					if (e.editingBlockId) {
+						let t = this.dom.canvas.querySelector(`[data-block-id="${e.editingBlockId}"], [data-id="${e.editingBlockId}"]`);
+						if (t && (this.state.editingBlock = t, e.editingAltCardIndex !== void 0 && e.editingAltCardIndex !== null)) {
+							let n = Array.from(t.querySelectorAll("div")).filter((e) => e.querySelector(".alt-title") || e.querySelector(".alt-title-text"));
+							this.state.editingAltCard = n[e.editingAltCardIndex] || null;
+						}
+					}
+					e.pendingSide && (this.state.pendingSide = e.pendingSide), e.pendingBlockId && (this.state.pendingBlockId = e.pendingBlockId), e.pendingRole && (this.state.pendingRole = e.pendingRole), e.insertAfterIndex !== void 0 && (this.state.insertAfterIndex = e.insertAfterIndex);
+					let t = document.getElementById("editorBlockTitleInput");
+					t && e.blockTitle !== void 0 && (t.value = e.blockTitle), this.open(e.content || "");
+				}
+			}
 		} catch {}
 	}
 	_revealInterface() {
@@ -37023,7 +37757,7 @@ var Qv = class {
 	_bindEvents() {
 		n.setupDraggable(this.dom.editor, this.dom.dragHandle, this.state), n.setupResizable(this.dom.editor, document.getElementById("editorResizeHandle"));
 		let e = (e, t) => document.getElementById(e)?.addEventListener("click", t.bind(this));
-		e("btnDeleteDialectics", this.deleteGlobal), e("btnSaveDialectics", this.saveGlobal), e("btnExportMarkdown", this.exportMarkdown), e("btnExportPDF", this.exportPDF), e("btnMathFormula", () => this.editor.showMathMenu()), this.dom.editor.classList.contains("embedded") ? (this.logDebug("Binding embedded editor save"), e("btnEditorSave", this.saveAndPin)) : (this.logDebug("Binding global save"), e("btnEditorSave", this.saveGlobal)), this.logDebug("Binding other buttons"), e("btnPinNote", this.pinCurrent), e("btnEditorClose", this.close), e("btnEditorExpand", this.toggleExpand), this.logDebug("Binding btnLoadDialectics..."), e("btnLoadDialectics", async (e) => {
+		e("btnDeleteDialectics", this.deleteGlobal), e("btnSaveDialectics", () => this.saveGlobal(!1)), e("btnExportMarkdown", this.exportMarkdown), e("btnExportPDF", this.exportPDF), e("btnMathFormula", () => this.editor.showMathMenu()), e("btnEditorSave", () => this.saveGlobal(!0)), e("btnPinNote", this.pinCurrent), e("btnEditorClose", async () => await this.close(!0)), e("btnEditorExpand", this.toggleExpand), this.logDebug("Binding btnLoadDialectics..."), e("btnLoadDialectics", async (e) => {
 			this.logDebug("btnLoadDialectics CLICKED!"), e.preventDefault(), e.stopPropagation();
 			try {
 				if (this.logDebug("isDirty = " + this.state.isDirty), this.state.isDirty) {
@@ -37031,7 +37765,7 @@ var Qv = class {
 					let e = await r({
 						title: window._ ? window._("dialectics.unsaved_title") : "Внимание",
 						message: window._ ? window._("dialectics.unsaved_msg") : "Есть несохранённые изменения. Продолжить?",
-						icon: "⚠️",
+						icon: "",
 						buttons: [{
 							label: window._ ? window._("dialectics.cancel") : "Отмена",
 							value: !1,
@@ -37076,15 +37810,30 @@ var Qv = class {
 			} else this.state.currentNoteId && await this.saveGlobal(!1, "toast.dialectics_updated");
 		}), e("btnViewModalEdit", () => {
 			this.hideViewModal(), this.loadNoteToEditor(this.state.viewingNoteId);
-		}), g_.init(this.dom.canvas, {
-			onClick: (e, t) => {
+		}), __.init(this.dom.canvas, {
+			onClick: async (e, t) => {
+				if (this.state.isDirty && !await r({
+					title: window._ ? window._("dialectics.unsaved_title", "Внимание") : "Внимание",
+					message: window._ ? window._("dialectics.unsaved_msg", "Есть несохранённые изменения. Продолжить?") : "Есть несохранённые изменения. Продолжить?",
+					icon: "",
+					buttons: [{
+						label: window._ ? window._("dialectics.cancel", "Отмена") : "Отмена",
+						value: !1,
+						class: "confirm-btn-secondary"
+					}, {
+						label: window._ ? window._("dialectics.continue_btn", "Продолжить") : "Продолжить",
+						value: !0,
+						class: "confirm-btn-primary"
+					}]
+				})) return;
+				this.state.isDirty = !1;
 				let n = e < t ? "left" : "right";
 				this.state.editingBlock = null, this.state.pendingSide = n, this.state.pendingBlockId = "block_" + Math.random().toString(36).substr(2, 9), this.state.pendingRole = null;
-				let r = $.getBlocks(this.dom.canvas).some((e) => e.role === "anchor");
-				n === "left" && !r && (this.state.pendingRole = "anchor"), this.open();
+				let i = $.getBlocks(this.dom.canvas).some((e) => e.role === "anchor");
+				n === "left" && !i && (this.state.pendingRole = "anchor"), this.open();
 			},
 			onDoubleClick: (e) => {
-				this.state.editingBlock = e, this.openEdit(e);
+				this.openEdit(e);
 			}
 		}), document.querySelectorAll(".editor-tab").forEach((e) => {
 			e.addEventListener("click", () => this.editor.switchTab(e.dataset.tab));
@@ -37100,23 +37849,7 @@ var Qv = class {
 		let s = document.getElementById("shapeFillColor");
 		if (s && s.addEventListener("input", (e) => {
 			this.editor.applyFillToSelected(e.target.value + "33");
-		}), e("btnToggleFill", () => this.editor.toggleFillForSelected()), window.addEventListener("stickersUpdated", async (e) => {
-			let { parentType: t, parentId: n } = e.detail || {};
-			if (t === "dialectics" && Number(n) === Number(this.state.currentNoteId)) {
-				let e = {};
-				try {
-					let t = await fetch(`/api/stickers/dialectics/${this.state.currentNoteId}/`).then((e) => e.json());
-					Array.isArray(t) && t.forEach((t) => {
-						t.dialectics_block_id && (e[t.dialectics_block_id] = (e[t.dialectics_block_id] || 0) + 1);
-					});
-				} catch (e) {
-					console.error("Failed to refresh block stickers:", e);
-				}
-				this.state.blockStickersCount = e;
-				let t = $.getBlocks(this.dom.canvas);
-				$.render(this.dom.canvas, t, this._blockCallbacks());
-			}
-		}), this.dom.canvas) {
+		}), e("btnToggleFill", () => this.editor.toggleFillForSelected()), this.dom.canvas) {
 			let e = null;
 			this.dom.canvas.addEventListener("dragstart", (t) => {
 				let n = t.target.closest(".dialectics-block");
@@ -37144,29 +37877,76 @@ var Qv = class {
 		return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>");
 	}
 	setupExplainTooltip() {
+		if (!document.getElementById("explain-concept-styles")) {
+			let e = document.createElement("style");
+			e.id = "explain-concept-styles", e.innerHTML = "\n                @keyframes spin {\n                    0% { transform: rotate(0deg); }\n                    100% { transform: rotate(360deg); }\n                }\n            ", document.head.appendChild(e);
+		}
 		let e = document.createElement("div");
 		e.className = "dialectics-context-menu", e.style.display = "none";
 		let t = document.createElement("div");
 		t.className = "dialectics-context-menu-item", t.innerHTML = "Что это?", e.appendChild(t), document.body.appendChild(e);
-		let n = "", r = (e) => e.closest(".dialectics-content-inner") || e.closest(".tiptap-editor") || e.closest(".ProseMirror") || e.closest("#inlineEditor");
+		let n = "", r = "", i = "", a = [], o = (e) => {
+			let t = e;
+			for (; t && t !== document.body;) {
+				if (t.classList.contains("tiptap-editor") || t.classList.contains("ProseMirror") || t.classList.contains("dialectics-content-inner") || t.id === "inlineEditor" || [
+					"P",
+					"DIV",
+					"LI",
+					"BLOCKQUOTE",
+					"PRE",
+					"H1",
+					"H2",
+					"H3",
+					"H4",
+					"H5",
+					"H6"
+				].includes(t.tagName)) return t;
+				t = t.parentElement;
+			}
+			return e;
+		}, s = (e) => {
+			if (!e || !e.rangeCount) return {
+				before: "",
+				after: ""
+			};
+			try {
+				let t = e.getRangeAt(0), n = t.commonAncestorContainer, r = o(n.nodeType === 3 ? n.parentElement : n), i = document.createRange();
+				i.selectNodeContents(r), i.setEnd(t.startContainer, t.startOffset);
+				let a = i.toString(), s = document.createRange();
+				return s.selectNodeContents(r), s.setStart(t.endContainer, t.endOffset), {
+					before: a,
+					after: s.toString()
+				};
+			} catch (e) {
+				return console.error("Error getting context:", e), {
+					before: "",
+					after: ""
+				};
+			}
+		}, c = (e) => e.closest(".dialectics-content-inner") || e.closest(".tiptap-editor") || e.closest(".ProseMirror") || e.closest("#inlineEditor"), l = document.getElementById("explainConceptBody"), u = (e, t) => {
+			if (!l) return;
+			let n = document.createElement("div");
+			e === "user" ? (n.style.cssText = "margin-left: auto; margin-right: 0; max-width: 80%; background: #3b82f6; color: #fff; padding: 10px 14px; border-radius: 12px 12px 0 12px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15); margin-bottom: 12px; word-break: break-word;", n.innerText = t) : e === "assistant" ? (n.style.cssText = "margin-left: 0; margin-right: auto; max-width: 85%; background: #f1f5f9; color: #1e293b; padding: 12px 16px; border-radius: 12px 12px 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 12px; word-break: break-word;", n.innerHTML = this._renderMarkdown(t)) : e === "loading" && (n.id = "explainConceptLoading", n.style.cssText = "margin-left: 0; margin-right: auto; max-width: 85%; background: #f1f5f9; color: #94a3b8; padding: 12px 16px; border-radius: 12px 12px 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;", n.innerHTML = "<span class=\"spinner\" style=\"border: 2px solid #cbd5e1; border-top: 2px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; display: inline-block;\"></span><span>Думаю...</span>"), l.appendChild(n), l.scrollTop = l.scrollHeight;
+		};
 		document.addEventListener("contextmenu", (t) => {
-			let i = window.getSelection();
-			if (!i || !i.rangeCount || i.isCollapsed) {
+			let a = window.getSelection();
+			if (!a || !a.rangeCount || a.isCollapsed) {
 				e.style.display = "none";
 				return;
 			}
-			let a = i.getRangeAt(0).commonAncestorContainer;
-			if (!r(a.nodeType === 3 ? a.parentElement : a)) {
+			let o = a.getRangeAt(0).commonAncestorContainer;
+			if (!c(o.nodeType === 3 ? o.parentElement : o)) {
 				e.style.display = "none";
 				return;
 			}
-			if (n = i.toString().trim(), !n) {
+			if (n = a.toString().trim(), !n) {
 				e.style.display = "none";
 				return;
 			}
-			t.preventDefault(), e.style.display = "block";
-			let o = t.pageX, s = t.pageY;
-			o + 160 > window.innerWidth && (o = window.innerWidth - 160), s + 50 > window.innerHeight + window.scrollY && (s = t.pageY - 50), e.style.left = `${o}px`, e.style.top = `${s}px`;
+			let l = s(a);
+			r = l.before, i = l.after, t.preventDefault(), e.style.display = "block";
+			let u = t.pageX, d = t.pageY;
+			u + 160 > window.innerWidth && (u = window.innerWidth - 160), d + 50 > window.innerHeight + window.scrollY && (d = t.pageY - 50), e.style.left = `${u}px`, e.style.top = `${d}px`;
 		}, !0), document.addEventListener("click", (t) => {
 			e.contains(t.target) || (e.style.display = "none");
 		}), document.addEventListener("keydown", (t) => {
@@ -37174,22 +37954,69 @@ var Qv = class {
 		}), t.addEventListener("click", async (t) => {
 			if (t.stopPropagation(), !n) return;
 			e.style.display = "none";
-			let r = document.getElementById("explainConceptModal"), i = document.getElementById("explainConceptTitle"), a = document.getElementById("explainConceptBody");
-			if (!(!r || !a)) {
-				i.innerText = `Что это: "${n}"?`, a.innerHTML = "<div style=\"text-align:center; padding:40px; color:#94a3b8;\"><div style=\"font-size:2rem; margin-bottom:12px;\">⏳</div><div>Анализирую концепт...</div></div>", r.style.display = "flex";
+			let o = document.getElementById("explainConceptModal"), s = document.getElementById("explainConceptTitle"), c = document.getElementById("explainConceptDefaultFooter"), d = document.getElementById("explainConceptChatFooter"), f = document.getElementById("explainConceptInput"), p = document.getElementById("explainConceptSendBtn");
+			if (!(!o || !l || !f || !p)) {
+				a = [], s.innerText = `Что это: "${n}"?`, l.innerHTML = "", f.value = "", f.disabled = !0, p.disabled = !0, c && (c.style.display = "none"), d && (d.style.display = "block"), o.style.display = "flex", u("loading");
 				try {
 					let e = await fetch("/api/ai/dialectics/explain-concept", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ text: n })
-					});
-					if (!e.ok) throw Error(`HTTP ${e.status}`);
-					let t = await e.json();
-					a.innerHTML = this._renderMarkdown(t.result);
+						body: JSON.stringify({
+							text: n,
+							context_before: r,
+							context_after: i
+						})
+					}), t = document.getElementById("explainConceptLoading");
+					if (t && t.remove(), !e.ok) throw Error(`HTTP ${e.status}`);
+					let o = await e.json(), s = o.user_query || `Объясни следующее понятие: ${n}`;
+					a.push({
+						role: "user",
+						content: s
+					}), a.push({
+						role: "assistant",
+						content: o.result
+					}), u("assistant", o.result), f.disabled = !1, p.disabled = !1, f.focus();
 				} catch (e) {
-					a.innerHTML = `<div style="color:#ef4444;">Ошибка: ${e.message}</div>`;
+					let t = document.getElementById("explainConceptLoading");
+					t && t.remove(), l.innerHTML = `<div style="color:#ef4444; padding:10px;">Ошибка: ${e.message}</div>`;
 				}
 				window.getSelection()?.removeAllRanges();
+			}
+		});
+		let d = document.getElementById("explainConceptForm");
+		d && (d.onsubmit = async (e) => {
+			e.preventDefault();
+			let t = document.getElementById("explainConceptInput"), r = document.getElementById("explainConceptSendBtn");
+			if (!t || !r) return;
+			let i = t.value.trim();
+			if (!(!i || t.disabled)) {
+				u("user", i), a.push({
+					role: "user",
+					content: i
+				}), t.value = "", t.disabled = !0, r.disabled = !0, u("loading");
+				try {
+					let e = await fetch("/api/ai/dialectics/explain-concept", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							text: n,
+							history: a
+						})
+					}), t = document.getElementById("explainConceptLoading");
+					if (t && t.remove(), !e.ok) throw Error(`HTTP ${e.status}`);
+					let r = await e.json();
+					a.push({
+						role: "assistant",
+						content: r.result
+					}), u("assistant", r.result);
+				} catch (e) {
+					let t = document.getElementById("explainConceptLoading");
+					t && t.remove();
+					let n = document.createElement("div");
+					n.style.cssText = "margin-left: 0; margin-right: auto; max-width: 85%; color: #ef4444; padding: 10px 12px; margin-bottom: 12px;", n.innerText = `Ошибка: ${e.message}`, l.appendChild(n), l.scrollTop = l.scrollHeight;
+				} finally {
+					t.disabled = !1, r.disabled = !1, t.focus();
+				}
 			}
 		});
 	}
@@ -37213,30 +38040,31 @@ var Qv = class {
 		}
 		let i = document.getElementById("explainConceptModal"), a = document.getElementById("explainConceptTitle"), o = document.getElementById("explainConceptBody");
 		if (!i || !o) return;
-		a.innerText = `📖 ${n.word}`;
-		let s = "";
+		let s = document.getElementById("explainConceptDefaultFooter"), c = document.getElementById("explainConceptChatFooter");
+		s && (s.style.display = "block"), c && (c.style.display = "none"), a.innerText = `📖 ${n.word}`;
+		let l = "";
 		if (n.connections) {
 			let e = n.connections.split(",").map((e) => e.trim()).filter(Boolean);
-			e.length > 0 && (s = "<div style=\"margin-top: 16px; padding-top: 12px; border-top: 1px dashed #e2e8f0;\">\n                    <strong style=\"color: #475569; font-size: 0.85rem; display: block; margin-bottom: 6px;\">Связи:</strong>\n                    <div style=\"display: flex; flex-wrap: wrap; gap: 6px;\">\n                ", e.forEach((e) => {
-				s += `<span onclick="window.app && window.app.showWordDefinition('${e.replace(/'/g, "\\'")}')" style="cursor: pointer; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">📖 ${e}</span>`;
-			}), s += "</div></div>");
+			e.length > 0 && (l = "<div style=\"margin-top: 16px; padding-top: 12px; border-top: 1px dashed #e2e8f0;\">\n                    <strong style=\"color: #475569; font-size: 0.85rem; display: block; margin-bottom: 6px;\">Связи:</strong>\n                    <div style=\"display: flex; flex-wrap: wrap; gap: 6px;\">\n                ", e.forEach((e) => {
+				l += `<span onclick="window.app && window.app.showWordDefinition('${e.replace(/'/g, "\\'")}')" style="cursor: pointer; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">📖 ${e}</span>`;
+			}), l += "</div></div>");
 		}
 		o.innerHTML = `
             <div style="font-size: 1rem; color: #1e293b; line-height: 1.6;">
                 ${n.definition.replace(/\n/g, "<br>")}
             </div>
-            ${s}
+            ${l}
             <div style="margin-top: 20px; text-align: right;">
                 <button class="btn btn-secondary" onclick="document.getElementById('explainConceptModal').style.display='none'; const el = document.querySelector('[data-block-id=\\'${r}\\']'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)'; setTimeout(() => el.style.boxShadow = '', 2000); }" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; background: #3b82f6; color: white; border: none; cursor: pointer; font-weight: 600;">🔍 ${window._ && window._("dialectics.go_to_block") || "Перейти к блоку"}</button>
             </div>
         `, i.style.display = "flex";
 	}
 };
-Object.assign(Qv.prototype, Gv, qv, Yv, Zv), window.toggleOnlyTitlesMode = function(e) {
+Object.assign($v.prototype, Kv, Jv, Xv, Qv), window.toggleOnlyTitlesMode = function(e) {
 	let t = document.getElementById("dialecticsCanvas");
 	t && (e ? t.classList.add("mode-only-titles") : t.classList.remove("mode-only-titles"));
 }, window.toggleCompressedMode = function(e) {
 	let t = document.getElementById("dialecticsCanvas");
 	t && (e ? t.classList.add("mode-compressed-left") : t.classList.remove("mode-compressed-left"));
-}, window.BlockManager = $, window.CanvasManager = g_, window.app = new Qv();
+}, window.BlockManager = $, window.CanvasManager = __, window.app = new $v();
 //#endregion

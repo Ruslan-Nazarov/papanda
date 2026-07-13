@@ -109,10 +109,18 @@ class DashboardService:
                 if c_type in counter_map:
                     item = counter_map[c_type]
                     prefix = "title_until" if c_type == "until" else "title_after"
-                    data[prefix] = item.title
                     dt = normalize_date(item.date)
                     if dt:
-                        data[attr] = abs((dt - today_obj).days) if c_type == "until" else abs((today_obj - dt).days)
+                        if c_type == "until":
+                            if dt < today_obj:
+                                data[prefix] = "Нет события"
+                                data[attr] = 0
+                            else:
+                                data[prefix] = item.title
+                                data[attr] = (dt - today_obj).days
+                        else:
+                            data[prefix] = item.title
+                            data[attr] = abs((today_obj - dt).days)
         except Exception as e:
             logger.error(f"Error fetching dashboard widgets: {e}")
 

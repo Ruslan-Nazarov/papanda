@@ -335,7 +335,13 @@ async def update_dialectics(
         latest_ver = ver_res.scalar_one_or_none()
         
         now_utc = datetime.now(timezone.utc)
-        if latest_ver and (now_utc - latest_ver.created_at) < timedelta(minutes=15):
+        if latest_ver:
+            ver_ts = latest_ver.created_at
+            # SQLite returns naive datetimes — normalise to UTC-aware for comparison
+            if ver_ts is not None and ver_ts.tzinfo is None:
+                ver_ts = ver_ts.replace(tzinfo=timezone.utc)
+        
+        if latest_ver and ver_ts is not None and (now_utc - ver_ts) < timedelta(minutes=15):
             latest_ver.content_json = copy.deepcopy(content_json)
             latest_ver.created_at = now_utc
             flag_modified(latest_ver, "content_json")
@@ -360,6 +366,7 @@ async def update_dialectics(
                 for old_ver in all_auto_vers[30:]:
                     await db.delete(old_ver)
     await db.commit()
+
     
     # Reload with category after commit
     query = select(Dialectics).options(selectinload(Dialectics.category)).where(Dialectics.id == note.id)

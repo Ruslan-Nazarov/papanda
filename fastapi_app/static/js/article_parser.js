@@ -133,12 +133,13 @@ window.switchParserTab = function(tabName) {
 window.handleArticleUpload = function(input) {
     if (input.files && input.files[0]) {
         uploadedArticleFile = input.files[0];
-        const btnUpload = document.querySelector('.parser-upload-section .upload-btn');
+        window.uploadedArticleText = null; // Clear pasted text if file is uploaded
+        const btnUploads = document.querySelectorAll('.parser-upload-section .upload-btn');
         const fileNameDisplay = document.getElementById('uploadedFileName');
         const nameText = document.querySelector('#uploadedFileName .file-name-text');
         
         if (nameText) nameText.textContent = uploadedArticleFile.name;
-        if (btnUpload) btnUpload.style.display = 'none';
+        btnUploads.forEach(btn => btn.style.display = 'none');
         if (fileNameDisplay) fileNameDisplay.style.display = 'flex';
         
         if (articleWidget) {
@@ -147,16 +148,59 @@ window.handleArticleUpload = function(input) {
     }
 };
 
-// Удаление прикрепленного файла
+// Удаление прикрепленного файла или текста
 window.removeUploadedArticle = function() {
     uploadedArticleFile = null;
+    window.uploadedArticleText = null;
     const input = document.getElementById('articleFileInput');
     if (input) input.value = '';
     
-    const btnUpload = document.querySelector('.parser-upload-section .upload-btn');
+    const btnUploads = document.querySelectorAll('.parser-upload-section .upload-btn');
     const fileNameDisplay = document.getElementById('uploadedFileName');
-    if (btnUpload) btnUpload.style.display = 'flex';
+    btnUploads.forEach(btn => btn.style.display = 'flex');
     if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+};
+
+// Вставка текста статьи вручную
+window.openPasteArticleTextModal = async function() {
+    if (typeof window.customPrompt !== 'function') {
+        if (window.showToast) window.showToast('Ошибка инициализации диалогового окна', 'error');
+        return;
+    }
+    const text = await window.customPrompt({
+        title: window._ ? window._('dialectics.paste_article_title', 'Вставить текст статьи') : 'Вставить текст статьи',
+        message: window._ ? window._('dialectics.paste_article_msg', 'Введите или вставьте полный текст статьи:') : 'Введите или вставьте полный текст статьи:',
+        value: '',
+        placeholder: window._ ? window._('dialectics.paste_article_placeholder', 'Текст статьи...') : 'Текст статьи...',
+        multiline: true,
+        okLabel: window._ ? window._('dialectics.save', 'Сохранить') : 'Сохранить',
+        cancelLabel: window._ ? window._('dialectics.cancel', 'Отмена') : 'Отмена',
+        width: '600px'
+    });
+    if (text === null || text.trim() === '') return;
+    
+    uploadedArticleFile = null; // Clear uploaded file if text is pasted
+    const input = document.getElementById('articleFileInput');
+    if (input) input.value = '';
+
+    window.uploadedArticleText = text.trim();
+    
+    const btnUploads = document.querySelectorAll('.parser-upload-section .upload-btn');
+    const fileNameDisplay = document.getElementById('uploadedFileName');
+    const nameText = document.querySelector('#uploadedFileName .file-name-text');
+    
+    if (nameText) {
+        let snippet = window.uploadedArticleText.substring(0, 30);
+        if (window.uploadedArticleText.length > 30) snippet += '...';
+        nameText.textContent = `📝 Текст: "${snippet}"`;
+    }
+    
+    btnUploads.forEach(btn => btn.style.display = 'none');
+    if (fileNameDisplay) fileNameDisplay.style.display = 'flex';
+    
+    if (articleWidget) {
+        articleWidget.appendMessage('system', `Текст статьи успешно прикреплен. Задайте вопрос по нему!`);
+    }
 };
 
 // Добавление термина в словарь
@@ -223,7 +267,7 @@ window.sendParserMessage = async function() {
     if (!input || !articleWidget) return;
     
     const text = input.value.trim();
-    if (!text && !uploadedArticleFile) return;
+    if (!text && !uploadedArticleFile && !window.uploadedArticleText) return;
     
     if (text) {
         articleWidget.appendMessage('user', text);
@@ -246,6 +290,8 @@ window.sendParserMessage = async function() {
         formData.append('message', text || "Проанализируй этот документ диалектически.");
         if (uploadedArticleFile) {
             formData.append('file', uploadedArticleFile);
+        } else if (window.uploadedArticleText) {
+            formData.append('article_text', window.uploadedArticleText);
         }
         
         const response = await fetch('/api/ai/dialectics/article-parser', {

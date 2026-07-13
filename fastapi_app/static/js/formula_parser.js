@@ -154,7 +154,17 @@ window.sendFormulaMessage = async function(formulaOverride) {
                 contentDiv.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
             } else {
                 const cleanText = data.result ? data.result.replace(/```json/g, '').replace(/```/g, '') : "Анализ завершен.";
-                contentDiv.textContent = cleanText;
+                const renderMarkdown = (txt) => {
+                    return txt
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                        .replace(/\n/g, '<br>');
+                };
+                const html = renderMarkdown(cleanText);
+                contentDiv.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
             }
             formulaWidget.saveHistory();
         }

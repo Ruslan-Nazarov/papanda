@@ -1,39 +1,641 @@
 import { DialecticsAPI } from './api.js';
-import { DialecticsUI } from './ui_utils.js';
 import { BlockManager, COLOR_PRESETS } from './BlockManager.js';
-import { CanvasManager } from './CanvasManager.js';
 import { customConfirm, customChoice, customPrompt } from '../modal_controller.js';
+import { DialecticsUI } from './ui_utils.js';
 
 class BlocksOrchestratorClass {
     // --- Core Logic ---
     open(content = '') {
-        if (this.dom.editor && !this.dom.editor.classList.contains('embedded')) {
-            DialecticsUI.toggleDisplay(this.dom.editor, true, true);
+        if (this.state.editingBlock) {
+            const block = this.state.editingBlock;
+            const titleText = this.state.originalTitle || block.dataset.title || "";
+            this.createFloatingEditor(block, content, titleText, this.state.isExpanded);
+        } else {
+            const blockId = 'new_block_' + (this.state.pendingSide || 'left');
+            const dummyBlock = {
+                dataset: {
+                    id: blockId,
+                    side: this.state.pendingSide || 'left',
+                    role: this.state.pendingRole || undefined
+                }
+            };
+            const titleText = this.state.originalTitle || "";
+            this.createFloatingEditor(dummyBlock, content, titleText, this.state.isExpanded);
         }
-        const aiTab = document.getElementById('tab-ai');
-        if (aiTab) aiTab.style.display = 'none';
-        this.editor.switchTab('text');
-        this.editor.setContent(content);
-
-        if (!this.editor.tiptap && this.dom.dashboardTextarea) {
-            const temp = document.createElement('div');
-            temp.innerHTML = content;
-            this.dom.dashboardTextarea.value = temp.innerText || temp.textContent || "";
-            this.dom.dashboardTextarea.dispatchEvent(new Event('input'));
-        }
-        try { localStorage.setItem('papanda_editor_open_state', JSON.stringify({ isOpen: true, content })); } catch(e) {}
     }
 
-    openEdit(block) {
-        const html = block.querySelector('.dialectics-content-inner')?.innerHTML || "";
-        const titleInput = document.getElementById('editorBlockTitleInput');
+    createFloatingEditor(block, content, title, fullscreen = false) {
+        const template = document.getElementById('inlineEditor');
+        if (template) {
+            template.style.display = 'none';
+        }
+
+        const blockId = block.dataset ? (block.dataset.id || block.dataset.blockId) : (block.id || 'new_block');
+
+        let win = document.querySelector(`.dialectics-floating-editor[data-block-id="${blockId}"]`);
+        if (win) {
+            this.bringToFront(win);
+            if (win._tiptapEditor) {
+                win._tiptapEditor.commands.setContent(content);
+            }
+            return win;
+        }
+
+        win = template.cloneNode(true);
+        win.removeAttribute('id');
+        win.classList.add('dialectics-floating-editor');
+        win.dataset.blockId = blockId;
+
+        const openCount = document.querySelectorAll('.dialectics-floating-editor').length;
+        const offsetX = 40 + (openCount * 30);
+        const offsetY = 120 + (openCount * 25);
+        win.style.left = `${offsetX}px`;
+        win.style.top = `${offsetY}px`;
+        win.style.position = 'fixed';
+        win.style.display = 'flex';
+        win.style.zIndex = String(this.getNextZIndex());
+
+        document.body.appendChild(win);
+
+        const dragHandle = win.querySelector('.editor-drag-handle');
+        if (dragHandle) {
+            dragHandle.removeAttribute('id');
+            DialecticsUI.setupDraggable(win, dragHandle, this.state);
+        }
+        const resizeHandle = win.querySelector('#editorResizeHandle') || win.querySelector('.editor-resize-handle');
+        if (resizeHandle) {
+            resizeHandle.removeAttribute('id');
+            DialecticsUI.setupResizable(win, resizeHandle);
+        }
+
+        const tiptapEl = win.querySelector('#tiptap-editor');
+        if (tiptapEl) {
+            tiptapEl.removeAttribute('id');
+            tiptapEl.classList.add('tiptap-editor');
+        }
+
+        const titleInput = win.querySelector('#editorBlockTitleInput');
         if (titleInput) {
-            titleInput.value = block.dataset.title || "";
+            titleInput.removeAttribute('id');
+            titleInput.classList.add('editor-block-title-input');
+            titleInput.value = title || "";
+            titleInput.addEventListener('input', () => {
+                this.state.isDirty = true;
+                this.saveAllEditorsState();
+            });
         }
-        this.open(html);
+
+        const stickerBtn = win.querySelector('#dialecticsStickerBtn');
+        if (stickerBtn) {
+            stickerBtn.removeAttribute('id');
+            stickerBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (window.app) window.app.openStickersForCurrent(blockId);
+            };
+        }
+
+        const expandBtn = win.querySelector('#btnEditorExpand');
+        if (expandBtn) {
+            expandBtn.removeAttribute('id');
+            expandBtn.onclick = () => {
+                win.classList.toggle('expanded');
+                this.saveAllEditorsState();
+            };
+        }
+
+        const closeBtn = win.querySelector('#btnEditorClose');
+        if (closeBtn) {
+            closeBtn.removeAttribute('id');
+            closeBtn.onclick = async () => {
+                await this.closeFloatingEditor(block);
+            };
+        }
+
+        const saveBtn = win.querySelector('#btnEditorSave') || win.querySelector('.btn-primary');
+        if (saveBtn) {
+            saveBtn.removeAttribute('id');
+            saveBtn.onclick = async () => {
+                await this.saveFloatingEditor(block);
+            };
+        }
+
+        this.setupWindowTabs(win);
+
+        const editorInstance = this.editor.createEditor(
+            tiptapEl,
+            content,
+            // onFocus:
+            () => {
+                this.editor.tiptap = editorInstance;
+                if (blockId.startsWith('new_block')) {
+                    this.state.editingBlock = null;
+                } else {
+                    this.state.editingBlock = block;
+                }
+                this.bringToFront(win);
+
+                const formatToolbarEl = document.getElementById('editorFormattingToolbar');
+                if (formatToolbarEl) {
+                    const dragHandleControls = win.querySelector('.editor-header-controls');
+                    if (dragHandleControls && !dragHandleControls.contains(formatToolbarEl)) {
+                        dragHandleControls.parentNode.insertBefore(formatToolbarEl, dragHandleControls);
+                        formatToolbarEl.style.marginLeft = '20px';
+                        formatToolbarEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                        formatToolbarEl.style.border = '1px solid #e2e8f0';
+                        formatToolbarEl.style.padding = '2px 8px';
+                        formatToolbarEl.style.display = 'flex';
+                    }
+                }
+            },
+            // onUpdate:
+            () => {
+                this.state.isDirty = true;
+                this.saveAllEditorsState();
+            }
+        );
+
+        win._tiptapEditor = editorInstance;
+        block._floatingEditorWindow = win;
+        block._tiptapEditor = editorInstance; // Bind it to block element as well
+
+        this.switchWindowTab(win, 'text');
+
+        if (fullscreen) {
+            win.classList.add('expanded');
+        }
+
+        this.saveAllEditorsState();
+        return win;
     }
 
-    openEditAltCard(altCardEl, blockEl) {
+    setupWindowTabs(win) {
+        const tabsContainer = win.querySelector('.editor-tabs');
+        if (!tabsContainer) return;
+        
+        tabsContainer.removeAttribute('id');
+        const tabs = tabsContainer.querySelectorAll('.editor-tab');
+        tabs.forEach(tab => {
+            tab.removeAttribute('id');
+            tab.onclick = () => {
+                this.switchWindowTab(win, tab.dataset.tab);
+            };
+        });
+    }
+
+    async switchWindowTab(win, tabId) {
+        win.querySelectorAll('.editor-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tabId));
+        win.querySelectorAll('.tab-content').forEach(el => {
+            const isTarget = el.id === `editor-${tabId}` || el.classList.contains(`editor-${tabId}`) || el.classList.contains(`tab-content-${tabId}`);
+            if (el.id === `editor-${tabId}`) {
+                el.removeAttribute('id');
+                el.classList.add(`tab-content-${tabId}`);
+            }
+            el.classList.toggle('active', isTarget);
+            el.style.display = isTarget ? 'flex' : 'none';
+        });
+
+        if (tabId === 'text') {
+            if (this.editor) {
+                await this.editor.init();
+            }
+        }
+    }
+
+    bringToFront(win) {
+        const activeEditors = Array.from(document.querySelectorAll('.dialectics-floating-editor'));
+        if (activeEditors.length <= 1) return;
+        
+        let maxZ = 10000;
+        activeEditors.forEach(el => {
+            const z = parseInt(el.style.zIndex) || 10000;
+            if (z > maxZ) maxZ = z;
+        });
+        
+        if (parseInt(win.style.zIndex) < maxZ) {
+            win.style.zIndex = String(maxZ + 1);
+        }
+    }
+
+    getNextZIndex() {
+        const activeEditors = Array.from(document.querySelectorAll('.dialectics-floating-editor'));
+        let maxZ = 10000;
+        activeEditors.forEach(el => {
+            const z = parseInt(el.style.zIndex) || 10000;
+            if (z > maxZ) maxZ = z;
+        });
+        return maxZ + 1;
+    }
+
+    async closeFloatingEditor(block) {
+        const blockId = block.dataset ? (block.dataset.id || block.dataset.blockId) : (block.id || 'new_block');
+        const win = document.querySelector(`.dialectics-floating-editor[data-block-id="${blockId}"]`);
+        if (!win) return;
+
+        if (this.state.isDirty) {
+            const confirmed = await customConfirm({
+                title: window._ ? window._('dialectics.unsaved_title', 'Внимание') : "Внимание",
+                message: window._ ? window._('dialectics.unsaved_msg', 'Есть несохранённые изменения. Продолжить?') : "Есть несохранённые изменения. Продолжить?",
+                icon: '',
+                buttons: [
+                    { label: window._ ? window._('dialectics.cancel', 'Отмена') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                    { label: window._ ? window._('dialectics.continue_btn', 'Продолжить') : 'Продолжить', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+            if (!confirmed) return;
+        }
+
+        this.destroyFloatingEditorWindow(win, block);
+    }
+
+    destroyFloatingEditorWindow(win, block) {
+        if (win._tiptapEditor) {
+            try {
+                win._tiptapEditor.destroy();
+            } catch(e) {}
+        }
+
+        const formatToolbarEl = document.getElementById('editorFormattingToolbar');
+        const originalToolbarParent = document.getElementById('editorDragHandle');
+        if (formatToolbarEl && win.contains(formatToolbarEl) && originalToolbarParent) {
+            originalToolbarParent.appendChild(formatToolbarEl);
+            formatToolbarEl.style.marginLeft = '20px';
+            formatToolbarEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+            formatToolbarEl.style.border = '1px solid #e2e8f0';
+            formatToolbarEl.style.padding = '2px 8px';
+            formatToolbarEl.style.display = 'none';
+        }
+
+        win.remove();
+
+        if (block) {
+            delete block._floatingEditorWindow;
+            delete block._tiptapEditor;
+        }
+
+        this.saveAllEditorsState();
+    }
+
+    async saveFloatingEditor(block) {
+        const blockId = block.dataset ? (block.dataset.id || block.dataset.blockId) : (block.id || 'new_block');
+        const win = document.querySelector(`.dialectics-floating-editor[data-block-id="${blockId}"]`);
+        if (!win) return;
+
+        const titleInput = win.querySelector('.editor-block-title-input');
+        const customTitle = titleInput ? titleInput.value.trim() : "";
+        const html = win._tiptapEditor ? win._tiptapEditor.getHTML() : "";
+
+        if (!blockId.startsWith('new_block') && block.dataset) {
+            if (customTitle) {
+                block.dataset.title = customTitle;
+            } else {
+                delete block.dataset.title;
+            }
+            const inner = block.querySelector('.dialectics-content-inner');
+            if (inner) {
+                inner.innerHTML = html;
+            }
+
+            this.state.editingBlock = block;
+            const globalTitleInput = document.getElementById('editorBlockTitleInput');
+            if (globalTitleInput) {
+                globalTitleInput.value = customTitle;
+            }
+            if (this.editor && this.editor.tiptap) {
+                this.editor.tiptap.commands.setContent(html);
+            }
+
+            await this.saveGlobal(false);
+            this.state.editingBlock = null;
+
+            // Re-render blocks to update title in DOM
+            const blocks = BlockManager.getBlocks(this.dom.canvas);
+            BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+        } else {
+            if (html !== '<p></p>' && html.trim() !== '') {
+                const currentBlocks = BlockManager.getBlocks(this.dom.canvas);
+                const newBlock = { 
+                    id: this.state.pendingBlockId || ('block_' + Math.random().toString(36).substring(2, 9)), 
+                    side: this.state.pendingSide || 'left', 
+                    html,
+                    title: customTitle || undefined
+                };
+                if (this.state.pendingRole) {
+                    newBlock.role = this.state.pendingRole;
+                }
+                let newBlocks;
+                if (this.state.insertAfterIndex !== null) {
+                    newBlocks = [
+                        ...currentBlocks.slice(0, this.state.insertAfterIndex + 1),
+                        newBlock,
+                        ...currentBlocks.slice(this.state.insertAfterIndex + 1)
+                    ];
+                } else {
+                    newBlocks = [...currentBlocks, newBlock];
+                }
+                this.state.insertAfterIndex = null;
+                this.state.pendingRole = null;
+                
+                BlockManager.render(this.dom.canvas, newBlocks, this._blockCallbacks());
+                await this.saveGlobal(false);
+            }
+        }
+
+        this.destroyFloatingEditorWindow(win, block);
+    }
+
+    saveAllEditorsState() {
+        try {
+            const states = [];
+            const floatingWins = Array.from(document.querySelectorAll('.dialectics-floating-editor'));
+            floatingWins.forEach(win => {
+                const blockId = win.dataset.blockId;
+                const titleInput = win.querySelector('.editor-block-title-input');
+                const title = titleInput ? titleInput.value : "";
+                const content = win._tiptapEditor ? win._tiptapEditor.getHTML() : "";
+                
+                states.push({
+                    blockId: blockId,
+                    title: title,
+                    content: content,
+                    isExpanded: win.classList.contains('expanded'),
+                    styleLeft: win.style.left,
+                    styleTop: win.style.top,
+                    styleWidth: win.style.width,
+                    styleHeight: win.style.height
+                });
+            });
+            localStorage.setItem('papanda_multiple_editors_state', JSON.stringify(states));
+        } catch(e) {}
+    }
+
+    cleanUpInlineEdit() {
+        this.cleanUpAllInlineEditors();
+    }
+
+    cleanUpAllInlineEditors() {
+        if (this.dom.canvas) {
+            const editingBlocks = Array.from(this.dom.canvas.querySelectorAll('.dialectics-block.is-editing'));
+            editingBlocks.forEach(block => {
+                this.cleanUpInlineEditForBlock(block);
+            });
+        }
+    }
+
+    cleanUpInlineEditForBlock(block) {
+        if (!block) return;
+        
+        if (block._tiptapEditor) {
+            try {
+                block._tiptapEditor.destroy();
+            } catch(e) {}
+            block._tiptapEditor = null;
+        }
+
+        // Return formatting toolbar to its default global parent if it was inside this block
+        const formatToolbarEl = document.getElementById('editorFormattingToolbar');
+        const originalToolbarParent = document.getElementById('editorDragHandle');
+        const inlineContainer = block.querySelector('.dialectics-inline-editor-container');
+        if (formatToolbarEl && inlineContainer && inlineContainer.contains(formatToolbarEl) && originalToolbarParent) {
+            originalToolbarParent.appendChild(formatToolbarEl);
+            formatToolbarEl.style.marginLeft = '20px';
+            formatToolbarEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+            formatToolbarEl.style.border = '1px solid #e2e8f0';
+            formatToolbarEl.style.padding = '2px 8px';
+            formatToolbarEl.style.display = 'none';
+        }
+
+        block.classList.remove('is-editing');
+        if (inlineContainer) {
+            inlineContainer.remove();
+        }
+
+        if (this.state.editingBlock === block) {
+            this.state.editingBlock = null;
+        }
+    }
+
+    async saveInlineEdit() {
+        if (this.state.editingBlock) {
+            await this.saveInlineEditForBlock(this.state.editingBlock);
+        }
+    }
+
+    async saveInlineEditForBlock(block) {
+        if (!block) return;
+
+        const inlineContainer = block.querySelector('.dialectics-inline-editor-container');
+        let newTitle = block._originalTitle;
+        if (inlineContainer) {
+            const inlineTitleInput = inlineContainer.querySelector('.inline-title-input');
+            if (inlineTitleInput) {
+                newTitle = inlineTitleInput.value.trim();
+            }
+        }
+
+        const newHtml = block._tiptapEditor ? block._tiptapEditor.getHTML() : (block._originalHtml || "");
+
+        this.cleanUpInlineEditForBlock(block);
+
+        // Update block title and content directly in DOM
+        if (newTitle) {
+            block.dataset.title = newTitle;
+        } else {
+            delete block.dataset.title;
+        }
+        const inner = block.querySelector('.dialectics-content-inner');
+        if (inner) {
+            inner.innerHTML = newHtml;
+        }
+
+        // Temporarily set editingBlock for saveGlobal
+        this.state.editingBlock = block;
+        await this.saveGlobal(false);
+        this.state.editingBlock = null;
+
+        // Re-render blocks
+        const blocks = BlockManager.getBlocks(this.dom.canvas);
+        BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+    }
+
+    cancelInlineEdit() {
+        if (this.state.editingBlock) {
+            this.cancelInlineEditForBlock(this.state.editingBlock);
+        }
+    }
+
+    cancelInlineEditForBlock(block) {
+        if (!block) return;
+
+        const inner = block.querySelector('.dialectics-content-inner');
+        if (inner && block._originalHtml !== undefined) {
+            inner.innerHTML = block._originalHtml;
+        }
+        if (block._originalTitle !== undefined) {
+            block.dataset.title = block._originalTitle;
+        }
+
+        this.cleanUpInlineEditForBlock(block);
+
+        // Re-render blocks
+        const blocks = BlockManager.getBlocks(this.dom.canvas);
+        BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+    }
+
+    detachInlineEdit(fullscreen = false) {
+        if (this.state.editingBlock) {
+            this.detachInlineEditForBlock(this.state.editingBlock, fullscreen);
+        }
+    }
+
+    detachInlineEditForBlock(block, fullscreen = false) {
+        if (!block) return;
+
+        const currentHtml = block._tiptapEditor ? block._tiptapEditor.getHTML() : (block._originalHtml || "");
+        const inlineContainer = block.querySelector('.dialectics-inline-editor-container');
+        let currentTitle = block._originalTitle || "";
+        if (inlineContainer) {
+            const inlineTitleInput = inlineContainer.querySelector('.inline-title-input');
+            if (inlineTitleInput) {
+                currentTitle = inlineTitleInput.value;
+            }
+        }
+
+        this.cleanUpInlineEditForBlock(block);
+
+        this.createFloatingEditor(block, currentHtml, currentTitle, fullscreen);
+    }
+
+    async openEdit(block) {
+        // Guard: if this block is already open in the editor, do nothing
+        if (block.classList.contains('is-editing')) {
+            return;
+        }
+
+        // Close modal editor if open
+        if (this.dom.editor) {
+            this.dom.editor.style.display = 'none';
+        }
+        if (this.dom.backdrop) {
+            this.dom.backdrop.style.display = 'none';
+        }
+
+        this.state.isDirty = false;
+        
+        block.classList.add('is-editing');
+        
+        let inlineContainer = block.querySelector('.dialectics-inline-editor-container');
+        if (!inlineContainer) {
+            inlineContainer = document.createElement('div');
+            inlineContainer.className = 'dialectics-inline-editor-container';
+            const contentInner = block.querySelector('.dialectics-content-inner');
+            if (contentInner) {
+                contentInner.after(inlineContainer);
+            } else {
+                block.appendChild(inlineContainer);
+            }
+        }
+
+        const titleText = block.dataset.title || "";
+        const html = block.querySelector('.dialectics-content-inner')?.innerHTML || "<p></p>";
+
+        block._originalHtml = html;
+        block._originalTitle = titleText;
+
+        inlineContainer.innerHTML = `
+            <div class="inline-edit-toolbar" style="display:flex; justify-content:space-between; align-items:center; padding: 6px 12px; background:#f1f5f9; border-bottom:1px solid #cbd5e1; border-top-left-radius:12px; border-top-right-radius:12px; gap:8px;">
+                <div class="inline-format-placeholder" style="display:flex; align-items:center; gap:4px;"></div>
+                <div style="display:flex; align-items:center; gap:6px; margin-left:auto;">
+                    <button type="button" class="btn-inline-action btn-inline-detach" title="Открыть в отдельном окне" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px 6px; border-radius:6px; transition:background 0.15s; display:flex; align-items:center; justify-content:center;">↗️</button>
+                    <button type="button" class="btn-inline-action btn-inline-fullscreen" title="Во весь экран" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px 6px; border-radius:6px; transition:background 0.15s; display:flex; align-items:center; justify-content:center;">⛶</button>
+                    <span style="width:1px; height:16px; background:#cbd5e1; margin:0 2px;"></span>
+                    <button type="button" class="btn-inline-action btn-inline-save" title="Сохранить" style="background:#10b981; border:none; color:white; font-weight:600; cursor:pointer; font-size:0.85rem; padding:6px 12px; border-radius:8px; transition:opacity 0.15s;">OK</button>
+                    <button type="button" class="btn-inline-action btn-inline-cancel" title="Отмена" style="background:#ef4444; border:none; color:white; font-weight:600; cursor:pointer; font-size:0.85rem; padding:6px 12px; border-radius:8px; transition:opacity 0.15s;">Отмена</button>
+                </div>
+            </div>
+            <div class="inline-edit-title-row" style="padding: 10px 14px; display:flex; align-items:center; gap:8px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:0.85rem; font-weight:600; color:#475569;">Заголовок:</span>
+                <input type="text" class="inline-title-input" value="${titleText}" placeholder="Введите заголовок блока..." style="flex-grow:1; padding:6px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; font-family:inherit; outline:none; transition:border 0.15s;">
+            </div>
+            <div class="inline-tiptap-wrapper">
+                <div class="block-tiptap-editor"></div>
+            </div>
+        `;
+
+        const detachBtn = inlineContainer.querySelector('.btn-inline-detach');
+        const fullscreenBtn = inlineContainer.querySelector('.btn-inline-fullscreen');
+        [detachBtn, fullscreenBtn].forEach(btn => {
+            if (btn) {
+                btn.onmouseenter = () => btn.style.background = '#e2e8f0';
+                btn.onmouseleave = () => btn.style.background = 'none';
+            }
+        });
+
+        const blockTiptapEl = inlineContainer.querySelector('.block-tiptap-editor');
+
+        const editorInstance = this.editor.createEditor(
+            blockTiptapEl,
+            html,
+            // onFocus:
+            () => {
+                const formatToolbarEl = document.getElementById('editorFormattingToolbar');
+                if (formatToolbarEl) {
+                    const placeholder = inlineContainer.querySelector('.inline-format-placeholder');
+                    if (placeholder && !placeholder.contains(formatToolbarEl)) {
+                        placeholder.appendChild(formatToolbarEl);
+                        formatToolbarEl.style.marginLeft = '0';
+                        formatToolbarEl.style.boxShadow = 'none';
+                        formatToolbarEl.style.border = 'none';
+                        formatToolbarEl.style.padding = '0';
+                        formatToolbarEl.style.display = 'flex';
+                    }
+                }
+                this.state.editingBlock = block;
+            },
+            // onUpdate:
+            () => {
+                this.state.isDirty = true;
+            }
+        );
+
+        block._tiptapEditor = editorInstance;
+
+        const inlineTitleInput = inlineContainer.querySelector('.inline-title-input');
+        inlineTitleInput.addEventListener('input', (e) => {
+            this.state.isDirty = true;
+        });
+
+        inlineContainer.querySelector('.btn-inline-save').onclick = async (e) => {
+            e.stopPropagation();
+            await this.saveInlineEditForBlock(block);
+        };
+        inlineContainer.querySelector('.btn-inline-cancel').onclick = (e) => {
+            e.stopPropagation();
+            this.cancelInlineEditForBlock(block);
+        };
+        inlineContainer.querySelector('.btn-inline-detach').onclick = (e) => {
+            e.stopPropagation();
+            this.detachInlineEditForBlock(block, false);
+        };
+        inlineContainer.querySelector('.btn-inline-fullscreen').onclick = (e) => {
+            e.stopPropagation();
+            this.detachInlineEditForBlock(block, true);
+        };
+    }
+
+    async openEditAltCard(altCardEl, blockEl) {
+        if (this.state.isDirty && (this.state.editingBlock !== blockEl || this.state.editingAltCard !== altCardEl)) {
+            const confirmed = await customConfirm({
+                title: window._ ? window._('dialectics.unsaved_title', 'Внимание') : "Внимание",
+                message: window._ ? window._('dialectics.unsaved_msg', 'Есть несохранённые изменения. Продолжить?') : "Есть несохранённые изменения. Продолжить?",
+                icon: '',
+                buttons: [
+                    { label: window._ ? window._('dialectics.cancel', 'Отмена') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                    { label: window._ ? window._('dialectics.continue_btn', 'Продолжить') : 'Продолжить', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+            if (!confirmed) return;
+        }
+        this.state.isDirty = false;
         this.state.editingBlock = blockEl;
         this.state.editingAltCard = altCardEl;
         const html = altCardEl.querySelector('.dialectics-content-inner')?.innerHTML || "";
@@ -45,19 +647,58 @@ class BlocksOrchestratorClass {
         this.open(html);
     }
 
-    close() {
-        if (this.dom.editor) {
-            this.dom.editor.style.display = 'none';
-            this.dom.editor.classList.remove('embedded');
+    async close(confirmIfDirty = true) {
+        // Prevent re-entrant calls while confirm dialog is open
+        if (this._isClosing) return;
+        this._isClosing = true;
+
+        if (confirmIfDirty && this.state.isDirty) {
+            const confirmed = await customConfirm({
+                title: window._ ? window._('dialectics.unsaved_title', 'Внимание') : "Внимание",
+                message: window._ ? window._('dialectics.unsaved_msg', 'Есть несохранённые изменения. Продолжить?') : "Есть несохранённые изменения. Продолжить?",
+                icon: '',
+                buttons: [
+                    { label: window._ ? window._('dialectics.cancel', 'Отмена') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                    { label: window._ ? window._('dialectics.continue_btn', 'Продолжить') : 'Продолжить', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+            if (!confirmed) {
+                this._isClosing = false;
+                return;
+            }
         }
-        this.editor.setContent('');
+
+        // Clean up inline editing UI just in case
+        if (typeof this.cleanUpInlineEdit === 'function') {
+            this.cleanUpInlineEdit();
+        }
+
+        // Reset isDirty BEFORE setContent('') to prevent TipTap's onUpdate
+        // from re-flagging dirty=true after we've already cleared it
+        this.state.isDirty = false;
         this.state.editingBlock = null;
         this.state.editingAltCard = null;
         this.state.pendingSide = null;
         this.state.pendingRole = null;
         this.state.pendingBlockId = null;
-        try { localStorage.setItem('papanda_editor_open_state', JSON.stringify({ isOpen: false })); } catch(e) {}
         this.state.insertAfterIndex = null;
+
+        // Reset expanded mode
+        this.state.isExpanded = false;
+
+        // Clear content before hiding to avoid stale TipTap state
+        this.editor.setContent('');
+
+        if (this.dom.editor) {
+            this.dom.editor.classList.remove('expanded');
+            this.dom.editor.style.display = 'none';
+        }
+        if (this.dom.backdrop) {
+            this.dom.backdrop.style.display = 'none';
+        }
+
+        try { localStorage.setItem('papanda_editor_open_state', JSON.stringify({ isOpen: false })); } catch(e) {}
+        this._isClosing = false;
     }
 
     save() {
@@ -117,7 +758,6 @@ class BlocksOrchestratorClass {
         const sourcesBtn = el.querySelector('.btn-block-sources');
 
         if (editBtn) editBtn.onclick = () => {
-            this.state.editingBlock = el;
             this.openEdit(el);
         };
 
@@ -271,8 +911,8 @@ class BlocksOrchestratorClass {
 
     bindEvents() {
         if (this.dom.btnSave) this.dom.btnSave.onclick = () => this.save();
-        if (this.dom.btnCancel) this.dom.btnCancel.onclick = () => this.close();
-        if (this.dom.btnClose) this.dom.btnClose.onclick = () => this.close();
+        if (this.dom.btnCancel) this.dom.btnCancel.onclick = async () => await this.close();
+        if (this.dom.btnClose) this.dom.btnClose.onclick = async () => await this.close();
 
         // Global delegator for dynamically added blocks or hints
         document.addEventListener('click', (e) => {
@@ -310,7 +950,14 @@ class BlocksOrchestratorClass {
             window.BlockManager.setCallbacks({
                 onEdit: (block) => this.openEdit(block),
                 onEditAltCard: (altCardEl, blockEl) => this.openEditAltCard(altCardEl, blockEl),
-                onDelete: async () => { await this.saveGlobal(false, "toast.dialectics_updated"); const blocks = BlockManager.getBlocks(this.dom.canvas); BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks()); },
+                onDelete: async (deletedBlockId) => {
+                    if (deletedBlockId) {
+                        await this.deleteStickersForBlock(deletedBlockId);
+                    }
+                    await this.saveGlobal(false, "toast.dialectics_updated");
+                    const blocks = BlockManager.getBlocks(this.dom.canvas);
+                    BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+                },
                 onHintClick: (hint) => this.openHintEditor(hint),
                 onHintAI: (hint) => (hint && hint.id === 'step3' ? this.runAI(this.dom.canvas) : this.runHintAI(hint)),
                 onHacks: (block) => this.openHacksPopover(block)
@@ -318,7 +965,20 @@ class BlocksOrchestratorClass {
         }
     }
 
-    openHintEditor(hint, content = '', aiHtml = null) {
+    async openHintEditor(hint, content = '', aiHtml = null) {
+        if (this.state.isDirty) {
+            const confirmed = await customConfirm({
+                title: window._ ? window._('dialectics.unsaved_title', 'Внимание') : "Внимание",
+                message: window._ ? window._('dialectics.unsaved_msg', 'Есть несохранённые изменения. Продолжить?') : "Есть несохранённые изменения. Продолжить?",
+                icon: '',
+                buttons: [
+                    { label: window._ ? window._('dialectics.cancel', 'Отмена') : 'Отмена', value: false, class: 'confirm-btn-secondary' },
+                    { label: window._ ? window._('dialectics.continue_btn', 'Продолжить') : 'Продолжить', value: true, class: 'confirm-btn-primary' }
+                ]
+            });
+            if (!confirmed) return;
+        }
+        this.state.isDirty = false;
         this.state.editingBlock = null;
         this.state.pendingSide = hint.side;
         this.state.pendingRole = hint.id;
@@ -353,7 +1013,7 @@ class BlocksOrchestratorClass {
         this.state.isExpanded = !this.state.isExpanded;
         if (this.dom.editor) {
             this.dom.editor.classList.toggle('expanded', this.state.isExpanded);
-            if (this.dom.backdrop) DialecticsUI.toggleDisplay(this.dom.backdrop, this.state.isExpanded);
+            if (this.dom.backdrop) this.dom.backdrop.style.display = this.state.isExpanded ? 'block' : 'none';
         }
         // Resize Fabric.js canvas to match new wrapper dimensions after transition
         setTimeout(() => {
@@ -372,6 +1032,29 @@ class BlocksOrchestratorClass {
         }, 320); // wait for CSS transition to finish
     }
 
+    dismissHint(hintId) {
+        if (!this.state.dismissedHints) {
+            this.state.dismissedHints = [];
+        }
+        if (!this.state.dismissedHints.includes(hintId)) {
+            this.state.dismissedHints.push(hintId);
+            try {
+                const key = this.state.currentNoteId ? ('dialectics_dismissed_hints_' + this.state.currentNoteId) : 'dialectics_dismissed_hints_temp';
+                localStorage.setItem(key, JSON.stringify(this.state.dismissedHints));
+            } catch(e) {}
+        }
+        const blocks = BlockManager.getBlocks(this.dom.canvas);
+        BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+    }
+
+    toggleShowHiddenHints(checked) {
+        try {
+            localStorage.setItem('dialectics_show_hidden_hints', checked ? 'true' : 'false');
+        } catch(e) {}
+        const blocks = BlockManager.getBlocks(this.dom.canvas);
+        BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+    }
+
     // Returns the standard callbacks object for BlockManager.render
     _blockCallbacks() {
         return {
@@ -380,20 +1063,56 @@ class BlocksOrchestratorClass {
                     this.openSectionTitleModal(null, b);
                     return;
                 }
-                this.state.editingBlock = b; 
+                const blockStatus = b.dataset.status || 'none';
+                if (blockStatus === 'ready') {
+                    if (window.showToast) window.showToast('Этот блок заблокирован. Смените статус на «В работе», чтобы изменить его.', 'warning');
+                    return;
+                }
                 this.openEdit(b); 
             },
             onEditAltCard: (altCardEl, blockEl) => { this.openEditAltCard(altCardEl, blockEl); },
             onInsertAfter: (side, index) => { this.openInsertAfter(side, index); },
-            onDelete: async () => { await this.saveGlobal(false, "toast.dialectics_updated"); const blocks = BlockManager.getBlocks(this.dom.canvas); BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks()); },
+            onDelete: async (deletedBlockId) => {
+                if (deletedBlockId) {
+                    await this.deleteStickersForBlock(deletedBlockId);
+                }
+                await this.saveGlobal(false, "toast.dialectics_updated");
+                const blocks = BlockManager.getBlocks(this.dom.canvas);
+                BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+            },
             onAI: (b) => { this.runAI(b); },
+            onCheckAI: (b) => { this.checkAI(b); },
             onSources: (b) => { this.openSourcesModal(b); },
             onWords: (b) => { this.openWordsModal(b); },
             onColor: (b) => { this.openColorModal(b); },
             onHintClick: (hint) => { this.openHintEditor(hint); },
             onHintAI: (hint) => { if (hint && hint.id === 'step3') { this.runAI(this.dom.canvas); } else { this.runHintAI(hint); } },
-            onFoldToggle: () => { this.saveGlobal(false, "toast.dialectics_updated"); },
-            onHacks: (b) => { this.openHacksPopover(b); }
+            onHintDismiss: (hintId) => { this.dismissHint(hintId); },
+            onFoldToggle: () => { this.saveGlobal(false, null); },
+            onHacks: (b) => { this.openHacksPopover(b); },
+            onStatusToggle: async (blockEl) => {
+                const currentStatus = blockEl.dataset.status || 'none';
+                let nextStatus = 'none';
+                if (currentStatus === 'none') nextStatus = 'in_progress';
+                else if (currentStatus === 'in_progress') nextStatus = 'ready';
+                else if (currentStatus === 'ready') nextStatus = 'none';
+
+                blockEl.dataset.status = nextStatus;
+
+                if (window.showToast) {
+                    let msg = 'Статус блока: Не указан';
+                    if (nextStatus === 'in_progress') msg = 'Статус блока: В работе';
+                    if (nextStatus === 'ready') msg = 'Статус блока: Готово (Заблокировано)';
+                    window.showToast(msg, 'info');
+                }
+
+                // Re-render to show lock icon and update button listeners
+                const blocks = BlockManager.getBlocks(this.dom.canvas);
+                BlockManager.render(this.dom.canvas, blocks, this._blockCallbacks());
+
+                // Save to server
+                await this.saveGlobal(false, null);
+            }
         };
     }
 
@@ -998,6 +1717,128 @@ class BlocksOrchestratorClass {
                 };
             }
         }, 10);
+    }
+
+    toggleSearchInNote(e) {
+        if (e) e.stopPropagation();
+        let menu = document.getElementById('searchInNoteMenu');
+        if (!menu) return;
+        if (menu.style.display === 'none' || !menu.style.display) {
+            const tocMenu = document.getElementById('tableOfContentsMenu');
+            if (tocMenu) tocMenu.style.display = 'none';
+            const verMenu = document.getElementById('versionsMenu');
+            if (verMenu) verMenu.style.display = 'none';
+
+            menu.style.display = 'block';
+            const inputEl = document.getElementById('searchInNoteInput');
+            if (inputEl) {
+                inputEl.value = '';
+                inputEl.focus();
+            }
+            const resultsEl = document.getElementById('searchInNoteResults');
+            if (resultsEl) {
+                resultsEl.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 10px 0;">Введите текст для начала поиска</div>';
+            }
+
+            const closeHandler = (evt) => {
+                if (!menu.contains(evt.target) && evt.target.id !== 'btnToggleSearch') {
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        } else {
+            menu.style.display = 'none';
+        }
+    }
+
+    performSearchInNote(query) {
+        const resultsEl = document.getElementById('searchInNoteResults');
+        if (!resultsEl || !this.dom.canvas) return;
+
+        query = (query || '').trim().toLowerCase();
+        if (!query) {
+            resultsEl.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 10px 0;">Введите текст для начала поиска</div>';
+            return;
+        }
+
+        const blocks = Array.from(this.dom.canvas.querySelectorAll('.dialectics-block'));
+        resultsEl.innerHTML = '';
+
+        let matchCount = 0;
+
+        blocks.forEach((b, idx) => {
+            const isSection = b.classList.contains('block-section') || b.dataset.isSection === 'true';
+            
+            let title = b.dataset.title || '';
+            if (!title) {
+                const titleEl = b.querySelector('.block-title-text');
+                title = titleEl ? titleEl.innerText : '';
+            }
+            if (!title) {
+                const headerSpan = b.querySelector('.dialectics-block-header span:first-child');
+                title = headerSpan ? headerSpan.innerText : (isSection ? 'Раздел' : `Блок ${idx + 1}`);
+            }
+
+            const inner = b.querySelector('.dialectics-content-inner');
+            const content = inner ? (inner.innerText || inner.textContent || '') : '';
+
+            const titleMatch = title.toLowerCase().includes(query);
+            const contentMatch = content.toLowerCase().includes(query);
+
+            if (titleMatch || contentMatch) {
+                matchCount++;
+
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; 
+                    border-radius: 8px; cursor: pointer; transition: background 0.15s;
+                    border: 1px solid #e2e8f0; background: #fff; text-align: left;
+                `;
+                item.onmouseover = () => item.style.background = '#f8fafc';
+                item.onmouseout = () => item.style.background = '#fff';
+
+                const icon = isSection ? '📑' : (b.classList.contains('block-left') ? '▫️' : '▪️');
+                
+                let snippet = '';
+                if (contentMatch) {
+                    const index = content.toLowerCase().indexOf(query);
+                    const start = Math.max(0, index - 30);
+                    const end = Math.min(content.length, index + query.length + 30);
+                    snippet = (start > 0 ? '...' : '') + content.substring(start, end) + (end < content.length ? '...' : '');
+                    snippet = snippet.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    snippet = snippet.replace(new RegExp(`(${escapedQuery})`, 'gi'), '<mark style="background: #fef08a; padding: 0 2px; border-radius: 2px;">$1</mark>');
+                } else {
+                    snippet = content.substring(0, 60) + (content.length > 60 ? '...' : '');
+                }
+
+                item.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; color: ${isSection ? '#ea580c' : '#1e293b'};">
+                        <span>${icon}</span>
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
+                    </div>
+                    ${snippet ? `<div style="font-size: 0.75rem; color: #64748b; line-height: 1.3; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${snippet}</div>` : ''}
+                `;
+
+                item.onclick = () => {
+                    document.getElementById('searchInNoteMenu').style.display = 'none';
+                    b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    b.style.transition = 'box-shadow 0.5s ease';
+                    const origBoxShadow = b.style.boxShadow;
+                    b.style.boxShadow = '0 0 0 4px #3b82f6';
+                    setTimeout(() => {
+                        b.style.boxShadow = origBoxShadow;
+                    }, 2000);
+                };
+
+                resultsEl.appendChild(item);
+            }
+        });
+
+        if (matchCount === 0) {
+            resultsEl.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 20px 0;">Ничего не найдено</div>';
+        }
     }
 
 }
