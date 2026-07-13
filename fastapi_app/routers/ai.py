@@ -24,13 +24,19 @@ _groq_client: Optional[AsyncGroq] = None
 
 def get_groq_client() -> AsyncGroq:
     global _groq_client
-    if _groq_client is None:
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        from dotenv import load_dotenv
+        from ..config import BASE_DIR
+        load_dotenv(dotenv_path=BASE_DIR / ".env")
         api_key = os.getenv("GROQ_API_KEY")
-        if not api_key or api_key == "your_groq_api_key_here":
-            raise HTTPException(
-                status_code=500, 
-                detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file."
-            )
+        
+    if not api_key or api_key == "your_groq_api_key_here":
+        raise HTTPException(
+            status_code=500, 
+            detail="GROQ_API_KEY is not set or invalid. Please configure it in the .env file."
+        )
+    if _groq_client is None or getattr(_groq_client, "api_key", None) == "dummy_key_if_not_set":
         _groq_client = AsyncGroq(api_key=api_key)
     return _groq_client
 

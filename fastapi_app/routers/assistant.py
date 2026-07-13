@@ -22,7 +22,7 @@ class AssistantResponse(BaseModel):
 
 @router.post("", response_model=AssistantResponse, status_code=status.HTTP_200_OK)
 @router.post("/", response_model=AssistantResponse, status_code=status.HTTP_200_OK)
-def ask_assistant(request: AssistantRequest) -> AssistantResponse:
+async def ask_assistant(request: AssistantRequest) -> AssistantResponse:
     """Обрабатывает запрос пользователя к ИИ-помощнику по функционалу приложения."""
     query_text = request.query.strip()
     if not query_text: raise HTTPException(
@@ -31,7 +31,7 @@ def ask_assistant(request: AssistantRequest) -> AssistantResponse:
     )
 
     try:
-        answer = generate_assistant_response(query_text, page=request.page, history=request.history)
+        answer = await generate_assistant_response(query_text, page=request.page, history=request.history)
         return AssistantResponse(answer=answer)
     except HTTPException:
         raise

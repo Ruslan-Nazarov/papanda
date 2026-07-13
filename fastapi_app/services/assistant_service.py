@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
-from groq import Groq, APIError, RateLimitError
+from groq import AsyncGroq, APIError, RateLimitError
 from ..config import BASE_DIR
 from ..logger import logger
 
@@ -52,7 +52,12 @@ def _load_knowledge_base() -> Dict[str, Dict[str, str]]:
             for p_file in sorted(prompts_dir.iterdir()):
                 if p_file.is_file() and p_file.suffix in [".md", ".json", ".txt"]:
                     with open(p_file, "r", encoding="utf-8") as pf:
-                        prompts_text += f"\n\n--- ПРОМПТ / АЛГОРИТМ: {p_file.name} ---\n{pf.read()}"
+                        f_content = pf.read()
+                        if len(f_content) > 2500: f_content = f_content[:2500] + "\n... [остальное опущено]"
+                        prompts_text += f"\n\n--- ПРОМПТ / АЛГОРИТМ: {p_file.name} ---\n{f_content}"
+                        if len(prompts_text) > 10000:
+                            prompts_text = prompts_text[:10000] + "\n... [остальные промпты опущены для соблюдения лимитов API]"
+                            break
         except Exception as e:
             logger.error(f"Error reading prompts directory: {e}")
 
@@ -158,26 +163,25 @@ AVAILABLE_CATEGORIES: List[str] = _get_categories()
 
 _groq_client = None
 
-def get_groq_client() -> Groq:
-    """Возвращает инициализированный клиент Groq с ленивой загрузкой ключа."""
+def get_groq_client() -> AsyncGroq:
+    """Возвращает инициализированный асинхронный клиент Groq с ленивой загрузкой ключа."""
     global _groq_client
-    if _groq_client is None:
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        from dotenv import load_dotenv
+        from ..config import BASE_DIR
+        load_dotenv(dotenv_path=BASE_DIR / ".env")
         api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            # На случай, если .env еще не загружен (хотя config.py уже должен был это сделать)
-            from dotenv import load_dotenv
-            from ..config import BASE_DIR
-            load_dotenv(dotenv_path=BASE_DIR / ".env")
-            api_key = os.getenv("GROQ_API_KEY")
+    
+    if not api_key or api_key == "your_groq_api_key_here":
+        return AsyncGroq(api_key="dummy_key_if_not_set")
         
-        if not api_key or api_key == "your_groq_api_key_here":
-            api_key = "dummy_key_if_not_set"
-            
-        _groq_client = Groq(api_key=api_key)
+    if _groq_client is None or getattr(_groq_client, "api_key", None) == "dummy_key_if_not_set":
+        _groq_client = AsyncGroq(api_key=api_key)
     return _groq_client
 
 
-def classify_query(user_query: str, page: str = None, history: List[Dict[str, str]] = None) -> Tuple[str, str]:
+async def classify_query(user_query: str, page: str = None, history: List[Dict[str, str]] = None) -> Tuple[str, str]:
     """
     Классифицирует запрос пользователя по категории и языку с учетом истории диалога.
     Возвращает кортеж (ключ категории, код языка).
@@ -243,7 +247,7 @@ def classify_query(user_query: str, page: str = None, history: List[Dict[str, st
     )
 
     try:
-        response = get_groq_client().chat.completions.create(
+        response = await get_groq_client().chat.completions.create(
             model=FALLBACK_MODEL_NAME,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -264,21 +268,46 @@ def classify_query(user_query: str, page: str = None, history: List[Dict[str, st
         if lang not in ["ru", "kz", "en"]: lang = "ru"
             
         return category, lang
-    except (RateLimitError, APIError):
+    except (RateLimitError, APIError) as e:
+        logger.error(f"Groq APIError in classify_query: {e}", exc_info=True)
         raise
     except Exception as e:
         logger.warning(f"Error in classify_query: {e}")
         return "unknown", "ru"
 
 
-def generate_assistant_response(user_query: str, page: str = None, history: List[Dict[str, str]] = None) -> str:
+import time
+import traceback
+
+async def generate_assistant_response_with_debug(user_query: str, page: str = None, history: List[Dict[str, str]] = None) -> Tuple[str, Dict]:
     """
-    Генерирует ответ ИИ-помощника на основе базы знаний приложения с учетом истории диалога и мультиконтекста.
+    Генерирует ответ ИИ-помощника и возвращает кортеж (ответ, отладочная информация).
     """
-    if not user_query or not user_query.strip(): return "Пожалуйста, задайте вопрос по функционалу приложения papanda."
+    start_time = time.perf_counter()
+    debug_info = {
+        "user_query": user_query,
+        "page": page,
+        "history_count": len(history) if history else 0,
+        "models": {
+            "main": MODEL_NAME,
+            "fallback": FALLBACK_MODEL_NAME
+        },
+        "steps": []
+    }
+
+    if not user_query or not user_query.strip():
+        return "Пожалуйста, задайте вопрос по функционалу приложения papanda.", debug_info
 
     try:
-        category, lang = classify_query(user_query, page=page, history=history)
+        t0 = time.perf_counter()
+        category, lang = await classify_query(user_query, page=page, history=history)
+        classify_elapsed = round((time.perf_counter() - t0) * 1000, 2)
+        debug_info["steps"].append({
+            "step": "classify_query",
+            "category": category,
+            "lang": lang,
+            "latency_ms": classify_elapsed
+        })
         
         if category == "unknown" and page:
             q_lower = user_query.lower()
@@ -296,28 +325,37 @@ def generate_assistant_response(user_query: str, page: str = None, history: List
         context_text = lang_dict.get(category, "")
         if not context_text and lang != "ru": context_text = KNOWLEDGE_BASE.get("ru", {}).get(category, "")
 
-        # Мультиконтекстная загрузка связанных разделов
+        # Мультиконтекстная загрузка связанных разделов (с защитой от раздувания промпта)
         related_cats = []
         if category == "words": related_cats = ["dashboard", "settings"]
-        elif category == "tasks": related_cats = ["stickers", "today_calendar", "activity_tree"]
-        elif category == "stickers": related_cats = ["tasks", "habits", "today_calendar"]
-        elif category == "today_calendar": related_cats = ["tasks", "activity_tree", "stickers"]
+        elif category == "tasks": related_cats = ["stickers", "today_calendar"]
+        elif category == "stickers": related_cats = ["tasks", "today_calendar"]
+        elif category == "today_calendar": related_cats = ["tasks", "activity_tree"]
         elif category == "activity_tree": related_cats = ["today_calendar", "tasks"]
-        elif category == "dashboard": related_cats = ["today_calendar", "tasks", "habits", "chronology", "words", "notes"]
-        elif category == "dialectics_methodology": related_cats = ["top_menu", "prompts"]
+        elif category == "dashboard": related_cats = ["today_calendar", "tasks", "words"]
+        elif category == "dialectics_methodology": related_cats = ["top_menu"]
         elif category == "prompts": related_cats = ["dialectics_methodology"]
 
         for r_cat in related_cats:
+            if len(context_text) > 8000: break
             r_text = lang_dict.get(r_cat) or KNOWLEDGE_BASE.get("ru", {}).get(r_cat, "")
             if r_text:
+                if len(r_text) > 3000: r_text = r_text[:3000] + "\n... [часть опущена]"
                 context_text += f"\n\n--- ДОПОЛНИТЕЛЬНЫЙ КОНТЕКСТ ({r_cat}) ---\n{r_text}"
 
         if category == "unknown" or not context_text:
             if lang in ["kz", "kk"]:
-                return "Өкінішке орай, мен бұл ақпаратты анықтамалықтан таппадым."
+                ans = "Өкінішке орай, мен бұл ақпаратты анықтамалықтан таппадым."
             elif lang == "en":
-                return "Unfortunately, I could not find this information in the reference guide."
-            return "К сожалению, я не нашел этой информации в справочнике."
+                ans = "Unfortunately, I could not find this information in the reference guide."
+            else:
+                ans = "К сожалению, я не нашел этой информации в справочнике."
+            debug_info["status"] = "not_found_in_kb"
+            return ans, debug_info
+
+        # Защита от превышения лимита TPM Groq API (Request too large error 413)
+        if len(context_text) > 12000:
+            context_text = context_text[:12000] + "\n\n... [Детали ниже опущены для соблюдения лимитов на скорость ответа модели (TPM Limit)]"
 
         system_prompt = (
             "Вы — интеллектуальный гид и служба поддержки SaaS-приложения papanda.\n"
@@ -344,30 +382,83 @@ def generate_assistant_response(user_query: str, page: str = None, history: List
                         messages_payload.append({"role": role, "content": content})
         messages_payload.append({"role": "user", "content": user_query})
 
+        t1 = time.perf_counter()
         try:
-            response = get_groq_client().chat.completions.create(
+            response = await get_groq_client().chat.completions.create(
                 model=MODEL_NAME,
                 messages=messages_payload,
                 temperature=0.3,
                 max_tokens=800,
             )
-            return response.choices[0].message.content or ""
+            elapsed = round((time.perf_counter() - t1) * 1000, 2)
+            debug_info["steps"].append({
+                "step": "chat_completion_main",
+                "model": MODEL_NAME,
+                "status": "success",
+                "latency_ms": elapsed
+            })
+            debug_info["status"] = "success"
+            return (response.choices[0].message.content or ""), debug_info
         except (RateLimitError, APIError) as e:
+            elapsed = round((time.perf_counter() - t1) * 1000, 2)
             logger.warning(f"Groq API error on 70B ({e}), falling back to 8B")
-            response = get_groq_client().chat.completions.create(
+            debug_info["steps"].append({
+                "step": "chat_completion_main_failed",
+                "model": MODEL_NAME,
+                "error": str(e),
+                "status_code": getattr(e, "status_code", None),
+                "latency_ms": elapsed
+            })
+            t2 = time.perf_counter()
+            response = await get_groq_client().chat.completions.create(
                 model=FALLBACK_MODEL_NAME,
                 messages=messages_payload,
                 temperature=0.3,
                 max_tokens=800,
             )
-            return response.choices[0].message.content or ""
+            elapsed2 = round((time.perf_counter() - t2) * 1000, 2)
+            debug_info["steps"].append({
+                "step": "chat_completion_fallback",
+                "model": FALLBACK_MODEL_NAME,
+                "status": "success",
+                "latency_ms": elapsed2
+            })
+            debug_info["status"] = "success_fallback"
+            return (response.choices[0].message.content or ""), debug_info
 
     except RateLimitError as e:
-        logger.warning(f"Groq API RateLimitError: {e}")
-        return "Извините, система сейчас испытывает высокую нагрузку (слишком много запросов). Пожалуйста, подождите немного и повторите ваш запрос позже."
+        logger.warning(f"Groq API RateLimitError in generate_assistant_response: {e}")
+        debug_info["status"] = "RateLimitError"
+        debug_info["error_details"] = {
+            "message": str(e),
+            "status_code": getattr(e, "status_code", None),
+            "traceback": traceback.format_exc()
+        }
+        return "Извините, система сейчас испытывает высокую нагрузку (слишком много запросов). Пожалуйста, подождите немного и повторите ваш запрос позже.", debug_info
     except APIError as e:
-        logger.error(f"Groq APIError: {e}")
-        return "Извините, в данный момент ИИ-помощник временно недоступен из-за технических неполадок сервиса. Пожалуйста, попробуйте позже."
+        logger.error(f"Groq APIError in generate_assistant_response: {e}", exc_info=True)
+        debug_info["status"] = "APIError"
+        debug_info["error_details"] = {
+            "message": str(e),
+            "status_code": getattr(e, "status_code", None),
+            "body": getattr(e, "body", str(getattr(e, "response", ""))),
+            "traceback": traceback.format_exc()
+        }
+        return "Извините, в данный момент ИИ-помощник временно недоступен из-за технических неполадок сервиса. Пожалуйста, попробуйте позже.", debug_info
     except Exception as e:
         logger.error(f"Unexpected error in generate_assistant_response: {e}", exc_info=True)
-        return "Произошла непредвиденная ошибка при обработке вашего запроса. Пожалуйста, попробуйте немного позже."
+        debug_info["status"] = "UnexpectedError"
+        debug_info["error_details"] = {
+            "error_type": type(e).__name__,
+            "message": str(e),
+            "traceback": traceback.format_exc()
+        }
+        return "Произошла непредвиденная ошибка при обработке вашего запроса. Пожалуйста, попробуйте немного позже.", debug_info
+
+
+async def generate_assistant_response(user_query: str, page: str = None, history: List[Dict[str, str]] = None) -> str:
+    """
+    Генерирует ответ ИИ-помощника на основе базы знаний приложения с учетом истории диалога и мультиконтекста.
+    """
+    answer, _ = await generate_assistant_response_with_debug(user_query, page=page, history=history)
+    return answer

@@ -315,7 +315,6 @@
             const bubble = document.createElement("div");
             bubble.className = "assistant-msg " + (type === "user" ? "assistant-msg-user" : (type === "error" ? "assistant-msg-error" : "assistant-msg-ai"));
             
-            // Format simple markdown breaks/bold if AI
             if (type === "ai" || type === "error") {
                 let formatted = text
                     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
