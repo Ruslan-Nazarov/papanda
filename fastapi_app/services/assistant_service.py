@@ -156,13 +156,25 @@ def _get_categories() -> List[str]:
 
 AVAILABLE_CATEGORIES: List[str] = _get_categories()
 
-_api_key = os.getenv("GROQ_API_KEY", "dummy_key_if_not_set")
-groq_client: Groq = Groq(api_key=_api_key)
-
+_groq_client = None
 
 def get_groq_client() -> Groq:
-    """Возвращает инициализированный клиент Groq."""
-    return groq_client
+    """Возвращает инициализированный клиент Groq с ленивой загрузкой ключа."""
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            # На случай, если .env еще не загружен (хотя config.py уже должен был это сделать)
+            from dotenv import load_dotenv
+            from ..config import BASE_DIR
+            load_dotenv(dotenv_path=BASE_DIR / ".env")
+            api_key = os.getenv("GROQ_API_KEY")
+        
+        if not api_key or api_key == "your_groq_api_key_here":
+            api_key = "dummy_key_if_not_set"
+            
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
 
 
 def classify_query(user_query: str, page: str = None, history: List[Dict[str, str]] = None) -> Tuple[str, str]:
@@ -231,14 +243,14 @@ def classify_query(user_query: str, page: str = None, history: List[Dict[str, st
     )
 
     try:
-        response = groq_client.chat.completions.create(
+        response = get_groq_client().chat.completions.create(
             model=FALLBACK_MODEL_NAME,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": full_query}
             ],
             temperature=0.1,
-            max_completion_tokens=10,
+            max_tokens=10,
         )
         content = response.choices[0].message.content or ""
         content = content.strip().lower().replace("category:", "").replace("lang:", "").replace("language:", "")
@@ -333,20 +345,20 @@ def generate_assistant_response(user_query: str, page: str = None, history: List
         messages_payload.append({"role": "user", "content": user_query})
 
         try:
-            response = groq_client.chat.completions.create(
+            response = get_groq_client().chat.completions.create(
                 model=MODEL_NAME,
                 messages=messages_payload,
                 temperature=0.3,
-                max_completion_tokens=800,
+                max_tokens=800,
             )
             return response.choices[0].message.content or ""
         except (RateLimitError, APIError) as e:
             logger.warning(f"Groq API error on 70B ({e}), falling back to 8B")
-            response = groq_client.chat.completions.create(
+            response = get_groq_client().chat.completions.create(
                 model=FALLBACK_MODEL_NAME,
                 messages=messages_payload,
                 temperature=0.3,
-                max_completion_tokens=800,
+                max_tokens=800,
             )
             return response.choices[0].message.content or ""
 
