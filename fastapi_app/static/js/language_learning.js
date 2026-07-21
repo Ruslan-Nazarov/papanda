@@ -124,12 +124,15 @@ import { StickerService, StickerRenderer, StickerOverview, StickerModal } from "
         });
 
         // Update counter
-        const progressSpan = document.getElementById('sentence-progress');
-        if (progressSpan) {
-            progressSpan.innerText = `Sentence ${currentSentenceIndex + 1} / ${activeSentences.length}`;
-            progressSpan.style.display = 'inline-block';
+        const sentenceProgress = document.getElementById('sentence-progress');
+        if (sentenceProgress && activeSentences.length > 0) {
+            sentenceProgress.innerText = `${currentSentenceIndex + 1} / ${activeSentences.length}`;
+            sentenceProgress.style.display = 'inline-block';
+        } else if (sentenceProgress) {
+            sentenceProgress.style.display = 'none';
         }
 
+        // Make the sentence visible by default
         runFlash();
     }
 

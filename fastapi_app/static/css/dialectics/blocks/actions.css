@@ -1,0 +1,230 @@
+/* --- Block Actions --- */
+.dialectics-block .block-actions,
+.dialectics-block-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 14px 8px 14px;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    opacity: 1;
+    transition: opacity 0.2s ease, padding 0.2s ease;
+    justify-content: flex-start;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+}
+
+.dialectics-block.is-editing .dialectics-block-sticky-header,
+.dialectics-block.is-editing .dialectics-block-actions,
+.dialectics-block.is-editing .dialectics-content-inner,
+.dialectics-block.is-editing .dialectics-block-words-row {
+    display: none !important;
+}
+
+.dialectics-block-sticky-header {
+    /* По умолчанию — просто обычный элемент, не sticky */
+    position: relative;
+    z-index: 15;
+    background: var(--color-bg-white, #ffffff);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Sticky активируется только если блок достаточно высокий */
+.dialectics-block.header-can-stick .dialectics-block-sticky-header {
+    position: sticky !important;
+    top: 52px !important;
+    z-index: 15 !important;
+}
+
+/* Буфер снизу: шапка не перекрывает последние строки.
+   Не применяется к блокам is-sticky (плавают весь блок). */
+.dialectics-block.header-can-stick:not(.is-sticky) {
+    padding-bottom: 60px !important;
+}
+
+.dialectics-block-actions.actions-floating {
+    position: fixed !important;
+    top: 20px;
+    z-index: 100 !important;
+    flex-direction: column !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 24px !important;
+    padding: 10px 6px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    animation: slideInLeftMenu 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    max-height: none !important;
+    height: auto !important;
+    gap: 8px !important;
+    align-items: center !important;
+    width: 38px !important;
+    box-sizing: border-box !important;
+}
+
+.dialectics-block-actions.actions-floating .btn-block-sep {
+    display: none !important;
+}
+
+@keyframes slideInLeftMenu {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+}
+
+.dialectics-block .dialectics-content-inner {
+    padding: 12px 14px 12px 14px;
+    line-height: 1.6;
+}
+
+.dialectics-block .dialectics-content-inner p {
+    margin-top: 0;
+    margin-bottom: 0.9em;
+}
+
+.dialectics-block .dialectics-content-inner p:last-child {
+    margin-bottom: 0;
+}
+
+.dialectics-block .dialectics-content-inner ul,
+.dialectics-block .dialectics-content-inner ol {
+    margin-top: 0.4em;
+    margin-bottom: 0.9em;
+    padding-left: 1.5em;
+}
+
+.dialectics-block .dialectics-content-inner li {
+    margin-bottom: 0.35em;
+}
+
+
+.btn-block-edit, .btn-block-del, .btn-block-ai, .btn-block-sticker, .btn-block-sources, .btn-block-words, .btn-block-color, .btn-block-pin, .btn-block-hacks, .btn-block-hidden-phrases, .btn-block-check-ai, .btn-block-copy {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #94a3b8;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+.btn-block-pin:hover {
+    color: #4338ca;
+    border-color: #c7d2fe;
+    background: #e0e7ff;
+}
+
+.btn-block-copy:hover {
+    color: #10b981;
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+}
+
+.btn-block-edit:hover {
+    color: #6366f1;
+    border-color: #c7d2fe;
+    background: #eef2ff;
+}
+
+.btn-block-del:hover {
+    color: #ef4444;
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.btn-block-ai:hover {
+    color: #8b5cf6;
+    border-color: #ddd6fe;
+    background: #f5f3ff;
+}
+
+.btn-block-sources:hover {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.btn-block-words:hover {
+    color: #1e40af;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.btn-block-sticker:hover {
+    color: #f59e0b;
+    border-color: #fde68a;
+    background: #fef3c7;
+}
+
+.btn-block-color:hover {
+    color: #0d9488;
+    border-color: #99f6e4;
+    background: #f0fdfa;
+}
+
+.btn-block-hacks:hover {
+    color: #eab308;
+    border-color: #fef08a;
+    background: #fefce8;
+}
+
+.btn-block-hidden-phrases:hover {
+    color: #0284c7;
+    border-color: #bae6fd;
+    background: #f0f9ff;
+}
+
+.btn-block-check-ai:hover {
+    color: #0ea5e9;
+    border-color: #bae6fd;
+    background: #f0f9ff;
+}
+
+/* --- Floating Editor Formatting Toolbar --- */
+.format-btn {
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px;
+    color: #475569;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    width: 26px;
+}
+.format-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+.format-btn.active {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+    font-weight: bold;
+}
+

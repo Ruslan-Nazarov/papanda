@@ -132,6 +132,11 @@ export const DragAndDropService = {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(ids)
+                    }).then(res => {
+                        if (!res.ok) showToast(window._("toast.failed_to_update_status"), 'error');
+                    }).catch(err => {
+                        console.error('[DnD] reorder_events failed:', err);
+                        showToast(window._("toast.network_error"), 'error');
                     });
                 } else {
                     await handleCrossListMove(evt);
@@ -150,6 +155,11 @@ export const DragAndDropService = {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(ids)
+                    }).then(res => {
+                        if (!res.ok) showToast(window._("toast.failed_to_update_status"), 'error');
+                    }).catch(err => {
+                        console.error('[DnD] reorder_events failed:', err);
+                        showToast(window._("toast.network_error"), 'error');
                     });
                 } else {
                     await handleCrossListMove(evt);

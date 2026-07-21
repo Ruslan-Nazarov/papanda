@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Language Dashboard - papanda{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=2.0" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/word_stats.css') }}?v=2.0" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/language_learning.css') }}?v=1" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- DOMPurify for XSS Protection -->
+    <script src="https://cdn.jsdelivr.net/npm/purify@3.0.6/dist/purify.min.js"></script>
+
+    <!-- GridStack.js -->
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+{% endblock %}
+
+{% block content %}
+    <!-- Modals -->
+    {% include 'partials/modals/word_modals.html' %}
+    {% include 'partials/modals/_word_stats_modal.html' %}
+    {% include 'partials/modals/_sentence_editor_modal.html' %}
+    
+    <!-- Help Popup for Tooltips -->
+    <div id="help-popup"></div>
+
+    <div style="width: 100%; max-width: 1600px; margin: 0 auto; padding: 20px 20px 0 20px; display: flex; flex-direction: column; gap: 20px;">
+        <!-- Top Navigation Bar -->
+        <div class="lang-dashboard-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--color-border-light); border-radius: var(--radius-xl, 16px); box-shadow: var(--shadow-sm);">
+            <div style="display: flex; gap: 12px;">
+                <a href="/dashboard" class="footer-btn" style="min-width: auto; padding: 8px 20px; border-radius: 12px; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
+                    <span>🏠</span> {{ _('dashboard.widgets') | default('Виджеты') }}
+                </a>
+                <a href="/" class="footer-btn" style="min-width: auto; padding: 8px 20px; border-radius: 12px; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
+                    <span>📝</span> {{ _('header.dialectics') | default('Диалектика') }}
+                </a>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Language Switcher -->
+                <div style="position: relative; display: inline-block; height: 38px;">
+                    <select id="languageSwitcher" class="form-select" style="height: 100%; padding: 0 36px 0 16px; font-size: 0.9rem; font-weight: 800; border-radius: 12px; border: 1.5px solid var(--color-border-medium); background: white; color: var(--color-text-dark); appearance: none; -webkit-appearance: none; cursor: pointer; text-align: center; font-family: inherit;" onchange="switchLanguage(this.value)">
+                        <option value="en" {% if request.cookies.get('locale', 'en') == 'en' %}selected{% endif %}>🇬🇧 EN</option>
+                        <option value="ru" {% if request.cookies.get('locale', 'en') == 'ru' %}selected{% endif %}>🇷🇺 RU</option>
+                        <option value="kz" {% if request.cookies.get('locale', 'en') in ['kz', 'kk'] %}selected{% endif %}>🇰🇿 KZ</option>
+                    </select>
+                    <div style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.5; font-size: 0.65rem;">
+                        ▼
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-stack" style="visibility: hidden; width: 100%;">
+        <!-- Metric Cards (Draggable GridStack Items) -->
+        
+        <!-- Total Volume -->
+        <div class="grid-stack-item" id="metric_total" gs-id="metric_total" gs-x="0" gs-y="0" gs-w="2" gs-h="3">
+            <div class="grid-stack-item-content">
+                <div class="premium-card metric-card card-total card-relative" style="height: 100%; display: flex; flex-direction: column; padding: 12px; border: 1px solid var(--color-border-light);">
+                    <div class="widget-header" style="padding: 0 !important; background: transparent !important; border-bottom: none !important; cursor: move; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+                        <span style="font-size: 0.65rem; color: #ccc; font-weight: bold; pointer-events: none;">⋮⋮</span>
+                        {% if show_lang_tips != False %}
+                        <span class="help-trigger" onclick="showHelp(event, 'Total number of unique words in your database across all languages.')" style="position: static; transform: none; width: 14px; height: 14px; font-size: 9px; opacity: 0.7;">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="metric-label" style="font-size: 0.75rem; text-align: center;">Total Volume</span>
+                    <span class="metric-value" style="font-size: 1.8rem; margin: auto 0; text-align: center; line-height: 1;">{{ total_count }}</span>
+                    <div class="progress-bar-container" style="width: 100%; margin-top: auto; height: 6px;">
+                        <div class="progress-bar" style="width: 100%; background: #ccc"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coverage -->
+        <div class="grid-stack-item" id="metric_coverage" gs-id="metric_coverage" gs-x="2" gs-y="0" gs-w="2" gs-h="4">
+            <div class="grid-stack-item-content">
+                <div class="premium-card metric-card card-coverage card-relative" style="height: 100%; display: flex; flex-direction: column; padding: 12px; border: 1px solid var(--color-border-light);">
+                    <div class="widget-header" style="padding: 0 !important; background: transparent !important; border-bottom: none !important; cursor: move; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
+                        <span style="font-size: 0.65rem; color: #ccc; font-weight: bold; pointer-events: none;">⋮⋮</span>
+                        {% if show_lang_tips != False %}
+                        <span class="help-trigger" onclick="showHelp(event, 'Percentage of words you have encountered at least once.')" style="position: static; transform: none; width: 14px; height: 14px; font-size: 9px; opacity: 0.7;">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="metric-label" style="font-size: 0.75rem; text-align: center; margin-bottom: 6px;">Coverage</span>
+                    <div style="display: flex; flex-direction: column; gap: 2px; overflow-y: auto; flex: 1; min-height: 0; padding-right: 2px;">
+                        {% for lang_code in active_languages %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                            <span>{{ language_flags.get(lang_code, lang_code|upper) }} {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+                            <strong>{{ coverage_by_lang.get(lang_code, 0) }}%</strong>
+                        </div>
+                        <div style="font-size: 0.65rem; color: #888; text-align: right; margin-bottom: 4px;">
+                            {{ learned_count_by_lang.get(lang_code, 0) }} words
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="progress-bar-container" style="width: 100%; margin-top: auto; height: 6px;">
+                        <div class="progress-bar" style="width: {{ coverage }}%; background: lightgreen;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- iMW Index -->
+        <div class="grid-stack-item" id="metric_imw" gs-id="metric_imw" gs-x="4" gs-y="0" gs-w="2" gs-h="4">
+            <div class="grid-stack-item-content">
+                <div class="premium-card metric-card card-imw card-relative" style="height: 100%; display: flex; flex-direction: column; padding: 12px; border: 1px solid var(--color-border-light);">
+                    <div class="widget-header" style="padding: 0 !important; background: transparent !important; border-bottom: none !important; cursor: move; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
+                        <span style="font-size: 0.65rem; color: #ccc; font-weight: bold; pointer-events: none;">⋮⋮</span>
+                        {% if show_lang_tips != False %}
+                        <span class="help-trigger" onclick="showHelp(event, 'Intelligent Memory Weight. Shows how close you are to the target of 80 repetitions per word.')" style="position: static; transform: none; width: 14px; height: 14px; font-size: 9px; opacity: 0.7;">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="metric-label" style="font-size: 0.75rem; text-align: center; margin-bottom: 6px;">iMW Index</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; min-height: 0;">
+                        {% for lang_code in active_languages %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                            <span>{{ language_flags.get(lang_code, lang_code|upper) }} {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+                            <strong>{{ imw_by_lang.get(lang_code, 0) }}%</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="progress-bar-container" style="width: 100%; margin-top: auto; height: 6px;">
+                        <div class="progress-bar" style="width: {{ imw }}%; background: #5D9CEC;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fully Learned -->
+        <div class="grid-stack-item" id="metric_learned" gs-id="metric_learned" gs-x="6" gs-y="0" gs-w="2" gs-h="3">
+            <div class="grid-stack-item-content">
+                <div class="premium-card metric-card card-relative" style="height: 100%; display: flex; flex-direction: column; border-color: #27ae60; background-color: #f0fff4; padding: 12px; border-width: 1px;">
+                    <div class="widget-header" style="padding: 0 !important; background: transparent !important; border-bottom: none !important; cursor: move; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+                        <span style="font-size: 0.65rem; color: #ccc; font-weight: bold; pointer-events: none;">⋮⋮</span>
+                        {% if show_lang_tips != False %}
+                        <span class="help-trigger" onclick="showHelp(event, 'Number of word triplets marked as fully known and excluded from regular training.')" style="position: static; transform: none; width: 14px; height: 14px; font-size: 9px; opacity: 0.7;">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="metric-label" style="font-size: 0.75rem; text-align: center;">Fully Learned</span>
+                    <span class="metric-value" style="font-size: 1.8rem; margin: auto 0; text-align: center; color: #27ae60; line-height: 1;">{{ fully_learned_count }}</span>
+                    <span style="font-size: 0.65rem; color: #888; text-align: center; display: block; margin-bottom: 4px;">Triplets excluded</span>
+                    <div class="progress-bar-container" style="width: 100%; margin-top: auto; height: 6px;">
+                        <div class="progress-bar" style="width: {{ (fully_learned_count / total_count * 100)|round(1) if total_count > 0 else 0 }}%; background: #27ae60;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Known Languages -->
+        {% set colors = ['#3498DB', '#2ECC71', '#F1C40F'] %}
+        {% for lang_code in active_languages %}
+        <div class="grid-stack-item" id="metric_known_{{ lang_code }}" gs-id="metric_known_{{ lang_code }}" gs-x="{{ 8 + loop.index0 * 2 }}" gs-y="0" gs-w="2" gs-h="3">
+            <div class="grid-stack-item-content">
+                <div class="premium-card metric-card card-relative" style="height: 100%; display: flex; flex-direction: column; border-color: {{ colors[loop.index0 % 3] }}; padding: 12px; border-width: 1px;">
+                    <div class="widget-header" style="padding: 0 !important; background: transparent !important; border-bottom: none !important; cursor: move; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+                        <span style="font-size: 0.65rem; color: #ccc; font-weight: bold; pointer-events: none;">⋮⋮</span>
+                        {% if show_lang_tips != False %}
+                        <span class="help-trigger" onclick="showHelp(event, 'Number of words marked as Known for the {{ all_languages.get(lang_code, lang_code|upper) }} language.')" style="position: static; transform: none; width: 14px; height: 14px; font-size: 9px; opacity: 0.7;">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="metric-label" style="font-size: 0.75rem; text-align: center;">Known {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+                    <span class="metric-value" style="font-size: 1.8rem; margin: auto 0; text-align: center; color: {{ colors[loop.index0 % 3] }}; line-height: 1;">{{ known_counts.get(lang_code, 0) }}</span>
+                    <div class="progress-bar-container" style="width: 100%; margin-top: auto; height: 6px;">
+                        <div class="progress-bar" style="width: {{ (known_counts.get(lang_code, 0) / total_count * 100)|round(1) if total_count > 0 else 0 }}%; background: {{ colors[loop.index0 % 3] }};"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Shown Today -->
+        <div class="grid-stack-item" id="metric_today" gs-id="metric_today" gs-x="10" gs-y="0" gs-w="2" gs-h="3">
+            <div class="grid-stack-item-content">
+                <div class="premium-card metric-card card-relative" style="height: 100%; display: flex; flex-direction: column; padding: 12px; border: 1px solid var(--color-border-light);">
+                    <div class="widget-header" style="padding: 0 !important; background: transparent !important; border-bottom: none !important; cursor: move; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+                        <span style="font-size: 0.65rem; color: #ccc; font-weight: bold; pointer-events: none;">⋮⋮</span>
+                        {% if show_lang_tips != False %}
+                        <span class="help-trigger" onclick="showHelp(event, 'Number of times any word was displayed on your dashboard or in a workout today.')" style="position: static; transform: none; width: 14px; height: 14px; font-size: 9px; opacity: 0.7;">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="metric-label" style="font-size: 0.75rem; text-align: center;">Shown Today</span>
+                    <span class="metric-value" style="font-size: 1.8rem; margin: auto 0; text-align: center; line-height: 1;">{{ shown_today }}</span>
+                    <div class="progress-bar-container" style="width: 100%; margin-top: auto; height: 6px;">
+                        <div class="progress-bar" style="width: 100%; background: var(--color-primary)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dictionary Widget -->
+        <div class="grid-stack-item" id="words_dictionary" gs-id="words_dictionary" gs-x="0" gs-y="4" gs-w="4" gs-h="10">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/dictionary_widget.html' %}</div>
+        </div>
+
+        <!-- Workout Widget -->
+        <div class="grid-stack-item" id="words_workout" gs-id="words_workout" gs-x="4" gs-y="4" gs-w="4" gs-h="6">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/workout_widget.html' %}</div>
+        </div>
+
+        <!-- Sentence Trainer Widget -->
+        <div class="grid-stack-item" id="words_sentence_trainer" gs-id="words_sentence_trainer" gs-x="8" gs-y="4" gs-w="4" gs-h="6">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/sentence_trainer_widget.html' %}</div>
+        </div>
+
+        <!-- Volume & Coverage Stats Widget -->
+        <div class="grid-stack-item" id="words_volume_coverage" gs-id="words_volume_coverage" gs-x="4" gs-y="10" gs-w="4" gs-h="5">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/words_volume_coverage_widget.html' %}</div>
+        </div>
+
+        <!-- iMW Stats Widget -->
+        <div class="grid-stack-item" id="words_imw" gs-id="words_imw" gs-x="8" gs-y="10" gs-w="4" gs-h="8">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/words_imw_widget.html' %}</div>
+        </div>
+
+        <!-- Frequent Words Widget -->
+        <div class="grid-stack-item" id="words_frequent" gs-id="words_frequent" gs-x="0" gs-y="18" gs-w="4" gs-h="5">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/words_frequent_widget.html' %}</div>
+        </div>
+
+        <!-- Charts Widget -->
+        <div class="grid-stack-item" id="words_charts" gs-id="words_charts" gs-x="4" gs-y="18" gs-w="8" gs-h="5">
+            <div class="grid-stack-item-content">{% include 'partials/widgets/words/words_charts_widget.html' %}</div>
+        </div>
+    </div>
+
+    {% include 'partials/footer.html' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', path='js/services/WidgetSettingsService.js') }}"></script>
+    <script>
+        // Global variables for dashboard
+        window.P_LANGUAGE_LAYOUT = {{ language_layout|safe if language_layout else '{}' }};
+        window.P_ACTIVE_LANGUAGES = {{ active_languages|tojson|safe }};
+        window.P_ALL_LANGUAGES = {{ all_languages|tojson|safe }};
+        window.DASHBOARD_ACTIVE_LANGS = window.P_ACTIVE_LANGUAGES;
+        window.DASHBOARD_ALL_LANGS = window.P_ALL_LANGUAGES;
+        window.DASHBOARD_LANG_FLAGS = { 'en': '🇬🇧', 'it': '🇮🇹', 'de': '🇩🇪', 'ru': '🇷🇺', 'fr': '🇫🇷', 'es': '🇪🇸', 'tr': '🇹🇷', 'kz': '🇰🇿' };
+        window.LANG_ANCHORS = {{ lang_anchors_json | safe }};
+
+        // Statistics Variables for word_stats.js
+        window.WS_ACTIVE_LANGS          = {{ active_languages | tojson | safe }};
+        window.WS_ALL_LANG_NAMES        = {{ all_languages    | tojson | safe }};
+        window.WS_LANGUAGE_FLAGS        = {{ language_flags   | tojson | safe }};
+
+        window.WS_DISTRIBUTION          = {
+            keys:   {{ distribution.keys()   | list | tojson | safe }},
+            values: {{ distribution.values() | list | tojson | safe }}
+        };
+        window.WS_DAILY_SHOWS_LABELS    = {{ daily_shows_labels | tojson | safe }};
+        window.WS_DAILY_SHOWS_DATA      = {{ daily_shows_data   | tojson | safe }};
+
+        window.WS_KNOWN_COUNTS          = {
+            langs:  [{% for lang_code in active_languages %}"{{ all_languages.get(lang_code, lang_code|upper) }}",{% endfor %}],
+            values: [{% for lang_code in active_languages %}{{ known_counts.get(lang_code, 0) }},{% endfor %}]
+        };
+        window.WS_TOTAL_COUNT           = {{ total_count }};
+
+        window.WS_HISTORY_LABELS          = {{ history_labels         | tojson | safe }};
+        window.WS_HISTORY_TOTAL_SUCCESS   = {{ history_total_success  | tojson | safe }};
+        window.WS_HISTORY_RETENTION       = {{ history_retention      | tojson | safe }};
+        window.WS_HISTORY_LANG_SUCCESS    = {{ history_lang_success   | tojson | safe }};
+        window.WS_HISTORY_LANG_RETENTION  = {{ history_lang_retention | tojson | safe }};
+        window.WS_HAS_HISTORY             = {{ 'true' if history_labels else 'false' }};
+    </script>
+    
+    <!-- Word Stats Logic & Charts -->
+    <script src="{{ url_for('static', path='js/word_stats.js') }}?v=8"></script>
+
+    <!-- Sentence Trainer logic module -->
+    <script type="module" src="{{ url_for('static', path='js/language_learning.js') }}?v=2"></script>
+    <script id="sentences-data" type="application/json">
+        {{ sentences_json | safe }}
+    </script>
+
+    <script type="module">
+        import { initGrid, toggleWidget } from '{{ url_for("static", path="js/grid_controller.js") }}?v={{ range(1, 9999) | random }}';
+        import { initWordWidget } from '{{ url_for("static", path="js/word_widget.js") }}?v={{ range(1, 9999) | random }}';
+        import { ModalManager } from '{{ url_for("static", path="js/modules/ModalManager.js") }}?v={{ range(1, 9999) | random }}';
+        import { DashboardActionService } from '{{ url_for("static", path="js/modules/DashboardActionService.js") }}?v={{ range(1, 9999) | random }}';
+        import { HeaderService } from '{{ url_for("static", path="js/modules/HeaderService.js") }}';
+
+        window.toggleWidget = toggleWidget;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Init Gridstack
+            try {
+                const grid = initGrid({
+                    context: 'language',
+                    layout: window.P_LANGUAGE_LAYOUT
+                });
+            } catch (e) {
+                console.error("initGrid ERROR:", e);
+            }
+
+            // Word Stats logic
+            if (typeof initWordStats === 'function') {
+                initWordStats();
+            }
+
+            // Other inits
+            HeaderService.init();
+            ModalManager.initGlobal();
+            DashboardActionService.init();
+
+            // Initialize Word Widgets logic
+            try { 
+                await initWordWidget();
+                
+                // Fetch the words list and populate the dictionary
+                if (typeof window.refreshWords === 'function') {
+                    await window.refreshWords();
+                }
+            } catch (e) { 
+                console.error(`[Language Dashboard] Failed to init WordWidget:`, e); 
+            }
+
+            // Initialize Charts
+            if (typeof window.initCharts === 'function') {
+                window.initCharts();
+            }
+            if (window.WS_HAS_HISTORY && typeof window.updateHealthChart === 'function') {
+                window.updateHealthChart();
+            }
+        });
+    </script>
+{% endblock %}

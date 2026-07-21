@@ -153,10 +153,10 @@ async function deleteSearchWord() {
             }
             showToast('Word deleted successfully', 'success');
         } else {
-            alert(window._("toast.error_deleting_word") || "Error deleting word");
+            showToast(window._("toast.error_deleting_word") || "Error deleting word", "error");
         }
     } catch (e) {
-        alert(window._("toast.network_error") || "Network error");
+        showToast(window._("toast.network_error") || "Network error", "error");
     }
 }
 
@@ -234,11 +234,11 @@ window.saveWordStatsEdit = async function() {
             }
             window.closeWordStatsEdit();
         } else {
-            alert(window._("toast.error_saving_changes"));
+            showToast(window._("toast.error_saving_changes"), "error");
         }
     } catch (e) {
         console.error('Save failed', e);
-        alert(window._("toast.network_error"));
+        showToast(window._("toast.network_error"), "error");
     }
 };
 
@@ -277,11 +277,11 @@ async function saveWorkoutWordEdit() {
             window.closeWordStatsEdit();
             renderCard();
         } else {
-            alert(window._("toast.error_saving_changes"));
+            showToast(window._("toast.error_saving_changes"), "error");
         }
     } catch (e) {
         console.error('Save failed', e);
-        alert(window._("toast.network_error"));
+        showToast(window._("toast.network_error"), "error");
     }
 };
 
@@ -290,74 +290,81 @@ async function saveWorkoutWordEdit() {
 function initCharts() {
     // 1. Distribution Chart
     const distCanvas = document.getElementById('distChart');
-    if (!distCanvas) return; // not loaded yet
-    const distCtx = distCanvas.getContext('2d');
-    new Chart(distCtx, {
-        type: 'bar',
-        data: {
-            labels: window.WS_DISTRIBUTION.keys,
-            datasets: [{
-                label: 'Number of Words',
-                data: window.WS_DISTRIBUTION.values,
-                backgroundColor: ['#eee', '#FFE5B4', '#F2D2BD', '#FADBD8', '#D4E6F1', '#D5F5E3'],
-                borderWidth: 0,
-                borderRadius: 8
-            }]
-        },
-        options: {
-            maintainAspectRatio: false, responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
-        }
-    });
+    if (distCanvas) {
+        const distCtx = distCanvas.getContext('2d');
+        window.distChart = new Chart(distCtx, {
+            type: 'bar',
+            data: {
+                labels: window.WS_DISTRIBUTION.keys,
+                datasets: [{
+                    label: 'Number of Words',
+                    data: window.WS_DISTRIBUTION.values,
+                    backgroundColor: ['#eee', '#FFE5B4', '#F2D2BD', '#FADBD8', '#D4E6F1', '#D5F5E3'],
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                maintainAspectRatio: false, responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+            }
+        });
+    }
 
     // 2. Daily Word Shows Chart
-    const dailyCtx = document.getElementById('dailyShowsChart').getContext('2d');
-    new Chart(dailyCtx, {
-        type: 'bar',
-        data: {
-            labels: window.WS_DAILY_SHOWS_LABELS,
-            datasets: [{
-                label: 'Words shown',
-                data: window.WS_DAILY_SHOWS_DATA,
-                backgroundColor: 'rgba(242, 153, 74, 0.7)',
-                borderColor: '#F2994A',
-                borderWidth: 1, borderRadius: 4
-            }]
-        },
-        options: {
-            maintainAspectRatio: false, responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { precision: 0 } },
-                x: { grid: { display: false } }
+    const dailyCanvas = document.getElementById('dailyShowsChart');
+    if (dailyCanvas) {
+        const dailyCtx = dailyCanvas.getContext('2d');
+        window.dailyShowsChart = new Chart(dailyCtx, {
+            type: 'bar',
+            data: {
+                labels: window.WS_DAILY_SHOWS_LABELS,
+                datasets: [{
+                    label: 'Words shown',
+                    data: window.WS_DAILY_SHOWS_DATA,
+                    backgroundColor: 'rgba(242, 153, 74, 0.7)',
+                    borderColor: '#F2994A',
+                    borderWidth: 1, borderRadius: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false, responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                }
             }
-        }
-    });
+        });
+    }
 
     // 3. Knowledge by Language Chart
-    const pieCtx = document.getElementById('knowledgePieChart').getContext('2d');
-    new Chart(pieCtx, {
-        type: 'bar',
-        data: {
-            labels: window.WS_KNOWN_COUNTS.langs,
-            datasets: [{
-                label: 'Known Words',
-                data: window.WS_KNOWN_COUNTS.values,
-                backgroundColor: ['#3498DB', '#2ECC71', '#F1C40F'],
-                borderWidth: 0, borderRadius: 5
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, max: window.WS_TOTAL_COUNT, grid: { color: '#f8f8f8' } },
-                y: { grid: { display: false } }
+    const pieCanvas = document.getElementById('knowledgePieChart');
+    if (pieCanvas) {
+        const pieCtx = pieCanvas.getContext('2d');
+        window.knowledgePieChart = new Chart(pieCtx, {
+            type: 'bar',
+            data: {
+                labels: window.WS_KNOWN_COUNTS.langs,
+                datasets: [{
+                    label: 'Known Words',
+                    data: window.WS_KNOWN_COUNTS.values,
+                    backgroundColor: ['#3498DB', '#2ECC71', '#F1C40F'],
+                    borderWidth: 0, borderRadius: 5
+                }]
             },
-            maintainAspectRatio: false, responsive: true
-        }
-    });
+            options: {
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, max: window.WS_TOTAL_COUNT, grid: { color: '#f8f8f8' } },
+                    y: { grid: { display: false } }
+                },
+                maintainAspectRatio: false, responsive: true
+            }
+        });
+    }
 }
 
 // ── Brain Workout Efficiency Chart ────────────────────────────────────────────
@@ -609,8 +616,8 @@ async function resetAllProgress() {
         const res = await fetch('/reset_word_stats', { method: 'POST' });
         const data = await res.json();
         if (data.status === 'success') location.reload();
-        else alert(window._("toast.error") + (data.message || 'Unknown'));
-    } catch (e) { alert(window._("toast.failed_see_console")); }
+        else showToast(window._("toast.error") + (data.message || 'Unknown'), "error");
+    } catch (e) { showToast(window._("toast.failed_see_console"), "error"); }
 }
 
 // ── Help Tooltip ──────────────────────────────────────────────────────────────

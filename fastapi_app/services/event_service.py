@@ -87,7 +87,7 @@ class EventService(BaseService):
         physical_events = valid_physical
         
         combined = physical_events + virtual_events
-        combined.sort(key=lambda x: (x.position or 0, x.date))
+        combined.sort(key=lambda x: (x.date.date() if isinstance(x.date, datetime) else x.date, x.position or 0, x.date))
         
         from ..utils import attach_event_stickers_count
         await attach_event_stickers_count(self.db, combined, models.StickyNote)
@@ -186,6 +186,21 @@ class EventService(BaseService):
         except Exception as e:
             await self.db.rollback()
             logger.error(f"Error updating event {event_id} date: {e}")
+            return False
+
+    async def reorder_events(self, event_ids: List[int]) -> bool:
+        """Обновляет порядок событий (позицию)."""
+        try:
+            res = await self.db.execute(select(models.Event).where(models.Event.id.in_(event_ids)))
+            events = {e.id: e for e in res.scalars().all()}
+            for index, event_id in enumerate(event_ids):
+                if event_id in events:
+                    events[event_id].position = index
+            await self.db.commit()
+            return True
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Error reordering events: {e}")
             return False
 
     async def delete_event(self, event_id: int, mode: Optional[str] = None, event_date: Optional[str] = None) -> bool:

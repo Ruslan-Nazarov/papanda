@@ -45,6 +45,37 @@
         animation: assistantPulse 3s infinite ease-in-out;
     }
     
+    #papanda-assistant-fab.fab-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        padding: 0;
+        justify-content: center;
+    }
+    #papanda-assistant-fab.fab-circle .assistant-fab-text,
+    #papanda-assistant-fab.fab-circle .assistant-fab-close {
+        display: none;
+    }
+    
+    .assistant-fab-close {
+        margin-left: 8px;
+        font-size: 12px;
+        opacity: 0.6;
+        transition: opacity 0.2s, transform 0.2s, background-color 0.2s;
+        padding: 2px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+    }
+    .assistant-fab-close:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.15);
+    }
+    
     #papanda-assistant-modal {
         position: fixed;
         bottom: 88px;
@@ -234,7 +265,8 @@
 <!-- Floating Action Button -->
 <button id="papanda-assistant-fab" onclick="togglePapandaAssistant()" title="ИИ-помощник papanda">
     <span class="assistant-fab-icon">✨</span>
-    <span>помощник papanda</span>
+    <span class="assistant-fab-text">помощник papanda</span>
+    <span class="assistant-fab-close" onclick="toggleFabMinimize(event)" title="Свернуть в кружок">✕</span>
 </button>
 
 <!-- Chat Modal -->
@@ -332,15 +364,34 @@
 
         window.togglePapandaAssistant = function() {
             const modal = document.getElementById("papanda-assistant-modal");
+            const fab = document.getElementById("papanda-assistant-fab");
             if (!modal) return;
             const isHidden = window.getComputedStyle(modal).display === "none";
             if (isHidden) {
                 modal.style.display = "flex";
+                if (fab) fab.style.display = "none";
                 initPapandaAssistantUI();
                 const input = document.getElementById("papanda-assistant-input");
                 if (input) setTimeout(() => input.focus(), 100);
             } else {
                 modal.style.display = "none";
+                if (fab) fab.style.display = "flex";
+            }
+        };
+
+        window.toggleFabMinimize = function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const fab = document.getElementById("papanda-assistant-fab");
+            if (fab) {
+                fab.classList.add("fab-circle");
+                fab.title = "ИИ-помощник papanda (Правый клик — развернуть)";
+                localStorage.setItem("papanda_assistant_fab_minimized", "true");
+                if (window.showToast) {
+                    window.showToast("Кнопка свернута в кружок. Нажмите правой кнопкой мыши для разворачивания.", "info");
+                }
             }
         };
 
@@ -412,6 +463,27 @@
                     if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         sendPapandaAssistantMsg();
+                    }
+                });
+            }
+
+            const fab = document.getElementById("papanda-assistant-fab");
+            if (fab) {
+                const isMinimized = localStorage.getItem("papanda_assistant_fab_minimized") === "true";
+                if (isMinimized) {
+                    fab.classList.add("fab-circle");
+                    fab.title = "ИИ-помощник papanda (Правый клик — развернуть)";
+                }
+
+                fab.addEventListener("contextmenu", function(e) {
+                    if (fab.classList.contains("fab-circle")) {
+                        e.preventDefault();
+                        fab.classList.remove("fab-circle");
+                        fab.title = "ИИ-помощник papanda";
+                        localStorage.setItem("papanda_assistant_fab_minimized", "false");
+                        if (window.showToast) {
+                            window.showToast("Кнопка ассистента развернута", "info");
+                        }
                     }
                 });
             }

@@ -1,0 +1,42 @@
+<div class="premium-card words-widget frequent-words-widget" style="height: 100%; display: flex; flex-direction: column;">
+    <div class="widget-header" style="margin-bottom: 8px;">
+        <div class="widget-title">
+            <span class="widget-icon">🔥</span>
+            <span>Most Encountered Words</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'language')">▼</button>
+        </div>
+    </div>
+    <div class="widget-body" style="padding-top: 0; flex: 1; overflow-y: auto;">
+        <div class="top-words-list" style="display: flex; flex-direction: column; gap: 8px;">
+            {% for w in top_shown %}
+            <div class="word-tag-compact" title="{{ w.tooltip_text or w.eng }}" style="background: var(--color-bg-subtle); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--color-border-light);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <strong style="color: var(--color-text-dark); font-size: 0.85rem;">
+                        {{ w.ru or w.eng }}
+                        {% if w.is_learned or (w.knowledge_stats and w.knowledge_stats.values()|select('equalto', True)|list|length > 0) %}
+                        <span title="Learned" style="color:#27ae60; font-size: 0.85em;">✅</span>
+                        {% endif %}
+                    </strong>
+                    <span style="font-size: 0.7rem; color: var(--color-text-faint); font-weight: 700; background: var(--color-bg-app); padding: 2px 6px; border-radius: 4px;">
+                        {{ w.count }} {{ _('modal.shows') | default('shows') }}
+                    </span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-text-muted); display: flex; gap: 8px; flex-wrap: wrap;">
+                    {% if 'en' in active_languages and w.eng %}<span>🇬🇧 {{ w.eng }}</span>{% endif %}
+                    {% for lang_code in active_languages %}
+                    {% if lang_code != 'en' and lang_code != 'ru' %}
+                    {% set trans = w.translations.get(lang_code, '') if w.translations else '' %}
+                    {% if trans %}
+                    <span>{{ language_flags.get(lang_code, '') }} {{ trans }}</span>
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

@@ -15,6 +15,7 @@ from .services.event_service import EventService
 from .services.task_service import TaskService
 from .services.habit_service import HabitService
 from .services.chronology_service import ChronologyService
+from .services.dialectics_service import DialecticsService
 
 async def get_note_service(db: AsyncSession = Depends(get_db)) -> NoteService:
     """Возвращает экземпляр NoteService с внедренной сессией БД."""
@@ -71,3 +72,7 @@ async def get_habit_service(db: AsyncSession = Depends(get_db)) -> HabitService:
 async def get_chronology_service(db: AsyncSession = Depends(get_db)) -> ChronologyService:
     """Возвращает экземпляр ChronologyService с внедренной сессией БД."""
     return ChronologyService(db)
+
+async def get_dialectics_service(db: AsyncSession = Depends(get_db)) -> DialecticsService:
+    """Возвращает экземпляр DialecticsService с внедренной сессией БД."""
+    return DialecticsService(db)

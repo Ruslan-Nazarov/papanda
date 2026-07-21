@@ -1,0 +1,190 @@
+/* --- Question / Unclear Highlight --- */
+.dialectics-question-highlight {
+    background-color: rgba(254, 240, 138, 0.85);
+    color: #92400e;
+    border-bottom: 2px dashed #f59e0b;
+    padding: 1px 4px;
+    border-radius: 4px;
+    cursor: help;
+    font-weight: 500;
+}
+.dialectics-question-highlight:hover {
+    background-color: rgba(253, 224, 71, 0.95);
+    color: #78350f;
+}
+.dialectics-question-highlight::after {
+    content: " ❓";
+    font-size: 0.8em;
+    vertical-align: super;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* --- Hidden Phrase / Inline Footnote --- */
+.dialectics-hidden-phrase {
+    background-color: rgba(139, 92, 246, 0.12);
+    color: inherit;
+    border-bottom: 1.5px dotted #8b5cf6;
+    padding: 1px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline;
+}
+.dialectics-hidden-phrase:hover {
+    background-color: rgba(139, 92, 246, 0.22);
+}
+.dialectics-hidden-phrase::after {
+    user-select: none;
+    pointer-events: none;
+}
+.dialectics-hidden-phrase[data-expanded="false"]::after,
+.dialectics-hidden-phrase:not([data-expanded="true"])::after {
+    content: " ▾";
+    font-size: 0.8em;
+    color: #8b5cf6;
+    font-weight: bold;
+    margin-left: 2px;
+    vertical-align: baseline;
+}
+.dialectics-hidden-phrase[data-expanded="true"] {
+    background-color: rgba(139, 92, 246, 0.18);
+    border-bottom: 1.5px solid #8b5cf6;
+}
+.dialectics-hidden-phrase[data-expanded="true"]::after {
+    content: " ▴ 💡 " attr(data-note);
+    display: inline;
+    background: #f5f3ff;
+    color: #4c1d95;
+    padding: 2px 8px;
+    margin: 0 4px;
+    border-radius: 6px;
+    border: 1px solid #ddd6fe;
+    font-size: 0.9em;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.1);
+    white-space: normal;
+}
+
+/* --- Block Link / Smart Chip --- */
+.dialectics-block-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95em;
+    cursor: pointer;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    vertical-align: baseline;
+    margin: 0 2px;
+}
+.dialectics-block-link:hover {
+    background: rgba(59, 130, 246, 0.22);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+.dialectics-block-link::before {
+    content: "🔗";
+    font-size: 0.85em;
+    margin-right: 2px;
+}
+.dialectics-block-link::after {
+    content: "↗";
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+
+/* Prevent duplicate icons when mark is split across multiple inline segments inside the same block/paragraph */
+.dialectics-question-highlight:has(~ .dialectics-question-highlight)::after,
+.dialectics-hidden-phrase:has(~ .dialectics-hidden-phrase)::after,
+.dialectics-block-link + .dialectics-block-link::before,
+.dialectics-block-link:has(~ .dialectics-block-link)::after {
+    content: none !important;
+}
+
+/* --- Modern Quote Block --- */
+.modern-blockquote {
+    border-left: 4px solid #3b82f6 !important;
+    background: #f8fafc !important;
+    padding: 14px 20px !important;
+    margin: 16px 0 !important;
+    border-radius: 0 12px 12px 0 !important;
+    font-style: italic;
+    color: #334155 !important;
+    position: relative !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+.modern-blockquote::before {
+    content: "“" !important;
+    font-family: Georgia, serif !important;
+    font-size: 3rem !important;
+    color: #3b82f6 !important;
+    position: absolute !important;
+    left: 8px !important;
+    top: -12px !important;
+    line-height: 1 !important;
+    opacity: 0.15 !important;
+    pointer-events: none !important;
+}
+
+.quote-content {
+    margin-bottom: 6px !important;
+    font-family: inherit;
+    font-size: 1.05rem !important;
+    line-height: 1.6 !important;
+}
+
+.modern-blockquote .math-node,
+.quote-content .math-node,
+.modern-blockquote span[data-type="mathNode"],
+.quote-content span[data-type="mathNode"],
+.modern-blockquote .katex,
+.quote-content .katex {
+    font-style: normal !important;
+    display: inline-block;
+}
+
+.quote-author-line {
+    display: flex !important;
+    justify-content: flex-end !important;
+    font-size: 0.85rem !important;
+    font-style: normal !important;
+    color: #64748b !important;
+    font-family: inherit !important;
+    margin-top: 6px !important;
+}
+
+.quote-author-text {
+    cursor: pointer !important;
+    font-weight: 700 !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    transition: all 0.2s !important;
+    user-select: none !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+.quote-author-text:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+.quote-author-text.empty {
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+    font-style: italic !important;
+    background-color: transparent !important;
+    border: 1px dashed #cbd5e1 !important;
+}

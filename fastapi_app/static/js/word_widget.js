@@ -153,11 +153,11 @@ window.saveDashboardWordEdit = async function() {
             }
             window.closeEditModal();
         } else {
-            alert(window._("toast.error_saving_changes"));
+            showToast(window._("toast.error_saving_changes"), "error");
         }
     } catch (e) {
         console.error('Save failed', e);
-        alert(window._("toast.network_error"));
+        showToast(window._("toast.network_error"), "error");
     }
 };
 
@@ -186,10 +186,10 @@ window.deleteDashboardWord = async function() {
             }
             showToast('Word deleted successfully', 'success');
         } else {
-            alert(window._("toast.error_deleting_word") || "Error deleting word");
+            showToast(window._("toast.error_deleting_word") || "Error deleting word", "error");
         }
     } catch (e) {
-        alert(window._("toast.network_error") || "Network error");
+        showToast(window._("toast.network_error") || "Network error", "error");
     }
 };
 
@@ -360,7 +360,7 @@ window.resetWordStats = async function () {
         if (result.status === 'success') {
             await window.refreshWords();
         } else {
-            alert(window._("toast.reset_failed") + result.message);
+            showToast(window._("toast.reset_failed") + result.message, "error");
         }
     } catch (e) { console.error('Word reset failed', e); }
 };
@@ -485,7 +485,7 @@ window.openWorkoutEditWidget = function() {
     const word = testWords[currentIdx];
     if (!word) return;
     const mockBtn = document.createElement('button');
-    mockBtn.dataset.eng = word.word_to_test || word.eng;
+    mockBtn.dataset.eng = word.eng;
     mockBtn.dataset.ru = word.ru || '';
     mockBtn.dataset.meaning = word.meaning || '';
     
@@ -501,8 +501,8 @@ window.openWorkoutEditWidget = function() {
         });
     }
 
-    if (typeof window.openWordStatsModal === 'function') {
-        window.openWordStatsModal(mockBtn);
+    if (typeof window.openEditModalFromData === 'function') {
+        window.openEditModalFromData(mockBtn);
     }
 };
 
@@ -658,6 +658,9 @@ window.finishTestWidget = function() {
 
 export function initWordWidget() {
     // All handlers registered on window.* — no DOM wiring needed at init time.
+    if (typeof window.refreshWords === 'function') {
+        window.refreshWords();
+    }
     setTimeout(() => {
         const btnStart = document.getElementById('ww-btn-start-test');
         if (btnStart && !btnStart.dataset.bound) {

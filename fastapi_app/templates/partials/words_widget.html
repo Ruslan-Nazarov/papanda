@@ -1,171 +1,29 @@
-<script>
-    // Provide variables for word_stats.js when used directly on dashboard
-    window.DASHBOARD_ACTIVE_LANGS = {{ active_languages | tojson | safe }};
-    window.DASHBOARD_ALL_LANGS    = {{ all_languages | default({}) | tojson | safe }};
-    // Need a fallback for language_flags since it might not be passed to the dashboard endpoint
-    window.DASHBOARD_LANG_FLAGS   = { 'en': '🇬🇧', 'it': '🇮🇹', 'de': '🇩🇪', 'ru': '🇷🇺', 'fr': '🇫🇷', 'es': '🇪🇸', 'tr': '🇹🇷', 'kz': '🇰🇿' };
-</script>
 <div class="premium-card words-widget">
     <div class="widget-header" style="margin-bottom: 8px;">
         <div class="widget-title">
             <span class="widget-icon">📖</span>
-            <span>{{ _('dashboard.words') }}</span>
+            <span><a href="/languages" style="color: inherit; text-decoration: none;">{{ _('dashboard.words') }}</a></span>
             {% if show_widget_tips %}
             <span class="help-trigger" onclick="openWidgetHelpModal('{{ _('dashboard.words') }}')">?</span>
             {% endif %}
         </div>
         <div class="widget-actions">
             <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
-            <!-- Tabs -->
-            <button type="button" class="btn btn-secondary btn-icon tab-btn active" id="tab-btn-list" onclick="switchWordsTab('list')" style="background: var(--color-bg-subtle);" title="{{ _('dashboard.list') }}">📋</button>
-            <button type="button" class="btn btn-secondary btn-icon tab-btn" id="tab-btn-workout" onclick="switchWordsTab('workout')" title="{{ _('dashboard.recognition') }}">👀</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openLanguageLearningModal()" style="background: var(--color-bg-subtle); margin-left: 5px;" title="{{ _('dashboard.sentence_trainer') }}">🎓</button>
-            
-            <!-- Removed old full library link -->
-            <button type="button" class="btn btn-secondary btn-icon" onclick="openWordStatsModal()" title="{{ _('dashboard.statistics') }}">📊</button>
-            <button type="button" class="btn btn-secondary btn-icon" onclick="refreshWords()" title="{{ _('dashboard.refresh') }}">↻</button>
+            <a href="/languages" class="btn btn-secondary btn-icon" style="text-decoration: none; display: flex; align-items: center; justify-content: center;" title="Перейти в языковую панель">↗</a>
             <button type="button" class="btn btn-secondary btn-icon" onclick="toggleWidget(this)">▼</button>
         </div>
     </div>
 
-    <div class="widget-body" style="padding-top: 0;">
-        <!-- LIST TAB -->
-        <div id="words-tab-list">
-            <!-- Compact Stats Row -->
-            <div style="display: flex; gap: 12px; margin-bottom: 8px; padding: 0 4px; font-size: 0.7rem; color: var(--color-text-faint); text-transform: uppercase; font-weight: 800; border-bottom: 1px solid var(--color-bg-app);">
-            <span>V: <b id="volume-count" style="color: var(--color-primary);">{{ count_words_translate }}</b></span>
-            <span>C: <b id="coverage-count" style="color: var(--color-success);">{{ coverage_learning_words }}%</b></span>
-            <span>I: <b id="imw-count" style="color: var(--color-warning);">{{ iMW }}%</b></span>
+    <div class="widget-body" style="padding-top: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; height: calc(100% - 40px);">
+        <!-- Compact Stats Row -->
+        <div style="display: flex; gap: 12px; margin-bottom: 12px; padding: 0 4px; font-size: 0.9rem; color: var(--color-text-faint); text-transform: uppercase; font-weight: 800; justify-content: center;">
+            <div title="Volume / Объем">V: <b id="volume-count" style="color: var(--color-primary);">{{ count_words_translate }}</b></div>
+            <div title="Coverage / Покрытие">C: <b id="coverage-count" style="color: var(--color-success);">{{ coverage_learning_words }}%</b></div>
+            <div title="iMW / Важные слова">I: <b id="imw-count" style="color: var(--color-warning);">{{ iMW }}%</b></div>
         </div>
-
-        <!-- Table Header (100% Width) -->
-        <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); padding: 4px 12px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; color: var(--color-text-faint); letter-spacing: 0.05em; background: var(--color-bg-subtle); border-radius: 4px; margin-bottom: 4px;">
-            {% for lang in active_languages %}
-            <span>{{ lang }}</span>
-            {% endfor %}
-        </div>
-
-        <div id="words-list" style="display: flex; flex-direction: column;">
-            {% for word in words %}
-            <div class="word-row" 
-                 title="{{ word.foreign_word|e }} - {{ word.native_translation|e }}"
-                 style="padding: 8px 12px; border-bottom: 1px solid var(--color-bg-app); transition: all 0.2s; position: relative; cursor: pointer;"
-                 onmouseover="this.style.background='var(--color-bg-subtle)'; this.querySelector('.row-actions').style.opacity='1'" 
-                 onmouseout="this.style.background='transparent'; this.querySelector('.row-actions').style.opacity='0'">
-                
-                <!-- Main Content Grid -->
-                <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); gap: 8px;">
-                    <!-- Foreign Words (Top Row) -->
-                    {% for lang_code in active_languages %}
-                    <span class="font-study" style="font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal'; this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';" oncontextmenu="event.preventDefault(); this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal'; this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';">
-                        {{ word.translations.get(lang_code, '') }}
-                    </span>
-                    {% endfor %}
-                    
-                    <!-- Russian sub-text (Bottom Row, under first column only) -->
-                    <div style="grid-column: 1 / -1; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="this.style.whiteSpace = this.style.whiteSpace === 'normal' ? 'nowrap' : 'normal'; this.style.wordBreak = this.style.whiteSpace === 'normal' ? 'break-all' : 'normal';">
-                        <span style="font-weight: 600; color: var(--color-text-faint); font-size: 0.7rem; line-height: 1.2; opacity: 0.7;">
-                            {{ word.ru }}
-                        </span>
-                        {% if word.meaning %}
-                        <span style="font-style: italic; color: var(--color-text-faint); font-size: 0.65rem; opacity: 0.5; margin-left: 6px;">
-                            — {{ word.meaning }}
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Floating Actions -->
-                <div class="row-actions" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; background: var(--color-bg-subtle); padding: 4px; border-radius: 6px; box-shadow: -4px 0 12px var(--color-bg-subtle);">
-                    <button type="button" class="btn-icon" style="width: 22px; height: 22px; font-size: 0.65rem; border: 1px solid var(--color-border-light); border-radius: 4px; background: white;"
-                            data-eng="{{ word.eng|e }}"
-                            {% for lang_code in active_languages %}
-                            data-lang-{{ lang_code|lower }}="{{ word.translations.get(lang_code, '')|e }}"
-                            {% endfor %}
-                            data-ru="{{ (word.ru or '')|e }}"
-                            data-meaning="{{ (word.meaning or '')|e }}"
-                            onclick="openEditModalFromData(this)">✎</button>
-                    <button type="button" class="btn-icon" style="width: 22px; height: 22px; font-size: 0.65rem; border: 1px solid var(--color-border-light); border-radius: 4px; color: var(--color-success); background: white;" onclick="markTripletLearned('{{ word.eng|e }}', this)">✓</button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        </div> <!-- End words-tab-list -->
-
-        <!-- WORKOUT TAB -->
-        <div id="words-tab-workout" style="display: none; padding: 20px 10px; min-height: 220px; flex-direction: column; justify-content: center;">
-            <div id="ww-test-start-view" style="text-align: center; padding: 10px 0;">
-                <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px;">
-                    <p style="font-size: 0.85rem; color: var(--color-text-body); margin: 0;">{{ _('dashboard.ready_for_a') }} <span id="ww-workout-count-display">5</span>{{ _('dashboard.word_recognition_q') }}</p>
-                    <span class="edit-btn" style="cursor: pointer; font-size: 0.8em; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" onclick="openWorkoutSettingsModalWidget()" title="{{ _('dashboard.recognition_settings') }}">⚙️</span>
-                </div>
-                <button id="ww-btn-start-test" type="button" style="background: #9b59b6; color: white; border: none; padding: 8px 24px; font-size: 0.95rem; border-radius: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(155, 89, 182, 0.25);">{{ _('dashboard.start_test') }}</button>
-                <p style="font-size: 0.78rem; color: var(--color-text-muted); opacity: 0.85; max-width: 300px; margin: 14px auto 0; line-height: 1.35;">{{ _('dashboard.recognition_hint') }}</p>
-                <div id="ww-test-log" style="margin-top: 8px; color: #c00; min-height: 16px; font-size: 0.75rem;"></div>
-            </div>
-
-            <div id="ww-test-active-view" style="display: none; text-align: center; padding: 10px 0; position: relative;">
-                <label class="workout-hint-toggle" style="position: absolute; top: 0; right: 4px; z-index: 5;" title="{{ _('dashboard.hint') }}">
-                    <span style="font-size: 0.75rem;">💡</span>
-                    <div class="workout-pill-switch">
-                        <input type="checkbox" id="ww-toggle-auto-hint" onchange="window.onAutoHintToggleWidget()">
-                        <span class="workout-pill-slider"></span>
-                    </div>
-                </label>
-                <div id="ww-test-lang-header" style="text-transform: uppercase; font-size: 0.7em; color: #9b59b6; font-weight: bold; margin-bottom: 2px;">{{ _('dashboard.translate_this') }}</div>
-                <div id="ww-word-show-count" style="font-size: 0.65em; color: var(--color-text-muted); margin-bottom: 6px; background: var(--color-bg-subtle); display: inline-block; padding: 2px 8px; border-radius: 8px;">{{ _('dashboard.seen') }} 0 {{ _('dashboard.times') }}</div>
-                <div>
-                    <div id="ww-current-word-display" style="font-size: 1.5em; font-weight: bold; margin-bottom: 6px; color: var(--color-text-dark); display: inline-block;">...</div>
-                    <span id="ww-learned-icon" style="display:none; font-size: 0.9em; vertical-align: middle; margin-left: 6px; color: var(--color-success);" title="{{ _('dashboard.learned') }}">✅</span>
-                    <span id="ww-workout-edit-trigger" class="edit-btn" style="display:none; cursor:pointer;" onclick="window.openWorkoutEditWidget()">✎ {{ _('dashboard.edit') }}</span>
-                </div>
-                <div id="ww-current-translation-display" style="font-size: 0.9em; color: var(--color-text-faint); margin-bottom: 20px; visibility: hidden;">{{ _('dashboard.translation') }}</div>
-
-                <div style="display: flex; gap: 16px; justify-content: center; align-items: center; margin-bottom: 12px;">
-                    <button id="ww-btn-known" type="button" style="background: #16a34a; color: white; border: none; padding: 10px 28px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3); transition: transform 0.1s, box-shadow 0.1s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">{{ _('dashboard.i_know_this') }}</button>
-                    <button id="ww-btn-unknown" type="button" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.25); transition: transform 0.1s, box-shadow 0.1s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">{{ _('dashboard.dont_know') }}</button>
-                </div>
-                <div style="display: flex; justify-content: center; gap: 12px;">
-                    <button id="ww-btn-undo" type="button" style="display: none; background: transparent; color: #64748b; border: 1px dashed #64748b; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="{{ _('dashboard.undo') }}">↩️ {{ _('dashboard.undo') }}</button>
-                    <button id="ww-btn-learn-triplet" type="button" style="background: transparent; color: #16a34a; border: 1px dashed #16a34a; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'" title="Mark all translations as learned">✓ {{ _('dashboard.all') }}</button>
-                </div>
-            </div>
-
-            <div id="ww-test-finish-view" style="display: none; text-align: center; padding: 10px 0;">
-                <div style="font-size: 2em; margin-bottom: 8px">🏆</div>
-                <h4 style="margin: 0; color: var(--color-text-dark); font-size: 1rem;">{{ _('dashboard.recognition_complete') }}</h4>
-                <p id="ww-test-result-summary" style="font-size: 0.85rem; color: var(--color-text-body); margin-top: 6px;">{{ _('dashboard.you_knew') }} 0 {{ _('dashboard.out_of') }} 5 {{ _('dashboard.words_lower') }}</p>
-                <div style="display: flex; gap: 8px; justify-content: center; margin-top: 12px;">
-                    <button id="ww-btn-try-again" type="button" style="background: none; border: 1px solid #9b59b6; color: #9b59b6; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">{{ _('dashboard.try_again') }}</button>
-                </div>
-            </div>
-            
-            <div id="ww-test-progress" style="font-size: 0.6em; background: var(--color-bg-subtle); padding: 2px 10px; border-radius: 10px; color: var(--color-text-muted); display: none; text-align: center; margin-top: 12px;">{{ _('dashboard.word') }} 1/5</div>
-        </div>
-    </div>
-</div>
-
-<!-- Recognition Settings Modal (Widget Version) -->
-<div id="workoutSettingsModalWidget" class="modal premium-modal" style="display: none; z-index: 1050;">
-    <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-xl); padding: 0; overflow: hidden; background: white;">
-        <div class="modal-header" style="border-bottom: 1px solid var(--color-bg-app); padding: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: 1.25rem; font-weight: 850; letter-spacing: -0.02em; margin: 0;">{{ _('dashboard.recognition_settings') }}</h2>
-            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 0; color: var(--color-text-muted);" onclick="closeWorkoutSettingsModalWidget()">✕</button>
-        </div>
-        <div class="modal-body" style="padding: 24px;">
-            <div class="form-group" style="margin-bottom: 24px;">
-                <label class="form-label">{{ _('dashboard.words_per_session') }}</label>
-                <input type="number" id="settingWorkoutLimitWidget" min="1" max="50" value="5" class="form-input" />
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">{{ _('dashboard.max_previously_learned') }}</label>
-                <input type="number" id="settingWorkoutMaxKnownWidget" min="0" max="50" value="1" class="form-input" />
-                <div style="font-size: 0.8em; color: var(--color-text-muted); margin-top: 8px;">{{ _('dashboard.limit_previously_learned') }}</div>
-            </div>
-        </div>
-        <div class="modal-footer" style="background: var(--color-bg-subtle); padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl);">
-            <button type="button" class="btn btn-secondary" onclick="closeWorkoutSettingsModalWidget()" style="flex:1;">{{ _('dashboard.cancel') }}</button>
-            <button type="button" class="btn btn-primary" onclick="saveWorkoutSettingsWidget()" style="flex:1;">{{ _('dashboard.save') }}</button>
-        </div>
+        
+        <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 15px;">Полная статистика, словарь и тесты перенесены в отдельную языковую панель.</p>
+        
+        <a href="/languages" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">Открыть языковую панель</a>
     </div>
 </div>

@@ -1,0 +1,361 @@
+/* --- Dialectics Blocks & Content Nodes --- */
+
+/* --- Block Insert Zones --- */
+.block-insert-row {
+    width: 100%;
+    height: 28px;
+    position: relative;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    margin: 4px 0;
+    z-index: 10;
+}
+.block-insert-row:hover { opacity: 1; }
+
+.insert-wrap {
+    position: absolute;
+    top: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.insert-wrap--left { left: 0; width: 46%; }
+.insert-wrap--right { right: 0; width: 46%; }
+.insert-wrap--center { left: 50%; transform: translateX(-50%); }
+
+.btn-insert-block {
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s ease;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.btn-insert-round {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px dashed #94a3b8;
+    color: #64748b;
+    font-size: 1.2rem;
+}
+.btn-insert-round:hover {
+    border-color: #6366f1; color: #6366f1;
+    background: #eef2ff; border-style: solid;
+    transform: scale(1.15);
+}
+
+.btn-insert-square {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: none;
+    color: #10b981;
+    font-size: 1.4rem;
+    font-weight: 500;
+    background: #ecfdf5;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2), inset 0 0 0 1px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-insert-square:hover {
+    color: #fff;
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+    transform: scale(1.15) translateY(-2px);
+}
+
+
+.dialectics-block {
+    padding: 0;
+    background: var(--color-bg-white);
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    word-wrap: break-word;
+    width: 46%;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+.dialectics-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 12px 0 0 12px;
+    z-index: 20;
+}
+
+.dialectics-block:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+.block-left {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+}
+
+.block-left::before {
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+}
+
+.block-right {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #ffffff 0%, #fff8f5 100%);
+}
+
+.block-right::before {
+    background: linear-gradient(180deg, #f97316, #fb923c);
+}
+
+.block-center {
+    align-self: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    width: 70%;
+    text-align: left;
+}
+
+.block-center::before {
+    background: linear-gradient(180deg, #22c55e, #4ade80);
+}
+
+
+
+/* --- Mode toggling styles --- */
+
+/* State 2 & 3: Dialectics Mode OFF */
+.dialectics-canvas.mode-no-dialectics .dialectics-hint-block {
+    display: none !important;
+}
+.dialectics-canvas.mode-no-dialectics .dialectics-step-title {
+    display: none !important;
+}
+.dialectics-canvas.mode-no-dialectics .btn-block-ai {
+    display: none !important;
+}
+
+/* State 3: Single Column Mode (Two-Column Mode OFF) */
+.dialectics-canvas.mode-single-column .canvas-divider {
+    display: none !important;
+}
+.dialectics-canvas.mode-single-column .dialectics-block {
+    align-self: center !important;
+    width: 80% !important;
+    max-width: 850px !important;
+}
+.dialectics-canvas.mode-single-column .insert-wrap--left,
+.dialectics-canvas.mode-single-column .insert-wrap--right {
+    display: none !important;
+}
+.dialectics-canvas.mode-single-column .insert-wrap--center .btn-insert-block {
+    border-radius: 50% !important;
+    width: 28px !important;
+    height: 28px !important;
+}
+
+/* State 4: Compressed Left Column Mode */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .canvas-divider {
+    left: 80px !important;
+}
+
+/* Компактный вид левых блоков в неактивном (несвернутом по ховеру) состоянии */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover),
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover) {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    cursor: pointer;
+    z-index: 10;
+    position: relative;
+    align-self: flex-start !important;
+}
+
+/* Скрываем всё внутреннее содержимое блока (заголовки, текст, бейджи, полоски) когда он сжат */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover) > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover) > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover)::before,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover)::before {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Вместо обрезанного текста показываем аккуратную иконку-кнопку через ::after */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover)::after {
+    content: "📝";
+    position: absolute;
+    top: 0; left: 0; width: 44px; height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    color: #3b82f6;
+    transition: all 0.2s ease;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:not(:hover):hover::after {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    transform: scale(1.05);
+}
+
+/* Иконка для подсказок ИИ */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):not(:hover)::after {
+    content: "💡";
+    position: absolute;
+    top: 0; left: 0; width: 44px; height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: #fdf4ff;
+    border: 1px solid #e879f9;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    color: #c084fc;
+    transition: all 0.2s ease;
+}
+
+/* При наведении (Hover) — блок раскрывается в полную карточку */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:hover,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):hover {
+    width: 45% !important;
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: 800px !important;
+    overflow: visible !important;
+    z-index: 100 !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22), 0 0 0 2px rgba(99, 102, 241, 0.4) !important;
+    white-space: normal;
+    align-self: flex-start !important;
+}
+
+/* При наведении убираем иконку ::after и возвращаем видимость внутренним элементам */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:hover::after,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):hover::after {
+    content: none !important;
+    display: none !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left:hover > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block:not(.block-right):not(.block-center):hover > * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* Правая колонка и секции */
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-right,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-hint-block.block-right {
+    width: calc(100% - 100px) !important;
+    max-width: none !important;
+    align-self: flex-end !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .insert-wrap--left {
+    width: 44px !important;
+    align-self: flex-start !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .insert-wrap--left .btn-insert-block {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50% !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .insert-wrap--right {
+    width: calc(100% - 100px) !important;
+    align-self: flex-end !important;
+}
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .dialectics-block.block-section {
+    width: calc(100% - 100px) !important;
+    align-self: flex-end !important;
+}
+
+/* --- Block Collapse & Fold Styles --- */
+.dialectics-block.is-collapsed .dialectics-content-inner,
+.dialectics-block.is-collapsed .dialectics-stickers-container {
+    display: none !important;
+}
+
+.dialectics-canvas.mode-only-titles .dialectics-block .dialectics-content-inner,
+.dialectics-canvas.mode-only-titles .dialectics-block .dialectics-stickers-container {
+    display: none !important;
+}
+
+.dialectics-canvas.mode-only-titles .btn-block-fold-toggle {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* --- Drag and Drop Styles --- */
+.dialectics-canvas.is-dragging-active .block-insert-row {
+    display: none !important;
+}
+
+.dialectics-block.is-dragging {
+    opacity: 0.4;
+    border: 2px dashed #3b82f6 !important;
+    transform: scale(0.98);
+}
+
+/* --- Sticky / Floating Left Block --- */
+.dialectics-block.is-sticky,
+.block-left.is-sticky,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky:not(:hover) {
+    position: sticky !important;
+    top: 24px !important;
+    z-index: 50 !important;
+    width: 46% !important;
+    height: auto !important;
+    min-height: 50px !important;
+    max-height: none !important;
+    padding: 0 !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%) !important;
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.22), 0 0 0 2px #6366f1 !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.dialectics-block-header {
+    position: relative !important;
+    top: auto !important;
+    z-index: 1;
+    box-shadow: none !important;
+}
+
+.dialectics-block.is-sticky:hover,
+.block-left.is-sticky:hover {
+    transform: translateY(-2px);
+    z-index: 55 !important;
+}
+
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky > *,
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky::before {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.dialectics-canvas.mode-compressed-left:not(.mode-single-column) .block-left.is-sticky::after {
+    display: none !important;
+}
+

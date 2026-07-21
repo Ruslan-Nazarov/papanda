@@ -1,0 +1,65 @@
+<div class="premium-card words-widget charts-widget" style="height: 100%; display: flex; flex-direction: column;">
+    <div class="widget-header" style="margin-bottom: 8px;">
+        <div class="widget-title">
+            <span class="widget-icon">📈</span>
+            <span>Progress Charts</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'language')">▼</button>
+        </div>
+    </div>
+    <div class="widget-body" style="padding-top: 0; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+        <!-- Charts tabs to keep it compact but fully detailed -->
+        <div class="charts-tabs" style="display: flex; gap: 8px; border-bottom: 1px solid var(--color-bg-app); padding-bottom: 8px; margin-bottom: 10px;">
+            <button class="btn btn-secondary btn-sm active chart-tab-btn" onclick="switchChartTab('dist', this)" style="border-radius: 8px; font-size: 0.75rem; padding: 4px 10px;">Distribution</button>
+            <button class="btn btn-secondary btn-sm chart-tab-btn" onclick="switchChartTab('knowledge', this)" style="border-radius: 8px; font-size: 0.75rem; padding: 4px 10px;">By Language</button>
+            <button class="btn btn-secondary btn-sm chart-tab-btn" onclick="switchChartTab('health', this)" style="border-radius: 8px; font-size: 0.75rem; padding: 4px 10px;">Efficiency</button>
+            <button class="btn btn-secondary btn-sm chart-tab-btn" onclick="switchChartTab('shows', this)" style="border-radius: 8px; font-size: 0.75rem; padding: 4px 10px;">Shown/Day</button>
+        </div>
+
+        <div id="chart-panel-dist" class="chart-panel" style="position: relative; height: 220px; width: 100%;">
+            <canvas id="distChart"></canvas>
+        </div>
+        <div id="chart-panel-knowledge" class="chart-panel" style="position: relative; height: 220px; width: 100%; display: none;">
+            <canvas id="knowledgePieChart"></canvas>
+        </div>
+        <div id="chart-panel-health" class="chart-panel" style="position: relative; height: 220px; width: 100%; display: none;">
+            <div style="display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 10px; position: absolute; right: 0; top: -45px; z-index: 10;">
+                <button id="toggle-abs" class="toggle-btn btn btn-secondary btn-sm active" onclick="setHealthMode('abs')" style="font-size: 0.65rem; padding: 2px 6px;">Absolute</button>
+                <button id="toggle-pct" class="toggle-btn btn btn-secondary btn-sm" onclick="setHealthMode('pct')" style="font-size: 0.65rem; padding: 2px 6px;">Percentage (%)</button>
+            </div>
+            <canvas id="healthChart"></canvas>
+        </div>
+        <div id="chart-panel-shows" class="chart-panel" style="position: relative; height: 220px; width: 100%; display: none;">
+            <canvas id="dailyShowsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchChartTab(tabName, btn) {
+        document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        document.querySelectorAll('.chart-panel').forEach(p => p.style.display = 'none');
+        const target = document.getElementById('chart-panel-' + tabName);
+        if (target) {
+            target.style.display = 'block';
+            
+            // Resize / update the chart to fix display:none Chart.js bug
+            if (tabName === 'dist' && window.distChart) window.distChart.resize();
+            if (tabName === 'knowledge' && window.knowledgePieChart) window.knowledgePieChart.resize();
+            if (tabName === 'health') {
+                if (typeof window.updateHealthChart === 'function') window.updateHealthChart();
+                if (window.healthChart) window.healthChart.resize();
+            }
+            if (tabName === 'shows' && window.dailyShowsChart) window.dailyShowsChart.resize();
+
+            // Force Chart.js resize recalculation for newly visible canvas
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 50);
+        }
+    }
+</script>

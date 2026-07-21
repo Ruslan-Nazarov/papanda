@@ -239,7 +239,6 @@
                             <button type="button" class="format-btn" data-format="strike" title="Зачеркнутый (Strike)">S</button>
                             <button type="button" class="format-btn" data-format="code" title="Код (Code)">&lt;&gt;</button>
                             <button type="button" class="format-btn" data-format="quote" title="Цитата (Quote)">”</button>
-                            <button type="button" class="format-btn" data-format="alternatives" title="Альтернативные формулировки" style="color: #10b981;">🔀</button>
                             <button type="button" class="format-btn" data-format="question" title="Отметить вопрос / непонятно" style="color: #d97706;">❓</button>
                             <button type="button" class="format-btn" data-format="hiddenPhrase" title="Скрытая фраза (пояснение)" style="color: #8b5cf6;">👁</button>
                             <button type="button" class="format-btn" data-format="blockLink" title="Ссылка на блок" style="color: #3b82f6;">🔗</button>
@@ -652,8 +651,8 @@
             <!-- Chat footer (interactive) -->
             <div id="explainConceptChatFooter" style="display:none; padding:16px 24px; border-top:1px solid #f1f5f9; background:#f8fafc; flex-shrink:0;">
                 <form id="explainConceptForm" style="display:flex; gap:10px; align-items:center; margin:0;" onsubmit="return false;">
-                    <input type="text" id="explainConceptInput" placeholder="Задайте уточняющий вопрос..." style="flex-grow:1; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'">
-                    <button type="submit" id="explainConceptSendBtn" class="btn btn-primary" style="padding:10px 20px; font-size:0.9rem; border-radius:8px; display:flex; align-items:center; gap:6px;">
+                    <input type="text" id="explainConceptChatInput" placeholder="Задайте уточняющий вопрос..." style="flex-grow:1; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'">
+                    <button type="submit" id="btnSendConceptQuestion" class="btn btn-primary" style="padding:10px 20px; font-size:0.9rem; border-radius:8px; display:flex; align-items:center; gap:6px;">
                         <span>Отправить</span>
                     </button>
                 </form>

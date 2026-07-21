@@ -74,12 +74,14 @@ export function initGrid(options = {}) {
     let grid = null;
     try {
         grid = window.grid = GridStack.init({
+            column: 12,
             cellHeight: 45,
             margin: 10,
             handle: '.widget-header',
             minRow: 1,
             animate: false,
-            float: true
+            float: true,
+            disableOneColumnMode: true
         }, gridStackEl);
 
         // 2. Restore Layout
@@ -87,13 +89,20 @@ export function initGrid(options = {}) {
         const savedLayout = options.layout || window[layoutKey];
         
         if (grid && savedLayout && typeof savedLayout === 'object' && Object.keys(savedLayout).length > 0) {
-            const items = Object.values(savedLayout).map(item => ({
-                id: item.id,
-                x: parseInt(item.x),
-                y: parseInt(item.y),
-                w: parseInt(item.w),
-                h: parseInt(item.h)
-            }));
+            const items = Object.values(savedLayout).map(item => {
+                let w = parseInt(item.w !== undefined ? item.w : item.width) || 4;
+                let h = parseInt(item.h !== undefined ? item.h : item.height) || 5;
+                if (w <= 0) w = 4;
+                if (h <= 0) h = 5;
+                
+                return {
+                    id: item.id,
+                    x: parseInt(item.x) || 0,
+                    y: parseInt(item.y) || 0,
+                    w: w,
+                    h: h
+                };
+            });
             grid.load(items, false); 
         }
 

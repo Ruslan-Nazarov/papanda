@@ -768,12 +768,20 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
             const renderList = (filterText = '') => {
                 listEl.innerHTML = '';
                 const lower = filterText.toLowerCase().trim();
-                let hasResults = false;
+                
+                const filteredBlocks = currentBlocks.filter(b => !lower || b.title.toLowerCase().includes(lower));
+                
+                if (filteredBlocks.length === 0) {
+                    listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">Блоки не найдены</div>';
+                    selectedBlock = null;
+                    return;
+                }
 
-                currentBlocks.forEach(b => {
-                    if (lower && !b.title.toLowerCase().includes(lower)) return;
-                    hasResults = true;
+                if (!selectedBlock || !filteredBlocks.includes(selectedBlock)) {
+                    selectedBlock = filteredBlocks[0];
+                }
 
+                filteredBlocks.forEach(b => {
                     const item = document.createElement('div');
                     item.style.cssText = `
                         padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
@@ -803,10 +811,6 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
 
                     listEl.appendChild(item);
                 });
-
-                if (!hasResults) {
-                    listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">Блоки не найдены</div>';
-                }
             };
 
             noteSelect.onchange = async () => {
@@ -885,7 +889,11 @@ export function customSelectBlockPrompt({ title = 'Выберите целево
 
             const submit = () => {
                 if (!selectedBlock) {
-                    if (window.app && window.app.toast) window.app.toast('Выберите блок из списка', 'warning');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Выберите блок из списка', 'warning');
+                    } else {
+                        alert('Выберите блок из списка');
+                    }
                     return;
                 }
                 modal.classList.remove('active');

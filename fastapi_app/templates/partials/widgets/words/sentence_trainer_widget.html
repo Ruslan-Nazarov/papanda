@@ -1,0 +1,60 @@
+<div class="premium-card words-widget sentence-trainer-widget" style="height: 100%; display: flex; flex-direction: column;">
+    <div class="widget-header" style="margin-bottom: 8px;">
+        <div class="widget-title">
+            <span class="widget-icon">⚡</span>
+            <span>{{ _('dashboard.sentence_trainer') }}</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon" onclick="window.openSentenceEditor(false)" title="{{ _('modal.edit_sentence') | default('Редактировать предложение') }}">✏️</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="window.openSentenceEditor(true)" title="{{ _('modal.add_sentence') | default('Добавить предложение') }}">＋</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="window.openLanguageStickerModal()" title="{{ _('header.add_sticker') }}">📝</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'language')">▼</button>
+        </div>
+    </div>
+
+    <div class="widget-body" style="padding-top: 0; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+         <!-- Header actions compact -->
+         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px;">
+             <div id="lang-selector" class="lang-selector" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+             <div style="display: flex; align-items: center; gap: 12px;">
+                 <label class="workout-hint-toggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0; font-size: 0.8rem;" title="Translation">
+                     <span style="font-weight: 600; color: var(--color-text-faint);">Translation</span>
+                     <div class="workout-pill-switch" style="width: 32px; height: 18px;">
+                         <input type="checkbox" id="toggle-translation-checkbox" class="toggle-translation-checkbox" checked onchange="toggleTranslation(this.checked)">
+                         <span class="workout-pill-slider"></span>
+                     </div>
+                 </label>
+                 <span id="sentence-progress" style="font-size: 0.75rem; background: var(--color-bg-subtle); padding: 4px 10px; border-radius: 8px; color: var(--color-text-faint); font-weight: 700; display: none;"></span>
+             </div>
+         </div>
+
+         <!-- Display area -->
+         <div id="sentence-display" class="sentence-display show-translation" onclick="handleDisplayClick()" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 120px; border: 1.5px dashed var(--color-border-light); border-radius: 12px; padding: 15px; margin-bottom: 15px; cursor: pointer; user-select: none;">
+             <!-- Injected by JS -->
+         </div>
+
+         <!-- Controls and Legend -->
+         <div>
+             <div class="controls" style="display: flex; gap: 10px; margin-bottom: 12px;">
+                 <button class="btn btn-secondary" onclick="runFlash()" style="flex: 1; height: 38px; font-weight: 700; border-radius: 10px;">▶ Run</button>
+                 <button class="btn btn-primary" onclick="nextSentence()" style="flex: 1; height: 38px; font-weight: 700; border-radius: 10px;">Next ➜</button>
+             </div>
+             
+             <!-- Compact Legend -->
+             <div class="legend" style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.65rem; color: var(--color-text-faint); font-weight: 600;">
+                 <div class="legend-item"><span class="dot" style="background: #ff7675; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;"></span> Predicate</div>
+                 <div class="legend-item"><span class="dot" style="background: #74b9ff; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;"></span> Subject</div>
+                 <div class="legend-item"><span class="dot" style="background: #55efc4; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;"></span> Attributes</div>
+                 <div class="legend-item"><span class="dot" style="background: #a29bfe; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;"></span> Object</div>
+                 <div class="legend-item"><span class="dot" style="background: #ffeaa7; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;"></span> Circumstance</div>
+             </div>
+
+             <!-- Stickers display canvas -->
+             <div class="sticker-canvas-wrapper" style="margin-top: 15px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--color-bg-app); padding-top: 10px;">
+                 <div class="add-sticker-btn" onclick="window.openLanguageStickerModal()" title="Add note" style="cursor: pointer; width: 26px; height: 26px; border-radius: 50%; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--color-text-dark); border: 1px dashed var(--color-border-medium); font-size: 0.9rem;">+</div>
+                 <div id="languageStickersCanvas" class="sticker-canvas" style="display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 2px 0;"></div>
+             </div>
+         </div>
+    </div>
+</div>

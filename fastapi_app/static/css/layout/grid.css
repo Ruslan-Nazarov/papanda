@@ -2,11 +2,17 @@
 
 .grid-stack {
     padding: 20px;
-    margin: 0 auto;
+    margin: 0 auto 80px auto;
     max-width: 1600px;
+    flex-shrink: 0;
 }
 
 .grid-stack-item-content {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: transparent !important;
     padding: 10px !important; /* Вместо inset используем padding для внутреннего зазора */
     overflow: visible !important;

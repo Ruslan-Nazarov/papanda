@@ -72,6 +72,9 @@ export const ModalManager = {
                 this.close(e.target.id);
             }
         });
+    },
+    initGlobal() {
+        // Already initialized on module load
     }
 };
 

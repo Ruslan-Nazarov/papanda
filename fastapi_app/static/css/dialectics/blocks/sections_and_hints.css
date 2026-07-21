@@ -1,0 +1,76 @@
+/* --- Hint/Prompt Blocks --- */
+.dialectics-hint-block {
+    position: relative;
+    z-index: 2;
+    padding: 48px 24px 28px 24px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 46%;
+    align-self: flex-start;
+    margin: 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+}
+.dialectics-hint-block:hover {
+    background: #e2e8f0;
+    color: #475569;
+    transform: translateY(-2px);
+}
+.dialectics-hint-block.block-right {
+    align-self: flex-end;
+}
+.dialectics-hint-block.block-center {
+    align-self: center;
+    width: 70%;
+}
+
+/* --- Section Blocks & TOC --- */
+.insert-wrap--section {
+    right: 15%;
+    width: auto;
+}
+.dialectics-canvas.mode-single-column .insert-wrap--section {
+    right: 20%;
+}
+.btn-insert-section {
+    width: auto !important;
+    height: 24px !important;
+    padding: 0 10px !important;
+    border-radius: 12px !important;
+    border: 1px dashed #ea580c !important;
+    background: #fff7ed !important;
+    color: #ea580c !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+}
+.btn-insert-section:hover {
+    background: #ea580c !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+
+.dialectics-canvas .dialectics-block.block-section {
+    align-self: flex-end !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 28px 0 16px 0 !important;
+    padding: 0 !important;
+    width: 46% !important;
+    max-width: none !important;
+}
+.dialectics-canvas .dialectics-block.block-section:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+

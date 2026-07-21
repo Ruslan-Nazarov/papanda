@@ -1,0 +1,33 @@
+<div class="premium-card words-widget dictionary-widget" style="height: 100%; display: flex; flex-direction: column;">
+    <div class="widget-header" style="margin-bottom: 8px;">
+        <div class="widget-title">
+            <span class="widget-icon">📋</span>
+            <span>{{ _('dashboard.dictionary') }}</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="refreshWords()" title="{{ _('dashboard.refresh') }}">↻</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'language')">▼</button>
+        </div>
+    </div>
+
+    <div class="widget-body" style="padding-top: 0; flex: 1; overflow-y: auto;">
+        <!-- Compact Stats Row -->
+        <div style="display: flex; gap: 12px; margin-bottom: 8px; padding: 0 4px; font-size: 0.7rem; color: var(--color-text-faint); text-transform: uppercase; font-weight: 800; border-bottom: 1px solid var(--color-bg-app);">
+            <span>V: <b id="volume-count" style="color: var(--color-primary);">{{ metrics.total_count }}</b></span>
+            <span>C: <b id="coverage-count" style="color: var(--color-success);">{{ metrics.coverage }}%</b></span>
+            <span>I: <b id="imw-count" style="color: var(--color-warning);">{{ metrics.imw }}%</b></span>
+        </div>
+
+        <!-- Table Header (100% Width) -->
+        <div style="display: grid; grid-template-columns: repeat({{ active_languages|length }}, 1fr); padding: 4px 12px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; color: var(--color-text-faint); letter-spacing: 0.05em; background: var(--color-bg-subtle); border-radius: 4px; margin-bottom: 4px;">
+            {% for lang in active_languages %}
+            <span>{{ lang }}</span>
+            {% endfor %}
+        </div>
+
+        <div id="words-list" style="display: flex; flex-direction: column;">
+            <div style="text-align: center; padding: 20px; color: var(--color-text-faint);">Loading dictionary...</div>
+        </div>
+    </div>
+</div>

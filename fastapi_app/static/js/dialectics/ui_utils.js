@@ -2,6 +2,7 @@
  * ui_utils.js - Управление интерфейсом (Dialectics)
  */
 export const DialecticsUI = {
+    logDebugWindow(msg, data = null) {},
     toggleDisplay(el, show, flex = false) {
         if (!el) return;
         el.style.display = show ? (flex ? 'flex' : 'block') : 'none';

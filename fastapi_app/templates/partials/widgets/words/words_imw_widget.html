@@ -1,0 +1,41 @@
+<div class="premium-card words-widget imw-widget" style="height: 100%; display: flex; flex-direction: column;">
+    <div class="widget-header" style="margin-bottom: 8px;">
+        <div class="widget-title">
+            <span class="widget-icon">🧠</span>
+            <span>iMW Index</span>
+        </div>
+        <div class="widget-actions">
+            <button type="button" class="btn btn-secondary btn-icon widget-settings-trigger" onclick="WidgetSettings.openColorPicker(this)" title="{{ _('dashboard.widget_color') }}">🎨</button>
+            <button type="button" class="btn btn-secondary btn-icon widget-collapse-btn" onclick="toggleWidget(this, 'language')">▼</button>
+        </div>
+    </div>
+    <div class="widget-body" style="padding-top: 0; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+        <p style="font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.35; margin: 0 0 4px 0;">
+            Intelligent Memory Weight shows how close you are to the target repetition frequency.
+        </p>
+
+        <!-- iMW list by language -->
+        <div class="metric-item">
+            {% for lang_code in active_languages %}
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 6px;">
+                <span>{{ language_flags.get(lang_code, lang_code|upper) }} {{ all_languages.get(lang_code, lang_code|upper) }}</span>
+                <strong>{{ imw_by_lang.get(lang_code, 0) }}%</strong>
+            </div>
+            <div style="height: 6px; background: var(--color-bg-app); border-radius: 3px; overflow: hidden; margin-bottom: 12px;">
+                <div style="width: {{ imw_by_lang.get(lang_code, 0) }}%; background: #3b82f6; height: 100%;"></div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Overall iMW -->
+        <div class="metric-item" style="border-top: 1px solid var(--color-bg-app); padding-top: 8px; margin-top: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 700; color: var(--color-text-dark);">
+                <span>Overall iMW Index</span>
+                <strong>{{ imw }}%</strong>
+            </div>
+            <div style="height: 8px; background: var(--color-bg-app); border-radius: 4px; overflow: hidden; margin-top: 6px;">
+                <div style="width: {{ imw }}%; background: #4F46E5; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
