@@ -1,0 +1,38 @@
+{
+  "id": 1,
+  "title": "Гегель: Логика и метод (обновлено)",
+  "content_json": [
+    {
+      "id": "block-1",
+      "side": "left",
+      "html": "<p>Что такое бытие и ничто?</p>",
+      "title": "Исходный вопрос",
+      "role": "anchor",
+      "tags": null,
+      "status": "ready",
+      "collapsed": false,
+      "color": null,
+      "border_color": null,
+      "is_pinned": false,
+      "sources": [],
+      "words": [],
+      "tabs": null,
+      "active_tab_id": null
+    }
+  ],
+  "category_id": 1,
+  "is_pinned": true,
+  "status": "ready",
+  "is_deleted": false,
+  "deleted_at": null,
+  "created_at": "2026-08-25T07:05:12+00:00",
+  "updated_at": "2026-08-25T07:05:12+00:00",
+  "category": {
+    "name": "Диалектика",
+    "color": "#10b981",
+    "id": 1
+  },
+  "sticker_text": "Важная заметка",
+  "sticker_color": "#fff9c4",
+  "sync_id": "08011ed8-9d70-45b5-adbb-230b7ce67864"
+}
