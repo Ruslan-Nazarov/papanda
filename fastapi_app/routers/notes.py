@@ -93,6 +93,36 @@ async def get_active_pinned_note(db: AsyncSession = Depends(get_db)):
 async def search_notes(q: str = Query(...), db: AsyncSession = Depends(get_db)):
     return await NotesService.get_all_notes(db, search=q)
 
+@router.get("/diagnostic/sync")
+async def get_diagnostic(session: AsyncSession = Depends(get_db)):
+    import os
+    from pathlib import Path
+    
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    publish_dir = BASE_DIR / "content" / "published"
+    
+    files = []
+    if publish_dir.exists():
+        files = [f.name for f in publish_dir.glob("*.json")]
+        
+    sync_errors = ""
+    err_log = BASE_DIR / "sync_errors.log"
+    if err_log.exists():
+        with open(err_log, "r", encoding="utf-8") as f:
+            sync_errors = f.read()
+            
+    stmt = select(Note).where(Note.status == 'ready')
+    result = await session.execute(stmt)
+    notes_in_db = [{"id": n.id, "title": n.title, "sync_id": n.sync_id, "status": n.status} for n in result.scalars().all()]
+    
+    return {
+        "publish_dir": str(publish_dir),
+        "publish_dir_exists": publish_dir.exists(),
+        "json_files": files,
+        "sync_errors": sync_errors,
+        "notes_in_db": notes_in_db,
+    }
+
 @router.post("/save", response_model=NoteView)
 async def create_note(data: NoteCreate, db: AsyncSession = Depends(get_db)):
     return await NotesService.create_note(db, data)

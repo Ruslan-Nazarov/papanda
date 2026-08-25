@@ -55,7 +55,10 @@ async def sync_published_notes():
                         session.add(new_note)
                         
                 except Exception as e:
-                    logger.error(f"Failed to sync {file_path}: {e}")
+                    error_msg = f"Failed to sync {file_path}: {str(e)}"
+                    logger.error(error_msg)
+                    with open(BASE_DIR / "sync_errors.log", "a", encoding="utf-8") as err_f:
+                        err_f.write(error_msg + "\n")
             
             await session.commit()
     except Exception as e:
