@@ -27,8 +27,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        # Adjusted CSP to allow CDN scripts/styles used by the app (TiPTap, KaTeX, D3, Fabric)
-        response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: data: blob:;"
+        # Adjusted CSP to allow CDN scripts/styles used by the app (TiPTap, KaTeX, D3, Fabric) and WebSockets for analytics
+        response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: ws: wss: data: blob:;"
         return response
 
 class LocaleMiddleware(BaseHTTPMiddleware):
