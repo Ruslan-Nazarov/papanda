@@ -46,11 +46,15 @@ async def get_db(request: Request = None) -> AsyncSession:
                 async with engine.begin() as conn_0:
                     res = await conn_0.execute(text("PRAGMA table_info(notes)"))
                     columns = [row[1] for row in res.fetchall()]
-                    if "title" not in columns:
+                    if columns and "title" not in columns:
                         # The old notes table is completely incompatible. Backup and recreate.
-                        await conn_0.execute(text("ALTER TABLE notes RENAME TO notes_old_backup"))
+                        import time
+                        backup_name = f"notes_old_backup_{int(time.time())}"
+                        await conn_0.execute(text(f"ALTER TABLE notes RENAME TO {backup_name}"))
                         await conn_0.run_sync(Base.metadata.create_all)
-            except Exception:
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Migration error: {e}")
                 pass
             
             # Each migration must be in its own transaction to prevent one failure from aborting others
