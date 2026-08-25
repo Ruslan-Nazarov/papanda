@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="{{ locale | default('ru') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Конспекты{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- App CSS -->
+    <link rel="stylesheet" href="/static/css/notes.css">
+    <script>
+        if (!document.cookie.includes('locale=')) {
+            var userLang = (navigator.language || navigator.userLanguage || 'ru').toLowerCase();
+            var locale = 'en';
+            if (userLang.startsWith('ru')) locale = 'ru';
+            else if (userLang.startsWith('kk') || userLang.startsWith('kz')) locale = 'kz';
+            
+            document.cookie = "locale=" + locale + "; path=/; max-age=31536000";
+            if (document.documentElement.lang !== locale) {
+                window.location.reload();
+            }
+        }
+    </script>
+    {% block head %}{% endblock %}
+    {% include 'partials/head_analytics.html' ignore missing %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    <!-- DOMPurify -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    
+    <!-- Marked JS -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
+    
+    {% include 'partials/analytics.html' ignore missing %}
+</body>
+</html>

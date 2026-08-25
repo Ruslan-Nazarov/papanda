@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Вики Портал - Конспекты{% endblock %}
+
+{% block content %}
+<div class="portal-container" style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 16px;">
+        <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; color: #1e293b;"><span style="font-size: 1.4em;">📚</span> База Знаний</h1>
+        
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Global Search -->
+            <div style="position: relative; min-width: 250px;">
+                <input type="text" id="portal-global-search" placeholder="🔍 Глобальный поиск..." style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;">
+                <div id="portal-global-search-results" class="dropdown-menu hidden" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 4px; max-height: 300px; overflow-y: auto; z-index: 10;"></div>
+            </div>
+
+            <!-- Formula Parser -->
+            <button class="portal-tool-btn" id="btn-portal-formula-parser">🧮 Парсер формул</button>
+            
+            <!-- Language Switch -->
+            <div class="dropdown-wrapper" style="position: relative;">
+                <button class="portal-tool-btn" id="btn-portal-lang">🌐 Язык</button>
+                <div id="portal-lang-dropdown" class="dropdown-menu hidden" style="position: absolute; right: 0; top: 100%; min-width: 120px; padding: 8px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: white; margin-top: 4px; z-index: 10;">
+                    <div class="lang-option" data-lang="ru" style="padding: 8px; cursor: pointer; border-radius: 6px;">🇷🇺 Русский</div>
+                    <div class="lang-option" data-lang="en" style="padding: 8px; cursor: pointer; border-radius: 6px;">🇬🇧 English</div>
+                    <div class="lang-option" data-lang="kz" style="padding: 8px; cursor: pointer; border-radius: 6px;">🇰🇿 Қазақша</div>
+                </div>
+            </div>
+
+            <a href="/editor" class="btn-primary" style="text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #3b82f6; color: white;">✏️ В Редактор</a>
+        </div>
+    </header>
+
+    <div style="display: grid; grid-template-columns: 280px 1fr; gap: 40px;">
+        <aside class="portal-sidebar">
+            <h3 style="color: #64748b; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;">Рубрики</h3>
+            <ul id="category-list" style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 8px; color: #94a3b8;">Загрузка...</li>
+            </ul>
+        </aside>
+        
+        <main class="portal-main">
+            <h2 id="current-category-title" style="margin-top: 0; margin-bottom: 24px; color: #0f172a;">Все конспекты</h2>
+            <div id="notes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+                <!-- Cards will be populated here -->
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+    import NotesAPI from '/static/js/notes/api.js';
+
+    async function loadPortal() {
+        try {
+            // Load Categories
+            const categories = await NotesAPI.getCategories();
+            const catList = document.getElementById('category-list');
+            catList.innerHTML = '<li style="margin-bottom: 8px;"><a href="#" class="cat-link active" data-id="">Всё подряд</a></li>';
+            
+            categories.forEach(c => {
+                catList.innerHTML += `<li style="margin-bottom: 8px;"><a href="#" class="cat-link" data-id="${c.id}">${c.name}</a></li>`;
+            });
+
+            // Load Notes
+            const notes = await NotesAPI.getNotes();
+            const readyNotes = notes.filter(n => n.status === 'ready' || n.status === 'done');
+            renderNotes(readyNotes);
+
+            // Handle category clicks
+            document.querySelectorAll('.cat-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll('.cat-link').forEach(l => l.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const catId = e.target.dataset.id;
+                    const catName = e.target.textContent;
+                    
+                    document.getElementById('current-category-title').textContent = catId ? catName : 'Все конспекты';
+                    
+                    if (catId) {
+                        renderNotes(readyNotes.filter(n => n.category_id == catId));
+                    } else {
+                        renderNotes(readyNotes);
+                    }
+                });
+            });
+
+        } catch (e) {
+            console.error(e);
+            document.getElementById('notes-grid').innerHTML = '<p style="color: #ef4444;">Ошибка загрузки данных.</p>';
+        }
+    }
+
+    function renderNotes(notes) {
+        const grid = document.getElementById('notes-grid');
+        if (notes.length === 0) {
+            grid.innerHTML = '<p style="color: #64748b; font-style: italic;">В этой рубрике пока нет опубликованных конспектов.</p>';
+            return;
+        }
+
+        grid.innerHTML = notes.map(n => `
+            <a href="/read/${n.id}" class="note-card" style="display: block; text-decoration: none; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; background: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); transition: all 0.2s; color: inherit;">
+                <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 1.25em; color: #1e293b;">${n.title || 'Без названия'}</h3>
+                <p style="color: #64748b; font-size: 0.9em; margin-bottom: 0;">Обновлен: ${new Date(n.updated_at).toLocaleDateString('ru-RU')}</p>
+            </a>
+        `).join('');
+    }
+
+    // --- Header Tools Logic ---
+    document.querySelectorAll('.portal-tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const dropdown = btn.nextElementSibling;
+            if (dropdown && dropdown.classList.contains('dropdown-menu')) {
+                e.stopPropagation();
+                const isHidden = dropdown.classList.contains('hidden');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.add('hidden'));
+                if (isHidden) dropdown.classList.remove('hidden');
+            }
+        });
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown-wrapper') && !e.target.closest('#portal-global-search')) {
+            document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.add('hidden'));
+        }
+    });
+
+    // 1. Language
+    document.querySelectorAll('.lang-option').forEach(el => {
+        el.addEventListener('click', (e) => {
+            document.cookie = `locale=${e.target.dataset.lang}; path=/; max-age=31536000`;
+            window.location.reload();
+        });
+    });
+
+    // 2. Parsers
+    import('/static/js/notes/ParserWindowsManager.js').then(module => {
+        const ParserWindowsManager = module.default;
+        ParserWindowsManager.init();
+        document.getElementById('btn-portal-formula-parser').addEventListener('click', () => {
+            ParserWindowsManager.openWindow('formula');
+        });
+    }).catch(e => console.error(e));
+
+    // 3. Global Search
+    const globalSearchInput = document.getElementById('portal-global-search');
+    const globalSearchResults = document.getElementById('portal-global-search-results');
+    globalSearchInput.addEventListener('focus', () => {
+        if (globalSearchInput.value.trim()) globalSearchResults.classList.remove('hidden');
+    });
+    globalSearchInput.addEventListener('input', async () => {
+        const q = globalSearchInput.value.trim();
+        if (!q) { 
+            globalSearchResults.classList.add('hidden');
+            globalSearchResults.innerHTML = ''; 
+            return; 
+        }
+        globalSearchResults.classList.remove('hidden');
+        try {
+            const res = await fetch(`/api/notes?query=${encodeURIComponent(q)}`);
+            const notes = await res.json();
+            if (notes.length === 0) {
+                globalSearchResults.innerHTML = '<div style="color: #64748b; font-size: 0.9em; padding: 8px;">Ничего не найдено</div>';
+                return;
+            }
+            globalSearchResults.innerHTML = notes.map(n => `<a href="/read/${n.id}" class="search-item" style="display:block; padding: 10px; text-decoration:none; color:#1e293b; border-bottom:1px solid #f1f5f9; font-size: 0.9em;"><b>${n.title || 'Без названия'}</b></a>`).join('');
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadPortal);
+</script>
+<style>
+    .cat-link { 
+        display: block;
+        padding: 8px 12px;
+        border-radius: 8px;
+        color: #475569; 
+        text-decoration: none; 
+        transition: background 0.2s, color 0.2s;
+    }
+    .cat-link:hover, .cat-link.active { 
+        background: #f1f5f9; 
+        color: #3b82f6; 
+        font-weight: 600; 
+    }
+    .portal-tool-btn {
+        background: white;
+        border: 1px solid #e2e8f0;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        color: #475569;
+        transition: background 0.2s;
+    }
+    .portal-tool-btn:hover {
+        background: #f1f5f9;
+    }
+    .lang-option:hover, .search-item:hover {
+        background: #f1f5f9;
+    }
+    .note-card:hover { 
+        transform: translateY(-4px); 
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        border-color: #cbd5e1;
+    }
+    body {
+        background-color: #f8fafc;
+    }
+</style>
+{% endblock %}

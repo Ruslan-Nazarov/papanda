@@ -1,0 +1,55 @@
+import os
+from pathlib import Path
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import DeclarativeBase
+from fastapi import Request, HTTPException
+from fastapi_app.config import settings
+
+class Base(DeclarativeBase):
+    pass
+
+async def get_db(request: Request = None) -> AsyncSession:
+    if settings.DEMO_MODE and request:
+        session_id = request.cookies.get("session_id")
+        if not session_id:
+            raise HTTPException(status_code=401, detail="Session ID missing. Please refresh the page.")
+            
+        settings.DEMO_DIR.mkdir(parents=True, exist_ok=True)
+        db_path = settings.DEMO_DIR / f"{session_id}.db"
+        db_url = f"sqlite+aiosqlite:///{db_path}"
+        needs_init = not db_path.exists()
+    else:
+        if settings.DATABASE_URL:
+            db_url = settings.DATABASE_URL
+            if db_url.startswith("sqlite"):
+                needs_init = not Path(db_url.replace("sqlite+aiosqlite:///", "")).exists()
+            else:
+                needs_init = False
+        else:
+            settings.DB_DIR.mkdir(parents=True, exist_ok=True)
+            db_path = settings.DB_DIR / "papanda.db"
+            db_url = f"sqlite+aiosqlite:///{db_path}"
+            needs_init = not db_path.exists()
+    
+    engine = create_async_engine(db_url, echo=False)
+    
+    if db_url.startswith("sqlite"):
+        async with engine.begin() as conn:
+            if needs_init:
+                await conn.run_sync(Base.metadata.create_all)
+            else:
+                # Basic auto-migration for sticker columns (ignore errors if they exist)
+                from sqlalchemy import text
+                try:
+                    await conn.execute(text("ALTER TABLE notes ADD COLUMN sticker_text VARCHAR"))
+                    await conn.execute(text("ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"))
+                except Exception:
+                    pass
+            
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    
+    try:
+        async with async_session() as session:
+            yield session
+    finally:
+        await engine.dispose()

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('app_title') }}{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <!-- Верхняя шапка -->
+    <header class="top-header">
+        <div class="header-left">
+            <a href="/" class="nav-pill-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <span class="pill-icon">←</span> На портал
+            </a>
+        </div>
+        <div class="header-right">
+            <!-- Режим -->
+            <div class="dropdown-wrapper">
+                <button class="nav-pill-btn" id="btn-mode">
+                    <span class="pill-icon">🎛</span> {{ _('btn_mode') }}
+                </button>
+                <div id="mode-dropdown" class="dropdown-menu hidden" style="min-width: 260px;">
+                    <div class="mode-dropdown-row">
+                        <span>Диалектический конспект</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-dialectics" checked><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="mode-dropdown-row">
+                        <span>Двуколоночный вид</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-two-column" checked><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="mode-dropdown-row">
+                        <span>Оставить заголовки</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-keep-titles"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="mode-dropdown-row">
+                        <span>Свернуть левую колонку</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-hide-left"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="mode-dropdown-row">
+                        <span>Автозаполнение ИИ 🪄</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-auto-fill"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="mode-dropdown-row" id="row-autofill-step" style="display: none;">
+                        <span>↳ Пошагово</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-autofill-step"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="mode-dropdown-row">
+                        <span>Показать скрытые подсказки</span>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-show-hints"><span class="toggle-slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Парсеры -->
+            <div class="dropdown-wrapper">
+                <button class="nav-pill-btn" id="btn-parsers-nav">
+                    <span class="pill-icon">☰</span> Парсеры
+                </button>
+                <div id="parsers-dropdown" class="dropdown-menu hidden" style="min-width: 170px;">
+                    <div class="menu-item" id="menu-item-formula-parser">
+                        <span class="menu-icon">🧮</span>
+                        <span>Формулы</span>
+                    </div>
+                    <div class="menu-item" id="menu-item-article-parser">
+                        <span class="menu-icon">📄</span>
+                        <span>Статьи</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Связи -->
+            <button class="nav-pill-btn" id="btn-connections-nav">
+                <span class="pill-icon">🔗</span> Связи
+            </button>
+
+            <!-- Меню -->
+            <div class="dropdown-wrapper">
+                <button class="nav-pill-btn" id="btn-main-menu">
+                    <span class="pill-icon">☰</span> Меню
+                </button>
+                <div id="main-menu-dropdown" class="dropdown-menu hidden" style="min-width: 230px;">
+                    <div class="menu-item" id="menu-item-open-note">
+                        <span class="menu-icon">📁</span>
+                        <span>Открыть конспект</span>
+                    </div>
+                    <div class="menu-item" id="menu-item-new-note">
+                        <span class="menu-icon">📄</span>
+                        <span>Новый конспект</span>
+                    </div>
+                    <div class="menu-item" id="menu-item-back-note">
+                        <span class="menu-icon">‹</span>
+                        <span>Назад к предыдущему</span>
+                    </div>
+                    <div class="menu-item" id="menu-item-trash">
+                        <span class="menu-icon">🗑</span>
+                        <span>Корзина</span>
+                    </div>
+                    <div class="menu-item text-danger" id="menu-item-delete-current">
+                        <span class="menu-icon">🗑</span>
+                        <span>Удалить конспект</span>
+                    </div>
+                    <div class="menu-divider"></div>
+                    <div class="menu-section-label">ЭКСПОРТ</div>
+                    <div class="menu-item" id="menu-item-export-md">
+                        <span class="menu-icon">📄</span>
+                        <span>Markdown (.md)</span>
+                    </div>
+                    <div class="menu-item" id="menu-item-export-pdf">
+                        <span class="menu-icon">📄</span>
+                        <span>PDF (.pdf)</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Смена языка -->
+            <div class="dropdown-wrapper" style="margin-left: 4px;">
+                <button class="nav-pill-btn" id="btn-lang-menu" title="Выбор языка">
+                    <span class="pill-icon">🌐</span> Язык
+                </button>
+                <div id="lang-menu-dropdown" class="dropdown-menu hidden" style="min-width: 140px;">
+                    <div class="menu-item" data-lang="ru">
+                        <span>🇷🇺 Русский (RU)</span>
+                    </div>
+                    <div class="menu-item" data-lang="en">
+                        <span>🇬🇧 English (EN)</span>
+                    </div>
+                    <div class="menu-item" data-lang="kz">
+                        <span>🇰🇿 Қазақша (KZ)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основная рабочая область конспекта -->
+    <div class="canvas-card-wrapper">
+        <!-- Панель заголовка конспекта (Header Bar) -->
+        <div class="note-header-bar">
+            <div class="note-header-left">
+                <div class="category-dropdown-wrapper dropdown-wrapper" style="position: relative;">
+                    <button class="pill-dropdown-btn" id="btn-category-select">
+                        <span id="category-label">Без категории</span> <span class="arrow-down">▾</span>
+                    </button>
+                    <div id="category-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 220px; max-width: 300px; padding: 6px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
+                        <!-- populated by CategoryManager -->
+                    </div>
+                </div>
+                <span class="breadcrumb-chevron">›</span>
+                <input type="text" id="note-title" class="note-title-input" placeholder="{{ _('placeholder_title') }}" autocomplete="off">
+            </div>
+            <div class="note-header-right" style="display: flex; gap: 8px; align-items: center;">
+                <div class="save-status-dot-indicator" id="save-status-dot"></div>
+                <button id="btn-publish" style="padding: 8px 16px; background: #10b981; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 600; font-family: inherit;">
+                    Опубликовать
+                </button>
+                <button class="btn-save-primary" id="btn-save">
+                    <span class="save-icon">💾</span> Сохранить
+                </button>
+            </div>
+        </div>
+
+        <!-- Подзаголовок: Прогресс, Оглавление, Поиск, Стикеры, Время сохранения -->
+        <div class="note-sub-bar">
+            <div class="sub-bar-left">
+                <div class="progress-section">
+                    <span class="progress-label">ПРОГРЕСС</span>
+                    <div class="progress-track">
+                        <div class="progress-fill ready" id="progress-ready" style="width: 0%;"></div>
+                        <div class="progress-fill in-progress" id="progress-in-progress" style="width: 0%;"></div>
+                    </div>
+                    <span class="progress-stats" id="progress-text">0% • 0 / 0</span>
+                </div>
+                <div class="sub-bar-divider"></div>
+                <div class="dropdown-wrapper" style="position: relative;">
+                    <button class="sub-bar-btn" id="btn-toc">
+                        <span class="sub-icon">📋</span> Оглавление
+                    </button>
+                    <div id="toc-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 290px; max-width: 380px; padding: 0; border-radius: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); overflow: hidden; background: #ffffff;">
+                        <!-- populated by TOCManager -->
+                    </div>
+                </div>
+                <div class="dropdown-wrapper" style="position: relative;">
+                    <button class="sub-bar-btn" id="btn-search">
+                        <span class="sub-icon">🔍</span> Поиск
+                    </button>
+                    <div id="search-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 320px; max-width: 380px; padding: 14px 16px; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); background: #ffffff;">
+                        <!-- populated by SearchManager -->
+                    </div>
+                </div>
+                <div class="dropdown-wrapper" style="position: relative;">
+                    <button class="sub-bar-btn" id="btn-note-stickers">
+                        <span class="sub-icon" style="color: #eab308;">🟨</span> Стикеры
+                    </button>
+                    <div id="note-stickers-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 320px; max-width: 360px; padding: 0; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); background: #ffffff;">
+                        <!-- populated by BlockStickersManager -->
+                    </div>
+                </div>
+            </div>
+            <div class="sub-bar-right">
+                <button class="sub-bar-btn" id="btn-versions">
+                    <span class="sub-icon">🕒</span> <span id="save-time-text">Сохранено: 12:42</span> <span class="arrow-down">▾</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Холст конспекта -->
+        <main class="canvas-area" id="canvas-area">
+            <div class="dialectics-canvas" id="blocks-container">
+                <!-- Блоки рендерятся динамически -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Футер -->
+    <footer class="app-footer">
+        <div class="footer-pills-row">
+            <button class="footer-pill-btn" id="btn-footer-training">
+                <span class="footer-icon">🎓</span> Обучение
+            </button>
+            <button class="footer-pill-btn" id="btn-footer-about">
+                <span class="footer-icon">📖</span> О проекте
+            </button>
+            <button class="footer-pill-btn" id="btn-footer-changelog">
+                <span class="footer-icon">📝</span> История изменений
+            </button>
+            <button class="footer-pill-btn" id="btn-footer-contact">
+                <span class="footer-icon">💬</span> Написать разработчику
+            </button>
+        </div>
+
+        <div class="footer-credits">
+            papanda version 0.7.6 (last update 2026-08-25)<br>
+            designed and developed by <strong>ruslan nazarov</strong><br>
+            CC BY-NC 4.0 License
+        </div>
+    </footer>
+
+    <!-- Плавающая кнопка наверх (Scroll-to-top FAB) -->
+    <button class="scroll-top-fab" id="btn-scroll-top" title="Наверх">⌃</button>
+</div>
+
+<!-- Модальный контейнер -->
+<div id="modal-container" class="hidden"></div>
+{% endblock %}
+
+{% block scripts %}
+<!-- D3 and Function-Plot -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+
+<!-- Fabric.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+<!-- TipTap (ESM via CDN) -->
+<script type="importmap">
+  {
+    "imports": {
+      "@tiptap/core": "https://esm.sh/@tiptap/core@2.2.4?bundle",
+      "@tiptap/starter-kit": "https://esm.sh/@tiptap/starter-kit@2.2.4?bundle",
+      "@tiptap/extension-mark": "https://esm.sh/@tiptap/core@2.2.4?bundle",
+      "@tiptap/extension-node": "https://esm.sh/@tiptap/core@2.2.4?bundle",
+      "@tiptap/extension-underline": "https://esm.sh/@tiptap/extension-underline@2.2.4?bundle",
+      "@tiptap/extension-link": "https://esm.sh/@tiptap/extension-link@2.2.4?bundle",
+      "@tiptap/extension-placeholder": "https://esm.sh/@tiptap/extension-placeholder@2.2.4?bundle",
+      "@tiptap/extension-image": "https://esm.sh/@tiptap/extension-image@2.2.4?bundle"
+    }
+  }
+</script>
+<script type="module" src="/static/js/notes/app.js?v=4"></script>
+{% endblock %}

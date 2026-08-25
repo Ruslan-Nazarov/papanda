@@ -1,0 +1,19 @@
+# Среда разработки
+venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Данные пользователя
+data/
+!data/resources/
+*.db
+*.sqlite
+*.sqlite3
+
+# Демо-базы
+data/demo/*.db
+
+# Системные файлы
+.DS_Store
