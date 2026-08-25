@@ -1,0 +1,16 @@
+{
+  "id": 5,
+  "title": "тест2",
+  "content_json": [],
+  "category_id": null,
+  "is_pinned": false,
+  "status": "ready",
+  "is_deleted": false,
+  "deleted_at": null,
+  "created_at": "2026-08-25T09:20:30+00:00",
+  "updated_at": "2026-08-25T09:20:33+00:00",
+  "category": null,
+  "sticker_text": null,
+  "sticker_color": "#fff9c4",
+  "sync_id": "a1cb30f6-ab2f-40f5-beb6-4e67f0941eef"
+}
