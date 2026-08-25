@@ -95,43 +95,19 @@ async def get_active_pinned_note(db: AsyncSession = Depends(get_db)):
 async def search_notes(q: str = Query(...), db: AsyncSession = Depends(get_db)):
     return await NotesService.get_all_notes(db, search=q)
 
-@router.get("/diagnostic/sync")
-async def get_diagnostic(session: AsyncSession = Depends(get_db)):
-    try:
-        import os, traceback
-        from pathlib import Path
-        
-        BASE_DIR = Path(__file__).resolve().parent.parent.parent
-        publish_dir = BASE_DIR / "content" / "published"
-        
-        files = []
-        if publish_dir.exists():
-            files = [f.name for f in publish_dir.glob("*.json")]
-            
-        sync_errors = ""
-        err_log = BASE_DIR / "sync_errors.log"
-        if err_log.exists():
-            with open(err_log, "r", encoding="utf-8") as f:
-                sync_errors = f.read()
-                
-        notes_in_db = []
-        try:
-            stmt = select(Note).where(Note.status == 'ready')
-            result = await session.execute(stmt)
-            notes_in_db = [{"id": n.id, "title": n.title, "sync_id": getattr(n, 'sync_id', None), "status": n.status} for n in result.scalars().all()]
-        except Exception as e:
-            notes_in_db = [{"error": str(e), "trace": traceback.format_exc()}]
-        
-        return {
-            "publish_dir": str(publish_dir),
-            "publish_dir_exists": publish_dir.exists(),
-            "json_files": files,
-            "sync_errors": sync_errors,
-            "notes_in_db": notes_in_db,
-        }
-    except Exception as e:
-        import traceback
-        return {"critical_error": str(e), "trace": traceback.format_exc()}
+# Trash
+@router.get("/trash/list", response_model=List[NoteView])
+async def get_trash(db: AsyncSession = Depends(get_db)):
+    return await NotesService.get_trash(db)
+
+@router.post("/{note_id}/restore", response_model=NoteView)
+async def restore_note(note_id: int, db: AsyncSession = Depends(get_db)):
+    return await NotesService.restore_note(db, note_id)
+
+@router.delete("/{note_id}/permanent")
+async def permanent_delete(note_id: int, db: AsyncSession = Depends(get_db)):
+    return await NotesService.permanent_delete(db, note_id)
+
 
 @router.post("/save", response_model=NoteView)
 async def create_note(data: NoteCreate, db: AsyncSession = Depends(get_db)):
@@ -186,3 +162,24 @@ async def evaluate_note(note_id: int, db: AsyncSession = Depends(get_db)):
         "score": 85,
         "feedback": "Отличный конспект! Тезис сформулирован очень чётко. Обратите внимание на то, что антитезис можно раскрыть чуть шире, добавив больше примеров для контраста."
     }
+
+# Versions
+@router.get("/{note_id}/versions", response_model=List[NoteVersionView])
+async def get_versions(note_id: int, db: AsyncSession = Depends(get_db)):
+    return await NotesService.get_versions(db, note_id)
+
+@router.post("/{note_id}/checkpoint", response_model=NoteVersionView)
+async def create_checkpoint(note_id: int, data: NoteVersionCreate, db: AsyncSession = Depends(get_db)):
+    return await NotesService.create_version(db, note_id, data)
+
+@router.post("/{note_id}/versions/{version_id}/restore", response_model=NoteView)
+async def restore_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
+    return await NotesService.restore_version(db, note_id, version_id)
+
+@router.post("/{note_id}/versions/{version_id}/pin", response_model=NoteVersionView)
+async def pin_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
+    return await NotesService.pin_version(db, note_id, version_id)
+
+@router.delete("/{note_id}/versions/{version_id}")
+async def delete_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
+    return await NotesService.delete_version(db, note_id, version_id)

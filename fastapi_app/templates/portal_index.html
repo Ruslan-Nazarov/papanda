@@ -159,7 +159,7 @@
         }
         globalSearchResults.classList.remove('hidden');
         try {
-            const res = await fetch(`/api/notes?query=${encodeURIComponent(q)}`);
+            const res = await fetch(`/api/dialectics/search/notes?q=${encodeURIComponent(q)}`);
             const notes = await res.json();
             if (notes.length === 0) {
                 globalSearchResults.innerHTML = '<div style="color: #64748b; font-size: 0.9em; padding: 8px;">Ничего не найдено</div>';
@@ -171,7 +171,11 @@
         }
     });
 
-    document.addEventListener('DOMContentLoaded', loadPortal);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadPortal);
+    } else {
+        loadPortal();
+    }
 </script>
 <style>
     .cat-link { 

@@ -46,29 +46,57 @@ async def get_db(request: Request = None) -> AsyncSession:
                 async with engine.begin() as conn_0:
                     res = await conn_0.execute(text("PRAGMA table_info(notes)"))
                     columns = [row[1] for row in res.fetchall()]
+                    
                     if columns and "title" not in columns:
-                        # The old notes table is completely incompatible. Backup and recreate.
-                        import time
-                        backup_name = f"notes_old_backup_{int(time.time())}"
-                        await conn_0.execute(text(f"ALTER TABLE notes RENAME TO {backup_name}"))
-                        await conn_0.run_sync(Base.metadata.create_all)
+                        await conn_0.execute(text("ALTER TABLE notes ADD COLUMN title VARCHAR(150) DEFAULT 'Без названия'"))
+                        try:
+                            await conn_0.execute(text("CREATE INDEX ix_notes_title ON notes (title)"))
+                        except Exception:
+                            pass
+                    
+                    if columns and "content_json" not in columns:
+                        await conn_0.execute(text("ALTER TABLE notes ADD COLUMN content_json JSON DEFAULT '[]'"))
+                    
+                    if columns and "is_pinned" not in columns:
+                        await conn_0.execute(text("ALTER TABLE notes ADD COLUMN is_pinned BOOLEAN DEFAULT 0"))
+                        
+                    if columns and "status" not in columns:
+                        await conn_0.execute(text("ALTER TABLE notes ADD COLUMN status VARCHAR(20) DEFAULT 'none'"))
+                        
+                    if columns and "is_deleted" not in columns:
+                        await conn_0.execute(text("ALTER TABLE notes ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
+                        try:
+                            await conn_0.execute(text("CREATE INDEX ix_notes_is_deleted ON notes (is_deleted)"))
+                        except Exception:
+                            pass
             except Exception as e:
                 import logging
-                logging.getLogger(__name__).error(f"Migration error: {e}")
+                logging.getLogger(__name__).error(f"Migration error (title/other): {e}")
                 pass
             
-            # Each migration must be in its own transaction to prevent one failure from aborting others
             try:
                 async with engine.begin() as conn_1:
-                    await conn_1.execute(text("ALTER TABLE notes ADD COLUMN sticker_text VARCHAR"))
-                    await conn_1.execute(text("ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"))
+                    res = await conn_1.execute(text("PRAGMA table_info(notes)"))
+                    columns = [row[1] for row in res.fetchall()]
+                    
+                    if columns and "sticker_text" not in columns:
+                        await conn_1.execute(text("ALTER TABLE notes ADD COLUMN sticker_text VARCHAR"))
+                    if columns and "sticker_color" not in columns:
+                        await conn_1.execute(text("ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"))
             except Exception:
                 pass
             
             try:
                 async with engine.begin() as conn_2:
-                    await conn_2.execute(text("ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)"))
-                    await conn_2.execute(text("CREATE UNIQUE INDEX ix_notes_sync_id ON notes(sync_id)"))
+                    res = await conn_2.execute(text("PRAGMA table_info(notes)"))
+                    columns = [row[1] for row in res.fetchall()]
+                    
+                    if columns and "sync_id" not in columns:
+                        await conn_2.execute(text("ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)"))
+                        try:
+                            await conn_2.execute(text("CREATE UNIQUE INDEX ix_notes_sync_id ON notes(sync_id)"))
+                        except Exception:
+                            pass
             except Exception:
                 pass
             

@@ -111,25 +111,25 @@ class LoadNotesModalService {
                 .premium-action-btn {
                     background: #fef2f2;
                     color: #ef4444;
-                    border: none;
-                    width: 34px;
-                    height: 34px;
-                    border-radius: 10px;
+                    border: 1px solid #fee2e2;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
                     transition: all 0.2s;
-                    opacity: 0;
-                    transform: scale(0.9);
+                    opacity: 0.7;
+                    flex-shrink: 0;
                 }
                 .premium-note-card:hover .premium-action-btn {
                     opacity: 1;
-                    transform: scale(1);
                 }
                 .premium-action-btn:hover {
                     background: #fee2e2;
-                    transform: scale(1.05) !important;
+                    opacity: 1;
+                    transform: scale(1.08) !important;
                 }
                 .premium-restore-btn {
                     background: #f0fdf4;
@@ -216,9 +216,9 @@ class LoadNotesModalService {
                     const updatedAt = n.updated_at ? new Date(n.updated_at).toLocaleDateString('ru-RU') : '—';
                     
                     html += `
-                        <div class="note-item premium-note-card">
+                        <div class="note-item premium-note-card" data-id="${n.id}" style="cursor: pointer;">
                             <div style="min-width:0; flex:1;">
-                                <span class="note-title-link" data-id="${n.id}" style="font-weight: 700; font-size: 1.05rem; cursor: pointer; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #0f172a; margin-bottom: 4px; transition: color 0.2s;">
+                                <span class="note-title-link" data-id="${n.id}" style="font-weight: 700; font-size: 1.05rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #0f172a; margin-bottom: 4px; transition: color 0.2s;">
                                     ${this.escapeHtml(n.title || 'Без названия')}
                                 </span>
                                 <span style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center;">
@@ -356,21 +356,18 @@ class LoadNotesModalService {
             if (statusSelect) {
                 statusSelect.addEventListener('change', (e) => {
                     currentStatus = e.target.value;
-                    const tabContent = dialog.querySelector('#tab-content');
-                    if (tabContent) {
-                        const filtered = currentStatus === 'all' ? currentNotes : currentNotes.filter(n => n.status === currentStatus);
-                        tabContent.innerHTML = renderNotesTab(filtered.length > 0 ? filtered : []);
-                        // Re-bind after re-render (note: filtered is a subset, rebind fresh)
-                    }
                     loadNotes(dialog);
                 });
             }
 
-            dialog.querySelectorAll('.note-title-link').forEach(link => {
-                link.addEventListener('click', async (e) => {
-                    const id = e.target.closest('.note-title-link').dataset.id;
-                    await NoteStorageService.loadNote(id);
-                    if (dialog.closeModal) dialog.closeModal();
+            dialog.querySelectorAll('.premium-note-card').forEach(card => {
+                card.addEventListener('click', async (e) => {
+                    if (e.target.closest('.btn-delete-note')) return;
+                    const id = card.dataset.id;
+                    if (id) {
+                        await NoteStorageService.loadNote(id);
+                        if (dialog.closeModal) dialog.closeModal();
+                    }
                 });
             });
 

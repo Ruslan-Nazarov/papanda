@@ -271,7 +271,7 @@
                 const q = globalSearchInput.value.trim();
                 if (!q) { globalSearchResults.innerHTML = ''; return; }
                 try {
-                    const res = await fetch(`/api/notes?query=${encodeURIComponent(q)}`);
+                    const res = await fetch(`/api/dialectics/search/notes?q=${encodeURIComponent(q)}`);
                     const notes = await res.json();
                     if (notes.length === 0) {
                         globalSearchResults.innerHTML = '<div style="color: #64748b; font-size: 0.9em; padding: 8px;">Ничего не найдено</div>';
@@ -296,10 +296,10 @@
                     btnEvaluate.textContent = '⏳ Оцениваем...';
                     btnEvaluate.disabled = true;
                     try {
-                        const res = await fetch(\`/api/dialectics/\${noteId}/evaluate\`, { method: 'POST' });
+                        const res = await fetch(`/api/dialectics/${noteId}/evaluate`, { method: 'POST' });
                         if (!res.ok) throw new Error('Ошибка API');
                         const data = await res.json();
-                        alert(\`Оценка: \${data.score}/100\\n\\n\${data.feedback}\`);
+                        alert(`Оценка: ${data.score}/100\n\n${data.feedback}`);
                     } catch (e) {
                         alert('Не удалось получить оценку.');
                     } finally {
@@ -316,6 +316,10 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', loadNote);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadNote);
+    } else {
+        loadNote();
+    }
 </script>
 {% endblock %}

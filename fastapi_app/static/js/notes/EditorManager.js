@@ -776,20 +776,20 @@ class EditorManager {
                     const noteTitle = AppState.currentNote.title;
                     if (anchorText) {
                         if (AppState.isAutoFillStepByStep) {
-                            NotesAPI.generateNextStep(anchorText, 'step2').then(res => {
-                                if (res && res.result && res.result['step2']) {
-                                    const stepObj = ALGORITHM_STEPS.find(s => s.role === 'step2') || {};
+                            NotesAPI.generateNextStep(anchorText, 'step1').then(res => {
+                                if (res && res.result && res.result['step1']) {
+                                    const stepObj = ALGORITHM_STEPS.find(s => s.role === 'step1') || {};
                                     const newBlock = {
                                         id: 'block-' + Math.random().toString(36).substr(2, 9),
-                                        side: 'left',
-                                        role: 'step2',
-                                        title: stepObj.title || 'step2',
-                                        html: `<p>${res.result['step2']}</p>`,
+                                        side: stepObj.side || 'left',
+                                        role: 'step1',
+                                        title: stepObj.title || 'step1',
+                                        html: `<p>${res.result['step1']}</p>`,
                                         status: 'ready',
                                         isDraft: false
                                     };
                                     AppState.addBlock(newBlock);
-                                    AppState.dismissHint('step2');
+                                    AppState.dismissHint('step1');
                                     import('./BlockDOMRenderer.js').then(m => m.default.renderAll());
                                     
                                     setTimeout(() => {
@@ -808,7 +808,7 @@ class EditorManager {
                         } else {
                             NotesAPI.autofillConspect(anchorText, noteTitle).then(res => {
                                 if (res && res.result && typeof res.result === 'object') {
-                                    const steps = ['step2', 'step3', 'step4', 'step5'];
+                                    const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
                                     let delay = 600;
                                     
                                     steps.forEach((step, index) => {
@@ -817,7 +817,7 @@ class EditorManager {
                                                 const stepObj = ALGORITHM_STEPS.find(s => s.role === step) || {};
                                                 const newBlock = {
                                                     id: 'block-' + Math.random().toString(36).substr(2, 9),
-                                                    side: step === 'step3' ? 'right' : (step === 'step2' ? 'left' : 'center'),
+                                                    side: stepObj.side || 'center',
                                                     role: step,
                                                     title: stepObj.title || step,
                                                     html: `<p>${res.result[step]}</p>`,

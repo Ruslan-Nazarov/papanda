@@ -29,12 +29,10 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = asyncio.create_task(cleanup_old_dbs())
-    from fastapi_app.sync import sync_published_notes
-    await sync_published_notes()
     yield
     task.cancel()
 
-app = FastAPI(title="Notes App", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Notes App", version="0.7.7", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)

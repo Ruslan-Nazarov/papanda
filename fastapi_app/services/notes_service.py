@@ -117,41 +117,6 @@ class NotesService:
         await session.commit()
         await session.refresh(note)
         
-        # Publish logic if status is ready
-        if note.status == "ready":
-            import json
-            import subprocess
-            import asyncio
-            from pathlib import Path
-            from fastapi_app.schemas.notes import NoteView
-            
-            try:
-                # Prepare JSON data
-                note_view = NoteView.model_validate(note)
-                export_data = note_view.model_dump(mode='json')
-                
-                BASE_DIR = Path(__file__).resolve().parent.parent.parent
-                publish_dir = BASE_DIR / "content" / "published"
-                publish_dir.mkdir(parents=True, exist_ok=True)
-                
-                file_path = publish_dir / f"{note.sync_id}.json"
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(export_data, f, ensure_ascii=False, indent=2)
-                    
-                # Run git commands in background
-                def _run_git():
-                    try:
-                        subprocess.run(["git", "add", str(file_path)], check=True, cwd=str(Path.cwd()))
-                        subprocess.run(["git", "commit", "-m", f"auto-publish note: {note.title}"], check=True, cwd=str(Path.cwd()))
-                        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=str(Path.cwd()))
-                    except Exception as e:
-                        print(f"Git publish failed: {e}")
-                
-                # Execute synchronously to ensure it happens, or use asyncio.to_thread
-                asyncio.create_task(asyncio.to_thread(_run_git))
-            except Exception as e:
-                print(f"Export failed: {e}")
-        
         return note
 
     @staticmethod

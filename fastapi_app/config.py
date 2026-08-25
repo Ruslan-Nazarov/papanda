@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     SECRET_KEY: str = ""
     ENABLE_ONLY_NOTES: bool = True
-    DEMO_MODE: bool = True
+    DEMO_MODE: bool = False
     DATABASE_URL: str = ""
     
     # Пути
