@@ -95,33 +95,41 @@ async def search_notes(q: str = Query(...), db: AsyncSession = Depends(get_db)):
 
 @router.get("/diagnostic/sync")
 async def get_diagnostic(session: AsyncSession = Depends(get_db)):
-    import os
-    from pathlib import Path
-    
-    BASE_DIR = Path(__file__).resolve().parent.parent.parent
-    publish_dir = BASE_DIR / "content" / "published"
-    
-    files = []
-    if publish_dir.exists():
-        files = [f.name for f in publish_dir.glob("*.json")]
+    try:
+        import os, traceback
+        from pathlib import Path
         
-    sync_errors = ""
-    err_log = BASE_DIR / "sync_errors.log"
-    if err_log.exists():
-        with open(err_log, "r", encoding="utf-8") as f:
-            sync_errors = f.read()
+        BASE_DIR = Path(__file__).resolve().parent.parent.parent
+        publish_dir = BASE_DIR / "content" / "published"
+        
+        files = []
+        if publish_dir.exists():
+            files = [f.name for f in publish_dir.glob("*.json")]
             
-    stmt = select(Note).where(Note.status == 'ready')
-    result = await session.execute(stmt)
-    notes_in_db = [{"id": n.id, "title": n.title, "sync_id": n.sync_id, "status": n.status} for n in result.scalars().all()]
-    
-    return {
-        "publish_dir": str(publish_dir),
-        "publish_dir_exists": publish_dir.exists(),
-        "json_files": files,
-        "sync_errors": sync_errors,
-        "notes_in_db": notes_in_db,
-    }
+        sync_errors = ""
+        err_log = BASE_DIR / "sync_errors.log"
+        if err_log.exists():
+            with open(err_log, "r", encoding="utf-8") as f:
+                sync_errors = f.read()
+                
+        notes_in_db = []
+        try:
+            stmt = select(Note).where(Note.status == 'ready')
+            result = await session.execute(stmt)
+            notes_in_db = [{"id": n.id, "title": n.title, "sync_id": getattr(n, 'sync_id', None), "status": n.status} for n in result.scalars().all()]
+        except Exception as e:
+            notes_in_db = [{"error": str(e), "trace": traceback.format_exc()}]
+        
+        return {
+            "publish_dir": str(publish_dir),
+            "publish_dir_exists": publish_dir.exists(),
+            "json_files": files,
+            "sync_errors": sync_errors,
+            "notes_in_db": notes_in_db,
+        }
+    except Exception as e:
+        import traceback
+        return {"critical_error": str(e), "trace": traceback.format_exc()}
 
 @router.post("/save", response_model=NoteView)
 async def create_note(data: NoteCreate, db: AsyncSession = Depends(get_db)):
