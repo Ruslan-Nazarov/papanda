@@ -37,20 +37,25 @@ async def get_db(request: Request = None) -> AsyncSession:
         async with engine.begin() as conn:
             if needs_init:
                 await conn.run_sync(Base.metadata.create_all)
-            else:
-                # Basic auto-migration for sticker columns (ignore errors if they exist)
-                from sqlalchemy import text
-                try:
-                    await conn.execute(text("ALTER TABLE notes ADD COLUMN sticker_text VARCHAR"))
-                    await conn.execute(text("ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"))
-                except Exception:
-                    pass
                 
-                try:
-                    await conn.execute(text("ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)"))
-                    await conn.execute(text("CREATE UNIQUE INDEX ix_notes_sync_id ON notes(sync_id)"))
-                except Exception:
-                    pass
+        if not needs_init:
+            # Basic auto-migration for sticker columns (ignore errors if they exist)
+            from sqlalchemy import text
+            
+            # Each migration must be in its own transaction to prevent one failure from aborting others
+            try:
+                async with engine.begin() as conn_1:
+                    await conn_1.execute(text("ALTER TABLE notes ADD COLUMN sticker_text VARCHAR"))
+                    await conn_1.execute(text("ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"))
+            except Exception:
+                pass
+            
+            try:
+                async with engine.begin() as conn_2:
+                    await conn_2.execute(text("ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)"))
+                    await conn_2.execute(text("CREATE UNIQUE INDEX ix_notes_sync_id ON notes(sync_id)"))
+            except Exception:
+                pass
             
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     
