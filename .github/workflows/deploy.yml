@@ -25,6 +25,9 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
+            echo "Installing dependencies..."
+            /root/papanda/venv/bin/pip install -r requirements.txt
+            
             echo "Restarting Papanda service..."
             systemctl restart papanda
             
