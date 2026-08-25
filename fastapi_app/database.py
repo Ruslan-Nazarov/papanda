@@ -39,8 +39,19 @@ async def get_db(request: Request = None) -> AsyncSession:
                 await conn.run_sync(Base.metadata.create_all)
                 
         if not needs_init:
-            # Basic auto-migration for sticker columns (ignore errors if they exist)
+            # Basic auto-migration for sticker columns and old schemas (ignore errors if they exist)
             from sqlalchemy import text
+            
+            try:
+                async with engine.begin() as conn_0:
+                    res = await conn_0.execute(text("PRAGMA table_info(notes)"))
+                    columns = [row[1] for row in res.fetchall()]
+                    if "title" not in columns:
+                        # The old notes table is completely incompatible. Backup and recreate.
+                        await conn_0.execute(text("ALTER TABLE notes RENAME TO notes_old_backup"))
+                        await conn_0.run_sync(Base.metadata.create_all)
+            except Exception:
+                pass
             
             # Each migration must be in its own transaction to prevent one failure from aborting others
             try:
