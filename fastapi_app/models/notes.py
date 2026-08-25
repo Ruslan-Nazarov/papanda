@@ -23,6 +23,7 @@ class Note(Base):
     status: Mapped[str] = mapped_column(String(20), default="none") # none, in_progress, ready
     sticker_text: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     sticker_color: Mapped[str] = mapped_column(String(20), default="#fff9c4")
+    sync_id: Mapped[Optional[str]] = mapped_column(String(36), unique=True, index=True, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

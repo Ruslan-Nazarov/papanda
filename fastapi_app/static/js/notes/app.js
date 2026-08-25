@@ -403,7 +403,7 @@ class App {
             });
         }
 
-        const btnPublish = document.getElementById('btn-publish');
+        const btnPublish = document.getElementById('menu-item-publish');
         if (btnPublish) {
             btnPublish.addEventListener('click', async () => {
                 AppState.currentNote.status = 'ready';

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Чтение - База Знаний{% endblock %}
+{% block title %}Чтение - Конспекты{% endblock %}
 
 {% block content %}
 <div style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
@@ -122,7 +122,7 @@
         try {
             const note = await NotesAPI.getNote(noteId);
             document.getElementById('read-title').textContent = note.title || 'Без названия';
-            document.title = (note.title || 'Чтение') + ' - База Знаний';
+            document.title = (note.title || 'Чтение') + ' - Конспекты';
 
             const blocks = typeof note.content_json === 'string' ? JSON.parse(note.content_json) : note.content_json || [];
             

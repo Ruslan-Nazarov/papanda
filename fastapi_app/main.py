@@ -29,6 +29,8 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = asyncio.create_task(cleanup_old_dbs())
+    from fastapi_app.sync import sync_published_notes
+    await sync_published_notes()
     yield
     task.cancel()
 

@@ -85,6 +85,7 @@ class NoteView(BaseModel):
     category: Optional[CategoryView] = None
     sticker_text: Optional[str] = None
     sticker_color: Optional[str] = None
+    sync_id: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 

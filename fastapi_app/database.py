@@ -45,6 +45,12 @@ async def get_db(request: Request = None) -> AsyncSession:
                     await conn.execute(text("ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"))
                 except Exception:
                     pass
+                
+                try:
+                    await conn.execute(text("ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)"))
+                    await conn.execute(text("CREATE UNIQUE INDEX ix_notes_sync_id ON notes(sync_id)"))
+                except Exception:
+                    pass
             
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     
