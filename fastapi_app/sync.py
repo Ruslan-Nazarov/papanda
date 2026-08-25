@@ -10,16 +10,15 @@ logger = logging.getLogger(__name__)
 
 async def sync_published_notes():
     """Reads JSON files from content/published and upserts them into the database."""
-    publish_dir = Path("content/published")
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    publish_dir = BASE_DIR / "content" / "published"
     if not publish_dir.exists():
         return
         
     try:
-        # We need an ad-hoc session because this runs outside of a request context
-        from fastapi_app.database import async_sessionmaker, engine
-        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        from fastapi_app.database import get_db
         
-        async with async_session() as session:
+        async for session in get_db():
             for file_path in publish_dir.glob("*.json"):
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:

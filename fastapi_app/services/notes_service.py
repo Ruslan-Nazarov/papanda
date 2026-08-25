@@ -130,7 +130,8 @@ class NotesService:
                 note_view = NoteView.model_validate(note)
                 export_data = note_view.model_dump(mode='json')
                 
-                publish_dir = Path("content/published")
+                BASE_DIR = Path(__file__).resolve().parent.parent.parent
+                publish_dir = BASE_DIR / "content" / "published"
                 publish_dir.mkdir(parents=True, exist_ok=True)
                 
                 file_path = publish_dir / f"{note.sync_id}.json"
