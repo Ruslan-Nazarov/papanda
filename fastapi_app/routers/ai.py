@@ -1,60 +1,68 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Optional, List, Any
 import json
 import base64
-from fastapi_app.services.ai_service import ai_service
-from fastapi_app.services.locale_utils import normalize_locale
-from fastapi_app.rate_limiter import limiter
 import tempfile
 import os
+import io
 import aiofiles.os
 from pypdf import PdfReader
 
+from fastapi_app.services.ai_service import ai_service
+from fastapi_app.services.locale_utils import normalize_locale
+from fastapi_app.rate_limiter import limiter
+
 router = APIRouter()
 
+def _try_parse_json(raw: str, fallback: Any = None) -> Any:
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return fallback if fallback is not None else raw
+
 class DialecticsHintRequest(BaseModel):
-    step_id: str
-    current_content: str
-    note_title: Optional[str] = ""
-    mode: Optional[str] = "hint"
+    step_id: str = Field(..., max_length=100)
+    current_content: str = Field(..., max_length=50_000)
+    note_title: Optional[str] = Field(default="", max_length=300)
+    mode: Optional[str] = Field(default="hint", max_length=50)
+
 class OppositesRequest(BaseModel):
-    process_a: str
-    locale: Optional[str] = None
+    process_a: str = Field(..., max_length=5_000)
+    locale: Optional[str] = Field(default=None, max_length=20)
 
 class ExplainRequest(BaseModel):
-    text: str
-    context_before: Optional[str] = ""
-    context_after: Optional[str] = ""
-    history: Optional[List[dict]] = []
+    text: str = Field(..., max_length=10_000)
+    context_before: Optional[str] = Field(default="", max_length=5_000)
+    context_after: Optional[str] = Field(default="", max_length=5_000)
+    history: Optional[List[dict]] = Field(default=[], max_length=30)
 
 class ParserRequest(BaseModel):
-    formula: str
+    formula: str = Field(..., max_length=5_000)
 
 class TextMathRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=10_000)
     
 class EditMathRequest(BaseModel):
-    formula: str
-    instruction: str
+    formula: str = Field(..., max_length=5_000)
+    instruction: str = Field(..., max_length=5_000)
 
 class HintRequest(BaseModel):
-    step_id: str
-    goal_text: Optional[str] = ""
-    context_text: Optional[str] = ""
+    step_id: str = Field(..., max_length=100)
+    goal_text: Optional[str] = Field(default="", max_length=1_000)
+    context_text: Optional[str] = Field(default="", max_length=50_000)
 
 class CheckRequest(BaseModel):
-    text: str
-    history: Optional[List[dict]] = []
+    text: str = Field(..., max_length=50_000)
+    history: Optional[List[dict]] = Field(default=[], max_length=30)
 
 class AutofillRequest(BaseModel):
-    anchor_text: str
-    note_title: Optional[str] = ""
+    anchor_text: str = Field(..., max_length=5_000)
+    note_title: Optional[str] = Field(default="", max_length=300)
 
 class GenerateStepRequest(BaseModel):
-    context_text: str
-    target_step: str
-
+    context_text: str = Field(..., max_length=50_000)
+    target_step: str = Field(..., max_length=100)
 
 @router.post("/opposites")
 @limiter.limit("5/minute")
@@ -69,8 +77,8 @@ async def explain_concept(request: Request, data: ExplainRequest):
     locale = normalize_locale(request.state.locale)
     result = await ai_service.explain_concept(
         text=data.text,
-        context_before=data.context_before,
-        context_after=data.context_after,
+        context_before=data.context_before or "",
+        context_after=data.context_after or "",
         history=data.history or [],
         locale=locale
     )
@@ -80,11 +88,7 @@ async def explain_concept(request: Request, data: ExplainRequest):
 @limiter.limit("20/minute")
 async def parser(request: Request, data: ParserRequest):
     result = await ai_service.generate_parser(data.formula)
-    try:
-        res_json = json.loads(result)
-        return {"result": res_json}
-    except json.JSONDecodeError:
-        return {"result": result}
+    return {"result": _try_parse_json(result)}
 
 @router.post("/text-math")
 @limiter.limit("10/minute")
@@ -96,11 +100,7 @@ async def text_math(request: Request, data: TextMathRequest):
 @limiter.limit("10/minute")
 async def edit_math(request: Request, data: EditMathRequest):
     result = await ai_service.edit_math(data.instruction, data.formula)
-    try:
-        res_json = json.loads(result)
-        return {"result": res_json}
-    except json.JSONDecodeError:
-        return {"result": result}
+    return {"result": _try_parse_json(result)}
 
 @router.post("/formula/ocr")
 @limiter.limit("5/minute")
@@ -108,11 +108,7 @@ async def ocr_formula(request: Request, file: UploadFile = File(...)):
     contents = await file.read()
     base64_encoded = base64.b64encode(contents).decode('utf-8')
     result = await ai_service.ocr_formula(base64_encoded)
-    try:
-        res_json = json.loads(result)
-        return {"result": res_json}
-    except json.JSONDecodeError:
-        return {"result": result}
+    return {"result": _try_parse_json(result)}
 
 @router.post("/voice-math")
 @limiter.limit("5/minute")
@@ -124,11 +120,10 @@ async def voice_math(request: Request, file: UploadFile = File(...)):
     try:
         text = await ai_service.transcribe_audio(temp_audio_path)
         result = await ai_service.generate_parser(text)
-        try:
-            res_json = json.loads(result)
-            return {"result": res_json.get("formula", text)}
-        except json.JSONDecodeError:
-            return {"result": result}
+        parsed = _try_parse_json(result)
+        if isinstance(parsed, dict) and "formula" in parsed:
+            return {"result": parsed.get("formula", text)}
+        return {"result": result}
     finally:
         if await aiofiles.os.path.exists(temp_audio_path):
             await aiofiles.os.remove(temp_audio_path)
@@ -143,11 +138,16 @@ async def article_parser(
 ):
     text_to_parse = article_text or ""
     
-    if file and file.filename.endswith(".pdf"):
+    if file:
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files are supported")
         try:
-            pdf_reader = PdfReader(file.file)
+            contents = await file.read()
+            pdf_reader = PdfReader(io.BytesIO(contents))
             for page in pdf_reader.pages:
-                text_to_parse += page.extract_text() + "\n"
+                extracted = page.extract_text()
+                if extracted:
+                    text_to_parse += extracted + "\n"
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error reading PDF: {str(e)}")
     
@@ -155,15 +155,12 @@ async def article_parser(
         raise HTTPException(status_code=400, detail="Must provide valid file or article_text")
         
     result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message)
-    
-    try:
-        res_json = json.loads(result)
-        return {"result": res_json}
-    except json.JSONDecodeError:
-        return {"result": [{"side": "left", "html": f"<p>{result}</p>", "role": "thesis"}]}
+    fallback = [{"side": "left", "html": f"<p>{result}</p>", "role": "thesis"}]
+    return {"result": _try_parse_json(result, fallback=fallback)}
 
 @router.post("/hint-step")
 @router.post("/hint")
+@limiter.limit("15/minute")
 async def get_dialectics_hint(
     req: DialecticsHintRequest, 
     request: Request
@@ -174,9 +171,9 @@ async def get_dialectics_hint(
         current_content=req.current_content,
         note_title=req.note_title,
         locale=locale,
-        mode=req.mode
+        mode=req.mode or "hint"
     )
-    return {"result": hint_text}
+    return {"result": hint_text, "hint": hint_text}
 
 @router.post("/check-ai")
 @limiter.limit("10/minute")
@@ -201,23 +198,15 @@ async def get_notes_hints(request: Request):
 @limiter.limit("5/minute")
 async def autofill_conspect(request: Request, data: AutofillRequest):
     locale = normalize_locale(request.state.locale)
-    result = await ai_service.autofill_conspect(data.anchor_text, data.note_title, locale=locale)
-    try:
-        res_json = json.loads(result)
-        return {"result": res_json}
-    except json.JSONDecodeError:
-        return {"result": result}
-
+    result = await ai_service.autofill_conspect(data.anchor_text, data.note_title or "", locale=locale)
+    return {"result": _try_parse_json(result)}
 
 @router.post("/generate-next-step")
 @limiter.limit("5/minute")
 async def generate_next_step(request: Request, data: GenerateStepRequest):
     locale = normalize_locale(request.state.locale)
     result = await ai_service.generate_next_step(data.context_text, data.target_step, locale=locale)
-    try:
-        res_json = json.loads(result)
-        return {"result": res_json}
-    except json.JSONDecodeError:
-        return {"result": result}
+    return {"result": _try_parse_json(result)}
+
 
 

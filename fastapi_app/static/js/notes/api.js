@@ -57,6 +57,12 @@ class NotesAPI {
     static generateNextStep(contextText, targetStep) {
         return this.request('/ai/dialectics/generate-next-step', 'POST', { context_text: contextText, target_step: targetStep });
     }
+    static textMath(text) {
+        return this.request('/ai/text-math', 'POST', { text });
+    }
+    static editMath(instruction, formula) {
+        return this.request('/ai/edit-math', 'POST', { instruction, formula });
+    }
 
     // Connections
     static getConnections(noteId) { return this.request(`/dialectics/${noteId}/connections`); }

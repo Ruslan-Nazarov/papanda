@@ -57,6 +57,7 @@ class NoteCreate(BaseModel):
     title: str
     blocks: List[NoteBlock]
     is_pinned: bool = False
+    is_example: bool = False
     category_id: Optional[int] = None
     status: Optional[Literal["none", "in_progress", "ready"]] = "none"
     sticker_text: Optional[str] = None
@@ -66,6 +67,7 @@ class NoteUpdate(BaseModel):
     title: Optional[str] = None
     blocks: Optional[List[NoteBlock]] = None
     is_pinned: Optional[bool] = None
+    is_example: Optional[bool] = None
     category_id: Optional[int] = None
     status: Optional[Literal["none", "in_progress", "ready"]] = None
     sticker_text: Optional[str] = None
@@ -77,6 +79,7 @@ class NoteView(BaseModel):
     content_json: List[Dict[str, Any]]
     category_id: Optional[int]
     is_pinned: bool
+    is_example: bool
     status: str
     is_deleted: bool
     deleted_at: Optional[datetime] = None

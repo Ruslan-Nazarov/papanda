@@ -1,16 +1,24 @@
+import os
+import json
+import uuid
 import time
+from pathlib import Path
+from datetime import datetime, timezone
+from typing import List, Optional, Dict, Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import or_
+from sqlalchemy import or_, delete, update
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
-from fastapi_app.models.notes import Note, NoteCategory, NoteVersion
+
+from fastapi_app.config import settings
+from fastapi_app.models.notes import Note, NoteCategory, NoteVersion, NoteConnection
 from fastapi_app.schemas.notes import NoteCreate, NoteUpdate, CategoryCreate, NoteVersionCreate
-from datetime import datetime, timezone
 
 class NotesService:
     @staticmethod
-    async def get_all_notes(session: AsyncSession, search: str = None, category_id: int = None, locale: str = 'ru'):
+    async def get_all_notes(session: AsyncSession, search: Optional[str] = None, category_id: Optional[int] = None, locale: str = 'ru'):
         stmt = select(Note).where(Note.is_deleted == False)
         
         if category_id:
@@ -29,9 +37,9 @@ class NotesService:
         result = await session.execute(stmt)
         notes = list(result.scalars().all())
         
-        # Translate protected examples based on locale
+        # Translate example notes based on locale
         for note in notes:
-            if note.title in ["Example Note", "Пример конспекта", "Конспект мысалы"]:
+            if note.is_example:
                 session.expunge(note)
                 if locale == "en":
                     note.title = "Example Note"
@@ -46,11 +54,11 @@ class NotesService:
     async def create_note(session: AsyncSession, data: NoteCreate):
         blocks_data = [b.model_dump() for b in data.blocks]
         
-        import uuid
         new_note = Note(
             title=data.title,
             content_json=blocks_data,
             is_pinned=data.is_pinned,
+            is_example=data.is_example,
             category_id=data.category_id,
             status=data.status,
             sticker_text=data.sticker_text,
@@ -92,7 +100,6 @@ class NotesService:
     async def update_note(session: AsyncSession, note_id: int, data: NoteUpdate):
         note = await NotesService.get_note(session, note_id)
         
-        import uuid
         if not note.sync_id:
             note.sync_id = str(uuid.uuid4())
             
@@ -100,6 +107,8 @@ class NotesService:
             note.title = data.title
         if data.is_pinned is not None:
             note.is_pinned = data.is_pinned
+        if data.is_example is not None:
+            note.is_example = data.is_example
         if data.category_id is not None:
             note.category_id = data.category_id
         if data.status is not None:
@@ -149,7 +158,6 @@ class NotesService:
             all_auto = result_auto.scalars().all()
             
             if len(all_auto) > 10:
-                from sqlalchemy import delete
                 ids_to_delete = [v.id for v in all_auto[10:]]
                 await session.execute(delete(NoteVersion).where(NoteVersion.id.in_(ids_to_delete)))
         
@@ -160,6 +168,9 @@ class NotesService:
     @staticmethod
     async def delete_note(session: AsyncSession, note_id: int):
         note = await NotesService.get_note(session, note_id)
+        if note.is_example:
+            raise HTTPException(status_code=400, detail="Cannot delete an example note")
+            
         note.is_deleted = True
         note.deleted_at = datetime.now(timezone.utc)
         await session.commit()
@@ -184,6 +195,9 @@ class NotesService:
     @staticmethod
     async def permanent_delete(session: AsyncSession, note_id: int):
         note = await NotesService.get_note(session, note_id)
+        if note.is_example:
+            raise HTTPException(status_code=400, detail="Cannot permanently delete an example note")
+            
         await session.delete(note)
         await session.commit()
         return {"status": "success", "message": "Note deleted permanently"}
@@ -298,7 +312,6 @@ class NotesService:
             raise HTTPException(status_code=404, detail="Category not found")
         
         # Reset category_id for notes in this category
-        from sqlalchemy import update
         await session.execute(
             update(Note).where(Note.category_id == category_id).values(category_id=None)
         )
@@ -309,9 +322,6 @@ class NotesService:
 
     @staticmethod
     async def get_connections(session: AsyncSession, note_id: int):
-        from fastapi_app.models.notes import NoteConnection
-        from sqlalchemy import or_
-        
         stmt = select(NoteConnection).where(
             or_(
                 NoteConnection.note_id_from == note_id,
@@ -352,7 +362,6 @@ class NotesService:
 
     @staticmethod
     async def create_connection(session: AsyncSession, note_id_from: int, note_id_to: int, label: str = "related"):
-        from fastapi_app.models.notes import NoteConnection
         if note_id_from == note_id_to:
             raise HTTPException(status_code=400, detail="Cannot connect note to itself")
             
@@ -389,7 +398,6 @@ class NotesService:
 
     @staticmethod
     async def delete_connection(session: AsyncSession, connection_id: int):
-        from fastapi_app.models.notes import NoteConnection
         stmt = select(NoteConnection).where(NoteConnection.id == connection_id)
         result = await session.execute(stmt)
         conn = result.scalar_one_or_none()
@@ -399,3 +407,78 @@ class NotesService:
         await session.delete(conn)
         await session.commit()
         return {"status": "success", "message": "Connection deleted"}
+
+    @staticmethod
+    async def export_examples_to_file(session: AsyncSession, filepath: Optional[str] = None):
+        target_path = Path(filepath) if filepath else settings.DATA_DIR / "example_notes.json"
+        
+        stmt = select(Note).where(Note.is_example == True, Note.is_deleted == False)
+        result = await session.execute(stmt)
+        examples = result.scalars().all()
+        
+        export_data = []
+        for ex in examples:
+            export_data.append({
+                "title": ex.title,
+                "content_json": ex.content_json,
+                "is_pinned": ex.is_pinned,
+                "sticker_text": ex.sticker_text,
+                "sticker_color": ex.sticker_color,
+                "sync_id": ex.sync_id
+            })
+            
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(target_path, "w", encoding="utf-8") as f:
+            json.dump(export_data, f, ensure_ascii=False, indent=2)
+            
+        return len(export_data)
+
+    @staticmethod
+    async def import_examples_from_file(session: AsyncSession, filepath: Optional[str] = None):
+        target_path = Path(filepath) if filepath else settings.DATA_DIR / "example_notes.json"
+        
+        if not target_path.exists():
+            return 0
+            
+        with open(target_path, "r", encoding="utf-8") as f:
+            try:
+                examples_data = json.load(f)
+            except json.JSONDecodeError:
+                return 0
+                
+        imported_count = 0
+        for data in examples_data:
+            sync_id = data.get("sync_id")
+            if sync_id:
+                stmt = select(Note).where(Note.sync_id == sync_id)
+                result = await session.execute(stmt)
+                existing = result.scalar_one_or_none()
+                
+                if existing:
+                    # Update existing example
+                    existing.title = data.get("title", existing.title)
+                    existing.content_json = data.get("content_json", existing.content_json)
+                    existing.is_pinned = data.get("is_pinned", existing.is_pinned)
+                    existing.sticker_text = data.get("sticker_text", existing.sticker_text)
+                    existing.sticker_color = data.get("sticker_color", existing.sticker_color)
+                    existing.is_example = True
+                    existing.is_deleted = False
+                else:
+                    # Create new example
+                    new_ex = Note(
+                        title=data.get("title", "Пример конспекта"),
+                        content_json=data.get("content_json", []),
+                        is_pinned=data.get("is_pinned", False),
+                        is_example=True,
+                        sticker_text=data.get("sticker_text"),
+                        sticker_color=data.get("sticker_color", "#fff9c4"),
+                        sync_id=sync_id
+                    )
+                    session.add(new_ex)
+                imported_count += 1
+                
+        if imported_count > 0:
+            await session.commit()
+            
+        return imported_count
+

@@ -17,166 +17,7 @@ class LoadNotesModalService {
             if (catRes.ok) categories = await catRes.json();
         } catch(e) {}
 
-        const modalStyles = `
-            <style>
-                .premium-modal-content {
-                    font-family: 'Inter', system-ui, sans-serif;
-                }
-                .premium-tab-btn {
-                    position: relative;
-                    padding: 10px 20px;
-                    border: none;
-                    background: transparent;
-                    font-weight: 600;
-                    font-size: 0.95rem;
-                    cursor: pointer;
-                    color: #64748b;
-                    transition: color 0.3s ease;
-                }
-                .premium-tab-btn:hover {
-                    color: #1e293b;
-                }
-                .premium-tab-btn.active {
-                    color: #2563eb;
-                }
-                .premium-tab-btn.active::after {
-                    content: '';
-                    position: absolute;
-                    bottom: -2px;
-                    left: 0;
-                    right: 0;
-                    height: 3px;
-                    background: #2563eb;
-                    border-radius: 3px 3px 0 0;
-                }
-                .premium-tab-btn.trash.active {
-                    color: #ef4444;
-                }
-                .premium-tab-btn.trash.active::after {
-                    background: #ef4444;
-                }
-                .premium-input, .premium-select {
-                    padding: 12px 16px;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 12px;
-                    font-size: 0.95rem;
-                    color: #1e293b;
-                    background: #f8fafc;
-                    transition: all 0.3s ease;
-                    outline: none;
-                }
-                .premium-input:focus, .premium-select:focus {
-                    background: #ffffff;
-                    border-color: #3b82f6;
-                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-                }
-                .premium-note-card {
-                    padding: 14px 18px;
-                    background: #ffffff;
-                    border: 1px solid #f1f5f9;
-                    border-radius: 14px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 10px;
-                    transition: all 0.25s ease;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-                }
-                .premium-note-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-                    border-color: #e2e8f0;
-                }
-                .premium-create-btn {
-                    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 12px;
-                    padding: 14px;
-                    font-weight: 600;
-                    font-size: 1rem;
-                    width: 100%;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-                    margin-top: 10px;
-                }
-                .premium-create-btn:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
-                }
-                .premium-create-btn:active {
-                    transform: translateY(1px);
-                }
-                .premium-action-btn {
-                    background: #fef2f2;
-                    color: #ef4444;
-                    border: 1px solid #fee2e2;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    opacity: 0.7;
-                    flex-shrink: 0;
-                }
-                .premium-note-card:hover .premium-action-btn {
-                    opacity: 1;
-                }
-                .premium-action-btn:hover {
-                    background: #fee2e2;
-                    opacity: 1;
-                    transform: scale(1.08) !important;
-                }
-                .premium-restore-btn {
-                    background: #f0fdf4;
-                    color: #16a34a;
-                    border: none;
-                    padding: 8px 14px;
-                    border-radius: 8px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .premium-restore-btn:hover {
-                    background: #dcfce7;
-                    transform: translateY(-1px);
-                }
-                .premium-delete-perm-btn {
-                    background: #fef2f2;
-                    color: #ef4444;
-                    border: none;
-                    padding: 8px 14px;
-                    border-radius: 8px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .premium-delete-perm-btn:hover {
-                    background: #fee2e2;
-                    transform: translateY(-1px);
-                }
-                .premium-list {
-                    padding: 4px;
-                }
-                .premium-list::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .premium-list::-webkit-scrollbar-track {
-                    background: transparent; 
-                }
-                .premium-list::-webkit-scrollbar-thumb {
-                    background: #cbd5e1; 
-                    border-radius: 4px;
-                }
-                .premium-list::-webkit-scrollbar-thumb:hover {
-                    background: #94a3b8; 
-                }
-            </style>
-        `;
+        const modalStyles = '';
 
         // --- Notes tab renderer ---
         const renderNotesTab = (notes) => {
@@ -229,7 +70,7 @@ class LoadNotesModalService {
                                 </span>
                             </div>
                             <button class="premium-action-btn btn-delete-note" data-id="${n.id}" title="В корзину">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                <svg style="pointer-events: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                             </button>
                         </div>
                     `;
@@ -373,16 +214,30 @@ class LoadNotesModalService {
 
             dialog.querySelectorAll('.btn-delete-note').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
                     const confirmed = await DialogService.confirm({
                         title: 'В корзину',
                         message: 'Переместить конспект в корзину?',
                         isDestructive: true,
                         confirmText: 'В корзину'
                     });
-                    if (confirmed) {
-                        const id = e.currentTarget.dataset.id;
-                        await NotesAPI.deleteNote(id);
-                        loadNotes(dialog);
+                    if (confirmed && id) {
+                        try {
+                            await NotesAPI.deleteNote(id);
+                            if (AppState.currentNote && String(AppState.currentNote.id) === String(id)) {
+                                const remaining = await NotesAPI.getNotes(currentSearch, currentCategory);
+                                if (remaining && remaining.length > 0) {
+                                    await NoteStorageService.loadNote(remaining[0].id);
+                                } else {
+                                    await NoteStorageService.createNewNote();
+                                }
+                            }
+                            loadNotes(dialog);
+                        } catch(err) {
+                            console.error('Delete error:', err);
+                            await DialogService.alert('Ошибка', 'Не удалось переместить конспект в корзину.');
+                        }
                     }
                 });
             });
@@ -400,7 +255,8 @@ class LoadNotesModalService {
         const bindTrashEvents = (dialog, trashedNotes) => {
             dialog.querySelectorAll('.btn-restore-note').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = e.currentTarget.dataset.id;
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
                     try {
                         const restored = await NotesAPI.restoreNote(id);
                         await NoteStorageService.loadNote(restored.id);
@@ -413,20 +269,25 @@ class LoadNotesModalService {
 
             dialog.querySelectorAll('.btn-permanent-delete').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
                     const confirmed = await DialogService.confirm({
                         title: 'Удаление навсегда',
                         message: 'Удалить конспект безвозвратно? Это действие нельзя отменить.',
                         isDestructive: true,
                         confirmText: 'Удалить навсегда'
                     });
-                    if (confirmed) {
-                        const id = e.currentTarget.dataset.id;
+                    if (confirmed && id) {
                         try {
                             await NotesAPI.permanentDelete(id);
                             // If we just permanently deleted the currently open note — clear state
-                            if (AppState.currentNote.id == id) {
-                                AppState.setNote({ id: null, title: 'Новый конспект', blocks: [] });
-                                BlockDOMRenderer.renderAll();
+                            if (AppState.currentNote && String(AppState.currentNote.id) === String(id)) {
+                                const remaining = await NotesAPI.getNotes();
+                                if (remaining && remaining.length > 0) {
+                                    await NoteStorageService.loadNote(remaining[0].id);
+                                } else {
+                                    await NoteStorageService.createNewNote();
+                                }
                             }
                             loadTrash(dialog);
                         } catch(err) {

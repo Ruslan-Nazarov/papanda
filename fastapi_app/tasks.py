@@ -1,7 +1,10 @@
 import asyncio
 import time
 import os
+import logging
 from fastapi_app.config import settings
+
+logger = logging.getLogger(__name__)
 
 async def cleanup_old_dbs():
     while True:
@@ -14,5 +17,6 @@ async def cleanup_old_dbs():
                         if now - db_file.stat().st_mtime > 2592000:
                             os.remove(db_file)
         except Exception as e:
-            print(f"Cleanup error: {e}")
+            logger.error("Cleanup error: %s", e)
         await asyncio.sleep(86400) # Run once a day
+

@@ -114,7 +114,9 @@ class NoteVersionsService {
             const updatedNote = await NotesAPI.restoreVersion(noteId, versionId);
             AppState.setNote(updatedNote);
             BlockDOMRenderer.renderAll();
-            if (this.currentModal) this.currentModal.close();
+            const oldModal = this.currentModal;
+            await this.show(window.app);
+            if (oldModal) oldModal.close();
             NoteController._showToast('⏪ Версия восстановлена');
         } catch (e) {
             console.error(e);
@@ -131,8 +133,9 @@ class NoteVersionsService {
             } else {
                 await NotesAPI.pinVersion(noteId, versionId);
             }
-            if (this.currentModal) this.currentModal.close();
-            this.show(window.app);
+            const oldModal = this.currentModal;
+            await this.show(window.app);
+            if (oldModal) oldModal.close();
             NoteController._showToast(isManual ? 'Версия откреплена' : '📌 Версия закреплена');
         } catch (e) {
             console.error(e);
@@ -152,8 +155,9 @@ class NoteVersionsService {
         try {
             const noteId = AppState.currentNote.id;
             await NotesAPI.deleteVersion(noteId, versionId);
-            if (this.currentModal) this.currentModal.close();
-            this.show(window.app);
+            const oldModal = this.currentModal;
+            await this.show(window.app);
+            if (oldModal) oldModal.close();
         } catch (e) {
             console.error(e);
             NoteController._showToast('Не удалось удалить версию', 'error');

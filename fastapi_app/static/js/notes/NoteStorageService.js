@@ -7,6 +7,7 @@ class NoteStorageService {
         try {
             const note = await NotesAPI.getNote(noteId);
             AppState.setNote(note);
+            try { localStorage.setItem('papanda_last_note_id', note.id); } catch {}
             return note;
         } catch (e) {
             console.error('Failed to load note', e);
@@ -28,7 +29,7 @@ class NoteStorageService {
         }
 
         const data = {
-            title: AppState.currentNote.title || 'Тема конспекта...',
+            title: AppState.currentNote.title || '',
             blocks: AppState.currentNote.blocks || [],
             category_id: AppState.currentNote.category_id,
             status: AppState.currentNote.status || 'in_progress'
@@ -42,6 +43,7 @@ class NoteStorageService {
                 res = await NotesAPI.createNote(data);
             }
             AppState.setNote(res);
+            try { localStorage.setItem('papanda_last_note_id', res.id); } catch {}
             return res;
         } catch (e) {
             console.error('Failed to save note', e);

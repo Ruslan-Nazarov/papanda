@@ -1,5 +1,6 @@
 import AppState from './AppState.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
+import { inferRoleFromTitle } from './BlockConstants.js';
 
 class TOCManager {
     static init() {
@@ -29,19 +30,45 @@ class TOCManager {
         const menu = document.getElementById('toc-dropdown-menu');
         if (!menu) return;
 
-        const blocks = AppState.currentNote.blocks || [];
+        const blocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
 
         let itemsHTML = '';
         if (blocks.length === 0) {
             itemsHTML = `<div style="color: #94a3b8; font-style: italic; padding: 12px 16px; font-size: 0.9rem;">Нет блоков в конспекте.</div>`;
         } else {
-            itemsHTML = blocks.map((b, idx) => `
-                <div class="toc-item" data-id="${b.id}" data-idx="${idx}" draggable="true" style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.93rem; color: #1e293b;">
-                    <span class="toc-drag-handle" style="color: #94a3b8; font-size: 1.1rem; cursor: grab; user-select: none; line-height: 1;">⠿</span>
-                    <span class="toc-marker" style="color: #a855f7; font-size: 0.75rem; line-height: 1;">▪</span>
-                    <span class="toc-title" style="flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(b.title || 'Что вам нужно понять?')}</span>
-                </div>
-            `).join('');
+            itemsHTML = blocks.map((b) => {
+                inferRoleFromTitle(b);
+                const isSection = b.role === 'section';
+                const isAnchor = b.role === 'anchor' || (b.title || '').toLowerCase().includes('что вам нужно понять');
+                
+                let icon = '▪';
+                let iconColor = '#a855f7';
+                let itemBg = 'transparent';
+                let fontWeight = '500';
+                let titleText = b.title || (isAnchor ? 'Что вам нужно понять?' : (isSection ? 'Раздел' : 'Блок'));
+
+                if (isSection) {
+                    icon = '📄';
+                    iconColor = '#3b82f6';
+                    itemBg = '#f1f5f9';
+                    fontWeight = '700';
+                } else if (isAnchor) {
+                    icon = '🧠';
+                    iconColor = '#ea580c';
+                    fontWeight = '600';
+                }
+
+                return `
+                    <div class="toc-item ${isSection ? 'toc-section-item' : ''}" 
+                         data-id="${b.id}" 
+                         draggable="true" 
+                         style="display: flex; align-items: center; gap: 8px; padding: ${isSection ? '8px 10px' : '6px 10px'}; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.92rem; color: #1e293b; background: ${itemBg}; border: 2px solid transparent; user-select: none;">
+                        <span class="toc-drag-handle" title="Перетащить" style="color: #94a3b8; font-size: 1.1rem; cursor: grab; padding: 0 2px; line-height: 1;">⠿</span>
+                        <span class="toc-marker" style="color: ${iconColor}; font-size: ${isSection ? '1rem' : '0.85rem'}; display: inline-flex; align-items: center; justify-content: center;">${icon}</span>
+                        <span class="toc-title" style="flex: 1; font-weight: ${fontWeight}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(titleText)}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         menu.innerHTML = `
@@ -52,7 +79,7 @@ class TOCManager {
                 </div>
                 <button class="btn-close-toc" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;">✕</button>
             </div>
-            <div class="toc-items-list" style="padding: 6px 8px 10px 8px; display: flex; flex-direction: column; gap: 2px; max-height: 360px; overflow-y: auto;">
+            <div class="toc-items-list" style="padding: 6px 8px 10px 8px; display: flex; flex-direction: column; gap: 4px; max-height: 380px; overflow-y: auto;">
                 ${itemsHTML}
             </div>
         `;
@@ -63,20 +90,33 @@ class TOCManager {
             menu.classList.add('hidden');
         });
 
-        // Item click and hover
         const items = menu.querySelectorAll('.toc-item');
+        let draggedItemId = null;
+
+        const clearDropStyles = () => {
+            items.forEach(i => {
+                i.style.borderTop = '2px solid transparent';
+                i.style.borderBottom = '2px solid transparent';
+            });
+        };
+
         items.forEach(item => {
             item.addEventListener('mouseenter', () => {
-                item.style.background = '#f1f5f9';
+                if (!item.classList.contains('toc-section-item')) {
+                    item.style.background = '#f8fafc';
+                }
             });
             item.addEventListener('mouseleave', () => {
-                item.style.background = 'transparent';
+                if (!item.classList.contains('toc-section-item')) {
+                    item.style.background = 'transparent';
+                }
             });
 
+            // Click navigation
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.toc-drag-handle')) return;
                 const blockId = item.dataset.id;
-                const targetEl = document.querySelector(`.dialectics-block[data-id="${blockId}"]`);
+                const targetEl = document.getElementById(blockId) || document.querySelector(`.dialectics-block[data-id="${blockId}"]`);
                 if (targetEl) {
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     targetEl.style.transition = 'box-shadow 0.3s ease, transform 0.2s ease';
@@ -89,39 +129,70 @@ class TOCManager {
                 }
             });
 
-            // Drag and drop within TOC to reorder blocks
+            // Drag events
             item.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', item.dataset.idx);
+                draggedItemId = item.dataset.id;
+                e.dataTransfer.setData('text/plain', draggedItemId);
+                e.dataTransfer.effectAllowed = 'move';
                 item.style.opacity = '0.4';
             });
 
             item.addEventListener('dragend', () => {
                 item.style.opacity = '1';
-                items.forEach(i => i.style.borderTop = '');
+                draggedItemId = null;
+                clearDropStyles();
             });
 
             item.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                item.style.borderTop = '2px solid #ea580c';
+                e.dataTransfer.dropEffect = 'move';
+                
+                const rect = item.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                const isAfter = offsetY > rect.height / 2;
+
+                clearDropStyles();
+                if (isAfter) {
+                    item.style.borderBottom = '2px solid #ea580c';
+                } else {
+                    item.style.borderTop = '2px solid #ea580c';
+                }
             });
 
             item.addEventListener('dragleave', () => {
-                item.style.borderTop = '';
+                item.style.borderTop = '2px solid transparent';
+                item.style.borderBottom = '2px solid transparent';
             });
 
             item.addEventListener('drop', (e) => {
                 e.preventDefault();
-                item.style.borderTop = '';
-                const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                const toIdx = parseInt(item.dataset.idx, 10);
+                const sourceId = e.dataTransfer.getData('text/plain') || draggedItemId;
+                const targetId = item.dataset.id;
+                clearDropStyles();
 
-                if (!isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
-                    const movedBlock = AppState.currentNote.blocks.splice(fromIdx, 1)[0];
-                    AppState.currentNote.blocks.splice(toIdx, 0, movedBlock);
-                    AppState.markDirty();
-                    BlockDOMRenderer.renderAll();
-                    this.render();
-                }
+                if (!sourceId || !targetId || sourceId === targetId) return;
+
+                const rect = item.getBoundingClientRect();
+                const isAfter = (e.clientY - rect.top) > rect.height / 2;
+
+                const blocksList = AppState.currentNote.blocks || [];
+                const fromIndex = blocksList.findIndex(b => b.id === sourceId);
+                let toIndex = blocksList.findIndex(b => b.id === targetId);
+
+                if (fromIndex === -1 || toIndex === -1) return;
+
+                const [movedBlock] = blocksList.splice(fromIndex, 1);
+                
+                // Recalculate toIndex after removal
+                toIndex = blocksList.findIndex(b => b.id === targetId);
+                const insertIndex = isAfter ? toIndex + 1 : toIndex;
+
+                blocksList.splice(insertIndex, 0, movedBlock);
+
+                // Update AppState & Re-render note on canvas and TOC
+                AppState.markDirty();
+                BlockDOMRenderer.renderAll();
+                this.render();
             });
         });
     }
@@ -135,3 +206,4 @@ class TOCManager {
 }
 
 export default TOCManager;
+

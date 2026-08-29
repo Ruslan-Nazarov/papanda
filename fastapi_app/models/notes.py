@@ -20,6 +20,7 @@ class Note(Base):
     content_json: Mapped[List[dict]] = mapped_column(JSON, default=list)
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("note_categories.id", ondelete="SET NULL"), nullable=True)
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_example: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(20), default="none") # none, in_progress, ready
     sticker_text: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     sticker_color: Mapped[str] = mapped_column(String(20), default="#fff9c4")

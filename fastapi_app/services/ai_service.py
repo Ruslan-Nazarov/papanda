@@ -1,7 +1,7 @@
 from groq import AsyncGroq
 from fastapi_app.config import settings
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import aiofiles
 
 PROMPT_MAP = {
@@ -27,7 +27,7 @@ PROMPT_CHAINS = {
 class AIService:
     def __init__(self):
         self.client = AsyncGroq(api_key=settings.GROQ_API_KEY, timeout=30.0)
-        self.model = "openai/gpt-oss-120b" # Обновлено на актуальную модель
+        self.model = settings.GROQ_MODEL
         self._prompts_cache: Dict[str, str] = {}
         
     async def get_bundled_prompt(self, key: str) -> str:
@@ -41,7 +41,6 @@ class AIService:
         for p_key in chain:
             filename = PROMPT_MAP.get(p_key)
             if not filename:
-                # If key not in map (e.g. fallback), use it as filename pattern
                 filename = f"{p_key}.md"
             
             file_path = prompts_dir / filename
@@ -55,7 +54,7 @@ class AIService:
         self._prompts_cache[key] = bundled
         return bundled
 
-    async def _generate(self, system_prompt: str, user_prompt: str, response_format: Optional[dict] = None, history: Optional[list] = None) -> str:
+    async def _generate(self, system_prompt: str, user_prompt: str, response_format: Optional[dict] = None, history: Optional[list] = None, model: Optional[str] = None) -> str:
         if not settings.GROQ_API_KEY or settings.GROQ_API_KEY == "your_groq_api_key_here":
             return "AI disabled. Please set GROQ_API_KEY."
             
@@ -66,7 +65,7 @@ class AIService:
         
         try:
             kwargs = {
-                "model": self.model,
+                "model": model or self.model,
                 "messages": messages
             }
             if response_format:
@@ -103,7 +102,7 @@ class AIService:
             f"Формула: {formula}\n\n"
             f"Разбери эту формулу. Объясни каждый символ и смысл формулы целиком."
         )
-        return await self._generate(sys_prompt, user_prompt)
+        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
 
     async def parse_article(self, text: str, user_instruction: str = "") -> str:
         sys_prompt = await self.get_bundled_prompt("article")
@@ -116,7 +115,15 @@ class AIService:
         return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
         
     async def generate_dialectics_hint(self, step_id: str, current_content: str, note_title: Optional[str] = "", locale: str = "русском", mode: str = "hint") -> str:
-        return await self.get_hint(step_id=step_id, goal_text=note_title or "", context_text=current_content, locale=locale, mode=mode)
+        kwargs = {
+            "step_id": step_id,
+            "goal_text": note_title or "",
+            "context_text": current_content,
+            "locale": locale
+        }
+        if mode != "hint":
+            kwargs["mode"] = mode
+        return await self.get_hint(**kwargs)
 
     async def get_hint(self, step_id: str, goal_text: str, context_text: str, locale: str = "русском", mode: str = "hint") -> str:
         if step_id == "restore":
@@ -174,6 +181,7 @@ class AIService:
             f"Отвечай на {locale}."
         )
         return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+
     async def check_logic(self, note_text: str, history: list, locale: str = "русском") -> str:
         sys_prompt = await self.get_bundled_prompt("check_ai")
         user_prompt = (
@@ -210,7 +218,7 @@ class AIService:
         
         try:
             response = await self.client.chat.completions.create(
-                model="qwen/qwen3.6-27b", # Предполагаем, что эта модель поддерживает vision
+                model=settings.GROQ_VISION_MODEL,
                 messages=messages
             )
             return response.choices[0].message.content
@@ -218,7 +226,7 @@ class AIService:
             # Fallback
             try:
                 response = await self.client.chat.completions.create(
-                    model="openai/gpt-oss-120b",
+                    model="llama-3.2-11b-vision-preview",
                     messages=messages
                 )
                 return response.choices[0].message.content
@@ -258,5 +266,5 @@ class AIService:
         except Exception as e:
             return f"Error transcribing audio: {str(e)}"
 
-
 ai_service = AIService()
+

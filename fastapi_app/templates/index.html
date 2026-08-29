@@ -7,9 +7,9 @@
     <!-- Верхняя шапка -->
     <header class="top-header">
         <div class="header-left">
-            <a href="/" class="nav-pill-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                <span class="pill-icon">←</span> На портал
-            </a>
+            <div class="brand-logo" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #1e293b; padding: 4px 8px; user-select: none;">
+                <span>{{ _('app_title') }}</span>
+            </div>
         </div>
         <div class="header-right">
             <!-- Режим -->
@@ -98,11 +98,7 @@
                         <span>Удалить конспект</span>
                     </div>
                     <div class="menu-divider"></div>
-                    <div class="menu-section-label">ЭКСПОРТ И ПУБЛИКАЦИЯ</div>
-                    <div class="menu-item" id="menu-item-publish" style="color: #10b981;">
-                        <span class="menu-icon">🌍</span>
-                        <span>Опубликовать на портале</span>
-                    </div>
+                    <div class="menu-section-label">ЭКСПОРТ</div>
                     <div class="menu-item" id="menu-item-export-md">
                         <span class="menu-icon">📄</span>
                         <span>Markdown (.md)</span>
@@ -227,7 +223,7 @@
         </div>
 
         <div class="footer-credits">
-            papanda version 0.7.7 (last update 2026-08-25)<br>
+            papanda version 0.8.1 (last update 2026-08-29)<br>
             designed and developed by <strong>ruslan nazarov</strong><br>
             CC BY-NC 4.0 License
         </div>

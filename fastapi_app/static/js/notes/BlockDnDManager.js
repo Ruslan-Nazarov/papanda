@@ -90,11 +90,15 @@ class BlockDnDManager {
         // Update side based on drop horizontal position
         const droppedBlock = AppState.currentNote.blocks.find(b => b.id === blockId);
         if (droppedBlock && droppedBlock.role !== 'section' && droppedBlock.side !== 'center') {
-            const dropX = e.clientX - containerRect.left;
-            if (dropX < containerRect.width / 2) {
+            if (droppedBlock.role === 'anchor' || (droppedBlock.title || '').toLowerCase().includes('что вам нужно понять')) {
                 droppedBlock.side = 'left';
             } else {
-                droppedBlock.side = 'right';
+                const dropX = e.clientX - containerRect.left;
+                if (dropX < containerRect.width / 2) {
+                    droppedBlock.side = 'left';
+                } else {
+                    droppedBlock.side = 'right';
+                }
             }
         }
 

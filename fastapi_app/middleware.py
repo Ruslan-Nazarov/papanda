@@ -9,11 +9,13 @@ class SessionMiddleware(BaseHTTPMiddleware):
         session_id = request.cookies.get("session_id")
         if not session_id:
             session_id = str(uuid.uuid4())
+            is_https = request.url.scheme == "https"
             response.set_cookie(
                 key="session_id",
                 value=session_id,
                 httponly=True,
-                max_age=30 * 24 * 60 * 60, # 30 days
+                secure=is_https,
+                max_age=30 * 24 * 60 * 60,  # 30 days
                 samesite="lax"
             )
             request.state.session_id = session_id
@@ -27,8 +29,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        # Adjusted CSP to allow CDN scripts/styles used by the app (TiPTap, KaTeX, D3, Fabric) and WebSockets for analytics
-        response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: ws: wss: data: blob:;"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://d3js.org https://esm.sh; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self'; "
+            "worker-src 'self' blob:;"
+        )
         return response
 
 class LocaleMiddleware(BaseHTTPMiddleware):
@@ -40,7 +49,7 @@ class LocaleMiddleware(BaseHTTPMiddleware):
             
             if primary_lang == "ru":
                 locale = "ru"
-            elif primary_lang == "kk" or primary_lang == "kz":
+            elif primary_lang in ("kk", "kz"):
                 locale = "kz"
             else:
                 locale = "en"
@@ -55,3 +64,4 @@ class NoCacheStaticMiddleware(BaseHTTPMiddleware):
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
         return response
+

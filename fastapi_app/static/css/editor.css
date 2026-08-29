@@ -1,0 +1,553 @@
+/* ==========================================================================
+   4. Editor (TipTap & Modal Editor)
+   ========================================================================== */
+/* TipTap Editor Overrides */
+.ProseMirror {
+    outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #adb5bd;
+    pointer-events: none;
+    height: 0;
+}
+
+/* Inline Editor UI */
+.inline-editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.editor-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px 12px;
+}
+
+.editor-field label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.editor-field input {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    color: var(--color-text);
+    padding: 4px 0;
+}
+
+.editor-title-input {
+    font-weight: 600;
+}
+
+.editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    width: 100%;
+}
+
+.format-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.format-btn {
+    background: white;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    transition: all 0.2s;
+}
+
+.format-btn:hover {
+    background: #e2e8f0;
+}
+
+.action-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.editor-save-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.editor-save-btn:hover {
+    background: #059669;
+}
+
+.editor-cancel-btn {
+    background: white;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.editor-cancel-btn:hover {
+    background: #f1f5f9;
+}
+
+.editor-tiptap-content {
+    border: 1px solid #3b82f6;
+    border-radius: 6px;
+    padding: 12px;
+    min-height: 150px;
+    outline: none;
+    background: white;
+}
+
+/* ФИКС #9: Активное состояние кнопок форматирования */
+.format-btn.is-active {
+    background: #e0f2fe;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+}
+
+/* Inline Editor Tabs */
+.inline-editor-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-bottom: 2px solid var(--color-border);
+    padding: 0 0 0 0;
+    margin-bottom: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.inline-tab {
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+    user-select: none;
+}
+
+.inline-tab:hover {
+    color: var(--color-primary);
+    background: #f0f7ff;
+}
+
+.inline-tab.active {
+    color: var(--color-primary);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-primary);
+    margin-bottom: -2px;
+    background: transparent;
+}
+
+.inline-editor-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 4px;
+    flex-shrink: 0;
+}
+
+.inline-tab-content {
+    width: 100%;
+}
+
+/* AI Tab */
+.ai-tab-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.action-btn-ai {
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.action-btn-ai:hover {
+    background: #e0f2fe;
+    border-color: #3b82f6;
+    color: var(--color-primary);
+}
+
+.btn-copy-to-text {
+    margin-left: auto;
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.btn-copy-to-text:hover {
+    background: #dcfce7;
+    border-color: #4ade80;
+}
+
+.ai-response-area {
+    min-height: 180px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: white;
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    outline: none;
+}
+
+.ai-response-area:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+
+/* Modal Editor UI (New Floating Design) */
+.modal-editor-floating {
+    position: fixed;
+    background: white;
+    width: 580px;
+    height: 520px;
+    min-width: 400px;
+    min-height: 300px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 40px);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.06);
+    z-index: 2000;
+    font-family: var(--font-main);
+    resize: both;
+    transition: width 0.2s, height 0.2s, top 0.2s, left 0.2s, border-radius 0.2s;
+}
+
+.modal-editor-floating.expanded {
+    width: calc(100vw - 64px) !important;
+    height: calc(100vh - 64px) !important;
+    top: 32px !important;
+    left: 32px !important;
+    border-radius: 20px;
+    resize: none;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
+    background: white;
+    border-bottom: 1px solid var(--color-border-light);
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.modal-header h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #475569;
+    margin: 0;
+    min-width: 80px;
+}
+
+.modal-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: white;
+    border-radius: 20px;
+    padding: 4px 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid var(--color-border-light);
+    margin: 0 auto; /* center horizontally */
+}
+
+.modal-toolbar .format-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 3px 6px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.modal-toolbar .format-btn:hover {
+    background: #f1f5f9;
+}
+
+.modal-toolbar .format-btn.is-active {
+    background: #e0f2fe;
+    color: #2563eb;
+}
+
+.format-btn-clear::after { content: '🧹'; }
+
+.modal-header-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.window-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+.btn-min { background: #f59e0b; }
+.btn-close { background: #ef4444; }
+
+.modal-tabs {
+    display: flex;
+    background: white;
+    padding: 0 18px;
+    gap: 18px;
+    border-bottom: 1px solid var(--color-border-light);
+    flex-shrink: 0;
+}
+
+.modal-tab {
+    padding: 10px 0;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.modal-tab:hover {
+    color: #3b82f6;
+}
+
+.modal-tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.modal-tab .tab-icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: #f59e0b;
+    border-radius: 2px;
+    color: transparent;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.modal-body {
+    padding: 14px 18px;
+    background: #f8fafc;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.editor-field {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    padding: 0 10px;
+    margin-bottom: 8px;
+}
+
+.editor-field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    width: 85px;
+    flex-shrink: 0;
+}
+
+.modal-title-input, .modal-tags-input {
+    border: none;
+    flex-grow: 1;
+    padding: 8px 0;
+    font-size: 0.92rem;
+    color: #334155;
+    outline: none;
+    background: transparent;
+}
+
+.modal-tiptap-content {
+    background: white;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-height: 130px;
+    max-height: 250px;
+    overflow-y: auto;
+    outline: none;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #334155;
+}
+
+.modal-tiptap-content:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
+.modal-footer {
+    padding: 10px 18px;
+    display: flex;
+    justify-content: flex-end;
+    background: white;
+    border-top: 1px solid var(--color-border-light);
+    flex-shrink: 0;
+}
+
+.btn-ok {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 7px 26px;
+    border-radius: 20px; /* rounded pill */
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.btn-ok:hover {
+    background: #d97706;
+}
+.btn-ok:active {
+    transform: scale(0.97);
+}
+
+.action-btn-ai {
+    background: white;
+    border: 1px solid var(--color-border-light);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.action-btn-ai:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #f0f7ff;
+}
+
+.btn-copy-to-text {
+    margin-left: auto;
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.ai-response-area {
+    min-height: 200px;
+    padding: 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background: white;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    outline: none;
+    margin-top: 12px;
+}
+
+/* Editing and Focus states */
+.dialectics-block.is-editing {
+    border: 2px solid var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    z-index: 10;
+}
+
+.dialectics-block.is-focused {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    z-index: 10;
+}
+
+.dialectics-block.is-collapsed .block-body {
+    display: none;
+}
+.dialectics-block.is-collapsed {
+    opacity: 0.8;
+    padding-bottom: 8px;
+}
+
+@keyframes blockFadeOut {
+    to { opacity: 0; transform: scale(0.9) translateY(10px); }
+}
+
+.dialectics-block.is-deleting {
+    animation: blockFadeOut 0.2s forwards;
+    pointer-events: none;
+}

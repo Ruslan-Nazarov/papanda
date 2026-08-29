@@ -1,0 +1,496 @@
+/* ==========================================================================
+   7. Math & Formula Editor (KaTeX, MathCallout, FormulaModal)
+   ========================================================================== */
+/* Math Callout & Math Inline (Красивое оформление формул) */
+.math-callout {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f1f4ff 100%);
+    border: 1.5px solid #c7d2fe;
+    border-radius: 14px;
+    padding: 12px 20px;
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    color: #1e293b;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.04);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: all;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.math-callout:hover {
+    border-color: #a5b4fc;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.09);
+    transform: translateY(-1px);
+}
+
+.math-callout .katex-display {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    text-align: center;
+}
+
+.math-inline {
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 6px;
+    padding: 2px 7px;
+    margin: 0 2px;
+    font-size: 0.95em;
+    color: #4338ca;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.math-inline:hover {
+    background: #ede9fe;
+    border-color: #c4b5fd;
+}
+
+/* ==========================================================================
+   Connections Modal Styles (Связи)
+   ========================================================================== */
+.connections-modal-dialog {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 820px;
+    max-width: 94vw;
+    max-height: 88vh;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 28px 20px 28px;
+    box-sizing: border-box;
+    animation: modalSlideIn 0.2s ease-out;
+    position: relative;
+}
+
+.connections-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.connections-modal-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.connections-modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #334155;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.connections-modal-close-btn:hover {
+    color: #0f172a;
+    background-color: #f1f5f9;
+}
+
+/* KaTeX and Math formatting fixes */
+.katex-mathml {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.katex-display {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-width: 100% !important;
+    padding: 6px 0 !important;
+    margin: 0.6em 0 !important;
+}
+
+.katex {
+    font-size: 1.05em;
+    max-width: 100%;
+}
+
+.dialectics-block .block-content {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* Formula Editor Modal */
+.formula-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: formulaFadeIn 0.15s ease-out;
+}
+
+@keyframes formulaFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.formula-modal-dialog {
+    background: #ffffff;
+    border-radius: 24px;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.formula-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.formula-modal-title {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.formula-modal-icon {
+    font-size: 1.25rem;
+    color: #0f172a;
+}
+
+.formula-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.formula-modal-close:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+
+.formula-modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.formula-ai-card {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 16px;
+    padding: 14px 16px;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.formula-ai-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.formula-ai-sparkle {
+    font-size: 1.4rem;
+}
+
+.formula-ai-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #f472b6;
+}
+
+.formula-ai-subtitle {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+}
+
+.formula-ai-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.formula-ai-btn {
+    flex: 1;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.formula-ai-text-btn {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+    color: #f8fafc;
+    border: 1px solid #64748b;
+}
+
+.formula-ai-text-btn:hover {
+    background: #475569;
+}
+
+.formula-ai-voice-btn {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    color: #ffffff;
+}
+
+.formula-ai-voice-btn:hover {
+    opacity: 0.92;
+}
+
+.formula-ai-voice-btn.is-recording {
+    background: #ef4444;
+    animation: pulseRecording 1s infinite;
+}
+
+@keyframes pulseRecording {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.formula-input-wrapper {
+    position: relative;
+    border-radius: 12px;
+    border: 2px solid #fb923c;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.15);
+}
+
+.formula-textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: 'Fira Code', Consolas, monospace;
+    font-size: 0.95rem;
+    color: #0f172a;
+    padding: 10px 42px 10px 12px;
+    resize: vertical;
+    border-radius: 10px;
+    box-sizing: border-box;
+    min-height: 52px;
+}
+
+.formula-paste-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 0.9rem;
+    transition: background 0.15s;
+}
+
+.formula-paste-btn:hover {
+    background: #e2e8f0;
+}
+
+.formula-preview-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.formula-preview-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.formula-preview-box {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+    padding: 4px 0;
+}
+
+.formula-preview-empty {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.formula-preview-error {
+    font-size: 0.85rem;
+    color: #ef4444;
+}
+
+.formula-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+
+.formula-search-icon {
+    color: #94a3b8;
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+.formula-search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 0.88rem;
+    color: #334155;
+}
+
+.formula-symbols-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: 165px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.formula-symbol-btn {
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.1s, background 0.15s;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    min-height: 52px;
+}
+
+.formula-symbol-btn small {
+    font-size: 0.72rem;
+    opacity: 0.85;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+.formula-symbol-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.formula-modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.formula-btn-cancel {
+    flex: 1;
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.formula-btn-cancel:hover {
+    background: #2563eb;
+}
+
+.formula-btn-save {
+    flex: 1;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3);
+    transition: opacity 0.15s, transform 0.1s;
+}
+
+.formula-btn-save:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+}
+
+/* Math Inline Nodes */
+.math-inline {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 2px;
+}
+
+.math-inline-rendered {
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 4px;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.math-inline-rendered:hover {
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #93c5fd;
+}

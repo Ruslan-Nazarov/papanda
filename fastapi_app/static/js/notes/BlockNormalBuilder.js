@@ -2,6 +2,10 @@ import AppState from './AppState.js';
 import DictModalService from './DictModalService.js';
 import AICheckModalService from './AICheckModalService.js';
 import { showToast } from './ToastService.js';
+import BlockMathRenderer from './BlockMathRenderer.js';
+import { ALGORITHM_STEPS } from './BlockConstants.js';
+
+import BlockColorPicker from './BlockColorPicker.js';
 
 class BlockNormalBuilder {
     static setupHiddenPhrases(container) {
@@ -33,92 +37,7 @@ class BlockNormalBuilder {
     }
 
     static openColorPicker(block, buttonEl, div) {
-        const existing = document.getElementById('block-color-picker-popover');
-        if (existing) {
-            existing.remove();
-            return;
-        }
-
-        const colors = [
-            { name: 'Синий', color: '#3b82f6' },
-            { name: 'Фиолетовый', color: '#8b5cf6' },
-            { name: 'Изумрудный', color: '#10b981' },
-            { name: 'Оранжевый', color: '#f97316' },
-            { name: 'Янтарный', color: '#f59e0b' },
-            { name: 'Розовый', color: '#ec4899' },
-            { name: 'Красный', color: '#ef4444' },
-            { name: 'Бирюзовый', color: '#06b6d4' },
-            { name: 'Серый', color: '#64748b' }
-        ];
-
-        const rect = buttonEl.getBoundingClientRect();
-        const popover = document.createElement('div');
-        popover.id = 'block-color-picker-popover';
-        popover.style.position = 'absolute';
-        popover.style.top = `${rect.bottom + window.scrollY + 6}px`;
-        popover.style.left = `${Math.max(10, rect.left + window.scrollX - 80)}px`;
-        popover.style.background = '#ffffff';
-        popover.style.border = '1px solid #e2e8f0';
-        popover.style.borderRadius = '12px';
-        popover.style.boxShadow = '0 10px 25px rgba(0,0,0,0.12)';
-        popover.style.padding = '10px 12px';
-        popover.style.zIndex = '1200';
-        popover.style.display = 'flex';
-        popover.style.flexDirection = 'column';
-        popover.style.gap = '8px';
-        popover.style.width = '180px';
-
-        const colorGrid = colors.map(c => `
-            <button class="color-dot-btn" data-color="${c.color}" title="${c.name}" style="width: 22px; height: 22px; border-radius: 50%; background: ${c.color}; border: 2px solid ${block.border_color === c.color ? '#1e293b' : 'transparent'}; cursor: pointer; transition: transform 0.15s;"></button>
-        `).join('');
-
-        popover.innerHTML = `
-            <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Цвет рамки</div>
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
-                ${colorGrid}
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 6px; margin-top: 2px;">
-                <span style="font-size: 0.75rem; color: #94a3b8;">Свой цвет:</span>
-                <input type="color" id="custom-block-color-picker" value="${block.border_color || '#3b82f6'}" style="width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent;">
-            </div>
-        `;
-
-        document.body.appendChild(popover);
-
-        const close = (e) => {
-            if (!popover.contains(e.target) && e.target !== buttonEl) {
-                popover.remove();
-                document.removeEventListener('click', close);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', close), 10);
-
-        popover.querySelectorAll('.color-dot-btn').forEach(btn => {
-            btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.2)');
-            btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
-            btn.addEventListener('click', () => {
-                const color = btn.dataset.color;
-                block.border_color = color;
-                AppState.updateBlock(block.id, { border_color: color });
-                div.style.borderLeftColor = color;
-                showToast('Цвет рамки изменён');
-                popover.remove();
-            });
-        });
-
-        const customPicker = popover.querySelector('#custom-block-color-picker');
-        if (customPicker) {
-            customPicker.addEventListener('input', (e) => {
-                const color = e.target.value;
-                block.border_color = color;
-                AppState.updateBlock(block.id, { border_color: color });
-                div.style.borderLeftColor = color;
-            });
-            customPicker.addEventListener('change', () => {
-                showToast('Цвет рамки изменён');
-                popover.remove();
-            });
-        }
+        BlockColorPicker.open(block, buttonEl, div);
     }
 
     static build(block, onRenderAll) {
@@ -131,6 +50,7 @@ class BlockNormalBuilder {
             div.style.borderLeftColor = block.border_color;
         }
         div.dataset.id = block.id;
+        div.id = block.id;
         div.draggable = true;
 
         if (block.role === 'section') {
@@ -145,15 +65,21 @@ class BlockNormalBuilder {
                 </div>
             `;
         } else {
+            const stepObj = ALGORITHM_STEPS.find(s => s.role === block.role);
+            const roleLabelHTML = stepObj ? `<div class="block-role-label" style="position: absolute; top: -24px; left: 12px; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; pointer-events: none; user-select: none;">${stepObj.title}</div>` : '';
+
             div.innerHTML = `
-                <div class="block-header">
+                ${roleLabelHTML}
+                <div class="block-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div class="block-header-left">
                         <span class="drag-handle" title="Перетащить блок">⠿</span>
+                        <span class="block-number"></span>
                         <div class="block-status-dot" data-status="${block.status || 'none'}" title="Статус: ${block.status || 'none'}"></div>
                         <button class="btn-collapse-toggle" title="Свернуть/Развернуть">${block.collapsed ? '▶' : '▼'}</button>
                         <h3 class="block-title" contenteditable="true">${block.title || 'Что вам нужно понять?'}</h3>
                     </div>
-                    <div class="block-header-right">
+                    <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
+                        <button class="block-action-btn btn-autofill-ai" title="Автозаполнение ИИ" style="font-size: 1.1rem; padding: 2px 4px; border: none; background: transparent; cursor: pointer;">✨</button>
                         <button class="btn-pin-toggle ${block.is_pinned ? 'active' : ''}" title="Закрепить (плавающий блок)">📌</button>
                     </div>
                 </div>
@@ -164,7 +90,9 @@ class BlockNormalBuilder {
                 ` : ''}
                 <div class="block-toolbar-row" style="display: flex; align-items: center; gap: 4px;">
                     <button class="block-action-btn btn-sources" title="Инструкция к шагу">ℹ️</button>
-                    <button class="block-action-btn btn-connections" title="Источники блока">🔗</button>
+                    <button class="block-action-btn btn-connections" title="Источники блока" style="position:relative;">
+                        🔗${(block.sources && block.sources.length > 0) ? `<span style="position:absolute; top:-4px; right:-6px; background:#3b82f6; color:white; font-size:0.6rem; padding:1px 4px; border-radius:8px; font-weight:bold;">${block.sources.length}</span>` : ''}
+                    </button>
                     <button class="block-action-btn btn-dict" title="Словарь блока">📖</button>
                     <button class="block-action-btn btn-hint" title="Хаки понимания">💡</button>
                     <button class="block-action-btn btn-sticker" title="Заметки / Цвет">🟨</button>
@@ -202,6 +130,71 @@ class BlockNormalBuilder {
             });
         }
 
+        // Bind Autofill AI
+        const btnAutofill = div.querySelector('.btn-autofill-ai');
+        if (btnAutofill) {
+            btnAutofill.addEventListener('click', (e) => {
+                e.stopPropagation();
+                import('./ToastService.js').then(m => m.showToast('Запущена ИИ генерация...'));
+                import('./api.js').then(module => {
+                    const NotesAPI = module.default;
+                    const anchorText = (block.html || '').replace(/<[^>]+>/g, '').trim();
+                    const noteTitle = AppState.currentNote.title;
+                    if (AppState.isAutoFillStepByStep) {
+                        NotesAPI.generateNextStep(anchorText, 'step1').then(res => {
+                            if (res && res.result && res.result['step1']) {
+                                const stepObj = ALGORITHM_STEPS.find(s => s.role === 'step1') || {};
+                                const newBlock = {
+                                    id: 'block-' + Math.random().toString(36).substr(2, 9),
+                                    side: stepObj.side || 'left',
+                                    role: 'step1',
+                                    title: stepObj.title || 'step1',
+                                    html: `<p>${res.result['step1']}</p>`,
+                                    status: 'ready',
+                                    isDraft: false
+                                };
+                                AppState.addBlock(newBlock);
+                                AppState.dismissHint('step1');
+                                if (onRenderAll) onRenderAll();
+                            }
+                        }).catch(err => {
+                            console.error("Autofill step failed", err);
+                            import('./ToastService.js').then(m => m.showToast('Ошибка автозаполнения', 'error'));
+                        });
+                    } else {
+                        NotesAPI.autofillConspect(anchorText, noteTitle).then(res => {
+                            if (res && res.result && typeof res.result === 'object') {
+                                const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+                                let delay = 600;
+                                steps.forEach((step, index) => {
+                                    if (res.result[step]) {
+                                        setTimeout(() => {
+                                            const stepObj = ALGORITHM_STEPS.find(s => s.role === step) || {};
+                                            const newBlock = {
+                                                id: 'block-' + Math.random().toString(36).substr(2, 9),
+                                                side: stepObj.side || 'center',
+                                                role: step,
+                                                title: stepObj.title || step,
+                                                html: `<p>${res.result[step]}</p>`,
+                                                status: 'ready',
+                                                isDraft: false
+                                            };
+                                            AppState.addBlock(newBlock);
+                                            AppState.dismissHint(step);
+                                            if (onRenderAll) onRenderAll();
+                                        }, delay * (index + 1));
+                                    }
+                                });
+                            }
+                        }).catch(err => {
+                            console.error("Autofill failed", err);
+                            import('./ToastService.js').then(m => m.showToast('Ошибка автозаполнения', 'error'));
+                        });
+                    }
+                });
+            });
+        }
+
         // Bind Collapse toggle
         const collapseBtn = div.querySelector('.btn-collapse-toggle');
         if (collapseBtn) {
@@ -220,6 +213,10 @@ class BlockNormalBuilder {
         const btnEdit = div.querySelector('.btn-edit');
         if (btnEdit) {
             btnEdit.addEventListener('click', () => {
+                if (block.status === 'ready') {
+                    import('./ToastService.js').then(m => m.default.showToast('Для редактирования снимите зелёный статус', 'info'));
+                    return;
+                }
                 document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div } }));
             });
         }
@@ -229,6 +226,10 @@ class BlockNormalBuilder {
             blockContent.addEventListener('dblclick', (e) => {
                 const selection = window.getSelection();
                 if (selection.toString().length > 0) return;
+                if (block.status === 'ready') {
+                    import('./ToastService.js').then(m => m.default.showToast('Для редактирования снимите зелёный статус', 'info'));
+                    return;
+                }
                 document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div } }));
             });
         }
@@ -246,8 +247,8 @@ class BlockNormalBuilder {
         if (statusEl) {
             statusEl.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const statuses = ['none', 'in_progress', 'ready'];
-                const next = statuses[(statuses.indexOf(block.status || 'none') + 1) % 3];
+                const statuses = ['none', 'ready'];
+                const next = statuses[(statuses.indexOf(block.status || 'none') + 1) % 2];
                 block.status = next;
                 AppState.updateBlock(block.id, { status: next });
                 statusEl.dataset.status = next;
@@ -431,9 +432,7 @@ class BlockNormalBuilder {
         }
 
         // Math rendering
-        if (window.BlockMathRenderer) {
-            window.BlockMathRenderer.renderMath(div);
-        }
+        BlockMathRenderer.renderMath(div);
 
         if (block.collapsed) {
             div.classList.add('collapsed');

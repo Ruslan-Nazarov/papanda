@@ -37,10 +37,17 @@ export const STEP_ORDER = {
  * Returns the inferred role string, or null if no match.
  */
 export function inferRoleFromTitle(block) {
-    if (block.role) return block.role;
     const title = (block.title || '').trim().toLowerCase();
-    if (title.includes('что вам нужно понять')) { block.role = 'anchor'; block.side = 'left'; }
-    else if (title.includes('простейший процесс') && !title.includes('развивается')) { block.role = 'step1'; block.side = 'left'; }
+    if (title.includes('что вам нужно понять')) {
+        block.role = 'anchor';
+        block.side = 'left';
+        return block.role;
+    }
+    if (block.role) {
+        if (block.role === 'anchor') block.side = 'left';
+        return block.role;
+    }
+    if (title.includes('простейший процесс') && !title.includes('развивается')) { block.role = 'step1'; block.side = 'left'; }
     else if (title.includes('развивается этот простейший') || title.includes('развитие простейшего')) { block.role = 'step2'; block.side = 'right'; }
     else if (title.includes('противоположный процесс') && !title.includes('развитие')) { block.role = 'step3'; block.side = 'left'; }
     else if (title.includes('развитие противоположного')) { block.role = 'step4'; block.side = 'right'; }

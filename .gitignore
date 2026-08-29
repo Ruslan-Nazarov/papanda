@@ -18,3 +18,4 @@ data/demo/*.db
 # Системные файлы
 .DS_Store
 .agents/
+node_modules/

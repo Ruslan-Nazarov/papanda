@@ -1,3 +1,4 @@
+console.log('APP JS LOADED');
 import AppState from './AppState.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
 import NoteController from './NoteController.js';
@@ -5,7 +6,6 @@ import BlockDnDManager from './BlockDnDManager.js';
 import EditorManager from './EditorManager.js';
 import NoteStorageService from './NoteStorageService.js';
 import NotesAPI from './api.js';
-import BlockMathRenderer from './BlockMathRenderer.js';
 import LoadNotesModalService from './LoadNotesModalService.js';
 import ConnectionsModalService from './ConnectionsModalService.js';
 import NoteExportService from './NoteExportService.js';
@@ -17,15 +17,12 @@ import TOCManager from './TOCManager.js';
 import SearchManager from './SearchManager.js';
 import BlockStickersManager from './BlockStickersManager.js';
 import DialogService from './DialogService.js';
+import DropdownController from './DropdownController.js';
+import NavHistoryManager from './NavHistoryManager.js';
 import { t, switchLanguage } from '../i18n.js';
-
-// Navigation history stack for "back" button
-const _navHistory = [];
 
 class App {
     static init() {
-        console.log('Notes App Initialized');
-        
         // Initialize managers
         BlockDnDManager.init();
         EditorManager.init();
@@ -34,11 +31,13 @@ class App {
         TOCManager.init();
         SearchManager.init();
         BlockStickersManager.init();
-        NoteController.init(); // autosave + beforeunload
+        NoteController.init();
         ParserWindowsManager.init();
+        DropdownController.init();
         
-        // Setup UI bindings
+        // Setup UI bindings & listeners
         this.setupBindings();
+        this.setupCopyHandler();
         
         // Load initial note state
         this.loadInitialState();
@@ -76,91 +75,79 @@ class App {
         return { overlay, dialog, close };
     }
 
-    static setupBindings() {
-        // --- 1. Top Header Dropdowns & Navigation ---
-        const btnMode = document.getElementById('btn-mode');
-        const modeDropdown = document.getElementById('mode-dropdown');
-        const btnParsersNav = document.getElementById('btn-parsers-nav');
-        const parsersDropdown = document.getElementById('parsers-dropdown');
-        const btnConnectionsNav = document.getElementById('btn-connections-nav');
-        const btnMainMenu = document.getElementById('btn-main-menu');
-        const mainMenuDropdown = document.getElementById('main-menu-dropdown');
-        const btnLangMenu = document.getElementById('btn-lang-menu');
-        const langMenuDropdown = document.getElementById('lang-menu-dropdown');
+    static setupCopyHandler() {
+        document.addEventListener('copy', (e) => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
 
-        const allDropdowns = [modeDropdown, parsersDropdown, mainMenuDropdown, langMenuDropdown];
-
-        const closeAllDropdowns = () => {
-            allDropdowns.forEach(d => { if (d) d.classList.add('hidden'); });
-        };
-
-        if (btnMode && modeDropdown) {
-            btnMode.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = modeDropdown.classList.contains('hidden');
-                closeAllDropdowns();
-                if (isHidden) modeDropdown.classList.remove('hidden');
-            });
-        }
-
-        if (btnParsersNav && parsersDropdown) {
-            btnParsersNav.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = parsersDropdown.classList.contains('hidden');
-                closeAllDropdowns();
-                if (isHidden) parsersDropdown.classList.remove('hidden');
-            });
-        }
-
-        if (btnConnectionsNav) {
-            btnConnectionsNav.addEventListener('click', () => {
-                closeAllDropdowns();
-                ConnectionsModalService.show(this);
-            });
-        }
-
-        if (btnMainMenu && mainMenuDropdown) {
-            btnMainMenu.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = mainMenuDropdown.classList.contains('hidden');
-                closeAllDropdowns();
-                if (isHidden) mainMenuDropdown.classList.remove('hidden');
-            });
-        }
-        if (btnLangMenu && langMenuDropdown) {
-            btnLangMenu.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = langMenuDropdown.classList.contains('hidden');
-                closeAllDropdowns();
-                if (isHidden) langMenuDropdown.classList.remove('hidden');
-            });
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.dropdown-wrapper')) {
-                closeAllDropdowns();
+            const container = document.createElement('div');
+            for (let i = 0; i < selection.rangeCount; i++) {
+                container.appendChild(selection.getRangeAt(i).cloneContents());
             }
+
+            if (container.querySelector('.katex, .math-callout, .math-inline')) {
+                container.querySelectorAll('.katex').forEach(katexEl => {
+                    const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
+                    let formula = '';
+                    if (annotation) {
+                        formula = annotation.textContent.trim();
+                    } else {
+                        formula = katexEl.getAttribute('data-formula') || katexEl.getAttribute('formula') || '';
+                    }
+                    if (!formula) {
+                        const mathml = katexEl.querySelector('.katex-mathml');
+                        if (mathml) formula = mathml.textContent.trim();
+                    }
+
+                    if (formula) {
+                        const isDisplay = katexEl.closest('.katex-display') || katexEl.classList.contains('katex-display');
+                        const span = document.createElement('span');
+                        span.className = 'math-inline';
+                        span.setAttribute('formula', formula);
+                        span.textContent = isDisplay ? `$$${formula}$$` : `$${formula}$`;
+                        katexEl.parentNode.replaceChild(span, katexEl);
+                    }
+                });
+
+                container.querySelectorAll('.katex-mathml, .katex-html').forEach(el => el.remove());
+
+                const cleanHtml = container.innerHTML;
+                const cleanText = container.innerText;
+                if (cleanHtml && e.clipboardData) {
+                    e.clipboardData.setData('text/html', cleanHtml);
+                    e.clipboardData.setData('text/plain', cleanText);
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
+    static setupBindings() {
+        // --- 1. Nav Buttons ---
+        document.getElementById('btn-connections-nav')?.addEventListener('click', () => {
+            DropdownController.closeAll();
+            ConnectionsModalService.show(this);
         });
 
         // --- 2. Parsers Menu Actions ---
         document.getElementById('menu-item-formula-parser')?.addEventListener('click', () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             ParserWindowsManager.openWindow('formula');
         });
 
         document.getElementById('menu-item-article-parser')?.addEventListener('click', () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             ParserWindowsManager.openWindow('article');
         });
 
         // --- 3. Main Menu Actions ---
         document.getElementById('menu-item-open-note')?.addEventListener('click', async () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             LoadNotesModalService.show(this);
         });
 
         document.getElementById('menu-item-new-note')?.addEventListener('click', async () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             if (AppState.isDirty) {
                 const confirmed = await DialogService.confirm({
                     title: 'Новый конспект',
@@ -174,26 +161,19 @@ class App {
         });
 
         document.getElementById('menu-item-back-note')?.addEventListener('click', async () => {
-            closeAllDropdowns();
-            if (_navHistory.length >= 2) {
-                // Pop current, then load previous
-                _navHistory.pop();
-                const prevId = _navHistory[_navHistory.length - 1];
-                await NoteStorageService.loadNote(prevId);
-            } else {
-                await DialogService.alert('Назад', 'Нет предыдущего конспекта в истории навигации.');
-            }
+            DropdownController.closeAll();
+            await NavHistoryManager.goBack();
         });
 
         document.getElementById('menu-item-trash')?.addEventListener('click', async () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             LoadNotesModalService.show(this, 'trash');
         });
 
         document.getElementById('menu-item-delete-current')?.addEventListener('click', async () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             if (!AppState.currentNote.id) {
-                AppState.setNote({ id: null, title: 'Новый конспект', blocks: [] });
+                AppState.setNote({ id: null, title: '', blocks: [] });
                 BlockDOMRenderer.renderAll();
                 return;
             }
@@ -210,12 +190,12 @@ class App {
         });
 
         document.getElementById('menu-item-export-md')?.addEventListener('click', () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             NoteExportService.exportToMarkdown();
         });
 
         document.getElementById('menu-item-export-pdf')?.addEventListener('click', () => {
-            closeAllDropdowns();
+            DropdownController.closeAll();
             NoteExportService.exportToPDF();
         });
 
@@ -263,63 +243,6 @@ class App {
             });
         }
 
-        // --- 5. Internal Links Handler ---
-        document.addEventListener('click', async (e) => {
-            const link = e.target.closest('a[href^="internal://"]');
-            if (link) {
-                e.preventDefault();
-                const url = link.getAttribute('href');
-                const match = url.match(/^internal:\/\/note\/([a-zA-Z0-9_-]+)(?:\/block\/([a-zA-Z0-9_-]+))?/);
-                if (match) {
-                    const noteId = match[1];
-                    const blockId = match[2];
-                    
-                    if (AppState.currentNote.id !== noteId) {
-                        if (AppState.isDirty) {
-                            const confirmed = await DialogService.confirm({
-                                title: 'Переход по ссылке',
-                                message: 'Имеются несохраненные изменения. Сохранить их перед переходом?',
-                                confirmText: 'Сохранить и перейти',
-                                cancelText: 'Перейти без сохранения'
-                            });
-                            if (confirmed === null) return; // User closed modal
-                            if (confirmed) {
-                                await NoteStorageService.saveCurrentNote();
-                            }
-                        }
-                        
-                        // Show loading or just load
-                        try {
-                            await NoteStorageService.loadNote(noteId);
-                            import('./BlockDOMRenderer.js').then(module => {
-                                module.default.renderAll();
-                                if (blockId) {
-                                    setTimeout(() => {
-                                        const blockEl = document.getElementById(`block-${blockId}`);
-                                        if (blockEl) {
-                                            blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            blockEl.style.boxShadow = '0 0 0 3px #3b82f6';
-                                            setTimeout(() => blockEl.style.boxShadow = '', 2000);
-                                        }
-                                    }, 100);
-                                }
-                            });
-                        } catch (err) {
-                            DialogService.alert('Ошибка', 'Не удалось загрузить конспект.');
-                        }
-                    } else if (blockId) {
-                        // Already in the same note, just scroll
-                        const blockEl = document.getElementById(`block-${blockId}`);
-                        if (blockEl) {
-                            blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            blockEl.style.boxShadow = '0 0 0 3px #3b82f6';
-                            setTimeout(() => blockEl.style.boxShadow = '', 2000);
-                        }
-                    }
-                }
-            }
-        });
-
         if (toggleShowHints) {
             toggleShowHints.addEventListener('change', (e) => {
                 cont.classList.toggle('show-hints', e.target.checked);
@@ -346,16 +269,67 @@ class App {
             });
         }
 
-        // --- 5. Note Header Bar ---
+        // --- 5. Internal Links Handler ---
+        document.addEventListener('click', async (e) => {
+            const link = e.target.closest('a[href^="internal://"]');
+            if (link) {
+                e.preventDefault();
+                const url = link.getAttribute('href');
+                const match = url.match(/^internal:\/\/note\/([a-zA-Z0-9_-]+)(?:\/block\/([a-zA-Z0-9_-]+))?/);
+                if (match) {
+                    const noteId = match[1];
+                    const blockId = match[2];
+                    
+                    if (AppState.currentNote.id !== noteId) {
+                        if (AppState.isDirty) {
+                            const confirmed = await DialogService.confirm({
+                                title: 'Переход по ссылке',
+                                message: 'Имеются несохраненные изменения. Сохранить их перед переходом?',
+                                confirmText: 'Сохранить и перейти',
+                                cancelText: 'Перейти без сохранения'
+                            });
+                            if (confirmed === null) return;
+                            if (confirmed) {
+                                await NoteStorageService.saveCurrentNote();
+                            }
+                        }
+                        
+                        try {
+                            await NoteStorageService.loadNote(noteId);
+                            BlockDOMRenderer.renderAll();
+                            if (blockId) {
+                                setTimeout(() => {
+                                    const blockEl = document.getElementById(`block-${blockId}`);
+                                    if (blockEl) {
+                                        blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        blockEl.style.boxShadow = '0 0 0 3px #3b82f6';
+                                        setTimeout(() => blockEl.style.boxShadow = '', 2000);
+                                    }
+                                }, 100);
+                            }
+                        } catch (err) {
+                            DialogService.alert('Ошибка', 'Не удалось загрузить конспект.');
+                        }
+                    } else if (blockId) {
+                        const blockEl = document.getElementById(`block-${blockId}`);
+                        if (blockEl) {
+                            blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            blockEl.style.boxShadow = '0 0 0 3px #3b82f6';
+                            setTimeout(() => blockEl.style.boxShadow = '', 2000);
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- 6. Save & Status ---
         const btnSave = document.getElementById('btn-save');
         if (btnSave) {
             btnSave.addEventListener('click', async () => {
                 try {
-                    const NoteStorageService = (await import('./NoteStorageService.js')).default;
                     await NoteStorageService.saveCurrentNote();
                     
                     if (AppState.currentNote && AppState.currentNote.id) {
-                        const NotesAPI = (await import('./api.js')).default;
                         const now = new Date();
                         const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                         await NotesAPI.createCheckpoint(
@@ -390,7 +364,6 @@ class App {
 
                 if (AppState.currentNote.id) {
                     try {
-                        const NotesAPI = (await import('./api.js')).default;
                         await NotesAPI.updateNoteStatus(AppState.currentNote.id, newStatus);
                     } catch (e) {
                         console.error('Failed to update status on server:', e);
@@ -403,26 +376,6 @@ class App {
             });
         }
 
-        const btnPublish = document.getElementById('menu-item-publish');
-        if (btnPublish) {
-            btnPublish.addEventListener('click', async () => {
-                AppState.currentNote.status = 'ready';
-                this.updateSaveStatusUI();
-                const { showToast } = await import('./ToastService.js');
-                if (AppState.currentNote.id) {
-                    try {
-                        const NotesAPI = (await import('./api.js')).default;
-                        await NotesAPI.updateNoteStatus(AppState.currentNote.id, 'ready');
-                    } catch (e) {
-                        console.error('Failed to update status on server:', e);
-                    }
-                } else {
-                    AppState.markDirty();
-                }
-                showToast('Конспект опубликован на портале!');
-            });
-        }
-
         const noteTitleInput = document.getElementById('note-title');
         if (noteTitleInput) {
             noteTitleInput.addEventListener('input', (e) => {
@@ -431,7 +384,6 @@ class App {
             });
         }
 
-        // --- 6. Sub Bar ---
         document.getElementById('btn-versions')?.addEventListener('click', () => {
             NoteVersionsService.show(this);
         });
@@ -462,21 +414,10 @@ class App {
         }
 
         // --- 8. Footer Buttons ---
-        document.getElementById('btn-footer-training')?.addEventListener('click', () => {
-            FooterModalsService.showTraining(this);
-        });
-
-        document.getElementById('btn-footer-about')?.addEventListener('click', () => {
-            FooterModalsService.showAbout(this);
-        });
-
-        document.getElementById('btn-footer-changelog')?.addEventListener('click', () => {
-            FooterModalsService.showChangelog(this);
-        });
-
-        document.getElementById('btn-footer-contact')?.addEventListener('click', () => {
-            FooterModalsService.showContact(this);
-        });
+        document.getElementById('btn-footer-training')?.addEventListener('click', () => FooterModalsService.showTraining(this));
+        document.getElementById('btn-footer-about')?.addEventListener('click', () => FooterModalsService.showAbout(this));
+        document.getElementById('btn-footer-changelog')?.addEventListener('click', () => FooterModalsService.showChangelog(this));
+        document.getElementById('btn-footer-contact')?.addEventListener('click', () => FooterModalsService.showContact(this));
 
         // --- 9. Scroll to Top FAB ---
         const scrollTopBtn = document.getElementById('btn-scroll-top');
@@ -498,10 +439,8 @@ class App {
         document.addEventListener('noteLoaded', () => {
             const titleInput = document.getElementById('note-title');
             if (titleInput) titleInput.value = AppState.currentNote.title || '';
-            // Track navigation history
-            if (AppState.currentNote.id && _navHistory[_navHistory.length - 1] !== AppState.currentNote.id) {
-                _navHistory.push(AppState.currentNote.id);
-                if (_navHistory.length > 50) _navHistory.shift(); // cap history
+            if (AppState.currentNote.id) {
+                NavHistoryManager.push(AppState.currentNote.id);
             }
             BlockDOMRenderer.renderAll();
             NoteController.updateProgress();
@@ -530,11 +469,7 @@ class App {
         const dot = document.getElementById('save-status-dot');
 
         if (btnSave) {
-            if (AppState.isDirty) {
-                btnSave.classList.add('is-dirty');
-            } else {
-                btnSave.classList.remove('is-dirty');
-            }
+            btnSave.classList.toggle('is-dirty', AppState.isDirty);
         }
 
         if (dot) {
@@ -559,7 +494,7 @@ class App {
     }
 
     static addNewBlock(side, index = -1, role = null, title = 'Новый блок') {
-        const id = 'block-' + Math.random().toString(36).substring(2, 9);
+        const id = 'block-' + crypto.randomUUID().replace(/-/g, '').substring(0, 9);
         const block = {
             id,
             side,
@@ -575,15 +510,28 @@ class App {
 
     static async loadInitialState() {
         try {
+            const lastId = localStorage.getItem('papanda_last_note_id');
+            if (lastId) {
+                try {
+                    const note = await NotesAPI.getNote(lastId);
+                    if (note && !note.is_deleted) {
+                        await NoteStorageService.loadNote(note.id);
+                        return;
+                    }
+                } catch (e) {
+                    // Fallback to list
+                }
+            }
+
             const notes = await NotesAPI.getNotes();
             if (notes && notes.length > 0) {
                 await NoteStorageService.loadNote(notes[0].id);
             } else {
-                AppState.setNote({ id: null, title: 'Тема конспекта...', blocks: [] });
+                AppState.setNote({ id: null, title: '', blocks: [] });
             }
         } catch (e) {
             console.error('Failed to load initial state', e);
-            AppState.setNote({ id: null, title: 'Тема конспекта...', blocks: [] });
+            AppState.setNote({ id: null, title: '', blocks: [] });
         }
     }
 }

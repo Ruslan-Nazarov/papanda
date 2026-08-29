@@ -1,6 +1,6 @@
 import uuid
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -26,13 +26,30 @@ from fastapi_app.rate_limiter import limiter
 
 from contextlib import asynccontextmanager
 
+from fastapi_app.config import settings, ensure_secret_key
+from fastapi_app.database import get_db, dispose_all_engines
+from fastapi_app.services.notes_service import NotesService
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    task = asyncio.create_task(cleanup_old_dbs())
-    yield
-    task.cancel()
+    # Ensure secret key on startup
+    ensure_secret_key()
+    
+    # Import examples from json
+    examples_path = Path(__file__).parent / "data" / "example_notes.json"
+    if examples_path.exists():
+        async for session in get_db():
+            await NotesService.import_examples_from_file(session, str(examples_path))
+            break
+                
+    cleanup_task = asyncio.create_task(cleanup_old_dbs())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        await dispose_all_engines()
 
-app = FastAPI(title="Notes App", version="0.7.7", lifespan=lifespan)
+app = FastAPI(title="Notes App", version="0.8.1", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -55,22 +72,14 @@ app.include_router(notes.router, prefix="/api/dialectics", tags=["notes"])
 app.include_router(ai.router, prefix="/api/ai/dialectics", tags=["ai"])
 
 @app.get("/", response_class=HTMLResponse)
-async def portal_index(request: Request):
-    locale = getattr(request.state, "locale", "ru")
-    _ = get_translator(locale)
-    return templates.TemplateResponse(request=request, name="portal_index.html", context={"_": _, "locale": locale})
-
-@app.get("/editor", response_class=HTMLResponse)
-async def editor(request: Request):
+async def index(request: Request):
     locale = getattr(request.state, "locale", "ru")
     _ = get_translator(locale)
     return templates.TemplateResponse(request=request, name="index.html", context={"_": _, "locale": locale})
 
-@app.get("/read/{note_id}", response_class=HTMLResponse)
-async def portal_read(request: Request, note_id: str):
-    locale = getattr(request.state, "locale", "ru")
-    _ = get_translator(locale)
-    return templates.TemplateResponse(request=request, name="portal_read.html", context={"_": _, "locale": locale, "note_id": note_id})
+@app.get("/editor")
+async def editor_redirect():
+    return RedirectResponse(url="/", status_code=307)
 
 @app.get("/health")
 async def health():

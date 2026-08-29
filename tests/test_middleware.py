@@ -73,3 +73,10 @@ async def test_nocache_static_middleware(client: AsyncClient):
     assert res.status_code == 200
     assert res.headers.get("Cache-Control") == "no-store, no-cache, must-revalidate, max-age=0"
     assert res.headers.get("Pragma") == "no-cache"
+
+
+@pytest.mark.asyncio
+async def test_editor_redirect(client: AsyncClient):
+    res = await client.get("/editor", follow_redirects=False)
+    assert res.status_code == 307
+    assert res.headers.get("location") == "/"
