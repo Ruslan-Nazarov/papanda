@@ -31,11 +31,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://d3js.org https://esm.sh; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+            "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://d3js.org https://esm.sh "
+            "https://mc.yandex.ru https://www.googletagmanager.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-            "img-src 'self' data: blob:; "
-            "connect-src 'self'; "
+            "img-src 'self' data: blob: https://mc.yandex.ru "
+            "https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com; "
+            "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com "
+            "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; "
+            "frame-src 'self' https://mc.yandex.ru; "
             "worker-src 'self' blob:;"
         )
         return response
