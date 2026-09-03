@@ -352,9 +352,10 @@
 .tour-prev { background: #f1f5f9; color: #475569; }
 .tour-next { background: #f97316; color: #ffffff; }
 
-/* В режиме ИИ-генерации прячем «ручные» элементы блока и подсказки-блоки */
+/* В режиме ИИ-генерации прячем «ручные» элементы блока и подсказки-блоки,
+   но НЕ якорь — это стартовое поле «Что вам нужно понять?» для запуска ИИ. */
 #blocks-container.mode-ai .manual-only { display: none !important; }
-#blocks-container.mode-ai .dialectics-hint-block { display: none !important; }
+#blocks-container.mode-ai .dialectics-hint-block:not([data-role="anchor"]) { display: none !important; }
 
 /* Строка «вопрос к блоку» */
 .block-ask-row {

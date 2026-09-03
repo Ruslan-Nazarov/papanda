@@ -9,6 +9,13 @@ class BlockHintBuilder {
      * Build a hint block element.
      */
     static build(stepRole, stepSide, onRenderAll) {
+        // In AI mode the very first block is an inline "what do you want to
+        // understand?" field + a one-click "build the whole note" button —
+        // no modal, no click-to-discover.
+        if (stepRole === 'anchor' && AppState.isAutoFillEnabled) {
+            return this._buildAnchorStarter(onRenderAll);
+        }
+
         const div = document.createElement('div');
 
         div.className = `dialectics-hint-block block-${stepSide} block-hint`;
@@ -139,6 +146,77 @@ class BlockHintBuilder {
             });
         }
 
+        return div;
+    }
+
+    /**
+     * AI-mode starter: inline topic field + "build the whole note" button.
+     */
+    static _buildAnchorStarter(onRenderAll) {
+        const anchorObj = ALGORITHM_STEPS.find(s => s.role === 'anchor') || { title: t('hint_anchor_title') };
+
+        const div = document.createElement('div');
+        div.className = 'dialectics-hint-block block-left block-hint block-anchor-starter';
+        div.dataset.hintId = 'anchor';
+        div.dataset.side = 'left';
+        div.dataset.role = 'anchor';
+        div.style.cssText = 'background:#f1f5f9; border:none; border-radius:16px; padding:22px 24px; position:relative;';
+
+        div.innerHTML = `
+            <div style="font-weight:700; color:#1e293b; text-align:center; margin-bottom:14px; font-size:1.05rem;">
+                ${t('hint_anchor_title')}
+            </div>
+            <textarea class="anchor-topic-input" rows="2" placeholder="${t('anchor_topic_ph')}"
+                style="width:100%; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:10px; padding:11px 14px; font-size:0.98rem; line-height:1.5; font-family:inherit; resize:vertical; outline:none; background:#fff;"></textarea>
+            <button class="btn-anchor-generate" style="margin-top:12px; width:100%; background:linear-gradient(135deg,#fb923c,#ea580c); color:#fff; border:none; border-radius:10px; padding:12px; font-size:0.95rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <span>✨</span> ${t('anchor_generate_btn')}
+            </button>
+            <div style="text-align:center; margin-top:10px;">
+                <button class="btn-anchor-editor" style="background:transparent; border:none; color:#64748b; font-size:0.82rem; cursor:pointer; text-decoration:underline;">${t('anchor_open_editor')}</button>
+            </div>
+        `;
+
+        const ta = div.querySelector('.anchor-topic-input');
+        const btnGen = div.querySelector('.btn-anchor-generate');
+        const btnEditor = div.querySelector('.btn-anchor-editor');
+
+        const run = async () => {
+            const topic = ta.value.trim();
+            if (!topic) { ta.focus(); return; }
+            btnGen.disabled = true;
+            btnGen.style.opacity = '0.6';
+            const id = 'block-' + Math.random().toString(36).substring(2, 9);
+            const esc = topic.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+            const html = `<p>${esc}</p>`;
+            AppState.addBlock({ id, side: 'left', role: 'anchor', title: anchorObj.title, html, status: 'ready' });
+            try {
+                const { default: EditorManager } = await import('./EditorManager.js');
+                await EditorManager.triggerAutofill(html);
+            } catch (err) {
+                console.error('Anchor autofill failed', err);
+                const m = await import('./ToastService.js');
+                m.showToast(t('ed_ai_gen_error') + (err.message || ''), 'error');
+                if (onRenderAll) onRenderAll();
+            }
+        };
+
+        btnGen.addEventListener('click', run);
+        ta.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); run(); }
+        });
+
+        btnEditor.addEventListener('click', () => {
+            const id = 'block-' + Math.random().toString(36).substring(2, 9);
+            const topic = ta.value.trim();
+            const esc = topic.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+            AppState.addBlock({
+                id, side: 'left', role: 'anchor', title: anchorObj.title,
+                html: topic ? `<p>${esc}</p>` : '', status: 'in_progress', isDraft: true
+            });
+            document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: id, el: div } }));
+        });
+
+        setTimeout(() => ta.focus(), 50);
         return div;
     }
 }
