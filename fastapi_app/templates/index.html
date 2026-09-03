@@ -160,6 +160,10 @@
         <!-- Подзаголовок: Прогресс, Оглавление, Поиск, Стикеры, Время сохранения -->
         <div class="note-sub-bar">
             <div class="sub-bar-left">
+                <button class="sub-bar-btn sub-bar-btn-primary" id="btn-new-conspect">
+                    <span class="sub-icon">➕</span> {{ _('bar_new_note') }}
+                </button>
+                <div class="sub-bar-divider"></div>
                 <div class="progress-section">
                     <span class="progress-label">{{ _('progress') }}</span>
                     <div class="progress-track">
@@ -261,5 +265,5 @@
     }
   }
 </script>
-<script type="module" src="/static/js/notes/app.js?v=14"></script>
+<script type="module" src="/static/js/notes/app.js?v=15"></script>
 {% endblock %}

@@ -334,6 +334,17 @@ input:checked + .toggle-slider:before {
     color: #1e293b;
 }
 
+.sub-bar-btn-primary {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 5px 12px;
+}
+.sub-bar-btn-primary:hover {
+    background: linear-gradient(135deg, #f97316, #c2410c);
+    color: #ffffff;
+}
+
 /* 7. Footer */
 .app-footer {
     width: calc(100% - 32px);

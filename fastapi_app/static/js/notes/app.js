@@ -165,7 +165,7 @@ class App {
             LoadNotesModalService.show(this);
         });
 
-        document.getElementById('menu-item-new-note')?.addEventListener('click', async () => {
+        const startNewConspect = async () => {
             DropdownController.closeAll();
             if (AppState.isDirty) {
                 const confirmed = await DialogService.confirm({
@@ -177,7 +177,9 @@ class App {
             }
             AppState.setNote({ id: null, title: t('menu_new_note'), blocks: [] });
             BlockDOMRenderer.renderAll();
-        });
+        };
+        document.getElementById('menu-item-new-note')?.addEventListener('click', startNewConspect);
+        document.getElementById('btn-new-conspect')?.addEventListener('click', startNewConspect);
 
         document.getElementById('menu-item-back-note')?.addEventListener('click', async () => {
             DropdownController.closeAll();

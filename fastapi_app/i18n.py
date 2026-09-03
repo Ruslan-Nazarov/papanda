@@ -48,6 +48,7 @@ TRANSLATIONS = {
         # --- Панель конспекта ---
         "btn_save": "Сохранить",
         "progress": "ПРОГРЕСС",
+        "bar_new_note": "Новый конспект",
         "bar_toc": "Оглавление",
         "bar_search": "Поиск",
         "bar_stickers": "Стикеры",
@@ -105,6 +106,7 @@ TRANSLATIONS = {
         "menu_nav_mobile": "Menu",
         "btn_save": "Save",
         "progress": "PROGRESS",
+        "bar_new_note": "New note",
         "bar_toc": "Contents",
         "bar_search": "Search",
         "bar_stickers": "Stickers",
@@ -161,6 +163,7 @@ TRANSLATIONS = {
         "menu_nav_mobile": "Мәзір",
         "btn_save": "Сақтау",
         "progress": "БАРЫСЫ",
+        "bar_new_note": "Жаңа конспект",
         "bar_toc": "Мазмұны",
         "bar_search": "Іздеу",
         "bar_stickers": "Стикерлер",
