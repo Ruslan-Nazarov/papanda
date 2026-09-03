@@ -63,7 +63,18 @@ class AIController {
         if (!text) return '';
         // Если доступен marked — рендерим полноценный markdown
         if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-            return DOMPurify.sanitize(marked.parse(text));
+            // Уводим формулы из-под markdown-парсера: marked превращает \[ в [,
+            // \( в (, и портит _ ^ внутри $…$. Прячем, парсим, возвращаем.
+            const math = [];
+            const stash = (m) => `@@MATH${math.push(m) - 1}@@`;
+            const guarded = text
+                .replace(/\$\$[\s\S]+?\$\$/g, stash)
+                .replace(/\\\[[\s\S]+?\\\]/g, stash)
+                .replace(/\\\([\s\S]+?\\\)/g, stash)
+                .replace(/\$[^$\n]+?\$/g, stash);
+            let html = DOMPurify.sanitize(marked.parse(guarded));
+            html = html.replace(/@@MATH(\d+)@@/g, (_, i) => math[+i] || '');
+            return html;
         }
         // Иначе: каждый двойной перевод строки → отдельный <p>, одинарный → <br>
         return text

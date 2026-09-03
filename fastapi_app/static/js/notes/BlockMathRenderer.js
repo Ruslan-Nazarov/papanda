@@ -69,6 +69,18 @@ class BlockMathRenderer {
                 }
             });
 
+            // A2. Bare [ … ] display math — markdown ate the backslash of \[ … \].
+            //     Only fires when the brackets clearly wrap a formula (contain = \ ^ _).
+            html = html.replace(/(^|>|<br\s*\/?>|\n)\s*\[\s*([^\[\]<>\n]*[=\\^_][^\[\]<>\n]*?)\s*\]\s*(?=$|<|\n)/g, (match, pre, formula) => {
+                changed = true;
+                const cleanFormula = this.unescapeHtml(formula).trim().replace(/\.\s*$/, '');
+                try {
+                    return pre + window.katex.renderToString(cleanFormula, { displayMode: true, throwOnError: false });
+                } catch (e) {
+                    return match;
+                }
+            });
+
             // B. Standalone raw LaTeX environments: \begin{pmatrix}... \end{pmatrix}, etc.
             html = html.replace(/((?:[A-Za-z0-9_\{\}\^\\'\s]+\s*=\s*)?\\begin\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}[\s\S]+?\\end\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}(?:\s*\\begin\{matrix\}[\s\S]+?\\end\{matrix\})?)/g, (match, formula) => {
                 changed = true;
