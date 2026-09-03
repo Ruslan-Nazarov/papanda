@@ -98,13 +98,13 @@ async def test_edit_math_prompt_application():
 
 @pytest.mark.asyncio
 async def test_parse_article_prompt_application():
-    """Проверяет применение промпта в parse_article: передачу текста статьи, пользовательской инструкции и json_object."""
+    """parse_article: системный промпт «article», текст статьи в user-промпте, вывод Markdown (без json_object)."""
     service = AIService()
     with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
         mock_bundle.return_value = "SYSTEM_ARTICLE_PROMPT"
         with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
-            mock_gen.return_value = '[{"side": "left", "html": "<p>Тезис</p>"}]'
-            
+            mock_gen.return_value = "## Реконструкция\nТезис …"
+
             res = await service.parse_article(
                 text="Текст исследовательской статьи...",
                 user_instruction="Выдели основные этапы"
@@ -117,7 +117,7 @@ async def test_parse_article_prompt_application():
             assert sys_prompt == "SYSTEM_ARTICLE_PROMPT"
             assert "Выдели основные этапы" in user_prompt
             assert "Текст исследовательской статьи..." in user_prompt
-            assert response_fmt == {"type": "json_object"}
+            assert response_fmt is None
 
 
 @pytest.mark.asyncio

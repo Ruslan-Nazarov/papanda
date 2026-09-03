@@ -216,10 +216,10 @@ async def test_voice_math_endpoint(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_article_parser_with_text(client: AsyncClient):
-    """Проверяет парсинг статьи при передаче article_text."""
+    """Парсинг статьи из article_text — на выходе связный Markdown-текст."""
     with patch("fastapi_app.routers.ai.ai_service.parse_article", new_callable=AsyncMock) as mock_article:
-        mock_article.return_value = '[{"side": "left", "role": "thesis", "html": "<p>Тезис статьи</p>"}]'
-        
+        mock_article.return_value = "## Реконструкция\nПростейший процесс — …"
+
         res = await client.post(
             "/api/ai/dialectics/article-parser",
             data={
@@ -228,9 +228,7 @@ async def test_article_parser_with_text(client: AsyncClient):
             }
         )
         assert res.status_code == 200
-        data = res.json()
-        assert isinstance(data["result"], list)
-        assert data["result"][0]["role"] == "thesis"
+        assert res.json()["result"] == "## Реконструкция\nПростейший процесс — …"
 
 
 @pytest.mark.asyncio
@@ -244,17 +242,15 @@ async def test_article_parser_with_valid_pdf(client: AsyncClient):
             mock_reader.pages = [mock_page]
             mock_pdf_reader_cls.return_value = mock_reader
 
-            mock_article.return_value = '[{"side": "left", "role": "thesis", "html": "<p>Текст из PDF</p>"}]'
-            
+            mock_article.return_value = "## Реконструкция из PDF"
+
             fake_pdf = BytesIO(b"fake pdf content")
             files = {"file": ("paper.pdf", fake_pdf, "application/pdf")}
             data = {"message": "Сделай конспект PDF"}
-            
+
             res = await client.post("/api/ai/dialectics/article-parser", files=files, data=data)
             assert res.status_code == 200
-            data_res = res.json()
-            assert isinstance(data_res["result"], list)
-            assert data_res["result"][0]["role"] == "thesis"
+            assert res.json()["result"] == "## Реконструкция из PDF"
             mock_article.assert_awaited_once_with("Текст статьи из PDF документа\n", user_instruction="Сделай конспект PDF")
 
 
@@ -267,7 +263,7 @@ async def test_article_parser_missing_input_and_invalid_pdf(client: AsyncClient)
         data={"message": "Разбери"}
     )
     assert res_empty.status_code == 400
-    assert "Must provide valid file or article_text" in res_empty.json()["detail"]
+    assert "ссылка" in res_empty.json()["detail"].lower()
 
     # 2. Поврежденный PDF файл -> 400 Bad Request
     corrupt_pdf = BytesIO(b"not a real pdf content header")
@@ -282,21 +278,28 @@ async def test_article_parser_missing_input_and_invalid_pdf(client: AsyncClient)
 
 
 @pytest.mark.asyncio
-async def test_article_parser_json_fallback(client: AsyncClient):
-    """Проверяет fallback оборачивание в блок конспекта, если AI вернул невалидный JSON."""
-    with patch("fastapi_app.routers.ai.ai_service.parse_article", new_callable=AsyncMock) as mock_article:
-        mock_article.return_value = "Сырой неформатированный ответ модели"
-        
+async def test_article_parser_from_url(client: AsyncClient):
+    """URL передаётся -> роутер тянет текст со страницы и парсит его."""
+    with patch("fastapi_app.routers.ai._fetch_article_from_url", new_callable=AsyncMock) as mock_fetch:
+        mock_fetch.return_value = "Длинный текст статьи со страницы " * 20
+        with patch("fastapi_app.routers.ai.ai_service.parse_article", new_callable=AsyncMock) as mock_article:
+            mock_article.return_value = "## Реконструкция по ссылке"
+
+            res = await client.post(
+                "/api/ai/dialectics/article-parser",
+                data={"message": "Разбери", "url": "https://ru.wikipedia.org/wiki/Теорема_Пифагора"},
+            )
+            assert res.status_code == 200
+            assert res.json()["result"] == "## Реконструкция по ссылке"
+            mock_fetch.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_article_parser_url_ssrf_guard(client: AsyncClient):
+    """Локальные / приватные адреса и не-http схемы отклоняются."""
+    for bad in ("http://localhost/x", "http://127.0.0.1/x", "file:///etc/passwd", "ftp://example.com/x"):
         res = await client.post(
             "/api/ai/dialectics/article-parser",
-            data={
-                "message": "Разбери",
-                "article_text": "Какой-то научный текст"
-            }
+            data={"message": "Разбери", "url": bad},
         )
-        assert res.status_code == 200
-        data = res.json()
-        assert isinstance(data["result"], list)
-        assert data["result"][0]["side"] == "left"
-        assert data["result"][0]["role"] == "thesis"
-        assert "Сырой неформатированный ответ" in data["result"][0]["html"]
+        assert res.status_code == 400

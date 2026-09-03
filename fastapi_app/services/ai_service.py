@@ -233,13 +233,17 @@ class AIService:
 
     async def parse_article(self, text: str, user_instruction: str = "") -> str:
         sys_prompt = await self.get_bundled_prompt("article")
+        instr = (user_instruction or "").strip()
         user_prompt = (
-            f"{user_instruction}\n\n"
-            f"Текст для парсинга:\n---\n{text}\n---\n\n"
-            f"Преобразуй этот текст в структурированные блоки конспекта.\n"
-            f"Верни строго JSON-массив, без пояснений и обёрток."
+            f"{instr}\n\n" if instr and "диалектич" not in instr.lower() else ""
+        ) + (
+            f"Текст статьи:\n---\n{text}\n---\n\n"
+            f"Выполните диалектико-историческую реконструкцию по алгоритму: "
+            f"уберите академический шум, выделите простейший процесс, покажите его "
+            f"развитие через противоположность к синтезу. Ответ — связный Markdown "
+            f"(заголовки, короткие абзацы), без JSON."
         )
-        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+        return await self._generate(sys_prompt, user_prompt)
         
     async def generate_dialectics_hint(self, step_id: str, current_content: str, note_title: Optional[str] = "", locale: str = "русском", mode: str = "hint") -> str:
         kwargs = {

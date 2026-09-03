@@ -407,14 +407,16 @@ class ParserWindowsManager {
             const text = input.value.trim();
             if (!text) return;
 
-            this.appendMessage('article', 'user', text);
+            const isUrl = /^https?:\/\/\S+$/i.test(text);
+            this.appendMessage('article', 'user', isUrl ? `🔗 ${text}` : text);
             input.value = '';
 
             const loadingId = this.appendLoading('article');
 
             try {
                 const formData = new FormData();
-                formData.append('message', text);
+                formData.append('message', t('pw_article_parse_msg'));
+                formData.append(isUrl ? 'url' : 'article_text', text);
 
                 const res = await fetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
@@ -422,7 +424,11 @@ class ParserWindowsManager {
                 });
                 const data = await res.json();
                 this.removeLoading(loadingId);
-                const reply = typeof data.result === 'string' ? data.result : '```json\n' + JSON.stringify(data.result, null, 2) + '\n```';
+                if (!res.ok) {
+                    this.appendMessage('article', 'bot', `⚠️ ${data.detail || res.statusText}`);
+                    return;
+                }
+                const reply = typeof data.result === 'string' ? data.result : this.formatJSON(data.result);
                 this.appendMessage('article', 'bot', reply);
             } catch (err) {
                 this.removeLoading(loadingId);
@@ -454,7 +460,11 @@ class ParserWindowsManager {
                 });
                 const data = await res.json();
                 this.removeLoading(loadingId);
-                const reply = typeof data.result === 'string' ? data.result : '```json\n' + JSON.stringify(data.result, null, 2) + '\n```';
+                if (!res.ok) {
+                    this.appendMessage('article', 'bot', `⚠️ ${data.detail || res.statusText}`);
+                    return;
+                }
+                const reply = typeof data.result === 'string' ? data.result : this.formatJSON(data.result);
                 this.appendMessage('article', 'bot', reply);
             } catch (err) {
                 this.removeLoading(loadingId);

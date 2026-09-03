@@ -3,11 +3,17 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, AsyncIterator
 from contextlib import aclosing
+from urllib.parse import urlparse
+import ipaddress
+import socket
+import html as _html
+import re
 import json
 import base64
 import tempfile
 import io
 import aiofiles.os
+import httpx
 from pypdf import PdfReader
 
 from fastapi_app.services.ai_service import ai_service
@@ -27,6 +33,49 @@ conspectus_router = ConspectusRouter(
     Sanitizer(), 
     RAGManager(ai_service)
 )
+
+
+async def _fetch_article_from_url(url: str) -> str:
+    """Скачивает страницу по ссылке и вытаскивает основной текст (абзацы <p>).
+    Простая защита от SSRF: только http(s), без приватных/loopback адресов."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise HTTPException(status_code=400, detail="Поддерживаются только http(s)-ссылки")
+    host = parsed.hostname
+    try:
+        infos = socket.getaddrinfo(host, None)
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise HTTPException(status_code=400, detail="Эта ссылка недоступна для загрузки")
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Не удалось разрешить адрес ссылки")
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=15.0, follow_redirects=True, max_redirects=3,
+            headers={"User-Agent": "Mozilla/5.0 (papanda article parser)"},
+        ) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            ctype = resp.headers.get("content-type", "")
+            if "html" not in ctype and "text" not in ctype:
+                raise HTTPException(status_code=400, detail="По ссылке не текстовая страница")
+            body = resp.text
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=400, detail=f"Не удалось загрузить страницу: {e}")
+
+    body = re.sub(r"(?is)<(script|style|noscript|template)[^>]*>.*?</\1>", " ", body)
+    paras = re.findall(r"(?is)<p\b[^>]*>(.*?)</p>", body)
+    chunks = []
+    for p in paras:
+        txt = _html.unescape(re.sub(r"(?s)<[^>]+>", "", p)).strip()
+        if len(txt) >= 40:  # выкидываем короткий навигационный мусор
+            chunks.append(txt)
+    text = "\n\n".join(chunks).strip()
+    if len(text) < 200:
+        raise HTTPException(status_code=400, detail="Не удалось извлечь текст статьи со страницы")
+    return text
 
 
 def _try_parse_json(raw: str, fallback: Any = None) -> Any:
@@ -193,13 +242,17 @@ async def voice_math(request: Request, file: UploadFile = File(...)):
 @router.post("/article-parser")
 @limiter.limit("5/minute")
 async def article_parser(
-    request: Request, 
-    message: str = Form(...), 
+    request: Request,
+    message: str = Form(...),
     file: Optional[UploadFile] = File(None),
-    article_text: Optional[str] = Form(None)
+    article_text: Optional[str] = Form(None),
+    url: Optional[str] = Form(None),
 ):
     text_to_parse = article_text or ""
-    
+
+    if url and url.strip():
+        text_to_parse = await _fetch_article_from_url(url.strip())
+
     if file:
         if not file.filename.lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Only PDF files are supported")
@@ -214,11 +267,10 @@ async def article_parser(
             raise HTTPException(status_code=400, detail=f"Error reading PDF: {str(e)}")
     
     if not text_to_parse.strip():
-        raise HTTPException(status_code=400, detail="Must provide valid file or article_text")
-        
+        raise HTTPException(status_code=400, detail="Нужна ссылка, файл или текст статьи")
+
     result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message)
-    fallback = [{"side": "left", "html": f"<p>{result}</p>", "role": "thesis"}]
-    return {"result": _try_parse_json(result, fallback=fallback)}
+    return {"result": result}
 
 @router.post("/hint-step")
 @router.post("/hint")
