@@ -56,40 +56,41 @@ async def test_prompt_bundle_fallback_for_missing_files():
 
 @pytest.mark.asyncio
 async def test_generate_parser_prompt_application():
-    """Проверяет применение промпта в generate_parser: передачу формулы и response_format json_object."""
+    """generate_parser: системный промпт «formula», формула в user-промпте, вывод Markdown (без json_object)."""
     service = AIService()
     with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
         mock_bundle.return_value = "SYSTEM_FORMULA_PROMPT"
         with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
-            mock_gen.return_value = '{"formula": "E=mc^2"}'
-            
+            mock_gen.return_value = "## Цепочка\n1 + 1 → …"
+
             res = await service.generate_parser("E=mc^2")
-            assert res == '{"formula": "E=mc^2"}'
+            assert res == "## Цепочка\n1 + 1 → …"
             mock_bundle.assert_awaited_with("formula")
             args = mock_gen.call_args[0]
             sys_prompt, user_prompt = args[0], args[1]
             response_fmt = args[2] if len(args) > 2 else mock_gen.call_args[1].get("response_format")
             assert sys_prompt == "SYSTEM_FORMULA_PROMPT"
             assert "E=mc^2" in user_prompt
-            assert response_fmt == {"type": "json_object"}
+            # промпт запрещает объяснять смысл — user-промпт не должен этого требовать
+            assert "смысл формулы целиком" not in user_prompt
+            assert response_fmt is None
 
 
 @pytest.mark.asyncio
 async def test_edit_math_prompt_application():
-    """Проверяет применение промпта в edit_math: передачу исходной формулы, инструкции и json_object."""
+    """edit_math: свой узкий системный промпт (не диалектический), формула + инструкция в user, json_object."""
     service = AIService()
     with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
-        mock_bundle.return_value = "SYSTEM_FORMULA_PROMPT"
         with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
             mock_gen.return_value = '{"formula": "y = 2x + 1"}'
-            
+
             res = await service.edit_math(instruction="прибавь единицу", formula="y = 2x")
             assert res == '{"formula": "y = 2x + 1"}'
-            mock_bundle.assert_awaited_with("formula")
+            mock_bundle.assert_not_awaited()
             args = mock_gen.call_args[0]
             sys_prompt, user_prompt = args[0], args[1]
             response_fmt = args[2] if len(args) > 2 else mock_gen.call_args[1].get("response_format")
-            assert sys_prompt == "SYSTEM_FORMULA_PROMPT"
+            assert "LaTeX" in sys_prompt
             assert "y = 2x" in user_prompt
             assert "прибавь единицу" in user_prompt
             assert response_fmt == {"type": "json_object"}

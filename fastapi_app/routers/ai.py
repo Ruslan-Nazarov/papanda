@@ -155,8 +155,8 @@ async def parser(request: Request, data: ParserRequest):
 @router.post("/text-math")
 @limiter.limit("10/minute")
 async def text_math(request: Request, data: TextMathRequest):
-    result = await ai_service.generate_parser(data.text)
-    return {"result": result}
+    result = await ai_service.text_to_formula(data.text)
+    return {"result": _try_parse_json(result)}
     
 @router.post("/edit-math")
 @limiter.limit("10/minute")
@@ -181,7 +181,7 @@ async def voice_math(request: Request, file: UploadFile = File(...)):
         
     try:
         text = await ai_service.transcribe_audio(temp_audio_path)
-        result = await ai_service.generate_parser(text)
+        result = await ai_service.text_to_formula(text)
         parsed = _try_parse_json(result)
         if isinstance(parsed, dict) and "formula" in parsed:
             return {"result": parsed.get("formula", text)}

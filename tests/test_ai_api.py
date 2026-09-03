@@ -150,14 +150,14 @@ async def test_parser_endpoint_json_and_fallback(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_text_math_endpoint(client: AsyncClient):
-    """Проверяет POST /api/ai/dialectics/text-math."""
-    with patch("fastapi_app.routers.ai.ai_service.generate_parser", new_callable=AsyncMock) as mock_parser:
-        mock_parser.return_value = '{"formula": "\\\\int x dx"}'
-        
+    """Проверяет POST /api/ai/dialectics/text-math — описание словами -> формула LaTeX."""
+    with patch("fastapi_app.routers.ai.ai_service.text_to_formula", new_callable=AsyncMock) as mock_ttf:
+        mock_ttf.return_value = '{"formula": "\\\\int x dx"}'
+
         res = await client.post("/api/ai/dialectics/text-math", json={"text": "интеграл от икс"})
         assert res.status_code == 200
-        assert res.json()["result"] == '{"formula": "\\\\int x dx"}'
-        mock_parser.assert_awaited_once_with("интеграл от икс")
+        assert res.json()["result"]["formula"] == "\\int x dx"
+        mock_ttf.assert_awaited_once_with("интеграл от икс")
 
 
 @pytest.mark.asyncio
@@ -196,18 +196,18 @@ async def test_formula_ocr_endpoint(client: AsyncClient):
 async def test_voice_math_endpoint(client: AsyncClient):
     """Проверяет POST /api/ai/dialectics/voice-math с транскрибацией и парсингом."""
     with patch("fastapi_app.routers.ai.ai_service.transcribe_audio", new_callable=AsyncMock) as mock_trans:
-        with patch("fastapi_app.routers.ai.ai_service.generate_parser", new_callable=AsyncMock) as mock_parser:
+        with patch("fastapi_app.routers.ai.ai_service.text_to_formula", new_callable=AsyncMock) as mock_ttf:
             mock_trans.return_value = "синус икс"
-            mock_parser.return_value = '{"formula": "\\\\sin(x)"}'
-            
+            mock_ttf.return_value = '{"formula": "\\\\sin(x)"}'
+
             fake_audio = BytesIO(b"dummy audio data")
             files = {"file": ("audio.webm", fake_audio, "audio/webm")}
-            
+
             res = await client.post("/api/ai/dialectics/voice-math", files=files)
             assert res.status_code == 200
             assert res.json()["result"] == "\\sin(x)"
             mock_trans.assert_awaited_once()
-            mock_parser.assert_awaited_once_with("синус икс")
+            mock_ttf.assert_awaited_once_with("синус икс")
 
 
 # ==============================================================================

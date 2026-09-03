@@ -56,7 +56,7 @@ PROMPT_MAP = {
 
 PROMPT_CHAINS = {
     "opposites": ["base", "restore", "opposites"],
-    "formula": ["base", "restore", "what_is", "formula"],
+    "formula": ["base", "restore", "formula"],
     "hint": ["base", "restore", "hint"],
     "article": ["base", "restore", "what_is", "formula", "article"],
     "what_is": ["base", "restore", "what_is"],
@@ -224,9 +224,12 @@ class AIService:
         sys_prompt = await self.get_bundled_prompt("formula")
         user_prompt = (
             f"Формула: {formula}\n\n"
-            f"Разбери эту формулу. Объясни каждый символ и смысл формулы целиком."
+            f"Постройте диалектическую цепочку от суммирования к этой формуле. "
+            f"Для каждого звена: операция-предшественник → кризис записи/вычисления → "
+            f"операция, разрешающая кризис. Только количественный анализ, без физического "
+            f"или содержательного смысла символов. Формат ответа — Markdown."
         )
-        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+        return await self._generate(sys_prompt, user_prompt)
 
     async def parse_article(self, text: str, user_instruction: str = "") -> str:
         sys_prompt = await self.get_bundled_prompt("article")
@@ -300,19 +303,33 @@ class AIService:
                 yield d
 
     async def edit_math(self, instruction: str, formula: str) -> str:
-        sys_prompt = await self.get_bundled_prompt("formula")
-        user_prompt = (
-            f"Исходная формула: {formula}\n\n"
-            f"Инструкция: {instruction}\n\n"
-            f"Отредактируй формулу и верни в формате JSON."
+        sys_prompt = (
+            "Ты — редактор математических формул в LaTeX. По инструкции пользователя "
+            "верни ТОЛЬКО итоговую формулу в LaTeX, без пояснений. "
+            'Формат ответа строго JSON: {"formula": "…"}.'
         )
+        user_prompt = (
+            f"Исходная формула (LaTeX): {formula or '(пусто)'}\n\n"
+            f"Инструкция: {instruction}"
+        )
+        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+
+    async def text_to_formula(self, description: str) -> str:
+        sys_prompt = (
+            "Ты преобразуешь словесное описание в математическую формулу LaTeX. "
+            'Верни ТОЛЬКО формулу в LaTeX, строго JSON: {"formula": "…"}. Без пояснений.'
+        )
+        user_prompt = f"Описание: {description}"
         return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
 
     async def ocr_formula(self, base64_img: str) -> str:
         if not settings.GROQ_API_KEY or settings.GROQ_API_KEY == "your_groq_api_key_here":
             return "AI disabled."
             
-        sys_prompt = await self.get_bundled_prompt("formula")
+        sys_prompt = (
+            "Ты распознаёшь математические формулы с изображений. "
+            'Верни ТОЛЬКО распознанную формулу в LaTeX, строго JSON: {"formula": "…"}.'
+        )
         user_prompt = "Распознай формулу с изображения и верни в формате JSON."
         
         messages = [
