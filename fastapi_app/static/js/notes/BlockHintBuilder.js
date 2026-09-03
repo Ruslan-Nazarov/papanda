@@ -166,8 +166,8 @@ class BlockHintBuilder {
             <div style="font-weight:700; color:#1e293b; text-align:center; margin-bottom:14px; font-size:1.05rem;">
                 ${t('hint_anchor_title')}
             </div>
-            <textarea class="anchor-topic-input" rows="2" placeholder="${t('anchor_topic_ph')}"
-                style="width:100%; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:10px; padding:11px 14px; font-size:0.98rem; line-height:1.5; font-family:inherit; resize:vertical; outline:none; background:#fff;"></textarea>
+            <textarea class="anchor-topic-input" rows="3" placeholder="${t('anchor_topic_ph')}"
+                style="width:100%; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:10px; padding:11px 14px; font-size:1rem; line-height:1.5; font-family:inherit; resize:vertical; outline:none; background:#fff;"></textarea>
             <button class="btn-anchor-generate" style="margin-top:12px; width:100%; background:linear-gradient(135deg,#fb923c,#ea580c); color:#fff; border:none; border-radius:10px; padding:12px; font-size:0.95rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
                 <span>✨</span> ${t('anchor_generate_btn')}
             </button>

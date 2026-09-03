@@ -104,13 +104,19 @@
     .footer-pill-btn { padding: 7px 14px; font-size: 0.85rem; }
 
     /* ---------- Блоки ---------- */
-    .dialectics-block {
+    .dialectics-block,
+    .dialectics-hint-block {
         width: 100% !important;
         max-width: 100% !important;
         align-self: center !important;
+    }
+    .dialectics-block {
         padding: 12px;
         border-left-width: 3px;
     }
+    .block-anchor-starter { padding: 16px !important; }
+    /* невидимые разделители между блоками съедают место на пустом экране */
+    .block-divider { height: 20px; }
     /* Ярлык роли дублирует заголовок и на узком экране налезает — прячем */
     .block-role-label { display: none !important; }
     .block-content { font-size: 0.95rem; }
