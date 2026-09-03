@@ -2,6 +2,7 @@ import NotesAPI from './api.js';
 import { showToast } from './ToastService.js';
 import DialogService from './DialogService.js';
 
+import { t } from '../i18n.js';
 class FormulaModalService {
     static currentResolve = null;
 
@@ -69,7 +70,7 @@ class FormulaModalService {
                 <div class="formula-modal-header">
                     <div class="formula-modal-title">
                         <span class="formula-modal-icon">∤</span>
-                        <h3>Редактор формулы (LaTeX)</h3>
+                        <h3>${t('fm_title')}</h3>
                     </div>
                     <button class="formula-modal-close" id="btn-formula-close">✕</button>
                 </div>
@@ -80,29 +81,29 @@ class FormulaModalService {
                         <div class="formula-ai-header">
                             <span class="formula-ai-sparkle">✨</span>
                             <div>
-                                <div class="formula-ai-title">ИИ-ассистент формул</div>
-                                <div class="formula-ai-subtitle">Редактируйте формулы голосом или текстом</div>
+                                <div class="formula-ai-title">${t('fm_ai_title')}</div>
+                                <div class="formula-ai-subtitle">${t('fm_ai_subtitle')}</div>
                             </div>
                         </div>
                         <div class="formula-ai-actions">
                             <button class="formula-ai-btn formula-ai-text-btn" id="btn-formula-ai-text">
-                                <span>🪄</span> Изменить текстом
+                                <span>🪄</span> ${t('fm_ai_text_btn')}
                             </button>
                             <button class="formula-ai-btn formula-ai-voice-btn" id="btn-formula-ai-voice">
-                                <span>🎙️</span> Изменить голосом
+                                <span>🎙️</span> ${t('fm_ai_voice_btn')}
                             </button>
                         </div>
                     </div>
 
                     <!-- Formula Input & Paste -->
                     <div class="formula-input-wrapper">
-                        <textarea class="formula-textarea" id="formula-input" rows="3" placeholder="Введите формулу LaTeX...">${this.escapeHtml(initialFormula)}</textarea>
-                        <button class="formula-paste-btn" id="btn-formula-paste" title="Вставить из буфера">📋</button>
+                        <textarea class="formula-textarea" id="formula-input" rows="3" placeholder="${t('fm_input_ph')}">${this.escapeHtml(initialFormula)}</textarea>
+                        <button class="formula-paste-btn" id="btn-formula-paste" title="${t('fm_paste_tt')}">📋</button>
                     </div>
 
                     <!-- Live Preview -->
                     <div class="formula-preview-container">
-                        <div class="formula-preview-label">Предпросмотр:</div>
+                        <div class="formula-preview-label">${t('fm_preview_label')}</div>
                         <div class="formula-preview-box" id="formula-preview"></div>
                     </div>
 
@@ -123,8 +124,8 @@ class FormulaModalService {
                 </div>
 
                 <div class="formula-modal-footer">
-                    <button class="formula-btn-cancel" id="btn-formula-cancel">Отмена</button>
-                    <button class="formula-btn-save" id="btn-formula-save">Сохранить</button>
+                    <button class="formula-btn-cancel" id="btn-formula-cancel">${t('fm_cancel')}</button>
+                    <button class="formula-btn-save" id="btn-formula-save">${t('fm_save')}</button>
                 </div>
             </div>
         `;
@@ -140,14 +141,14 @@ class FormulaModalService {
         const updatePreview = () => {
             const val = input.value.trim();
             if (!val) {
-                preview.innerHTML = '<span class="formula-preview-empty">Здесь появится отрендеренная формула</span>';
+                preview.innerHTML = `<span class="formula-preview-empty">${t('fm_preview_empty')}</span>`;
                 return;
             }
             if (window.katex) {
                 try {
                     preview.innerHTML = window.katex.renderToString(val, { displayMode: true, throwOnError: false });
                 } catch (e) {
-                    preview.innerHTML = `<span class="formula-preview-error">Ошибка LaTeX: ${e.message}</span>`;
+                    preview.innerHTML = `<span class="formula-preview-error">${t('fm_latex_error')}${e.message}</span>`;
                 }
             } else {
                 preview.textContent = val;
@@ -191,7 +192,7 @@ class FormulaModalService {
                     input.focus();
                 }
             } catch (err) {
-                showToast('Не удалось прочитать буфер обмена', 'warning');
+                showToast(t('fm_clipboard_fail'), 'warning');
             }
         });
 
@@ -199,17 +200,17 @@ class FormulaModalService {
         modal.querySelector('#btn-formula-ai-text').addEventListener('click', async () => {
             const currentFormula = input.value.trim();
             const prompt = await DialogService.prompt({
-                title: '✨ ИИ-ассистент формул',
-                message: 'Опишите словами формулу или изменение:',
-                placeholder: 'Например: формула матрицы вращения или вектор внимания с коэффициентами альфа',
+                title: t('fm_ai_dlg_title'),
+                message: t('fm_ai_dlg_msg'),
+                placeholder: t('fm_ai_dlg_ph'),
                 icon: '🪄',
-                confirmText: 'Сгенерировать'
+                confirmText: t('fm_ai_gen_confirm')
             });
 
             if (!prompt) return;
 
             try {
-                showToast('Генерация формулы...', 'info');
+                showToast(t('fm_generating'), 'info');
                 let res;
                 if (currentFormula) {
                     res = await NotesAPI.editMath(prompt, currentFormula);
@@ -220,13 +221,13 @@ class FormulaModalService {
                 if (newLatex) {
                     input.value = newLatex.trim();
                     updatePreview();
-                    showToast('Формула обновлена ИИ!', 'success');
+                    showToast(t('fm_updated'), 'success');
                 } else {
-                    showToast('Не удалось распознать формулу', 'warning');
+                    showToast(t('fm_not_recognized'), 'warning');
                 }
             } catch (e) {
                 console.error(e);
-                showToast('Ошибка ИИ-ассистента формул', 'error');
+                showToast(t('fm_ai_error'), 'error');
             }
         });
 
@@ -234,21 +235,21 @@ class FormulaModalService {
         modal.querySelector('#btn-formula-ai-voice').addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                showToast('Распознавание речи не поддерживается в этом браузере', 'warning');
+                showToast(t('fm_speech_unsupported'), 'warning');
                 return;
             }
 
             const recognition = new SpeechRecognition();
-            recognition.lang = 'ru-RU';
+            recognition.lang = (document.documentElement.lang || 'ru') + '-' + (document.documentElement.lang || 'ru').toUpperCase();
             recognition.interimResults = false;
 
             const voiceBtn = modal.querySelector('#btn-formula-ai-voice');
-            voiceBtn.innerHTML = '<span>🔴</span> Слушаю...';
+            voiceBtn.innerHTML = `<span>🔴</span> ${t('fm_listening')}`;
             voiceBtn.classList.add('is-recording');
 
             recognition.onresult = async (event) => {
                 const speechText = event.results[0][0].transcript;
-                showToast(`Распознано: "${speechText}"`, 'info');
+                showToast(`${t('fm_recognized')}: "${speechText}"`, 'info');
                 try {
                     const currentFormula = input.value.trim();
                     let res;
@@ -261,21 +262,21 @@ class FormulaModalService {
                     if (newLatex) {
                         input.value = newLatex.trim();
                         updatePreview();
-                        showToast('Формула сгенерирована голосом!', 'success');
+                        showToast(t('fm_voice_gen'), 'success');
                     }
                 } catch (e) {
                     console.error(e);
-                    showToast('Ошибка обработки голоса ИИ', 'error');
+                    showToast(t('fm_voice_error'), 'error');
                 }
             };
 
             recognition.onerror = (e) => {
                 console.error('Speech error', e);
-                showToast('Ошибка распознавания голоса', 'warning');
+                showToast(t('fm_voice_rec_error'), 'warning');
             };
 
             recognition.onend = () => {
-                voiceBtn.innerHTML = '<span>🎙️</span> Изменить голосом';
+                voiceBtn.innerHTML = `<span>🎙️</span> ${t('fm_ai_voice_btn')}`;
                 voiceBtn.classList.remove('is-recording');
             };
 

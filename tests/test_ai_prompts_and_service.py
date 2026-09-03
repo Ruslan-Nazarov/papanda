@@ -234,7 +234,7 @@ async def test_ocr_formula_primary_and_fallback_models():
     with patch("fastapi_app.services.ai_service.settings.GROQ_API_KEY", "gsk_test_key_valid"):
         res = await service.ocr_formula("fake_base64_data")
         assert res == '{"latex": "x^2 + y^2 = r^2"}'
-        assert service.client.chat.completions.create.call_args[1]["model"] == "meta-llama/llama-4-scout-17b-16e-instruct"
+        assert service.client.chat.completions.create.call_args[1]["model"] == settings.GROQ_VISION_MODEL
 
     # 2. Ошибка первичной модели -> Fallback на llama-3.2-11b-vision-preview
     fallback_resp = MagicMock()
@@ -249,7 +249,7 @@ async def test_ocr_formula_primary_and_fallback_models():
         assert res2 == '{"latex": "fallback_result"}'
         assert service.client.chat.completions.create.call_count == 2
         second_call_model = service.client.chat.completions.create.call_args_list[1][1]["model"]
-        assert second_call_model == "llama-3.2-11b-vision-preview"
+        assert second_call_model == settings.GROQ_VISION_FALLBACK_MODEL
 
     # 3. Обе модели выдали ошибку
     service.client.chat.completions.create = AsyncMock(
@@ -312,33 +312,31 @@ async def test_transcribe_audio_whisper_and_fallback():
 
 @pytest.mark.asyncio
 async def test_generate_error_handling_and_disabled_state():
-    """Проверяет механику _generate: обработка пустого ключа, плейсхолдера и сетевых ошибок."""
+    """Проверяет механику _generate поверх LLMRegistry: disabled-состояние,
+    сетевые ошибки, успешный вызов и формирование messages."""
     service = AIService()
 
-    # 1. API disabled
-    with patch("fastapi_app.services.ai_service.settings.GROQ_API_KEY", ""):
-        assert "AI disabled" in await service._generate("sys", "user")
+    # 1. Ни одного ключа не настроено -> дружелюбное сообщение вместо ошибки
+    with patch("fastapi_app.services.ai_service.any_llm_key_configured", return_value=False):
+        res = await service._generate("sys", "user")
+        assert "AI disabled" in res
 
-    with patch("fastapi_app.services.ai_service.settings.GROQ_API_KEY", "your_groq_api_key_here"):
-        assert "AI disabled" in await service._generate("sys", "user")
-
-    # 2. Сетевая ошибка / таймаут от Groq
-    with patch("fastapi_app.services.ai_service.settings.GROQ_API_KEY", "gsk_valid_key"):
-        service.client.chat.completions.create = AsyncMock(side_effect=Exception("Connection timed out"))
-        err_res = await service._generate("sys", "user")
+    # 2. Ошибка от реестра провайдеров -> "Error calling AI: ..."
+    with patch("fastapi_app.services.ai_service.any_llm_key_configured", return_value=True), \
+         patch("fastapi_app.services.ai_service.llm_registry.generate",
+               new=AsyncMock(side_effect=RuntimeError("Connection timed out"))):
+        err_res = await service._generate("sys", "user", use_cache=False)
         assert "Error calling AI: Connection timed out" in err_res
 
-    # 3. Успешный вызов и формирование сообщений
-    with patch("fastapi_app.services.ai_service.settings.GROQ_API_KEY", "gsk_valid_key"):
-        mock_resp = MagicMock()
-        mock_resp.choices = [MagicMock(message=MagicMock(content="Ответ ИИ"))]
-        service.client.chat.completions.create = AsyncMock(return_value=mock_resp)
-        
+    # 3. Успешный вызов и формирование сообщений (system + history + user)
+    with patch("fastapi_app.services.ai_service.any_llm_key_configured", return_value=True), \
+         patch("fastapi_app.services.ai_service.llm_registry.generate",
+               new=AsyncMock(return_value="Ответ ИИ")) as mock_gen:
         history = [{"role": "user", "content": "Вопрос 1"}, {"role": "assistant", "content": "Ответ 1"}]
-        res = await service._generate("SYS_PROMPT", "USER_PROMPT", history=history)
+        res = await service._generate("SYS_PROMPT", "USER_PROMPT", history=history, use_cache=False)
         assert res == "Ответ ИИ"
-        
-        sent_messages = service.client.chat.completions.create.call_args[1]["messages"]
+
+        sent_messages = mock_gen.call_args[0][0]
         assert sent_messages[0] == {"role": "system", "content": "SYS_PROMPT"}
         assert sent_messages[1] == {"role": "user", "content": "Вопрос 1"}
         assert sent_messages[2] == {"role": "assistant", "content": "Ответ 1"}

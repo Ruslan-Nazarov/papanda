@@ -5,13 +5,44 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+    SAMBANOVA_API_KEY: str = ""
+    CEREBRAS_API_KEY: str = ""
+    HUGGINGFACE_API_KEY: str = ""
+    GOOGLE_API_KEY: str = ""
+
     SECRET_KEY: str = ""
     ENABLE_ONLY_NOTES: bool = True
     DEMO_MODE: bool = False
     DATABASE_URL: str = ""
     
     GROQ_MODEL: str = "openai/gpt-oss-120b"
+    # Резервная модель на том же Groq-ключе, но с ОТДЕЛЬНЫМ лимитом частоты —
+    # даёт дополнительный запас бесплатных запросов при rate-limit основной модели.
+    GROQ_ALT_MODEL: str = "qwen/qwen3.8-27b"
+    OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct:free"
+    SAMBANOVA_MODEL: str = "Meta-Llama-3.3-70B-Instruct"
+    CEREBRAS_MODEL: str = "gpt-oss-120b"
+    HUGGINGFACE_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"
+    # Google AI Studio (OpenAI-совместимый эндпоинт). Щедрый бесплатный лимит.
+    # ВНИМАНИЕ: alias-модели (*-latest, *-preview) на compat-эндпоинте зависают —
+    # используем закреплённые версии. При устаревании вернётся чистый 404 (провайдер
+    # пропускается), тогда обновить строку на актуальный gemini-*-flash.
+    GOOGLE_MODEL: str = "gemini-3.5-flash"
+    GOOGLE_FAST_MODEL: str = "gemini-3.5-flash-lite"
+
+    # Быстрые (маленькие) модели для лёгких задач: подсказки, «что это?», скелет плана.
+    GROQ_FAST_MODEL: str = "openai/gpt-oss-20b"
+    CEREBRAS_FAST_MODEL: str = "llama3.1-8b"
+
+    # Таймаут одного запроса к провайдеру, сек (по истечении — переход к следующему).
+    LLM_TIMEOUT: float = 15.0
+    # Усилие reasoning для gpt-oss моделей: low | medium | high (пусто — не передавать).
+    LLM_REASONING_EFFORT: str = "low"
+    # ВНИМАНИЕ: на текущем Groq-ключе vision-моделей нет — OCR формул недоступен.
     GROQ_VISION_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    GROQ_VISION_FALLBACK_MODEL: str = "meta-llama/llama-4-maverick-17b-128e-instruct"
+    GROQ_WHISPER_MODEL: str = "whisper-large-v3-turbo"
     
     # Пути
     BASE_DIR: Path = Path(__file__).resolve().parent.parent

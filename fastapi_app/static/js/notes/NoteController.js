@@ -118,13 +118,13 @@ class NoteController {
 
         let title = customTitle;
         if (!title) {
-            const defaultTitle = `${t('version') || 'Версия'} ${new Date().toLocaleDateString('ru-RU')}`;
+            const defaultTitle = `${t('version')} ${new Date().toLocaleDateString()}`;
             title = await DialogService.prompt({
-                title: 'Сохранение версии',
-                message: t('checkpoint_name_prompt') || 'Введите название точки сохранения:',
+                title: t('checkpoint_dialog_title'),
+                message: t('checkpoint_dialog_msg'),
                 defaultValue: defaultTitle,
                 icon: '📌',
-                confirmText: 'Сохранить'
+                confirmText: t('save')
             });
             if (title === null) return; // cancelled
             if (!title.trim()) title = defaultTitle;
@@ -174,7 +174,7 @@ class NoteController {
             else timeStr = this._lastSavedAt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
             el.className = 'save-status saved';
-            el.innerHTML = `<span class="save-dot"></span> Сохранено ${timeStr}`;
+            el.innerHTML = `<span class="save-dot"></span> ${t('saved_at')} ${timeStr}`;
         }
     }
 

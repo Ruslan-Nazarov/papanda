@@ -1,5 +1,6 @@
 import AppState from './AppState.js';
 
+import { t } from '../i18n.js';
 class SearchManager {
     static init() {
         const btn = document.getElementById('btn-search');
@@ -37,15 +38,15 @@ class SearchManager {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #1e293b;">
                     <span style="font-size: 1.15rem;">🔍</span>
-                    <span>Поиск по конспекту</span>
+                    <span>${t('search_panel_title')}</span>
                 </div>
-                <button class="btn-close-search" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;" title="Закрыть">✕</button>
+                <button class="btn-close-search" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;" title="${t('close_word')}">✕</button>
             </div>
             <div style="margin-bottom: 12px;">
-                <input type="text" id="note-search-input" placeholder="Что искать..." style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit;">
+                <input type="text" id="note-search-input" placeholder="${t('search_input_ph')}" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit;">
             </div>
             <div id="note-search-results" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
-                <div class="search-empty-state" style="padding: 20px 8px 14px; text-align: center; color: #64748b; font-size: 0.9rem;">Введите текст для начала поиска</div>
+                <div class="search-empty-state" style="padding: 20px 8px 14px; text-align: center; color: #64748b; font-size: 0.9rem;">${t('search_hint')}</div>
             </div>
         `;
 
@@ -88,7 +89,7 @@ class SearchManager {
 
     static performSearch(query, container) {
         if (!query) {
-            container.innerHTML = `<div class="search-empty-state" style="padding: 20px 8px 14px; text-align: center; color: #64748b; font-size: 0.9rem;">Введите текст для начала поиска</div>`;
+            container.innerHTML = `<div class="search-empty-state" style="padding: 20px 8px 14px; text-align: center; color: #64748b; font-size: 0.9rem;">${t('search_hint')}</div>`;
             return;
         }
 
@@ -97,7 +98,7 @@ class SearchManager {
         const matches = [];
 
         blocks.forEach((b, index) => {
-            const rawTitle = b.title || 'Что вам нужно понять?';
+            const rawTitle = b.title || t('hint_anchor_title');
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = b.html || '';
             const plainText = tempDiv.textContent || tempDiv.innerText || '';
@@ -136,13 +137,13 @@ class SearchManager {
         });
 
         if (matches.length === 0) {
-            container.innerHTML = `<div class="search-empty-state" style="padding: 20px 8px 14px; text-align: center; color: #94a3b8; font-size: 0.9rem;">Ничего не найдено</div>`;
+            container.innerHTML = `<div class="search-empty-state" style="padding: 20px 8px 14px; text-align: center; color: #94a3b8; font-size: 0.9rem;">${t('search_nothing')}</div>`;
             return;
         }
 
         container.innerHTML = `
             <div style="font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; padding-left: 2px;">
-                Найдено совпадений: ${matches.length}
+                ${t('search_found')}: ${matches.length}
             </div>
             ${matches.map(m => `
                 <div class="search-result-item" data-id="${m.id}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #f1f5f9; background: #f8fafc; cursor: pointer; transition: all 0.15s ease; display: flex; flex-direction: column; gap: 4px;">

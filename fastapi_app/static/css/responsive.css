@@ -1,0 +1,192 @@
+/* ==========================================================================
+   8. Responsive / Mobile
+   Loaded last so these rules win the cascade.
+   ========================================================================== */
+
+/* Гамбургер шапки — только на мобильном */
+.mobile-nav-toggle {
+    display: none;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #334155;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    /* ---------- Шапка → гамбургер ---------- */
+    .top-header {
+        padding: 10px 12px;
+        position: relative;
+        align-items: center;
+        gap: 8px;
+    }
+    .brand-logo { font-size: 1rem !important; padding: 4px 0 !important; }
+    .mobile-nav-toggle { display: flex; }
+
+    /* Переключатель режимов остаётся в шапке, но компактный (иконки) */
+    .header-left { gap: 8px; flex: 1; min-width: 0; }
+    .mode-master-toggle button { padding: 6px 10px; }
+    .mode-master-toggle button .mm-label { display: none; }
+    .mode-substep { font-size: 0.75rem; padding: 4px 8px; }
+
+    .header-right {
+        display: none;
+        position: absolute;
+        top: calc(100% - 2px);
+        left: 8px;
+        right: 8px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+        padding: 8px;
+        z-index: 200;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .header-right.mobile-open { display: flex; }
+
+    .header-right .dropdown-wrapper { display: block; width: 100%; }
+    .header-right .nav-pill-btn {
+        width: 100%;
+        justify-content: flex-start;
+        border-radius: 10px;
+    }
+    /* Вложенные меню раскрываются аккордеоном внутри панели */
+    .header-right.mobile-open .dropdown-menu:not(.hidden) {
+        position: static !important;
+        width: 100%;
+        margin-top: 4px;
+        box-shadow: none;
+        border: 1px solid #f1f5f9;
+        border-radius: 10px;
+    }
+
+    /* ---------- Шапка конспекта ---------- */
+    .note-header-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px 14px;
+    }
+    .note-header-left { flex-wrap: wrap; gap: 6px; }
+    .note-title-input { width: 100% !important; font-size: 1.15rem; }
+    .note-header-right { justify-content: space-between; }
+
+    /* ---------- Сабтулбар ---------- */
+    .note-sub-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+    .sub-bar-left, .sub-bar-right { flex-wrap: wrap; gap: 8px; }
+    .note-sub-bar .sub-bar-divider { display: none; }
+    .progress-section { gap: 6px; }
+
+    /* ---------- Карточка / холст / футер ---------- */
+    .canvas-card-wrapper { width: calc(100% - 12px); margin: 6px; border-radius: 14px; }
+    .canvas-area { padding: 12px; min-height: 360px; }
+    .dialectics-canvas { padding: 12px 0; gap: 14px; }
+    .dialectics-canvas::before { display: none; }
+    .app-footer { width: calc(100% - 12px); margin: 0 6px 20px; padding: 18px 14px; }
+    .footer-pills-row { gap: 8px; }
+    .footer-pill-btn { padding: 7px 14px; font-size: 0.85rem; }
+
+    /* ---------- Блоки ---------- */
+    .dialectics-block {
+        width: 100% !important;
+        max-width: 100% !important;
+        align-self: center !important;
+        padding: 12px;
+        border-left-width: 3px;
+    }
+    /* Ярлык роли дублирует заголовок и на узком экране налезает — прячем */
+    .block-role-label { display: none !important; }
+    .block-content { font-size: 0.95rem; }
+    .block-title { word-break: break-word; }
+    /* Заголовок — на своей строке под контролами, а не в тесной колонке */
+    .block-header-left { flex-wrap: wrap; }
+    .block-header-left .block-title { flex-basis: 100%; font-size: 1rem; margin-top: 2px; }
+    .dialectics-canvas { padding-top: 4px; }
+    .dialectics-block.collapsed .block-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .block-toolbar-row { flex-wrap: wrap; }
+    .block-toolbar-row .block-action-btn { padding: 6px 9px; font-size: 1.05rem; }
+    .block-header-right .block-action-btn,
+    .btn-pin-toggle { padding: 4px 6px; }
+    .block-ask-row { padding-left: 14px; }
+
+    /* ---------- Редактор-модалка (перебиваем инлайн-стили) ---------- */
+    .modal-editor-floating,
+    .modal-editor-floating.expanded {
+        position: fixed !important;
+        top: 8px !important;
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 8px !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        max-height: none !important;
+        resize: none !important;
+        display: flex;
+        flex-direction: column;
+    }
+    .modal-editor-floating .modal-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .modal-editor-floating .modal-toolbar.format-group { flex-wrap: wrap; }
+    .modal-editor-floating .modal-body { max-height: none; flex: 1; overflow-y: auto; }
+    .modal-editor-floating.expanded { inset: 8px !important; }
+
+    /* ---------- Прочие модалки / окна парсеров ---------- */
+    .modal-dialog { width: 94% !important; max-height: 88vh; overflow-y: auto; }
+    .parser-floating-window {
+        position: fixed !important;
+        inset: 6px !important;
+        left: 6px !important;
+        top: 6px !important;
+        right: 6px !important;
+        width: auto !important;
+        height: auto !important;
+        max-height: calc(100dvh - 12px);
+    }
+
+    /* ---------- FAB ---------- */
+    .scroll-top-fab { bottom: 14px; right: 14px; width: 40px; height: 40px; font-size: 1.1rem; }
+
+    /* ---------- Онбординг-тур ---------- */
+    .tour-card,
+    .tour-card.tour-final {
+        position: fixed !important;
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 8px !important;
+        top: auto !important;
+        width: auto !important;
+        max-width: none !important;
+        transform: none !important;
+    }
+}
+
+@media (max-width: 460px) {
+    .note-title-input { font-size: 1.05rem; }
+    .block-toolbar-row { gap: 2px; }
+    .mode-master-toggle button { padding: 6px 8px; }
+    .mode-master-toggle button .mm-ico { font-size: 1rem; }
+    .sub-bar-btn { font-size: 0.8rem; padding: 4px 6px; }
+}

@@ -19,3 +19,10 @@ data/demo/*.db
 .DS_Store
 .agents/
 node_modules/
+
+# Черновики-скаффолдинг в prompts/ (не грузятся приложением, только справочные)
+prompts/10_data_model_schema.ts
+prompts/11_router_controller.py
+prompts/12_context_builder.py
+prompts/14_sanitizer.py
+prompts/15_rag_tool_manager.py

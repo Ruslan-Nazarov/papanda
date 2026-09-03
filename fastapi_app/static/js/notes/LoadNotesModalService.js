@@ -4,6 +4,7 @@ import DialogService from './DialogService.js';
 import AppState from './AppState.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
 
+import { t } from '../i18n.js';
 class LoadNotesModalService {
     static async show(app, openTab = 'notes') {
         let currentStatus = 'all';
@@ -24,17 +25,17 @@ class LoadNotesModalService {
             let html = `
                 <div class="premium-modal-content">
                 <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
-                    <input type="text" id="modal-search" class="premium-input" placeholder="Поиск конспектов..." value="${this.escapeHtml(currentSearch)}">
+                    <input type="text" id="modal-search" class="premium-input" placeholder="${t('load_search_ph')}..." value="${this.escapeHtml(currentSearch)}">
                     <div style="display:flex; gap:12px;">
                         <select id="modal-category" class="premium-select" style="flex:1;">
-                            <option value="">Все категории</option>
+                            <option value="">${t('all_categories')}</option>
                             ${categories.map(c => `<option value="${c.id}" ${currentCategory == c.id ? 'selected' : ''}>${this.escapeHtml(c.name)}</option>`).join('')}
                         </select>
                         <select id="modal-status" class="premium-select" style="flex:1;">
-                            <option value="all" ${currentStatus === 'all' ? 'selected' : ''}>Все статусы</option>
-                            <option value="none" ${currentStatus === 'none' ? 'selected' : ''}>Черновик</option>
-                            <option value="in_progress" ${currentStatus === 'in_progress' ? 'selected' : ''}>В процессе</option>
-                            <option value="ready" ${currentStatus === 'ready' ? 'selected' : ''}>Готово</option>
+                            <option value="all" ${currentStatus === 'all' ? 'selected' : ''}>${t('all_statuses')}</option>
+                            <option value="none" ${currentStatus === 'none' ? 'selected' : ''}>${t('st_draft')}</option>
+                            <option value="in_progress" ${currentStatus === 'in_progress' ? 'selected' : ''}>${t('st_in_progress')}</option>
+                            <option value="ready" ${currentStatus === 'ready' ? 'selected' : ''}>${t('st_ready')}</option>
                         </select>
                     </div>
                 </div>
@@ -47,20 +48,20 @@ class LoadNotesModalService {
                 html += `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; opacity: 0.7;">
                         <span style="font-size: 3rem; margin-bottom: 12px;">🔍</span>
-                        <p style="color:#64748b; font-weight: 500; font-size: 1.05rem;">Ничего не найдено.</p>
+                        <p style="color:#64748b; font-weight: 500; font-size: 1.05rem;">${t('load_nothing')}</p>
                     </div>
                 `;
             } else {
                 filteredNotes.forEach(n => {
                     const statusColor = n.status === 'ready' ? '#10b981' : (n.status === 'in_progress' ? '#f59e0b' : '#94a3b8');
-                    const statusName = n.status === 'ready' ? 'Готово' : (n.status === 'in_progress' ? 'В процессе' : 'Черновик');
-                    const updatedAt = n.updated_at ? new Date(n.updated_at).toLocaleDateString('ru-RU') : '—';
+                    const statusName = n.status === 'ready' ? t('st_ready') : (n.status === 'in_progress' ? t('st_in_progress') : t('st_draft'));
+                    const updatedAt = n.updated_at ? new Date(n.updated_at).toLocaleDateString() : '—';
                     
                     html += `
                         <div class="note-item premium-note-card" data-id="${n.id}" style="cursor: pointer;">
                             <div style="min-width:0; flex:1;">
                                 <span class="note-title-link" data-id="${n.id}" style="font-weight: 700; font-size: 1.05rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #0f172a; margin-bottom: 4px; transition: color 0.2s;">
-                                    ${this.escapeHtml(n.title || 'Без названия')}
+                                    ${this.escapeHtml(n.title || t('untitled'))}
                                 </span>
                                 <span style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center;">
                                     <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor}; margin-right:6px; box-shadow: 0 0 0 2px ${statusColor}33;"></span>
@@ -69,7 +70,7 @@ class LoadNotesModalService {
                                     <span>${updatedAt}</span>
                                 </span>
                             </div>
-                            <button class="premium-action-btn btn-delete-note" data-id="${n.id}" title="В корзину">
+                            <button class="premium-action-btn btn-delete-note" data-id="${n.id}" title="${t('to_trash')}">
                                 <svg style="pointer-events: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                             </button>
                         </div>
@@ -78,7 +79,7 @@ class LoadNotesModalService {
             }
             html += `
                 </div>
-                <button class="premium-create-btn" id="btn-create-new-note">✨ Создать новый конспект</button>
+                <button class="premium-create-btn" id="btn-create-new-note">✨ ${t('create_new_note_full')}</button>
                 </div>
             `;
             return html;
@@ -90,27 +91,27 @@ class LoadNotesModalService {
                 return `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; opacity: 0.7;">
                         <span style="font-size: 3.5rem; margin-bottom: 16px;">🗑️</span>
-                        <p style="color:#64748b; font-weight: 500; font-size: 1.1rem;">Корзина пуста.</p>
+                        <p style="color:#64748b; font-weight: 500; font-size: 1.1rem;">${t('trash_empty')}</p>
                     </div>
                 `;
             }
             let html = `<div class="notes-list premium-list" style="max-height: 420px; overflow-y: auto; overflow-x: hidden;">`;
             trashedNotes.forEach(n => {
-                const deletedAt = n.deleted_at ? new Date(n.deleted_at).toLocaleDateString('ru-RU') : '—';
+                const deletedAt = n.deleted_at ? new Date(n.deleted_at).toLocaleDateString() : '—';
                 html += `
                     <div class="note-item premium-note-card">
                         <div style="min-width:0; flex:1; padding-right: 12px;">
                             <span style="font-weight: 600; font-size: 1.05rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#475569; text-decoration: line-through; margin-bottom: 4px;">
-                                ${this.escapeHtml(n.title || 'Без названия')}
+                                ${this.escapeHtml(n.title || t('untitled'))}
                             </span>
-                            <span style="font-size:0.85rem; color:#94a3b8; font-weight: 500;">Удалён: ${deletedAt}</span>
+                            <span style="font-size:0.85rem; color:#94a3b8; font-weight: 500;">${t('deleted_at')}: ${deletedAt}</span>
                         </div>
                         <div style="display:flex; gap:8px; flex-shrink:0;">
-                            <button class="premium-restore-btn btn-restore-note" data-id="${n.id}" title="Восстановить">
-                                <span style="margin-right: 4px;">↩</span> Восстановить
+                            <button class="premium-restore-btn btn-restore-note" data-id="${n.id}" title="${t('restore_permanently')}">
+                                <span style="margin-right: 4px;">↩</span> ${t('restore_word')}
                             </button>
-                            <button class="premium-delete-perm-btn btn-permanent-delete" data-id="${n.id}" title="Удалить навсегда">
-                                ✕ Навсегда
+                            <button class="premium-delete-perm-btn btn-permanent-delete" data-id="${n.id}" title="${t('delete_forever')}">
+                                ✕ ${t('forever_short')}
                             </button>
                         </div>
                     </div>
@@ -124,8 +125,8 @@ class LoadNotesModalService {
         const renderTabBar = () => `
             ${modalStyles}
             <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #f1f5f9; padding-bottom:0; font-family: 'Inter', system-ui, sans-serif;">
-                <button id="tab-btn-notes" class="premium-tab-btn ${activeTab === 'notes' ? 'active' : ''}">📄 Конспекты</button>
-                <button id="tab-btn-trash" class="premium-tab-btn trash ${activeTab === 'trash' ? 'active' : ''}">🗑 Корзина</button>
+                <button id="tab-btn-notes" class="premium-tab-btn ${activeTab === 'notes' ? 'active' : ''}">📄 ${t('load_tab_notes')}</button>
+                <button id="tab-btn-trash" class="premium-tab-btn trash ${activeTab === 'trash' ? 'active' : ''}">🗑 ${t('load_tab_trash')}</button>
             </div>
         `;
 
@@ -138,7 +139,7 @@ class LoadNotesModalService {
                 bindTabButtons(dialog);
                 bindNotesEvents(dialog, notes);
             } catch(e) {
-                body.innerHTML = renderTabBar() + '<p style="color:#ef4444;">Ошибка загрузки.</p>';
+                body.innerHTML = renderTabBar() + `<p style="color:#ef4444;">${t('load_error')}</p>`;
                 bindTabButtons(dialog);
             }
         };
@@ -152,7 +153,7 @@ class LoadNotesModalService {
                 bindTabButtons(dialog);
                 bindTrashEvents(dialog, trashedNotes);
             } catch(e) {
-                body.innerHTML = renderTabBar() + '<p style="color:#ef4444;">Ошибка загрузки корзины.</p>';
+                body.innerHTML = renderTabBar() + `<p style="color:#ef4444;">${t('trash_load_failed')}</p>`;
                 bindTabButtons(dialog);
             }
         };
@@ -217,10 +218,10 @@ class LoadNotesModalService {
                     e.stopPropagation();
                     const id = btn.dataset.id;
                     const confirmed = await DialogService.confirm({
-                        title: 'В корзину',
-                        message: 'Переместить конспект в корзину?',
+                        title: t('to_trash'),
+                        message: t('confirm_to_trash_msg'),
                         isDestructive: true,
-                        confirmText: 'В корзину'
+                        confirmText: t('to_trash')
                     });
                     if (confirmed && id) {
                         try {
@@ -236,7 +237,7 @@ class LoadNotesModalService {
                             loadNotes(dialog);
                         } catch(err) {
                             console.error('Delete error:', err);
-                            await DialogService.alert('Ошибка', 'Не удалось переместить конспект в корзину.');
+                            await DialogService.alert(t('error_word'), t('trash_move_failed'));
                         }
                     }
                 });
@@ -262,7 +263,7 @@ class LoadNotesModalService {
                         await NoteStorageService.loadNote(restored.id);
                         if (dialog.closeModal) dialog.closeModal();
                     } catch(err) {
-                        await DialogService.alert('Ошибка', 'Не удалось восстановить конспект.');
+                        await DialogService.alert(t('error_word'), t('restore_failed'));
                     }
                 });
             });
@@ -272,10 +273,10 @@ class LoadNotesModalService {
                     e.stopPropagation();
                     const id = btn.dataset.id;
                     const confirmed = await DialogService.confirm({
-                        title: 'Удаление навсегда',
-                        message: 'Удалить конспект безвозвратно? Это действие нельзя отменить.',
+                        title: t('confirm_perma_title'),
+                        message: t('confirm_perma_msg'),
                         isDestructive: true,
-                        confirmText: 'Удалить навсегда'
+                        confirmText: t('delete_forever')
                     });
                     if (confirmed && id) {
                         try {
@@ -291,7 +292,7 @@ class LoadNotesModalService {
                             }
                             loadTrash(dialog);
                         } catch(err) {
-                            await DialogService.alert('Ошибка', 'Не удалось удалить конспект.');
+                            await DialogService.alert(t('error_word'), t('perma_delete_failed'));
                         }
                     }
                 });
@@ -304,21 +305,21 @@ class LoadNotesModalService {
             if (activeTab === 'trash') {
                 const trashedNotes = await NotesAPI.getTrash();
                 initialContent = renderTabBar() + `<div id="tab-content">${renderTrashTab(trashedNotes)}</div>`;
-                const modal = app.showModal('Корзина', initialContent);
+                const modal = app.showModal(t('trash_title'), initialContent);
                 modal.dialog.closeModal = modal.close;
                 bindTabButtons(modal.dialog);
                 bindTrashEvents(modal.dialog, trashedNotes);
             } else {
                 const initialNotes = await NotesAPI.getNotes();
                 initialContent = renderTabBar() + `<div id="tab-content">${renderNotesTab(initialNotes)}</div>`;
-                const modal = app.showModal('Открыть конспект', initialContent);
+                const modal = app.showModal(t('load_notes_title'), initialContent);
                 modal.dialog.closeModal = modal.close;
                 bindTabButtons(modal.dialog);
                 bindNotesEvents(modal.dialog, initialNotes);
             }
         } catch(e) {
             console.error(e);
-            app.showModal('Ошибка', '<p>Не удалось загрузить список конспектов.</p>');
+            app.showModal(t('error_word'), `<p>${t('load_list_failed')}</p>`);
         }
     }
     

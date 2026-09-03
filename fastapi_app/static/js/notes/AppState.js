@@ -27,8 +27,10 @@ const AppState = {
     // Flag to show all hints including dismissed ones (toggled via UI)
     toggleShowHiddenHints: false,
     
-    // Auto-fill mode
-    isAutoFillEnabled: false,
+    // Режим работы приложения: 'ai' (ИИ генерирует конспект) | 'manual' (ручной ввод по алгоритму).
+    // Управляется ModeManager; isAutoFillEnabled держим синхронно (на него завязан старый код).
+    mode: 'ai',
+    isAutoFillEnabled: true,
     isAutoFillStepByStep: false,
 
     setNote(note) {

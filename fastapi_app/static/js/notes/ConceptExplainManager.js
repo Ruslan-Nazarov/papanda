@@ -1,24 +1,51 @@
 import NotesAPI from './api.js';
 import AppState from './AppState.js';
 
+import { t } from '../i18n.js';
+export function renderStreamMarkdown(container, fullText) {
+    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+        container.innerHTML = DOMPurify.sanitize(marked.parse(fullText));
+    } else {
+        container.textContent = fullText;
+    }
+}
+
 class ConceptExplainManager {
     static init() {
         console.log('ConceptExplainManager Initialized');
     }
 
+    /** Стримит SSE-ответ в контейнер, дорисовывая markdown не чаще раза в 60мс. */
+    static async _streamInto(endpoint, body, container) {
+        container.innerHTML = '<span style="color:#94a3b8;">▍</span>';
+        let last = 0;
+        const full = await NotesAPI.stream(endpoint, body, (_delta, acc) => {
+            const now = Date.now();
+            if (now - last > 60) {
+                last = now;
+                renderStreamMarkdown(container, acc + ' ▍');
+            }
+        });
+        renderStreamMarkdown(container, full || '');
+        return full;
+    }
+
     static async handleAiAction(action, editor, aiResponseContainer, aiAppendBtn, aiReplaceBtn, onResponseReady, options = {}) {
-        aiResponseContainer.innerHTML = '<em>Загрузка...</em>';
+        aiResponseContainer.innerHTML = `<em>${t('loading')}</em>`;
         if (aiAppendBtn) aiAppendBtn.style.display = 'none';
         if (aiReplaceBtn) aiReplaceBtn.style.display = 'none';
         
         try {
             const blockHtml = editor.getHTML();
             const noteTitle = AppState.currentNote.title;
-            
+
             let result = '';
             if (action === 'explain') {
-                const res = await NotesAPI.explainBlock(blockHtml, noteTitle, 'explain');
-                result = res.result;
+                result = await this._streamInto(
+                    '/ai/dialectics/explain-concept/stream',
+                    { text: blockHtml, context_before: noteTitle || '', context_after: '', history: [] },
+                    aiResponseContainer
+                );
             } else if (action === 'opposite') {
                 const plainText = editor.getText();
                 const res = await NotesAPI.getOpposites(plainText);
@@ -33,7 +60,7 @@ class ConceptExplainManager {
                 result = res.result;
             }
             
-            let htmlResult = result || '<em style="color: #94a3b8;">AI не вернул ответ.</em>';
+            let htmlResult = result || `<em style="color: #94a3b8;">${t('ai_no_answer')}</em>`;
             if (result && typeof marked !== 'undefined') {
                 htmlResult = DOMPurify.sanitize(marked.parse(result));
             }
@@ -43,7 +70,7 @@ class ConceptExplainManager {
             
             if (onResponseReady) onResponseReady(result);
         } catch (err) {
-            aiResponseContainer.innerHTML = `<em style="color: red;">Ошибка: ${err.message}</em>`;
+            aiResponseContainer.innerHTML = `<em style="color: red;">${t('error_word')}: ${err.message}</em>`;
         }
     }
 }

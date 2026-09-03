@@ -1,5 +1,6 @@
 import AppState from './AppState.js';
 
+import { t } from '../i18n.js';
 export class EditorShapesTab {
     constructor(modalContainer, blockId, getEditor) {
         this.modalContainer = modalContainer;
@@ -135,7 +136,7 @@ export class EditorShapesTab {
             fc.add(group);
         });
         mc.querySelector('#btn-add-text')?.addEventListener('click', () => {
-            fc.add(new fabric.IText('Текст', { left: 50, top: 50, fontSize: 24, fill: this.getStroke() }));
+            fc.add(new fabric.IText(t('tab_text'), { left: 50, top: 50, fontSize: 24, fill: this.getStroke() }));
         });
 
         mc.querySelector('#btn-shape-copy')?.addEventListener('click', () => {

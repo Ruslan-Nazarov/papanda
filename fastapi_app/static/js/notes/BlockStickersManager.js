@@ -1,15 +1,16 @@
 import AppState from './AppState.js';
 
+import { t } from '../i18n.js';
 // Sticker color palette
 const STICKER_COLORS = [
-    { color: '#fef9c3', label: 'Жёлтый' },
-    { color: '#fce7f3', label: 'Розовый' },
-    { color: '#dbeafe', label: 'Синий' },
-    { color: '#dcfce7', label: 'Зелёный' },
-    { color: '#ede9fe', label: 'Фиолетовый' },
-    { color: '#fed7aa', label: 'Оранжевый' },
-    { color: '#ccfbf1', label: 'Бирюзовый' },
-    { color: '#f1f5f9', label: 'Серый' },
+    { color: '#fef9c3', label: t('stk_yellow') },
+    { color: '#fce7f3', label: t('stk_pink') },
+    { color: '#dbeafe', label: t('stk_blue') },
+    { color: '#dcfce7', label: t('stk_green') },
+    { color: '#ede9fe', label: t('stk_purple') },
+    { color: '#fed7aa', label: t('stk_orange') },
+    { color: '#ccfbf1', label: t('stk_teal') },
+    { color: '#f1f5f9', label: t('stk_gray') },
 ];
 
 function formatDate(iso) {
@@ -71,7 +72,7 @@ class BlockStickersManager {
         if (!block.stickers) block.stickers = [];
 
         const panel = this._buildPanel(
-            'Заметки блока',
+            t('stk_block_notes'),
             block.stickers,
             (sticker) => {
                 block.stickers.push(sticker);
@@ -106,7 +107,7 @@ class BlockStickersManager {
         if (!block.stickers) block.stickers = [];
 
         const panel = this._buildPanel(
-            'Заметки блока',
+            t('stk_block_notes'),
             block.stickers,
             (sticker) => {
                 block.stickers.push(sticker);
@@ -163,7 +164,7 @@ class BlockStickersManager {
         if (!AppState.currentNote.stickers) AppState.currentNote.stickers = [];
 
         const panel = this._buildPanel(
-            'Заметки конспекта',
+            t('stk_note_notes'),
             AppState.currentNote.stickers,
             (sticker) => {
                 AppState.currentNote.stickers.push(sticker);
@@ -206,8 +207,8 @@ class BlockStickersManager {
         if (!btn) return;
         const count = AppState.currentNote.stickers?.length || 0;
         btn.innerHTML = count > 0 
-            ? `<span class="sub-icon" style="color: #eab308;">🟨</span> Стикеры <span class="sticker-sub-badge" style="background: #fef08a; color: #854d0e; font-size: 0.75rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 2px;">${count}</span>`
-            : `<span class="sub-icon" style="color: #eab308;">🟨</span> Стикеры`;
+            ? `<span class="sub-icon" style="color: #eab308;">🟨</span> ${t('stk_bar_title')} <span class="sticker-sub-badge" style="background: #fef08a; color: #854d0e; font-size: 0.75rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 2px;">${count}</span>`
+            : `<span class="sub-icon" style="color: #eab308;">🟨</span> ${t('stk_bar_title')}`;
     }
 
     // ── Shared panel builder ───────────────────────────────────────────────────
@@ -222,11 +223,11 @@ class BlockStickersManager {
         panel.innerHTML = `
             <div class="sticker-panel-header">
                 <span>🟨 ${title}</span>
-                <button class="sticker-panel-close" title="Закрыть">✕</button>
+                <button class="sticker-panel-close" title="${t('close_word')}">✕</button>
             </div>
             <div class="sticker-panel-form">
-                <input type="text" class="sticker-panel-title-input" placeholder="ЗАГОЛОВОК (НЕОБЯЗАТЕЛЬНО)..." maxlength="60">
-                <textarea class="sticker-panel-text-input" placeholder="Напишите что-нибудь..." rows="4"></textarea>
+                <input type="text" class="sticker-panel-title-input" placeholder="${t('stk_title_ph')}" maxlength="60">
+                <textarea class="sticker-panel-text-input" placeholder="${t('stk_text_ph')}" rows="4"></textarea>
                 <div class="sticker-color-picker">
                     ${STICKER_COLORS.map((c, i) => `
                         <button class="sticker-color-btn ${i === 0 ? 'selected' : ''}"
@@ -282,14 +283,14 @@ class BlockStickersManager {
     }
 
     static _renderStickerGrid(stickers) {
-        if (!stickers || stickers.length === 0) return '<p class="sticker-empty" style="text-align: center; color: #94a3b8; font-size: 0.9rem; padding: 12px 0;">Заметок нет</p>';
+        if (!stickers || stickers.length === 0) return `<p class="sticker-empty" style="text-align: center; color: #94a3b8; font-size: 0.9rem; padding: 12px 0;">${t('stk_empty')}</p>`;
         return `<div class="sticker-grid">${stickers.map(s => `
             <div class="sticker-card" style="background: ${s.color || '#fef9c3'}">
                 ${s.title ? `<div class="sticker-card-title">${s.title}</div>` : ''}
                 <div class="sticker-card-text">${s.text}</div>
                 <div class="sticker-card-footer">
                     <span class="sticker-card-date">${formatDate(s.created_at)}</span>
-                    <button class="sticker-delete-btn" data-id="${s.id}" title="Удалить">✕</button>
+                    <button class="sticker-delete-btn" data-id="${s.id}" title="${t('tt_delete')}">✕</button>
                 </div>
             </div>
         `).join('')}</div>`;

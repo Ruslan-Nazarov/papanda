@@ -227,6 +227,164 @@
     display: none !important;
 }
 
+/* --- Главный переключатель режимов (ИИ генерация / Ручной ввод) --- */
+.top-header { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+}
+/* Компактнее, чтобы вся навигация + переключатель помещались в одну строку */
+.top-header .nav-pill-btn { padding: 6px 12px; font-size: 0.83rem; gap: 6px; }
+.top-header .dropdown-wrapper { margin: 0 !important; }
+.mode-master-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: #eef1f6;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 3px;
+    gap: 3px;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.mode-master-toggle button {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.mode-master-toggle button:hover:not(.active) { color: #1e293b; }
+.mode-master-toggle button .mm-ico { font-size: 0.95rem; line-height: 1; }
+.mode-master-toggle button.active {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+}
+.mode-substep {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 5px 10px 5px 8px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+.mode-substep.visible { display: inline-flex; }
+.mode-substep input { margin: 0; cursor: pointer; accent-color: #ea580c; }
+
+/* --- Онбординг-тур --- */
+.tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    pointer-events: none;
+}
+.tour-highlight {
+    position: fixed;
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+    border: 2px solid #f97316;
+    transition: top 0.25s, left 0.25s, width 0.25s, height 0.25s;
+    pointer-events: none;
+}
+.tour-card {
+    position: fixed;
+    z-index: 4001;
+    width: 340px;
+    max-width: calc(100vw - 24px);
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    padding: 18px 20px;
+    pointer-events: auto;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.tour-card.tour-final {
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+}
+.tour-progress {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #f97316;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+.tour-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin: 0 0 6px; }
+.tour-text { font-size: 0.9rem; line-height: 1.55; color: #475569; margin: 0 0 14px; }
+.tour-actions { display: flex; align-items: center; gap: 8px; }
+.tour-actions button {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.tour-skip { background: transparent; color: #94a3b8; padding: 7px 4px !important; }
+.tour-prev { background: #f1f5f9; color: #475569; }
+.tour-next { background: #f97316; color: #ffffff; }
+
+/* В режиме ИИ-генерации прячем «ручные» элементы блока и подсказки-блоки */
+#blocks-container.mode-ai .manual-only { display: none !important; }
+#blocks-container.mode-ai .dialectics-hint-block { display: none !important; }
+
+/* Строка «вопрос к блоку» */
+.block-ask-row {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 16px 4px 46px;
+}
+.block-ask-row.open { display: flex; }
+.block-ask-row textarea {
+    width: 100%;
+    min-height: 54px;
+    resize: vertical;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.block-ask-row .ask-actions { display: flex; gap: 8px; }
+.block-ask-row .ask-go {
+    background: #3b82f6; color: #fff; border: none; border-radius: 8px;
+    padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.block-ask-row .ask-cancel {
+    background: transparent; color: #64748b; border: none;
+    padding: 6px 8px; font-size: 0.85rem; cursor: pointer;
+}
+
 .note-header-bar {
     display: flex;
     justify-content: space-between;

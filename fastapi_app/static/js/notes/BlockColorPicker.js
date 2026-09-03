@@ -1,5 +1,6 @@
 import AppState from './AppState.js';
 import { showToast } from './ToastService.js';
+import { t } from '../i18n.js';
 
 export class BlockColorPicker {
     static open(block, buttonEl, div) {
@@ -10,15 +11,15 @@ export class BlockColorPicker {
         }
 
         const colors = [
-            { name: 'Синий', color: '#3b82f6' },
-            { name: 'Фиолетовый', color: '#8b5cf6' },
-            { name: 'Изумрудный', color: '#10b981' },
-            { name: 'Оранжевый', color: '#f97316' },
-            { name: 'Янтарный', color: '#f59e0b' },
-            { name: 'Розовый', color: '#ec4899' },
-            { name: 'Красный', color: '#ef4444' },
-            { name: 'Бирюзовый', color: '#06b6d4' },
-            { name: 'Серый', color: '#64748b' }
+            { name: t('color_blue'), color: '#3b82f6' },
+            { name: t('color_purple'), color: '#8b5cf6' },
+            { name: t('color_emerald'), color: '#10b981' },
+            { name: t('color_orange'), color: '#f97316' },
+            { name: t('color_amber'), color: '#f59e0b' },
+            { name: t('color_pink'), color: '#ec4899' },
+            { name: t('color_red'), color: '#ef4444' },
+            { name: t('color_teal'), color: '#06b6d4' },
+            { name: t('color_gray'), color: '#64748b' }
         ];
 
         const rect = buttonEl.getBoundingClientRect();
@@ -43,12 +44,12 @@ export class BlockColorPicker {
         `).join('');
 
         popover.innerHTML = `
-            <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Цвет рамки</div>
+            <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${t('color_frame')}</div>
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
                 ${colorGrid}
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 6px; margin-top: 2px;">
-                <span style="font-size: 0.75rem; color: #94a3b8;">Свой цвет:</span>
+                <span style="font-size: 0.75rem; color: #94a3b8;">${t('color_custom')}</span>
                 <input type="color" id="custom-block-color-picker" value="${block.border_color || '#3b82f6'}" style="width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent;">
             </div>
         `;
@@ -71,7 +72,7 @@ export class BlockColorPicker {
                 block.border_color = color;
                 AppState.updateBlock(block.id, { border_color: color });
                 div.style.borderLeftColor = color;
-                showToast('Цвет рамки изменён');
+                showToast(t('color_changed'));
                 popover.remove();
             });
         });
@@ -85,7 +86,7 @@ export class BlockColorPicker {
                 div.style.borderLeftColor = color;
             });
             customPicker.addEventListener('change', () => {
-                showToast('Цвет рамки изменён');
+                showToast(t('color_changed'));
                 popover.remove();
             });
         }

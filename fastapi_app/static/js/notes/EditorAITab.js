@@ -1,6 +1,7 @@
 import NotesAPI from './api.js';
 import AppState from './AppState.js';
 
+import { t } from '../i18n.js';
 export class EditorAITab {
     constructor(modalContainer, getEditor, aiRole) {
         this.modalContainer = modalContainer;
@@ -51,8 +52,8 @@ export class EditorAITab {
         const aiResponseExample = mc.querySelector('#ai-response-example');
 
         if (action === 'hint') {
-            if (aiResponseHint) aiResponseHint.innerHTML = `<em style="color:#94a3b8;">⏳ ИИ готовит подсказку...</em>`;
-            if (aiResponseExample) aiResponseExample.innerHTML = `<em style="color:#94a3b8;">⏳ ИИ генерирует пример...</em>`;
+            if (aiResponseHint) aiResponseHint.innerHTML = `<em style="color:#94a3b8;">${t('ai_preparing_hint')}</em>`;
+            if (aiResponseExample) aiResponseExample.innerHTML = `<em style="color:#94a3b8;">${t('ai_generating_example')}</em>`;
             
             try {
                 const currentContent = AppState.currentNote.blocks
@@ -62,12 +63,12 @@ export class EditorAITab {
                 const noteTitle = AppState.currentNote.title;
                 
                 const [hintRes, exampleRes] = await Promise.all([
-                    NotesAPI.getHint(role || 'step1', currentContent, noteTitle, 'ru', 'hint').catch(e => ({ result: 'Ошибка: ' + e.message })),
-                    NotesAPI.getHint(role || 'step1', currentContent, noteTitle, 'ru', 'example').catch(e => ({ result: 'Ошибка: ' + e.message }))
+                    NotesAPI.getHint(role || 'step1', currentContent, noteTitle, 'ru', 'hint').catch(e => ({ result: t('error_word') + ': ' + e.message })),
+                    NotesAPI.getHint(role || 'step1', currentContent, noteTitle, 'ru', 'example').catch(e => ({ result: t('error_word') + ': ' + e.message }))
                 ]);
                 
                 const formatResult = (res) => {
-                    let html = res.result || res.hint || '<em style="color: #94a3b8;">AI не вернул ответ.</em>';
+                    let html = res.result || res.hint || `<em style="color: #94a3b8;">${t('ai_no_answer')}</em>`;
                     if (res.result && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
                         html = DOMPurify.sanitize(marked.parse(res.result));
                     }
@@ -77,13 +78,13 @@ export class EditorAITab {
                 if (aiResponseHint) aiResponseHint.innerHTML = formatResult(hintRes);
                 if (aiResponseExample) aiResponseExample.innerHTML = formatResult(exampleRes);
             } catch (err) {
-                if (aiResponseHint) aiResponseHint.innerHTML = `<em style="color:#ef4444;">Ошибка: ${err.message}</em>`;
-                if (aiResponseExample) aiResponseExample.innerHTML = `<em style="color:#ef4444;">Ошибка: ${err.message}</em>`;
+                if (aiResponseHint) aiResponseHint.innerHTML = `<em style="color:#ef4444;">${t('error_word')}: ${err.message}</em>`;
+                if (aiResponseExample) aiResponseExample.innerHTML = `<em style="color:#ef4444;">${t('error_word')}: ${err.message}</em>`;
             }
         } else {
             const aiResponseArea = aiResponseHint || mc.querySelector('#ai-response-area');
             if (!aiResponseArea) return;
-            aiResponseArea.innerHTML = `<em style="color:#94a3b8;">⏳ ИИ думает...</em>`;
+            aiResponseArea.innerHTML = `<em style="color:#94a3b8;">${t('ai_thinking')}</em>`;
             try {
                 const ConceptExplainManager = (await import('./ConceptExplainManager.js')).default;
                 await ConceptExplainManager.handleAiAction(
@@ -96,7 +97,7 @@ export class EditorAITab {
                     { role }
                 );
             } catch (err) {
-                aiResponseArea.innerHTML = `<em style="color:#ef4444;">Ошибка запроса к AI: ${err.message}</em>`;
+                aiResponseArea.innerHTML = `<em style="color:#ef4444;">${t('ai_request_error')}: ${err.message}</em>`;
             }
         }
     }

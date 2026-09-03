@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import String, Boolean, DateTime, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship

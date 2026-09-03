@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import BlockNormalBuilder from './BlockNormalBuilder.js';
 import BlockHintBuilder from './BlockHintBuilder.js';
 import { ALGORITHM_STEPS, inferRoleFromTitle } from './BlockConstants.js';
+import { t } from '../i18n.js';
 
 class BlockDOMRenderer {
     /**
@@ -43,7 +44,12 @@ class BlockDOMRenderer {
         if (!container) return;
 
         const noDialectics = container.classList.contains('mode-no-dialectics');
+        // В режиме ИИ-генерации подсказки-блоки не показываем вовсе —
+        // исключение: пустой конспект, где anchor-подсказка нужна для старта.
+        const aiMode = AppState.mode === 'ai';
         const allBlocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
+        const hasRealBlocks = allBlocks.some(b => b.role !== 'section');
+        const showHints = !aiMode || !hasRealBlocks;
 
         allBlocks.forEach(b => {
             inferRoleFromTitle(b);
@@ -68,7 +74,7 @@ class BlockDOMRenderer {
         });
 
         // 2. Render next dialectics hint if active and not anchor (e.g. step1..step5 hint grows above anchor)
-        if (!noDialectics && nextStep && nextStep.role !== 'anchor') {
+        if (showHints && !noDialectics && nextStep && nextStep.role !== 'anchor') {
             container.appendChild(this.createDivider(dividerIdx++));
             const hintEl = BlockHintBuilder.build(nextStep.role, nextStep.side, () => this.renderAll());
             container.appendChild(hintEl);
@@ -82,7 +88,7 @@ class BlockDOMRenderer {
         });
 
         // 4. If next step is anchor (note is empty / no anchor yet)
-        if (!noDialectics && nextStep && nextStep.role === 'anchor') {
+        if (showHints && !noDialectics && nextStep && nextStep.role === 'anchor') {
             container.appendChild(this.createDivider(dividerIdx++));
             const hintEl = BlockHintBuilder.build(nextStep.role, nextStep.side, () => this.renderAll());
             container.appendChild(hintEl);
@@ -98,11 +104,11 @@ class BlockDOMRenderer {
         div.dataset.index = index;
         div.innerHTML = `
             <div class="add-block-actions">
-                <button class="icon-add-btn left" title="Добавить тезис">+</button>
-                <button class="icon-add-btn center" title="Добавить синтез">+</button>
+                <button class="icon-add-btn left" title="${t('add_thesis')}">+</button>
+                <button class="icon-add-btn center" title="${t('add_synthesis')}">+</button>
                 <div class="right-actions">
-                    <button class="icon-add-btn right" title="Добавить антитезис">+</button>
-                    <button class="section-add-btn" title="Добавить раздел">📄 Раздел</button>
+                    <button class="icon-add-btn right" title="${t('add_antithesis')}">+</button>
+                    <button class="section-add-btn" title="${t('add_section')}">📄 ${t('section_word')}</button>
                 </div>
             </div>
         `;

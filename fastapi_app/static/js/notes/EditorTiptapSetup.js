@@ -15,6 +15,7 @@ import DialogService from './DialogService.js';
 import FormulaModalService from './FormulaModalService.js';
 import PasteMathTransformer from './PasteMathTransformer.js';
 
+import { t } from '../i18n.js';
 export class EditorTiptapSetup {
     static createEditor(containerEl, currentHtml, autofocus = true) {
         return new Editor({
@@ -26,7 +27,7 @@ export class EditorTiptapSetup {
                 }), 
                 Underline,
                 InternalLink.configure({ openOnClick: false }),
-                Placeholder.configure({ placeholder: 'Напишите текст...' }),
+                Placeholder.configure({ placeholder: t('tip_placeholder') }),
                 QuestionMark, 
                 HiddenPhrase, 
                 MathCallout,
@@ -101,12 +102,12 @@ export class EditorTiptapSetup {
                     const existingText = isEditing ? currentEditor.getAttributes('questionMark').text : '';
 
                     DialogService.prompt({
-                        title: isEditing ? 'Редактировать вопрос' : 'Вопрос к тексту',
-                        message: 'В чём заключается вопрос или неясность?:',
+                        title: isEditing ? t('q_edit') : t('q_add'),
+                        message: t('q_prompt'),
                         defaultValue: existingText,
-                        placeholder: 'Например: Не совсем ясен вывод формулы...',
+                        placeholder: t('q_example_ph'),
                         icon: '❓',
-                        confirmText: 'Сохранить'
+                        confirmText: t('save')
                     }).then(questionText => {
                         if (questionText === null) return;
                         if (questionText === '') {
@@ -193,19 +194,19 @@ export class EditorTiptapSetup {
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; background: #ffffff;">
                 <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.15rem; color: #1e293b;">
                     <span style="font-size: 1.25rem;">👁</span>
-                    <span>${isEditing ? 'Редактировать скрытую фразу' : 'Добавить скрытую фразу'}</span>
+                    <span>${isEditing ? t('hp_edit') : t('hp_add')}</span>
                 </div>
                 <button class="btn-close-hp" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 4px 8px; border-radius: 6px;">✕</button>
             </div>
             <div style="padding: 20px;">
                 <div style="font-size: 0.92rem; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                     <span style="color: #64748b;">✍</span>
-                    <span>Введите текст пояснения или сноски, который будет разворачиваться по клику:</span>
+                    <span>${t('tip_hp_intro')}</span>
                 </div>
-                <input type="text" id="hp-explanation-input" placeholder="Например: наука о всеобщих законах развития..." value="${this.escapeHtml(existingHint)}" style="width: 100%; padding: 10px 14px; border: 1.5px solid #f97316; border-radius: 10px; font-size: 0.95rem; outline: none; box-sizing: border-box; margin-bottom: 20px;">
+                <input type="text" id="hp-explanation-input" placeholder="${t('hp_example_ph')}" value="${this.escapeHtml(existingHint)}" style="width: 100%; padding: 10px 14px; border: 1.5px solid #f97316; border-radius: 10px; font-size: 0.95rem; outline: none; box-sizing: border-box; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button class="btn-cancel-hp" style="background: #2563eb; color: white; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">Отмена</button>
-                    <button class="btn-save-hp" style="background: #ea580c; color: white; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">Сохранить</button>
+                    <button class="btn-cancel-hp" style="background: #2563eb; color: white; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${t('tip_cancel')}</button>
+                    <button class="btn-save-hp" style="background: #ea580c; color: white; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${t('save')}</button>
                 </div>
             </div>
         `;
@@ -233,11 +234,11 @@ export class EditorTiptapSetup {
                     currentEditor.chain().focus().setHiddenPhrase({ hint: hintText }).run();
                 } else {
                     const placeholder = await DialogService.prompt({
-                        title: 'Скрытая фраза',
-                        message: 'Введите слово или фразу для скрытого пояснения:',
-                        defaultValue: 'сноска',
-                        confirmText: 'Вставить'
-                    }) || 'сноска';
+                        title: t('hp_title'),
+                        message: t('hp_prompt'),
+                        defaultValue: t('tip_footnote_default'),
+                        confirmText: t('insert_word')
+                    }) || t('tip_footnote_default');
                     currentEditor.chain().focus().insertContent({
                         type: 'text',
                         text: placeholder,

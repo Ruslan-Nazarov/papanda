@@ -10,8 +10,20 @@
             <div class="brand-logo" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #1e293b; padding: 4px 8px; user-select: none;">
                 <span>{{ _('app_title') }}</span>
             </div>
+            <div class="mode-master-toggle" id="mode-master-toggle" title="{{ _('mode_toggle_title') }}">
+                <button type="button" data-mode="ai"><span class="mm-ico">✨</span><span class="mm-label">{{ _('mode_ai') }}</span></button>
+                <button type="button" data-mode="manual"><span class="mm-ico">✍️</span><span class="mm-label">{{ _('mode_manual') }}</span></button>
+            </div>
+            <label class="mode-substep" id="mode-substep" title="{{ _('mode_substep_title') }}">
+                <input type="checkbox" id="toggle-autofill-step"> {{ _('mode_substep') }}
+            </label>
         </div>
-        <div class="header-right">
+        <button class="mobile-nav-toggle" id="btn-mobile-nav" aria-label="{{ _('menu_nav_mobile') }}">☰</button>
+        <div class="header-right" id="header-right">
+            <!-- Обучение -->
+            <button class="nav-pill-btn" id="btn-howto">
+                <span class="pill-icon">🎓</span> {{ _('nav_howto') }}
+            </button>
             <!-- Режим -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-mode">
@@ -19,31 +31,23 @@
                 </button>
                 <div id="mode-dropdown" class="dropdown-menu hidden" style="min-width: 260px;">
                     <div class="mode-dropdown-row">
-                        <span>Диалектический конспект</span>
+                        <span>{{ _('menu_dialectics') }}</span>
                         <label class="toggle-switch"><input type="checkbox" id="toggle-dialectics" checked><span class="toggle-slider"></span></label>
                     </div>
                     <div class="mode-dropdown-row">
-                        <span>Двуколоночный вид</span>
+                        <span>{{ _('menu_two_column') }}</span>
                         <label class="toggle-switch"><input type="checkbox" id="toggle-two-column" checked><span class="toggle-slider"></span></label>
                     </div>
                     <div class="mode-dropdown-row">
-                        <span>Оставить заголовки</span>
+                        <span>{{ _('menu_keep_titles') }}</span>
                         <label class="toggle-switch"><input type="checkbox" id="toggle-keep-titles"><span class="toggle-slider"></span></label>
                     </div>
                     <div class="mode-dropdown-row">
-                        <span>Свернуть левую колонку</span>
+                        <span>{{ _('menu_hide_left') }}</span>
                         <label class="toggle-switch"><input type="checkbox" id="toggle-hide-left"><span class="toggle-slider"></span></label>
                     </div>
                     <div class="mode-dropdown-row">
-                        <span>Автозаполнение ИИ 🪄</span>
-                        <label class="toggle-switch"><input type="checkbox" id="toggle-auto-fill"><span class="toggle-slider"></span></label>
-                    </div>
-                    <div class="mode-dropdown-row" id="row-autofill-step" style="display: none;">
-                        <span>↳ Пошагово</span>
-                        <label class="toggle-switch"><input type="checkbox" id="toggle-autofill-step"><span class="toggle-slider"></span></label>
-                    </div>
-                    <div class="mode-dropdown-row">
-                        <span>Показать скрытые подсказки</span>
+                        <span>{{ _('menu_show_hints') }}</span>
                         <label class="toggle-switch"><input type="checkbox" id="toggle-show-hints"><span class="toggle-slider"></span></label>
                     </div>
                 </div>
@@ -52,53 +56,53 @@
             <!-- Парсеры -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-parsers-nav">
-                    <span class="pill-icon">☰</span> Парсеры
+                    <span class="pill-icon">☰</span> {{ _('nav_parsers') }}
                 </button>
                 <div id="parsers-dropdown" class="dropdown-menu hidden" style="min-width: 170px;">
                     <div class="menu-item" id="menu-item-formula-parser">
                         <span class="menu-icon">🧮</span>
-                        <span>Формулы</span>
+                        <span>{{ _('parser_formula') }}</span>
                     </div>
                     <div class="menu-item" id="menu-item-article-parser">
                         <span class="menu-icon">📄</span>
-                        <span>Статьи</span>
+                        <span>{{ _('parser_article') }}</span>
                     </div>
                 </div>
             </div>
 
             <!-- Связи -->
             <button class="nav-pill-btn" id="btn-connections-nav">
-                <span class="pill-icon">🔗</span> Связи
+                <span class="pill-icon">🔗</span> {{ _('nav_connections') }}
             </button>
 
             <!-- Меню -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-main-menu">
-                    <span class="pill-icon">☰</span> Меню
+                    <span class="pill-icon">☰</span> {{ _('nav_menu') }}
                 </button>
                 <div id="main-menu-dropdown" class="dropdown-menu hidden" style="min-width: 230px;">
                     <div class="menu-item" id="menu-item-open-note">
                         <span class="menu-icon">📁</span>
-                        <span>Открыть конспект</span>
+                        <span>{{ _('menu_open_note') }}</span>
                     </div>
                     <div class="menu-item" id="menu-item-new-note">
                         <span class="menu-icon">📄</span>
-                        <span>Новый конспект</span>
+                        <span>{{ _('menu_new_note') }}</span>
                     </div>
                     <div class="menu-item" id="menu-item-back-note">
                         <span class="menu-icon">‹</span>
-                        <span>Назад к предыдущему</span>
+                        <span>{{ _('menu_back') }}</span>
                     </div>
                     <div class="menu-item" id="menu-item-trash">
                         <span class="menu-icon">🗑</span>
-                        <span>Корзина</span>
+                        <span>{{ _('menu_trash') }}</span>
                     </div>
                     <div class="menu-item text-danger" id="menu-item-delete-current">
                         <span class="menu-icon">🗑</span>
-                        <span>Удалить конспект</span>
+                        <span>{{ _('menu_delete_note') }}</span>
                     </div>
                     <div class="menu-divider"></div>
-                    <div class="menu-section-label">ЭКСПОРТ</div>
+                    <div class="menu-section-label">{{ _('menu_export') }}</div>
                     <div class="menu-item" id="menu-item-export-md">
                         <span class="menu-icon">📄</span>
                         <span>Markdown (.md)</span>
@@ -111,8 +115,8 @@
             </div>
             <!-- Смена языка -->
             <div class="dropdown-wrapper" style="margin-left: 4px;">
-                <button class="nav-pill-btn" id="btn-lang-menu" title="Выбор языка">
-                    <span class="pill-icon">🌐</span> Язык
+                <button class="nav-pill-btn" id="btn-lang-menu" title="{{ _('lang_menu_title') }}">
+                    <span class="pill-icon">🌐</span> {{ _('nav_lang') }}
                 </button>
                 <div id="lang-menu-dropdown" class="dropdown-menu hidden" style="min-width: 140px;">
                     <div class="menu-item" data-lang="ru">
@@ -136,7 +140,7 @@
             <div class="note-header-left">
                 <div class="category-dropdown-wrapper dropdown-wrapper" style="position: relative;">
                     <button class="pill-dropdown-btn" id="btn-category-select">
-                        <span id="category-label">Без категории</span> <span class="arrow-down">▾</span>
+                        <span id="category-label">{{ _('no_category') }}</span> <span class="arrow-down">▾</span>
                     </button>
                     <div id="category-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 220px; max-width: 300px; padding: 6px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
                         <!-- populated by CategoryManager -->
@@ -148,7 +152,7 @@
             <div class="note-header-right" style="display: flex; gap: 8px; align-items: center;">
                 <div class="save-status-dot-indicator" id="save-status-dot"></div>
                 <button class="btn-save-primary" id="btn-save">
-                    <span class="save-icon">💾</span> Сохранить
+                    <span class="save-icon">💾</span> {{ _('btn_save') }}
                 </button>
             </div>
         </div>
@@ -157,7 +161,7 @@
         <div class="note-sub-bar">
             <div class="sub-bar-left">
                 <div class="progress-section">
-                    <span class="progress-label">ПРОГРЕСС</span>
+                    <span class="progress-label">{{ _('progress') }}</span>
                     <div class="progress-track">
                         <div class="progress-fill ready" id="progress-ready" style="width: 0%;"></div>
                         <div class="progress-fill in-progress" id="progress-in-progress" style="width: 0%;"></div>
@@ -167,7 +171,7 @@
                 <div class="sub-bar-divider"></div>
                 <div class="dropdown-wrapper" style="position: relative;">
                     <button class="sub-bar-btn" id="btn-toc">
-                        <span class="sub-icon">📋</span> Оглавление
+                        <span class="sub-icon">📋</span> {{ _('bar_toc') }}
                     </button>
                     <div id="toc-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 290px; max-width: 380px; padding: 0; border-radius: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); overflow: hidden; background: #ffffff;">
                         <!-- populated by TOCManager -->
@@ -175,7 +179,7 @@
                 </div>
                 <div class="dropdown-wrapper" style="position: relative;">
                     <button class="sub-bar-btn" id="btn-search">
-                        <span class="sub-icon">🔍</span> Поиск
+                        <span class="sub-icon">🔍</span> {{ _('bar_search') }}
                     </button>
                     <div id="search-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 320px; max-width: 380px; padding: 14px 16px; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); background: #ffffff;">
                         <!-- populated by SearchManager -->
@@ -183,7 +187,7 @@
                 </div>
                 <div class="dropdown-wrapper" style="position: relative;">
                     <button class="sub-bar-btn" id="btn-note-stickers">
-                        <span class="sub-icon" style="color: #eab308;">🟨</span> Стикеры
+                        <span class="sub-icon" style="color: #eab308;">🟨</span> {{ _('bar_stickers') }}
                     </button>
                     <div id="note-stickers-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 320px; max-width: 360px; padding: 0; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); background: #ffffff;">
                         <!-- populated by BlockStickersManager -->
@@ -192,7 +196,7 @@
             </div>
             <div class="sub-bar-right">
                 <button class="sub-bar-btn" id="btn-versions">
-                    <span class="sub-icon">🕒</span> <span id="save-time-text">Сохранено: 12:42</span> <span class="arrow-down">▾</span>
+                    <span class="sub-icon">🕒</span> <span id="save-time-text">{{ _('saved_at') }}: 12:42</span> <span class="arrow-down">▾</span>
                 </button>
             </div>
         </div>
@@ -208,29 +212,26 @@
     <!-- Футер -->
     <footer class="app-footer">
         <div class="footer-pills-row">
-            <button class="footer-pill-btn" id="btn-footer-training">
-                <span class="footer-icon">🎓</span> Обучение
-            </button>
             <button class="footer-pill-btn" id="btn-footer-about">
-                <span class="footer-icon">📖</span> О проекте
+                <span class="footer-icon">📖</span> {{ _('footer_about') }}
             </button>
             <button class="footer-pill-btn" id="btn-footer-changelog">
-                <span class="footer-icon">📝</span> История изменений
+                <span class="footer-icon">📝</span> {{ _('footer_changelog') }}
             </button>
             <button class="footer-pill-btn" id="btn-footer-contact">
-                <span class="footer-icon">💬</span> Написать разработчику
+                <span class="footer-icon">💬</span> {{ _('footer_contact') }}
             </button>
         </div>
 
         <div class="footer-credits">
-            papanda version 0.8.1 (last update 2026-08-29)<br>
+            papanda version 0.8.3 (last update 2026-09-03)<br>
             designed and developed by <strong>ruslan nazarov</strong><br>
             CC BY-NC 4.0 License
         </div>
     </footer>
 
     <!-- Плавающая кнопка наверх (Scroll-to-top FAB) -->
-    <button class="scroll-top-fab" id="btn-scroll-top" title="Наверх">⌃</button>
+    <button class="scroll-top-fab" id="btn-scroll-top" title="{{ _('fab_top') }}">⌃</button>
 </div>
 
 <!-- Модальный контейнер -->
@@ -260,5 +261,5 @@
     }
   }
 </script>
-<script type="module" src="/static/js/notes/app.js?v=4"></script>
+<script type="module" src="/static/js/notes/app.js?v=13"></script>
 {% endblock %}

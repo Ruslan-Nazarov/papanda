@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
 import { inferRoleFromTitle } from './BlockConstants.js';
 
+import { t } from '../i18n.js';
 class TOCManager {
     static init() {
         const btn = document.getElementById('btn-toc');
@@ -34,7 +35,7 @@ class TOCManager {
 
         let itemsHTML = '';
         if (blocks.length === 0) {
-            itemsHTML = `<div style="color: #94a3b8; font-style: italic; padding: 12px 16px; font-size: 0.9rem;">Нет блоков в конспекте.</div>`;
+            itemsHTML = `<div style="color: #94a3b8; font-style: italic; padding: 12px 16px; font-size: 0.9rem;">${t('toc_empty')}</div>`;
         } else {
             itemsHTML = blocks.map((b) => {
                 inferRoleFromTitle(b);
@@ -45,7 +46,7 @@ class TOCManager {
                 let iconColor = '#a855f7';
                 let itemBg = 'transparent';
                 let fontWeight = '500';
-                let titleText = b.title || (isAnchor ? 'Что вам нужно понять?' : (isSection ? 'Раздел' : 'Блок'));
+                let titleText = b.title || (isAnchor ? t('hint_anchor_title') : (isSection ? t('section_word') : t('block_word')));
 
                 if (isSection) {
                     icon = '📄';
@@ -63,7 +64,7 @@ class TOCManager {
                          data-id="${b.id}" 
                          draggable="true" 
                          style="display: flex; align-items: center; gap: 8px; padding: ${isSection ? '8px 10px' : '6px 10px'}; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.92rem; color: #1e293b; background: ${itemBg}; border: 2px solid transparent; user-select: none;">
-                        <span class="toc-drag-handle" title="Перетащить" style="color: #94a3b8; font-size: 1.1rem; cursor: grab; padding: 0 2px; line-height: 1;">⠿</span>
+                        <span class="toc-drag-handle" title="${t('drag_word')}" style="color: #94a3b8; font-size: 1.1rem; cursor: grab; padding: 0 2px; line-height: 1;">⠿</span>
                         <span class="toc-marker" style="color: ${iconColor}; font-size: ${isSection ? '1rem' : '0.85rem'}; display: inline-flex; align-items: center; justify-content: center;">${icon}</span>
                         <span class="toc-title" style="flex: 1; font-weight: ${fontWeight}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(titleText)}</span>
                     </div>
@@ -75,7 +76,7 @@ class TOCManager {
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 8px 16px; border-bottom: 1px solid #f8fafc;">
                 <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #1e293b;">
                     <span style="font-size: 1.15rem;">📋</span>
-                    <span>Оглавление</span>
+                    <span>${t('toc_title')}</span>
                 </div>
                 <button class="btn-close-toc" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;">✕</button>
             </div>

@@ -1,5 +1,6 @@
 import NotesAPI from './api.js';
 
+import { t } from '../i18n.js';
 class DialogService {
     static async selectInternalLink(isEditing = false) {
         return new Promise((resolve) => {
@@ -21,21 +22,21 @@ class DialogService {
             dialog.innerHTML = `
                 <div class="modal-dialog-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-                        <span>🔗</span> Внутренняя ссылка
+                        <span>🔗</span> ${t('dlg_internal_link')}
                     </h2>
                     <button class="btn-close-dialog" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;">✕</button>
                 </div>
                 <div class="modal-dialog-body" style="padding: 0; flex: 1; overflow-y: auto; background: #f8fafc;">
                     <div id="internal-link-list" style="padding: 12px;">
-                        <div style="text-align: center; padding: 20px; color: #64748b;">Загрузка...</div>
+                        <div style="text-align: center; padding: 20px; color: #64748b;">${t('loading')}</div>
                     </div>
                 </div>
                 <div class="modal-dialog-footer" style="padding: 12px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                    <div id="internal-link-selected" style="font-size: 0.9rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;">Ничего не выбрано</div>
+                    <div id="internal-link-selected" style="font-size: 0.9rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;">${t('dlg_nothing_selected')}</div>
                     <div style="display: flex; gap: 10px;">
-                        ${isEditing ? '<button class="btn-delete-dialog" style="background: #ef4444; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">Удалить</button>' : ''}
-                        <button class="btn-cancel-dialog" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">Отмена</button>
-                        <button class="btn-confirm-dialog" style="background: #2563eb; color: white; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;" disabled>Вставить</button>
+                        ${isEditing ? `<button class="btn-delete-dialog" style="background: #ef4444; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${t('tt_delete')}</button>` : ''}
+                        <button class="btn-cancel-dialog" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${t('cancel')}</button>
+                        <button class="btn-confirm-dialog" style="background: #2563eb; color: white; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;" disabled>${t('insert_word')}</button>
                     </div>
                 </div>
             `;
@@ -75,7 +76,7 @@ class DialogService {
                     selectedText.style.color = '#2563eb';
                     confirmBtn.disabled = false;
                 } else {
-                    selectedText.textContent = 'Ничего не выбрано';
+                    selectedText.textContent = t('picker_nothing');
                     selectedText.style.color = '#64748b';
                     confirmBtn.disabled = true;
                 }
@@ -86,7 +87,7 @@ class DialogService {
                     const notes = await NotesAPI.getNotes();
                     listContainer.innerHTML = '';
                     if (notes.length === 0) {
-                        listContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b;">Нет доступных конспектов</div>';
+                        listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #64748b;">${t('picker_no_notes')}</div>`;
                         return;
                     }
                     
@@ -99,11 +100,11 @@ class DialogService {
                         noteHeader.innerHTML = `
                             <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
                                 <span style="font-size: 1.2rem;">📓</span>
-                                <span style="font-weight: 600; color: #1e293b;">${this.escapeHtml(note.title || 'Без названия')}</span>
+                                <span style="font-weight: 600; color: #1e293b;">${this.escapeHtml(note.title || t('untitled'))}</span>
                             </div>
                             <div style="display: flex; gap: 6px;">
-                                <button class="btn-select-note" style="padding: 4px 10px; background: #e0e7ff; color: #4f46e5; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">Выбрать</button>
-                                <button class="btn-expand-note" style="padding: 4px 10px; background: #f1f5f9; color: #64748b; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">Блоки ▾</button>
+                                <button class="btn-select-note" style="padding: 4px 10px; background: #e0e7ff; color: #4f46e5; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">${t('dlg_select')}</button>
+                                <button class="btn-expand-note" style="padding: 4px 10px; background: #f1f5f9; color: #64748b; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">${t('picker_blocks')} ▾</button>
                             </div>
                         `;
                         
@@ -122,25 +123,25 @@ class DialogService {
                             });
                             noteEl.classList.add('internal-link-active');
                             noteEl.style.border = '1px solid #3b82f6';
-                            updateSelection(`internal://note/${note.id}`, note.title || 'Без названия');
+                            updateSelection(`internal://note/${note.id}`, note.title || t('untitled'));
                         });
 
                         noteHeader.querySelector('.btn-expand-note').addEventListener('click', async (e) => {
                             e.stopPropagation();
                             if (blocksContainer.style.display === 'block') {
                                 blocksContainer.style.display = 'none';
-                                e.target.textContent = 'Блоки ▾';
+                                e.target.textContent = t('picker_blocks') + ' ▾';
                                 return;
                             }
                             
-                            e.target.textContent = 'Загрузка...';
+                            e.target.textContent = t('loading');
                             try {
                                 const fullNote = await NotesAPI.getNote(note.id);
                                 blocksContainer.innerHTML = '';
                                 const blocks = (fullNote.content_json || fullNote.blocks || []).filter(b => b.role !== 'section' && b.title);
                                 
                                 if (blocks.length === 0) {
-                                    blocksContainer.innerHTML = '<div style="padding: 8px 12px; color: #94a3b8; font-size: 0.85rem;">Нет блоков</div>';
+                                    blocksContainer.innerHTML = `<div style="padding: 8px 12px; color: #94a3b8; font-size: 0.85rem;">${t('picker_no_blocks')}</div>`;
                                 } else {
                                     blocks.forEach(block => {
                                         const blockEl = document.createElement('div');
@@ -156,21 +157,21 @@ class DialogService {
                                             blockEl.classList.add('internal-link-active');
                                             blockEl.style.border = '1px solid #3b82f6';
                                             blockEl.style.background = '#eff6ff';
-                                            updateSelection(`internal://note/${note.id}/block/${block.id}`, `${note.title || 'Без названия'} → ${block.title}`);
+                                            updateSelection(`internal://note/${note.id}/block/${block.id}`, `${note.title || t('untitled')} → ${block.title}`);
                                         });
                                         
                                         blocksContainer.appendChild(blockEl);
                                     });
                                 }
                                 blocksContainer.style.display = 'block';
-                                e.target.textContent = 'Блоки ▴';
+                                e.target.textContent = t('picker_blocks') + ' ▴';
                             } catch (err) {
-                                e.target.textContent = 'Ошибка';
+                                e.target.textContent = t('error_word');
                             }
                         });
                     });
                 } catch (err) {
-                    listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">Ошибка загрузки конспектов: ${err.message}</div>`;
+                    listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">${t('picker_load_err')}: ${err.message}</div>`;
                 }
             };
 
@@ -179,7 +180,7 @@ class DialogService {
     }
 
     static alert(titleOrMessage, message = null, options = {}) {
-        let title = 'Уведомление';
+        let title = t('dlg_notice');
         let content = '';
 
         if (message === null) {
@@ -189,7 +190,7 @@ class DialogService {
             content = message;
         }
 
-        const icon = options.icon || (title.includes('Ошибка') ? '⚠️' : 'ℹ️');
+        const icon = options.icon || (title.includes(t('dlg_err_marker')) ? '⚠️' : 'ℹ️');
         const buttonText = options.buttonText || 'OK';
 
         return new Promise((resolve) => {
@@ -254,17 +255,17 @@ class DialogService {
             if (message !== null) {
                 options = { title: optionsOrMessage, message };
             } else {
-                options = { title: 'Подтверждение', message: optionsOrMessage };
+                options = { title: t('dlg_confirm_title'), message: optionsOrMessage };
             }
         } else {
             options = optionsOrMessage || {};
         }
 
-        const title = options.title || 'Подтверждение';
+        const title = options.title || t('dlg_confirm_title');
         const content = options.message || '';
         const icon = options.icon || (options.isDestructive ? '🗑️' : '❓');
-        const confirmText = options.confirmText || (options.isDestructive ? 'Удалить' : 'Подтвердить');
-        const cancelText = options.cancelText || 'Отмена';
+        const confirmText = options.confirmText || (options.isDestructive ? t('delete') : t('dlg_confirm_yes'));
+        const cancelText = options.cancelText || t('cancel');
         const isDestructive = !!options.isDestructive;
 
         return new Promise((resolve) => {
@@ -335,7 +336,7 @@ class DialogService {
         let options = {};
         if (typeof optionsOrMessage === 'string') {
             options = {
-                title: 'Ввод данных',
+                title: t('dlg_input_title'),
                 message: optionsOrMessage,
                 defaultValue,
                 placeholder
@@ -344,13 +345,13 @@ class DialogService {
             options = optionsOrMessage || {};
         }
 
-        const title = options.title || 'Ввод данных';
+        const title = options.title || t('dlg_input_title');
         const content = options.message || '';
         const defVal = options.defaultValue || '';
         const ph = options.placeholder || '';
         const icon = options.icon || '✏️';
-        const confirmText = options.confirmText || 'Сохранить';
-        const cancelText = options.cancelText || 'Отмена';
+        const confirmText = options.confirmText || t('save');
+        const cancelText = options.cancelText || t('cancel');
 
         return new Promise((resolve) => {
             const overlay = document.createElement('div');

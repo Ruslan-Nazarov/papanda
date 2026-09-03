@@ -3,6 +3,7 @@ import DialogService from './DialogService.js';
 import NotesAPI from './api.js';
 import { showToast } from './ToastService.js';
 
+import { t } from '../i18n.js';
 class ConnectionsModalService {
     static async show(app) {
         // Ensure current note is saved
@@ -16,7 +17,7 @@ class ConnectionsModalService {
         }
 
         if (!AppState.currentNote || !AppState.currentNote.id) {
-            await DialogService.alert('Внимание', 'Сначала сохраните текущий конспект, чтобы добавлять связи.');
+            await DialogService.alert(t('attention_word'), t('conn_need_save'));
             return;
         }
 
@@ -66,8 +67,8 @@ class ConnectionsModalService {
         dialog.innerHTML = `
             <!-- Header -->
             <div class="connections-modal-header">
-                <h2 class="connections-modal-title">Связи</h2>
-                <button class="connections-modal-close-btn" id="btn-close-conn-modal" title="Закрыть">✕</button>
+                <h2 class="connections-modal-title">${t('conn_title')}</h2>
+                <button class="connections-modal-close-btn" id="btn-close-conn-modal" title="${t('close_word')}">✕</button>
             </div>
 
             <!-- Search Bar -->
@@ -76,7 +77,7 @@ class ConnectionsModalService {
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" id="connections-search-input" class="connections-search-input" placeholder="Поиск по конспектам..." autocomplete="off">
+                <input type="text" id="connections-search-input" class="connections-search-input" placeholder="${t('conn_search_ph')}" autocomplete="off">
             </div>
 
             <!-- Body Columns -->
@@ -84,29 +85,29 @@ class ConnectionsModalService {
                 <!-- Left Sidebar: Categories -->
                 <div class="connections-sidebar">
                     <div>
-                        <div class="connections-column-heading">КАТЕГОРИИ</div>
+                        <div class="connections-column-heading">${t('conn_categories')}</div>
                         <div class="connections-categories-list" id="connections-cat-list"></div>
                     </div>
 
                     <!-- Add Category Form -->
                     <div class="connections-add-category-section">
                         <div class="connections-add-category-form">
-                            <input type="text" id="new-cat-name-input" class="connections-add-category-input" placeholder="Новая категория...">
-                            <button id="btn-add-new-category" class="connections-add-category-btn" title="Добавить">+</button>
+                            <input type="text" id="new-cat-name-input" class="connections-add-category-input" placeholder="${t('conn_new_cat_ph')}">
+                            <button id="btn-add-new-category" class="connections-add-category-btn" title="${t('add_word')}">+</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right Column: Notes Cards -->
                 <div class="connections-main-content">
-                    <div class="connections-column-heading" id="connections-notes-heading">ВСЕ КОНСПЕКТЫ</div>
+                    <div class="connections-column-heading" id="connections-notes-heading">${t('conn_all_notes')}</div>
                     <div class="connections-notes-list" id="connections-notes-container"></div>
                 </div>
             </div>
 
             <!-- Footer -->
             <div class="connections-modal-footer">
-                <button class="connections-btn-close" id="btn-footer-close-conn">Закрыть</button>
+                <button class="connections-btn-close" id="btn-footer-close-conn">${t('close_word')}</button>
             </div>
         `;
 
@@ -150,7 +151,7 @@ class ConnectionsModalService {
             let html = `
                 <div class="connections-category-item ${selectedCategoryId === null ? 'active' : ''}" data-cat-id="all">
                     <span class="connections-category-dot"></span>
-                    <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Все</span>
+                    <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t('all_word')}</span>
                 </div>
             `;
 
@@ -189,9 +190,9 @@ class ConnectionsModalService {
             // Update heading
             if (selectedCategoryId !== null) {
                 const curCat = categories.find(c => c.id === selectedCategoryId);
-                notesHeading.textContent = curCat ? curCat.name.toUpperCase() : 'КОНСПЕКТЫ';
+                notesHeading.textContent = curCat ? curCat.name.toUpperCase() : t('conn_notes');
             } else {
-                notesHeading.textContent = 'ВСЕ КОНСПЕКТЫ';
+                notesHeading.textContent = t('conn_all_notes');
             }
 
             // Filter
@@ -212,7 +213,7 @@ class ConnectionsModalService {
             if (filtered.length === 0) {
                 notesContainer.innerHTML = `
                     <div style="text-align: center; color: #94a3b8; padding: 40px 10px; font-size: 0.95rem;">
-                        Конспекты не найдены
+                        ${t('conn_notes_not_found')}
                     </div>
                 `;
                 return;
@@ -226,16 +227,16 @@ class ConnectionsModalService {
                 const isReady = (n.status === 'ready' || n.status === 'done');
                 const statusColor = isReady ? '#10b981' : '#ea580c';
 
-                const catName = (n.category && n.category.name) ? n.category.name.toUpperCase() : 'БЕЗ КАТЕГОРИИ';
+                const catName = (n.category && n.category.name) ? n.category.name.toUpperCase() : t('conn_no_category');
                 const formattedDate = this.formatDate(n.updated_at || n.created_at);
 
                 return `
                     <div class="connections-note-card ${connected ? 'is-connected' : ''}" data-id="${n.id}">
                         <div class="connections-note-card-header">
                             <div class="connections-note-title-wrap">
-                                <span class="connections-note-status-dot" style="background: ${statusColor};" title="${isReady ? 'Готово' : 'Черновик'}"></span>
-                                <span class="connections-note-title" title="${this.escapeHtml(n.title || 'Без названия')}">${this.escapeHtml(n.title || 'Без названия')}</span>
-                                ${isCurrent ? '<span class="connections-current-badge">(текущий)</span>' : ''}
+                                <span class="connections-note-status-dot" style="background: ${statusColor};" title="${isReady ? t('st_ready') : t('st_draft')}"></span>
+                                <span class="connections-note-title" title="${this.escapeHtml(n.title || t('untitled'))}">${this.escapeHtml(n.title || t('untitled'))}</span>
+                                ${isCurrent ? `<span class="connections-current-badge">${t('conn_current')}</span>` : ''}
                             </div>
                             <span class="connections-note-category-badge">${this.escapeHtml(catName)}</span>
                         </div>
@@ -244,11 +245,11 @@ class ConnectionsModalService {
                             <span class="connections-note-date">${formattedDate}</span>
                             <div class="connections-note-actions">
                                 ${isCurrent ? `
-                                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Открыт сейчас</span>
+                                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 500;">${t('conn_open_now')}</span>
                                 ` : `
-                                    <button class="connections-card-btn btn-open-note" data-id="${n.id}" title="Открыть конспект">↗ Перейти</button>
+                                    <button class="connections-card-btn btn-open-note" data-id="${n.id}" title="${t('load_notes_title')}">${t('conn_go')}</button>
                                     <button class="connections-card-btn btn-toggle-link ${connected ? 'is-connected' : ''}" data-id="${n.id}">
-                                        ${connected ? '✕ Отвязать' : '🔗 Связать'}
+                                        ${connected ? t('conn_unlink') : t('conn_link')}
                                     </button>
                                 `}
                             </div>
@@ -265,7 +266,7 @@ class ConnectionsModalService {
                 card.addEventListener('click', async (e) => {
                     if (e.target.closest('.btn-open-note')) return;
                     if (targetId === currentNoteId) {
-                        showToast('Этот конспект уже открыт в редакторе');
+                        showToast(t('conn_already_open'));
                         return;
                     }
                     await toggleConnection(targetId);
@@ -282,7 +283,7 @@ class ConnectionsModalService {
                             await NoteController.loadNote(targetId);
                             closeModal();
                         } catch (err) {
-                            await DialogService.alert('Ошибка', 'Не удалось открыть конспект: ' + err.message);
+                            await DialogService.alert(t('error_word'), t('conn_open_failed') + err.message);
                         }
                     });
                 }
@@ -301,18 +302,18 @@ class ConnectionsModalService {
                     await NotesAPI.deleteConnection(existing.id);
                     connections = connections.filter(c => c.id !== existing.id);
                     renderNotes();
-                    showToast('Связь удалена');
+                    showToast(t('conn_removed'));
                 } catch (err) {
-                    await DialogService.alert('Ошибка', 'Ошибка удаления связи: ' + err.message);
+                    await DialogService.alert(t('error_word'), t('conn_remove_err') + err.message);
                 }
             } else {
                 try {
                     const newConn = await NotesAPI.createConnection(currentNoteId, targetId, 'related');
                     connections.push(newConn);
                     renderNotes();
-                    showToast('Связь создана');
+                    showToast(t('conn_created'));
                 } catch (err) {
-                    await DialogService.alert('Ошибка', 'Ошибка создания связи: ' + err.message);
+                    await DialogService.alert(t('error_word'), t('conn_create_err') + err.message);
                 }
             }
         };
@@ -332,9 +333,9 @@ class ConnectionsModalService {
                 selectedCategoryId = created.id;
                 renderCategories();
                 renderNotes();
-                showToast(`Категория «${name}» создана`);
+                showToast(`«${name}» ${t('conn_cat_created')}`);
             } catch (err) {
-                await DialogService.alert('Ошибка', 'Ошибка создания категории: ' + err.message);
+                await DialogService.alert(t('error_word'), t('cat_create_err') + err.message);
             }
         };
 

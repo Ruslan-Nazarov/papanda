@@ -14,7 +14,7 @@ class NoteVersionsService {
     static async show(app) {
         const noteId = AppState.currentNote.id;
         if (!noteId) {
-            await DialogService.alert('История версий', 'Сначала сохраните конспект для работы с версиями.');
+            await DialogService.alert(t('versions_title'), t('versions_need_save'));
             return;
         }
 
@@ -28,18 +28,18 @@ class NoteVersionsService {
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <strong style="font-size: 1.05rem; font-weight: 700; color: #1e293b;">${this.escapeHtml(v.title)}</strong>
                                 ${v.is_manual
-                                    ? `<span style="background: #e0f2fe; color: #0284c7; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="color: #ec4899;">📌</span> Ручная</span>`
-                                    : `<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">🤖 Авто</span>`}
+                                    ? `<span style="background: #e0f2fe; color: #0284c7; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="color: #ec4899;">📌</span> ${t('version_manual')}</span>`
+                                    : `<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">🤖 ${t('version_auto')}</span>`}
                             </div>
                             <div style="color: #64748b; font-size: 0.88rem;">
                                 ${DialogService.formatDateTime(v.created_at)}
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
                                 <button class="action-btn" onclick="window.app.versionsService.restore(${v.id})" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <span style="font-size: 0.95rem;">↪</span> Восстановить
+                                    <span style="font-size: 0.95rem;">↪</span> ${t('restore_word')}
                                 </button>
                                 <button class="action-btn" onclick="window.app.versionsService.togglePin(${v.id}, ${v.is_manual})" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <span>${v.is_manual ? '🔓 Открепить' : '🔒 Закрепить'}</span>
+                                    <span>${v.is_manual ? t('unpin_word') : t('pin_word')}</span>
                                 </button>
                                 <button class="action-btn" onclick="window.app.versionsService.delete(${v.id})" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
                                     ✕
@@ -48,7 +48,7 @@ class NoteVersionsService {
                         </div>
                     `).join('')}
                 </div>`
-                : `<p style="color: #94a3b8; padding: 1.5rem 0; text-align: center;">Нет сохраненных версий.</p>`;
+                : `<p style="color: #94a3b8; padding: 1.5rem 0; text-align: center;">${t('versions_empty')}</p>`;
 
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
@@ -62,15 +62,15 @@ class NoteVersionsService {
                 <div class="modal-dialog-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 1.25rem;">⏱️</span>
-                        <h2 style="font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0;">История версий</h2>
-                        <span style="color: #ec4899; font-weight: 800; font-size: 1.1rem; cursor: pointer;" title="Автосохранение каждые 15 минут, ручные версии сохраняются навсегда.">❓</span>
+                        <h2 style="font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0;">${t('versions_title')}</h2>
+                        <span style="color: #ec4899; font-weight: 800; font-size: 1.1rem; cursor: pointer;" title="${t('versions_autosave_note')}">❓</span>
                     </div>
                     <button class="icon-btn btn-close-modal" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">✕</button>
                 </div>
                 <div class="modal-dialog-body" style="padding: 18px 20px;">
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="text" id="new-version-title" placeholder="Название версии (опционально)..." style="flex: 1; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.92rem; outline: none;">
-                        <button id="btn-save-custom-version" style="background: #2563eb; color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 0.92rem; font-weight: 600; cursor: pointer; white-space: nowrap;">+ Сохранить</button>
+                        <input type="text" id="new-version-title" placeholder="${t('version_name_ph')}" style="flex: 1; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.92rem; outline: none;">
+                        <button id="btn-save-custom-version" style="background: #2563eb; color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 0.92rem; font-weight: 600; cursor: pointer; white-space: nowrap;">+ ${t('save')}</button>
                     </div>
 
                     ${listHTML}
@@ -88,7 +88,7 @@ class NoteVersionsService {
 
             dialog.querySelector('#btn-save-custom-version').addEventListener('click', async () => {
                 const input = dialog.querySelector('#new-version-title');
-                const title = input.value.trim() || `Версия ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU')}`;
+                const title = input.value.trim() || `${t('version')} ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
                 await NoteController.createCheckpoint(title);
                 this.currentModal.close();
                 this.show(app);
@@ -96,16 +96,16 @@ class NoteVersionsService {
 
         } catch (e) {
             console.error(e);
-            await DialogService.alert('Ошибка', 'Не удалось загрузить историю версий.');
+            await DialogService.alert(t('error_word'), t('versions_load_failed'));
         }
     }
 
     static async restore(versionId) {
         const confirmed = await DialogService.confirm({
-            title: 'Восстановление версии',
-            message: 'Восстановить эту версию? Текущее состояние будет сохранено в истории.',
+            title: t('confirm_restore_ver_title'),
+            message: t('confirm_restore_ver_msg'),
             icon: '⏪',
-            confirmText: 'Восстановить'
+            confirmText: t('restore_word')
         });
         if (!confirmed) return;
 
@@ -117,10 +117,10 @@ class NoteVersionsService {
             const oldModal = this.currentModal;
             await this.show(window.app);
             if (oldModal) oldModal.close();
-            NoteController._showToast('⏪ Версия восстановлена');
+            NoteController._showToast(t('version_restored'));
         } catch (e) {
             console.error(e);
-            NoteController._showToast('Не удалось восстановить версию', 'error');
+            NoteController._showToast(t('version_restore_failed'), 'error');
         }
     }
 
@@ -136,19 +136,19 @@ class NoteVersionsService {
             const oldModal = this.currentModal;
             await this.show(window.app);
             if (oldModal) oldModal.close();
-            NoteController._showToast(isManual ? 'Версия откреплена' : '📌 Версия закреплена');
+            NoteController._showToast(isManual ? t('version_unpinned') : t('version_pinned'));
         } catch (e) {
             console.error(e);
-            NoteController._showToast('Ошибка при изменении статуса версии', 'error');
+            NoteController._showToast(t('version_pin_failed'), 'error');
         }
     }
 
     static async delete(versionId) {
         const confirmed = await DialogService.confirm({
-            title: 'Удаление версии',
-            message: 'Удалить эту версию из истории конспекта?',
+            title: t('confirm_del_ver_title'),
+            message: t('confirm_del_ver_msg'),
             isDestructive: true,
-            confirmText: 'Удалить'
+            confirmText: t('tt_delete')
         });
         if (!confirmed) return;
 
@@ -160,7 +160,7 @@ class NoteVersionsService {
             if (oldModal) oldModal.close();
         } catch (e) {
             console.error(e);
-            NoteController._showToast('Не удалось удалить версию', 'error');
+            NoteController._showToast(t('version_del_failed'), 'error');
         }
     }
 

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional, List, Any
+from typing import Optional, List, Any, AsyncIterator
+from contextlib import aclosing
 import json
 import base64
 import tempfile
-import os
 import io
 import aiofiles.os
 from pypdf import PdfReader
@@ -13,13 +14,53 @@ from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
 from fastapi_app.rate_limiter import limiter
 
+from fastapi_app.services.context_builder import ContextBuilder
+from fastapi_app.services.sanitizer import Sanitizer
+from fastapi_app.services.rag_tool_manager import RAGManager
+from fastapi_app.services.ai_router_service import ConspectusRouter
+
 router = APIRouter()
+
+conspectus_router = ConspectusRouter(
+    ai_service, 
+    ContextBuilder(), 
+    Sanitizer(), 
+    RAGManager(ai_service)
+)
+
 
 def _try_parse_json(raw: str, fallback: Any = None) -> Any:
     try:
         return json.loads(raw)
     except (json.JSONDecodeError, TypeError):
         return fallback if fallback is not None else raw
+
+
+def _sse_response(event_source) -> StreamingResponse:
+    async def event_stream():
+        try:
+            async with aclosing(event_source) as src:
+                async for ev in src:
+                    yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
+    """Поток токенов текста → SSE-кадры {"delta": "..."}, затем {"done": true}."""
+    async def as_events():
+        async with aclosing(token_gen) as tg:
+            async for tok in tg:
+                if tok:
+                    yield {"delta": tok}
+    return _sse_response(as_events())
 
 class DialecticsHintRequest(BaseModel):
     step_id: str = Field(..., max_length=100)
@@ -64,6 +105,15 @@ class GenerateStepRequest(BaseModel):
     context_text: str = Field(..., max_length=50_000)
     target_step: str = Field(..., max_length=100)
 
+class ConspectusRouteRequest(BaseModel):
+    action: str = Field(..., max_length=50)
+    context_state: dict = Field(default_factory=dict)
+    target_step: Optional[str] = Field(default=None, max_length=10)
+    user_prompt: Optional[str] = Field(default=None, max_length=5000)
+    pinned_step: Optional[str] = Field(default=None, max_length=10)
+    question: Optional[str] = Field(default=None, max_length=2000)
+
+
 @router.post("/opposites")
 @limiter.limit("5/minute")
 async def generate_opposites(request: Request, data: OppositesRequest):
@@ -83,6 +133,18 @@ async def explain_concept(request: Request, data: ExplainRequest):
         locale=locale
     )
     return {"result": result, "user_query": data.text}
+
+@router.post("/explain-concept/stream")
+@limiter.limit("10/minute")
+async def explain_concept_stream(request: Request, data: ExplainRequest):
+    locale = normalize_locale(request.state.locale)
+    return _sse(ai_service.explain_concept_stream(
+        text=data.text,
+        context_before=data.context_before or "",
+        context_after=data.context_after or "",
+        history=data.history or [],
+        locale=locale,
+    ))
 
 @router.post("/parser")
 @limiter.limit("20/minute")
@@ -182,6 +244,12 @@ async def check_logic(request: Request, data: CheckRequest):
     result = await ai_service.check_logic(data.text, data.history or [], locale=locale)
     return {"result": result}
 
+@router.post("/check-ai/stream")
+@limiter.limit("10/minute")
+async def check_logic_stream(request: Request, data: CheckRequest):
+    locale = normalize_locale(request.state.locale)
+    return _sse(ai_service.check_logic_stream(data.text, data.history or [], locale=locale))
+
 @router.get("/notes/hints")
 @limiter.limit("20/minute")
 async def get_notes_hints(request: Request):
@@ -194,19 +262,36 @@ async def get_notes_hints(request: Request):
         "step5": "Какой итоговый синтез?"
     }}
 
-@router.post("/autofill-conspect")
-@limiter.limit("5/minute")
-async def autofill_conspect(request: Request, data: AutofillRequest):
-    locale = normalize_locale(request.state.locale)
-    result = await ai_service.autofill_conspect(data.anchor_text, data.note_title or "", locale=locale)
-    return {"result": _try_parse_json(result)}
+@router.post("/conspectus/route")
+@limiter.limit("15/minute")
+async def route_conspectus_request(request: Request, data: ConspectusRouteRequest):
+    locale = normalize_locale(getattr(request.state, "locale", "ru"))
+    payload = data.dict()
+    payload["locale"] = locale
+    result = await conspectus_router.route_request(payload)
+    return result
 
-@router.post("/generate-next-step")
-@limiter.limit("5/minute")
-async def generate_next_step(request: Request, data: GenerateStepRequest):
-    locale = normalize_locale(request.state.locale)
-    result = await ai_service.generate_next_step(data.context_text, data.target_step, locale=locale)
-    return {"result": _try_parse_json(result)}
+@router.post("/conspectus/assistant/stream")
+@limiter.limit("15/minute")
+async def stream_conspectus_assistant(request: Request, data: ConspectusRouteRequest):
+    locale = normalize_locale(getattr(request.state, "locale", "ru"))
+    target_step = int(data.target_step) if data.target_step else 1
+    return _sse(conspectus_router.stream_ask_assistant(
+        data.context_state or {}, target_step, data.user_prompt or "", locale
+    ))
 
+@router.post("/conspectus/generate-full/stream")
+@limiter.limit("15/minute")
+async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
+    """Прогрессивная генерация конспекта: SSE-кадры {"step": "stepN", "content": "..."}
+    по мере готовности каждого шага, затем {"done": true}."""
+    locale = normalize_locale(getattr(request.state, "locale", "ru"))
 
+    async def events():
+        async for step_key, content in conspectus_router.stream_generate_full(
+            data.context_state or {}, locale,
+            pinned_step=data.pinned_step, question=data.question,
+        ):
+            yield {"step": step_key, "content": content}
 
+    return _sse_response(events())

@@ -3,6 +3,7 @@ import NotesAPI from './api.js';
 import { showToast } from './ToastService.js';
 import DialogService from './DialogService.js';
 
+import { t } from '../i18n.js';
 class CategoryManager {
     static categories = [];
 
@@ -46,12 +47,12 @@ class CategoryManager {
         if (!label) return;
 
         if (!categoryId) {
-            label.textContent = 'Без категории';
+            label.textContent = t('no_category');
             return;
         }
 
         const cat = this.categories.find(c => c.id === categoryId);
-        label.textContent = cat ? cat.name : 'Без категории';
+        label.textContent = cat ? cat.name : t('no_category');
     }
 
     static async loadAndRender() {
@@ -72,8 +73,8 @@ class CategoryManager {
                 <div class="category-item ${isSelected ? 'selected' : ''}" data-id="${c.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; cursor: pointer; border-radius: 6px; transition: background 0.15s; font-size: 0.9rem; color: #1e293b;">
                     <span class="cat-name" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(c.name)}</span>
                     <div class="cat-actions" style="display: flex; align-items: center; gap: 4px; opacity: 0.6; transition: opacity 0.15s;">
-                        <button class="cat-action-btn btn-edit-cat" data-id="${c.id}" data-name="${this.escapeHtml(c.name)}" title="Переименовать" style="background: none; border: none; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; border-radius: 4px;">✏️</button>
-                        <button class="cat-action-btn btn-del-cat" data-id="${c.id}" data-name="${this.escapeHtml(c.name)}" title="Удалить" style="background: none; border: none; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; border-radius: 4px;">🗑️</button>
+                        <button class="cat-action-btn btn-edit-cat" data-id="${c.id}" data-name="${this.escapeHtml(c.name)}" title="${t('rename_word')}" style="background: none; border: none; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; border-radius: 4px;">✏️</button>
+                        <button class="cat-action-btn btn-del-cat" data-id="${c.id}" data-name="${this.escapeHtml(c.name)}" title="${t('tt_delete')}" style="background: none; border: none; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; border-radius: 4px;">🗑️</button>
                     </div>
                 </div>
             `;
@@ -81,16 +82,16 @@ class CategoryManager {
 
         menu.innerHTML = `
             <div class="category-item ${!currentCatId ? 'selected' : ''}" data-id="" style="display: flex; align-items: center; padding: 7px 12px; cursor: pointer; border-radius: 6px; transition: background 0.15s; font-size: 0.9rem; color: #1e293b; font-weight: ${!currentCatId ? '600' : '400'};">
-                <span class="cat-name" style="flex: 1;">Без категории</span>
+                <span class="cat-name" style="flex: 1;">${t('no_category')}</span>
             </div>
             ${categoriesHTML}
             <div style="height: 1px; background: #f1f5f9; margin: 6px 0;"></div>
             <div id="new-cat-btn-row" style="padding: 7px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #ea580c; font-size: 0.9rem; font-weight: 600; border-radius: 6px; transition: background 0.15s;">
                 <span style="color: #7c3aed; font-size: 1.1rem; line-height: 1;">✚</span>
-                <span>Новая категория...</span>
+                <span>${t('conn_new_cat_ph')}</span>
             </div>
             <div id="new-cat-form" class="hidden" style="padding: 8px 10px; display: flex; gap: 6px; align-items: center;">
-                <input type="text" id="new-cat-input" placeholder="Название..." style="flex: 1; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 0.85rem; outline: none; box-sizing: border-box;">
+                <input type="text" id="new-cat-input" placeholder="${t('cat_name_ph')}" style="flex: 1; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 0.85rem; outline: none; box-sizing: border-box;">
                 <button id="btn-save-new-cat" style="background: #ea580c; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">OK</button>
             </div>
         `;
@@ -129,19 +130,19 @@ class CategoryManager {
                 const catId = parseInt(btn.dataset.id, 10);
                 const oldName = btn.dataset.name;
                 const newName = await DialogService.prompt({
-                    title: 'Редактирование категории',
-                    message: 'Введите новое название категории:',
+                    title: t('cat_edit_title'),
+                    message: t('cat_edit_msg'),
                     defaultValue: oldName,
-                    confirmText: 'Сохранить'
+                    confirmText: t('save')
                 });
                 if (newName && newName.trim() && newName.trim() !== oldName) {
                     try {
                         await NotesAPI.updateCategory(catId, newName.trim());
-                        showToast('Категория обновлена');
+                        showToast(t('cat_updated'));
                         await this.loadAndRender();
                         this.updateLabel(AppState.currentNote.category_id);
                     } catch (err) {
-                        await DialogService.alert('Ошибка', 'Ошибка обновления категории: ' + err.message);
+                        await DialogService.alert(t('error_word'), t('cat_update_err') + err.message);
                     }
                 }
             });
@@ -154,10 +155,10 @@ class CategoryManager {
                 const catId = parseInt(btn.dataset.id, 10);
                 const name = btn.dataset.name;
                 const confirmed = await DialogService.confirm({
-                    title: 'Удаление категории',
-                    message: `Удалить категорию "${name}"?`,
+                    title: t('cat_del_title'),
+                    message: `${t('cat_del_confirm')} "${name}"?`,
                     isDestructive: true,
-                    confirmText: 'Удалить'
+                    confirmText: t('tt_delete')
                 });
                 if (confirmed) {
                     try {
@@ -166,11 +167,11 @@ class CategoryManager {
                             AppState.currentNote.category_id = null;
                             AppState.markDirty();
                         }
-                        showToast('Категория удалена');
+                        showToast(t('cat_deleted'));
                         await this.loadAndRender();
                         this.updateLabel(AppState.currentNote.category_id);
                     } catch (err) {
-                        await DialogService.alert('Ошибка', 'Ошибка удаления категории: ' + err.message);
+                        await DialogService.alert(t('error_word'), t('cat_del_err') + err.message);
                     }
                 }
             });
@@ -197,12 +198,12 @@ class CategoryManager {
                     const newCat = await NotesAPI.createCategory(name);
                     AppState.currentNote.category_id = newCat.id;
                     AppState.markDirty();
-                    showToast(`Категория "${name}" создана`);
+                    showToast(`«${name}» ${t('conn_cat_created')}`);
                     await this.loadAndRender();
                     this.updateLabel(newCat.id);
                     menu.classList.add('hidden');
                 } catch (err) {
-                    await DialogService.alert('Ошибка', 'Ошибка создания категории: ' + err.message);
+                    await DialogService.alert(t('error_word'), t('cat_create_err') + err.message);
                 }
             };
 

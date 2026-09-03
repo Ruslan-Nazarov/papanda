@@ -90,7 +90,7 @@ class BlockDnDManager {
         // Update side based on drop horizontal position
         const droppedBlock = AppState.currentNote.blocks.find(b => b.id === blockId);
         if (droppedBlock && droppedBlock.role !== 'section' && droppedBlock.side !== 'center') {
-            if (droppedBlock.role === 'anchor' || (droppedBlock.title || '').toLowerCase().includes('что вам нужно понять')) {
+            if (droppedBlock.role === 'anchor') {
                 droppedBlock.side = 'left';
             } else {
                 const dropX = e.clientX - containerRect.left;

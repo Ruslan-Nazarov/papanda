@@ -1,17 +1,15 @@
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from typing import List, Optional
 
 from fastapi_app.database import get_db
 from fastapi_app.schemas.notes import (
-    NoteCreate, NoteUpdate, NoteView, 
+    NoteCreate, NoteUpdate, NoteView,
     CategoryCreate, CategoryView,
     NoteVersionCreate, NoteVersionView,
     ConnectionCreate, ConnectionView
 )
 from fastapi_app.services.notes_service import NotesService
-from fastapi_app.models.notes import Note
 
 router = APIRouter()
 

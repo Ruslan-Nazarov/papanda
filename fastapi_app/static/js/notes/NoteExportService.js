@@ -1,11 +1,12 @@
 import AppState from './AppState.js';
 import DialogService from './DialogService.js';
 
+import { t } from '../i18n.js';
 class NoteExportService {
     static exportToMarkdown() {
         const note = AppState.currentNote;
         if (!note || !note.blocks || note.blocks.length === 0) {
-            DialogService.alert('Экспорт', 'Конспект пуст.');
+            DialogService.alert(t('export_word'), t('note_empty'));
             return;
         }
 

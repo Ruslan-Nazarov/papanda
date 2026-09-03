@@ -2,6 +2,7 @@ import NoteStorageService from './NoteStorageService.js';
 import DialogService from './DialogService.js';
 import AppState from './AppState.js';
 
+import { t } from '../i18n.js';
 export class NavHistoryManager {
     static _navHistory = [];
 
@@ -19,7 +20,7 @@ export class NavHistoryManager {
             const prevId = this._navHistory[this._navHistory.length - 1];
             await NoteStorageService.loadNote(prevId);
         } else {
-            await DialogService.alert('Назад', 'Нет предыдущего конспекта в истории навигации.');
+            await DialogService.alert(t('back_word'), t('nav_no_prev'));
         }
     }
 }

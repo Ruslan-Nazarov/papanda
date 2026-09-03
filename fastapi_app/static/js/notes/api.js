@@ -19,7 +19,46 @@ class NotesAPI {
         }
     }
 
-    static getNotes(search = '', categoryId = '') { 
+    /**
+     * Стрим ответа ИИ через SSE.
+     *   onDelta(chunkText, accumulatedText) — на каждый текстовый кусок ({delta})
+     *   onEvent(evObject) — на любой кадр (для {step,content} и т.п.)
+     * Возвращает полный накопленный текст. Кадры: {delta}|{step,content}|{done}|{error}.
+     */
+    static async stream(endpoint, body, onDelta, onEvent) {
+        const res = await fetch(`/api${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok || !res.body) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `HTTP Error ${res.status}`);
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let full = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop();
+            for (const part of parts) {
+                const line = part.trim();
+                if (!line.startsWith('data:')) continue;
+                let ev;
+                try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
+                if (ev.error) throw new Error(ev.error);
+                if (onEvent) onEvent(ev);
+                if (ev.delta) { full += ev.delta; if (onDelta) onDelta(ev.delta, full); }
+            }
+        }
+        return full;
+    }
+
+    static getNotes(search = '', categoryId = '') {
         let url = '/dialectics?';
         if (search) url += `search=${encodeURIComponent(search)}&`;
         if (categoryId) url += `category_id=${encodeURIComponent(categoryId)}&`;
@@ -51,17 +90,14 @@ class NotesAPI {
     static explainBlock(blockHtml, noteTitle, mode) { 
         return this.request('/ai/dialectics/explain-concept', 'POST', { text: blockHtml, context_before: noteTitle || '', context_after: '', history: [] }); 
     }
-    static autofillConspect(anchorText, noteTitle) {
-        return this.request('/ai/dialectics/autofill-conspect', 'POST', { anchor_text: anchorText, note_title: noteTitle || '' });
-    }
-    static generateNextStep(contextText, targetStep) {
-        return this.request('/ai/dialectics/generate-next-step', 'POST', { context_text: contextText, target_step: targetStep });
+    static routeConspectus(payload) {
+        return this.request('/ai/dialectics/conspectus/route', 'POST', payload);
     }
     static textMath(text) {
-        return this.request('/ai/text-math', 'POST', { text });
+        return this.request('/ai/dialectics/text-math', 'POST', { text });
     }
     static editMath(instruction, formula) {
-        return this.request('/ai/edit-math', 'POST', { instruction, formula });
+        return this.request('/ai/dialectics/edit-math', 'POST', { instruction, formula });
     }
 
     // Connections

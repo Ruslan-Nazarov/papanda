@@ -156,62 +156,42 @@ class EditorManager {
     }
 
     static async triggerAutofill(newHtml) {
-        const { default: NotesAPI } = await import('./api.js');
         const anchorText = newHtml.replace(/<[^>]+>/g, '').trim();
-        const noteTitle = AppState.currentNote.title;
         if (!anchorText) return;
+        const { default: AIController } = await import('./AIController.js');
+        const { default: BlockDOMRenderer } = await import('./BlockDOMRenderer.js');
 
-        if (AppState.isAutoFillStepByStep) {
-            try {
-                const res = await NotesAPI.generateNextStep(anchorText, 'step1');
-                if (res && res.result && res.result['step1']) {
-                    const stepObj = ALGORITHM_STEPS.find(s => s.role === 'step1') || {};
-                    const newBlock = {
-                        id: 'block-' + crypto.randomUUID().replace(/-/g, '').substring(0, 9),
-                        side: stepObj.side || 'left',
-                        role: 'step1',
-                        title: stepObj.title || 'step1',
-                        html: `<p>${res.result['step1']}</p>`,
-                        status: 'ready',
-                        isDraft: false
-                    };
-                    AppState.addBlock(newBlock);
-                    AppState.dismissHint('step1');
-                    const { default: BlockDOMRenderer } = await import('./BlockDOMRenderer.js');
-                    BlockDOMRenderer.renderAll();
-                }
-            } catch (e) {
-                console.error('Autofill step failed', e);
+        // Создаем глобальный индикатор загрузки
+        const loaderId = 'ai-global-loader';
+        let loader = document.getElementById(loaderId);
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.id = loaderId;
+            loader.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#8b5cf6; color:white; padding:12px 24px; border-radius:8px; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-weight:bold; font-family:sans-serif; display:flex; align-items:center; gap:10px; transition: opacity 0.3s;';
+            document.body.appendChild(loader);
+        }
+        loader.innerHTML = `<span style="animation: spin 1s linear infinite; display:inline-block;">⏳</span> ${t('ed_ai_analyzing')}`;
+        loader.style.display = 'flex';
+        
+        // Добавляем стиль для спиннера, если его еще нет
+        if (!document.getElementById('ai-spinner-style')) {
+            const style = document.createElement('style');
+            style.id = 'ai-spinner-style';
+            style.textContent = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+            document.head.appendChild(style);
+        }
+
+        try {
+            if (AppState.isAutoFillStepByStep) {
+                await AIController.generateStep(1, () => BlockDOMRenderer.renderAll());
+            } else {
+                await AIController.generateFull(() => BlockDOMRenderer.renderAll());
             }
-        } else {
-            try {
-                const res = await NotesAPI.autofillConspect(anchorText, noteTitle);
-                if (res && res.result && typeof res.result === 'object') {
-                    const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
-                    steps.forEach((step, index) => {
-                        if (res.result[step]) {
-                            setTimeout(async () => {
-                                const stepObj = ALGORITHM_STEPS.find(s => s.role === step) || {};
-                                const newBlock = {
-                                    id: 'block-' + crypto.randomUUID().replace(/-/g, '').substring(0, 9),
-                                    side: stepObj.side || 'center',
-                                    role: step,
-                                    title: stepObj.title || step,
-                                    html: `<p>${res.result[step]}</p>`,
-                                    status: 'ready',
-                                    isDraft: false
-                                };
-                                AppState.addBlock(newBlock);
-                                AppState.dismissHint(step);
-                                const { default: BlockDOMRenderer } = await import('./BlockDOMRenderer.js');
-                                BlockDOMRenderer.renderAll();
-                            }, 600 * (index + 1));
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error('Autofill failed', e);
-            }
+        } catch (e) {
+            console.error('Autofill failed', e);
+            alert(t('ed_ai_gen_error') + e.message);
+        } finally {
+            if (loader) loader.style.display = 'none';
         }
     }
 
@@ -261,11 +241,11 @@ class EditorManager {
                         <button class="format-btn" data-format="strike" style="text-decoration: line-through;">S</button>
                         <button class="format-btn" data-format="code">&lt;&gt;</button>
                         <button class="format-btn" data-format="quote">"</button>
-                        <button class="format-btn" data-format="question" style="color: #ef4444; font-weight: bold;">?</button>
-                        <button class="format-btn" data-format="hidden" style="color: #7c3aed;">👁</button>
+                        <button class="format-btn" data-format="question" style="color: #ef4444; font-weight: bold;" title="${t('ed_tt_question')}">?</button>
+                        <button class="format-btn" data-format="hidden" style="color: #7c3aed;" title="${t('ed_tt_hidden')}">👁</button>
                         <button class="format-btn" data-format="link">🔗</button>
-                        <button class="format-btn" data-format="math" style="color: #2563eb; font-weight: bold;" title="Рамка-выноска">∑</button>
-                        <button class="format-btn" data-format="latex" style="color: #8b5cf6; font-weight: 800; font-size: 0.78rem; letter-spacing: -0.5px;" title="Редактор формулы (LaTeX)">LTX</button>
+                        <button class="format-btn" data-format="math" style="color: #2563eb; font-weight: bold;" title="${t('ed_tt_math')}">∑</button>
+                        <button class="format-btn" data-format="latex" style="color: #8b5cf6; font-weight: 800; font-size: 0.78rem; letter-spacing: -0.5px;" title="${t('ed_tt_latex')}">LTX</button>
                         <button class="format-btn format-btn-clear" data-format="clear"></button>
                     </div>
                     <div class="modal-header-actions">
@@ -297,19 +277,19 @@ class EditorManager {
                     
                     <div id="tab-ai" class="tab-content" style="${showAiTab ? 'display: block;' : 'display: none;'}">
                         <div class="ai-subtabs" style="display: flex; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                            <button class="ai-subtab-btn active" data-subtab="ai-hint" style="background: none; border: none; font-weight: bold; color: #3b82f6; cursor: pointer; padding: 4px 8px;">Как найти ответ</button>
-                            <button class="ai-subtab-btn" data-subtab="ai-example" style="background: none; border: none; font-weight: normal; color: #64748b; cursor: pointer; padding: 4px 8px;">Пример ответа</button>
+                            <button class="ai-subtab-btn active" data-subtab="ai-hint" style="background: none; border: none; font-weight: bold; color: #3b82f6; cursor: pointer; padding: 4px 8px;">${t('ed_ai_howto')}</button>
+                            <button class="ai-subtab-btn" data-subtab="ai-example" style="background: none; border: none; font-weight: normal; color: #64748b; cursor: pointer; padding: 4px 8px;">${t('ed_ai_example')}</button>
                         </div>
                         <div id="ai-area-hint" class="ai-subtab-content" style="display: block;">
                             <div class="ai-response-area" id="ai-response-hint" style="margin-bottom: 12px; min-height: 150px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.95rem;">
-                                <em style="color: #94a3b8;">⏳ Загрузка подсказки...</em>
+                                <em style="color: #94a3b8;">${t('ed_ai_hint_loading')}</em>
                             </div>
                         </div>
                         <div id="ai-area-example" class="ai-subtab-content" style="display: none;">
                             <div class="ai-response-area" id="ai-response-example" contenteditable="true" style="margin-bottom: 12px; min-height: 150px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
-                                <em style="color: #94a3b8;">⏳ Загрузка примера...</em>
+                                <em style="color: #94a3b8;">${t('ed_ai_example_loading')}</em>
                             </div>
-                            <button class="btn-primary" id="btn-ai-copy-text" style="width: 100%; padding: 10px; font-size: 1rem;">📋 Вставить в Текст</button>
+                            <button class="btn-primary" id="btn-ai-copy-text" style="width: 100%; padding: 10px; font-size: 1rem;">${t('ed_ai_paste_text')}</button>
                         </div>
                     </div>
                     
@@ -320,7 +300,7 @@ class EditorManager {
                             <div style="margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
                                 <label>f(x) =</label>
                                 <input type="text" id="graph-function" value="x^2" class="modal-title-input" style="width: 200px;">
-                                <button id="btn-draw-graph" class="btn-primary" style="padding: 6px 12px;">Нарисовать</button>
+                                <button id="btn-draw-graph" class="btn-primary" style="padding: 6px 12px;">${t('ed_draw')}</button>
                             </div>
                             <div id="graph-canvas" class="canvas-container"></div>
                         </div>
@@ -330,40 +310,40 @@ class EditorManager {
                         <div class="shapes-editor" style="display: flex; flex-direction: column; gap: 8px;">
                             <div class="shapes-toolbar-wrapper" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; background: #ffffff;">
                                 <div class="shapes-toolbar-row1" style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                                    <button class="shape-tool-btn active" id="btn-shape-select" title="Выделение"><i class="ph ph-cursor"></i></button>
-                                    <button class="shape-tool-btn" id="btn-shape-draw" title="Рисование"><i class="ph ph-pencil-simple"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-rect" title="Прямоугольник"><i class="ph ph-square"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-circle" title="Круг"><i class="ph ph-circle"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-triangle" title="Равнобедренный треугольник"><i class="ph ph-triangle"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-rtriangle" title="Прямоугольный треугольник"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V3l18 18H3z"></path></svg></button>
-                                    <button class="shape-tool-btn" id="btn-add-diamond" title="Ромб"><i class="ph ph-diamond"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-line" title="Линия"><i class="ph ph-line-segment"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-arrow" title="Стрелка"><i class="ph ph-arrow-right"></i></button>
-                                    <button class="shape-tool-btn" id="btn-add-text" title="Текст"><i class="ph ph-text-t"></i></button>
+                                    <button class="shape-tool-btn active" id="btn-shape-select" title="${t('sh_select')}"><i class="ph ph-cursor"></i></button>
+                                    <button class="shape-tool-btn" id="btn-shape-draw" title="${t('sh_draw')}"><i class="ph ph-pencil-simple"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-rect" title="${t('sh_rect')}"><i class="ph ph-square"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-circle" title="${t('sh_circle')}"><i class="ph ph-circle"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-triangle" title="${t('sh_triangle')}"><i class="ph ph-triangle"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-rtriangle" title="${t('sh_rtriangle')}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V3l18 18H3z"></path></svg></button>
+                                    <button class="shape-tool-btn" id="btn-add-diamond" title="${t('sh_diamond')}"><i class="ph ph-diamond"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-line" title="${t('sh_line')}"><i class="ph ph-line-segment"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-arrow" title="${t('sh_arrow')}"><i class="ph ph-arrow-right"></i></button>
+                                    <button class="shape-tool-btn" id="btn-add-text" title="${t('sh_text')}"><i class="ph ph-text-t"></i></button>
                                 </div>
                                 <div class="shapes-toolbar-row2" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                     <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px;">
-                                        <input type="color" id="shape-color-fill" title="Цвет заливки" value="#ffffff" style="width: 24px; height: 24px; border: none; cursor: pointer; padding: 0;">
-                                        <button class="shape-action-btn" id="btn-fill-transparent" title="Без заливки" style="padding: 2px 4px; font-size: 16px;"><i class="ph ph-prohibit"></i></button>
+                                        <input type="color" id="shape-color-fill" title="${t('sh_fill_color')}" value="#ffffff" style="width: 24px; height: 24px; border: none; cursor: pointer; padding: 0;">
+                                        <button class="shape-action-btn" id="btn-fill-transparent" title="${t('sh_no_fill')}" style="padding: 2px 4px; font-size: 16px;"><i class="ph ph-prohibit"></i></button>
                                     </div>
-                                    <input type="color" id="shape-color-stroke" title="Цвет контура" value="#1e293b" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid #94a3b8; cursor: pointer; padding: 0;">
+                                    <input type="color" id="shape-color-stroke" title="${t('sh_stroke_color')}" value="#1e293b" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid #94a3b8; cursor: pointer; padding: 0;">
                                     
-                                    <input type="range" id="shape-stroke-width" min="1" max="20" value="2" title="Толщина линии" style="width: 60px;">
+                                    <input type="range" id="shape-stroke-width" min="1" max="20" value="2" title="${t('sh_stroke_width')}" style="width: 60px;">
                                     
                                     <div style="width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px;"></div>
                                     
-                                    <button class="shape-action-btn" id="btn-shape-grid" title="Сетка"><i class="ph ph-grid-four"></i></button>
-                                    <button class="shape-action-btn" id="btn-shape-copy" title="Дублировать"><i class="ph ph-copy"></i></button>
-                                    <button class="shape-action-btn" id="btn-shape-lock" title="Блокировать"><i class="ph ph-lock-key"></i></button>
-                                    <button class="shape-action-btn" id="btn-shape-undo" title="Отменить шаг"><i class="ph ph-arrow-u-up-left"></i></button>
-                                    <button class="shape-action-btn" id="btn-shape-delete" title="Удалить"><i class="ph ph-trash"></i></button>
-                                    <button class="shape-action-btn" id="btn-clear-canvas" title="Очистить все"><i class="ph ph-eraser"></i></button>
+                                    <button class="shape-action-btn" id="btn-shape-grid" title="${t('sh_grid')}"><i class="ph ph-grid-four"></i></button>
+                                    <button class="shape-action-btn" id="btn-shape-copy" title="${t('sh_dup')}"><i class="ph ph-copy"></i></button>
+                                    <button class="shape-action-btn" id="btn-shape-lock" title="${t('sh_lock')}"><i class="ph ph-lock-key"></i></button>
+                                    <button class="shape-action-btn" id="btn-shape-undo" title="${t('sh_undo')}"><i class="ph ph-arrow-u-up-left"></i></button>
+                                    <button class="shape-action-btn" id="btn-shape-delete" title="${t('sh_delete')}"><i class="ph ph-trash"></i></button>
+                                    <button class="shape-action-btn" id="btn-clear-canvas" title="${t('sh_clear')}"><i class="ph ph-eraser"></i></button>
                                 </div>
                             </div>
                             <div class="canvas-container" style="border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; overflow: hidden; display: flex; justify-content: center; align-items: center; position: relative;">
                                 <canvas id="shapes-canvas" width="540" height="220"></canvas>
                             </div>
-                            <button class="btn-primary" id="btn-insert-shapes" style="width: 100%; margin-top: 8px; padding: 12px; font-weight: bold; background-color: #10b981; border: none; border-radius: 8px; color: white; cursor: pointer; transition: 0.2s;">Вставить в текст</button>
+                            <button class="btn-primary" id="btn-insert-shapes" style="width: 100%; margin-top: 8px; padding: 12px; font-weight: bold; background-color: #10b981; border: none; border-radius: 8px; color: white; cursor: pointer; transition: 0.2s;">${t('sh_insert')}</button>
                         </div>
                     </div>
                 </div>

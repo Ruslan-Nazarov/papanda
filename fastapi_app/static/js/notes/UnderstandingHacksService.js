@@ -1,70 +1,22 @@
 import { showToast } from './ToastService.js';
+import { t } from '../i18n.js';
 
-const HACKS_DATA = [
-    {
-        title: "Количественный подход к формуле",
-        category: "Базовый",
-        icon: "📊",
-        badgeColor: "#0284c7",
-        badgeBg: "#e0f2fe",
-        borderColor: "#2563eb",
-        text: "Если сразу сложно понять формулу, то сначала изучите ее количественно, сведите к суммированию, а затем уже изучите качественно."
-    },
-    {
-        title: "Поиск простейшего отношения",
-        category: "Диалектика",
-        icon: "🔬",
-        badgeColor: "#7c3aed",
-        badgeBg: "#f3e8ff",
-        borderColor: "#7c3aed",
-        text: "Найдите элементарную неделимую клеточку процесса — отношение двух элементов, из которого логически разворачивается вся сложная система."
-    },
-    {
-        title: "Выделение противоположностей",
-        category: "Метод",
-        icon: "🔄",
-        badgeColor: "#d97706",
-        badgeBg: "#fef3c7",
-        borderColor: "#f59e0b",
-        text: "Сформулируйте исследуемый процесс и найдите то, что отрицает его сущность, но при этом существует в неразрывном единстве с ним."
-    },
-    {
-        title: "Переход от абстрактного к конкретному",
-        category: "Мышление",
-        icon: "🧩",
-        badgeColor: "#059669",
-        badgeBg: "#d1fae5",
-        borderColor: "#10b981",
-        text: "Начните с самого общего и простого определения. Затем шаг за шагом добавляйте реальные условия, ограничения и взаимосвязи."
-    },
-    {
-        title: "Анализ предельных состояний",
-        category: "Лайфхак",
-        icon: "⚡",
-        badgeColor: "#dc2626",
-        badgeBg: "#fee2e2",
-        borderColor: "#ef4444",
-        text: "Мысленно устремите один из ключевых параметров к нулю или к бесконечности. Как при этом ведёт себя вся система? Что исчезает, а что остаётся?"
-    },
-    {
-        title: "Формула как сценарий процесса",
-        category: "Формулы",
-        icon: "🧮",
-        badgeColor: "#2563eb",
-        badgeBg: "#dbeafe",
-        borderColor: "#3b82f6",
-        text: "Воспринимайте математическую формулу не как застывший набор символов, а как динамический сценарий взаимодействия действующих сил и величин."
-    },
-    {
-        title: "Разрешение, а не компромисс",
-        category: "Синтез",
-        icon: "💡",
-        badgeColor: "#9333ea",
-        badgeBg: "#fae8ff",
-        borderColor: "#a855f7",
-        text: "Синтез не должен быть механической смесью тезиса и антитезиса. Истинный синтез переводит систему на новый уровень, где исходное противоречие снимается."
-    }
+const HACKS_META = [
+    { icon: "📊", badgeColor: "#0284c7", badgeBg: "#e0f2fe", borderColor: "#2563eb" },
+    { icon: "🔬", badgeColor: "#7c3aed", badgeBg: "#f3e8ff", borderColor: "#7c3aed" },
+    { icon: "🔄", badgeColor: "#d97706", badgeBg: "#fef3c7", borderColor: "#f59e0b" },
+    { icon: "🧩", badgeColor: "#059669", badgeBg: "#d1fae5", borderColor: "#10b981" },
+    { icon: "⚡", badgeColor: "#dc2626", badgeBg: "#fee2e2", borderColor: "#ef4444" },
+    { icon: "🧮", badgeColor: "#2563eb", badgeBg: "#dbeafe", borderColor: "#3b82f6" },
+    { icon: "💡", badgeColor: "#9333ea", badgeBg: "#fae8ff", borderColor: "#a855f7" },
 ];
+
+const HACKS_DATA = HACKS_META.map((m, i) => ({
+    ...m,
+    title: t(`hack${i + 1}_title`),
+    category: t(`hack${i + 1}_cat`),
+    text: t(`hack${i + 1}_text`),
+}));
 
 class UnderstandingHacksService {
     static show(block, anchorEl) {
@@ -102,7 +54,7 @@ class UnderstandingHacksService {
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; background: #ffffff;">
                 <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #1e293b;">
                     <span style="font-size: 1.2rem;">💡</span>
-                    <span>Хаки понимания</span>
+                    <span>${t('tt_hacks')}</span>
                 </div>
                 <button class="btn-close-hacks" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 4px 8px; border-radius: 6px;">✕</button>
             </div>
@@ -112,7 +64,7 @@ class UnderstandingHacksService {
             </div>
 
             <div style="padding: 10px 16px; background: #ffffff; border-top: 1px solid #f1f5f9; text-align: center; font-size: 0.8rem; color: #94a3b8;">
-                Нажмите на карточку, чтобы скопировать совет
+                ${t('hacks_click_hint')}
             </div>
         `;
 
@@ -153,7 +105,7 @@ class UnderstandingHacksService {
                         document.execCommand('copy');
                         document.body.removeChild(ta);
                     }
-                    showToast('📋 Совет скопирован в буфер');
+                    showToast(t('hacks_copied'));
                     card.style.borderColor = '#10b981';
                     setTimeout(() => {
                         card.style.borderColor = hack.borderColor;

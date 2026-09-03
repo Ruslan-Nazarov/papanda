@@ -421,11 +421,6 @@ input:checked + .toggle-slider:before {
     transform: scale(1.08);
 }
 
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
 .action-btn.danger {
     background: #fee2e2;
     color: #991b1b;

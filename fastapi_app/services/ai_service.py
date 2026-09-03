@@ -1,8 +1,47 @@
 from groq import AsyncGroq
 from fastapi_app.config import settings
 import os
-from typing import Dict, Optional, List
+import time
+import json
+import hashlib
+from contextlib import aclosing
+from collections import OrderedDict
+from typing import Dict, Optional
 import aiofiles
+
+
+class _TTLCache:
+    """Маленький LRU+TTL кэш ответов LLM (общий на процесс)."""
+
+    def __init__(self, maxsize: int = 256, ttl: float = 3600.0):
+        self.maxsize = maxsize
+        self.ttl = ttl
+        self._d: "OrderedDict[str, tuple]" = OrderedDict()
+
+    @staticmethod
+    def key(*parts) -> str:
+        raw = json.dumps(parts, ensure_ascii=False, sort_keys=True, default=str)
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    def get(self, key: str):
+        item = self._d.get(key)
+        if item is None:
+            return None
+        ts, value = item
+        if time.time() - ts > self.ttl:
+            self._d.pop(key, None)
+            return None
+        self._d.move_to_end(key)
+        return value
+
+    def set(self, key: str, value: str) -> None:
+        self._d[key] = (time.time(), value)
+        self._d.move_to_end(key)
+        while len(self._d) > self.maxsize:
+            self._d.popitem(last=False)
+
+
+_llm_cache = _TTLCache()
 
 PROMPT_MAP = {
     "base":      "1 главный промпт.md",
@@ -24,12 +63,26 @@ PROMPT_CHAINS = {
     "check_ai": ["base", "restore", "check_ai"],
 }
 
+from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured
+
+_AI_DISABLED_MSG = "AI disabled: не настроены API-ключи LLM (см. .env)."
+
 class AIService:
     def __init__(self):
-        self.client = AsyncGroq(api_key=settings.GROQ_API_KEY, timeout=30.0)
-        self.model = settings.GROQ_MODEL
         self._prompts_cache: Dict[str, str] = {}
-        
+        self._groq_client: Optional[AsyncGroq] = None
+
+    @property
+    def client(self) -> AsyncGroq:
+        """Ленивая инициализация Groq-клиента для vision/whisper (OCR, транскрипция)."""
+        if self._groq_client is None:
+            self._groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY or "dummy_key")
+        return self._groq_client
+
+    @client.setter
+    def client(self, value):
+        self._groq_client = value
+
     async def get_bundled_prompt(self, key: str) -> str:
         if key in self._prompts_cache:
             return self._prompts_cache[key]
@@ -54,27 +107,88 @@ class AIService:
         self._prompts_cache[key] = bundled
         return bundled
 
-    async def _generate(self, system_prompt: str, user_prompt: str, response_format: Optional[dict] = None, history: Optional[list] = None, model: Optional[str] = None) -> str:
-        if not settings.GROQ_API_KEY or settings.GROQ_API_KEY == "your_groq_api_key_here":
-            return "AI disabled. Please set GROQ_API_KEY."
-            
+    async def _generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        response_format: Optional[dict] = None,
+        history: Optional[list] = None,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        fast: bool = False,
+        use_cache: bool = True,
+    ) -> str:
+        if not any_llm_key_configured():
+            return _AI_DISABLED_MSG
+
         messages = [{"role": "system", "content": system_prompt}]
         if history:
             messages.extend(history)
         messages.append({"role": "user", "content": user_prompt})
-        
+
+        cache_key = None
+        if use_cache:
+            cache_key = _llm_cache.key(messages, response_format, max_tokens, temperature, fast)
+            hit = _llm_cache.get(cache_key)
+            if hit is not None:
+                return hit
+
         try:
-            kwargs = {
-                "model": model or self.model,
-                "messages": messages
-            }
-            if response_format:
-                kwargs["response_format"] = response_format
-                
-            response = await self.client.chat.completions.create(**kwargs)
-            return response.choices[0].message.content
+            result = await llm_registry.generate(
+                messages,
+                response_format,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                fast=fast,
+            )
         except Exception as e:
             return f"Error calling AI: {str(e)}"
+
+        if cache_key and result and not result.startswith("Error calling AI:"):
+            _llm_cache.set(cache_key, result)
+        return result
+
+    async def _generate_stream(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        history: Optional[list] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        fast: bool = False,
+        use_cache: bool = True,
+    ):
+        """Стрим токенов ответа. При попадании в кэш отдаёт целиком одним чанком.
+        По завершении складывает полный ответ в кэш."""
+        if not any_llm_key_configured():
+            yield _AI_DISABLED_MSG
+            return
+
+        messages = [{"role": "system", "content": system_prompt}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": user_prompt})
+
+        cache_key = None
+        if use_cache:
+            cache_key = _llm_cache.key(messages, None, max_tokens, temperature, fast)
+            hit = _llm_cache.get(cache_key)
+            if hit is not None:
+                yield hit
+                return
+
+        parts = []
+        async with aclosing(llm_registry.generate_stream(
+            messages, max_tokens=max_tokens, temperature=temperature, fast=fast
+        )) as gen:
+            async for delta in gen:
+                parts.append(delta)
+                yield delta
+
+        full = "".join(parts).strip()
+        if cache_key and full:
+            _llm_cache.set(cache_key, full)
 
     async def get_opposites(self, process_a: str, locale: str = "русском") -> str:
         sys_prompt = await self.get_bundled_prompt("opposites")
@@ -84,17 +198,27 @@ class AIService:
             f"Объясни, почему именно этот процесс является диалектической противоположностью.\n"
             f"Ответ давай на {locale}."
         )
-        return await self._generate(sys_prompt, user_prompt)
+        return await self._generate(sys_prompt, user_prompt, fast=True, max_tokens=800)
         
-    async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском") -> str:
-        sys_prompt = await self.get_bundled_prompt("what_is")
-        user_prompt = (
+    def _explain_prompt(self, text, context_before, context_after):
+        return (
             f"Выделенный фрагмент: \"{text}\"\n\n"
             f"Контекст (до): {context_before}\n\n"
             f"Контекст (после): {context_after}\n\n"
             f"Объясни, что такое \"{text}\" в контексте данного конспекта."
         )
-        return await self._generate(sys_prompt, user_prompt, history=history)
+
+    async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском") -> str:
+        sys_prompt = await self.get_bundled_prompt("what_is")
+        user_prompt = self._explain_prompt(text, context_before, context_after)
+        return await self._generate(sys_prompt, user_prompt, history=history, fast=True, max_tokens=800)
+
+    async def explain_concept_stream(self, text, context_before, context_after, history, locale="русском"):
+        sys_prompt = await self.get_bundled_prompt("what_is")
+        user_prompt = self._explain_prompt(text, context_before, context_after)
+        async with aclosing(self._generate_stream(sys_prompt, user_prompt, history=history, fast=True, max_tokens=800)) as g:
+            async for d in g:
+                yield d
         
     async def generate_parser(self, formula: str) -> str:
         sys_prompt = await self.get_bundled_prompt("formula")
@@ -152,45 +276,28 @@ class AIService:
                     f"Дай подсказку, как самому найти ответ для этого шага. Направь пользователя, задай наводящие вопросы.\n"
                     f"Ответ на {locale}."
                 )
-        return await self._generate(sys_prompt, user_prompt)
-        
-    async def autofill_conspect(self, anchor_text: str, note_title: str, locale: str = "русском") -> str:
-        sys_prompt = await self.get_bundled_prompt("hint")
-        user_prompt = (
-            f"Пользователь начал составлять диалектический конспект.\n"
-            f"Тема: {note_title}\n"
-            f"Цель изучения (anchor): {anchor_text}\n\n"
-            f"Основываясь на Главном промпте и вашей роли помощника, сгенерируйте содержимое для следующих 5 шагов:\n"
-            f"step1 - Простейший процесс\n"
-            f"step2 - Развитие простейшего процесса\n"
-            f"step3 - Противоположный процесс\n"
-            f"step4 - Развитие противоположного процесса\n"
-            f"step5 - Синтез и противоречие\n\n"
-            f"Обязательно верни результат строго в формате JSON, где ключи - это 'step1', 'step2', 'step3', 'step4', 'step5', а значения - сгенерированный текст.\n"
-            f"Отвечай на {locale}."
-        )
-        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+        # 'restore' — качество важнее (полноценный анализ), остальные подсказки — быстрая модель.
+        use_fast = step_id != "restore"
+        return await self._generate(sys_prompt, user_prompt, fast=use_fast, max_tokens=900)
 
-    async def generate_next_step(self, context_text: str, target_step: str, locale: str = "русском") -> str:
-        sys_prompt = await self.get_bundled_prompt("hint")
-        user_prompt = (
-            f"Пользователь составляет диалектический конспект шаг за шагом.\n"
-            f"Текущий контекст конспекта (уже заполненные шаги):\n{context_text}\n\n"
-            f"Основываясь на Главном промпте и вашей роли помощника, сгенерируйте текст ТОЛЬКО для шага: {target_step}.\n"
-            f"Обязательно верни результат строго в формате JSON, где ключ - это '{target_step}', а значение - сгенерированный текст для этого шага.\n"
-            f"Отвечай на {locale}."
-        )
-        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
-
-    async def check_logic(self, note_text: str, history: list, locale: str = "русском") -> str:
-        sys_prompt = await self.get_bundled_prompt("check_ai")
-        user_prompt = (
+    @staticmethod
+    def _check_prompt(note_text, locale):
+        return (
             f"Конспект для проверки:\n---\n{note_text}\n---\n\n"
             f"Проверь логическую связность диалектического конспекта.\n"
             f"Дай структурированную оценку по каждому критерию.\n"
             f"Ответ на {locale}."
         )
-        return await self._generate(sys_prompt, user_prompt, history=history)
+
+    async def check_logic(self, note_text: str, history: list, locale: str = "русском") -> str:
+        sys_prompt = await self.get_bundled_prompt("check_ai")
+        return await self._generate(sys_prompt, self._check_prompt(note_text, locale), history=history)
+
+    async def check_logic_stream(self, note_text: str, history: list, locale: str = "русском"):
+        sys_prompt = await self.get_bundled_prompt("check_ai")
+        async with aclosing(self._generate_stream(sys_prompt, self._check_prompt(note_text, locale), history=history, max_tokens=1600)) as g:
+            async for d in g:
+                yield d
 
     async def edit_math(self, instruction: str, formula: str) -> str:
         sys_prompt = await self.get_bundled_prompt("formula")
@@ -222,11 +329,11 @@ class AIService:
                 messages=messages
             )
             return response.choices[0].message.content
-        except Exception as e:
-            # Fallback
+        except Exception:
+            # Fallback на запасную vision-модель
             try:
                 response = await self.client.chat.completions.create(
-                    model="llama-3.2-11b-vision-preview",
+                    model=settings.GROQ_VISION_FALLBACK_MODEL,
                     messages=messages
                 )
                 return response.choices[0].message.content
@@ -243,7 +350,7 @@ class AIService:
             if hasattr(self.client, "audio") and hasattr(self.client.audio, "transcriptions"):
                 transcription = await self.client.audio.transcriptions.create(
                     file=(os.path.basename(file_path), file_bytes),
-                    model="whisper-large-v3",
+                    model=settings.GROQ_WHISPER_MODEL,
                     response_format="json",
                     language="ru",
                     temperature=0.0
@@ -253,7 +360,7 @@ class AIService:
                 import httpx
                 headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}"}
                 files = {"file": (os.path.basename(file_path), file_bytes, "audio/webm")}
-                data = {"model": "whisper-large-v3", "language": "ru", "temperature": "0.0", "response_format": "json"}
+                data = {"model": settings.GROQ_WHISPER_MODEL, "language": "ru", "temperature": "0.0", "response_format": "json"}
                 async with httpx.AsyncClient() as http_client:
                     resp = await http_client.post(
                         "https://api.groq.com/openai/v1/audio/transcriptions",

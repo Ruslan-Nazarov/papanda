@@ -1,32 +1,27 @@
-import uuid
+import asyncio
+from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
+
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from fastapi_app.routers import notes, ai
-from fastapi_app.config import settings
+from fastapi_app.config import ensure_secret_key
 from fastapi_app.middleware import (
-    SessionMiddleware, 
-    SecurityHeadersMiddleware, 
-    LocaleMiddleware, 
-    NoCacheStaticMiddleware
+    SessionMiddleware,
+    SecurityHeadersMiddleware,
+    LocaleMiddleware,
+    NoCacheStaticMiddleware,
 )
 from fastapi_app.tasks import cleanup_old_dbs
 from fastapi_app.i18n import get_translator
-
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-import asyncio
-
 from fastapi_app.rate_limiter import limiter
-
-from contextlib import asynccontextmanager
-
-from fastapi_app.config import settings, ensure_secret_key
 from fastapi_app.database import get_db, dispose_all_engines
 from fastapi_app.services.notes_service import NotesService
 
@@ -48,8 +43,10 @@ async def lifespan(app: FastAPI):
     finally:
         cleanup_task.cancel()
         await dispose_all_engines()
+        from fastapi_app.services.llm_provider import llm_registry
+        await llm_registry.aclose()
 
-app = FastAPI(title="Notes App", version="0.8.1", lifespan=lifespan)
+app = FastAPI(title="Notes App", version="0.8.3", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)

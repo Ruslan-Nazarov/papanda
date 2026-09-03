@@ -19,6 +19,9 @@ import BlockStickersManager from './BlockStickersManager.js';
 import DialogService from './DialogService.js';
 import DropdownController from './DropdownController.js';
 import NavHistoryManager from './NavHistoryManager.js';
+import ConceptSelectionMenu from './ConceptSelectionMenu.js';
+import ModeManager from './ModeManager.js';
+import OnboardingTour from './OnboardingTour.js';
 import { t, switchLanguage } from '../i18n.js';
 
 class App {
@@ -34,7 +37,9 @@ class App {
         NoteController.init();
         ParserWindowsManager.init();
         DropdownController.init();
-        
+        ConceptSelectionMenu.init();
+        ModeManager.init();
+
         // Setup UI bindings & listeners
         this.setupBindings();
         this.setupCopyHandler();
@@ -124,8 +129,22 @@ class App {
 
     static setupBindings() {
         // --- 1. Nav Buttons ---
+        // Мобильный гамбургер: показать/скрыть панель шапки
+        const headerRight = document.getElementById('header-right');
+        const btnMobileNav = document.getElementById('btn-mobile-nav');
+        if (headerRight && btnMobileNav) {
+            btnMobileNav.addEventListener('click', (e) => {
+                e.stopPropagation();
+                headerRight.classList.toggle('mobile-open');
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.top-header')) headerRight.classList.remove('mobile-open');
+            });
+        }
+
         document.getElementById('btn-connections-nav')?.addEventListener('click', () => {
             DropdownController.closeAll();
+            headerRight?.classList.remove('mobile-open');
             ConnectionsModalService.show(this);
         });
 
@@ -150,13 +169,13 @@ class App {
             DropdownController.closeAll();
             if (AppState.isDirty) {
                 const confirmed = await DialogService.confirm({
-                    title: 'Новый конспект',
-                    message: 'Имеются несохраненные изменения. Создать новый конспект?',
-                    confirmText: 'Создать'
+                    title: t('menu_new_note'),
+                    message: t('confirm_new_note'),
+                    confirmText: t('create_word')
                 });
                 if (!confirmed) return;
             }
-            AppState.setNote({ id: null, title: 'Новый конспект', blocks: [] });
+            AppState.setNote({ id: null, title: t('menu_new_note'), blocks: [] });
             BlockDOMRenderer.renderAll();
         });
 
@@ -178,10 +197,10 @@ class App {
                 return;
             }
             const confirmed = await DialogService.confirm({
-                title: 'В корзину',
-                message: `Переместить конспект "${AppState.currentNote.title}" в корзину?`,
+                title: t('to_trash'),
+                message: `${t('confirm_to_trash_msg')} "${AppState.currentNote.title}"`,
                 isDestructive: true,
-                confirmText: 'Переместить'
+                confirmText: t('move_word')
             });
             if (confirmed) {
                 await NotesAPI.deleteNote(AppState.currentNote.id);
@@ -205,9 +224,8 @@ class App {
         const toggleKeepTitles = document.getElementById('toggle-keep-titles');
         const toggleHideLeft = document.getElementById('toggle-hide-left');
         const toggleShowHints = document.getElementById('toggle-show-hints');
-        const toggleAutoFill = document.getElementById('toggle-auto-fill');
-        const toggleAutoFillStep = document.getElementById('toggle-autofill-step');
         const cont = document.getElementById('blocks-container');
+        // Главный переключатель режимов и «По шагам» — в ModeManager.
 
         if (toggleDialectics) {
             toggleDialectics.addEventListener('change', (e) => {
@@ -251,24 +269,6 @@ class App {
             });
         }
 
-        if (toggleAutoFill) {
-            toggleAutoFill.addEventListener('change', (e) => {
-                AppState.isAutoFillEnabled = e.target.checked;
-                const rowAutofillStep = document.getElementById('row-autofill-step');
-                if (rowAutofillStep) {
-                    rowAutofillStep.style.display = e.target.checked ? 'flex' : 'none';
-                }
-                BlockDOMRenderer.renderAll();
-            });
-        }
-        
-        if (toggleAutoFillStep) {
-            toggleAutoFillStep.addEventListener('change', (e) => {
-                AppState.isAutoFillStepByStep = e.target.checked;
-                BlockDOMRenderer.renderAll();
-            });
-        }
-
         // --- 5. Internal Links Handler ---
         document.addEventListener('click', async (e) => {
             const link = e.target.closest('a[href^="internal://"]');
@@ -283,10 +283,10 @@ class App {
                     if (AppState.currentNote.id !== noteId) {
                         if (AppState.isDirty) {
                             const confirmed = await DialogService.confirm({
-                                title: 'Переход по ссылке',
-                                message: 'Имеются несохраненные изменения. Сохранить их перед переходом?',
-                                confirmText: 'Сохранить и перейти',
-                                cancelText: 'Перейти без сохранения'
+                                title: t('link_nav_title'),
+                                message: t('link_nav_msg'),
+                                confirmText: t('save_and_go'),
+                                cancelText: t('go_without_save')
                             });
                             if (confirmed === null) return;
                             if (confirmed) {
@@ -308,7 +308,7 @@ class App {
                                 }, 100);
                             }
                         } catch (err) {
-                            DialogService.alert('Ошибка', 'Не удалось загрузить конспект.');
+                            DialogService.alert(t('error_word'), t('note_load_failed'));
                         }
                     } else if (blockId) {
                         const blockEl = document.getElementById(`block-${blockId}`);
@@ -334,7 +334,7 @@ class App {
                         const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                         await NotesAPI.createCheckpoint(
                             AppState.currentNote.id,
-                            `Сохранение ${dateStr}`,
+                            `${t('checkpoint_label')} ${dateStr}`,
                             true
                         );
                     }
@@ -342,11 +342,11 @@ class App {
                     this.updateSaveStatusUI();
                     this.updateSaveTime();
                     const { showToast } = await import('./ToastService.js');
-                    showToast('Конспект и версия сохранены');
+                    showToast(t('note_and_version_saved'));
                 } catch (e) {
                     console.error('Save failed:', e);
                     const { showToast } = await import('./ToastService.js');
-                    showToast('Ошибка сохранения', 'error');
+                    showToast(t('save_error'), 'error');
                 }
             });
         }
@@ -372,7 +372,7 @@ class App {
                     AppState.markDirty();
                 }
 
-                showToast(isReady ? 'Статус конспекта: Готово' : 'Статус конспекта: Черновик (в процессе)');
+                showToast(isReady ? t('status_note_ready') : t('status_note_draft'));
             });
         }
 
@@ -414,7 +414,11 @@ class App {
         }
 
         // --- 8. Footer Buttons ---
-        document.getElementById('btn-footer-training')?.addEventListener('click', () => FooterModalsService.showTraining(this));
+        document.getElementById('btn-howto')?.addEventListener('click', () => {
+            DropdownController.closeAll();
+            document.getElementById('header-right')?.classList.remove('mobile-open');
+            OnboardingTour.start();
+        });
         document.getElementById('btn-footer-about')?.addEventListener('click', () => FooterModalsService.showAbout(this));
         document.getElementById('btn-footer-changelog')?.addEventListener('click', () => FooterModalsService.showChangelog(this));
         document.getElementById('btn-footer-contact')?.addEventListener('click', () => FooterModalsService.showContact(this));
@@ -477,8 +481,8 @@ class App {
             dot.classList.toggle('status-ready', isReady);
             dot.classList.toggle('status-in-progress', !isReady);
             dot.title = isReady 
-                ? 'Статус: Готово (нажмите, чтобы изменить на Черновик)' 
-                : 'Статус: Черновик (нажмите, чтобы изменить на Готово)';
+                ? t('status_dot_ready')
+                : t('status_dot_draft');
         }
     }
 
@@ -488,12 +492,12 @@ class App {
             const now = new Date();
             const hh = String(now.getHours()).padStart(2, '0');
             const mm = String(now.getMinutes()).padStart(2, '0');
-            timeEl.textContent = `Сохранено: ${hh}:${mm}`;
+            timeEl.textContent = `${t('saved_at')}: ${hh}:${mm}`;
         }
         this.updateSaveStatusUI();
     }
 
-    static addNewBlock(side, index = -1, role = null, title = 'Новый блок') {
+    static addNewBlock(side, index = -1, role = null, title = t('new_block_default')) {
         const id = 'block-' + crypto.randomUUID().replace(/-/g, '').substring(0, 9);
         const block = {
             id,
@@ -532,6 +536,11 @@ class App {
         } catch (e) {
             console.error('Failed to load initial state', e);
             AppState.setNote({ id: null, title: '', blocks: [] });
+        } finally {
+            // Первый заход — один раз показываем обзорный тур.
+            let seen = true;
+            try { seen = localStorage.getItem('dialectics_onboarding_seen') === '1'; } catch {}
+            if (!seen) setTimeout(() => OnboardingTour.start(), 700);
         }
     }
 }

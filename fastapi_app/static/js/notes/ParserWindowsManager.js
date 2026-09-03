@@ -1,11 +1,12 @@
 import DialogService from './DialogService.js';
 
+import { t } from '../i18n.js';
 class ParserWindowsManager {
     static init() {
         this.windows = {
             formula: {
                 id: 'formula-parser-window',
-                title: '🧮 Парсер формул',
+                title: t('pw_formula_title'),
                 isOpen: false,
                 isMinimized: false,
                 isMaximized: false,
@@ -14,7 +15,7 @@ class ParserWindowsManager {
             },
             article: {
                 id: 'article-parser-window',
-                title: '📄 Парсер статей',
+                title: t('pw_article_title'),
                 isOpen: false,
                 isMinimized: false,
                 isMaximized: false,
@@ -54,7 +55,7 @@ class ParserWindowsManager {
         minimized.forEach(([key, w]) => {
             const btn = document.createElement('button');
             btn.className = 'dock-item-btn';
-            btn.innerHTML = `${key === 'formula' ? '<span class="dock-icon">🧮</span> Парсер формул' : '<span class="dock-icon">📄</span> Парсер статей'}`;
+            btn.innerHTML = `${key === 'formula' ? `<span class="dock-icon">🧮</span> ${t('pw_formula_name')}` : `<span class="dock-icon">📄</span> ${t('pw_article_name')}`}`;
             btn.addEventListener('click', () => {
                 this.restoreWindow(key);
             });
@@ -125,31 +126,31 @@ class ParserWindowsManager {
             <div class="parser-window-header">
                 <div class="parser-window-title">
                     <span class="parser-header-icon">🧮</span>
-                    <span>Парсер формул</span>
+                    <span>${t('pw_formula_name')}</span>
                 </div>
                 <div class="parser-window-controls">
-                    <button class="win-btn btn-clear" title="Очистить чат">🗑</button>
-                    <button class="win-btn btn-minimize" title="Свернуть">_</button>
-                    <button class="win-btn btn-maximize" title="Развернуть">□</button>
-                    <button class="win-btn btn-close" title="Закрыть">✕</button>
+                    <button class="win-btn btn-clear" title="${t('pw_clear_tt')}">🗑</button>
+                    <button class="win-btn btn-minimize" title="${t('pw_min_tt')}">_</button>
+                    <button class="win-btn btn-maximize" title="${t('pw_max_tt')}">□</button>
+                    <button class="win-btn btn-close" title="${t('pw_close_tt')}">✕</button>
                 </div>
             </div>
             <div class="parser-window-body">
                 <div class="parser-chat-messages" id="formula-chat-messages">
                     <div class="parser-msg bot-msg">
                         <div class="msg-bubble">
-                            Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.
+                            ${t('pw_formula_hello')}
                         </div>
                     </div>
                 </div>
             </div>
             <div class="parser-window-footer">
                 <div class="parser-input-container">
-                    <input type="text" class="parser-input" id="formula-input" placeholder="Введите формулу..." autocomplete="off">
+                    <input type="text" class="parser-input" id="formula-input" placeholder="${t('pw_formula_input_ph')}" autocomplete="off">
                     <input type="file" id="formula-file-input" accept="image/*" style="display: none;">
-                    <button class="parser-action-btn" id="formula-btn-ocr" title="Распознать с фото (OCR)">🖼</button>
-                    <button class="parser-action-btn" id="formula-btn-voice" title="Голосовой ввод">🎙</button>
-                    <button class="parser-send-btn" id="formula-btn-send" title="Отправить">➤</button>
+                    <button class="parser-action-btn" id="formula-btn-ocr" title="${t('pw_ocr_tt')}">🖼</button>
+                    <button class="parser-action-btn" id="formula-btn-voice" title="${t('pw_voice_tt')}">🎙</button>
+                    <button class="parser-send-btn" id="formula-btn-send" title="${t('pw_send_tt')}">➤</button>
                 </div>
             </div>
         `;
@@ -168,7 +169,7 @@ class ParserWindowsManager {
             msgs.innerHTML = `
                 <div class="parser-msg bot-msg">
                     <div class="msg-bubble">
-                        Введите математическую формулу (например, E = mc^2 или Hψ = Eψ), чтобы разобрать ее диалектическую структуру.
+                        ${t('pw_formula_hello')}
                     </div>
                 </div>
             `;
@@ -201,7 +202,7 @@ class ParserWindowsManager {
                 this.appendMessage('formula', 'bot', reply);
             } catch (err) {
                 this.removeLoading(loadingId);
-                this.appendMessage('formula', 'bot', `Ошибка обработки: ${err.message}`);
+                this.appendMessage('formula', 'bot', `${t('pw_err_process')}${err.message}`);
             }
         };
 
@@ -215,7 +216,7 @@ class ParserWindowsManager {
             const file = e.target.files[0];
             if (!file) return;
 
-            this.appendMessage('formula', 'user', `[Загружено фото: ${file.name}]`);
+            this.appendMessage('formula', 'user', `[${t('pw_photo_uploaded')}: ${file.name}]`);
             const loadingId = this.appendLoading('formula');
 
             const formData = new FormData();
@@ -232,13 +233,13 @@ class ParserWindowsManager {
                 this.appendMessage('formula', 'bot', reply);
             } catch (err) {
                 this.removeLoading(loadingId);
-                this.appendMessage('formula', 'bot', `Ошибка OCR: ${err.message}`);
+                this.appendMessage('formula', 'bot', `${t('pw_err_ocr')}${err.message}`);
             }
         });
 
         voiceBtn.addEventListener('click', async () => {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                this.appendMessage('formula', 'bot', '⚠️ Ваш браузер не поддерживает запись аудио.');
+                this.appendMessage('formula', 'bot', t('pw_audio_unsupported'));
                 return;
             }
             // Toggle: if already recording — stop
@@ -254,15 +255,15 @@ class ParserWindowsManager {
                 
                 voiceBtn.style.background = '#fee2e2';
                 voiceBtn.style.color = '#ef4444';
-                voiceBtn.title = 'Нажмите чтобы остановить';
-                this.appendMessage('formula', 'bot', '🎙️ Запись... нажмите кнопку микрофона ещё раз чтобы остановить.');
+                voiceBtn.title = t('pw_stop_hint');
+                this.appendMessage('formula', 'bot', t('pw_recording'));
                 
                 mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
                 mediaRecorder.onstop = async () => {
                     stream.getTracks().forEach(t => t.stop());
                     voiceBtn.style.background = '';
                     voiceBtn.style.color = '';
-                    voiceBtn.title = 'Голосовой ввод';
+                    voiceBtn.title = t('pw_voice_tt');
                     
                     const blob = new Blob(chunks, { type: 'audio/webm' });
                     const formData = new FormData();
@@ -276,19 +277,19 @@ class ParserWindowsManager {
                         const recognized = data.result || '';
                         if (recognized) {
                             input.value = recognized;
-                            this.appendMessage('formula', 'bot', `🎙️ Распознано: <strong>${recognized}</strong>`);
+                            this.appendMessage('formula', 'bot', `${t('pw_recognized')}<strong>${recognized}</strong>`);
                             input.focus();
                         } else {
-                            this.appendMessage('formula', 'bot', '⚠️ Не удалось распознать формулу.');
+                            this.appendMessage('formula', 'bot', t('pw_no_formula'));
                         }
                     } catch(err) {
                         this.removeLoading(loadingId);
-                        this.appendMessage('formula', 'bot', `Ошибка распознавания: ${err.message}`);
+                        this.appendMessage('formula', 'bot', `${t('pw_err_recognize')}${err.message}`);
                     }
                 };
                 mediaRecorder.start();
             } catch(err) {
-                this.appendMessage('formula', 'bot', `⚠️ Не удалось получить доступ к микрофону: ${err.message}`);
+                this.appendMessage('formula', 'bot', `${t('pw_mic_denied')}${err.message}`);
             }
         });
     }
@@ -302,56 +303,56 @@ class ParserWindowsManager {
             <div class="parser-window-header">
                 <div class="parser-window-title">
                     <span class="parser-header-icon">📄</span>
-                    <span>Парсер статей</span>
+                    <span>${t('pw_article_name')}</span>
                 </div>
                 <div class="parser-window-controls">
-                    <button class="win-btn btn-clear" title="Очистить чат">🗑</button>
-                    <button class="win-btn btn-minimize" title="Свернуть">_</button>
-                    <button class="win-btn btn-maximize" title="Развернуть">□</button>
-                    <button class="win-btn btn-close" title="Закрыть">✕</button>
+                    <button class="win-btn btn-clear" title="${t('pw_clear_tt')}">🗑</button>
+                    <button class="win-btn btn-minimize" title="${t('pw_min_tt')}">_</button>
+                    <button class="win-btn btn-maximize" title="${t('pw_max_tt')}">□</button>
+                    <button class="win-btn btn-close" title="${t('pw_close_tt')}">✕</button>
                 </div>
             </div>
             <div class="parser-tabs">
-                <button class="parser-tab-btn active" data-tab="chat">Чат</button>
-                <button class="parser-tab-btn" data-tab="dict">Словарь</button>
+                <button class="parser-tab-btn active" data-tab="chat">${t('pw_tab_chat')}</button>
+                <button class="parser-tab-btn" data-tab="dict">${t('pw_tab_dict')}</button>
             </div>
             <div class="parser-window-body">
                 <div class="parser-tab-pane active" id="article-tab-chat">
                     <div class="parser-chat-messages" id="article-chat-messages">
                         <div class="parser-msg bot-msg">
                             <div class="msg-bubble">
-                                <strong>👋 Привет!</strong> Я превращаю любую статью в изложение процесса, которому она посвящена.
+                                ${t('pw_article_hello1')}
                             </div>
                         </div>
                         <div class="parser-msg bot-msg">
                             <div class="msg-bubble">
-                                💡 Если статья посвящена трансформерам в машинном обучении – я превращаю ее в рассказ о том, как проходит само обучение с применением трансформеров. Другими словами, из обычной статьи я пытаюсь сделать статью <strong>диалектическую</strong>.
+                                ${t('pw_article_hello2')}
                             </div>
                         </div>
                         <div class="parser-msg bot-msg">
                             <div class="msg-bubble">
-                                🛠 Можешь задавать мне вопросы по статье, а еще можешь добавить любое определение из статьи в <strong>Словарь</strong> для быстрого доступа.
+                                ${t('pw_article_hello3')}
                             </div>
                         </div>
                     </div>
                     <div class="parser-action-pills">
                         <input type="file" id="article-file-input" accept=".pdf,.txt,.md,.doc,.docx" style="display: none;">
-                        <button class="parser-dashed-btn" id="article-btn-file">⭡ Файл</button>
-                        <button class="parser-dashed-btn" id="article-btn-text">✍️ Вставить текст</button>
+                        <button class="parser-dashed-btn" id="article-btn-file">${t('pw_btn_file')}</button>
+                        <button class="parser-dashed-btn" id="article-btn-text">${t('pw_btn_text')}</button>
                     </div>
                 </div>
                 <div class="parser-tab-pane" id="article-tab-dict" style="display: none;">
                     <div class="article-dict-container">
-                        <p class="empty-dict-text" id="article-dict-empty">Термины из статьи пока не добавлены.</p>
+                        <p class="empty-dict-text" id="article-dict-empty">${t('pw_dict_empty')}</p>
                         <div class="article-dict-list" id="article-dict-list"></div>
                     </div>
                 </div>
             </div>
             <div class="parser-window-footer">
                 <div class="parser-input-container">
-                    <input type="text" class="parser-input" id="article-input" placeholder="Задайте вопрос по статье..." autocomplete="off">
-                    <button class="parser-action-btn" id="article-btn-voice" title="Голосовой ввод">🎙</button>
-                    <button class="parser-send-btn" id="article-btn-send" title="Отправить">➤</button>
+                    <input type="text" class="parser-input" id="article-input" placeholder="${t('pw_article_input_ph')}" autocomplete="off">
+                    <button class="parser-action-btn" id="article-btn-voice" title="${t('pw_voice_tt')}">🎙</button>
+                    <button class="parser-send-btn" id="article-btn-send" title="${t('pw_send_tt')}">➤</button>
                 </div>
             </div>
         `;
@@ -370,7 +371,7 @@ class ParserWindowsManager {
             msgs.innerHTML = `
                 <div class="parser-msg bot-msg">
                     <div class="msg-bubble">
-                        <strong>👋 Привет!</strong> Я превращаю любую статью в изложение процесса, которому она посвящена.
+                        ${t('pw_article_hello1')}
                     </div>
                 </div>
             `;
@@ -425,7 +426,7 @@ class ParserWindowsManager {
                 this.appendMessage('article', 'bot', reply);
             } catch (err) {
                 this.removeLoading(loadingId);
-                this.appendMessage('article', 'bot', `Ошибка: ${err.message}`);
+                this.appendMessage('article', 'bot', `${t('pw_err_generic')}${err.message}`);
             }
         };
 
@@ -439,11 +440,11 @@ class ParserWindowsManager {
             const file = e.target.files[0];
             if (!file) return;
 
-            this.appendMessage('article', 'user', `[Загружен файл: ${file.name}]`);
+            this.appendMessage('article', 'user', `[${t('pw_file_uploaded')}: ${file.name}]`);
             const loadingId = this.appendLoading('article');
 
             const formData = new FormData();
-            formData.append('message', 'Разобрать статью диалектически');
+            formData.append('message', t('pw_article_parse_msg'));
             formData.append('file', file);
 
             try {
@@ -457,17 +458,17 @@ class ParserWindowsManager {
                 this.appendMessage('article', 'bot', reply);
             } catch (err) {
                 this.removeLoading(loadingId);
-                this.appendMessage('article', 'bot', `Ошибка загрузки файла: ${err.message}`);
+                this.appendMessage('article', 'bot', `${t('pw_err_file')}${err.message}`);
             }
         });
 
         textBtn.addEventListener('click', async () => {
             const text = await DialogService.prompt({
-                title: 'Разбор статьи',
-                message: 'Вставьте текст статьи для диалектического разбора:',
-                placeholder: 'Текст статьи...',
+                title: t('pw_article_dlg_title'),
+                message: t('pw_article_dlg_msg'),
+                placeholder: t('pw_article_dlg_ph'),
                 icon: '📄',
-                confirmText: 'Разобрать'
+                confirmText: t('pw_article_dlg_confirm')
             });
             if (text && text.trim()) {
                 input.value = text.trim();
@@ -501,7 +502,7 @@ class ParserWindowsManager {
         const msgDiv = document.createElement('div');
         msgDiv.id = loadingId;
         msgDiv.className = 'parser-msg bot-msg loading-msg';
-        msgDiv.innerHTML = `<div class="msg-bubble"><span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span> Обработка...</div>`;
+        msgDiv.innerHTML = `<div class="msg-bubble"><span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span> ${t('pw_processing')}</div>`;
         container.appendChild(msgDiv);
         container.scrollTop = container.scrollHeight;
         return loadingId;
@@ -561,7 +562,7 @@ class ParserWindowsManager {
         if (Array.isArray(obj)) {
             obj.forEach((item, index) => {
                 const indent = '  '.repeat(depth);
-                md += `\n${indent}**Блок ${index + 1}**:\n`;
+                md += `\n${indent}**${t('block_word')} ${index + 1}**:\n`;
                 md += this.formatJSON(item, depth + 1);
             });
         } else {

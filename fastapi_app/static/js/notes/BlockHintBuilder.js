@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import { ALGORITHM_STEPS, ALGORITHM_TEXTS } from './BlockConstants.js';
 import { t } from '../i18n.js';
 import NotesAPI from './api.js';
+import AIController from './AIController.js';
 
 class BlockHintBuilder {
     /**
@@ -24,7 +25,7 @@ class BlockHintBuilder {
         div.style.boxShadow = 'none';
         div.style.borderLeft = 'none';
 
-        const stepObj = ALGORITHM_STEPS.find(s => s.role === stepRole) || { title: 'Новый блок' };
+        const stepObj = ALGORITHM_STEPS.find(s => s.role === stepRole) || { title: t('new_block_default') };
         const promptText = t(`hint_${stepRole}`) !== `hint_${stepRole}` 
             ? t(`hint_${stepRole}`) 
             : (ALGORITHM_TEXTS[stepRole] || stepObj.title);
@@ -40,8 +41,8 @@ class BlockHintBuilder {
                         <span style="color: #f59e0b; font-size: 1rem;">✨</span> ${t('ai_help')}
                     </button>
                     ${(AppState.isAutoFillEnabled && AppState.isAutoFillStepByStep) ? `
-                    <button class="btn-autofill-step" title="Продолжить автозаполнение" style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 12px; color: #10b981; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <span>▶</span> Сгенерировать ИИ
+                    <button class="btn-autofill-step" title="${t('hint_continue_autofill')}" style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 12px; color: #10b981; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <span>▶</span> ${t('hint_gen_ai')}
                     </button>
                     ` : ''}
                 </div>
@@ -101,45 +102,27 @@ class BlockHintBuilder {
                 e.stopPropagation();
                 
                 const originalHtml = btnAutofillStep.innerHTML;
-                btnAutofillStep.innerHTML = `⏳ Генерирую...`;
+                btnAutofillStep.innerHTML = t('hint_generating');
                 btnAutofillStep.disabled = true;
 
                 try {
-                    const currentContent = AppState.currentNote.blocks
-                        .filter(b => b.html && b.html.trim().length > 0 && !b.isDraft)
-                        .map(b => `[${b.title}]:\n${b.html.replace(/<[^>]+>/g, '')}`)
-                        .join('\n\n');
-                        
-                    const res = await NotesAPI.generateNextStep(currentContent, stepRole);
+                    const stepNumber = stepRole.replace('step', '');
+                    await AIController.generateStep(stepNumber, onRenderAll);
                     
-                    if (res && res.result && res.result[stepRole]) {
-                        const newBlock = {
-                            id: 'block-' + Math.random().toString(36).substring(2, 9),
-                            side: stepSide,
-                            role: stepRole,
-                            title: stepObj.title,
-                            html: `<p>${res.result[stepRole]}</p>`,
-                            status: 'ready',
-                            isDraft: false
-                        };
-                        AppState.addBlock(newBlock);
-                        AppState.dismissHint(stepRole);
-                        if (onRenderAll) onRenderAll();
-                        
-                        setTimeout(() => {
+                    setTimeout(() => {
+                        const newBlock = AppState.currentNote.blocks.find(b => b.role === stepRole);
+                        if (newBlock) {
                             const blockEl = document.getElementById(newBlock.id);
                             if (blockEl) {
                                 blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 blockEl.style.boxShadow = '0 0 0 3px #10b981';
                                 setTimeout(() => blockEl.style.boxShadow = '', 2000);
                             }
-                        }, 100);
-                    } else {
-                        throw new Error("Неверный ответ от ИИ");
-                    }
+                        }
+                    }, 100);
                 } catch (err) {
                     console.error("Next step generation failed", err);
-                    import('./ToastService.js').then(m => m.showToast('Ошибка генерации шага', 'error'));
+                    import('./ToastService.js').then(m => m.showToast(t('hint_gen_step_err'), 'error'));
                     btnAutofillStep.innerHTML = originalHtml;
                     btnAutofillStep.disabled = false;
                 }

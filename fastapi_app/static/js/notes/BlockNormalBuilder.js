@@ -2,10 +2,11 @@ import AppState from './AppState.js';
 import DictModalService from './DictModalService.js';
 import AICheckModalService from './AICheckModalService.js';
 import { showToast } from './ToastService.js';
+import { t } from '../i18n.js';
 import BlockMathRenderer from './BlockMathRenderer.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
-
 import BlockColorPicker from './BlockColorPicker.js';
+import AIController from './AIController.js';
 
 class BlockNormalBuilder {
     static setupHiddenPhrases(container) {
@@ -51,17 +52,20 @@ class BlockNormalBuilder {
         }
         div.dataset.id = block.id;
         div.id = block.id;
-        div.draggable = true;
+        // ВАЖНО: не делаем весь блок draggable — атрибут draggable="true" в Chromium
+        // отключает выделение текста внутри (user-select: none). Перетаскивание
+        // навешиваем только на «ручку» .drag-handle ниже.
+        div.draggable = false;
 
         if (block.role === 'section') {
             div.className = `dialectics-block block-section`;
             div.innerHTML = `
                 <div class="block-header" style="justify-content: center; border-bottom: none; background: #e2e8f0;">
-                    <span class="drag-handle" title="Перетащить блок">⠿</span>
-                    <h2 class="block-title" contenteditable="true" style="font-size: 1.25rem; font-weight: bold; text-align: center; width: 100%; margin: 0;">${block.title || 'Раздел'}</h2>
+                    <span class="drag-handle" title="${t('tt_drag')}">⠿</span>
+                    <h2 class="block-title" contenteditable="true" style="font-size: 1.25rem; font-weight: bold; text-align: center; width: 100%; margin: 0;">${block.title || t('section_word')}</h2>
                 </div>
                 <div class="block-actions">
-                    <button class="block-action-btn btn-delete" title="Удалить">🗑</button>
+                    <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑</button>
                 </div>
             `;
         } else {
@@ -72,41 +76,59 @@ class BlockNormalBuilder {
                 ${roleLabelHTML}
                 <div class="block-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div class="block-header-left">
-                        <span class="drag-handle" title="Перетащить блок">⠿</span>
+                        <span class="drag-handle" title="${t('tt_drag')}">⠿</span>
                         <span class="block-number"></span>
-                        <div class="block-status-dot" data-status="${block.status || 'none'}" title="Статус: ${block.status || 'none'}"></div>
-                        <button class="btn-collapse-toggle" title="Свернуть/Развернуть">${block.collapsed ? '▶' : '▼'}</button>
-                        <h3 class="block-title" contenteditable="true">${block.title || 'Что вам нужно понять?'}</h3>
+                        <div class="block-status-dot" data-status="${block.status || 'none'}" title="${t('block_status')}: ${block.status || 'none'}"></div>
+                        <button class="btn-collapse-toggle" title="${t('tt_collapse')}">${block.collapsed ? '▶' : '▼'}</button>
+                        <h3 class="block-title" contenteditable="true">${block.title || t('hint_anchor_title')}</h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
-                        <button class="block-action-btn btn-autofill-ai" title="Автозаполнение ИИ" style="font-size: 1.1rem; padding: 2px 4px; border: none; background: transparent; cursor: pointer;">✨</button>
-                        <button class="btn-pin-toggle ${block.is_pinned ? 'active' : ''}" title="Закрепить (плавающий блок)">📌</button>
+                        <button class="block-action-btn btn-autofill-ai" title="${t('tt_autofill')}" style="font-size: 1.1rem; padding: 2px 4px; border: none; background: transparent; cursor: pointer;">✨</button>
+                        <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" title="${t('tt_pin')}">📌</button>
                     </div>
                 </div>
                 ${block.tags ? `
                 <div class="block-tags" style="padding: 0 16px 8px 46px; display: flex; flex-wrap: wrap; gap: 6px;">
-                    ${block.tags.split(',').filter(t => t.trim()).map(t => `<span style="background: #e2e8f0; color: #475569; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 500;">#${t.trim()}</span>`).join('')}
+                    ${block.tags.split(',').filter(tag => tag.trim()).map(tag => `<span style="background: #e2e8f0; color: #475569; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 500;">#${tag.trim()}</span>`).join('')}
                 </div>
                 ` : ''}
                 <div class="block-toolbar-row" style="display: flex; align-items: center; gap: 4px;">
-                    <button class="block-action-btn btn-sources" title="Инструкция к шагу">ℹ️</button>
-                    <button class="block-action-btn btn-connections" title="Источники блока" style="position:relative;">
+                    <button class="block-action-btn btn-sources manual-only" title="${t('tt_sources')}">ℹ️</button>
+                    <button class="block-action-btn btn-connections manual-only" title="${t('tt_block_sources')}" style="position:relative;">
                         🔗${(block.sources && block.sources.length > 0) ? `<span style="position:absolute; top:-4px; right:-6px; background:#3b82f6; color:white; font-size:0.6rem; padding:1px 4px; border-radius:8px; font-weight:bold;">${block.sources.length}</span>` : ''}
                     </button>
-                    <button class="block-action-btn btn-dict" title="Словарь блока">📖</button>
-                    <button class="block-action-btn btn-hint" title="Хаки понимания">💡</button>
-                    <button class="block-action-btn btn-sticker" title="Заметки / Цвет">🟨</button>
-                    <button class="block-action-btn btn-hide" title="Развернуть/свернуть скрытые фразы">👁️</button>
-                    <div style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 3px;"></div>
-                    <button class="block-action-btn btn-edit" title="Редактировать">✏️</button>
-                    <button class="block-action-btn btn-ai-check" title="Проверка ИИ">🔬</button>
-                    <button class="block-action-btn btn-copy" title="Копировать текст блока">📋</button>
-                    <button class="block-action-btn btn-color" title="Цвет рамки блока">🎨</button>
-                    ${(block.role === 'step1' || block.role === 'anchor') ? `<button class="block-action-btn btn-regenerate" title="Перегенерировать шаги ИИ">🔄</button>` : ''}
-                    <button class="block-action-btn btn-delete" title="Удалить">🗑️</button>
+                    <button class="block-action-btn btn-dict manual-only" title="${t('tt_dict')}">📖</button>
+                    <button class="block-action-btn btn-hint manual-only" title="${t('tt_hacks')}">💡</button>
+                    <button class="block-action-btn btn-sticker manual-only" title="${t('tt_sticker')}">🟨</button>
+                    <button class="block-action-btn btn-hide manual-only" title="${t('tt_hide_phrases')}">👁️</button>
+                    <div class="manual-only" style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 3px;"></div>
+                    <button class="block-action-btn btn-edit" title="${t('tt_edit')}">✏️</button>
+                    <button class="block-action-btn btn-ai-check manual-only" title="${t('tt_ai_check')}">🔬</button>
+                    <button class="block-action-btn btn-copy" title="${t('tt_copy')}">📋</button>
+                    <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}">🎨</button>
+                    ${(block.role && block.role.startsWith('step')) ? `<button class="block-action-btn btn-ask" title="${t('ask_title')}">💬</button>` : ''}
+                    ${(block.role && block.role.startsWith('step')) || block.role === 'anchor' ? `<button class="block-action-btn btn-regenerate" title="${t('tt_regenerate')}">🔄</button>` : ''}
+                    <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑️</button>
                 </div>
-                <div class="block-content">${block.html || '<p>Текст...</p>'}</div>
+                <div class="block-ask-row">
+                    <textarea placeholder="${t('ask_placeholder')}"></textarea>
+                    <div class="ask-actions">
+                        <button class="ask-go">${t('ask_go')}</button>
+                        <button class="ask-cancel">${t('ask_cancel')}</button>
+                    </div>
+                </div>
+                <div class="block-content">${block.html || `<p>${t('block_text_ph')}</p>`}</div>
             `;
+        }
+
+        // Перетаскивание блока — только за «ручку».
+        const dragHandleEl = div.querySelector('.drag-handle');
+        if (dragHandleEl) {
+            dragHandleEl.setAttribute('draggable', 'true');
+            dragHandleEl.addEventListener('dragstart', (e) => {
+                // Тащим сам блок как превью, но инициируем с ручки.
+                try { e.dataTransfer.setDragImage(div, 20, 20); } catch (_) {}
+            });
         }
 
         // Setup hidden phrases interactivity inside block content
@@ -133,67 +155,38 @@ class BlockNormalBuilder {
         // Bind Autofill AI
         const btnAutofill = div.querySelector('.btn-autofill-ai');
         if (btnAutofill) {
-            btnAutofill.addEventListener('click', (e) => {
+            btnAutofill.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                import('./ToastService.js').then(m => m.showToast('Запущена ИИ генерация...'));
-                import('./api.js').then(module => {
-                    const NotesAPI = module.default;
-                    const anchorText = (block.html || '').replace(/<[^>]+>/g, '').trim();
-                    const noteTitle = AppState.currentNote.title;
-                    if (AppState.isAutoFillStepByStep) {
-                        NotesAPI.generateNextStep(anchorText, 'step1').then(res => {
-                            if (res && res.result && res.result['step1']) {
-                                const stepObj = ALGORITHM_STEPS.find(s => s.role === 'step1') || {};
-                                const newBlock = {
-                                    id: 'block-' + Math.random().toString(36).substr(2, 9),
-                                    side: stepObj.side || 'left',
-                                    role: 'step1',
-                                    title: stepObj.title || 'step1',
-                                    html: `<p>${res.result['step1']}</p>`,
-                                    status: 'ready',
-                                    isDraft: false
-                                };
-                                AppState.addBlock(newBlock);
-                                AppState.dismissHint('step1');
-                                if (onRenderAll) onRenderAll();
-                            }
-                        }).catch(err => {
-                            console.error("Autofill step failed", err);
-                            import('./ToastService.js').then(m => m.showToast('Ошибка автозаполнения', 'error'));
-                        });
+
+                const isStepByStep = AppState.isAutoFillStepByStep;
+
+                showToast(t('toast_gen_started'));
+                
+                try {
+                    if (isStepByStep) {
+                        let targetStep = 1;
+                        if (block.role && block.role.startsWith('step')) {
+                            targetStep = parseInt(block.role.replace('step', '')) + 1;
+                        } else if (block.role === 'anchor') {
+                            targetStep = 1;
+                        }
+                        
+                        if (targetStep > 5) {
+                            showToast(t('toast_all_steps_done'), 'info');
+                            return;
+                        }
+                        
+                        await AIController.generateStep(targetStep, onRenderAll);
                     } else {
-                        NotesAPI.autofillConspect(anchorText, noteTitle).then(res => {
-                            if (res && res.result && typeof res.result === 'object') {
-                                const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
-                                let delay = 600;
-                                steps.forEach((step, index) => {
-                                    if (res.result[step]) {
-                                        setTimeout(() => {
-                                            const stepObj = ALGORITHM_STEPS.find(s => s.role === step) || {};
-                                            const newBlock = {
-                                                id: 'block-' + Math.random().toString(36).substr(2, 9),
-                                                side: stepObj.side || 'center',
-                                                role: step,
-                                                title: stepObj.title || step,
-                                                html: `<p>${res.result[step]}</p>`,
-                                                status: 'ready',
-                                                isDraft: false
-                                            };
-                                            AppState.addBlock(newBlock);
-                                            AppState.dismissHint(step);
-                                            if (onRenderAll) onRenderAll();
-                                        }, delay * (index + 1));
-                                    }
-                                });
-                            }
-                        }).catch(err => {
-                            console.error("Autofill failed", err);
-                            import('./ToastService.js').then(m => m.showToast('Ошибка автозаполнения', 'error'));
-                        });
+                        await AIController.generateFull(onRenderAll);
                     }
-                });
+                    showToast(t('toast_gen_ok'));
+                } catch (err) {
+                    showToast(t('toast_gen_err'), 'error');
+                }
             });
         }
+
 
         // Bind Collapse toggle
         const collapseBtn = div.querySelector('.btn-collapse-toggle');
@@ -209,27 +202,22 @@ class BlockNormalBuilder {
             });
         }
 
-        // Bind editor
+        // Bind editor — карандаш всегда открывает редактор (в любом режиме и статусе)
         const btnEdit = div.querySelector('.btn-edit');
         if (btnEdit) {
             btnEdit.addEventListener('click', () => {
-                if (block.status === 'ready') {
-                    import('./ToastService.js').then(m => m.default.showToast('Для редактирования снимите зелёный статус', 'info'));
-                    return;
-                }
                 document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div } }));
             });
         }
 
         const blockContent = div.querySelector('.block-content');
         if (blockContent) {
-            blockContent.addEventListener('dblclick', (e) => {
-                const selection = window.getSelection();
-                if (selection.toString().length > 0) return;
-                if (block.status === 'ready') {
-                    import('./ToastService.js').then(m => m.default.showToast('Для редактирования снимите зелёный статус', 'info'));
-                    return;
-                }
+            blockContent.addEventListener('dblclick', () => {
+                // Двойной клик выделяет слово под курсором — это не считаем "выделением".
+                // Не открываем редактор только если пользователь выделил фразу (есть пробелы).
+                const sel = (window.getSelection().toString() || '').trim();
+                if (sel.includes(' ') || sel.includes('\n')) return;
+                window.getSelection().removeAllRanges();
                 document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div } }));
             });
         }
@@ -307,7 +295,7 @@ class BlockNormalBuilder {
                 e.stopPropagation();
                 const phrases = div.querySelectorAll('span[data-type="hidden-phrase"], .hidden-phrase-mark');
                 if (phrases.length === 0) {
-                    showToast('В этом блоке нет скрытых фраз');
+                    showToast(t('toast_no_hidden'));
                     return;
                 }
                 const anyCollapsed = Array.from(phrases).some(p => !p.classList.contains('is-expanded'));
@@ -316,6 +304,45 @@ class BlockNormalBuilder {
                     const arrow = p.querySelector('.hp-arrow');
                     if (arrow) arrow.textContent = anyCollapsed ? ' ▴' : ' ▾';
                 });
+            });
+        }
+
+        // Bind Ask-question → regenerate others (❓, режим ИИ)
+        const btnAsk = div.querySelector('.btn-ask');
+        const askRow = div.querySelector('.block-ask-row');
+        if (btnAsk && askRow) {
+            const ta = askRow.querySelector('textarea');
+            const btnGo = askRow.querySelector('.ask-go');
+            const btnCancel = askRow.querySelector('.ask-cancel');
+            btnAsk.addEventListener('click', (e) => {
+                e.stopPropagation();
+                askRow.classList.toggle('open');
+                if (askRow.classList.contains('open')) ta.focus();
+            });
+            btnCancel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                askRow.classList.remove('open');
+                ta.value = '';
+            });
+            btnGo.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const q = ta.value.trim();
+                if (!q) { ta.focus(); return; }
+                const stepNum = parseInt((block.role || '').replace('step', ''), 10);
+                if (!stepNum) return;
+                askRow.classList.remove('open');
+                btnGo.disabled = true;
+                showToast(t('ask_running'));
+                try {
+                    await AIController.regenerateWithQuestion(stepNum, q, onRenderAll);
+                    ta.value = '';
+                    showToast(t('ask_done'));
+                } catch (err) {
+                    console.error('regenerateWithQuestion failed', err);
+                    showToast(t('ask_error'), 'error');
+                } finally {
+                    btnGo.disabled = false;
+                }
             });
         }
 
@@ -347,7 +374,7 @@ class BlockNormalBuilder {
                     document.execCommand('copy');
                     document.body.removeChild(ta);
                 }
-                showToast('📋 Текст блока скопирован в буфер');
+                showToast(t('toast_copied'));
             });
         }
 
@@ -363,70 +390,25 @@ class BlockNormalBuilder {
         // Bind Regenerate (🔄)
         const btnRegenerate = div.querySelector('.btn-regenerate');
         if (btnRegenerate) {
-            btnRegenerate.addEventListener('click', (e) => {
+            btnRegenerate.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm('Это удалит все последующие шаги и сгенерирует их заново. Продолжить?')) {
-                    const blocksToKeep = AppState.currentNote.blocks.filter(b => b.id === block.id || b.role === 'section');
-                    AppState.currentNote.blocks = blocksToKeep;
-                    if (onRenderAll) onRenderAll();
-                    import('./ToastService.js').then(m => m.showToast('Запущена генерация шагов...'));
-                    import('./api.js').then(module => {
-                        const NotesAPI = module.default;
-                        const anchorText = (block.html || '').replace(/<[^>]+>/g, '').trim();
-                        const noteTitle = AppState.currentNote.title;
+                if (confirm(t('confirm_regen_cascade'))) {
+                    showToast(t('toast_steps_started'));
+                    let startStep = 1;
+                    if (block.role && block.role.startsWith('step')) {
+                        startStep = parseInt(block.role.replace('step', ''));
+                    }
+                    
+                    try {
                         if (AppState.isAutoFillStepByStep) {
-                            NotesAPI.generateNextStep(anchorText, 'step1').then(res => {
-                                if (res && res.result && res.result['step1']) {
-                                    const stepObj = ALGORITHM_STEPS.find(s => s.role === 'step1') || {};
-                                    const newBlock = {
-                                        id: 'block-' + Math.random().toString(36).substr(2, 9),
-                                        side: stepObj.side || 'left',
-                                        role: 'step1',
-                                        title: stepObj.title || 'step1',
-                                        html: `<p>${res.result['step1']}</p>`,
-                                        status: 'ready',
-                                        isDraft: false
-                                    };
-                                    AppState.addBlock(newBlock);
-                                    AppState.dismissHint('step1');
-                                    if (onRenderAll) onRenderAll();
-                                }
-                            }).catch(err => {
-                                console.error("Regeneration step failed", err);
-                                import('./ToastService.js').then(m => m.showToast('Ошибка перегенерации', 'error'));
-                            });
+                            await AIController.generateStep(startStep, onRenderAll);
                         } else {
-                            NotesAPI.autofillConspect(anchorText, noteTitle).then(res => {
-                                if (res && res.result && typeof res.result === 'object') {
-                                    const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
-                                    let delay = 600;
-                                    steps.forEach((step, index) => {
-                                        if (res.result[step]) {
-                                            setTimeout(() => {
-                                                // ALGORITHM_STEPS is imported at the top of BlockNormalBuilder.js
-                                                const stepObj = ALGORITHM_STEPS.find(s => s.role === step) || {};
-                                                const newBlock = {
-                                                    id: 'block-' + Math.random().toString(36).substr(2, 9),
-                                                    side: stepObj.side || 'center',
-                                                    role: step,
-                                                    title: stepObj.title || step,
-                                                    html: `<p>${res.result[step]}</p>`,
-                                                    status: 'ready',
-                                                    isDraft: false
-                                                };
-                                                AppState.addBlock(newBlock);
-                                                AppState.dismissHint(step);
-                                                if (onRenderAll) onRenderAll();
-                                            }, delay * (index + 1));
-                                        }
-                                    });
-                                }
-                            }).catch(err => {
-                                console.error("Regeneration failed", err);
-                                import('./ToastService.js').then(m => m.showToast('Ошибка перегенерации', 'error'));
-                            });
+                            await AIController.regenerateCascade(startStep, onRenderAll);
                         }
-                    });
+                        showToast(t('toast_regen_ok'));
+                    } catch (err) {
+                        showToast(t('toast_regen_err'), 'error');
+                    }
                 }
             });
         }
