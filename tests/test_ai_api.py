@@ -22,36 +22,8 @@ async def test_get_notes_hints_static(client: AsyncClient):
 
 
 # ==============================================================================
-# 2. ТЕСТЫ ЭНДПОИНТОВ ДИАЛЕКТИЧЕСКОГО АНАЛИЗА (OPPOSITES, EXPLAIN, HINT, CHECK)
+# 2. ТЕСТЫ ЭНДПОИНТОВ ДИАЛЕКТИЧЕСКОГО АНАЛИЗА (EXPLAIN, HINT, CHECK)
 # ==============================================================================
-
-@pytest.mark.asyncio
-async def test_opposites_endpoint_with_locales(client: AsyncClient):
-    """Проверяет POST /api/ai/dialectics/opposites и передачу нормализованной локали."""
-    with patch("fastapi_app.routers.ai.ai_service.get_opposites", new_callable=AsyncMock) as mock_get_opposites:
-        mock_get_opposites.return_value = "Процесс B: Рассеяние энергии (энтропия)"
-        
-        # 1. С cookie locale=ru
-        client.cookies.set("locale", "ru")
-        payload = {"process_a": "Концентрация энергии"}
-        res = await client.post("/api/ai/dialectics/opposites", json=payload)
-        assert res.status_code == 200
-        assert res.json()["result"] == "Процесс B: Рассеяние энергии (энтропия)"
-        mock_get_opposites.assert_awaited_with("Концентрация энергии", locale="русском")
-
-        # 2. С cookie locale=en
-        client.cookies.set("locale", "en")
-        res_en = await client.post("/api/ai/dialectics/opposites", json=payload)
-        assert res_en.status_code == 200
-        mock_get_opposites.assert_awaited_with("Концентрация энергии", locale="English")
-
-        # 3. С cookie locale=kz
-        client.cookies.set("locale", "kz")
-        res_kz = await client.post("/api/ai/dialectics/opposites", json=payload)
-        assert res_kz.status_code == 200
-        mock_get_opposites.assert_awaited_with("Концентрация энергии", locale="қазақша")
-        client.cookies.delete("locale")
-
 
 @pytest.mark.asyncio
 async def test_explain_concept_endpoint(client: AsyncClient):
@@ -80,31 +52,6 @@ async def test_explain_concept_endpoint(client: AsyncClient):
             locale="русском"
         )
         client.cookies.delete("locale")
-
-
-@pytest.mark.asyncio
-async def test_hint_step_and_hint_alias_endpoints(client: AsyncClient):
-    """Проверяет эндпоинты POST /api/ai/dialectics/hint-step и алиас POST /api/ai/dialectics/hint."""
-    with patch("fastapi_app.routers.ai.ai_service.generate_dialectics_hint", new_callable=AsyncMock) as mock_hint:
-        mock_hint.return_value = "Сформулируйте противоположность."
-        
-        payload = {
-            "step_id": "step3",
-            "current_content": "Тезис: Нагревание",
-            "note_title": "Термодинамика"
-        }
-        
-        # Проверка hint-step
-        res1 = await client.post("/api/ai/dialectics/hint-step", json=payload)
-        assert res1.status_code == 200
-        assert res1.json()["hint"] == "Сформулируйте противоположность."
-
-        # Проверка алиаса hint
-        res2 = await client.post("/api/ai/dialectics/hint", json=payload)
-        assert res2.status_code == 200
-        assert res2.json()["hint"] == "Сформулируйте противоположность."
-        
-        assert mock_hint.call_count == 2
 
 
 @pytest.mark.asyncio

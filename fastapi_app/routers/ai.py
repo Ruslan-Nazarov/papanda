@@ -111,16 +111,6 @@ def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
                     yield {"delta": tok}
     return _sse_response(as_events())
 
-class DialecticsHintRequest(BaseModel):
-    step_id: str = Field(..., max_length=100)
-    current_content: str = Field(..., max_length=50_000)
-    note_title: Optional[str] = Field(default="", max_length=300)
-    mode: Optional[str] = Field(default="hint", max_length=50)
-
-class OppositesRequest(BaseModel):
-    process_a: str = Field(..., max_length=5_000)
-    locale: Optional[str] = Field(default=None, max_length=20)
-
 class ExplainRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
     context_before: Optional[str] = Field(default="", max_length=5_000)
@@ -137,11 +127,6 @@ class EditMathRequest(BaseModel):
     formula: str = Field(..., max_length=5_000)
     instruction: str = Field(..., max_length=5_000)
 
-class HintRequest(BaseModel):
-    step_id: str = Field(..., max_length=100)
-    goal_text: Optional[str] = Field(default="", max_length=1_000)
-    context_text: Optional[str] = Field(default="", max_length=50_000)
-
 class CheckRequest(BaseModel):
     text: str = Field(..., max_length=50_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
@@ -154,21 +139,18 @@ class GenerateStepRequest(BaseModel):
     context_text: str = Field(..., max_length=50_000)
     target_step: str = Field(..., max_length=100)
 
+class SkillConfig(BaseModel):
+    speaker: Optional[str] = Field(default=None, max_length=50)
+    addressee: Optional[str] = Field(default=None, max_length=50)
+
 class ConspectusRouteRequest(BaseModel):
     action: str = Field(..., max_length=50)
     context_state: dict = Field(default_factory=dict)
     target_step: Optional[str] = Field(default=None, max_length=10)
-    user_prompt: Optional[str] = Field(default=None, max_length=5000)
     pinned_step: Optional[str] = Field(default=None, max_length=10)
     question: Optional[str] = Field(default=None, max_length=2000)
+    skill: Optional[SkillConfig] = Field(default=None)
 
-
-@router.post("/opposites")
-@limiter.limit("5/minute")
-async def generate_opposites(request: Request, data: OppositesRequest):
-    locale = normalize_locale(request.state.locale)
-    result = await ai_service.get_opposites(data.process_a, locale=locale)
-    return {"result": result}
 
 @router.post("/explain-concept")
 @limiter.limit("10/minute")
@@ -272,23 +254,6 @@ async def article_parser(
     result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message)
     return {"result": result}
 
-@router.post("/hint-step")
-@router.post("/hint")
-@limiter.limit("15/minute")
-async def get_dialectics_hint(
-    req: DialecticsHintRequest, 
-    request: Request
-):
-    locale = getattr(request.state, "locale", "ru")
-    hint_text = await ai_service.generate_dialectics_hint(
-        step_id=req.step_id,
-        current_content=req.current_content,
-        note_title=req.note_title,
-        locale=locale,
-        mode=req.mode or "hint"
-    )
-    return {"result": hint_text, "hint": hint_text}
-
 @router.post("/check-ai")
 @limiter.limit("10/minute")
 async def check_logic(request: Request, data: CheckRequest):
@@ -323,27 +288,24 @@ async def route_conspectus_request(request: Request, data: ConspectusRouteReques
     result = await conspectus_router.route_request(payload)
     return result
 
-@router.post("/conspectus/assistant/stream")
-@limiter.limit("15/minute")
-async def stream_conspectus_assistant(request: Request, data: ConspectusRouteRequest):
-    locale = normalize_locale(getattr(request.state, "locale", "ru"))
-    target_step = int(data.target_step) if data.target_step else 1
-    return _sse(conspectus_router.stream_ask_assistant(
-        data.context_state or {}, target_step, data.user_prompt or "", locale
-    ))
-
 @router.post("/conspectus/generate-full/stream")
 @limiter.limit("15/minute")
 async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
     """Прогрессивная генерация конспекта: SSE-кадры {"step": "stepN", "content": "..."}
-    по мере готовности каждого шага, затем {"done": true}."""
+    по мере готовности каждого шага, {"status": "..."} для долгих операций
+    (проверка судьёй, повторная попытка), затем {"done": true}."""
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
+
+    skill = data.skill.dict() if data.skill else None
 
     async def events():
         async for step_key, content in conspectus_router.stream_generate_full(
             data.context_state or {}, locale,
-            pinned_step=data.pinned_step, question=data.question,
+            pinned_step=data.pinned_step, question=data.question, skill=skill,
         ):
-            yield {"step": step_key, "content": content}
+            if step_key == "__status__":
+                yield {"status": content}
+            else:
+                yield {"step": step_key, "content": content}
 
     return _sse_response(events())

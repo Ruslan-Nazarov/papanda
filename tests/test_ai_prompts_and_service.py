@@ -16,9 +16,7 @@ async def test_prompt_chains_composition_and_caching():
     service = AIService()
 
     # Проверяем структуру цепочек
-    assert "opposites" in PROMPT_CHAINS
     assert "formula" in PROMPT_CHAINS
-    assert "hint" in PROMPT_CHAINS
     assert "article" in PROMPT_CHAINS
     assert "what_is" in PROMPT_CHAINS
     assert "check_ai" in PROMPT_CHAINS
@@ -28,17 +26,17 @@ async def test_prompt_chains_composition_and_caching():
         mock_file = AsyncMock()
         mock_file.read.return_value = "PROMPT_CHUNK"
         mock_aio_open.return_value.__aenter__.return_value = mock_file
-        
+
         with patch("pathlib.Path.exists", return_value=True):
-            bundled = await service.get_bundled_prompt("opposites")
+            bundled = await service.get_bundled_prompt("formula")
             assert isinstance(bundled, str)
             assert "\n\n---\n\n" in bundled
-            # 3 элемента в цепочке opposites: base, restore, opposites
-            assert bundled.count("PROMPT_CHUNK") == 3
+            # 4 элемента в цепочке formula: base, restore, formula, format_short
+            assert bundled.count("PROMPT_CHUNK") == 4
 
             # Проверяем кэширование: повторный вызов возвращает закэшированную строку без повторного чтения
-            assert "opposites" in service._prompts_cache
-            cached_val = await service.get_bundled_prompt("opposites")
+            assert "formula" in service._prompts_cache
+            cached_val = await service.get_bundled_prompt("formula")
             assert cached_val is bundled
 
 
@@ -118,78 +116,6 @@ async def test_parse_article_prompt_application():
             assert "Выдели основные этапы" in user_prompt
             assert "Текст исследовательской статьи..." in user_prompt
             assert response_fmt is None
-
-
-@pytest.mark.asyncio
-async def test_get_hint_restore_prompt_application():
-    """Проверяет ветку восстановления содержимого блока (step_id='restore')."""
-    service = AIService()
-    with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
-        mock_bundle.return_value = "SYSTEM_RESTORE_PROMPT"
-        with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
-            mock_gen.return_value = "Восстановленный текст"
-            
-            res = await service.get_hint(
-                step_id="restore",
-                goal_text="Заголовок блока",
-                context_text="Контекст соседних блоков",
-                locale="русском"
-            )
-            assert res == "Восстановленный текст"
-            mock_bundle.assert_awaited_with("restore")
-            args = mock_gen.call_args[0]
-            sys_prompt, user_prompt = args[0], args[1]
-            assert sys_prompt == "SYSTEM_RESTORE_PROMPT"
-            assert "Заголовок блока" in user_prompt
-            assert "Контекст соседних блоков" in user_prompt
-
-
-@pytest.mark.asyncio
-async def test_get_hint_steps_prompt_application():
-    """Проверяет ветку подсказок по шагам (step1–step5) и передачу локали."""
-    service = AIService()
-    for step in ["step1", "step2", "step3", "step4", "step5"]:
-        with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
-            mock_bundle.return_value = "SYSTEM_HINT_PROMPT"
-            with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
-                mock_gen.return_value = f"Подсказка для {step}"
-                
-                res = await service.get_hint(
-                    step_id=step,
-                    goal_text="Тестовая цель",
-                    context_text="Текущие данные",
-                    locale="English"
-                )
-                assert res == f"Подсказка для {step}"
-                mock_bundle.assert_awaited_with("hint")
-                args = mock_gen.call_args[0]
-                sys_prompt, user_prompt = args[0], args[1]
-                assert sys_prompt == "SYSTEM_HINT_PROMPT"
-                assert f"Шаг: {step}" in user_prompt
-                assert "Тестовая цель" in user_prompt
-                assert "Текущие данные" in user_prompt
-                assert "English" in user_prompt
-
-
-@pytest.mark.asyncio
-async def test_generate_dialectics_hint_delegation():
-    """Проверяет делегирование вызова generate_dialectics_hint в get_hint."""
-    service = AIService()
-    with patch.object(service, "get_hint", new_callable=AsyncMock) as mock_get_hint:
-        mock_get_hint.return_value = "Подсказка ассистента"
-        res = await service.generate_dialectics_hint(
-            step_id="step2",
-            current_content="Текущий контент",
-            note_title="Заголовок темы",
-            locale="русском"
-        )
-        assert res == "Подсказка ассистента"
-        mock_get_hint.assert_awaited_once_with(
-            step_id="step2",
-            goal_text="Заголовок темы",
-            context_text="Текущий контент",
-            locale="русском"
-        )
 
 
 @pytest.mark.asyncio

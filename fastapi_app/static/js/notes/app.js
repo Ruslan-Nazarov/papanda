@@ -21,6 +21,7 @@ import DropdownController from './DropdownController.js';
 import NavHistoryManager from './NavHistoryManager.js';
 import ConceptSelectionMenu from './ConceptSelectionMenu.js';
 import ModeManager from './ModeManager.js';
+import SkillManager from './SkillManager.js';
 import OnboardingTour from './OnboardingTour.js';
 import { t, switchLanguage } from '../i18n.js';
 
@@ -39,6 +40,7 @@ class App {
         DropdownController.init();
         ConceptSelectionMenu.init();
         ModeManager.init();
+        SkillManager.init();
 
         // Setup UI bindings & listeners
         this.setupBindings();

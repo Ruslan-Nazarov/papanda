@@ -44,9 +44,6 @@ class BlockHintBuilder {
                 </button>
                 
                 <div style="display: flex; gap: 8px; z-index: 2;">
-                    <button class="btn-ai" title="${t('ai_help')}" style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 12px; color: #64748b; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <span style="color: #f59e0b; font-size: 1rem;">✨</span> ${t('ai_help')}
-                    </button>
                     ${(AppState.isAutoFillEnabled && AppState.isAutoFillStepByStep) ? `
                     <button class="btn-autofill-step" title="${t('hint_continue_autofill')}" style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 12px; color: #10b981; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <span>▶</span> ${t('hint_gen_ai')}
@@ -78,29 +75,6 @@ class BlockHintBuilder {
             
             document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: id, el: div } }));
         });
-
-        // AI button -> open editor with AI tab
-        const btnAi = div.querySelector('.btn-ai');
-        if (btnAi) {
-            btnAi.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const id = 'block-' + Math.random().toString(36).substring(2, 9);
-                const block = {
-                    id,
-                    side: stepSide,
-                    role: stepRole,
-                    title: stepObj.title,
-                    html: '',
-                    status: 'in_progress',
-                    isDraft: true
-                };
-                AppState.addBlock(block);
-                
-                document.dispatchEvent(new CustomEvent('openEditor', {
-                    detail: { blockId: id, el: div, openWithAiTab: true, aiRole: stepRole }
-                }));
-            });
-        }
 
         // Autofill step button -> generate next step automatically
         const btnAutofillStep = div.querySelector('.btn-autofill-step');

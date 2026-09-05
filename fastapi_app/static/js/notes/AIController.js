@@ -1,43 +1,13 @@
 import AppState from './AppState.js';
 import NotesAPI from './api.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
+import SkillManager from './SkillManager.js';
+import GlobalLoader from './GlobalLoader.js';
 
 import { t } from '../i18n.js';
 class AIController {
     static init() {
         console.log('AIController Initialized');
-    }
-
-    static async getHint(block, btnElement) {
-        try {
-            if (btnElement) btnElement.innerHTML = '⌛';
-            const res = await NotesAPI.getHint(block.role || 'none', block.html, AppState.currentNote.title, 'ru');
-            window.app.constructor.showModal(t('ai_hint_modal'), `<p>${res.result}</p>`);
-        } catch (e) {
-            window.app.constructor.showModal(t('ai_error_modal'), `<p style="color:red">${e.message}</p>`);
-        } finally {
-            if (btnElement) btnElement.innerHTML = '✨';
-        }
-    }
-
-    static async runAI(canvas, btnElement) {
-        // Fallback or specific logic (e.g. opposites) if needed, but the main logic is now algorithm generation
-        try {
-            if (btnElement) btnElement.innerHTML = '⌛';
-            const blocks = AppState.currentNote.blocks;
-            const step1 = blocks.find(b => b.role === 'step1');
-            const step2 = blocks.find(b => b.role === 'step2');
-            const contextParts = [];
-            if (step1) contextParts.push(`Простейший процесс: ${step1.html.replace(/<[^>]+>/g, '')}`);
-            if (step2) contextParts.push(`Развитие процесса: ${step2.html.replace(/<[^>]+>/g, '')}`);
-            const processA = contextParts.join('\n\n') || AppState.currentNote.title;
-            const res = await NotesAPI.getOpposites(processA);
-            window.app.constructor.showModal(t('ai_opposite_modal'), `<div style="line-height:1.6">${res.result}</div>`);
-        } catch (e) {
-            window.app.constructor.showModal(t('ai_error_modal'), `<p style="color:red">${e.message}</p>`);
-        } finally {
-            if (btnElement) btnElement.innerHTML = '✨';
-        }
     }
 
     static buildStateForAI() {
@@ -108,13 +78,17 @@ class AIController {
                     existingBlock.status = stepData.status || 'ready';
                     if (stepData.title) existingBlock.title = stepData.title;
                 } else {
-                    const baseRole = stepKey.split('.')[0];
+                    const [baseRole, subIndex] = stepKey.split('.');
                     const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole) || {};
+                    // "step1.2" -> "Простейший процесс (2)" — чтобы несколько
+                    // процессов одного шага визуально различались.
+                    const baseTitle = stepData.title || stepObj.title || stepKey;
+                    const title = subIndex ? `${baseTitle} (${subIndex})` : baseTitle;
                     const newBlock = {
                         id: 'block-' + Math.random().toString(36).substr(2, 9),
                         side: stepObj.side || 'center',
                         role: stepKey,
-                        title: stepData.title || stepObj.title || stepKey,
+                        title,
                         html: htmlContent,
                         status: stepData.status || 'ready',
                         isDraft: false
@@ -133,12 +107,13 @@ class AIController {
 
 
     static async generateFull(onRenderAll) {
+        GlobalLoader.show(t('ed_ai_analyzing'));
         try {
             const state = this.buildStateForAI();
             let received = 0;
             await NotesAPI.stream(
                 '/ai/dialectics/conspectus/generate-full/stream',
-                { action: 'generate_full', context_state: state },
+                { action: 'generate_full', context_state: state, skill: SkillManager.getSkill() },
                 null,
                 (ev) => {
                     if (ev.step && ev.content) {
@@ -148,6 +123,9 @@ class AIController {
                             { [ev.step]: { content: ev.content, status: 'ready' } },
                             onRenderAll
                         );
+                    } else if (ev.status) {
+                        // Долгая операция (судья, повторная попытка) — держим пользователя в курсе.
+                        GlobalLoader.show(ev.status);
                     }
                 }
             );
@@ -155,6 +133,8 @@ class AIController {
         } catch (e) {
             console.error("AI Generate Full Error:", e);
             throw e; // Let the caller handle UI feedback (e.g. toasts)
+        } finally {
+            GlobalLoader.hide();
         }
     }
 
@@ -163,28 +143,36 @@ class AIController {
      * Этот блок фиксируется, остальные (кроме anchor) перегенерируются согласованно.
      */
     static async regenerateWithQuestion(pinnedStep, question, onRenderAll) {
-        const state = this.buildStateForAI();
-        let received = 0;
-        await NotesAPI.stream(
-            '/ai/dialectics/conspectus/generate-full/stream',
-            {
-                action: 'generate_full',
-                context_state: state,
-                pinned_step: String(pinnedStep),
-                question: question || ''
-            },
-            null,
-            (ev) => {
-                if (ev.step && ev.content) {
-                    received++;
-                    this.processUpdatedSteps(
-                        { [ev.step]: { content: ev.content, status: 'ready' } },
-                        onRenderAll
-                    );
+        GlobalLoader.show(t('ed_ai_analyzing'));
+        try {
+            const state = this.buildStateForAI();
+            let received = 0;
+            await NotesAPI.stream(
+                '/ai/dialectics/conspectus/generate-full/stream',
+                {
+                    action: 'generate_full',
+                    context_state: state,
+                    pinned_step: String(pinnedStep),
+                    question: question || '',
+                    skill: SkillManager.getSkill()
+                },
+                null,
+                (ev) => {
+                    if (ev.step && ev.content) {
+                        received++;
+                        this.processUpdatedSteps(
+                            { [ev.step]: { content: ev.content, status: 'ready' } },
+                            onRenderAll
+                        );
+                    } else if (ev.status) {
+                        GlobalLoader.show(ev.status);
+                    }
                 }
-            }
-        );
-        if (!received) throw new Error(t('ai_no_steps'));
+            );
+            if (!received) throw new Error(t('ai_no_steps'));
+        } finally {
+            GlobalLoader.hide();
+        }
     }
 
     static async generateStep(stepNumber, onRenderAll) {
@@ -193,7 +181,8 @@ class AIController {
             const res = await NotesAPI.routeConspectus({
                 action: 'generate_step',
                 context_state: state,
-                target_step: stepNumber.toString()
+                target_step: stepNumber.toString(),
+                skill: SkillManager.getSkill()
             });
             if (res.action_status === 'success') {
                 this.processUpdatedSteps(res.updated_steps, onRenderAll);

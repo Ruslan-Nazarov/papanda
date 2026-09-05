@@ -83,11 +83,7 @@ class NotesAPI {
     static pinVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/pin`, 'POST'); }
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
     // AI
-    static getOpposites(processA) { return this.request('/ai/dialectics/opposites', 'POST', { process_a: processA }); }
-    static getHint(stepId, currentContent, noteTitle, locale, mode = 'hint') { 
-        return this.request('/ai/dialectics/hint-step', 'POST', { step_id: stepId, current_content: currentContent || '', note_title: noteTitle || '', mode: mode }); 
-    }
-    static explainBlock(blockHtml, noteTitle, mode) { 
+    static explainBlock(blockHtml, noteTitle, mode) {
         return this.request('/ai/dialectics/explain-concept', 'POST', { text: blockHtml, context_before: noteTitle || '', context_after: '', history: [] }); 
     }
     static routeConspectus(payload) {

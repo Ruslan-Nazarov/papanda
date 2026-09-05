@@ -53,6 +53,23 @@
                 </div>
             </div>
 
+            <!-- Скилл (регистр речи ИИ) -->
+            <div class="dropdown-wrapper">
+                <button class="nav-pill-btn" id="btn-skill-menu" title="{{ _('skill_menu_title') }}">
+                    <span class="pill-icon">🎭</span> {{ _('nav_skill') }}
+                </button>
+                <div id="skill-menu-dropdown" class="dropdown-menu hidden" style="min-width: 260px;">
+                    <div class="mode-dropdown-row" style="flex-direction: column; align-items: stretch; gap: 4px;">
+                        <span>{{ _('skill_speaker_label') }}</span>
+                        <select id="skill-speaker-select" class="premium-select" style="width: 100%;"></select>
+                    </div>
+                    <div class="mode-dropdown-row" style="flex-direction: column; align-items: stretch; gap: 4px;">
+                        <span>{{ _('skill_addressee_label') }}</span>
+                        <select id="skill-addressee-select" class="premium-select" style="width: 100%;"></select>
+                    </div>
+                </div>
+            </div>
+
             <!-- Парсеры -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-parsers-nav">
@@ -228,7 +245,7 @@
         </div>
 
         <div class="footer-credits">
-            papanda version 0.8.3 (last update 2026-09-03)<br>
+            papanda version 0.9.0 (last update 2026-09-05)<br>
             designed and developed by <strong>ruslan nazarov</strong><br>
             CC BY-NC 4.0 License
         </div>
@@ -265,5 +282,5 @@
     }
   }
 </script>
-<script type="module" src="/static/js/notes/app.js?v=16"></script>
+<script type="module" src="/static/js/notes/app.js?v=17"></script>
 {% endblock %}

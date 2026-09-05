@@ -5,7 +5,6 @@ import { ALGORITHM_STEPS } from './BlockConstants.js';
 import { EditorTiptapSetup } from './EditorTiptapSetup.js';
 import { EditorShapesTab } from './EditorShapesTab.js';
 import { EditorGraphTab } from './EditorGraphTab.js';
-import { EditorAITab } from './EditorAITab.js';
 import { EditorDragBehavior } from './EditorDragBehavior.js';
 
 class EditorManager {
@@ -13,16 +12,15 @@ class EditorManager {
     static currentBlockId = null;
     static shapesTab = null;
     static graphTab = null;
-    static aiTab = null;
 
     static init() {
         document.addEventListener('openEditor', (e) => {
-            const { blockId, el, openWithAiTab, aiRole } = e.detail;
-            this.openModalEditor(blockId, el, { openWithAiTab, aiRole });
+            const { blockId, el } = e.detail;
+            this.openModalEditor(blockId, el);
         });
     }
 
-    static openModalEditor(blockId, blockEl, options = {}) {
+    static openModalEditor(blockId, blockEl) {
         if (this.currentEditor) {
             this.closeModal(false);
         }
@@ -34,8 +32,6 @@ class EditorManager {
         const currentTitle = block.title || '';
         const currentTags = block.tags || '';
         const currentHtml = block.html || '';
-        const showAiTab = !!options.openWithAiTab;
-        const aiRole = options.aiRole;
 
         const modalContainer = document.getElementById('modal-container');
         
@@ -57,21 +53,19 @@ class EditorManager {
         let top = Math.min(Math.max(rect.top, minTop), maxTop);
 
         modalContainer.innerHTML = this.renderEditorHTML({
-            top, left, showAiTab, currentTitle, currentTags
+            top, left, currentTitle, currentTags
         });
-        
+
         modalContainer.classList.remove('hidden');
 
         // 1. TipTap
         const tiptapContainer = modalContainer.querySelector('.modal-tiptap-content');
-        this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml, !showAiTab);
+        this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml);
         EditorTiptapSetup.bindFormatButtons(modalContainer, () => this.currentEditor);
 
         // 2. Tabs
         this.shapesTab = new EditorShapesTab(modalContainer, blockId, () => this.currentEditor);
         this.graphTab = new EditorGraphTab(modalContainer);
-        this.aiTab = new EditorAITab(modalContainer, () => this.currentEditor, aiRole);
-        this.aiTab.init(showAiTab);
         this.graphTab.init();
 
         // 3. Dragging
@@ -160,26 +154,9 @@ class EditorManager {
         if (!anchorText) return;
         const { default: AIController } = await import('./AIController.js');
         const { default: BlockDOMRenderer } = await import('./BlockDOMRenderer.js');
+        const { default: GlobalLoader } = await import('./GlobalLoader.js');
 
-        // Создаем глобальный индикатор загрузки
-        const loaderId = 'ai-global-loader';
-        let loader = document.getElementById(loaderId);
-        if (!loader) {
-            loader = document.createElement('div');
-            loader.id = loaderId;
-            loader.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#8b5cf6; color:white; padding:12px 24px; border-radius:8px; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-weight:bold; font-family:sans-serif; display:flex; align-items:center; gap:10px; transition: opacity 0.3s;';
-            document.body.appendChild(loader);
-        }
-        loader.innerHTML = `<span style="animation: spin 1s linear infinite; display:inline-block;">⏳</span> ${t('ed_ai_analyzing')}`;
-        loader.style.display = 'flex';
-        
-        // Добавляем стиль для спиннера, если его еще нет
-        if (!document.getElementById('ai-spinner-style')) {
-            const style = document.createElement('style');
-            style.id = 'ai-spinner-style';
-            style.textContent = '@keyframes spin { 100% { transform: rotate(360deg); } }';
-            document.head.appendChild(style);
-        }
+        GlobalLoader.show(t('ed_ai_analyzing'));
 
         try {
             if (AppState.isAutoFillStepByStep) {
@@ -191,7 +168,7 @@ class EditorManager {
             console.error('Autofill failed', e);
             alert(t('ed_ai_gen_error') + e.message);
         } finally {
-            if (loader) loader.style.display = 'none';
+            GlobalLoader.hide();
         }
     }
 
@@ -209,7 +186,6 @@ class EditorManager {
         this.currentBlockId = null;
         this.shapesTab = null;
         this.graphTab = null;
-        this.aiTab = null;
 
         if (blockId) {
             const block = AppState.currentNote.blocks.find(b => b.id === blockId);
@@ -229,7 +205,7 @@ class EditorManager {
         }
     }
 
-    static renderEditorHTML({ top, left, showAiTab, currentTitle, currentTags }) {
+    static renderEditorHTML({ top, left, currentTitle, currentTags }) {
         return `
             <div class="modal-editor-floating" style="top: ${top}px; left: ${left}px; position: fixed; z-index: 1000;">
                 <div class="modal-header">
@@ -255,15 +231,14 @@ class EditorManager {
                 </div>
                 
                 <div class="modal-tabs">
-                    <div class="modal-tab ${!showAiTab ? 'active' : ''}" data-tab="text">${t('tab_text')}</div>
-                    <div class="modal-tab ${showAiTab ? 'active' : ''}" data-tab="ai">✨ AI</div>
+                    <div class="modal-tab active" data-tab="text">${t('tab_text')}</div>
                     <div class="modal-tab" data-tab="stickers">🟨 ${t('tab_notes')}</div>
                     <div class="modal-tab" data-tab="graphs">${t('tab_graphs')}</div>
                     <div class="modal-tab" data-tab="shapes">${t('tab_shapes')}</div>
                 </div>
 
                 <div class="modal-body">
-                    <div id="tab-text" class="tab-content" style="${!showAiTab ? 'display: block;' : 'display: none;'}">
+                    <div id="tab-text" class="tab-content" style="display: block;">
                         <div class="editor-field">
                             <label>${t('title').toLowerCase()}:</label>
                             <input type="text" class="modal-title-input" value="${this.escapeHtml(currentTitle)}">
@@ -274,25 +249,7 @@ class EditorManager {
                         </div>
                         <div class="modal-tiptap-content"></div>
                     </div>
-                    
-                    <div id="tab-ai" class="tab-content" style="${showAiTab ? 'display: block;' : 'display: none;'}">
-                        <div class="ai-subtabs" style="display: flex; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                            <button class="ai-subtab-btn active" data-subtab="ai-hint" style="background: none; border: none; font-weight: bold; color: #3b82f6; cursor: pointer; padding: 4px 8px;">${t('ed_ai_howto')}</button>
-                            <button class="ai-subtab-btn" data-subtab="ai-example" style="background: none; border: none; font-weight: normal; color: #64748b; cursor: pointer; padding: 4px 8px;">${t('ed_ai_example')}</button>
-                        </div>
-                        <div id="ai-area-hint" class="ai-subtab-content" style="display: block;">
-                            <div class="ai-response-area" id="ai-response-hint" style="margin-bottom: 12px; min-height: 150px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.95rem;">
-                                <em style="color: #94a3b8;">${t('ed_ai_hint_loading')}</em>
-                            </div>
-                        </div>
-                        <div id="ai-area-example" class="ai-subtab-content" style="display: none;">
-                            <div class="ai-response-area" id="ai-response-example" contenteditable="true" style="margin-bottom: 12px; min-height: 150px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
-                                <em style="color: #94a3b8;">${t('ed_ai_example_loading')}</em>
-                            </div>
-                            <button class="btn-primary" id="btn-ai-copy-text" style="width: 100%; padding: 10px; font-size: 1rem;">${t('ed_ai_paste_text')}</button>
-                        </div>
-                    </div>
-                    
+
                     <div id="tab-stickers" class="tab-content" style="display: none; min-height: 250px;"></div>
                     
                     <div id="tab-graphs" class="tab-content" style="display: none;">

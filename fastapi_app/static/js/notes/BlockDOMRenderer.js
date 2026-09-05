@@ -13,10 +13,14 @@ class BlockDOMRenderer {
         // Only consider blocks that are fully confirmed/saved (not in-progress drafts)
         const completedBlocks = (blocks || []).filter(b => b.role !== 'section' && b.status !== 'in_progress' && !b.isDraft);
         
+        // Роли вида "step1.2" (несколько простейших/развивающих процессов на
+        // одном шаге, см. expected_step_keys на бэкенде) считаются частью
+        // базового шага "step1" — иначе подсказка для уже заполненного шага
+        // продолжала бы показываться.
         const existingRoles = new Set();
         completedBlocks.forEach((b) => {
             inferRoleFromTitle(b);
-            if (b.role) existingRoles.add(b.role);
+            if (b.role) existingRoles.add(b.role.split('.')[0]);
         });
 
         const dismissedHints = AppState.dismissedHints || [];

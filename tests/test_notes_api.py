@@ -296,32 +296,3 @@ async def test_note_block_extra_fields_preserved(client: AsyncClient):
     assert block.get("border_color") == "#ef4444"
     assert block.get("is_pinned") is True
 
-
-@pytest.mark.asyncio
-async def test_hint_step_endpoint_mechanic(client: AsyncClient):
-    """Проверяет механику hint-step эндпоинта: принимает step_id/current_content/note_title,
-    передаёт в generate_dialectics_hint и возвращает hint в ответе."""
-    from unittest.mock import AsyncMock, patch
-
-    with patch("fastapi_app.routers.ai.ai_service.generate_dialectics_hint", new_callable=AsyncMock) as mock_hint:
-        mock_hint.return_value = "Подумайте о простейшем процессе"
-        
-        payload = {
-            "step_id": "step1",
-            "current_content": "Что-то уже написано",
-            "note_title": "Квантовая механика"
-        }
-        res = await client.post("/api/ai/dialectics/hint-step", json=payload)
-        assert res.status_code == 200
-        data = res.json()
-        assert "hint" in data
-        assert data["hint"] == "Подумайте о простейшем процессе"
-        
-        # Verify generate_dialectics_hint was called with correct args
-        mock_hint.assert_awaited_once()
-        call_kwargs = mock_hint.call_args[1] if mock_hint.call_args[1] else {}
-        call_args = mock_hint.call_args[0] if mock_hint.call_args[0] else ()
-        # step_id should be passed
-        assert "step1" in str(mock_hint.call_args)
-        assert "Квантовая механика" in str(mock_hint.call_args)
-

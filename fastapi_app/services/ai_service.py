@@ -44,23 +44,21 @@ class _TTLCache:
 _llm_cache = _TTLCache()
 
 PROMPT_MAP = {
-    "base":      "1 главный промпт.md",
-    "restore":   "2 восстановление_промпт.md",
-    "what_is":   "3 контекстный_промпт.md",
-    "formula":   "4 формулы_промпт.md",
-    "article":   "5 статьи_промпт.md",
-    "opposites": "6 противоположности_промпт.md",
-    "hint":      "7 помощник_промпт.md",
-    "check_ai":  "9 проверка_промпт.md",
+    "base":      "1_главный_промпт.md",
+    "restore":   "2_восстановление_промпт.md",
+    "what_is":   "3_контекст.md",
+    "formula":   "4_формулы_промпт.md",
+    "article":   "5_статьи_промпт.md",
+    "check_ai":  "6_проверка_промпт.md",
+    "format_short": "формат_кратко.md",
+    "format_check": "формат_отчета_проверки.md",
 }
 
 PROMPT_CHAINS = {
-    "opposites": ["base", "restore", "opposites"],
-    "formula": ["base", "restore", "formula"],
-    "hint": ["base", "restore", "hint"],
-    "article": ["base", "restore", "what_is", "formula", "article"],
-    "what_is": ["base", "restore", "what_is"],
-    "check_ai": ["base", "restore", "check_ai"],
+    "formula": ["base", "restore", "formula", "format_short"],
+    "article": ["base", "restore", "what_is", "formula", "article", "format_short"],
+    "what_is": ["base", "restore", "what_is", "format_short"],
+    "check_ai": ["base", "check_ai", "format_check"],
 }
 
 from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured
@@ -190,16 +188,6 @@ class AIService:
         if cache_key and full:
             _llm_cache.set(cache_key, full)
 
-    async def get_opposites(self, process_a: str, locale: str = "русском") -> str:
-        sys_prompt = await self.get_bundled_prompt("opposites")
-        user_prompt = (
-            f"Процесс A: {process_a}\n\n"
-            f"Найди диалектическую противоположность (процесс B) для данного процесса A.\n"
-            f"Объясни, почему именно этот процесс является диалектической противоположностью.\n"
-            f"Ответ давай на {locale}."
-        )
-        return await self._generate(sys_prompt, user_prompt, fast=True, max_tokens=800)
-        
     def _explain_prompt(self, text, context_before, context_after):
         return (
             f"Выделенный фрагмент: \"{text}\"\n\n"
@@ -244,48 +232,6 @@ class AIService:
             f"(заголовки, короткие абзацы), без JSON."
         )
         return await self._generate(sys_prompt, user_prompt)
-        
-    async def generate_dialectics_hint(self, step_id: str, current_content: str, note_title: Optional[str] = "", locale: str = "русском", mode: str = "hint") -> str:
-        kwargs = {
-            "step_id": step_id,
-            "goal_text": note_title or "",
-            "context_text": current_content,
-            "locale": locale
-        }
-        if mode != "hint":
-            kwargs["mode"] = mode
-        return await self.get_hint(**kwargs)
-
-    async def get_hint(self, step_id: str, goal_text: str, context_text: str, locale: str = "русском", mode: str = "hint") -> str:
-        if step_id == "restore":
-            sys_prompt = await self.get_bundled_prompt("restore")
-            user_prompt = (
-                f"Заголовок блока: {goal_text}\n\n"
-                f"Контекст соседних блоков:\n{context_text}\n\n"
-                f"Восстанови или дополни содержимое этого блока.\n"
-                f"Ответь только текстом блока, без дополнительных пояснений."
-            )
-        else:
-            sys_prompt = await self.get_bundled_prompt("hint")
-            if mode == "example":
-                user_prompt = (
-                    f"Шаг: {step_id}\n"
-                    f"Цель пользователя: {goal_text}\n\n"
-                    f"Текущее состояние конспекта:\n{context_text}\n\n"
-                    f"Сгенерируй пример готового текста, которым можно заполнить этот шаг. Выдай только сам текст без пояснений.\n"
-                    f"Ответ на {locale}."
-                )
-            else:
-                user_prompt = (
-                    f"Шаг: {step_id}\n"
-                    f"Цель пользователя: {goal_text}\n\n"
-                    f"Текущее состояние конспекта:\n{context_text}\n\n"
-                    f"Дай подсказку, как самому найти ответ для этого шага. Направь пользователя, задай наводящие вопросы.\n"
-                    f"Ответ на {locale}."
-                )
-        # 'restore' — качество важнее (полноценный анализ), остальные подсказки — быстрая модель.
-        use_fast = step_id != "restore"
-        return await self._generate(sys_prompt, user_prompt, fast=use_fast, max_tokens=900)
 
     @staticmethod
     def _check_prompt(note_text, locale):
