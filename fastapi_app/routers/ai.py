@@ -300,7 +300,7 @@ async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
 
     async def events():
         async for step_key, content in conspectus_router.stream_generate_full(
-            data.context_state or {}, locale,
+            data.context_state or {}, locale, use_skeleton=True,
             pinned_step=data.pinned_step, question=data.question, skill=skill,
         ):
             if step_key == "__status__":
