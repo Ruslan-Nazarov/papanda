@@ -91,16 +91,20 @@ class ContextBuilder:
         self._cache = {}
 
     async def _load_file(self, filename: str) -> str:
-        if filename in self._cache:
-            return self._cache[filename]
-            
         file_path = self.prompts_dir / filename
-        if file_path.exists():
-            async with aiofiles.open(file_path, mode='r', encoding='utf-8') as f:
-                content = await f.read()
-                self._cache[filename] = content
-                return content
-        return f"Instruction for {filename}"
+        if not file_path.exists():
+            return f"Instruction for {filename}"
+
+        # Кэш по mtime — правка промпта видна без рестарта сервера.
+        mtime = file_path.stat().st_mtime
+        cached = self._cache.get(filename)
+        if cached and cached[0] == mtime:
+            return cached[1]
+
+        async with aiofiles.open(file_path, mode='r', encoding='utf-8') as f:
+            content = await f.read()
+        self._cache[filename] = (mtime, content)
+        return content
 
     async def _render_skill_instructions(self, skill: dict = None) -> str:
         """Инструкции скилла (регистр + уровень адресата), см.

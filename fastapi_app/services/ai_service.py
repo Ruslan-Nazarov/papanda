@@ -71,7 +71,7 @@ _AI_DISABLED_MSG = "AI disabled: не настроены API-ключи LLM (с�
 
 class AIService:
     def __init__(self):
-        self._prompts_cache: Dict[str, str] = {}
+        self._prompts_cache: Dict[str, tuple] = {}  # key -> (mtime_stamp, bundled)
         self._groq_client: Optional[AsyncGroq] = None
 
     @property
@@ -86,27 +86,31 @@ class AIService:
         self._groq_client = value
 
     async def get_bundled_prompt(self, key: str) -> str:
-        if key in self._prompts_cache:
-            return self._prompts_cache[key]
-            
         prompts_dir = settings.PROMPTS_DIR
         chain = PROMPT_CHAINS.get(key, ["base", key])
-        
-        contents = []
+
+        paths = []
         for p_key in chain:
-            filename = PROMPT_MAP.get(p_key)
-            if not filename:
-                filename = f"{p_key}.md"
-            
-            file_path = prompts_dir / filename
+            filename = PROMPT_MAP.get(p_key) or f"{p_key}.md"
+            paths.append((p_key, prompts_dir / filename))
+
+        # Кэш инвалидируется по mtime исходных файлов — правка промпта
+        # видна без рестарта.
+        stamp = tuple(p.stat().st_mtime if p.exists() else 0 for _k, p in paths)
+        cached = self._prompts_cache.get(key)
+        if cached and cached[0] == stamp:
+            return cached[1]
+
+        contents = []
+        for p_key, file_path in paths:
             if file_path.exists():
                 async with aiofiles.open(file_path, mode='r', encoding='utf-8') as f:
                     contents.append(await f.read())
             else:
                 contents.append(f"Instruction for {p_key}")
-                
+
         bundled = "\n\n---\n\n".join(contents)
-        self._prompts_cache[key] = bundled
+        self._prompts_cache[key] = (stamp, bundled)
         return bundled
 
     async def _generate(
