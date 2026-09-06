@@ -250,6 +250,28 @@ class ContextBuilder:
                 lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
         return f"{main_prompt}\n\n{judge_prompt}\n\nКОНСПЕКТ ДЛЯ ОЦЕНКИ:\n" + "\n".join(lines)
 
+    async def build_history_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
+        """Промпт для доп. прохода «историческая форма + расхождение»
+        (1_главный_промпт.md п. 6, см. историческая_форма_промпт.md).
+        steps — {"1": "...", "2.1": "...", ...} (как в build_judge_prompt)."""
+        hist_prompt = await self._load_file("историческая_форма_промпт.md")
+        goal = _effective_goal(state, skeleton) or "Не указана"
+        grouped = _group_keys_by_base(sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")]))
+        lines = []
+        for base in ["1", "2", "3", "4", "5"]:
+            keys = grouped.get(base, [])
+            if not keys:
+                continue
+            if len(keys) == 1:
+                lines.append(f"--- ШАГ {base} ---\n{steps.get(keys[0], '')}")
+            else:
+                parts = "\n".join(f"  Процесс {k.split('.')[1]}: {steps.get(k, '')}" for k in keys)
+                lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
+        return (
+            f"{hist_prompt}\n\nЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
+            "ЛОГИЧЕСКАЯ ФОРМА (готовый конспект, Шаги 1–5):\n" + "\n".join(lines)
+        )
+
     async def build_all_steps_prompt(self, state: dict, skeleton: dict,
                                      pinned_step: int = None, question: str = None,
                                      skill: dict = None) -> str:

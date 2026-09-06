@@ -88,3 +88,43 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2():
     generated = {k for k, v in res["updated_steps"].items() if v.get("status") == "draft"}
     assert generated == {"step2.1", "step2.2", "step2.3"}
     assert "step2" not in res["updated_steps"]  # прежнего одиночного блока нет
+
+
+@pytest.mark.asyncio
+async def test_history_pass_appends_history_block():
+    """G1: после Шагов 1–5 и судьи идёт доп. проход — блок history с
+    исторической формой и расхождением."""
+    async def _stream(*_a, **_k):
+        yield (
+            "===ШАГ1===\nпростейший процесс достаточной длины для парсера\n"
+            "===ШАГ2===\nразвитие процесса достаточной длины для парсера\n"
+            "===ШАГ3===\nпротивоположность достаточной длины для парсера\n"
+            "===ШАГ4===\nпротиворечие достаточной длины для парсера тут\n"
+            "===ШАГ5===\nразрешение достаточной длины для парсера тут же\n"
+        )
+
+    ai_service = MagicMock()
+    ai_service._generate_stream = MagicMock(side_effect=_stream)
+
+    async def _gen(sys_prompt, *_a, **_k):
+        if "историческ" in sys_prompt.lower():
+            return "## Историческая форма\nтекст\n\n## Расхождение\nтекст"
+        if "is_valid" in sys_prompt:
+            return '{"is_valid": true, "reason": ""}'
+        return "{}"
+    ai_service._generate = AsyncMock(side_effect=_gen)
+
+    router = ConspectusRouter(
+        ai_service, ContextBuilder(), Sanitizer(),
+        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
+    )
+    state = {"target_goal": "диффузия", "steps": {}}
+
+    events = {}
+    async for key, content in router.stream_generate_full(state, "ru", use_skeleton=False):
+        if key != "__status__":
+            events[key] = content
+
+    assert "history" in events
+    assert "Расхождение" in events["history"]
+    assert state["steps"]["history"]["content"] == events["history"]

@@ -77,6 +77,17 @@ class AIController {
                     existingBlock.html = htmlContent;
                     existingBlock.status = stepData.status || 'ready';
                     if (stepData.title) existingBlock.title = stepData.title;
+                } else if (stepKey === 'history') {
+                    // Доп. блок «Историческая форма и расхождение» (1_главный п.6).
+                    AppState.addBlock({
+                        id: 'block-' + Math.random().toString(36).substr(2, 9),
+                        side: 'center',
+                        role: 'history',
+                        title: stepData.title || t('block_history_title'),
+                        html: htmlContent,
+                        status: stepData.status || 'ready',
+                        isDraft: false
+                    });
                 } else {
                     const [baseRole, subIndex] = stepKey.split('.');
                     const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole) || {};

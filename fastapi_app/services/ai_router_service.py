@@ -24,6 +24,7 @@ _MAX_TOKENS = {
     "step": 1600,
     "step5": 2800,
     "judge": 400,
+    "history": 1300,
 }
 
 # Многопроходный поиск простейшего процесса (см. 1_главный_промпт.md п. 4.2.1):
@@ -240,6 +241,28 @@ class ConspectusRouter:
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
+
+        # Доп. проход: историческая форма + расхождение (1_главный п.6).
+        if collected:
+            yield ("__status__", "Собираю историческую форму и расхождение…")
+            history = await self._gen_history(state, collected, locale)
+            if history:
+                state["steps"]["history"] = {"content": history, "status": "ready", "author": "ai", "sub_steps": []}
+                yield ("history", history)
+
+    async def _gen_history(self, state: dict, collected: Dict[str, str], locale: str) -> str:
+        """Историческая форма конспекта + её расхождение с логической формой.
+        Отдельный проход поверх готовых Шагов 1–5, свободный Markdown."""
+        prompt = await self.context_builder.build_history_prompt(state, collected)
+        prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
+        raw = await self.ai_service._generate(
+            prompt, f"Построй историческую форму и расхождение. Язык: {locale}",
+            None, max_tokens=_MAX_TOKENS["history"], temperature=0.4, use_cache=False,
+        )
+        raw = (raw or "").strip()
+        if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
+            return ""
+        return raw
 
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
                                           question: str, skill: dict):
