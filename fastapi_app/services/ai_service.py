@@ -54,9 +54,12 @@ PROMPT_MAP = {
     "format_check": "формат_отчета_проверки.md",
 }
 
+# restore (2_восстановление) осталось только в what_is: 4_формулы и 5_статьи
+# несут свою процедуру восстановления к диалектике внутри себя, 3_контекст
+# явно на restore ссылается (п.2).
 PROMPT_CHAINS = {
-    "formula": ["base", "restore", "formula", "format_short"],
-    "article": ["base", "restore", "what_is", "formula", "article", "format_short"],
+    "formula": ["base", "formula", "format_short"],
+    "article": ["base", "what_is", "formula", "article", "format_short"],
     "what_is": ["base", "restore", "what_is", "format_short"],
     "check_ai": ["base", "check_ai", "format_check"],
 }

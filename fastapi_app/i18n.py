@@ -62,6 +62,7 @@ TRANSLATIONS = {
         "bar_toc": "Оглавление",
         "bar_search": "Поиск",
         "bar_stickers": "Стикеры",
+        "bar_judge": "Проверить",
         "saved_at": "Сохранено",
         # --- Футер ---
         "footer_about": "О проекте",
@@ -130,6 +131,7 @@ TRANSLATIONS = {
         "bar_toc": "Contents",
         "bar_search": "Search",
         "bar_stickers": "Stickers",
+        "bar_judge": "Check",
         "saved_at": "Saved",
         "footer_about": "About",
         "footer_changelog": "Changelog",
@@ -197,6 +199,7 @@ TRANSLATIONS = {
         "bar_toc": "Мазмұны",
         "bar_search": "Іздеу",
         "bar_stickers": "Стикерлер",
+        "bar_judge": "Тексеру",
         "saved_at": "Сақталды",
         "footer_about": "Жоба туралы",
         "footer_changelog": "Өзгерістер тарихы",

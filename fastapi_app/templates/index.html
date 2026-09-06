@@ -214,6 +214,11 @@
                         <!-- populated by BlockStickersManager -->
                     </div>
                 </div>
+                <!-- Проверка конспекта судьёй по требованию. В режиме автогенерации
+                     скрыта (там судья работает автоматически) — ModeManager. -->
+                <button class="sub-bar-btn" id="btn-judge-conspect" hidden>
+                    <span class="sub-icon">⚖️</span> {{ _('bar_judge') }}
+                </button>
             </div>
             <div class="sub-bar-right">
                 <button class="sub-bar-btn" id="btn-versions">
@@ -245,7 +250,7 @@
         </div>
 
         <div class="footer-credits">
-            papanda version 0.9.2 (last update 2026-09-06)<br>
+            papanda version 0.10.0 (last update 2026-09-06)<br>
             designed and developed by <strong>ruslan nazarov</strong><br>
             CC BY-NC 4.0 License
         </div>
@@ -284,5 +289,5 @@
 </script>
 <!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
 <script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
-<script type="module" src="/static/js/notes/app.js?v=19"></script>
+<script type="module" src="/static/js/notes/app.js?v=20"></script>
 {% endblock %}

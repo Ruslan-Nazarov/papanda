@@ -124,3 +124,41 @@ async def test_judge_gives_up_after_max_attempts_and_returns_last_result():
 
     assert stream_calls["n"] == 3  # ровно _MAX_GENERATION_ATTEMPTS попыток, не бесконечно
     assert "attempt3" in events["step1"]  # отдали последнюю попытку, не пустоту
+
+
+@pytest.mark.asyncio
+async def test_handle_judge_returns_verdict_without_regenerating():
+    """Кнопка «Проверить»: action=judge гоняет судью по готовому конспекту,
+    возвращает вердикт + причину, ничего не перегенерирует."""
+    ai_service = MagicMock()
+    ai_service._generate = AsyncMock(return_value='{"is_valid": false, "reason": "Шаг 3 просто отличается от Шага 1"}')
+
+    router = ConspectusRouter(
+        ai_service, ContextBuilder(), Sanitizer(),
+        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
+    )
+    state = {
+        "target_goal": "диффузия",
+        "steps": {f"step{i}": {"content": f"текст шага {i} достаточной длины для проверки"} for i in range(1, 6)},
+    }
+    res = await router.route_request({"action": "judge", "context_state": state, "locale": "ru"})
+
+    assert res["action_status"] == "success"
+    assert res["is_valid"] is False
+    assert "Шаг 3" in res["reason"]
+    # только один вызов LLM — сам судья, никакой перегенерации
+    assert ai_service._generate.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_handle_judge_rejects_too_short_note():
+    ai_service = MagicMock()
+    ai_service._generate = AsyncMock()
+    router = ConspectusRouter(
+        ai_service, ContextBuilder(), Sanitizer(),
+        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
+    )
+    state = {"target_goal": "x", "steps": {"step1": {"content": "короткий текст шага один"}}}
+    res = await router.route_request({"action": "judge", "context_state": state, "locale": "ru"})
+    assert res["action_status"] == "error"
+    ai_service._generate.assert_not_awaited()

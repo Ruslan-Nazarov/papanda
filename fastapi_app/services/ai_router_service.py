@@ -73,8 +73,28 @@ class ConspectusRouter:
         elif action == "generate_step":
             return await self._handle_auto_step(state, int(target_step), locale, skill=skill)
 
+        elif action == "judge":
+            return await self._handle_judge(state, locale)
+
         else:
             return {"action_status": "error", "error_message": "Unknown action"}
+
+    async def _handle_judge(self, state: dict, locale: str) -> dict:
+        """Проверка готового конспекта судьёй по требованию (кнопка «Проверить»
+        в ручном режиме / «по шагам» — там авто-судьи нет). Ничего не
+        перегенерирует, только возвращает вердикт + причину."""
+        steps_state = (state or {}).get("steps", {}) or {}
+        collected: Dict[str, str] = {}
+        for i in range(1, 6):
+            s = steps_state.get(f"step{i}")
+            text = (s.get("content") if isinstance(s, dict) else s) or ""
+            text = text.strip()
+            if len(text) >= 20:
+                collected[str(i)] = text
+        if len(collected) < 3:
+            return {"action_status": "error", "error_message": "Конспект слишком короткий для проверки."}
+        is_valid, reason = await self._judge_conspect(collected, locale)
+        return {"action_status": "success", "is_valid": bool(is_valid), "reason": reason or ""}
 
     async def _gen_skeleton(self, state: dict, locale: str, failed_attempts: list = None) -> dict:
         """План-скелет на быстрой модели (у неё отдельный лимит частоты).

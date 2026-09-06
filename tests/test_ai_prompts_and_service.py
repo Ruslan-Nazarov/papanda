@@ -31,8 +31,8 @@ async def test_prompt_chains_composition_and_caching():
             bundled = await service.get_bundled_prompt("formula")
             assert isinstance(bundled, str)
             assert "\n\n---\n\n" in bundled
-            # 4 элемента в цепочке formula: base, restore, formula, format_short
-            assert bundled.count("PROMPT_CHUNK") == 4
+            # 3 элемента в цепочке formula: base, formula, format_short (restore убран)
+            assert bundled.count("PROMPT_CHUNK") == 3
 
             # Проверяем кэширование: повторный вызов возвращает закэшированную строку без повторного чтения
             assert "formula" in service._prompts_cache
