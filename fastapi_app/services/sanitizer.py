@@ -1,6 +1,38 @@
 import re
 import json
 
+
+def _iter_balanced_objects(text: str):
+    """Все верхнеуровневые {...} по порядку, со счётом глубины и уважением
+    к строковым литералам (кавычки/экранирование), чтобы не хватать лишнего,
+    когда в ответе LLM несколько JSON-объектов или проза с фигурными скобками."""
+    depth = 0
+    start = -1
+    in_str = False
+    escape = False
+    for i, ch in enumerate(text):
+        if in_str:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and start != -1:
+                    yield text[start:i + 1]
+                    start = -1
+
+
 class Sanitizer:
     @staticmethod
     def extract_json(llm_response: str) -> dict:
@@ -16,14 +48,15 @@ class Sanitizer:
                     return json.loads(json_match.group(1))
                 except json.JSONDecodeError:
                     pass
-        
-        # Попытка вытащить первый встреченный объект {...}
-        obj_match = re.search(r'(\{.*\})', llm_response, re.DOTALL)
-        if obj_match:
+
+        # Первый корректно разбираемый сбалансированный объект {...}.
+        # Раньше было жадное (\{.*\}) — оно захватывало от первой { до последней }
+        # и ломалось, если объектов несколько или вокруг проза с { }.
+        for candidate in _iter_balanced_objects(llm_response):
             try:
-                return json.loads(obj_match.group(1))
+                return json.loads(candidate)
             except json.JSONDecodeError:
-                pass
+                continue
 
         # Если ничего не помогло, возвращаем ошибку для логирования
         raise ValueError("Failed to extract valid JSON from LLM response.")

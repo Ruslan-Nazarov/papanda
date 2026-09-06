@@ -44,6 +44,10 @@
         left: 8px;
         right: 8px;
         flex-direction: column;
+        /* без nowrap flex-wrap:wrap (унаследованный из components.css) при
+           max-height:80vh раскидывает пункты в несколько колонок вправо
+           за край экрана — «Скилл» и т.п. становятся недостижимы */
+        flex-wrap: nowrap;
         align-items: stretch;
         gap: 6px;
         background: #ffffff;
