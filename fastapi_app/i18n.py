@@ -22,7 +22,7 @@ TRANSLATIONS = {
         "skill_role_professor": "Профессор",
         "skill_role_student": "Студент",
         "skill_role_psychologist": "Психолог",
-        "skill_role_plain": "Простой ответчик",
+        "skill_role_plain": "Обычный",
         "skill_role_engineer": "Инженер-практик",
         "skill_role_newbie": "Новичок",
         "btn_ai_wizard": "🪄 ИИ-генерация всего конспекта",

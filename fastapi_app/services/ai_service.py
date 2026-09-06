@@ -120,6 +120,7 @@ class AIService:
         temperature: Optional[float] = None,
         fast: bool = False,
         use_cache: bool = True,
+        prefer: Optional[str] = None,
     ) -> str:
         if not any_llm_key_configured():
             return _AI_DISABLED_MSG
@@ -143,6 +144,7 @@ class AIService:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 fast=fast,
+                prefer=prefer,
             )
         except Exception as e:
             return f"Error calling AI: {str(e)}"
@@ -160,6 +162,7 @@ class AIService:
         temperature: Optional[float] = None,
         fast: bool = False,
         use_cache: bool = True,
+        prefer: Optional[str] = None,
     ):
         """Стрим токенов ответа. При попадании в кэш отдаёт целиком одним чанком.
         По завершении складывает полный ответ в кэш."""
@@ -182,7 +185,7 @@ class AIService:
 
         parts = []
         async with aclosing(llm_registry.generate_stream(
-            messages, max_tokens=max_tokens, temperature=temperature, fast=fast
+            messages, max_tokens=max_tokens, temperature=temperature, fast=fast, prefer=prefer
         )) as gen:
             async for delta in gen:
                 parts.append(delta)

@@ -202,6 +202,19 @@ class LLMRegistry:
         # чтобы размазать нагрузку по провайдерам и не долбить один и тот же).
         self._start_idx: int = 0
 
+    def _order(self, prefer: Optional[str] = None) -> List[int]:
+        """Порядок провайдеров: от _start_idx по кругу; если задан prefer
+        (имя провайдера) — он идёт первым. Используется, чтобы увести
+        вспомогательные вызовы (скелет, судья, история) на Gemini-ключ и
+        разгрузить минутный лимит Groq для основного стрима шагов."""
+        n = len(self.providers)
+        order = [(self._start_idx + i) % n for i in range(n)]
+        if prefer:
+            pi = next((i for i, p in enumerate(self.providers) if p.name == prefer), None)
+            if pi is not None:
+                order = [pi] + [i for i in order if i != pi]
+        return order
+
     async def generate(
         self,
         messages: List[Dict[str, str]],
@@ -209,13 +222,14 @@ class LLMRegistry:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         fast: bool = False,
+        prefer: Optional[str] = None,
     ) -> str:
         # До 3 проходов по провайдерам: если весь круг упёрся в rate-limit,
         # ждём короткую паузу и пробуем снова (на free-тарифе окна лимитов узкие).
         last_error = "unknown"
         for attempt in range(3):
             try:
-                return await self._one_pass(messages, response_format, max_tokens, temperature, fast)
+                return await self._one_pass(messages, response_format, max_tokens, temperature, fast, prefer)
             except _AllRateLimited as e:
                 last_error = str(e)
                 await asyncio.sleep(1.5 + random.random() * (attempt + 1))
@@ -228,13 +242,13 @@ class LLMRegistry:
         max_tokens: Optional[int],
         temperature: Optional[float],
         fast: bool,
+        prefer: Optional[str] = None,
     ) -> str:
         provider_errors: List[str] = []
         rate_limited_count = 0
 
-        # Строим порядок: сначала стартовый провайдер, затем остальные по кругу
         n = len(self.providers)
-        order = [(self._start_idx + i) % n for i in range(n)]
+        order = self._order(prefer)
 
         for idx in order:
             provider = self.providers[idx]
@@ -256,8 +270,11 @@ class LLMRegistry:
 
                 # Rate limit: сразу к следующему провайдеру и сдвигаем стартовую точку,
                 # чтобы следующие запросы не начинались с перегруженного провайдера.
+                # При prefer-маршрутизации стартовую точку не трогаем — это
+                # осознанный выбор канала, а не общая ротация.
                 if is_rate_limit:
-                    self._start_idx = (idx + 1) % n
+                    if not prefer:
+                        self._start_idx = (idx + 1) % n
                     rate_limited_count += 1
                     provider_errors.append(f"{provider.name}: rate limited")
                     logger.warning(f"Provider {provider.name} rate limited, rotating to next.")
@@ -307,12 +324,13 @@ class LLMRegistry:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         fast: bool = False,
+        prefer: Optional[str] = None,
     ) -> AsyncIterator[str]:
         """Стрим токенов. Фолбэк на другого провайдера возможен только до первого
         отданного чанка; после — ошибка просто обрывает поток."""
         provider_errors: List[str] = []
         n = len(self.providers)
-        order = [(self._start_idx + i) % n for i in range(n)]
+        order = self._order(prefer)
 
         for idx in order:
             provider = self.providers[idx]
@@ -334,7 +352,7 @@ class LLMRegistry:
                     logger.error(f"Stream from {provider.name} broke mid-response: {e}")
                     return
                 msg = str(e).lower()
-                if any(kw in msg for kw in ("429", "rate limit", "rate_limit", "too many requests", "quota")):
+                if not prefer and any(kw in msg for kw in ("429", "rate limit", "rate_limit", "too many requests", "quota")):
                     self._start_idx = (idx + 1) % n
                 provider_errors.append(f"{provider.name}: {e}")
                 logger.warning(f"Stream provider {provider.name} failed before first chunk: {e}")

@@ -83,9 +83,6 @@ class NotesAPI {
     static pinVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/pin`, 'POST'); }
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
     // AI
-    static explainBlock(blockHtml, noteTitle, mode) {
-        return this.request('/ai/dialectics/explain-concept', 'POST', { text: blockHtml, context_before: noteTitle || '', context_after: '', history: [] }); 
-    }
     static routeConspectus(payload) {
         return this.request('/ai/dialectics/conspectus/route', 'POST', payload);
     }

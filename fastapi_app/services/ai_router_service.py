@@ -32,6 +32,11 @@ _MAX_TOKENS = {
 # процессом, если судья отклоняет предыдущую попытку.
 _MAX_GENERATION_ATTEMPTS = 3
 
+# Вспомогательные вызовы (скелет, судья, история) уводим на Gemini-ключ, чтобы
+# минутный лимит Groq тратился в основном на стрим шагов. При недоступности
+# Gemini — обычный фолбэк по кругу (Groq и т.д.).
+_AUX_PREFER = "Gemini"
+
 
 class ConspectusRouter:
     def __init__(self, ai_service, context_builder, sanitizer, rag_manager):
@@ -107,7 +112,8 @@ class ConspectusRouter:
         for _ in range(2):
             raw = await self.ai_service._generate(
                 prompt, f"Сгенерируй скелет. Верни только JSON. Язык: {locale}",
-                None, max_tokens=_MAX_TOKENS["skeleton"], temperature=0.3, fast=True, use_cache=False,
+                None, max_tokens=_MAX_TOKENS["skeleton"], temperature=0.3, fast=True,
+                use_cache=False, prefer=_AUX_PREFER,
             )
             try:
                 parsed = self.sanitizer.extract_json(raw)
@@ -126,6 +132,7 @@ class ConspectusRouter:
         raw = await self.ai_service._generate(
             judge_prompt, f"Оцени конспект. Верни только JSON. Язык: {locale}",
             None, max_tokens=_MAX_TOKENS["judge"], temperature=0.2, use_cache=False,
+            prefer=_AUX_PREFER,
         )
         try:
             parsed = self.sanitizer.extract_json(raw)
@@ -259,6 +266,7 @@ class ConspectusRouter:
         raw = await self.ai_service._generate(
             prompt, f"Построй историческую форму и расхождение. Язык: {locale}",
             None, max_tokens=_MAX_TOKENS["history"], temperature=0.4, use_cache=False,
+            prefer=_AUX_PREFER,
         )
         raw = (raw or "").strip()
         if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
@@ -334,7 +342,10 @@ class ConspectusRouter:
                 yield ("history", history)
 
     async def _handle_auto_full(self, state: dict, locale: str, skill: dict = None) -> dict:
-        """Нестримовый путь: собирает результат stream_generate_full целиком."""
+        """Нестримовый путь: собирает результат stream_generate_full целиком.
+        Фронт им не пользуется (там SSE), но это программная точка входа для
+        бенчмарка: `benchmark_papanda/papanda_bridge.py`, `compare_workbench`.
+        Не удалять — вызывается извне."""
         updated_steps = {}
         async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True, skill=skill):
             if step_key == "__status__":
