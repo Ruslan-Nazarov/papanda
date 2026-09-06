@@ -20,7 +20,11 @@ class Settings(BaseSettings):
     # Резервная модель на том же Groq-ключе, но с ОТДЕЛЬНЫМ лимитом частоты —
     # даёт дополнительный запас бесплатных запросов при rate-limit основной модели.
     GROQ_ALT_MODEL: str = "qwen/qwen3.8-27b"
-    OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct:free"
+    # Бесплатный каталог OpenRouter быстро меняется: модели уходят из :free в
+    # платные (тогда 404 "unavailable for free"). Если провайдер начал падать —
+    # проверить https://openrouter.ai/models?fmt=table&input_modalities=text&max_price=0
+    # и обновить строку. Проверено рабочим 2026-09-06.
+    OPENROUTER_MODEL: str = "minimax/minimax-m3:free"
     SAMBANOVA_MODEL: str = "Meta-Llama-3.3-70B-Instruct"
     CEREBRAS_MODEL: str = "gpt-oss-120b"
     HUGGINGFACE_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"

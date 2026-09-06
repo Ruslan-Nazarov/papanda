@@ -187,15 +187,17 @@ class _AllRateLimited(Exception):
 
 class LLMRegistry:
     def __init__(self):
-        # Порядок: сначала быстрые провайдеры с щедрым free-tier (Groq, Cerebras),
-        # медленный OpenRouter free — ближе к концу.
+        # Порядок = приоритет фолбэка. Реально живут (2026-09-06): Groq,
+        # Gemini, GroqAlt (тот же ключ, 2-я модель), OpenRouter (:free-модель).
+        # Cerebras/SambaNova требуют оплаты, HuggingFace-эндпоинт мёртв — идут
+        # в хвост, регистри их просто пропускает при недоступности.
         self.providers = [
             GroqProvider(),
             GeminiProvider(),
             GroqAltProvider(),
+            OpenRouterProvider(),
             CerebrasProvider(),
             SambaNovaProvider(),
-            OpenRouterProvider(),
             HuggingFaceProvider()
         ]
         # С какого провайдера начинать следующий запрос (сдвигается при rate-limit,
