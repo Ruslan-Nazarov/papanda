@@ -129,12 +129,13 @@ class ContextBuilder:
         """Сборка промпта для генерации конкретного шага (с учетом предыдущих).
         question — уточнение пользователя к этому конкретному шагу (кнопка ❓),
         учитывается при перегенерации именно этого шага."""
+        main_prompt = await self._load_file("1_главный_промпт.md")
         step_generator_prompt = await self._load_file("8_генератор_шага_промпт.md")
         goal = state.get("target_goal", "")
         previous_context = self._compile_previous_steps(state, target_step)
         domain = _detect_domain(goal, previous_context)
 
-        prompt = f"{step_generator_prompt}\n\n"
+        prompt = f"{main_prompt}\n\n{step_generator_prompt}\n\n"
         prompt += f"ЦЕЛЬ ИССЛЕДОВАНИЯ: {goal}\n"
         prompt += f"ДОМЕН: {domain}\n"
         if domain == "math_code":
@@ -144,13 +145,8 @@ class ContextBuilder:
         prompt += f"УЖЕ ЗАПОЛНЕННЫЙ КОНТЕКСТ:\n{previous_context}\n"
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {target_step}.\n"
         prompt += _ANTI_ECHO
-
-        if target_step == 3:
-            prompt += (
-                "\nЭто шаг поиска противоположного процесса. Назови его и в одной фразе объясни, "
-                "почему его развитие исключает необходимость простейшего процесса. Кратко: 1 предложение или короткий абзац. "
-                "НЕ выписывай списки из 10 утверждений — только итоговую противоположность и обоснование.\n"
-            )
+        # Пошаговые правила по каждому шагу (в т.ч. Шаг 3) регулирует
+        # 8_генератор_шага_промпт.md — отдельного хардкода здесь больше нет.
 
         if question:
             prompt += f"\nУТОЧНЕНИЕ ПОЛЬЗОВАТЕЛЯ к этому шагу: {question}\nУчти его при перегенерации.\n"
@@ -165,6 +161,7 @@ class ContextBuilder:
         Шаг 2: всегда 2+) — используется в "доборе" пропущенных ключей после
         основного потока. key вида "2.2"."""
         base_step = int(key.split(".")[0])
+        main_prompt = await self._load_file("1_главный_промпт.md")
         step_generator_prompt = await self._load_file("8_генератор_шага_промпт.md")
         goal = state.get("target_goal", "")
         previous_context = self._compile_previous_steps(state, base_step)
@@ -176,7 +173,7 @@ class ContextBuilder:
             sibling_lines = "\n".join(f"  - {thesis_for_key(skeleton, k)}" for k in siblings)
             sibling_block = f"\nДРУГИЕ ПРОЦЕССЫ ЭТОГО ЖЕ ШАГА (не повторяй их содержание, покажи связь):\n{sibling_lines}\n"
 
-        prompt = f"{step_generator_prompt}\n\n"
+        prompt = f"{main_prompt}\n\n{step_generator_prompt}\n\n"
         prompt += f"ЦЕЛЬ ИССЛЕДОВАНИЯ: {goal}\n"
         prompt += f"ДОМЕН: {domain}\n"
         if domain == "math_code":
@@ -187,12 +184,8 @@ class ContextBuilder:
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {base_step}, процесс «{thesis_for_key(skeleton, key)}».\n"
         prompt += sibling_block
         prompt += _ANTI_ECHO
+        # Правила по каждому шагу (в т.ч. Шаг 3) — в 8_генератор_шага_промпт.md.
 
-        if base_step == 3:
-            prompt += (
-                "\nЭто шаг поиска противоположного процесса. Назови его и в одной фразе объясни, "
-                "почему его развитие исключает необходимость простейшего процесса. Кратко.\n"
-            )
         if question:
             prompt += f"\nУТОЧНЕНИЕ ПОЛЬЗОВАТЕЛЯ к этому шагу: {question}\nУчти его при перегенерации.\n"
 

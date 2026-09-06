@@ -33,9 +33,8 @@ class BlockHintBuilder {
         div.style.borderLeft = 'none';
 
         const stepObj = ALGORITHM_STEPS.find(s => s.role === stepRole) || { title: t('new_block_default') };
-        const promptText = t(`hint_${stepRole}`) !== `hint_${stepRole}` 
-            ? t(`hint_${stepRole}`) 
-            : (ALGORITHM_TEXTS[stepRole] || stepObj.title);
+        // Текст подсказки: window.__ALGORITHM__ (из 7_*.json) → i18n hint_* → заголовок.
+        const promptText = ALGORITHM_TEXTS[stepRole] || stepObj.title;
 
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
