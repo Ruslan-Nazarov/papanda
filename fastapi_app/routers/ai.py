@@ -111,11 +111,16 @@ def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
                     yield {"delta": tok}
     return _sse_response(as_events())
 
+class SkillConfig(BaseModel):
+    speaker: Optional[str] = Field(default=None, max_length=50)
+    addressee: Optional[str] = Field(default=None, max_length=50)
+
 class ExplainRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
     context_before: Optional[str] = Field(default="", max_length=5_000)
     context_after: Optional[str] = Field(default="", max_length=5_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
+    skill: Optional[SkillConfig] = Field(default=None)
 
 class ParserRequest(BaseModel):
     formula: str = Field(..., max_length=5_000)
@@ -139,10 +144,6 @@ class GenerateStepRequest(BaseModel):
     context_text: str = Field(..., max_length=50_000)
     target_step: str = Field(..., max_length=100)
 
-class SkillConfig(BaseModel):
-    speaker: Optional[str] = Field(default=None, max_length=50)
-    addressee: Optional[str] = Field(default=None, max_length=50)
-
 class ConspectusRouteRequest(BaseModel):
     action: str = Field(..., max_length=50)
     context_state: dict = Field(default_factory=dict)
@@ -161,7 +162,8 @@ async def explain_concept(request: Request, data: ExplainRequest):
         context_before=data.context_before or "",
         context_after=data.context_after or "",
         history=data.history or [],
-        locale=locale
+        locale=locale,
+        skill=data.skill.dict() if data.skill else None,
     )
     return {"result": result, "user_query": data.text}
 
@@ -175,6 +177,7 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         context_after=data.context_after or "",
         history=data.history or [],
         locale=locale,
+        skill=data.skill.dict() if data.skill else None,
     ))
 
 @router.post("/parser")
@@ -229,6 +232,8 @@ async def article_parser(
     file: Optional[UploadFile] = File(None),
     article_text: Optional[str] = Form(None),
     url: Optional[str] = Form(None),
+    skill_speaker: Optional[str] = Form(None),
+    skill_addressee: Optional[str] = Form(None),
 ):
     text_to_parse = article_text or ""
 
@@ -251,7 +256,10 @@ async def article_parser(
     if not text_to_parse.strip():
         raise HTTPException(status_code=400, detail="Нужна ссылка, файл или текст статьи")
 
-    result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message)
+    skill = None
+    if skill_speaker or skill_addressee:
+        skill = {"speaker": skill_speaker, "addressee": skill_addressee}
+    result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message, skill=skill)
     return {"result": result}
 
 @router.post("/check-ai")

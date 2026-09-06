@@ -1,22 +1,24 @@
-import json
+import re
+
 import aiofiles
 from fastapi_app.config import settings
+from fastapi_app.services.skills import render_skill_instructions
 
-_SKILL_FILE = "скиллы_регистр.json"
-_DEFAULT_SKILL = "plain_answerer"
-
-# Маркеры для грубого определения домена цели исследования.
-_MATH_CODE_MARKERS = (
-    "формул", "теорем", "уравнени", "производн", "интеграл", "предел", "матриц",
-    "вектор", "график", "функци", "число", "геометр", "алгебр", "тригонометр",
-    "дифференциал", "код", "алгоритм", "программ", "класс ", "массив", "рекурси",
-    "=", "^", "∫", "∑", "√", "\\frac", "\\sum", "\\int",
+# Грубое определение домена цели. Словесные маркеры — по границе слова со
+# стеммингом (\b…\w*), чтобы «кодекс» не попадал в math_code из-за «код»,
+# «многочисленный» — из-за «число» и т.п. Символьные — подстрокой.
+_MATH_CODE_WORD_RE = re.compile(
+    r"\b(?:формул|теорем|уравнени|производн|интеграл|матриц|вектор|график|"
+    r"функци|геометр|алгебр|тригонометр|дифференциал|алгоритм|программ|"
+    r"массив|рекурси|синус|косинус|логарифм)\w*",
+    re.IGNORECASE,
 )
+_MATH_CODE_SYMBOLS = ("=", "^", "∫", "∑", "√", "\\frac", "\\sum", "\\int")
 
 
 def _detect_domain(*texts: str) -> str:
-    blob = " ".join(t for t in texts if t).lower()
-    if any(marker in blob for marker in _MATH_CODE_MARKERS):
+    blob = " ".join(t for t in texts if t)
+    if any(sym in blob for sym in _MATH_CODE_SYMBOLS) or _MATH_CODE_WORD_RE.search(blob):
         return "math_code"
     return "general"
 
@@ -101,39 +103,10 @@ class ContextBuilder:
         return f"Instruction for {filename}"
 
     async def _render_skill_instructions(self, skill: dict = None) -> str:
-        """skill = {"speaker": "<role_id>", "addressee": "<role_id>"}.
-        Обе оси независимы: speaker — только тон/регистр, addressee — только
-        порог и количество пояснений через скрытый текст (hidden-phrase).
-        Если не задано или обе роли = дефолт — не влияет на промпт вообще
-        (сохраняет прежнее поведение для старых вызовов без skill)."""
-        speaker = (skill or {}).get("speaker") or _DEFAULT_SKILL
-        addressee = (skill or {}).get("addressee") or _DEFAULT_SKILL
-        if speaker == _DEFAULT_SKILL and addressee == _DEFAULT_SKILL:
-            return ""
-
-        raw = await self._load_file(_SKILL_FILE)
-        try:
-            roles = json.loads(raw).get("roles", {})
-        except (ValueError, TypeError):
-            return ""
-
-        lines = []
-        speaker_role = roles.get(speaker)
-        if speaker_role and speaker_role.get("speaker"):
-            lines.append(speaker_role["speaker"])
-        addressee_role = roles.get(addressee)
-        addressee_text = addressee_role.get("addressee") if addressee_role else ""
-        if addressee_text:
-            lines.append(addressee_text)
-            if addressee != _DEFAULT_SKILL:
-                lines.append(
-                    "Термин, который поясняете через скрытый текст, оборачивайте СТРОГО так "
-                    "(прямо в тексте шага, без дополнительных пометок): "
-                    '<span data-type="hidden-phrase" data-hint="краткое объяснение термина">термин</span>'
-                )
-        if not lines:
-            return ""
-        return "\nСКИЛЛ (регистр речи и уровень адресата):\n" + "\n".join(lines) + "\n"
+        """Инструкции скилла (регистр + уровень адресата), см.
+        fastapi_app.services.skills. Тонкая обёртка — чтобы не менять
+        существующие `await self._render_skill_instructions(...)` вызовы."""
+        return render_skill_instructions(skill)
 
     async def build_step_prompt(self, state: dict, target_step: int, question: str = None,
                                  skill: dict = None, skeleton: dict = None) -> str:
@@ -250,7 +223,8 @@ class ContextBuilder:
                 lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
         return f"{main_prompt}\n\n{judge_prompt}\n\nКОНСПЕКТ ДЛЯ ОЦЕНКИ:\n" + "\n".join(lines)
 
-    async def build_history_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
+    async def build_history_prompt(self, state: dict, steps: dict, skeleton: dict = None,
+                                    skill: dict = None) -> str:
         """Промпт для доп. прохода «историческая форма + расхождение»
         (1_главный_промпт.md п. 6, см. историческая_форма_промпт.md).
         steps — {"1": "...", "2.1": "...", ...} (как в build_judge_prompt)."""
@@ -270,6 +244,7 @@ class ContextBuilder:
         return (
             f"{hist_prompt}\n\nЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
             "ЛОГИЧЕСКАЯ ФОРМА (готовый конспект, Шаги 1–5):\n" + "\n".join(lines)
+            + render_skill_instructions(skill)
         )
 
     async def build_all_steps_prompt(self, state: dict, skeleton: dict,

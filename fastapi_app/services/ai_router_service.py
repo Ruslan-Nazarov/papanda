@@ -245,15 +245,16 @@ class ConspectusRouter:
         # Доп. проход: историческая форма + расхождение (1_главный п.6).
         if collected:
             yield ("__status__", "Собираю историческую форму и расхождение…")
-            history = await self._gen_history(state, collected, locale)
+            history = await self._gen_history(state, collected, locale, skill)
             if history:
                 state["steps"]["history"] = {"content": history, "status": "ready", "author": "ai", "sub_steps": []}
                 yield ("history", history)
 
-    async def _gen_history(self, state: dict, collected: Dict[str, str], locale: str) -> str:
+    async def _gen_history(self, state: dict, collected: Dict[str, str], locale: str,
+                           skill: dict = None) -> str:
         """Историческая форма конспекта + её расхождение с логической формой.
         Отдельный проход поверх готовых Шагов 1–5, свободный Markdown."""
-        prompt = await self.context_builder.build_history_prompt(state, collected)
+        prompt = await self.context_builder.build_history_prompt(state, collected, skill=skill)
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         raw = await self.ai_service._generate(
             prompt, f"Построй историческую форму и расхождение. Язык: {locale}",
@@ -320,6 +321,17 @@ class ConspectusRouter:
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
+
+        # Шаги изменились — пересобираем историческую форму (иначе останется старая).
+        base_steps = {str(i): (state["steps"].get(f"step{i}", {}) or {}).get("content", "").strip()
+                      for i in range(1, 6)}
+        base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
+        if len(base_steps) >= 3:
+            yield ("__status__", "Обновляю историческую форму…")
+            history = await self._gen_history(state, base_steps, locale, skill)
+            if history:
+                state["steps"]["history"] = {"content": history, "status": "ready", "author": "ai", "sub_steps": []}
+                yield ("history", history)
 
     async def _handle_auto_full(self, state: dict, locale: str, skill: dict = None) -> dict:
         """Нестримовый путь: собирает результат stream_generate_full целиком."""

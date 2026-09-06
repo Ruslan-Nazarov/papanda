@@ -59,12 +59,13 @@ PROMPT_MAP = {
 # явно на restore ссылается (п.2).
 PROMPT_CHAINS = {
     "formula": ["base", "formula", "format_short"],
-    "article": ["base", "what_is", "formula", "article", "format_short"],
+    "article": ["base", "formula", "article", "format_short"],
     "what_is": ["base", "restore", "what_is", "format_short"],
     "check_ai": ["base", "check_ai", "format_check"],
 }
 
 from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured
+from fastapi_app.services.skills import render_skill_instructions
 
 _AI_DISABLED_MSG = "AI disabled: не настроены API-ключи LLM (см. .env)."
 
@@ -191,26 +192,29 @@ class AIService:
         if cache_key and full:
             _llm_cache.set(cache_key, full)
 
-    def _explain_prompt(self, text, context_before, context_after):
+    def _explain_prompt(self, text, context_before, context_after, skill=None):
         return (
             f"Выделенный фрагмент: \"{text}\"\n\n"
             f"Контекст (до): {context_before}\n\n"
             f"Контекст (после): {context_after}\n\n"
-            f"Объясни, что такое \"{text}\" в контексте данного конспекта."
+            f"Объясни, что такое \"{text}\" в контексте данного конспекта. "
+            f"Если у фрагмента есть внятный исторический путь (как к нему пришли) — "
+            f"коротко покажи его, затем логическое объяснение (п. 3.1 промпта восстановления)."
+            + render_skill_instructions(skill)
         )
 
-    async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском") -> str:
+    async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском", skill: dict = None) -> str:
         sys_prompt = await self.get_bundled_prompt("what_is")
-        user_prompt = self._explain_prompt(text, context_before, context_after)
+        user_prompt = self._explain_prompt(text, context_before, context_after, skill)
         return await self._generate(sys_prompt, user_prompt, history=history, fast=True, max_tokens=800)
 
-    async def explain_concept_stream(self, text, context_before, context_after, history, locale="русском"):
+    async def explain_concept_stream(self, text, context_before, context_after, history, locale="русском", skill: dict = None):
         sys_prompt = await self.get_bundled_prompt("what_is")
-        user_prompt = self._explain_prompt(text, context_before, context_after)
+        user_prompt = self._explain_prompt(text, context_before, context_after, skill)
         async with aclosing(self._generate_stream(sys_prompt, user_prompt, history=history, fast=True, max_tokens=800)) as g:
             async for d in g:
                 yield d
-        
+
     async def generate_parser(self, formula: str) -> str:
         sys_prompt = await self.get_bundled_prompt("formula")
         user_prompt = (
@@ -222,17 +226,23 @@ class AIService:
         )
         return await self._generate(sys_prompt, user_prompt)
 
-    async def parse_article(self, text: str, user_instruction: str = "") -> str:
+    async def parse_article(self, text: str, user_instruction: str = "", skill: dict = None) -> str:
         sys_prompt = await self.get_bundled_prompt("article")
         instr = (user_instruction or "").strip()
         user_prompt = (
             f"{instr}\n\n" if instr and "диалектич" not in instr.lower() else ""
         ) + (
             f"Текст статьи:\n---\n{text}\n---\n\n"
-            f"Выполните диалектико-историческую реконструкцию по алгоритму: "
-            f"уберите академический шум, выделите простейший процесс, покажите его "
-            f"развитие через противоположность к синтезу. Ответ — связный Markdown "
-            f"(заголовки, короткие абзацы), без JSON."
+            "Уберите академический шум, выделите простейший процесс, покажите его "
+            "развитие через противоположность к синтезу. Ответ — связный Markdown "
+            "(заголовки, короткие абзацы), без JSON, ТРЕМЯ разделами:\n"
+            "## Историческая форма — как процесс из статьи разворачивался в реальной "
+            "истории предмета (п. 3.1 промпта статей).\n"
+            "## Логическая форма — тот же процесс строго по алгоритму диалектического "
+            "анализа; приоритет — соответствие алгоритму, а не факты (п. 3.2).\n"
+            "## Расхождение — где логическая форма расходится с исторической и почему; "
+            "как содержание статьи повлияло на дальнейшее развитие предмета (п. 4)."
+            + render_skill_instructions(skill)
         )
         return await self._generate(sys_prompt, user_prompt)
 
