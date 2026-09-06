@@ -63,7 +63,7 @@ class ParserWindowsManager {
         });
     }
 
-    static openWindow(type) {
+    static openWindow(type, opts = {}) {
         const win = this.windows[type];
         if (!win) return;
 
@@ -77,10 +77,18 @@ class ParserWindowsManager {
 
         win.el.classList.remove('hidden', 'minimized');
         this.updateDock();
-        
-        // Focus input
+
+        // Focus input; при prefill — подставить текст, при autosend — сразу отправить
+        // (используется кнопкой «разобрать формулу» на рамке .math-callout).
         const input = win.el.querySelector('.parser-input');
-        if (input) input.focus();
+        if (input) {
+            if (opts.prefill) input.value = opts.prefill;
+            input.focus();
+            if (opts.autosend && opts.prefill) {
+                const sendBtn = win.el.querySelector('.parser-send-btn');
+                if (sendBtn) sendBtn.click();
+            }
+        }
     }
 
     static closeWindow(type) {

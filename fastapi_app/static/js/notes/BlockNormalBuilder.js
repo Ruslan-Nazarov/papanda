@@ -7,6 +7,7 @@ import BlockMathRenderer from './BlockMathRenderer.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
 import BlockColorPicker from './BlockColorPicker.js';
 import AIController from './AIController.js';
+import ParserWindowsManager from './ParserWindowsManager.js';
 
 class BlockNormalBuilder {
     static setupHiddenPhrases(container) {
@@ -35,6 +36,41 @@ class BlockNormalBuilder {
                 if (arrow) arrow.textContent = isExpanded ? ' ▴' : ' ▾';
             };
         });
+    }
+
+    /** Кнопка «разобрать формулу» в углу рамки .math-callout при чтении конспекта:
+     *  открывает плавающее окно парсера формул с этой формулой и сразу шлёт запрос. */
+    static setupFormulaParse(container) {
+        if (!container) return;
+        container.querySelectorAll('.math-callout').forEach(el => {
+            if (el.querySelector('.formula-parse-btn')) return;
+            const formula = this._extractFormula(el);
+            if (!formula) return;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'formula-parse-btn';
+            btn.contentEditable = 'false';
+            btn.title = t('formula_parse_tt');
+            btn.setAttribute('aria-label', t('formula_parse_tt'));
+            btn.textContent = '🔬';
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                ParserWindowsManager.openWindow('formula', { prefill: formula, autosend: true });
+            });
+            el.appendChild(btn);
+        });
+    }
+
+    static _extractFormula(el) {
+        const attr = el.getAttribute('formula');
+        if (attr && attr.trim()) return attr.trim();
+        // после KaTeX-рендера исходный TeX лежит в <annotation>
+        const ann = el.querySelector('annotation[encoding="application/x-tex"]');
+        if (ann && ann.textContent.trim()) return ann.textContent.trim();
+        const content = el.querySelector('.math-content') || el;
+        return (content.textContent || '').trim();
     }
 
     static openColorPicker(block, buttonEl, div) {
@@ -415,6 +451,7 @@ class BlockNormalBuilder {
 
         // Math rendering
         BlockMathRenderer.renderMath(div);
+        this.setupFormulaParse(div);
 
         if (block.collapsed) {
             div.classList.add('collapsed');

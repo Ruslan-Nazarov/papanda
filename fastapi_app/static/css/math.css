@@ -28,6 +28,41 @@
     transform: translateY(-1px);
 }
 
+/* Кнопка «разобрать формулу» в углу рамки (только режим чтения конспекта) */
+.formula-parse-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #c7d2fe;
+    border-radius: 50%;
+    background: #eef2ff;
+    font-size: 0.82rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease;
+    z-index: 10;
+    user-select: none;
+}
+.math-callout:hover .formula-parse-btn,
+.formula-parse-btn:focus-visible {
+    opacity: 1;
+}
+.formula-parse-btn:hover {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+}
+/* На тач-устройствах без hover — держим кнопку видимой */
+@media (hover: none) {
+    .formula-parse-btn { opacity: 1; }
+}
+
 .math-callout .katex-display {
     margin: 0;
     padding: 0;
