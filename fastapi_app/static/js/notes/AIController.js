@@ -35,15 +35,27 @@ class AIController {
         if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
             // Уводим формулы из-под markdown-парсера: marked превращает \[ в [,
             // \( в (, и портит _ ^ внутри $…$. Прячем, парсим, возвращаем.
+            // display=true (отдельная строка) вернём как рамку .math-callout —
+            // тогда у формулы появляется рамка и кнопка «🔬 разобрать».
             const math = [];
-            const stash = (m) => `@@MATH${math.push(m) - 1}@@`;
+            const stash = (display) => (m) => `@@MATH${math.push({ raw: m, display }) - 1}@@`;
             const guarded = text
-                .replace(/\$\$[\s\S]+?\$\$/g, stash)
-                .replace(/\\\[[\s\S]+?\\\]/g, stash)
-                .replace(/\\\([\s\S]+?\\\)/g, stash)
-                .replace(/\$[^$\n]+?\$/g, stash);
+                .replace(/\$\$[\s\S]+?\$\$/g, stash(true))
+                .replace(/\\\[[\s\S]+?\\\]/g, stash(true))
+                .replace(/\\\([\s\S]+?\\\)/g, stash(false))
+                .replace(/\$[^$\n]+?\$/g, stash(false));
             let html = DOMPurify.sanitize(marked.parse(guarded));
-            html = html.replace(/@@MATH(\d+)@@/g, (_, i) => math[+i] || '');
+            const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+            const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html = html.replace(/@@MATH(\d+)@@/g, (_, i) => {
+                const it = math[+i];
+                if (!it) return '';
+                if (!it.display) return it.raw;
+                const tex = it.raw.replace(/^\$\$|\$\$$/g, '').replace(/^\\\[|\\\]$/g, '').trim();
+                return `<div class="math-callout"><div class="math-content"><p><span class="math-inline" formula="${escAttr(tex)}">${escHtml(tex)}</span></p></div></div>`;
+            });
+            // <p> вокруг одинокой рамки — невалидная вложенность, разворачиваем.
+            html = html.replace(/<p>\s*(<div class="math-callout">[\s\S]*?<\/div>)\s*<\/p>/g, '$1');
             return html;
         }
         // Иначе: каждый двойной перевод строки → отдельный <p>, одинарный → <br>
