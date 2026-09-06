@@ -57,3 +57,34 @@ async def test_pinned_step_is_rewritten_with_question_not_left_untouched():
     # уточнение пользователя.
     first_call_args = ai_service._generate.call_args_list[0]
     assert "а если наоборот?" in first_call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_single_step_regen_emits_multiple_blocks_for_step2():
+    """D2: перегенерация Шага 2 в режиме «по шагам» отдаёт несколько блоков
+    step2.k, если скелет запланировал несколько процессов."""
+    skeleton_json = (
+        '{"step2": {"thesis": "развитие А", '
+        '"sub_steps": [{"thesis": "развитие Б"}, {"thesis": "развитие В"}]}}'
+    )
+
+    async def _gen(sys_prompt, user_msg, *a, **k):
+        if "sub_steps" in sys_prompt or "скелет" in user_msg.lower():
+            return skeleton_json
+        return '{"process": "текст очередного развивающего процесса, достаточно длинный"}'
+
+    ai_service = MagicMock()
+    ai_service._generate = AsyncMock(side_effect=_gen)
+
+    rag_manager = MagicMock()
+    rag_manager.enrich_prompt_if_needed = MagicMock(side_effect=lambda p, *_a, **_k: p)
+
+    router = ConspectusRouter(ai_service, ContextBuilder(), Sanitizer(), rag_manager)
+
+    state = {"target_goal": "диффузия", "steps": {"step1": {"content": "простейший процесс", "status": "ready"}}}
+    res = await router._handle_auto_step(state, 2, "ru")
+
+    assert res["action_status"] == "success"
+    generated = {k for k, v in res["updated_steps"].items() if v.get("status") == "draft"}
+    assert generated == {"step2.1", "step2.2", "step2.3"}
+    assert "step2" not in res["updated_steps"]  # прежнего одиночного блока нет

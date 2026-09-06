@@ -185,6 +185,16 @@ class AIController {
                 skill: SkillManager.getSkill()
             });
             if (res.action_status === 'success') {
+                // Если шаг вернулся несколькими процессами (stepN.k) — сносим
+                // старые блоки этого шага, чтобы не остался прежний одиночный.
+                const hasDotted = Object.keys(res.updated_steps)
+                    .some(k => k.startsWith(`step${stepNumber}.`));
+                if (hasDotted) {
+                    AppState.currentNote.blocks = AppState.currentNote.blocks.filter(
+                        b => b.role !== `step${stepNumber}` &&
+                             !(b.role && b.role.startsWith(`step${stepNumber}.`))
+                    );
+                }
                 this.processUpdatedSteps(res.updated_steps, onRenderAll);
             } else {
                 throw new Error(res.error_message || 'Unknown error');

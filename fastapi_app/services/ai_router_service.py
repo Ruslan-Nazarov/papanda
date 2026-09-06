@@ -323,26 +323,47 @@ class ConspectusRouter:
         # 1. Инвалидация последующих шагов при перегенерации раннего шага
         cascading_events = self._invalidate_subsequent_steps(state, target_step)
 
-        # 2. Сборка контекста только для запрашиваемого шага
-        prompt = await self.context_builder.build_step_prompt(state, target_step, skill=skill)
-        prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
-
-        step_key = f"step{target_step}"
         max_tokens = _MAX_TOKENS["step5"] if target_step == 5 else _MAX_TOKENS["step"]
-        content = await self._gen_json(
-            prompt, f"Генерируй шаг {target_step}. Язык: {locale}", step_key, max_tokens
-        )
-        if not content:
-            return {"action_status": "error", "error_message": "Не удалось сгенерировать шаг (пустой ответ модели)."}
 
-        updated_steps = {
-            step_key: {
+        # 2. Шаги 1 и 2 могут состоять из нескольких процессов (как в полной
+        # генерации). Пробуем скелет; если для этого шага в нём >1 процесса —
+        # каждый идёт отдельным блоком stepN.k.
+        skeleton: dict = {}
+        step_keys = [str(target_step)]
+        if target_step in (1, 2):
+            skeleton = await self._gen_skeleton(state, locale)
+            planned = [k for k in expected_step_keys(skeleton) if _base_of(k) == str(target_step)]
+            if len(planned) > 1:
+                step_keys = planned
+            else:
+                skeleton = {}
+
+        updated_steps: dict = {}
+        if len(step_keys) == 1 and "." not in step_keys[0]:
+            # Прежний путь — один блок на шаг.
+            prompt = await self.context_builder.build_step_prompt(state, target_step, skill=skill)
+            prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
+            content = await self._gen_json(
+                prompt, f"Генерируй шаг {target_step}. Язык: {locale}", f"step{target_step}", max_tokens
+            )
+            if not content:
+                return {"action_status": "error", "error_message": "Не удалось сгенерировать шаг (пустой ответ модели)."}
+            updated_steps[f"step{target_step}"] = {
                 "content": self.sanitizer.clean_markdown_for_editor(content),
-                "status": "draft",
-                "author": "ai"
+                "status": "draft", "author": "ai",
             }
-        }
-        
+        else:
+            # Несколько процессов — по блоку на каждый (stepN.k).
+            for key in step_keys:
+                content = await self._regen_process(state, key, skeleton, locale, skill=skill)
+                if content:
+                    updated_steps[f"step{key}"] = {
+                        "content": self.sanitizer.clean_markdown_for_editor(content),
+                        "status": "draft", "author": "ai",
+                    }
+            if not updated_steps:
+                return {"action_status": "error", "error_message": "Не удалось сгенерировать шаг (пустой ответ модели)."}
+
         # 3. Принудительная очистка зависимых шагов в интерфейсе
         for event in cascading_events:
             step_to_clear = event.replace("invalidated_", "")
