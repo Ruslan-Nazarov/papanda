@@ -291,8 +291,10 @@ class ConspectusRouter:
         return {"action_status": "success", "updated_steps": updated_steps, "cascading_events": []}
 
     async def _regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
-                           question: str = None, skill: dict = None) -> str:
-        prompt = await self.context_builder.build_step_prompt(state, step_idx, question=question, skill=skill)
+                           question: str = None, skill: dict = None, skeleton: dict = None) -> str:
+        prompt = await self.context_builder.build_step_prompt(
+            state, step_idx, question=question, skill=skill, skeleton=skeleton or None,
+        )
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         if thesis:
             prompt += f"\nРЕКОМЕНДУЕМЫЙ ТЕЗИС ОТ АРХИТЕКТОРА: {thesis}\n"
@@ -310,7 +312,7 @@ class ConspectusRouter:
         if "." not in key:
             plan = skeleton.get(f"step{base}", {})
             thesis = plan.get("thesis", "") if isinstance(plan, dict) else ""
-            return await self._regen_step(state, base, thesis, locale, skill=skill)
+            return await self._regen_step(state, base, thesis, locale, skill=skill, skeleton=skeleton)
 
         prompt = await self.context_builder.build_process_prompt(state, key, skeleton, skill=skill)
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
@@ -335,13 +337,13 @@ class ConspectusRouter:
             planned = [k for k in expected_step_keys(skeleton) if _base_of(k) == str(target_step)]
             if len(planned) > 1:
                 step_keys = planned
-            else:
-                skeleton = {}
 
         updated_steps: dict = {}
         if len(step_keys) == 1 and "." not in step_keys[0]:
             # Прежний путь — один блок на шаг.
-            prompt = await self.context_builder.build_step_prompt(state, target_step, skill=skill)
+            prompt = await self.context_builder.build_step_prompt(
+                state, target_step, skill=skill, skeleton=skeleton or None,
+            )
             prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
             content = await self._gen_json(
                 prompt, f"Генерируй шаг {target_step}. Язык: {locale}", f"step{target_step}", max_tokens

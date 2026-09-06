@@ -27,6 +27,17 @@ _ANTI_ECHO = (
 )
 
 
+def _effective_goal(state: dict, skeleton: dict = None) -> str:
+    """Цель как процесс: `goal_as_process` из скелета (переформулирование
+    запроса по п. 3.1 главного промпта, см. 9_скелет_конспекта_промпт.md)
+    при наличии, иначе — сырой `target_goal`."""
+    if isinstance(skeleton, dict):
+        gp = (skeleton.get("goal_as_process") or "").strip()
+        if gp:
+            return gp
+    return state.get("target_goal", "")
+
+
 def expected_step_keys(skeleton: dict) -> list:
     """Из скелета — упорядоченный список ключей шагов: "1", "2.1", "2.2", "3", ...
     Шаг 1 может быть 1 или 2 процесса, Шаг 2 — всегда 2+ (см. 9_скелет_конспекта_промпт.md).
@@ -125,13 +136,14 @@ class ContextBuilder:
         return "\nСКИЛЛ (регистр речи и уровень адресата):\n" + "\n".join(lines) + "\n"
 
     async def build_step_prompt(self, state: dict, target_step: int, question: str = None,
-                                 skill: dict = None) -> str:
+                                 skill: dict = None, skeleton: dict = None) -> str:
         """Сборка промпта для генерации конкретного шага (с учетом предыдущих).
         question — уточнение пользователя к этому конкретному шагу (кнопка ❓),
-        учитывается при перегенерации именно этого шага."""
+        учитывается при перегенерации именно этого шага.
+        skeleton — если передан, из него берётся goal_as_process."""
         main_prompt = await self._load_file("1_главный_промпт.md")
         step_generator_prompt = await self._load_file("8_генератор_шага_промпт.md")
-        goal = state.get("target_goal", "")
+        goal = _effective_goal(state, skeleton)
         previous_context = self._compile_previous_steps(state, target_step)
         domain = _detect_domain(goal, previous_context)
 
@@ -163,7 +175,7 @@ class ContextBuilder:
         base_step = int(key.split(".")[0])
         main_prompt = await self._load_file("1_главный_промпт.md")
         step_generator_prompt = await self._load_file("8_генератор_шага_промпт.md")
-        goal = state.get("target_goal", "")
+        goal = _effective_goal(state, skeleton)
         previous_context = self._compile_previous_steps(state, base_step)
         domain = _detect_domain(goal, previous_context)
 
@@ -246,7 +258,7 @@ class ContextBuilder:
         остальные перегенерируются согласованно с ним и с уточнением question."""
         main_prompt = await self._load_file("1_главный_промпт.md")
         step_rules = await self._load_file("8_генератор_шага_промпт.md")
-        goal = state.get("target_goal", "Не указана")
+        goal = _effective_goal(state, skeleton) or "Не указана"
         domain = _detect_domain(goal)
         steps_state = state.get("steps", {}) or {}
 
