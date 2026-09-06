@@ -65,20 +65,21 @@ class ModelManager {
 
     static _render(menu) {
         menu.innerHTML = this.models.map(m => `
-            <div class="model-item ${m.id === this.current ? 'active' : ''} ${m.available ? '' : 'disabled'}"
-                 data-id="${m.id}">
-                <div class="model-item-main">
+            <button type="button"
+                    class="model-item ${m.id === this.current ? 'active' : ''} ${m.available ? '' : 'disabled'}"
+                    data-id="${m.id}" ${m.available ? '' : 'disabled'}>
+                <div class="model-item-row">
                     <span class="model-item-name">${m.name}</span>
-                    <span class="model-item-sub">${m.available ? m.sub : t('model_no_key')}</span>
+                    ${m.id === this.current ? '<span class="model-item-check">✓</span>' : ''}
                 </div>
-                ${m.id === this.current ? '<span class="model-item-check">✓</span>' : ''}
+                <div class="model-item-sub">${m.available ? m.sub : t('model_no_key')}</div>
                 <div class="model-item-limit" data-limit-for="${m.id}"></div>
-            </div>
+            </button>
         `).join('');
 
         menu.querySelectorAll('.model-item').forEach(el => {
             el.addEventListener('click', () => {
-                if (el.classList.contains('disabled')) return;
+                if (el.disabled) return;
                 this.current = el.dataset.id;
                 try { localStorage.setItem(KEY, this.current); } catch {}
                 this._updateLabel();
@@ -97,11 +98,11 @@ class ModelManager {
             const res = await fetch(`/api/ai/dialectics/models/${id}/limit`);
             const d = await res.json();
             if (d.tokens && d.tokens.remaining != null) {
-                const lim = d.tokens.limit ? ` / ${d.tokens.limit}` : '';
-                const reset = d.tokens.reset ? ` · ${t('model_limit_reset')} ${d.tokens.reset}` : '';
-                slot.textContent = `${t('model_limit_tokens')}: ${d.tokens.remaining}${lim}${reset}`;
+                const lim = d.tokens.limit ? `/${d.tokens.limit}` : '';
+                const reset = d.tokens.reset ? ` (${t('model_limit_reset')} ${d.tokens.reset})` : '';
+                slot.textContent = `${t('model_limit_tokens')} ${d.tokens.remaining}${lim}${reset}`;
             } else if (d.requests && d.requests.remaining != null) {
-                slot.textContent = `${t('model_limit_requests')}: ${d.requests.remaining} / ${d.requests.limit || '?'}`;
+                slot.textContent = `${t('model_limit_requests')} ${d.requests.remaining}/${d.requests.limit || '?'}`;
             } else {
                 slot.textContent = t('model_limit_unknown');
             }

@@ -459,31 +459,39 @@
     width: 100%;
 }
 
-/* ===== Выбор модели ИИ (шапка) ===== */
+/* ===== Выбор модели ИИ (подпанель конспекта) ===== */
 #model-menu-dropdown { background: #ffffff; border: 1px solid #e2e8f0; }
 .model-item {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "main check" "limit limit";
-    gap: 2px 8px;
-    align-items: center;
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    font: inherit;
     padding: 8px 10px;
-    border-radius: 10px;
+    border-radius: 9px;
     cursor: pointer;
     transition: background 0.12s;
 }
+.model-item + .model-item { margin-top: 1px; }
 .model-item:hover { background: #f5f3ff; }
 .model-item.active { background: #eef2ff; }
-.model-item.disabled { opacity: 0.5; cursor: not-allowed; }
-.model-item-main { grid-area: main; display: flex; flex-direction: column; }
-.model-item-name { font-weight: 600; font-size: 0.9rem; color: #1e293b; }
-.model-item-sub { font-size: 0.76rem; color: #94a3b8; }
-.model-item-check { grid-area: check; color: #4f46e5; font-weight: 700; }
+.model-item.disabled { opacity: 0.45; cursor: default; }
+.model-item.disabled:hover { background: transparent; }
+.model-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.model-item-name { font-weight: 600; font-size: 0.88rem; color: #1e293b; }
+.model-item.active .model-item-name { color: #4338ca; }
+.model-item-check { color: #4f46e5; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+.model-item-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 1px; }
 .model-item-limit {
-    grid-area: limit;
     font-size: 0.74rem;
     color: #6d28d9;
-    min-height: 0;
+    margin-top: 3px;
 }
 .model-item-limit:empty { display: none; }
 

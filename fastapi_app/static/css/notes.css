@@ -1,11 +1,11 @@
 /* ==========================================================================
    Notes App Master Stylesheet (Modular)
    ========================================================================== */
-@import './base.css';
-@import './layout.css';
-@import './blocks.css';
-@import './editor.css';
-@import './modals.css';
-@import './components.css';
-@import './math.css';
-@import './responsive.css';
+@import './base.css?v=2';
+@import './layout.css?v=2';
+@import './blocks.css?v=2';
+@import './editor.css?v=2';
+@import './modals.css?v=2';
+@import './components.css?v=2';
+@import './math.css?v=2';
+@import './responsive.css?v=2';
