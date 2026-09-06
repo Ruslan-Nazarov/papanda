@@ -251,29 +251,42 @@ class ConspectusRouter:
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
 
-        # Доп. проход: историческая форма + расхождение (1_главный п.6).
+        # Доп. проход: короткие исторические справки по шагам (значок 📜 у блока).
         if collected:
-            yield ("__status__", "Собираю историческую форму и расхождение…")
-            history = await self._gen_history(state, collected, locale, skill)
-            if history:
-                state["steps"]["history"] = {"content": history, "status": "ready", "author": "ai", "sub_steps": []}
-                yield ("history", history)
+            yield ("__status__", "Ищу исторические справки к шагам…")
+            notes = await self._gen_history_notes(state, collected, locale, skill)
+            if notes:
+                state.setdefault("history_notes", {}).update(notes)
+                yield ("__history_notes__", notes)
 
-    async def _gen_history(self, state: dict, collected: Dict[str, str], locale: str,
-                           skill: dict = None) -> str:
-        """Историческая форма конспекта + её расхождение с логической формой.
-        Отдельный проход поверх готовых Шагов 1–5, свободный Markdown."""
-        prompt = await self.context_builder.build_history_prompt(state, collected, skill=skill)
+    async def _gen_history_notes(self, state: dict, collected: Dict[str, str], locale: str,
+                                 skill: dict = None) -> Dict[str, str]:
+        """Короткие исторические справки по шагам. Отдельный проход поверх
+        готовых Шагов 1–5. Возвращает {"1": "...", "4": "..."} — только те шаги,
+        где справка действительно нужна (историч. контекст или расхождение
+        логики с историей). Пусто → {}."""
+        prompt = await self.context_builder.build_history_notes_prompt(state, collected, skill=skill)
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         raw = await self.ai_service._generate(
-            prompt, f"Построй историческую форму и расхождение. Язык: {locale}",
-            None, max_tokens=_MAX_TOKENS["history"], temperature=0.4, use_cache=False,
-            prefer=_AUX_PREFER,
+            prompt, f"Верни JSON со справками по шагам. Язык: {locale}",
+            {"type": "json_object"}, max_tokens=_MAX_TOKENS["history"], temperature=0.4,
+            use_cache=False, prefer=_AUX_PREFER,
         )
         raw = (raw or "").strip()
         if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
-            return ""
-        return raw
+            return {}
+        try:
+            parsed = self.sanitizer.extract_json(raw)
+        except ValueError:
+            return {}
+        notes: Dict[str, str] = {}
+        for k, v in (parsed or {}).items():
+            key = str(k).strip().lstrip("шагШАГ ").strip() or str(k)
+            key = re.sub(r"[^\d.]", "", key) or key
+            base = key.split(".")[0]
+            if base in {"1", "2", "3", "4", "5"} and isinstance(v, str) and v.strip():
+                notes[base] = v.strip()
+        return notes
 
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
                                           question: str, skill: dict):
@@ -332,31 +345,35 @@ class ConspectusRouter:
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
 
-        # Шаги изменились — пересобираем историческую форму (иначе останется старая).
+        # Шаги изменились — пересобираем исторические справки (иначе останутся старые).
         base_steps = {str(i): (state["steps"].get(f"step{i}", {}) or {}).get("content", "").strip()
                       for i in range(1, 6)}
         base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
         if len(base_steps) >= 3:
-            yield ("__status__", "Обновляю историческую форму…")
-            history = await self._gen_history(state, base_steps, locale, skill)
-            if history:
-                state["steps"]["history"] = {"content": history, "status": "ready", "author": "ai", "sub_steps": []}
-                yield ("history", history)
+            yield ("__status__", "Обновляю исторические справки…")
+            notes = await self._gen_history_notes(state, base_steps, locale, skill)
+            # Пустой словарь тоже шлём — фронт снимет устаревшие значки.
+            state["history_notes"] = notes
+            yield ("__history_notes__", notes)
 
     async def _handle_auto_full(self, state: dict, locale: str, skill: dict = None) -> dict:
         """Нестримовый путь: собирает результат stream_generate_full целиком.
-        Фронт им не пользуется (там SSE), но это программная точка входа для
-        бенчмарка: `benchmark_papanda/papanda_bridge.py`, `compare_workbench`.
-        Не удалять — вызывается извне."""
+        Фронт обычно идёт через SSE; этот путь — для `action=generate_full`
+        нестримового эндпоинта `/conspectus/route`."""
         updated_steps = {}
+        history_notes = {}
         async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True, skill=skill):
             if step_key == "__status__":
+                continue
+            if step_key == "__history_notes__":
+                history_notes = content or {}
                 continue
             updated_steps[step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
 
         if not any(s["content"] for s in updated_steps.values()):
             return {"action_status": "error", "error_message": "Модель не вернула шаги."}
-        return {"action_status": "success", "updated_steps": updated_steps, "cascading_events": []}
+        return {"action_status": "success", "updated_steps": updated_steps,
+                "history_notes": history_notes, "cascading_events": []}
 
     async def _regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
                            question: str = None, skill: dict = None, skeleton: dict = None) -> str:

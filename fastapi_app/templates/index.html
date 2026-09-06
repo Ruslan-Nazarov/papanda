@@ -147,6 +147,15 @@
                     </div>
                 </div>
             </div>
+            <!-- Выбор модели ИИ -->
+            <div class="dropdown-wrapper" style="margin-left: 4px;">
+                <button class="nav-pill-btn" id="btn-model-menu" title="{{ _('model_menu_title') }}">
+                    <span class="pill-icon">🧠</span> <span id="model-menu-label">{{ _('nav_model') }}</span>
+                </button>
+                <div id="model-menu-dropdown" class="dropdown-menu hidden" style="min-width: 260px; padding: 6px; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.12);">
+                    <!-- populated by ModelManager -->
+                </div>
+            </div>
         </div>
     </header>
 
@@ -250,7 +259,7 @@
         </div>
 
         <div class="footer-credits">
-            papanda version 0.10.1 (last update 2026-09-06)<br>
+            papanda version 0.11.0 (last update 2026-09-06)<br>
             designed and developed by <strong>ruslan nazarov</strong><br>
             CC BY-NC 4.0 License
         </div>
@@ -289,5 +298,5 @@
 </script>
 <!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
 <script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
-<script type="module" src="/static/js/notes/app.js?v=24"></script>
+<script type="module" src="/static/js/notes/app.js?v=26"></script>
 {% endblock %}

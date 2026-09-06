@@ -1,5 +1,6 @@
 import DialogService from './DialogService.js';
 import SkillManager from './SkillManager.js';
+import { modelHeader } from './api.js';
 
 import { t } from '../i18n.js';
 class ParserWindowsManager {
@@ -201,6 +202,7 @@ class ParserWindowsManager {
             const text = input.value.trim();
             if (!text) return;
 
+            this.clearMessages('formula');
             this.appendMessage('formula', 'user', text);
             input.value = '';
 
@@ -209,7 +211,7 @@ class ParserWindowsManager {
             try {
                 const res = await fetch('/api/ai/dialectics/parser', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...modelHeader() },
                     body: JSON.stringify({ formula: text })
                 });
                 const data = await res.json();
@@ -232,6 +234,7 @@ class ParserWindowsManager {
             const file = e.target.files[0];
             if (!file) return;
 
+            this.clearMessages('formula');
             this.appendMessage('formula', 'user', `[${t('pw_photo_uploaded')}: ${file.name}]`);
             const loadingId = this.appendLoading('formula');
 
@@ -241,6 +244,7 @@ class ParserWindowsManager {
             try {
                 const res = await fetch('/api/ai/dialectics/formula/ocr', {
                     method: 'POST',
+                    headers: { ...modelHeader() },
                     body: formData
                 });
                 const data = await res.json();
@@ -287,7 +291,7 @@ class ParserWindowsManager {
                     
                     const loadingId = this.appendLoading('formula');
                     try {
-                        const res = await fetch('/api/ai/dialectics/voice-math', { method: 'POST', body: formData });
+                        const res = await fetch('/api/ai/dialectics/voice-math', { method: 'POST', headers: { ...modelHeader() }, body: formData });
                         const data = await res.json();
                         this.removeLoading(loadingId);
                         const recognized = data.result || '';
@@ -424,6 +428,7 @@ class ParserWindowsManager {
             if (!text) return;
 
             const isUrl = /^https?:\/\/\S+$/i.test(text);
+            this.clearMessages('article');
             this.appendMessage('article', 'user', isUrl ? `🔗 ${text}` : text);
             input.value = '';
 
@@ -437,6 +442,7 @@ class ParserWindowsManager {
 
                 const res = await fetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
+                    headers: { ...modelHeader() },
                     body: formData
                 });
                 const data = await res.json();
@@ -463,6 +469,7 @@ class ParserWindowsManager {
             const file = e.target.files[0];
             if (!file) return;
 
+            this.clearMessages('article');
             this.appendMessage('article', 'user', `[${t('pw_file_uploaded')}: ${file.name}]`);
             const loadingId = this.appendLoading('article');
 
@@ -474,6 +481,7 @@ class ParserWindowsManager {
             try {
                 const res = await fetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
+                    headers: { ...modelHeader() },
                     body: formData
                 });
                 const data = await res.json();
@@ -505,6 +513,15 @@ class ParserWindowsManager {
         });
     }
 
+    /** Очистить окно перед новым запросом — каждый вызов парсера показывает
+     *  только свой результат, а не копит их (просьба пользователя). */
+    static clearMessages(type) {
+        const win = this.windows[type];
+        if (!win || !win.el) return;
+        const container = win.el.querySelector(`#${type}-chat-messages`);
+        if (container) container.innerHTML = '';
+    }
+
     static appendMessage(type, sender, text) {
         const win = this.windows[type];
         if (!win || !win.el) return;
@@ -517,6 +534,22 @@ class ParserWindowsManager {
         const sanitized = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(parsed) : parsed;
         msgDiv.innerHTML = `<div class="msg-bubble">${sanitized}</div>`;
         container.appendChild(msgDiv);
+
+        // Рендерим LaTeX в ответе парсера (в таблицах приходит \dfrac, \pi и т.п.).
+        if (sender === 'bot' && typeof window.renderMathInElement === 'function') {
+            try {
+                window.renderMathInElement(msgDiv, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true },
+                    ],
+                    throwOnError: false,
+                    ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'option'],
+                });
+            } catch (_) {}
+        }
         container.scrollTop = container.scrollHeight;
     }
 

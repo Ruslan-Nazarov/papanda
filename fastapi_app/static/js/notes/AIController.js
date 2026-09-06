@@ -89,17 +89,6 @@ class AIController {
                     existingBlock.html = htmlContent;
                     existingBlock.status = stepData.status || 'ready';
                     if (stepData.title) existingBlock.title = stepData.title;
-                } else if (stepKey === 'history') {
-                    // Доп. блок «Историческая форма и расхождение» (1_главный п.6).
-                    AppState.addBlock({
-                        id: 'block-' + Math.random().toString(36).substr(2, 9),
-                        side: 'center',
-                        role: 'history',
-                        title: stepData.title || t('block_history_title'),
-                        html: htmlContent,
-                        status: stepData.status || 'ready',
-                        isDraft: false
-                    });
                 } else {
                     const [baseRole, subIndex] = stepKey.split('.');
                     const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole) || {};
@@ -128,6 +117,29 @@ class AIController {
         }
     }
 
+    /**
+     * Исторические справки к шагам (значок 📜 у блока). Приходят отдельным
+     * событием после генерации шагов: { "1": "текст", "4": "текст" }.
+     * Пустой объект тоже валиден — снимает устаревшие справки.
+     */
+    static applyHistoryNotes(notes, onRenderAll) {
+        if (!notes || typeof notes !== 'object') return;
+        let changed = false;
+        for (let i = 1; i <= 5; i++) {
+            const note = (notes[String(i)] || '').trim();
+            AppState.currentNote.blocks.forEach(b => {
+                if (b.role === `step${i}` || (b.role && b.role.startsWith(`step${i}.`))) {
+                    if ((b.historyNote || '') !== note) {
+                        b.historyNote = note || undefined;
+                        AppState.updateBlock(b.id, { historyNote: b.historyNote });
+                        changed = true;
+                    }
+                }
+            });
+        }
+        if (changed && onRenderAll) onRenderAll();
+    }
+
 
     static async generateFull(onRenderAll) {
         GlobalLoader.show(t('ed_ai_analyzing'));
@@ -146,6 +158,8 @@ class AIController {
                             { [ev.step]: { content: ev.content, status: 'ready' } },
                             onRenderAll
                         );
+                    } else if (ev.history_notes) {
+                        this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.status) {
                         // Долгая операция (судья, повторная попытка) — держим пользователя в курсе.
                         GlobalLoader.show(ev.status);
@@ -187,6 +201,8 @@ class AIController {
                             { [ev.step]: { content: ev.content, status: 'ready' } },
                             onRenderAll
                         );
+                    } else if (ev.history_notes) {
+                        this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.status) {
                         GlobalLoader.show(ev.status);
                     }

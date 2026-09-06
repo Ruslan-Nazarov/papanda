@@ -7,11 +7,11 @@ from fastapi_app.services.ai_service import ai_service
 
 def test_skill_default_is_empty():
     assert render_skill_instructions(None) == ""
-    assert render_skill_instructions({"speaker": "plain_answerer", "addressee": "plain_answerer"}) == ""
+    assert render_skill_instructions({"speaker": "neutral", "addressee": "neutral"}) == ""
 
 
 def test_skill_non_default_renders_text():
-    out = render_skill_instructions({"speaker": "professor", "addressee": "newbie"})
+    out = render_skill_instructions({"speaker": "professor", "addressee": "children"})
     assert "СКИЛЛ" in out
     assert "hidden-phrase" in out  # addressee != default -> инструкция по разметке
 

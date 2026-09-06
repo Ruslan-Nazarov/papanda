@@ -13,7 +13,7 @@ import json
 from fastapi_app.config import settings
 
 _SKILL_FILE = "скиллы_регистр.json"
-_DEFAULT_SKILL = "plain_answerer"
+_DEFAULT_SKILL = "neutral"
 
 _HIDDEN_PHRASE_SYNTAX = (
     "Термин, который поясняете через скрытый текст, оборачивайте СТРОГО так "

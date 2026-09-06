@@ -91,9 +91,9 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2():
 
 
 @pytest.mark.asyncio
-async def test_history_pass_appends_history_block():
-    """G1: после Шагов 1–5 и судьи идёт доп. проход — блок history с
-    исторической формой и расхождением."""
+async def test_history_pass_emits_per_step_notes():
+    """После Шагов 1–5 и судьи идёт доп. проход — событие __history_notes__
+    со справками по отдельным шагам (значок 📜 у блока)."""
     async def _stream(*_a, **_k):
         yield (
             "===ШАГ1===\nпростейший процесс достаточной длины для парсера\n"
@@ -108,7 +108,7 @@ async def test_history_pass_appends_history_block():
 
     async def _gen(sys_prompt, *_a, **_k):
         if "историческ" in sys_prompt.lower():
-            return "## Историческая форма\nтекст\n\n## Расхождение\nтекст"
+            return '{"1": "в древности так не считали", "4": "противоречие оформилось позже"}'
         if "is_valid" in sys_prompt:
             return '{"is_valid": true, "reason": ""}'
         return "{}"
@@ -122,9 +122,10 @@ async def test_history_pass_appends_history_block():
 
     events = {}
     async for key, content in router.stream_generate_full(state, "ru", use_skeleton=False):
-        if key != "__status__":
+        if key not in ("__status__",):
             events[key] = content
 
-    assert "history" in events
-    assert "Расхождение" in events["history"]
-    assert state["steps"]["history"]["content"] == events["history"]
+    assert "__history_notes__" in events
+    assert events["__history_notes__"] == {"1": "в древности так не считали",
+                                           "4": "противоречие оформилось позже"}
+    assert state["history_notes"]["1"] == "в древности так не считали"

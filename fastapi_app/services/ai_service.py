@@ -4,10 +4,26 @@ import os
 import time
 import json
 import hashlib
+import contextvars
 from contextlib import aclosing
 from collections import OrderedDict
 from typing import Dict, Optional
 import aiofiles
+
+# Провайдер, выбранный пользователем в интерфейсе (шапка «Модель»). Ставится
+# на время обработки запроса (см. routers/ai.py::_apply_model_prefer), читается
+# в _generate/_generate_stream и в aux-вызовах роутера. None = авто-ротация.
+_preferred_provider: "contextvars.ContextVar[Optional[str]]" = contextvars.ContextVar(
+    "preferred_provider", default=None
+)
+
+
+def set_preferred_provider(name: Optional[str]) -> None:
+    _preferred_provider.set(name or None)
+
+
+def get_preferred_provider() -> Optional[str]:
+    return _preferred_provider.get()
 
 
 class _TTLCache:
@@ -148,7 +164,7 @@ class AIService:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 fast=fast,
-                prefer=prefer,
+                prefer=_preferred_provider.get() or prefer,
             )
         except Exception as e:
             return f"Error calling AI: {str(e)}"
@@ -189,7 +205,8 @@ class AIService:
 
         parts = []
         async with aclosing(llm_registry.generate_stream(
-            messages, max_tokens=max_tokens, temperature=temperature, fast=fast, prefer=prefer
+            messages, max_tokens=max_tokens, temperature=temperature, fast=fast,
+            prefer=_preferred_provider.get() or prefer,
         )) as gen:
             async for delta in gen:
                 parts.append(delta)

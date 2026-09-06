@@ -57,8 +57,6 @@ export function inferRoleFromTitle(block) {
         block.role = 'step3'; block.side = 'left';
     } else if (has('развитие противоположного', 'development of the opposite', 'қарама-қарсы процестің дамуын')) {
         block.role = 'step4'; block.side = 'right';               // старый заголовок Шага 4
-    } else if (has('историческая форма', 'historical form', 'тарихи форма')) {
-        block.role = 'history'; block.side = 'center';            // доп. блок «Историческая форма и расхождение»
     } else if (has('синтез', 'synthesis', 'разрешение противоречия', 'resolving the contradiction', 'қайшылықты шешу')) {
         block.role = 'step5'; block.side = 'center';              // старый «Синтез / Противоречие» + новый «Разрешение противоречия»
     } else if (has('противоречие', 'contradiction', 'қайшылық')) {

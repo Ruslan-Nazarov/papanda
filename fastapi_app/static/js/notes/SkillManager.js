@@ -4,20 +4,19 @@ import { t } from '../i18n.js';
  * Скилл ИИ-генерации — две независимые оси (см. бэклог ревизии промптов
  * 2026-09-05): "speaker" меняет только тон/регистр речи, "addressee" —
  * порог и количество пояснений через скрытый текст. Обе по умолчанию
- * "plain_answerer" = текущее поведение без изменений.
+ * "neutral" = текущее поведение без изменений.
  * Выбор хранится глобально в localStorage (как и mode/по шагам).
  */
 const SPEAKER_KEY = 'dialectics_skill_speaker';
 const ADDRESSEE_KEY = 'dialectics_skill_addressee';
-const DEFAULT_ROLE = 'plain_answerer';
+const DEFAULT_ROLE = 'neutral';
 
 const ROLES = [
-    { id: 'plain_answerer', labelKey: 'skill_role_plain' },
+    { id: 'neutral', labelKey: 'skill_role_plain' },
     { id: 'professor', labelKey: 'skill_role_professor' },
     { id: 'student', labelKey: 'skill_role_student' },
-    { id: 'psychologist', labelKey: 'skill_role_psychologist' },
-    { id: 'engineer', labelKey: 'skill_role_engineer' },
-    { id: 'newbie', labelKey: 'skill_role_newbie' },
+    { id: 'parents', labelKey: 'skill_role_parents' },
+    { id: 'children', labelKey: 'skill_role_children' },
 ];
 
 class SkillManager {
