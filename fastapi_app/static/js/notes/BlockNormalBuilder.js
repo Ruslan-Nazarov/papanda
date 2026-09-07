@@ -105,7 +105,10 @@ class BlockNormalBuilder {
                 </div>
             `;
         } else {
-            const stepObj = ALGORITHM_STEPS.find(s => s.role === block.role);
+            // Роль может быть под-шагом ("step2.1", "step2.2" — несколько
+            // развивающих процессов); ярлык над блоком берём по базовому шагу.
+            const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
+            const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole);
             const roleLabelHTML = stepObj ? `<div class="block-role-label" style="position: absolute; top: -24px; left: 12px; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; pointer-events: none; user-select: none;">${stepObj.title}</div>` : '';
 
             div.innerHTML = `

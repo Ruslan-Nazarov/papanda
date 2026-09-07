@@ -59,6 +59,12 @@ TRANSLATIONS = {
         "footer_changelog": "История изменений",
         "footer_contact": "Написать разработчику",
         "fab_top": "Наверх",
+        # --- Статус-плашка ИИ-генерации конспекта (SSE) ---
+        "gen_status_planning": "Собираю план и генерирую конспект…",
+        "gen_status_judging": "Проверяю, получилось ли настоящее противоречие…",
+        "gen_status_retry": "Предыдущий вариант не прошёл проверку — пробую другой простейший процесс (попытка {n} из {total})…",
+        "gen_status_postprocess": "Собираю заголовки и исторические справки…",
+        "gen_status_postprocess_upd": "Обновляю заголовки и исторические справки…",
     },
     "en": {
         "app_title": "Notes",
@@ -117,6 +123,12 @@ TRANSLATIONS = {
         "footer_changelog": "Changelog",
         "footer_contact": "Contact the developer",
         "fab_top": "To top",
+        # --- AI conspect generation status pill (SSE) ---
+        "gen_status_planning": "Building the outline and generating the conspect…",
+        "gen_status_judging": "Checking whether a real contradiction came out…",
+        "gen_status_retry": "The previous version didn't pass the check — trying a different simplest process (attempt {n} of {total})…",
+        "gen_status_postprocess": "Collecting titles and historical notes…",
+        "gen_status_postprocess_upd": "Updating titles and historical notes…",
     },
     "kz": {
         "app_title": "Конспекттер",
@@ -175,6 +187,12 @@ TRANSLATIONS = {
         "footer_changelog": "Өзгерістер тарихы",
         "footer_contact": "Әзірлеушіге жазу",
         "fab_top": "Жоғарыға",
+        # --- ЖИ конспект генерациясының күй-жолағы (SSE) ---
+        "gen_status_planning": "Жоспарды жинап, конспект генерациялап жатырмын…",
+        "gen_status_judging": "Нағыз қайшылық шыққанын тексеріп жатырмын…",
+        "gen_status_retry": "Алдыңғы нұсқа тексеруден өтпеді — басқа қарапайым процесс байқап жатырмын ({total} ішінен {n}-әрекет)…",
+        "gen_status_postprocess": "Тақырыптар мен тарихи анықтамаларды жинап жатырмын…",
+        "gen_status_postprocess_upd": "Тақырыптар мен тарихи анықтамаларды жаңартып жатырмын…",
     },
 }
 

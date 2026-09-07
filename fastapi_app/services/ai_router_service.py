@@ -3,6 +3,7 @@ from contextlib import aclosing
 from typing import Dict
 
 from fastapi_app.services.context_builder import expected_step_keys
+from fastapi_app.i18n import get_translator
 
 # Ключ шага: "1".."5" (один процесс) или "N.k" (несколько процессов на шаге,
 # см. expected_step_keys/9_скелет_конспекта_промпт.md).
@@ -240,19 +241,20 @@ class ConspectusRouter:
                 yield event
             return
 
+        _ = get_translator(locale)
         failed_attempts = []
         collected: Dict[str, str] = {}
         for attempt in range(1, _MAX_GENERATION_ATTEMPTS + 1):
             if attempt > 1:
-                yield ("__status__", f"Предыдущий вариант не прошёл проверку — пробую другой простейший процесс (попытка {attempt} из {_MAX_GENERATION_ATTEMPTS})…")
+                yield ("__status__", _("gen_status_retry").format(n=attempt, total=_MAX_GENERATION_ATTEMPTS))
             elif use_skeleton:
-                yield ("__status__", "Собираю план и генерирую конспект…")
+                yield ("__status__", _("gen_status_planning"))
 
             collected = await self._generate_full_attempt(state, locale, use_skeleton or attempt > 1, failed_attempts)
             if not collected:
                 continue
 
-            yield ("__status__", "Проверяю, получилось ли настоящее противоречие…")
+            yield ("__status__", _("gen_status_judging"))
             is_valid, reason = await self._judge_conspect(collected, locale)
             if is_valid or attempt == _MAX_GENERATION_ATTEMPTS:
                 break
@@ -268,7 +270,7 @@ class ConspectusRouter:
 
         # Доп. проход: заголовки-суть по шагам + исторические справки (📜).
         if collected:
-            yield ("__status__", "Собираю заголовки и исторические справки…")
+            yield ("__status__", _("gen_status_postprocess"))
             notes, titles = await self._gen_postprocess(state, collected, locale)
             if titles:
                 state["step_titles"] = titles
@@ -317,6 +319,7 @@ class ConspectusRouter:
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
                                           question: str):
         """Часть stream_generate_full для кнопки ❓ — вынесено отдельно, без судьи."""
+        _ = get_translator(locale)
         if question:
             updated_pinned = await self._regen_step(state, pinned, "", locale, question=question)
             if updated_pinned:
@@ -377,7 +380,7 @@ class ConspectusRouter:
                       for i in range(1, 6)}
         base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
         if len(base_steps) >= 3:
-            yield ("__status__", "Обновляю заголовки и исторические справки…")
+            yield ("__status__", _("gen_status_postprocess_upd"))
             notes, titles = await self._gen_postprocess(state, base_steps, locale)
             if titles:
                 state["step_titles"] = titles
