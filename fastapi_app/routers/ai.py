@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, AsyncIterator
@@ -16,7 +16,7 @@ import aiofiles.os
 import httpx
 from pypdf import PdfReader
 
-from fastapi_app.services.ai_service import ai_service, set_preferred_provider
+from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
 from fastapi_app.rate_limiter import limiter
 
@@ -24,18 +24,8 @@ from fastapi_app.services.context_builder import ContextBuilder
 from fastapi_app.services.sanitizer import Sanitizer
 from fastapi_app.services.rag_tool_manager import RAGManager
 from fastapi_app.services.ai_router_service import ConspectusRouter
-from fastapi_app.services import model_switch
 
-
-async def _apply_model_prefer(request: Request):
-    """Читает выбор модели из заголовка X-Model-Prefer и кладёт предпочитаемого
-    провайдера в contextvar на время запроса (async-dep → тот же контекст, что
-    и обработчик). Пусто / 'auto' → обычная авто-ротация."""
-    mid = request.headers.get("x-model-prefer")
-    set_preferred_provider(model_switch.provider_for(mid) if mid else None)
-
-
-router = APIRouter(dependencies=[Depends(_apply_model_prefer)])
+router = APIRouter()
 
 conspectus_router = ConspectusRouter(
     ai_service, 
@@ -314,16 +304,3 @@ async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
                 yield {"step": step_key, "content": content}
 
     return _sse_response(events())
-
-
-@router.get("/models")
-async def list_models():
-    """Список моделей для переключателя в шапке + доступность (есть ли ключ)."""
-    return {"models": model_switch.list_models()}
-
-
-@router.get("/models/{model_id}/limit")
-@limiter.limit("20/minute")
-async def model_limit(request: Request, model_id: str):
-    """Остаток лимита у провайдера выбранной модели (если он его публикует)."""
-    return await model_switch.probe_limit(model_id)

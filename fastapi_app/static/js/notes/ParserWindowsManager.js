@@ -1,5 +1,4 @@
 import DialogService from './DialogService.js';
-import { modelHeader } from './api.js';
 
 import { t } from '../i18n.js';
 class ParserWindowsManager {
@@ -203,7 +202,7 @@ class ParserWindowsManager {
             try {
                 const res = await fetch('/api/ai/dialectics/parser', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...modelHeader() },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ formula: text })
                 });
                 const data = await res.json();
@@ -236,7 +235,6 @@ class ParserWindowsManager {
             try {
                 const res = await fetch('/api/ai/dialectics/formula/ocr', {
                     method: 'POST',
-                    headers: { ...modelHeader() },
                     body: formData
                 });
                 const data = await res.json();
@@ -283,7 +281,7 @@ class ParserWindowsManager {
                     
                     const loadingId = this.appendLoading('formula');
                     try {
-                        const res = await fetch('/api/ai/dialectics/voice-math', { method: 'POST', headers: { ...modelHeader() }, body: formData });
+                        const res = await fetch('/api/ai/dialectics/voice-math', { method: 'POST', body: formData });
                         const data = await res.json();
                         this.removeLoading(loadingId);
                         const recognized = data.result || '';
@@ -433,7 +431,6 @@ class ParserWindowsManager {
 
                 const res = await fetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
-                    headers: { ...modelHeader() },
                     body: formData
                 });
                 const data = await res.json();
@@ -471,7 +468,6 @@ class ParserWindowsManager {
             try {
                 const res = await fetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
-                    headers: { ...modelHeader() },
                     body: formData
                 });
                 const data = await res.json();

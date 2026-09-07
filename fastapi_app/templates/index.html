@@ -202,14 +202,6 @@
                 <button class="sub-bar-btn" id="btn-judge-conspect" hidden>
                     <span class="sub-icon">⚖️</span> {{ _('bar_judge') }}
                 </button>
-                <div class="dropdown-wrapper" style="position: relative;">
-                    <button class="sub-bar-btn" id="btn-model-menu" title="{{ _('model_menu_title') }}">
-                        <span class="sub-icon">🧠</span> <span id="model-menu-label">{{ _('nav_model') }}</span> <span class="arrow-down">▾</span>
-                    </button>
-                    <div id="model-menu-dropdown" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 264px; padding: 6px; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.12); background: #ffffff;">
-                        <!-- populated by ModelManager -->
-                    </div>
-                </div>
             </div>
             <div class="sub-bar-right">
                 <button class="sub-bar-btn" id="btn-versions">
@@ -280,5 +272,5 @@
 </script>
 <!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
 <script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
-<script type="module" src="/static/js/notes/app.js?v=27"></script>
+<script type="module" src="/static/js/notes/app.js?v=28"></script>
 {% endblock %}

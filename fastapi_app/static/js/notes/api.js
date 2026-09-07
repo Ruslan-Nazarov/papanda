@@ -1,17 +1,8 @@
-/** Заголовок выбора модели ИИ (шапка «Модель»). Читаем прямо из localStorage,
- *  чтобы не тянуть ModelManager в каждый модуль. */
-export function modelHeader() {
-    try {
-        const m = localStorage.getItem('dialectics_model');
-        return m && m !== 'auto' ? { 'X-Model-Prefer': m } : {};
-    } catch { return {}; }
-}
-
 class NotesAPI {
     static async request(endpoint, method = 'GET', body = null) {
         const options = {
             method,
-            headers: { 'Content-Type': 'application/json', ...modelHeader() },
+            headers: { 'Content-Type': 'application/json' },
         };
         if (body) options.body = JSON.stringify(body);
 
@@ -37,7 +28,7 @@ class NotesAPI {
     static async stream(endpoint, body, onDelta, onEvent) {
         const res = await fetch(`/api${endpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...modelHeader() },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
         if (!res.ok || !res.body) {

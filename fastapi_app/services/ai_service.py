@@ -10,9 +10,10 @@ from collections import OrderedDict
 from typing import Dict, Optional
 import aiofiles
 
-# Провайдер, выбранный пользователем в интерфейсе (шапка «Модель»). Ставится
-# на время обработки запроса (см. routers/ai.py::_apply_model_prefer), читается
-# в _generate/_generate_stream и в aux-вызовах роутера. None = авто-ротация.
+# Предпочитаемый провайдер на время обработки запроса. Читается в
+# _generate/_generate_stream и передаётся в LLMRegistry как prefer=. None =
+# обычная авто-ротация. Задаётся АВТОМАТИЧЕСКИ роутингом задач под модели
+# (в работе, см. services/model_switch.py) — выбор из интерфейса убран.
 _preferred_provider: "contextvars.ContextVar[Optional[str]]" = contextvars.ContextVar(
     "preferred_provider", default=None
 )
