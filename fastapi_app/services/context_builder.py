@@ -287,6 +287,20 @@ class ContextBuilder:
             + "\n\n".join(lines)
         )
 
+    async def build_editor_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
+        """Промпт редакторского прохода (см. редактор_конспекта_промпт.md):
+        готовые Шаги 1–5 → тот же конспект, сшитый в одно связное объяснение,
+        без жаргона и повторов. steps — {"1": "...", "2.1": "...", ...}."""
+        editor_prompt = await self._load_file("редактор_конспекта_промпт.md")
+        goal = _effective_goal(state, skeleton) or "Не указана"
+        order = sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")])
+        lines = [f"[{k}]\n{steps.get(k, '')}" for k in order]
+        return (
+            f"{editor_prompt}\n\nЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
+            f"ГОТОВЫЙ КОНСПЕКТ (в квадратных скобках — ключ блока):\n\n"
+            + "\n\n".join(lines)
+        )
+
     async def build_all_steps_prompt(self, state: dict, skeleton: dict,
                                      pinned_step: int = None, question: str = None) -> str:
         """Один промпт для генерации всех 5 шагов сразу (экономит вызовы к LLM).
@@ -359,9 +373,24 @@ class ContextBuilder:
         )
         return prompt
 
-    # На каждый предыдущий шаг в контексте — не больше этого числа символов
-    # (для добора/пошаговой генерации хватает сути шага, полный текст лишний).
-    _PREV_STEP_CAP = 600
+    # Непосредственно предыдущий шаг даём почти целиком (из него растёт
+    # текущий), более ранние — сжимаем до сути. Сжатие смысловое: заявка
+    # (первое предложение) + передача дальше (последнее), а не обрезка
+    # префикса — так виден переход, а не только начало мысли.
+    _PREV_STEP_CAP = 750
+    _PREV_STEP_OLDER_CAP = 340
+
+    @staticmethod
+    def _condense_step(txt: str, cap: int) -> str:
+        txt = (txt or "").strip()
+        if len(txt) <= cap:
+            return txt
+        sents = [s.strip() for s in re.split(r"(?<=[.!?…])\s+", txt) if s.strip()]
+        if len(sents) >= 3:
+            combo = sents[0] + " […] " + sents[-1]
+            if len(combo) <= cap * 1.4:
+                return combo
+        return txt[:cap].rsplit(" ", 1)[0] + " […]"
 
     def _compile_previous_steps(self, state: dict, current_step: int, include_substeps: bool = False) -> str:
         context = ""
@@ -371,8 +400,8 @@ class ContextBuilder:
             step_data = steps.get(step_key, {})
             if step_data.get("status") in ["ready", "done"]:
                 txt = (step_data.get("content", "") or "").strip()
-                if len(txt) > self._PREV_STEP_CAP:
-                    txt = txt[:self._PREV_STEP_CAP].rsplit(" ", 1)[0] + " …"
+                cap = self._PREV_STEP_CAP if i == current_step - 1 else self._PREV_STEP_OLDER_CAP
+                txt = self._condense_step(txt, cap)
                 context += f"--- ШАГ {i} ---\n{txt}\n\n"
             elif i == current_step and include_substeps:
                 # Включаем уже сгенерированные подшаги текущего шага

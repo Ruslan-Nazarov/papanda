@@ -18,6 +18,26 @@ def _sort_key(key: str) -> list:
 def _base_of(key: str) -> str:
     return key.split(".")[0]
 
+
+# Модель под medium-reasoning любит открывать блок называнием его роли
+# («Простейшим процессом здесь выступает…», «Противоположным процессом
+# является…») — вопреки запрету в 8_генератор_шага. Детерминированно срезаем
+# этот зачин: он всегда в форме «<роль> процессом <связка> <предмет>».
+_ROLE_OPENER_RE = re.compile(
+    r"^\W*(?:простейшим|развивающим|противоположным|разрешающим|исходным)\s+процессом\s+"
+    r"(?:здесь\s+|тут\s+|в\s+данном\s+случае\s+)?"
+    r"(?:является|выступает|служит|становится|будет)\s+",
+    re.IGNORECASE,
+)
+
+
+def _strip_role_opener(txt: str) -> str:
+    m = _ROLE_OPENER_RE.match(txt or "")
+    if not m:
+        return txt
+    rest = txt[m.end():].lstrip()
+    return (rest[:1].upper() + rest[1:]) if rest else txt
+
 # Потолки на длину ОТВЕТА по фазам (не размер входа).
 # ВАЖНО (2026-09-07, пересмотр): раньше all_steps держали на 3400, чтобы
 # вход+выход влезали в лимит Groq gpt-oss-120b (8000 токенов/мин на всё
@@ -32,6 +52,7 @@ _MAX_TOKENS = {
     "step5": 3800,
     "judge": 700,
     "history": 2000,
+    "editor": 6000,
 }
 
 # Многопроходный поиск простейшего процесса (см. 1_главный_промпт.md п. 6.2.1):
@@ -168,6 +189,16 @@ class ConspectusRouter:
         expected_step_keys) в зависимости от того, сколько процессов у
         каждого шага в скелете."""
         skeleton = await self._gen_skeleton(state, locale, failed_attempts=failed_attempts) if use_skeleton else {}
+        # Вторая попытка заземления: сырой запрос мог быть вопросом («почему…»)
+        # и не резолвиться в вики, а goal_as_process из скелета — чистая
+        # именная формулировка, по ней статья находится чаще.
+        if not state.get("reference") and isinstance(skeleton, dict):
+            gp = (skeleton.get("goal_as_process") or "").strip()
+            if gp:
+                try:
+                    state["reference"] = await self.rag_manager.reference_for(gp) or ""
+                except Exception:  # noqa: BLE001 — fail-open
+                    pass
         prompt_all = await self.context_builder.build_all_steps_prompt(
             state, skeleton, pinned_step=None, question=None,
         )
@@ -263,12 +294,23 @@ class ConspectusRouter:
             step1_summary = " / ".join(c for k, c in collected.items() if _base_of(k) == "1")[:200]
             failed_attempts.append({"thesis1": step1_summary, "reason": reason})
 
+        collected = {k: _strip_role_opener(v) for k, v in collected.items()}
         for key in sorted(collected.keys(), key=_sort_key):
             content = collected.get(key)
             if content:
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
+
+        # Редакторский проход: сшить блоки в одно связное объяснение, снять
+        # жаргон и повторы. Меняет только те блоки, где реально помогло.
+        if len(collected) >= 3:
+            yield ("__status__", _("gen_status_editor"))
+            for key, edited in (await self._gen_editor(state, collected, locale)).items():
+                collected[key] = edited
+                step_key = f"step{key}"
+                state["steps"][step_key] = {"content": edited, "status": "ready", "author": "ai", "sub_steps": []}
+                yield (step_key, edited)
 
         # Доп. проход: заголовки-суть по шагам + исторические справки (📜).
         if collected:
@@ -280,6 +322,43 @@ class ConspectusRouter:
             if notes:
                 state.setdefault("history_notes", {}).update(notes)
                 yield ("__history_notes__", notes)
+
+    async def _gen_editor(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
+        """Редакторский проход поверх готовых Шагов 1–5 (см.
+        редактор_конспекта_промпт.md): сшивает блоки в одно связное объяснение,
+        убирает жаргон алгоритма и повторы. Возвращает {ключ: новый текст}
+        ТОЛЬКО для реально изменённых блоков, прошедших проверку на
+        вменяемость (не пустой, длина не схлопнута и не раздута). Плохой
+        JSON / ошибка → {} (оставляем оригинал — проход необязательный)."""
+        if len(collected) < 3:
+            return {}
+        prompt = await self.context_builder.build_editor_prompt(state, collected)
+        raw = await self.ai_service._generate(
+            prompt, f"Отредактируй конспект. Верни только JSON. Язык: {locale}",
+            {"type": "json_object"}, max_tokens=_MAX_TOKENS["editor"], temperature=0.3,
+            use_cache=False, task="editor",
+        )
+        raw = (raw or "").strip()
+        if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
+            return {}
+        try:
+            parsed = self.sanitizer.extract_json(raw)
+        except ValueError:
+            return {}
+        if not isinstance(parsed, dict):
+            return {}
+        out: Dict[str, str] = {}
+        for key, original in collected.items():
+            edited = parsed.get(key)
+            if not isinstance(edited, str):
+                continue
+            edited = edited.strip()
+            orig = original.strip()
+            if len(edited) < 40 or not (0.7 * len(orig) <= len(edited) <= 1.35 * len(orig)):
+                continue
+            if edited != orig:
+                out[key] = edited
+        return out
 
     async def _gen_postprocess(self, state: dict, collected: Dict[str, str], locale: str):
         """Один проход поверх готовых Шагов 1–5: (notes, titles).

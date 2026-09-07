@@ -131,3 +131,28 @@ async def test_history_pass_emits_titles_and_notes():
                                            "4": "оформилось позже"}
     assert state["history_notes"]["1"] == "в древности так не считали"
     assert state["step_titles"]["5"] == "чем разрешилось"
+
+
+def test_strip_role_opener_removes_algorithm_narration():
+    from fastapi_app.services.ai_router_service import _strip_role_opener
+    assert _strip_role_opener(
+        "Противоположным процессом является дефляция — сжатие денежной массы."
+    ) == "Дефляция — сжатие денежной массы."
+    assert _strip_role_opener(
+        "Простейшим процессом здесь выступает поглощение света пигментами."
+    ) == "Поглощение света пигментами."
+    # обычный текст не трогаем
+    plain = "В древних культурах свет считали прямым лучом."
+    assert _strip_role_opener(plain) == plain
+
+
+def test_condense_step_keeps_claim_and_handoff():
+    from fastapi_app.services.context_builder import ContextBuilder
+    long = ("Первое предложение с заявкой шага. " + "Середина. " * 40
+            + "Последнее предложение с передачей дальше.")
+    out = ContextBuilder._condense_step(long, 200)
+    assert out.startswith("Первое предложение с заявкой шага.")
+    assert out.endswith("Последнее предложение с передачей дальше.")
+    assert "[…]" in out
+    # короткий текст возвращается как есть
+    assert ContextBuilder._condense_step("Коротко.", 200) == "Коротко."

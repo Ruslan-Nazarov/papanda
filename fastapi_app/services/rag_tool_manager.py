@@ -17,7 +17,10 @@ import httpx
 logger = logging.getLogger(__name__)
 
 _WIKI_API = "https://ru.wikipedia.org/w/api.php"
-_MAX_CHARS = 1400
+# ~3500 ≈ вводный абзац + начало первой содержательной секции: даёт не только
+# определение, но и контекст (кто, когда, при какой задаче) — то, что нужно
+# для историко-первого разбора. Меньше давало голое определение.
+_MAX_CHARS = 3500
 _CACHE_TTL = 3600.0
 # Вопросные обёртки убираем перед поиском статьи: «почему хлеб черствеет» плохо
 # резолвится, а «хлеб черствеет» — терпимо (хотя часто всё равно нет статьи, и
@@ -77,10 +80,11 @@ class RAGManager:
                     return ""
                 title = titles[0]
 
-                # 2. Вводный абзац статьи.
+                # 2. Вводный абзац + начало статьи (без exintro — нужен контекст,
+                #    не только определение из лида).
                 r2 = await client.get(_WIKI_API, params={
                     "action": "query", "titles": title, "redirects": "1",
-                    "prop": "extracts", "exintro": "1", "explaintext": "1",
+                    "prop": "extracts", "explaintext": "1",
                     "exchars": str(_MAX_CHARS), "format": "json",
                 })
                 r2.raise_for_status()

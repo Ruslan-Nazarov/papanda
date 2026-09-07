@@ -206,6 +206,7 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # Gemini flash-lite — второй фолбэк (большой контекст); Groq последним как
     # backstop (в основном 429, спасает добор по одному процессу).
     "step_stream": ["Cerebras", "Gemini", "Groq"],   # стрим шагов конспекта
+    "editor":      ["Cerebras", "Gemini", "Groq"],   # редакторский проход поверх готовых шагов
     "what_is":     ["Groq", "Cerebras", "Gemini"],   # «Что это?»
     "formula":     ["Groq", "Cerebras", "Gemini"],   # парсер формул
     "check":       ["Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
