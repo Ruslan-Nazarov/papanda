@@ -14,6 +14,18 @@ from fastapi import HTTPException
 from fastapi_app.config import settings
 from fastapi_app.models.notes import Note, NoteCategory, NoteVersion, NoteConnection
 from fastapi_app.schemas.notes import NoteCreate, NoteUpdate, CategoryCreate, NoteVersionCreate
+from fastapi_app.services.sanitizer import sanitize_on_write
+
+
+def _clean_blocks(blocks: list) -> list:
+    """Санитизация HTML каждого блока при сохранении (см. sanitize_on_write)."""
+    out = []
+    for b in blocks:
+        if isinstance(b, dict) and b.get("html"):
+            b = {**b, "html": sanitize_on_write(b["html"])}
+        out.append(b)
+    return out
+
 
 class NotesService:
     @staticmethod
@@ -51,7 +63,7 @@ class NotesService:
 
     @staticmethod
     async def create_note(session: AsyncSession, data: NoteCreate):
-        blocks_data = [b.model_dump() for b in data.blocks]
+        blocks_data = _clean_blocks([b.model_dump() for b in data.blocks])
         
         new_note = Note(
             title=data.title,
@@ -147,8 +159,7 @@ class NotesService:
             
         # Blocks update
         if data.blocks is not None:
-            new_blocks_data = [b.model_dump() for b in data.blocks]
-            note.content_json = new_blocks_data
+            note.content_json = _clean_blocks([b.model_dump() for b in data.blocks])
             
         await session.commit()
         await session.refresh(note)

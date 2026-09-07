@@ -354,28 +354,35 @@ class ConspectusRouter:
                 state["note_meta"] = meta
                 yield ("__note_meta__", meta)
 
-        # Отчёт о качестве прогона: отличить «просели токены/провайдер» от
-        # «плохо сработал метод» — и сказать это пользователю, а не молчать.
+        yield ("__report__", self._finalize_report(report, collected, t0))
+
+    @staticmethod
+    def _finalize_report(report: dict, collected: Dict[str, str], t0: float) -> dict:
+        """Достроить отчёт (degraded/reasons/метрики) и залогировать. Общий для
+        основного пути и pinned-регенерации."""
         short_steps = sum(1 for v in collected.values() if len(v) < _MIN_STEP_CHARS)
         expected_min = 6  # 1 + 2 развивающих + 3 + 4 + 5
+        report.setdefault("attempts", 1)
+        report.setdefault("regen", 0)
+        report.setdefault("judge", "skipped")
         report["expected_blocks"] = expected_min
         report["got_blocks"] = len(collected)
         report["short_blocks"] = short_steps
         report["duration_s"] = round(time.time() - t0, 1)
 
-        degraded_reasons = []
+        reasons = []
         if report.get("gen_provider") and report["gen_provider"] != _PRIMARY_GEN_PROVIDER:
-            degraded_reasons.append("fallback_provider")
+            reasons.append("fallback_provider")
         if report["attempts"] >= _MAX_GENERATION_ATTEMPTS and report["judge"] == "failed":
-            degraded_reasons.append("judge_gave_up")
+            reasons.append("judge_gave_up")
         if len(collected) < expected_min:
-            degraded_reasons.append("missing_blocks")
+            reasons.append("missing_blocks")
         if short_steps:
-            degraded_reasons.append("truncated_blocks")
+            reasons.append("truncated_blocks")
         if report["regen"] >= 3:
-            degraded_reasons.append("many_regens")
-        report["degraded"] = bool(degraded_reasons)
-        report["reasons"] = degraded_reasons
+            reasons.append("many_regens")
+        report["degraded"] = bool(reasons)
+        report["reasons"] = reasons
 
         logger.info(
             "conspect gen: provider=%s fell_back=%s attempts=%d judge=%s regen=%d "
@@ -383,9 +390,9 @@ class ConspectusRouter:
             report.get("gen_provider"), report.get("gen_fell_back"), report["attempts"],
             report["judge"], report["regen"], report["got_blocks"], expected_min,
             short_steps, report["duration_s"], report["degraded"],
-            (" reasons=" + ",".join(degraded_reasons)) if degraded_reasons else "",
+            (" reasons=" + ",".join(reasons)) if reasons else "",
         )
-        yield ("__report__", report)
+        return report
 
     async def _gen_editor(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
         """Редакторский проход поверх готовых Шагов 1–5 (см.
@@ -473,6 +480,8 @@ class ConspectusRouter:
                                           question: str):
         """Часть stream_generate_full для кнопки ❓ — вынесено отдельно, без судьи."""
         _ = get_translator(locale)
+        t0 = time.time()
+        report: Dict = {"attempts": 1, "regen": 0, "judge": "skipped"}
         if question:
             updated_pinned = await self._regen_step(state, pinned, "", locale, question=question)
             if updated_pinned:
@@ -505,6 +514,9 @@ class ConspectusRouter:
                         step_key = f"step{key}"
                         state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                         yield (step_key, content)
+        info = get_last_call_info() or {}
+        report["gen_provider"] = info.get("provider")
+        report["gen_fell_back"] = bool(info.get("fell_back"))
 
         # Хвост потока — финализируем последний процесс.
         for key, content in self._complete_steps(buf, final=True).items():
@@ -525,6 +537,7 @@ class ConspectusRouter:
             content = await self._regen_step(state, i, "", locale)
             if content:
                 emitted[key] = content
+                report["regen"] += 1
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
@@ -545,6 +558,9 @@ class ConspectusRouter:
             if meta:
                 state["note_meta"] = meta
                 yield ("__note_meta__", meta)
+
+        if base_steps:
+            yield ("__report__", self._finalize_report(report, base_steps, t0))
 
     async def _handle_auto_full(self, state: dict, locale: str) -> dict:
         """Нестримовый путь: собирает результат stream_generate_full целиком.

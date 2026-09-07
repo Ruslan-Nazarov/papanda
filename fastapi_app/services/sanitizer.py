@@ -3,19 +3,46 @@ import json
 
 import nh3
 
-# Разрешённый HTML в теле блока конспекта (то, что генерит contentToHtml на
-# фронте): абзацы, переносы, простое форматирование, рамка формулы и span
-# формулы с атрибутом formula. Всё остальное вырезаем.
-_ALLOWED_TAGS = {"p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li",
-                 "code", "pre", "blockquote", "h3", "h4", "span", "div"}
-_ALLOWED_ATTRS = {"span": {"class", "formula"}, "div": {"class"}}
+# Строгий набор — для ПУБЛИЧНОЙ отдачи (страница /s/<token>): абзацы,
+# форматирование, рамка формулы и span формулы с атрибутом formula.
+_PUBLIC_TAGS = {"p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li",
+                "code", "pre", "blockquote", "h3", "h4", "span", "div"}
+_PUBLIC_ATTRS = {"span": {"class", "formula"}, "div": {"class"}}
+
+# Набор пошире — для санитизации НА ЗАПИСЬ (create/update note): всё, что
+# легально производит редактор (TipTap), включая ссылки, mark и скрытые
+# фразы (span[data-type=hidden-phrase] + data-*). Скрипты/обработчики/style
+# всё равно вырезаются — nh3 их не пропускает.
+_WRITE_TAGS = _PUBLIC_TAGS | {"a", "mark", "sup", "sub", "h1", "h2", "h5", "h6",
+                              "hr", "table", "thead", "tbody", "tr", "th", "td"}
+_WRITE_ATTRS = {
+    "span": {"class", "formula", "data-type", "data-hint", "data-expanded", "style"},
+    "div": {"class"},
+    "a": {"href", "title"},  # rel/target управляет сам nh3 (link_rel)
+    "mark": {"class"},
+}
+# style на span нужен math-inline'у; nh3 санитизирует значение style сам
+# (только безопасные свойства), поэтому его можно оставить в списке.
+_WRITE_STYLES = {"color", "background-color", "font-weight", "text-decoration"}
 
 
 def sanitize_block_html(html: str) -> str:
-    """Очистить HTML блока перед публичной отдачей (страница /s/<token>)."""
+    """Строгая очистка для публичной отдачи (страница /s/<token>)."""
     if not html:
         return ""
-    return nh3.clean(html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS)
+    return nh3.clean(html, tags=_PUBLIC_TAGS, attributes=_PUBLIC_ATTRS)
+
+
+def sanitize_on_write(html: str) -> str:
+    """Очистка HTML блока при сохранении заметки — вырезает script/onclick/
+    javascript:-ссылки и прочий актив, сохраняя всё легальное форматирование
+    редактора."""
+    if not html:
+        return ""
+    return nh3.clean(
+        html, tags=_WRITE_TAGS, attributes=_WRITE_ATTRS,
+        url_schemes={"http", "https", "mailto"},
+    )
 
 
 def _iter_balanced_objects(text: str):
