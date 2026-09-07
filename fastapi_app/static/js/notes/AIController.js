@@ -61,12 +61,14 @@ class AIController {
             html = html.replace(/<p>\s*(<div class="math-callout">[\s\S]*?<\/div>)\s*<\/p>/g, '$1');
             return html;
         }
-        // Иначе: каждый двойной перевод строки → отдельный <p>, одинарный → <br>
+        // Иначе (marked/DOMPurify не загрузились): экранируем — это может быть
+        // текст модели с угловыми скобками, нельзя вставлять сырым.
+        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         return text
             .split(/\n\n+/)
             .map(para => para.trim())
             .filter(Boolean)
-            .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
+            .map(para => `<p>${esc(para).replace(/\n/g, '<br>')}</p>`)
             .join('');
     }
 

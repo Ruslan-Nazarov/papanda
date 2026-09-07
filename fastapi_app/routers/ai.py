@@ -36,35 +36,54 @@ conspectus_router = ConspectusRouter(
 )
 
 
-async def _fetch_article_from_url(url: str) -> str:
-    """Скачивает страницу по ссылке и вытаскивает основной текст (абзацы <p>).
-    Простая защита от SSRF: только http(s), без приватных/loopback адресов."""
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise HTTPException(status_code=400, detail="Поддерживаются только http(s)-ссылки")
-    host = parsed.hostname
+def _assert_public_host(host: str) -> None:
+    """Хост резолвится только в публичные адреса — иначе 400. Проверяем ВСЕ
+    A/AAAA-записи (не только первую), чтобы не проскочил DNS с несколькими
+    записями."""
     try:
         infos = socket.getaddrinfo(host, None)
-        for info in infos:
-            ip = ipaddress.ip_address(info[4][0])
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-                raise HTTPException(status_code=400, detail="Эта ссылка недоступна для загрузки")
     except socket.gaierror:
         raise HTTPException(status_code=400, detail="Не удалось разрешить адрес ссылки")
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
+                or ip.is_multicast or ip.is_unspecified):
+            raise HTTPException(status_code=400, detail="Эта ссылка недоступна для загрузки")
 
-    try:
-        async with httpx.AsyncClient(
-            timeout=15.0, follow_redirects=True, max_redirects=3,
-            headers={"User-Agent": "Mozilla/5.0 (papanda article parser)"},
-        ) as client:
-            resp = await client.get(url)
+
+async def _fetch_article_from_url(url: str) -> str:
+    """Скачивает страницу по ссылке и вытаскивает основной текст (абзацы <p>).
+    Защита от SSRF: только http(s); редиректы НЕ следуются автоматически —
+    каждый хоп проверяется на публичность вручную (иначе 302 на внутренний
+    адрес / метаданные облака обходит проверку)."""
+    body = None
+    for _hop in range(4):
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.hostname:
+            raise HTTPException(status_code=400, detail="Поддерживаются только http(s)-ссылки")
+        _assert_public_host(parsed.hostname)
+        try:
+            async with httpx.AsyncClient(
+                timeout=15.0, follow_redirects=False,
+                headers={"User-Agent": "Mozilla/5.0 (papanda article parser)"},
+            ) as client:
+                resp = await client.get(url)
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=400, detail=f"Не удалось загрузить страницу: {e}")
+        if resp.is_redirect and resp.headers.get("location"):
+            url = str(resp.next_request.url) if resp.next_request else resp.headers["location"]
+            continue
+        try:
             resp.raise_for_status()
-            ctype = resp.headers.get("content-type", "")
-            if "html" not in ctype and "text" not in ctype:
-                raise HTTPException(status_code=400, detail="По ссылке не текстовая страница")
-            body = resp.text
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=400, detail=f"Не удалось загрузить страницу: {e}")
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=400, detail=f"Не удалось загрузить страницу: {e}")
+        ctype = resp.headers.get("content-type", "")
+        if "html" not in ctype and "text" not in ctype:
+            raise HTTPException(status_code=400, detail="По ссылке не текстовая страница")
+        body = resp.text
+        break
+    if body is None:
+        raise HTTPException(status_code=400, detail="Слишком много переадресаций по ссылке")
 
     body = re.sub(r"(?is)<(script|style|noscript|template)[^>]*>.*?</\1>", " ", body)
     paras = re.findall(r"(?is)<p\b[^>]*>(.*?)</p>", body)

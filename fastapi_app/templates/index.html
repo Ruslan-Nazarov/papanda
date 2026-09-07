@@ -250,7 +250,7 @@
 {% block scripts %}
 <!-- D3 and Function-Plot -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/function-plot/dist/function-plot.js"></script>
+<script src="https://unpkg.com/function-plot@1.24.4/dist/function-plot.js"></script>
 
 <!-- Fabric.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -272,5 +272,5 @@
 </script>
 <!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
 <script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
-<script type="module" src="/static/js/notes/app.js?v=31"></script>
+<script type="module" src="/static/js/notes/app.js?v=32"></script>
 {% endblock %}

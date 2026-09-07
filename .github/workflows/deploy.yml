@@ -6,8 +6,23 @@ on:
       - main
 
 jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run test suite
+        run: python -m pytest -q
+
   deploy:
     name: Deploy to Production
+    needs: test          # деплой только если тесты прошли
     runs-on: ubuntu-latest
 
     steps:
@@ -20,15 +35,19 @@ jobs:
           script: |
             echo "Starting deployment..."
             cd /root/papanda/
-            
+
+            echo "Recording current revision for rollback..."
+            git rev-parse HEAD > /root/papanda/.last_deploy_rev || true
+
             echo "Pulling latest code from main branch..."
             git fetch origin main
             git reset --hard origin/main
-            
+
             echo "Installing dependencies..."
             /root/papanda/venv/bin/pip install -r requirements.txt
-            
+
             echo "Restarting Papanda service..."
             systemctl restart papanda
-            
+
             echo "Deployment completed successfully!"
+            echo "Rollback: git reset --hard \$(cat /root/papanda/.last_deploy_rev) && systemctl restart papanda"

@@ -67,8 +67,9 @@ async def _run_migrations(engine: AsyncEngine):
                 if col_name not in columns:
                     try:
                         await conn.execute(text(sql))
+                        logger.info("Migration: added column notes.%s", col_name)
                     except Exception as e:
-                        logger.debug("Migration column add failed for %s: %s", col_name, e)
+                        logger.warning("Migration column add failed for %s: %s", col_name, e)
             
             # Create indexes if missing
             index_statements = [
@@ -79,8 +80,8 @@ async def _run_migrations(engine: AsyncEngine):
             for idx_sql in index_statements:
                 try:
                     await conn.execute(text(idx_sql))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Migration index create failed: %s (%s)", idx_sql, e)
     except Exception as e:
         logger.error("Auto-migration error: %s", e)
 
