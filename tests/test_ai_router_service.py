@@ -164,7 +164,7 @@ async def test_report_flags_degraded_on_fallback_provider(monkeypatch):
     ai_service._generate = AsyncMock(return_value='{"is_valid": true, "reason": ""}')
 
     monkeypatch.setattr(
-        "fastapi_app.services.ai_router_service.get_last_call_info",
+        "fastapi_app.services.generation_pipeline.get_last_call_info",
         lambda: {"provider": "Groq", "fell_back": True},
     )
     router = ConspectusRouter(ai_service, ContextBuilder(), Sanitizer(), MagicMock())
