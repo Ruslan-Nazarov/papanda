@@ -4,27 +4,10 @@ import os
 import time
 import json
 import hashlib
-import contextvars
 from contextlib import aclosing
 from collections import OrderedDict
 from typing import Dict, Optional
 import aiofiles
-
-# Предпочитаемый провайдер на время обработки запроса. Читается в
-# _generate/_generate_stream и передаётся в LLMRegistry как prefer=. None =
-# обычная авто-ротация. Задаётся АВТОМАТИЧЕСКИ роутингом задач под модели
-# (в работе, см. services/model_switch.py) — выбор из интерфейса убран.
-_preferred_provider: "contextvars.ContextVar[Optional[str]]" = contextvars.ContextVar(
-    "preferred_provider", default=None
-)
-
-
-def set_preferred_provider(name: Optional[str]) -> None:
-    _preferred_provider.set(name or None)
-
-
-def get_preferred_provider() -> Optional[str]:
-    return _preferred_provider.get()
 
 
 class _TTLCache:
@@ -81,9 +64,14 @@ PROMPT_CHAINS = {
     "check_ai": ["base", "check_ai", "format_check"],
 }
 
-from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured
+from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured, TASK_ROUTES
 
 _AI_DISABLED_MSG = "AI disabled: не настроены API-ключи LLM (см. .env)."
+
+
+def _route(task: Optional[str], prefer):
+    """prefer, заданный явно, важнее; иначе — маршрут задачи из TASK_ROUTES."""
+    return prefer or (TASK_ROUTES.get(task) if task else None)
 
 class AIService:
     def __init__(self):
@@ -140,7 +128,8 @@ class AIService:
         temperature: Optional[float] = None,
         fast: bool = False,
         use_cache: bool = True,
-        prefer: Optional[str] = None,
+        prefer=None,
+        task: Optional[str] = None,
     ) -> str:
         if not any_llm_key_configured():
             return _AI_DISABLED_MSG
@@ -164,7 +153,7 @@ class AIService:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 fast=fast,
-                prefer=_preferred_provider.get() or prefer,
+                prefer=_route(task, prefer),
             )
         except Exception as e:
             return f"Error calling AI: {str(e)}"
@@ -182,7 +171,8 @@ class AIService:
         temperature: Optional[float] = None,
         fast: bool = False,
         use_cache: bool = True,
-        prefer: Optional[str] = None,
+        prefer=None,
+        task: Optional[str] = None,
     ):
         """Стрим токенов ответа. При попадании в кэш отдаёт целиком одним чанком.
         По завершении складывает полный ответ в кэш."""
@@ -206,7 +196,7 @@ class AIService:
         parts = []
         async with aclosing(llm_registry.generate_stream(
             messages, max_tokens=max_tokens, temperature=temperature, fast=fast,
-            prefer=_preferred_provider.get() or prefer,
+            prefer=_route(task, prefer),
         )) as gen:
             async for delta in gen:
                 parts.append(delta)
@@ -229,12 +219,12 @@ class AIService:
     async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском") -> str:
         sys_prompt = await self.get_bundled_prompt("what_is")
         user_prompt = self._explain_prompt(text, context_before, context_after)
-        return await self._generate(sys_prompt, user_prompt, history=history, fast=True, max_tokens=800)
+        return await self._generate(sys_prompt, user_prompt, history=history, max_tokens=900, task="what_is")
 
     async def explain_concept_stream(self, text, context_before, context_after, history, locale="русском"):
         sys_prompt = await self.get_bundled_prompt("what_is")
         user_prompt = self._explain_prompt(text, context_before, context_after)
-        async with aclosing(self._generate_stream(sys_prompt, user_prompt, history=history, fast=True, max_tokens=800)) as g:
+        async with aclosing(self._generate_stream(sys_prompt, user_prompt, history=history, max_tokens=900, task="what_is")) as g:
             async for d in g:
                 yield d
 
@@ -247,7 +237,7 @@ class AIService:
             f"операция, разрешающая кризис. Только количественный анализ, без физического "
             f"или содержательного смысла символов. Формат ответа — Markdown."
         )
-        return await self._generate(sys_prompt, user_prompt)
+        return await self._generate(sys_prompt, user_prompt, task="formula")
 
     async def parse_article(self, text: str, user_instruction: str = "") -> str:
         sys_prompt = await self.get_bundled_prompt("article")
@@ -266,7 +256,7 @@ class AIService:
             "## Расхождение — где логическая форма расходится с исторической и почему; "
             "как содержание статьи повлияло на дальнейшее развитие предмета (п. 4)."
         )
-        return await self._generate(sys_prompt, user_prompt)
+        return await self._generate(sys_prompt, user_prompt, task="article")
 
     @staticmethod
     def _check_prompt(note_text, locale):
@@ -279,11 +269,11 @@ class AIService:
 
     async def check_logic(self, note_text: str, history: list, locale: str = "русском") -> str:
         sys_prompt = await self.get_bundled_prompt("check_ai")
-        return await self._generate(sys_prompt, self._check_prompt(note_text, locale), history=history)
+        return await self._generate(sys_prompt, self._check_prompt(note_text, locale), history=history, task="check")
 
     async def check_logic_stream(self, note_text: str, history: list, locale: str = "русском"):
         sys_prompt = await self.get_bundled_prompt("check_ai")
-        async with aclosing(self._generate_stream(sys_prompt, self._check_prompt(note_text, locale), history=history, max_tokens=1600)) as g:
+        async with aclosing(self._generate_stream(sys_prompt, self._check_prompt(note_text, locale), history=history, max_tokens=1600, task="check")) as g:
             async for d in g:
                 yield d
 
@@ -297,7 +287,7 @@ class AIService:
             f"Исходная формула (LaTeX): {formula or '(пусто)'}\n\n"
             f"Инструкция: {instruction}"
         )
-        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"}, task="tiny")
 
     async def text_to_formula(self, description: str) -> str:
         sys_prompt = (
@@ -305,7 +295,7 @@ class AIService:
             'Верни ТОЛЬКО формулу в LaTeX, строго JSON: {"formula": "…"}. Без пояснений.'
         )
         user_prompt = f"Описание: {description}"
-        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"})
+        return await self._generate(sys_prompt, user_prompt, {"type": "json_object"}, task="tiny")
 
     async def ocr_formula(self, base64_img: str) -> str:
         if not settings.GROQ_API_KEY or settings.GROQ_API_KEY == "your_groq_api_key_here":

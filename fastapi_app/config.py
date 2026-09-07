@@ -25,19 +25,22 @@ class Settings(BaseSettings):
     # проверить https://openrouter.ai/models?fmt=table&input_modalities=text&max_price=0
     # и обновить строку. Проверено рабочим 2026-09-06.
     OPENROUTER_MODEL: str = "minimax/minimax-m3:free"
+    # SambaNova / HuggingFace выпилены из кольца (402 / мёртвый эндпоинт),
+    # строки оставлены на случай возврата.
     SAMBANOVA_MODEL: str = "Meta-Llama-3.3-70B-Instruct"
-    CEREBRAS_MODEL: str = "gpt-oss-120b"
+    CEREBRAS_MODEL: str = "gpt-oss-120b"          # тот же gpt-oss, что у Groq; $5 кредит
     HUGGINGFACE_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"
-    # Google AI Studio (OpenAI-совместимый эндпоинт). Щедрый бесплатный лимит.
-    # ВНИМАНИЕ: alias-модели (*-latest, *-preview) на compat-эндпоинте зависают —
-    # используем закреплённые версии. При устаревании вернётся чистый 404 (провайдер
-    # пропускается), тогда обновить строку на актуальный gemini-*-flash.
-    GOOGLE_MODEL: str = "gemini-3.5-flash"
+    # Google AI Studio (OpenAI-совместимый эндпоинт).
+    # ВНИМАНИЕ (проверено 2026-09-07): на этом ключе обычный gemini-3.5-flash
+    # мгновенно отдаёт 429 "exceeded your current quota" — рабочий только
+    # flash-LITE (быстрый, ~0.6с, чистый JSON). Поэтому обе строки = flash-lite.
+    # alias-модели (*-latest, *-preview) на compat-эндпоинте зависают.
+    GOOGLE_MODEL: str = "gemini-3.5-flash-lite"
     GOOGLE_FAST_MODEL: str = "gemini-3.5-flash-lite"
 
-    # Быстрые (маленькие) модели для лёгких задач: подсказки, «что это?», скелет плана.
+    # Быстрые (маленькие) модели для лёгких задач: скелет плана, исторические справки.
     GROQ_FAST_MODEL: str = "openai/gpt-oss-20b"
-    CEREBRAS_FAST_MODEL: str = "llama3.1-8b"
+    CEREBRAS_FAST_MODEL: str = "qwen-3.8-27b"   # на аккаунте нет llama; qwen отдаёт чистый JSON
 
     # Таймаут одного запроса к провайдеру, сек (по истечении — переход к следующему).
     LLM_TIMEOUT: float = 15.0

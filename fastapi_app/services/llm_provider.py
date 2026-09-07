@@ -185,36 +185,65 @@ class _AllRateLimited(Exception):
     """Весь круг провайдеров упёрся в rate-limit — есть смысл подождать и повторить."""
 
 
+# Маршрутизация вызовов под задачу (2026-09-07). Значение — список имён
+# провайдеров в порядке предпочтения для этой задачи; фолбэк на остальных из
+# кольца сохраняется. Решение по $5-кредиту Cerebras: на горячем пути первым
+# бесплатный Groq, Cerebras — первый фолбаг (платный буфер включается ровно
+# когда Groq затроттлился), Gemini — вторым.
+TASK_ROUTES: Dict[str, List[str]] = {
+    # горячий путь и всё крупное: Groq (free) → Cerebras (платный буфер) → Gemini
+    "step_stream": ["Groq", "Cerebras", "Gemini"],   # стрим шагов конспекта
+    "what_is":     ["Groq", "Cerebras", "Gemini"],   # «Что это?»
+    "formula":     ["Groq", "Cerebras", "Gemini"],   # парсер формул
+    "check":       ["Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
+    "article":     ["Groq", "Cerebras", "Gemini"],   # длинный вход
+    "tiny":        ["Groq", "Cerebras", "Gemini"],   # мелкие LaTeX-преобразования
+    # мелкие структурные вызовы: Gemini flash-lite первым — он быстрый, чистый
+    # JSON, и так минутный лимит Groq не тратится на вспомогательное
+    # (на этом ключе рабочий ТОЛЬКО flash-lite, обычный flash сразу 429).
+    "skeleton":    ["Gemini", "Groq", "Cerebras"],   # план-скелет (fast=True)
+    "history":     ["Gemini", "Groq"],               # исторические справки 📜 (fast=True)
+    # судья: Gemini первым осознанно — он ВНЕ семейства gpt-oss (Groq/Cerebras),
+    # чтобы не оценивал выход родственной модели.
+    "judge":       ["Gemini", "Cerebras", "Groq"],
+}
+
+
 class LLMRegistry:
     def __init__(self):
-        # Порядок = приоритет фолбэка. Реально живут (2026-09-06): Groq,
-        # Gemini, GroqAlt (тот же ключ, 2-я модель), OpenRouter (:free-модель).
-        # Cerebras/SambaNova требуют оплаты, HuggingFace-эндпоинт мёртв — идут
-        # в хвост, регистри их просто пропускает при недоступности.
+        # Порядок = приоритет фолбэка по умолчанию. Живые (2026-09-07): Groq
+        # (free ~200k TPD), Cerebras (gpt-oss-120b, $5 кредит), Gemini
+        # (3.5-flash / flash-lite), GroqAlt (тот же ключ, qwen — отдельный
+        # лимит), OpenRouter (:free minimax — общий бэкстоп).
+        # SambaNova / HuggingFace выпилены: первый требует оплаты (402), у
+        # второго мёртв эндпоинт — в кольце они только жгли по 1-2 с на 402/
+        # connection error каждый проход.
         self.providers = [
             GroqProvider(),
+            CerebrasProvider(),
             GeminiProvider(),
             GroqAltProvider(),
             OpenRouterProvider(),
-            CerebrasProvider(),
-            SambaNovaProvider(),
-            HuggingFaceProvider()
         ]
         # С какого провайдера начинать следующий запрос (сдвигается при rate-limit,
         # чтобы размазать нагрузку по провайдерам и не долбить один и тот же).
         self._start_idx: int = 0
 
-    def _order(self, prefer: Optional[str] = None) -> List[int]:
+    def _order(self, prefer=None) -> List[int]:
         """Порядок провайдеров: от _start_idx по кругу; если задан prefer
-        (имя провайдера) — он идёт первым. Используется, чтобы увести
-        вспомогательные вызовы (скелет, судья, история) на Gemini-ключ и
-        разгрузить минутный лимит Groq для основного стрима шагов."""
+        (имя провайдера ИЛИ список имён) — эти идут первыми в указанном
+        порядке. Так вызовы маршрутизируются под задачу (см. TASK_ROUTES),
+        а фолбэк на остальных сохраняется."""
         n = len(self.providers)
         order = [(self._start_idx + i) % n for i in range(n)]
-        if prefer:
-            pi = next((i for i, p in enumerate(self.providers) if p.name == prefer), None)
-            if pi is not None:
-                order = [pi] + [i for i in order if i != pi]
+        names = [prefer] if isinstance(prefer, str) else list(prefer or [])
+        head: List[int] = []
+        for name in names:
+            pi = next((i for i, p in enumerate(self.providers) if p.name == name), None)
+            if pi is not None and pi not in head:
+                head.append(pi)
+        if head:
+            order = head + [i for i in order if i not in head]
         return order
 
     async def generate(
@@ -224,7 +253,7 @@ class LLMRegistry:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         fast: bool = False,
-        prefer: Optional[str] = None,
+        prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
     ) -> str:
         # До 3 проходов по провайдерам: если весь круг упёрся в rate-limit,
         # ждём короткую паузу и пробуем снова (на free-тарифе окна лимитов узкие).
@@ -244,7 +273,7 @@ class LLMRegistry:
         max_tokens: Optional[int],
         temperature: Optional[float],
         fast: bool,
-        prefer: Optional[str] = None,
+        prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
     ) -> str:
         provider_errors: List[str] = []
         rate_limited_count = 0
@@ -326,7 +355,7 @@ class LLMRegistry:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         fast: bool = False,
-        prefer: Optional[str] = None,
+        prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
     ) -> AsyncIterator[str]:
         """Стрим токенов. Фолбэк на другого провайдера возможен только до первого
         отданного чанка; после — ошибка просто обрывает поток."""

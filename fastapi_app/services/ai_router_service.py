@@ -34,10 +34,10 @@ _MAX_TOKENS = {
 # процессом, если судья отклоняет предыдущую попытку.
 _MAX_GENERATION_ATTEMPTS = 3
 
-# Вспомогательные вызовы (скелет, судья, история) уводим на Gemini-ключ, чтобы
-# минутный лимит Groq тратился в основном на стрим шагов. При недоступности
-# Gemini — обычный фолбэк по кругу (Groq и т.д.).
-_AUX_PREFER = "Gemini"
+# Маршрутизация вызовов под задачу — в TASK_ROUTES (llm_provider.py). Каждый
+# вызов _generate/_generate_stream ниже передаёт свой task=; скелет/справки/
+# судья уходят на Gemini (разгрузка минутного лимита Groq), стрим шагов — на
+# Groq (быстрый), Cerebras — первый платный фолбэк.
 
 
 class ConspectusRouter:
@@ -55,7 +55,7 @@ class ConspectusRouter:
         for attempt in range(2):
             raw = await self.ai_service._generate(
                 sys_prompt, user_msg, None, max_tokens=max_tokens, temperature=0.3,
-                use_cache=False,
+                use_cache=False, task="step_stream",
             )
             try:
                 parsed = self.sanitizer.extract_json(raw)
@@ -114,7 +114,7 @@ class ConspectusRouter:
             raw = await self.ai_service._generate(
                 prompt, f"Сгенерируй скелет. Верни только JSON. Язык: {locale}",
                 None, max_tokens=_MAX_TOKENS["skeleton"], temperature=0.3, fast=True,
-                use_cache=False, prefer=_AUX_PREFER,
+                use_cache=False, task="skeleton",
             )
             try:
                 parsed = self.sanitizer.extract_json(raw)
@@ -133,7 +133,7 @@ class ConspectusRouter:
         raw = await self.ai_service._generate(
             judge_prompt, f"Оцени конспект. Верни только JSON. Язык: {locale}",
             None, max_tokens=_MAX_TOKENS["judge"], temperature=0.2, use_cache=False,
-            prefer=_AUX_PREFER,
+            task="judge",
         )
         try:
             parsed = self.sanitizer.extract_json(raw)
@@ -158,6 +158,7 @@ class ConspectusRouter:
         async with aclosing(self.ai_service._generate_stream(
             prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
             max_tokens=_MAX_TOKENS["all_steps"], temperature=0.35, use_cache=False,
+            task="step_stream",
         )) as gen:
             async for delta in gen:
                 buf += delta
@@ -266,7 +267,7 @@ class ConspectusRouter:
         raw = await self.ai_service._generate(
             prompt, f"Верни JSON со справками по шагам. Язык: {locale}",
             {"type": "json_object"}, max_tokens=_MAX_TOKENS["history"], temperature=0.4,
-            use_cache=False, prefer=_AUX_PREFER,
+            use_cache=False, fast=True, task="history",
         )
         raw = (raw or "").strip()
         if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
@@ -306,6 +307,7 @@ class ConspectusRouter:
         async with aclosing(self.ai_service._generate_stream(
             prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
             max_tokens=_MAX_TOKENS["all_steps"], temperature=0.35, use_cache=False,
+            task="step_stream",
         )) as gen:
             async for delta in gen:
                 buf += delta
