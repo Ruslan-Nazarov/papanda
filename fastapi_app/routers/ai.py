@@ -18,6 +18,7 @@ from pypdf import PdfReader
 
 from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
+from fastapi_app.services.abuse_guard import check_generation_quota, record_generation
 from fastapi_app.rate_limiter import limiter
 
 from fastapi_app.services.context_builder import ContextBuilder
@@ -278,6 +279,9 @@ async def get_notes_hints(request: Request):
 @limiter.limit("15/minute")
 async def route_conspectus_request(request: Request, data: ConspectusRouteRequest):
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
+    if data.action in ("generate_full", "generate_step"):
+        check_generation_quota(request)
+        record_generation(request)
     payload = data.dict()
     payload["locale"] = locale
     result = await conspectus_router.route_request(payload)
@@ -290,6 +294,8 @@ async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
     по мере готовности каждого шага, {"status": "..."} для долгих операций
     (проверка судьёй, повторная попытка), затем {"done": true}."""
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
+    check_generation_quota(request)  # 429 до начала работы, если исчерпан суточный лимит
+    record_generation(request)
 
     async def events():
         async for step_key, content in conspectus_router.stream_generate_full(

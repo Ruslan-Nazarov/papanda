@@ -1,4 +1,19 @@
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from starlette.requests import Request
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["10/minute"])
+from fastapi_app.config import settings
+
+
+def client_ip(request: Request) -> str:
+    """Реальный IP клиента для rate-limit. За обратным прокси request.client.host
+    — это IP прокси (один на всех). Берём из X-Forwarded-For запись
+    TRUSTED_PROXY_COUNT-ю справа (nginx добавляет реальный IP в конец)."""
+    n = settings.TRUSTED_PROXY_COUNT
+    if n >= 1:
+        parts = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+        if len(parts) >= n:
+            return parts[-n]
+    return request.client.host if request.client else "anon"
+
+
+limiter = Limiter(key_func=client_ip, default_limits=["10/minute"])

@@ -226,7 +226,10 @@ class BlockNormalBuilder {
                     }
                     showToast(t('toast_gen_ok'));
                 } catch (err) {
-                    showToast(t('toast_gen_err'), 'error');
+                    // 429 (дневной лимит демо) и т.п. приходят осмысленным текстом.
+                    const msg = (err && err.message && !/^HTTP Error/.test(err.message))
+                        ? err.message : t('toast_gen_err');
+                    showToast(msg, 'error');
                 }
             });
         }

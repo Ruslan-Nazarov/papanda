@@ -7,7 +7,7 @@ from fastapi_app.database import get_db
 async def test_health_check(client: AsyncClient):
     res = await client.get("/health")
     assert res.status_code == 200
-    assert res.json() == {"status": "ok"}
+    assert res.json()["status"] == "ok"
 
 
 @pytest.mark.asyncio

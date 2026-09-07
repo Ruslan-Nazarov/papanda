@@ -88,7 +88,8 @@ async def editor_redirect():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    from fastapi_app.services.abuse_guard import stats
+    return {"status": "ok", "generation": stats()}
 
 @app.get("/api/changelog")
 async def get_changelog():

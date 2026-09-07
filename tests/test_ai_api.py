@@ -282,3 +282,26 @@ async def test_generate_full_stream_sse_frames(client: AsyncClient):
     report_frame = next(f for f in frames if "report" in f)
     assert report_frame["report"]["degraded"] is True
     assert frames[-1] == {"done": True}
+
+
+@pytest.mark.asyncio
+async def test_generation_daily_quota_returns_429(client: AsyncClient, monkeypatch):
+    """Суточный лимит генераций на сессию: после N-й генерации приходит 429
+    с осмысленным текстом, работа не запускается."""
+    import fastapi_app.services.abuse_guard as guard
+    guard._session_counts.clear()
+    guard._global[0], guard._global[1] = "", 0
+    monkeypatch.setattr("fastapi_app.config.settings.SESSION_DAILY_GENERATION_CAP", 2)
+
+    async def _fake_stream(*_a, **_k):
+        yield ("step1", "ok")
+
+    with patch("fastapi_app.routers.ai.conspectus_router.stream_generate_full", side_effect=_fake_stream):
+        body = {"action": "generate_full", "context_state": {"target_goal": "x"}}
+        for _ in range(2):
+            r = await client.post("/api/ai/dialectics/conspectus/generate-full/stream", json=body)
+            assert r.status_code == 200
+        r = await client.post("/api/ai/dialectics/conspectus/generate-full/stream", json=body)
+        assert r.status_code == 429
+        assert "лимит" in r.json()["detail"].lower()
+    guard._session_counts.clear()
