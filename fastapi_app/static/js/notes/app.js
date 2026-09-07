@@ -23,6 +23,7 @@ import ConceptSelectionMenu from './ConceptSelectionMenu.js';
 import ModeManager from './ModeManager.js';
 import JudgeService from './JudgeService.js';
 import OnboardingTour from './OnboardingTour.js';
+import RecallMode from './RecallMode.js';
 import { t, switchLanguage } from '../i18n.js';
 
 class App {
@@ -41,6 +42,7 @@ class App {
         ConceptSelectionMenu.init();
         ModeManager.init();
         JudgeService.init();
+        document.getElementById('btn-recall-mode')?.addEventListener('click', () => RecallMode.open());
 
         // Setup UI bindings & listeners
         this.setupBindings();
