@@ -60,7 +60,8 @@ async def _run_migrations(engine: AsyncEngine):
                 ("is_deleted", "ALTER TABLE notes ADD COLUMN is_deleted BOOLEAN DEFAULT 0"),
                 ("sticker_text", "ALTER TABLE notes ADD COLUMN sticker_text VARCHAR"),
                 ("sticker_color", "ALTER TABLE notes ADD COLUMN sticker_color VARCHAR DEFAULT '#fff9c4'"),
-                ("sync_id", "ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)")
+                ("sync_id", "ALTER TABLE notes ADD COLUMN sync_id VARCHAR(36)"),
+                ("share_token", "ALTER TABLE notes ADD COLUMN share_token VARCHAR(32)"),
             ]
             
             for col_name, sql in migrations:
@@ -75,7 +76,8 @@ async def _run_migrations(engine: AsyncEngine):
             index_statements = [
                 "CREATE INDEX IF NOT EXISTS ix_notes_title ON notes (title)",
                 "CREATE INDEX IF NOT EXISTS ix_notes_is_deleted ON notes (is_deleted)",
-                "CREATE UNIQUE INDEX IF NOT EXISTS ix_notes_sync_id ON notes (sync_id)"
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_notes_sync_id ON notes (sync_id)",
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_notes_share_token ON notes (share_token)",
             ]
             for idx_sql in index_statements:
                 try:

@@ -222,6 +222,35 @@ class App {
             NoteExportService.exportToPDF();
         });
 
+        document.getElementById('menu-item-share')?.addEventListener('click', async () => {
+            DropdownController.closeAll();
+            const { showToast } = await import('./ToastService.js');
+            try {
+                if (!AppState.currentNote.id || AppState.isDirty) {
+                    await NoteStorageService.saveCurrentNote();
+                }
+                if (!AppState.currentNote.id) { showToast(t('share_need_content'), 'error'); return; }
+                const res = await NotesAPI.request(`/dialectics/${AppState.currentNote.id}/share`, 'POST');
+                const url = window.location.origin + res.path;
+                App.showModal(t('share_title'), `
+                    <p style="margin:0 0 10px; color:#475569;">${t('share_hint')}</p>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" readonly value="${url}" id="share-url-input"
+                               style="flex:1; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem;">
+                        <button class="action-btn primary" id="share-copy-btn">${t('share_copy')}</button>
+                    </div>`);
+                const inp = document.getElementById('share-url-input');
+                inp?.select();
+                document.getElementById('share-copy-btn')?.addEventListener('click', async () => {
+                    try { await navigator.clipboard.writeText(url); showToast(t('share_copied')); }
+                    catch { inp?.select(); document.execCommand('copy'); showToast(t('share_copied')); }
+                });
+            } catch (e) {
+                console.error('Share failed', e);
+                showToast(e.message || t('toast_gen_err'), 'error');
+            }
+        });
+
         // --- 4. Mode Toggles ---
         const toggleDialectics = document.getElementById('toggle-dialectics');
         const toggleTwoColumn = document.getElementById('toggle-two-column');

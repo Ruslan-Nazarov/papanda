@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="{{ locale | default('ru') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ note_title }} — papanda</title>
+    <meta name="description" content="{{ _('shared_tagline') }}">
+    <meta property="og:title" content="{{ note_title }}">
+    <meta property="og:description" content="{{ _('shared_tagline') }} — papanda.kz">
+    <meta property="og:type" content="article">
+    <meta name="robots" content="index,follow">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        :root { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; background: #f8fafc; color: #1e293b;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+        .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+        .doc-title { font-size: 1.7rem; font-weight: 700; margin: 8px 0 28px; }
+        .blk { position: relative; background: #fff; border: 1px solid #e2e8f0;
+               border-radius: 12px; padding: 18px 20px; margin: 34px 0 0; }
+        .blk-role { position: absolute; top: -22px; left: 14px;
+                    font-size: 0.8rem; font-weight: 700; color: #64748b;
+                    text-transform: uppercase; letter-spacing: 0.05em; }
+        .blk-anchor { background: #fff7ed; border-color: #fed7aa; }
+        .blk h3 { font-size: 1.08rem; font-weight: 600; margin: 0 0 10px; }
+        .blk-body p { margin: 0 0 10px; }
+        .blk-body p:last-child { margin-bottom: 0; }
+        .blk-note { margin-top: 12px; padding: 10px 12px; background: #f1f5f9;
+                    border-radius: 8px; font-size: 0.9rem; color: #475569; }
+        .blk-note::before { content: "📜 "; }
+        .math-callout { overflow-x: auto; padding: 8px 0; }
+        footer { margin-top: 48px; text-align: center; color: #64748b; font-size: 0.9rem; }
+        footer a { display: inline-block; margin-top: 10px; padding: 10px 20px;
+                   background: linear-gradient(135deg,#fb923c,#ea580c); color: #fff;
+                   text-decoration: none; border-radius: 10px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="doc-title">{{ note_title }}</div>
+
+        {% for b in blocks %}
+            {% set role = b.get('role') or '' %}
+            {% if role and role != 'section' %}
+                {% set base = role.split('.')[0] %}
+                {% if base == 'anchor' and b.get('anchorResolved') %}
+                    {% set label = _('shared_anchor_label') %}
+                {% else %}
+                    {% set label = algo.get(base + '_title') or algo.get(base) or '' %}
+                {% endif %}
+                <div class="blk {% if base == 'anchor' %}blk-anchor{% endif %}">
+                    {% if label %}<div class="blk-role">{{ label }}</div>{% endif %}
+                    {% if b.get('title') %}<h3>{{ b.get('title') }}</h3>{% endif %}
+                    <div class="blk-body">{{ b.get('html') | safe }}</div>
+                    {% if b.get('historyNote') %}<div class="blk-note">{{ b.get('historyNote') }}</div>{% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <footer>
+            {{ _('shared_made_with') }} <strong>papanda</strong> · {{ _('shared_tagline') }}<br>
+            <a href="/">{{ _('shared_cta') }}</a>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        { left: "$$", right: "$$", display: true },
+                        { left: "$", right: "$", display: false },
+                    ],
+                    throwOnError: false,
+                });
+            }
+        });
+    </script>
+    {% include 'partials/analytics.html' ignore missing %}
+</body>
+</html>

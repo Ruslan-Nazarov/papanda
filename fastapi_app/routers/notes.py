@@ -69,6 +69,21 @@ async def pin_version(note_id: int, version_id: int, db: AsyncSession = Depends(
 async def delete_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_version(db, note_id, version_id)
 
+# Sharing (публичная ссылка на конспект, только чтение)
+@router.post("/{note_id}/share")
+async def share_note(note_id: int, db: AsyncSession = Depends(get_db)):
+    token = await NotesService.enable_sharing(db, note_id)
+    return {"token": token, "path": f"/s/{token}"}
+
+@router.delete("/{note_id}/share")
+async def unshare_note(note_id: int, db: AsyncSession = Depends(get_db)):
+    await NotesService.disable_sharing(db, note_id)
+    return {"ok": True}
+
+@router.get("/shared/{token}", response_model=NoteView)
+async def get_shared_note_api(token: str, db: AsyncSession = Depends(get_db)):
+    return await NotesService.get_shared_note(db, token)
+
 # Guide
 @router.get("/guide")
 async def get_guide():

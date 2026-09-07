@@ -43,6 +43,7 @@ TRANSLATIONS = {
         "menu_back": "Назад к предыдущему",
         "menu_trash": "Корзина",
         "menu_delete_note": "Удалить конспект",
+        "menu_share": "Поделиться ссылкой",
         "menu_export": "ЭКСПОРТ",
         "menu_nav_mobile": "Меню",
         # --- Панель конспекта ---
@@ -66,6 +67,11 @@ TRANSLATIONS = {
         "gen_status_retry": "Предыдущий вариант не прошёл проверку — пробую другой простейший процесс (попытка {n} из {total})…",
         "gen_status_postprocess": "Собираю заголовки и исторические справки…",
         "gen_status_postprocess_upd": "Обновляю заголовки и исторические справки…",
+        # --- Публичная страница расшаренного конспекта ---
+        "shared_anchor_label": "Теперь вы поняли",
+        "shared_made_with": "Собрано в",
+        "shared_cta": "Собрать свой конспект",
+        "shared_tagline": "Понять тему, а не зазубрить",
     },
     "en": {
         "app_title": "Notes",
@@ -110,6 +116,7 @@ TRANSLATIONS = {
         "menu_back": "Back to previous",
         "menu_trash": "Trash",
         "menu_delete_note": "Delete note",
+        "menu_share": "Share a link",
         "menu_export": "EXPORT",
         "menu_nav_mobile": "Menu",
         "btn_save": "Save",
@@ -131,6 +138,10 @@ TRANSLATIONS = {
         "gen_status_retry": "The previous version didn't pass the check — trying a different simplest process (attempt {n} of {total})…",
         "gen_status_postprocess": "Collecting titles and historical notes…",
         "gen_status_postprocess_upd": "Updating titles and historical notes…",
+        "shared_anchor_label": "Now you understand",
+        "shared_made_with": "Made with",
+        "shared_cta": "Build your own conspect",
+        "shared_tagline": "Understand a topic, don't cram it",
     },
     "kz": {
         "app_title": "Конспекттер",
@@ -175,6 +186,7 @@ TRANSLATIONS = {
         "menu_back": "Алдыңғысына оралу",
         "menu_trash": "Себет",
         "menu_delete_note": "Конспектіні жою",
+        "menu_share": "Сілтемемен бөлісу",
         "menu_export": "ЭКСПОРТ",
         "menu_nav_mobile": "Мәзір",
         "btn_save": "Сақтау",
@@ -196,6 +208,10 @@ TRANSLATIONS = {
         "gen_status_retry": "Алдыңғы нұсқа тексеруден өтпеді — басқа қарапайым процесс байқап жатырмын ({total} ішінен {n}-әрекет)…",
         "gen_status_postprocess": "Тақырыптар мен тарихи анықтамаларды жинап жатырмын…",
         "gen_status_postprocess_upd": "Тақырыптар мен тарихи анықтамаларды жаңартып жатырмын…",
+        "shared_anchor_label": "Енді түсіндіңіз",
+        "shared_made_with": "Мұнда жасалған:",
+        "shared_cta": "Өз конспектіңді құрастыр",
+        "shared_tagline": "Тақырыпты жаттамай, түсіну",
     },
 }
 

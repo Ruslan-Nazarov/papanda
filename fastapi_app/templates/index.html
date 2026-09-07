@@ -102,6 +102,11 @@
                         <span>{{ _('menu_delete_note') }}</span>
                     </div>
                     <div class="menu-divider"></div>
+                    <div class="menu-item" id="menu-item-share">
+                        <span class="menu-icon">🔗</span>
+                        <span>{{ _('menu_share') }}</span>
+                    </div>
+                    <div class="menu-divider"></div>
                     <div class="menu-section-label">{{ _('menu_export') }}</div>
                     <div class="menu-item" id="menu-item-export-md">
                         <span class="menu-icon">📄</span>
@@ -272,5 +277,5 @@
 </script>
 <!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
 <script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
-<script type="module" src="/static/js/notes/app.js?v=32"></script>
+<script type="module" src="/static/js/notes/app.js?v=33"></script>
 {% endblock %}

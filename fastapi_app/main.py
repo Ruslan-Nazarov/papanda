@@ -3,7 +3,7 @@ import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -85,6 +85,28 @@ async def index(request: Request):
 @app.get("/editor")
 async def editor_redirect():
     return RedirectResponse(url="/", status_code=307)
+
+@app.get("/s/{token}", response_class=HTMLResponse)
+async def shared_conspect(request: Request, token: str, db=Depends(get_db)):
+    """Публичная страница расшаренного конспекта — только чтение, без редактора."""
+    locale = getattr(request.state, "locale", "ru")
+    _ = get_translator(locale)
+    note = await NotesService.get_shared_note(db, token)
+    blocks = note.content_json or []
+    title = note.title
+    # Публичная отдача — санитизируем HTML каждого блока (нет server-side
+    # sanitize-on-write, а тут контент виден кому угодно по ссылке).
+    from fastapi_app.services.sanitizer import sanitize_block_html
+    blocks = [
+        {**b, "html": sanitize_block_html(b.get("html", ""))}
+        for b in blocks if isinstance(b, dict)
+    ]
+    algo = get_manual_algorithm(locale)
+    return templates.TemplateResponse(
+        request=request, name="shared.html",
+        context={"_": _, "locale": locale, "blocks": blocks, "note_title": title,
+                 "token": token, "algo": algo},
+    )
 
 @app.get("/health")
 async def health():

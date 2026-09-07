@@ -296,3 +296,43 @@ async def test_note_block_extra_fields_preserved(client: AsyncClient):
     assert block.get("border_color") == "#ef4444"
     assert block.get("is_pinned") is True
 
+
+
+@pytest.mark.asyncio
+async def test_note_sharing_public_link(client: AsyncClient):
+    """POST /{id}/share выдаёт токен; GET /shared/{token} и страница /s/{token}
+    отдают конспект без привязки к сессии; XSS в html вычищается."""
+    payload = {
+        "title": "Почему небо голубое",
+        "blocks": [
+            {"side": "left", "role": "step1", "title": "Свет и воздух",
+             "html": "<p>Рассеяние <strong>Рэлея</strong>.</p><script>alert(1)</script>"},
+        ],
+    }
+    res = await client.post("/api/dialectics/save", json=payload)
+    assert res.status_code == 200, res.text
+    note_id = res.json()["id"]
+
+    sh = await client.post(f"/api/dialectics/{note_id}/share")
+    assert sh.status_code == 200
+    token = sh.json()["token"]
+    assert token and sh.json()["path"] == f"/s/{token}"
+
+    # повторный вызов — тот же токен
+    assert (await client.post(f"/api/dialectics/{note_id}/share")).json()["token"] == token
+
+    api = await client.get(f"/api/dialectics/shared/{token}")
+    assert api.status_code == 200
+    assert api.json()["title"] == "Почему небо голубое"
+
+    page = await client.get(f"/s/{token}")
+    assert page.status_code == 200
+    assert "Рассеяние" in page.text
+    assert "<script>alert(1)" not in page.text  # вычищено
+
+    # неизвестный токен — 404
+    assert (await client.get("/s/nope-nope-nope")).status_code == 404
+
+    # отзыв доступа
+    assert (await client.delete(f"/api/dialectics/{note_id}/share")).status_code == 200
+    assert (await client.get(f"/api/dialectics/shared/{token}")).status_code == 404

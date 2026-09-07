@@ -1,6 +1,22 @@
 import re
 import json
 
+import nh3
+
+# Разрешённый HTML в теле блока конспекта (то, что генерит contentToHtml на
+# фронте): абзацы, переносы, простое форматирование, рамка формулы и span
+# формулы с атрибутом formula. Всё остальное вырезаем.
+_ALLOWED_TAGS = {"p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li",
+                 "code", "pre", "blockquote", "h3", "h4", "span", "div"}
+_ALLOWED_ATTRS = {"span": {"class", "formula"}, "div": {"class"}}
+
+
+def sanitize_block_html(html: str) -> str:
+    """Очистить HTML блока перед публичной отдачей (страница /s/<token>)."""
+    if not html:
+        return ""
+    return nh3.clean(html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS)
+
 
 def _iter_balanced_objects(text: str):
     """Все верхнеуровневые {...} по порядку, со счётом глубины и уважением

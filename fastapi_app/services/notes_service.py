@@ -1,4 +1,5 @@
 import json
+import secrets
 import uuid
 from pathlib import Path
 from datetime import datetime, timezone
@@ -86,6 +87,34 @@ class NotesService:
         note = result.scalar_one_or_none()
         if not note:
             raise HTTPException(status_code=404, detail="Entry not found")
+        return note
+
+    @staticmethod
+    async def enable_sharing(session: AsyncSession, note_id: int) -> str:
+        """Выдать (или вернуть существующий) публичный токен конспекта."""
+        note = await NotesService.get_note(session, note_id)
+        if not note.share_token:
+            note.share_token = secrets.token_urlsafe(12)  # ~16 симв.
+            await session.commit()
+            await session.refresh(note)
+        return note.share_token
+
+    @staticmethod
+    async def disable_sharing(session: AsyncSession, note_id: int) -> None:
+        note = await NotesService.get_note(session, note_id)
+        if note.share_token:
+            note.share_token = None
+            await session.commit()
+
+    @staticmethod
+    async def get_shared_note(session: AsyncSession, token: str) -> Note:
+        """Конспект по публичному токену — БЕЗ привязки к сессии (это и есть шаринг)."""
+        if not token or len(token) > 32:
+            raise HTTPException(status_code=404, detail="Not found")
+        stmt = select(Note).where(Note.share_token == token, Note.is_deleted == False)
+        note = (await session.execute(stmt)).scalar_one_or_none()
+        if not note:
+            raise HTTPException(status_code=404, detail="Not found")
         return note
 
     @staticmethod
