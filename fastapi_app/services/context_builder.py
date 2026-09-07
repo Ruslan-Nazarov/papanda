@@ -30,7 +30,7 @@ _ANTI_ECHO = (
 
 def _effective_goal(state: dict, skeleton: dict = None) -> str:
     """Цель как процесс: `goal_as_process` из скелета (переформулирование
-    запроса по п. 3.1 главного промпта, см. 9_скелет_конспекта_промпт.md)
+    запроса по п. 5.1 главного промпта, см. 9_скелет_конспекта_промпт.md)
     при наличии, иначе — сырой `target_goal`."""
     if isinstance(skeleton, dict):
         gp = (skeleton.get("goal_as_process") or "").strip()
