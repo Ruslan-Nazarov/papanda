@@ -3,27 +3,40 @@ import json
 
 import nh3
 
-# Строгий набор — для ПУБЛИЧНОЙ отдачи (страница /s/<token>): абзацы,
-# форматирование, рамка формулы и span формулы с атрибутом formula.
-_PUBLIC_TAGS = {"p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li",
-                "code", "pre", "blockquote", "h3", "h4", "span", "div"}
-_PUBLIC_ATTRS = {"span": {"class", "formula"}, "div": {"class"}}
+# ВАЖНО: списки должны покрывать ВСЁ, что производят расширения TipTap
+# (fastapi_app/static/js/notes/extensions/*.js) — иначе санитизация молча
+# съест форматирование при сохранении. Проверяется round-trip-тестом
+# (tests/test_sanitizer.py::test_editor_html_survives_sanitize_on_write).
+#
+# CustomQuote     → <blockquote class author><div class="quote-content">…
+#                   <div class="quote-author-wrap"><span class="quote-dash">
+#                   <span class="quote-author">
+# MathCallout     → <div class="math-callout"><div class="math-content">
+# MathInline      → <span class="math-inline" formula data-formula>
+# HiddenPhrase    → <span data-type="hidden-phrase" data-hint data-expanded class>
+# QuestionMark    → <span data-question class="question-mark-text">
+# InternalLink    → <a href=(http/https/mailto/internal://note/…) target rel class>
 
-# Набор пошире — для санитизации НА ЗАПИСЬ (create/update note): всё, что
-# легально производит редактор (TipTap), включая ссылки, mark и скрытые
-# фразы (span[data-type=hidden-phrase] + data-*). Скрипты/обработчики/style
-# всё равно вырезаются — nh3 их не пропускает.
-_WRITE_TAGS = _PUBLIC_TAGS | {"a", "mark", "sup", "sub", "h1", "h2", "h5", "h6",
-                              "hr", "table", "thead", "tbody", "tr", "th", "td"}
+_INLINE_MARKS = {"strong", "b", "em", "i", "u", "s", "strike", "code", "mark", "sub", "sup"}
+_BLOCKS = {"p", "br", "ul", "ol", "li", "pre", "blockquote", "hr",
+           "h1", "h2", "h3", "h4", "h5", "h6",
+           "table", "thead", "tbody", "tr", "th", "td"}
+
+_WRITE_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "a"}
 _WRITE_ATTRS = {
-    "span": {"class", "formula", "data-type", "data-hint", "data-expanded", "style"},
+    "span": {"class", "formula", "data-formula", "data-type", "data-hint",
+             "data-expanded", "data-question", "style"},
     "div": {"class"},
-    "a": {"href", "title"},  # rel/target управляет сам nh3 (link_rel)
-    "mark": {"class"},
+    "blockquote": {"class", "author"},
+    "a": {"href", "title", "class", "target"},  # rel добавляет сам nh3
 }
-# style на span нужен math-inline'у; nh3 санитизирует значение style сам
-# (только безопасные свойства), поэтому его можно оставить в списке.
-_WRITE_STYLES = {"color", "background-color", "font-weight", "text-decoration"}
+_WRITE_SCHEMES = {"http", "https", "mailto", "internal"}  # internal:// — ссылки между конспектами
+
+# Строгий набор для ПУБЛИЧНОЙ отдачи (/s/<token>): без ссылок и data-*,
+# только форматирование + формулы + выноски.
+_PUBLIC_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div"}
+_PUBLIC_ATTRS = {"span": {"class", "formula", "data-formula"},
+                 "div": {"class"}, "blockquote": {"class", "author"}}
 
 
 def sanitize_block_html(html: str) -> str:
@@ -36,12 +49,11 @@ def sanitize_block_html(html: str) -> str:
 def sanitize_on_write(html: str) -> str:
     """Очистка HTML блока при сохранении заметки — вырезает script/onclick/
     javascript:-ссылки и прочий актив, сохраняя всё легальное форматирование
-    редактора."""
+    редактора (см. список расширений выше)."""
     if not html:
         return ""
     return nh3.clean(
-        html, tags=_WRITE_TAGS, attributes=_WRITE_ATTRS,
-        url_schemes={"http", "https", "mailto"},
+        html, tags=_WRITE_TAGS, attributes=_WRITE_ATTRS, url_schemes=_WRITE_SCHEMES,
     )
 
 
