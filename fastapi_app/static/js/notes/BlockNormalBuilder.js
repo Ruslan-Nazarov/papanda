@@ -109,7 +109,11 @@ class BlockNormalBuilder {
             // развивающих процессов); ярлык над блоком берём по базовому шагу.
             const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
             const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole);
-            const roleLabelHTML = stepObj ? `<div class="block-role-label" style="position: absolute; top: -24px; left: 12px; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; pointer-events: none; user-select: none;">${stepObj.title}</div>` : '';
+            // Якорь после генерации: «Что вам нужно понять?» → «Теперь вы поняли».
+            const roleLabelText = (baseRole === 'anchor' && block.anchorResolved)
+                ? t('anchor_resolved_label')
+                : (stepObj ? stepObj.title : '');
+            const roleLabelHTML = roleLabelText ? `<div class="block-role-label" style="position: absolute; top: -24px; left: 12px; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; pointer-events: none; user-select: none;">${roleLabelText}</div>` : '';
 
             div.innerHTML = `
                 ${roleLabelHTML}

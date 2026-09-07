@@ -279,10 +279,12 @@ class ContextBuilder:
         steps — {"1": "...", "2.1": "...", ...} (как в build_judge_prompt)."""
         hist_prompt = await self._load_file("историческая_справка_промпт.md")
         goal = _effective_goal(state, skeleton) or "Не указана"
+        raw_goal = (state.get("target_goal") or "").strip() or goal
         order = sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")])
         lines = [f"[{k}] {steps.get(k, '')}" for k in order]
         return (
-            f"{hist_prompt}\n\nЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
+            f"{hist_prompt}\n\nИСХОДНЫЙ ЗАПРОС ПОЛЬЗОВАТЕЛЯ (для anchor_title/note_title): {raw_goal}\n"
+            f"ЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
             f"ГОТОВЫЙ КОНСПЕКТ (в квадратных скобках — ключ шага, его и используйте в titles):\n"
             + "\n\n".join(lines)
         )

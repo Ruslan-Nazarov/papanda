@@ -12,7 +12,11 @@ class AIController {
     static buildStateForAI() {
         const blocks = AppState.currentNote.blocks;
         const anchorBlock = blocks.find(b => b.role === 'anchor');
-        const target_goal = anchorBlock ? (anchorBlock.html || '').replace(/<[^>]+>/g, '').trim() : AppState.currentNote.title;
+        // После генерации тело якоря — это вывод, а не исходный вопрос; исходный
+        // запрос сохраняём в sourceGoal и берём цель отсюда при перегенерации.
+        const target_goal = anchorBlock
+            ? (anchorBlock.sourceGoal || (anchorBlock.html || '').replace(/<[^>]+>/g, '').trim())
+            : AppState.currentNote.title;
         const steps = {};
         for (let i = 1; i <= 5; i++) {
             const stepBlocks = blocks.filter(b => b.role === `step${i}` || (b.role && b.role.startsWith(`step${i}.`)));
@@ -161,6 +165,49 @@ class AIController {
     }
 
 
+    /**
+     * Имя конспекта + итоговый вывод для блока-якоря. Приходит событием
+     * { note_title, anchor_title, anchor_summary } после генерации.
+     * - note_title применяем только если автор сам не задал название;
+     * - блок-якорь («Что вам нужно понять?») превращаем в вывод
+     *   («Теперь вы поняли»): заголовок = anchor_title, тело = anchor_summary.
+     */
+    static applyNoteMeta(meta, onRenderAll) {
+        if (!meta || typeof meta !== 'object') return;
+        let changed = false;
+
+        // «Не задано автором» = пусто / плейсхолдер / дефолтное имя нового конспекта.
+        const curTitle = (AppState.currentNote.title || '').trim();
+        const isDefaultTitle = !curTitle
+            || curTitle === t('placeholder_title')
+            || curTitle === t('menu_new_note')
+            || curTitle === t('untitled');
+        if (meta.note_title && isDefaultTitle) {
+            AppState.currentNote.title = meta.note_title.trim();
+            const input = document.getElementById('note-title');
+            if (input) input.value = AppState.currentNote.title;
+            AppState.markDirty();
+            changed = true;
+        }
+
+        const anchor = AppState.currentNote.blocks.find(b => b.role === 'anchor');
+        if (anchor && meta.anchor_summary) {
+            const patch = {
+                html: this.contentToHtml(meta.anchor_summary),
+                anchorResolved: true,
+            };
+            // Сохранить исходный вопрос до перезаписи тела выводом.
+            if (!anchor.sourceGoal) {
+                patch.sourceGoal = (anchor.html || '').replace(/<[^>]+>/g, '').trim();
+            }
+            if (meta.anchor_title) patch.title = meta.anchor_title.trim();
+            AppState.updateBlock(anchor.id, patch);
+            changed = true;
+        }
+
+        if (changed && onRenderAll) onRenderAll();
+    }
+
     static async generateFull(onRenderAll) {
         GlobalLoader.show(t('ed_ai_analyzing'));
         try {
@@ -182,6 +229,8 @@ class AIController {
                         this.applyTitles(ev.titles, onRenderAll);
                     } else if (ev.history_notes) {
                         this.applyHistoryNotes(ev.history_notes, onRenderAll);
+                    } else if (ev.note_meta) {
+                        this.applyNoteMeta(ev.note_meta, onRenderAll);
                     } else if (ev.status) {
                         // Долгая операция (судья, повторная попытка) — держим пользователя в курсе.
                         GlobalLoader.show(ev.status);
@@ -226,6 +275,8 @@ class AIController {
                         this.applyTitles(ev.titles, onRenderAll);
                     } else if (ev.history_notes) {
                         this.applyHistoryNotes(ev.history_notes, onRenderAll);
+                    } else if (ev.note_meta) {
+                        this.applyNoteMeta(ev.note_meta, onRenderAll);
                     } else if (ev.status) {
                         GlobalLoader.show(ev.status);
                     }

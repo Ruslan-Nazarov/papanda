@@ -312,16 +312,20 @@ class ConspectusRouter:
                 state["steps"][step_key] = {"content": edited, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, edited)
 
-        # Доп. проход: заголовки-суть по шагам + исторические справки (📜).
+        # Доп. проход: заголовки-суть по шагам + исторические справки (📜) +
+        # имя конспекта и итоговый вывод для блока-якоря.
         if collected:
             yield ("__status__", _("gen_status_postprocess"))
-            notes, titles = await self._gen_postprocess(state, collected, locale)
+            notes, titles, meta = await self._gen_postprocess(state, collected, locale)
             if titles:
                 state["step_titles"] = titles
                 yield ("__titles__", titles)
             if notes:
                 state.setdefault("history_notes", {}).update(notes)
                 yield ("__history_notes__", notes)
+            if meta:
+                state["note_meta"] = meta
+                yield ("__note_meta__", meta)
 
     async def _gen_editor(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
         """Редакторский проход поверх готовых Шагов 1–5 (см.
@@ -361,23 +365,25 @@ class ConspectusRouter:
         return out
 
     async def _gen_postprocess(self, state: dict, collected: Dict[str, str], locale: str):
-        """Один проход поверх готовых Шагов 1–5: (notes, titles).
+        """Один проход поверх готовых Шагов 1–5: (notes, titles, meta).
         titles — короткий заголовок-суть на каждый ключ шага ("1","2.1",...),
         для схемы-сворачивания. notes — исторические справки только по тем
-        базовым шагам, где нужно (расхождение логики с историей / деталь)."""
+        базовым шагам, где нужно (расхождение логики с историей / деталь).
+        meta — {note_title, anchor_title, anchor_summary}: имя конспекта и
+        итоговый вывод для блока-якоря («Теперь вы поняли»)."""
         prompt = await self.context_builder.build_history_notes_prompt(state, collected)
         raw = await self.ai_service._generate(
-            prompt, f"Верни JSON {{titles, notes}}. Язык: {locale}",
+            prompt, f"Верни JSON {{titles, notes, note_title, anchor_title, anchor_summary}}. Язык: {locale}",
             {"type": "json_object"}, max_tokens=_MAX_TOKENS["history"], temperature=0.4,
             use_cache=False, fast=True, task="history",
         )
         raw = (raw or "").strip()
         if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
-            return {}, {}
+            return {}, {}, {}
         try:
             parsed = self.sanitizer.extract_json(raw)
         except ValueError:
-            return {}, {}
+            return {}, {}, {}
         parsed = parsed or {}
 
         def _norm_key(k):
@@ -395,7 +401,13 @@ class ConspectusRouter:
             nk = _norm_key(k)
             if nk and isinstance(v, str) and v.strip():
                 notes[nk.split(".")[0]] = v.strip()
-        return notes, titles
+
+        meta: Dict[str, str] = {}
+        for fld in ("note_title", "anchor_title", "anchor_summary"):
+            v = parsed.get(fld)
+            if isinstance(v, str) and v.strip():
+                meta[fld] = v.strip()
+        return notes, titles, meta
 
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
                                           question: str):
@@ -463,20 +475,23 @@ class ConspectusRouter:
         base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
         if len(base_steps) >= 3:
             yield ("__status__", _("gen_status_postprocess_upd"))
-            notes, titles = await self._gen_postprocess(state, base_steps, locale)
+            notes, titles, meta = await self._gen_postprocess(state, base_steps, locale)
             if titles:
                 state["step_titles"] = titles
                 yield ("__titles__", titles)
             # Пустой notes тоже шлём — фронт снимет устаревшие значки.
             state["history_notes"] = notes
             yield ("__history_notes__", notes)
+            if meta:
+                state["note_meta"] = meta
+                yield ("__note_meta__", meta)
 
     async def _handle_auto_full(self, state: dict, locale: str) -> dict:
         """Нестримовый путь: собирает результат stream_generate_full целиком.
         Фронт обычно идёт через SSE; этот путь — для `action=generate_full`
         нестримового эндпоинта `/conspectus/route`."""
         updated_steps = {}
-        history_notes, step_titles = {}, {}
+        history_notes, step_titles, note_meta = {}, {}, {}
         async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True):
             if step_key == "__status__":
                 continue
@@ -486,12 +501,16 @@ class ConspectusRouter:
             if step_key == "__titles__":
                 step_titles = content or {}
                 continue
+            if step_key == "__note_meta__":
+                note_meta = content or {}
+                continue
             updated_steps[step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
 
         if not any(s["content"] for s in updated_steps.values()):
             return {"action_status": "error", "error_message": "Модель не вернула шаги."}
         return {"action_status": "success", "updated_steps": updated_steps,
-                "history_notes": history_notes, "step_titles": step_titles, "cascading_events": []}
+                "history_notes": history_notes, "step_titles": step_titles,
+                "note_meta": note_meta, "cascading_events": []}
 
     async def _regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
                            question: str = None, skeleton: dict = None) -> str:

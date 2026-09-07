@@ -109,7 +109,10 @@ async def test_history_pass_emits_titles_and_notes():
     async def _gen(sys_prompt, *_a, **_k):
         if "историческ" in sys_prompt.lower():
             return ('{"titles": {"1": "как всё началось", "5": "чем разрешилось"}, '
-                    '"notes": {"1": "в древности так не считали", "4": "оформилось позже"}}')
+                    '"notes": {"1": "в древности так не считали", "4": "оформилось позже"}, '
+                    '"note_title": "Диффузия и выравнивание", '
+                    '"anchor_title": "Диффузия выравнивает концентрацию", '
+                    '"anchor_summary": "Частицы переходят из плотных мест в разреженные, пока не станет ровно."}')
         if "is_valid" in sys_prompt:
             return '{"is_valid": true, "reason": ""}'
         return "{}"
@@ -131,6 +134,12 @@ async def test_history_pass_emits_titles_and_notes():
                                            "4": "оформилось позже"}
     assert state["history_notes"]["1"] == "в древности так не считали"
     assert state["step_titles"]["5"] == "чем разрешилось"
+    assert events["__note_meta__"] == {
+        "note_title": "Диффузия и выравнивание",
+        "anchor_title": "Диффузия выравнивает концентрацию",
+        "anchor_summary": "Частицы переходят из плотных мест в разреженные, пока не станет ровно.",
+    }
+    assert state["note_meta"]["note_title"] == "Диффузия и выравнивание"
 
 
 def test_strip_role_opener_removes_algorithm_narration():
