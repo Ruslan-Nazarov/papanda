@@ -1,4 +1,5 @@
 import pytest
+import json
 from unittest.mock import AsyncMock, patch, MagicMock
 from io import BytesIO
 from httpx import AsyncClient
@@ -250,3 +251,34 @@ async def test_article_parser_url_ssrf_guard(client: AsyncClient):
             data={"message": "Разбери", "url": bad},
         )
         assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_generate_full_stream_sse_frames(client: AsyncClient):
+    """SSE-эндпоинт полной генерации: кадры data: со step/content, затем
+    report, затем done. Регрессионный тест на форму потока."""
+    async def _fake_stream(*_a, **_k):
+        yield ("step1", "простейший процесс")
+        yield ("step2.1", "развитие один")
+        yield ("__titles__", {"1": "начало", "2.1": "ветка"})
+        yield ("__note_meta__", {"note_title": "Тест", "anchor_summary": "итог"})
+        yield ("__report__", {"degraded": True, "reasons": ["fallback_provider"], "judge": "passed"})
+
+    with patch("fastapi_app.routers.ai.conspectus_router.stream_generate_full", side_effect=_fake_stream):
+        frames = []
+        async with client.stream(
+            "POST", "/api/ai/dialectics/conspectus/generate-full/stream",
+            json={"action": "generate_full", "context_state": {"target_goal": "рост"}},
+        ) as resp:
+            assert resp.status_code == 200
+            async for line in resp.aiter_lines():
+                if line.startswith("data: "):
+                    frames.append(json.loads(line[6:]))
+
+    steps = [f for f in frames if "step" in f]
+    assert {s["step"] for s in steps} == {"step1", "step2.1"}
+    assert any(f.get("titles") == {"1": "начало", "2.1": "ветка"} for f in frames)
+    assert any("note_meta" in f for f in frames)
+    report_frame = next(f for f in frames if "report" in f)
+    assert report_frame["report"]["degraded"] is True
+    assert frames[-1] == {"done": True}

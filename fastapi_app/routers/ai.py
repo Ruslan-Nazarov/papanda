@@ -304,6 +304,8 @@ async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
                 yield {"titles": content}
             elif step_key == "__note_meta__":
                 yield {"note_meta": content}
+            elif step_key == "__report__":
+                yield {"report": content}
             else:
                 yield {"step": step_key, "content": content}
 

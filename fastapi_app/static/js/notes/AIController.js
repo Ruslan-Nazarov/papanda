@@ -208,6 +208,43 @@ class AIController {
         if (changed && onRenderAll) onRenderAll();
     }
 
+    /**
+     * Отчёт о качестве прогона генерации. Приходит событием { report } в конце.
+     * Если что-то просело (упали на резервного провайдера, судья не подтвердил,
+     * блоки короткие/пропали) — показываем баннер, чтобы пользователь понимал:
+     * это не ошибка метода, а нагрузка на ИИ, и стоит пересобрать.
+     */
+    static applyReport(report, onRenderAll) {
+        AppState.currentNote.genReport = report || null;
+        const host = document.getElementById('blocks-container');
+        if (!host) return;
+        const existing = document.getElementById('gen-degraded-banner');
+        if (existing) existing.remove();
+        if (!report || !report.degraded) return;
+
+        const r = report.reasons || [];
+        let key = 'gen_degraded_generic';
+        if (r.includes('missing_blocks') || r.includes('truncated_blocks')) key = 'gen_degraded_truncated';
+        else if (r.includes('judge_gave_up')) key = 'gen_degraded_judge';
+        else if (r.includes('fallback_provider')) key = 'gen_degraded_fallback';
+
+        const banner = document.createElement('div');
+        banner.id = 'gen-degraded-banner';
+        banner.className = 'gen-degraded-banner';
+        banner.innerHTML = `
+            <span class="gen-degraded-text">⚠️ ${t(key)}</span>
+            <span class="gen-degraded-actions">
+                <button class="gen-degraded-retry">${t('gen_degraded_retry_btn')}</button>
+                <button class="gen-degraded-close" title="${t('tt_close') || ''}">✕</button>
+            </span>`;
+        host.prepend(banner);
+        banner.querySelector('.gen-degraded-close').addEventListener('click', () => banner.remove());
+        banner.querySelector('.gen-degraded-retry').addEventListener('click', async () => {
+            banner.remove();
+            try { await this.generateFull(onRenderAll); } catch (e) { console.error(e); }
+        });
+    }
+
     static async generateFull(onRenderAll) {
         GlobalLoader.show(t('ed_ai_analyzing'));
         try {
@@ -231,6 +268,8 @@ class AIController {
                         this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.note_meta) {
                         this.applyNoteMeta(ev.note_meta, onRenderAll);
+                    } else if (ev.report) {
+                        this.applyReport(ev.report, onRenderAll);
                     } else if (ev.status) {
                         // Долгая операция (судья, повторная попытка) — держим пользователя в курсе.
                         GlobalLoader.show(ev.status);
@@ -277,6 +316,8 @@ class AIController {
                         this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.note_meta) {
                         this.applyNoteMeta(ev.note_meta, onRenderAll);
+                    } else if (ev.report) {
+                        this.applyReport(ev.report, onRenderAll);
                     } else if (ev.status) {
                         GlobalLoader.show(ev.status);
                     }

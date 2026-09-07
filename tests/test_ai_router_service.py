@@ -140,6 +140,42 @@ async def test_history_pass_emits_titles_and_notes():
         "anchor_summary": "Частицы переходят из плотных мест в разреженные, пока не станет ровно.",
     }
     assert state["note_meta"]["note_title"] == "Диффузия и выравнивание"
+    # Отчёт о прогоне тоже приходит.
+    assert "__report__" in events
+    assert events["__report__"]["judge"] == "passed"
+
+
+@pytest.mark.asyncio
+async def test_report_flags_degraded_on_fallback_provider(monkeypatch):
+    """Если основную генерацию обслужил НЕ основной провайдер — отчёт
+    помечает degraded с причиной fallback_provider (сигнал пользователю,
+    что просели токены, а не метод)."""
+    async def _stream(*_a, **_k):
+        yield (
+            "===ШАГ1===\nпростейший процесс достаточной длины для парсера тут\n"
+            "===ШАГ2.1===\nразвитие один достаточной длины для парсера тут да\n"
+            "===ШАГ2.2===\nразвитие два достаточной длины для парсера тут да\n"
+            "===ШАГ3===\nпротивоположность достаточной длины для парсера тут\n"
+            "===ШАГ4===\nпротиворечие достаточной длины для парсера тут же да\n"
+            "===ШАГ5===\nразрешение достаточной длины для парсера тут же да\n"
+        )
+    ai_service = MagicMock()
+    ai_service._generate_stream = MagicMock(side_effect=_stream)
+    ai_service._generate = AsyncMock(return_value='{"is_valid": true, "reason": ""}')
+
+    monkeypatch.setattr(
+        "fastapi_app.services.ai_router_service.get_last_call_info",
+        lambda: {"provider": "Groq", "fell_back": True},
+    )
+    router = ConspectusRouter(ai_service, ContextBuilder(), Sanitizer(), MagicMock())
+    events = {}
+    async for key, content in router.stream_generate_full({"target_goal": "рост", "steps": {}}, "ru", use_skeleton=False):
+        events[key] = content
+
+    rep = events["__report__"]
+    assert rep["degraded"] is True
+    assert "fallback_provider" in rep["reasons"]
+    assert rep["gen_provider"] == "Groq"
 
 
 def test_strip_role_opener_removes_algorithm_narration():

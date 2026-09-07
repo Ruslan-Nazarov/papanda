@@ -2,6 +2,7 @@ from abc import ABC
 from contextlib import aclosing
 from typing import Optional, List, Dict, AsyncIterator
 from openai import AsyncOpenAI
+import contextvars
 import logging
 import asyncio
 import random
@@ -11,6 +12,21 @@ from fastapi_app.config import settings
 logger = logging.getLogger(__name__)
 
 _PLACEHOLDER_KEYS = {"", "your_groq_api_key_here", "dummy_key"}
+
+# Кто обслужил последний вызов LLM в текущем запросе — чтобы генератор мог
+# отличить «просел провайдер / упали на резерв» от «плохо сработал алгоритм»
+# и сказать это пользователю. Contextvar: изолировано по asyncio-задаче.
+_last_call: contextvars.ContextVar = contextvars.ContextVar("llm_last_call", default=None)
+
+
+def get_last_call_info() -> Optional[dict]:
+    """{'provider': str, 'fell_back': bool, 'rate_limited': int} последнего
+    успешного вызова через LLMRegistry, либо None."""
+    return _last_call.get()
+
+
+def _note_call(provider_name: str, fell_back: bool, rate_limited: int = 0) -> None:
+    _last_call.set({"provider": provider_name, "fell_back": fell_back, "rate_limited": rate_limited})
 
 
 def any_llm_key_configured() -> bool:
@@ -294,6 +310,7 @@ class LLMRegistry:
     ) -> str:
         provider_errors: List[str] = []
         rate_limited_count = 0
+        tried = 0  # сколько провайдеров реально попробовали (>0 на успехе = фолбэк)
 
         n = len(self.providers)
         order = self._order(prefer)
@@ -311,8 +328,10 @@ class LLMRegistry:
                     messages, response_format, max_tokens=max_tokens, temperature=temperature, fast=fast,
                     reasoning_effort=reasoning_effort,
                 )
+                _note_call(provider.name, fell_back=tried > 0, rate_limited=rate_limited_count)
                 return result
             except Exception as e:
+                tried += 1
                 error_msg = str(e).lower()
                 is_network_error = any(kw in error_msg for kw in ("connection", "timeout", "timed out", "connect"))
                 is_rate_limit = any(kw in error_msg for kw in ("429", "rate limit", "rate_limit", "too many requests", "quota"))
@@ -343,6 +362,7 @@ class LLMRegistry:
                             messages, None, max_tokens=max_tokens, temperature=temperature, fast=fast,
                             reasoning_effort=reasoning_effort,
                         )
+                        _note_call(provider.name, fell_back=tried > 0, rate_limited=rate_limited_count)
                         return result
                     except Exception as e2:
                         provider_errors.append(f"{provider.name}: {e2}")
@@ -383,6 +403,7 @@ class LLMRegistry:
         provider_errors: List[str] = []
         n = len(self.providers)
         order = self._order(prefer)
+        tried = 0
 
         for idx in order:
             provider = self.providers[idx]
@@ -397,10 +418,13 @@ class LLMRegistry:
                     reasoning_effort=reasoning_effort, timeout=timeout,
                 )) as pstream:
                     async for delta in pstream:
-                        started = True
+                        if not started:
+                            started = True
+                            _note_call(provider.name, fell_back=tried > 0)
                         yield delta
                 return
             except Exception as e:
+                tried += 1
                 if started:
                     logger.error(f"Stream from {provider.name} broke mid-response: {e}")
                     return

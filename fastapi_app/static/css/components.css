@@ -1321,3 +1321,43 @@
 .connections-card-btn.btn-toggle-link.is-connected:hover {
     background: #ffedd5;
 }
+
+/* Баннер «генерация просела» — над блоками конспекта (AIController.applyReport) */
+.gen-degraded-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    justify-content: space-between;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 0 16px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: #78350f;
+}
+.gen-degraded-text { flex: 1; }
+.gen-degraded-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.gen-degraded-retry {
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.gen-degraded-retry:hover { background: #d97706; }
+.gen-degraded-close {
+    background: transparent;
+    border: none;
+    color: #92400e;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}

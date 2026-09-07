@@ -1,10 +1,21 @@
+import logging
 import re
+import time
 from contextlib import aclosing
 from typing import Dict
 
 from fastapi_app.config import settings
 from fastapi_app.services.context_builder import expected_step_keys
+from fastapi_app.services.llm_provider import get_last_call_info
 from fastapi_app.i18n import get_translator
+
+logger = logging.getLogger(__name__)
+
+# Провайдер, с которого ДОЛЖНА идти основная генерация (первый в TASK_ROUTES
+# step_stream). Если фактический другой — значит упали на резерв, качество
+# может просесть, и это надо показать пользователю (а не молчать).
+_PRIMARY_GEN_PROVIDER = "Cerebras"
+_MIN_STEP_CHARS = 120  # короче — процесс, похоже, оборвался
 
 # Ключ шага: "1".."5" (один процесс) или "N.k" (несколько процессов на шаге,
 # см. expected_step_keys/9_скелет_конспекта_промпт.md).
@@ -182,12 +193,15 @@ class ConspectusRouter:
             return True, ""
 
     async def _generate_full_attempt(self, state: dict, locale: str, use_skeleton: bool,
-                                      failed_attempts: list) -> Dict[str, str]:
+                                      failed_attempts: list, report: dict = None) -> Dict[str, str]:
         """Одна полная попытка собрать все процессы всех шагов, без
         прогрессивной выдачи наружу — используется внутри цикла судьи в
         stream_generate_full. Ключи результата — "1", "2.1", "2.2", ... (см.
         expected_step_keys) в зависимости от того, сколько процессов у
-        каждого шага в скелете."""
+        каждого шага в скелете.
+        report (мутируется) — телеметрия для сигнала пользователю: кто
+        обслужил основной вызов, был ли фолбэк, сколько процессов добирали."""
+        report = report if report is not None else {}
         skeleton = await self._gen_skeleton(state, locale, failed_attempts=failed_attempts) if use_skeleton else {}
         # Вторая попытка заземления: сырой запрос мог быть вопросом («почему…»)
         # и не резолвиться в вики, а goal_as_process из скелета — чистая
@@ -212,16 +226,23 @@ class ConspectusRouter:
             async for delta in gen:
                 buf += delta
 
+        info = get_last_call_info() or {}
+        report["gen_provider"] = info.get("provider")
+        report["gen_fell_back"] = bool(info.get("fell_back"))
+
         collected = self._complete_steps(buf, final=True)
         collected = {k: c for k, c in collected.items() if len(c) >= 20}
 
         # Добор пропущенных процессов точечно.
+        regen = 0
         for key in expected_step_keys(skeleton):
             if key in collected:
                 continue
             content = await self._regen_process(state, key, skeleton, locale)
             if content:
                 collected[key] = content
+                regen += 1
+        report["regen"] = regen
         return collected
 
     @staticmethod
@@ -275,20 +296,26 @@ class ConspectusRouter:
             return
 
         _ = get_translator(locale)
+        t0 = time.time()
+        report: Dict = {"attempts": 0, "regen": 0, "judge": "skipped",
+                        "gen_provider": None, "gen_fell_back": False}
         failed_attempts = []
         collected: Dict[str, str] = {}
         for attempt in range(1, _MAX_GENERATION_ATTEMPTS + 1):
+            report["attempts"] = attempt
             if attempt > 1:
                 yield ("__status__", _("gen_status_retry").format(n=attempt, total=_MAX_GENERATION_ATTEMPTS))
             elif use_skeleton:
                 yield ("__status__", _("gen_status_planning"))
 
-            collected = await self._generate_full_attempt(state, locale, use_skeleton or attempt > 1, failed_attempts)
+            collected = await self._generate_full_attempt(
+                state, locale, use_skeleton or attempt > 1, failed_attempts, report)
             if not collected:
                 continue
 
             yield ("__status__", _("gen_status_judging"))
             is_valid, reason = await self._judge_conspect(collected, locale)
+            report["judge"] = "passed" if is_valid else "failed"
             if is_valid or attempt == _MAX_GENERATION_ATTEMPTS:
                 break
             step1_summary = " / ".join(c for k, c in collected.items() if _base_of(k) == "1")[:200]
@@ -326,6 +353,39 @@ class ConspectusRouter:
             if meta:
                 state["note_meta"] = meta
                 yield ("__note_meta__", meta)
+
+        # Отчёт о качестве прогона: отличить «просели токены/провайдер» от
+        # «плохо сработал метод» — и сказать это пользователю, а не молчать.
+        short_steps = sum(1 for v in collected.values() if len(v) < _MIN_STEP_CHARS)
+        expected_min = 6  # 1 + 2 развивающих + 3 + 4 + 5
+        report["expected_blocks"] = expected_min
+        report["got_blocks"] = len(collected)
+        report["short_blocks"] = short_steps
+        report["duration_s"] = round(time.time() - t0, 1)
+
+        degraded_reasons = []
+        if report.get("gen_provider") and report["gen_provider"] != _PRIMARY_GEN_PROVIDER:
+            degraded_reasons.append("fallback_provider")
+        if report["attempts"] >= _MAX_GENERATION_ATTEMPTS and report["judge"] == "failed":
+            degraded_reasons.append("judge_gave_up")
+        if len(collected) < expected_min:
+            degraded_reasons.append("missing_blocks")
+        if short_steps:
+            degraded_reasons.append("truncated_blocks")
+        if report["regen"] >= 3:
+            degraded_reasons.append("many_regens")
+        report["degraded"] = bool(degraded_reasons)
+        report["reasons"] = degraded_reasons
+
+        logger.info(
+            "conspect gen: provider=%s fell_back=%s attempts=%d judge=%s regen=%d "
+            "blocks=%d/%d short=%d dur=%.1fs degraded=%s%s",
+            report.get("gen_provider"), report.get("gen_fell_back"), report["attempts"],
+            report["judge"], report["regen"], report["got_blocks"], expected_min,
+            short_steps, report["duration_s"], report["degraded"],
+            (" reasons=" + ",".join(degraded_reasons)) if degraded_reasons else "",
+        )
+        yield ("__report__", report)
 
     async def _gen_editor(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
         """Редакторский проход поверх готовых Шагов 1–5 (см.
@@ -491,7 +551,7 @@ class ConspectusRouter:
         Фронт обычно идёт через SSE; этот путь — для `action=generate_full`
         нестримового эндпоинта `/conspectus/route`."""
         updated_steps = {}
-        history_notes, step_titles, note_meta = {}, {}, {}
+        history_notes, step_titles, note_meta, report = {}, {}, {}, {}
         async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True):
             if step_key == "__status__":
                 continue
@@ -504,13 +564,16 @@ class ConspectusRouter:
             if step_key == "__note_meta__":
                 note_meta = content or {}
                 continue
+            if step_key == "__report__":
+                report = content or {}
+                continue
             updated_steps[step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
 
         if not any(s["content"] for s in updated_steps.values()):
             return {"action_status": "error", "error_message": "Модель не вернула шаги."}
         return {"action_status": "success", "updated_steps": updated_steps,
                 "history_notes": history_notes, "step_titles": step_titles,
-                "note_meta": note_meta, "cascading_events": []}
+                "note_meta": note_meta, "report": report, "cascading_events": []}
 
     async def _regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
                            question: str = None, skeleton: dict = None) -> str:
