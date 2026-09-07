@@ -8,10 +8,8 @@ export class DropdownController {
         const mainMenuDropdown = document.getElementById('main-menu-dropdown');
         const btnLangMenu = document.getElementById('btn-lang-menu');
         const langMenuDropdown = document.getElementById('lang-menu-dropdown');
-        const btnSkillMenu = document.getElementById('btn-skill-menu');
-        const skillMenuDropdown = document.getElementById('skill-menu-dropdown');
 
-        const allDropdowns = [modeDropdown, parsersDropdown, mainMenuDropdown, langMenuDropdown, skillMenuDropdown];
+        const allDropdowns = [modeDropdown, parsersDropdown, mainMenuDropdown, langMenuDropdown];
 
         const closeAllDropdowns = () => {
             allDropdowns.forEach(d => { if (d) d.classList.add('hidden'); });
@@ -33,7 +31,6 @@ export class DropdownController {
         bindToggle(btnParsersNav, parsersDropdown);
         bindToggle(btnMainMenu, mainMenuDropdown);
         bindToggle(btnLangMenu, langMenuDropdown);
-        bindToggle(btnSkillMenu, skillMenuDropdown);
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.dropdown-wrapper')) {

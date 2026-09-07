@@ -50,7 +50,6 @@ async def test_explain_concept_endpoint(client: AsyncClient):
             context_after="мы приходим к синтезу.",
             history=[{"role": "user", "content": "Поясни подробнее"}],
             locale="русском",
-            skill=None,
         )
         client.cookies.delete("locale")
 
@@ -199,7 +198,7 @@ async def test_article_parser_with_valid_pdf(client: AsyncClient):
             res = await client.post("/api/ai/dialectics/article-parser", files=files, data=data)
             assert res.status_code == 200
             assert res.json()["result"] == "## Реконструкция из PDF"
-            mock_article.assert_awaited_once_with("Текст статьи из PDF документа\n", user_instruction="Сделай конспект PDF", skill=None)
+            mock_article.assert_awaited_once_with("Текст статьи из PDF документа\n", user_instruction="Сделай конспект PDF")
 
 
 @pytest.mark.asyncio

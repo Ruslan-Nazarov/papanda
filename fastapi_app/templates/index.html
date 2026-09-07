@@ -53,23 +53,6 @@
                 </div>
             </div>
 
-            <!-- Скилл (регистр речи ИИ) -->
-            <div class="dropdown-wrapper">
-                <button class="nav-pill-btn" id="btn-skill-menu" title="{{ _('skill_menu_title') }}">
-                    <span class="pill-icon">🎭</span> {{ _('nav_skill') }}
-                </button>
-                <div id="skill-menu-dropdown" class="dropdown-menu hidden" style="min-width: 260px;">
-                    <div class="mode-dropdown-row" style="flex-direction: column; align-items: stretch; gap: 4px;">
-                        <span>{{ _('skill_speaker_label') }}</span>
-                        <select id="skill-speaker-select" class="premium-select" style="width: 100%;"></select>
-                    </div>
-                    <div class="mode-dropdown-row" style="flex-direction: column; align-items: stretch; gap: 4px;">
-                        <span>{{ _('skill_addressee_label') }}</span>
-                        <select id="skill-addressee-select" class="premium-select" style="width: 100%;"></select>
-                    </div>
-                </div>
-            </div>
-
             <!-- Парсеры -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-parsers-nav">
@@ -297,5 +280,5 @@
 </script>
 <!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
 <script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
-<script type="module" src="/static/js/notes/app.js?v=26"></script>
+<script type="module" src="/static/js/notes/app.js?v=27"></script>
 {% endblock %}

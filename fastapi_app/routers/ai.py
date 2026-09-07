@@ -121,16 +121,11 @@ def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
                     yield {"delta": tok}
     return _sse_response(as_events())
 
-class SkillConfig(BaseModel):
-    speaker: Optional[str] = Field(default=None, max_length=50)
-    addressee: Optional[str] = Field(default=None, max_length=50)
-
 class ExplainRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
     context_before: Optional[str] = Field(default="", max_length=5_000)
     context_after: Optional[str] = Field(default="", max_length=5_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
-    skill: Optional[SkillConfig] = Field(default=None)
 
 class ParserRequest(BaseModel):
     formula: str = Field(..., max_length=5_000)
@@ -160,7 +155,6 @@ class ConspectusRouteRequest(BaseModel):
     target_step: Optional[str] = Field(default=None, max_length=10)
     pinned_step: Optional[str] = Field(default=None, max_length=10)
     question: Optional[str] = Field(default=None, max_length=2000)
-    skill: Optional[SkillConfig] = Field(default=None)
 
 
 @router.post("/explain-concept")
@@ -173,7 +167,6 @@ async def explain_concept(request: Request, data: ExplainRequest):
         context_after=data.context_after or "",
         history=data.history or [],
         locale=locale,
-        skill=data.skill.dict() if data.skill else None,
     )
     return {"result": result, "user_query": data.text}
 
@@ -187,7 +180,6 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         context_after=data.context_after or "",
         history=data.history or [],
         locale=locale,
-        skill=data.skill.dict() if data.skill else None,
     ))
 
 @router.post("/parser")
@@ -242,8 +234,6 @@ async def article_parser(
     file: Optional[UploadFile] = File(None),
     article_text: Optional[str] = Form(None),
     url: Optional[str] = Form(None),
-    skill_speaker: Optional[str] = Form(None),
-    skill_addressee: Optional[str] = Form(None),
 ):
     text_to_parse = article_text or ""
 
@@ -266,10 +256,7 @@ async def article_parser(
     if not text_to_parse.strip():
         raise HTTPException(status_code=400, detail="Нужна ссылка, файл или текст статьи")
 
-    skill = None
-    if skill_speaker or skill_addressee:
-        skill = {"speaker": skill_speaker, "addressee": skill_addressee}
-    result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message, skill=skill)
+    result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message)
     return {"result": result}
 
 @router.post("/check-ai")
@@ -314,12 +301,10 @@ async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
     (проверка судьёй, повторная попытка), затем {"done": true}."""
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
 
-    skill = data.skill.dict() if data.skill else None
-
     async def events():
         async for step_key, content in conspectus_router.stream_generate_full(
             data.context_state or {}, locale, use_skeleton=True,
-            pinned_step=data.pinned_step, question=data.question, skill=skill,
+            pinned_step=data.pinned_step, question=data.question,
         ):
             if step_key == "__status__":
                 yield {"status": content}

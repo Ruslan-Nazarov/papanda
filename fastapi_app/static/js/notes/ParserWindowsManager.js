@@ -1,16 +1,8 @@
 import DialogService from './DialogService.js';
-import SkillManager from './SkillManager.js';
 import { modelHeader } from './api.js';
 
 import { t } from '../i18n.js';
 class ParserWindowsManager {
-    /** Скилл (регистр речи + уровень адресата) в multipart-запрос парсера статей. */
-    static _appendSkill(formData) {
-        const s = SkillManager.getSkill();
-        if (s && s.speaker) formData.append('skill_speaker', s.speaker);
-        if (s && s.addressee) formData.append('skill_addressee', s.addressee);
-    }
-
     static init() {
         this.windows = {
             formula: {
@@ -438,7 +430,6 @@ class ParserWindowsManager {
                 const formData = new FormData();
                 formData.append('message', t('pw_article_parse_msg'));
                 formData.append(isUrl ? 'url' : 'article_text', text);
-                this._appendSkill(formData);
 
                 const res = await fetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
@@ -476,7 +467,6 @@ class ParserWindowsManager {
             const formData = new FormData();
             formData.append('message', t('pw_article_parse_msg'));
             formData.append('file', file);
-            this._appendSkill(formData);
 
             try {
                 const res = await fetch('/api/ai/dialectics/article-parser', {

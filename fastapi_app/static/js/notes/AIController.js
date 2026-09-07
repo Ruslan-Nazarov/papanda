@@ -1,7 +1,6 @@
 import AppState from './AppState.js';
 import NotesAPI from './api.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
-import SkillManager from './SkillManager.js';
 import GlobalLoader from './GlobalLoader.js';
 
 import { t } from '../i18n.js';
@@ -148,7 +147,7 @@ class AIController {
             let received = 0;
             await NotesAPI.stream(
                 '/ai/dialectics/conspectus/generate-full/stream',
-                { action: 'generate_full', context_state: state, skill: SkillManager.getSkill() },
+                { action: 'generate_full', context_state: state },
                 null,
                 (ev) => {
                     if (ev.step && ev.content) {
@@ -190,8 +189,7 @@ class AIController {
                     action: 'generate_full',
                     context_state: state,
                     pinned_step: String(pinnedStep),
-                    question: question || '',
-                    skill: SkillManager.getSkill()
+                    question: question || ''
                 },
                 null,
                 (ev) => {
@@ -220,8 +218,7 @@ class AIController {
             const res = await NotesAPI.routeConspectus({
                 action: 'generate_step',
                 context_state: state,
-                target_step: stepNumber.toString(),
-                skill: SkillManager.getSkill()
+                target_step: stepNumber.toString()
             });
             if (res.action_status === 'success') {
                 // Если шаг вернулся несколькими процессами (stepN.k) — сносим

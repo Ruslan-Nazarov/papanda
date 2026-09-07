@@ -73,13 +73,12 @@ class ConspectusRouter:
         state = payload.get("context_state", {})
         target_step = payload.get("target_step")
         locale = payload.get("locale", "ru")
-        skill = payload.get("skill")
 
         if action == "generate_full":
-            return await self._handle_auto_full(state, locale, skill=skill)
+            return await self._handle_auto_full(state, locale)
 
         elif action == "generate_step":
-            return await self._handle_auto_step(state, int(target_step), locale, skill=skill)
+            return await self._handle_auto_step(state, int(target_step), locale)
 
         elif action == "judge":
             return await self._handle_judge(state, locale)
@@ -145,7 +144,7 @@ class ConspectusRouter:
             return True, ""
 
     async def _generate_full_attempt(self, state: dict, locale: str, use_skeleton: bool,
-                                      skill: dict, failed_attempts: list) -> Dict[str, str]:
+                                      failed_attempts: list) -> Dict[str, str]:
         """Одна полная попытка собрать все процессы всех шагов, без
         прогрессивной выдачи наружу — используется внутри цикла судьи в
         stream_generate_full. Ключи результата — "1", "2.1", "2.2", ... (см.
@@ -153,7 +152,7 @@ class ConspectusRouter:
         каждого шага в скелете."""
         skeleton = await self._gen_skeleton(state, locale, failed_attempts=failed_attempts) if use_skeleton else {}
         prompt_all = await self.context_builder.build_all_steps_prompt(
-            state, skeleton, pinned_step=None, question=None, skill=skill,
+            state, skeleton, pinned_step=None, question=None,
         )
         buf = ""
         async with aclosing(self.ai_service._generate_stream(
@@ -170,7 +169,7 @@ class ConspectusRouter:
         for key in expected_step_keys(skeleton):
             if key in collected:
                 continue
-            content = await self._regen_process(state, key, skeleton, locale, skill=skill)
+            content = await self._regen_process(state, key, skeleton, locale)
             if content:
                 collected[key] = content
         return collected
@@ -196,7 +195,7 @@ class ConspectusRouter:
         return out
 
     async def stream_generate_full(self, state: dict, locale: str, use_skeleton: bool = False,
-                                   pinned_step: int = None, question: str = None, skill: dict = None):
+                                   pinned_step: int = None, question: str = None):
         """Генератор (step_key, content) плюс служебные события ("__status__", текст)
         для UI-индикатора долгих операций.
         pinned_step + question (кнопка ❓ «перегенерировать с уточнением»):
@@ -209,9 +208,7 @@ class ConspectusRouter:
         попыток, судья (см. _judge_conspect) проверяет каждую попытку целиком;
         при отклонении — новая попытка с ДРУГИМ простейшим процессом, прошлые
         отклонённые попытки передаются архитектору, чтобы не повторялись
-        (1_главный_промпт.md п. 4.2.1).
-        skill — {"speaker": "<role_id>", "addressee": "<role_id>"}, см.
-        conspect/prompts/скиллы_регистр.json; None = поведение по умолчанию."""
+        (1_главный_промпт.md п. 4.2.1)."""
         if "steps" not in state:
             state["steps"] = {}
 
@@ -221,7 +218,7 @@ class ConspectusRouter:
             pinned = None
 
         if pinned:
-            async for event in self._stream_pinned_regeneration(state, locale, pinned, question, skill):
+            async for event in self._stream_pinned_regeneration(state, locale, pinned, question):
                 yield event
             return
 
@@ -233,7 +230,7 @@ class ConspectusRouter:
             elif use_skeleton:
                 yield ("__status__", "Собираю план и генерирую конспект…")
 
-            collected = await self._generate_full_attempt(state, locale, use_skeleton or attempt > 1, skill, failed_attempts)
+            collected = await self._generate_full_attempt(state, locale, use_skeleton or attempt > 1, failed_attempts)
             if not collected:
                 continue
 
@@ -254,18 +251,17 @@ class ConspectusRouter:
         # Доп. проход: короткие исторические справки по шагам (значок 📜 у блока).
         if collected:
             yield ("__status__", "Ищу исторические справки к шагам…")
-            notes = await self._gen_history_notes(state, collected, locale, skill)
+            notes = await self._gen_history_notes(state, collected, locale)
             if notes:
                 state.setdefault("history_notes", {}).update(notes)
                 yield ("__history_notes__", notes)
 
-    async def _gen_history_notes(self, state: dict, collected: Dict[str, str], locale: str,
-                                 skill: dict = None) -> Dict[str, str]:
+    async def _gen_history_notes(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
         """Короткие исторические справки по шагам. Отдельный проход поверх
         готовых Шагов 1–5. Возвращает {"1": "...", "4": "..."} — только те шаги,
         где справка действительно нужна (историч. контекст или расхождение
         логики с историей). Пусто → {}."""
-        prompt = await self.context_builder.build_history_notes_prompt(state, collected, skill=skill)
+        prompt = await self.context_builder.build_history_notes_prompt(state, collected)
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         raw = await self.ai_service._generate(
             prompt, f"Верни JSON со справками по шагам. Язык: {locale}",
@@ -289,10 +285,10 @@ class ConspectusRouter:
         return notes
 
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
-                                          question: str, skill: dict):
+                                          question: str):
         """Часть stream_generate_full для кнопки ❓ — вынесено отдельно, без судьи."""
         if question:
-            updated_pinned = await self._regen_step(state, pinned, "", locale, question=question, skill=skill)
+            updated_pinned = await self._regen_step(state, pinned, "", locale, question=question)
             if updated_pinned:
                 state["steps"][f"step{pinned}"] = {
                     "content": updated_pinned, "status": "ready", "author": "ai", "sub_steps": [],
@@ -302,7 +298,7 @@ class ConspectusRouter:
             # со старым его текстом, чем прерывать весь запрос пользователя.
 
         prompt_all = await self.context_builder.build_all_steps_prompt(
-            state, {}, pinned_step=pinned, question=None, skill=skill,
+            state, {}, pinned_step=pinned, question=None,
         )
 
         buf, emitted = "", {}
@@ -338,7 +334,7 @@ class ConspectusRouter:
             key = str(i)
             if key == pinned_str or emitted.get(key):
                 continue
-            content = await self._regen_step(state, i, "", locale, skill=skill)
+            content = await self._regen_step(state, i, "", locale)
             if content:
                 emitted[key] = content
                 step_key = f"step{key}"
@@ -351,18 +347,18 @@ class ConspectusRouter:
         base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
         if len(base_steps) >= 3:
             yield ("__status__", "Обновляю исторические справки…")
-            notes = await self._gen_history_notes(state, base_steps, locale, skill)
+            notes = await self._gen_history_notes(state, base_steps, locale)
             # Пустой словарь тоже шлём — фронт снимет устаревшие значки.
             state["history_notes"] = notes
             yield ("__history_notes__", notes)
 
-    async def _handle_auto_full(self, state: dict, locale: str, skill: dict = None) -> dict:
+    async def _handle_auto_full(self, state: dict, locale: str) -> dict:
         """Нестримовый путь: собирает результат stream_generate_full целиком.
         Фронт обычно идёт через SSE; этот путь — для `action=generate_full`
         нестримового эндпоинта `/conspectus/route`."""
         updated_steps = {}
         history_notes = {}
-        async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True, skill=skill):
+        async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True):
             if step_key == "__status__":
                 continue
             if step_key == "__history_notes__":
@@ -376,9 +372,9 @@ class ConspectusRouter:
                 "history_notes": history_notes, "cascading_events": []}
 
     async def _regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
-                           question: str = None, skill: dict = None, skeleton: dict = None) -> str:
+                           question: str = None, skeleton: dict = None) -> str:
         prompt = await self.context_builder.build_step_prompt(
-            state, step_idx, question=question, skill=skill, skeleton=skeleton or None,
+            state, step_idx, question=question, skeleton=skeleton or None,
         )
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         if thesis:
@@ -388,8 +384,7 @@ class ConspectusRouter:
             prompt, f"Генерируй шаг {step_idx}. Язык: {locale}", f"step{step_idx}", max_tokens
         )
 
-    async def _regen_process(self, state: dict, key: str, skeleton: dict, locale: str,
-                              skill: dict = None) -> str:
+    async def _regen_process(self, state: dict, key: str, skeleton: dict, locale: str) -> str:
         """Добор одного пропущенного процесса по ключу ("1", "2.2", ...) —
         для бесшовных (без точки) ключей просто зовёт _regen_step, для
         составных использует build_process_prompt (несколько процессов на шаге)."""
@@ -397,16 +392,16 @@ class ConspectusRouter:
         if "." not in key:
             plan = skeleton.get(f"step{base}", {})
             thesis = plan.get("thesis", "") if isinstance(plan, dict) else ""
-            return await self._regen_step(state, base, thesis, locale, skill=skill, skeleton=skeleton)
+            return await self._regen_step(state, base, thesis, locale, skeleton=skeleton)
 
-        prompt = await self.context_builder.build_process_prompt(state, key, skeleton, skill=skill)
+        prompt = await self.context_builder.build_process_prompt(state, key, skeleton)
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         max_tokens = _MAX_TOKENS["step5"] if base == 5 else _MAX_TOKENS["step"]
         return await self._gen_json(
             prompt, f"Генерируй процесс. Язык: {locale}", "process", max_tokens
         )
 
-    async def _handle_auto_step(self, state: dict, target_step: int, locale: str, skill: dict = None) -> dict:
+    async def _handle_auto_step(self, state: dict, target_step: int, locale: str) -> dict:
         # 1. Инвалидация последующих шагов при перегенерации раннего шага
         cascading_events = self._invalidate_subsequent_steps(state, target_step)
 
@@ -427,7 +422,7 @@ class ConspectusRouter:
         if len(step_keys) == 1 and "." not in step_keys[0]:
             # Прежний путь — один блок на шаг.
             prompt = await self.context_builder.build_step_prompt(
-                state, target_step, skill=skill, skeleton=skeleton or None,
+                state, target_step, skeleton=skeleton or None,
             )
             prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
             content = await self._gen_json(
@@ -442,7 +437,7 @@ class ConspectusRouter:
         else:
             # Несколько процессов — по блоку на каждый (stepN.k).
             for key in step_keys:
-                content = await self._regen_process(state, key, skeleton, locale, skill=skill)
+                content = await self._regen_process(state, key, skeleton, locale)
                 if content:
                     updated_steps[f"step{key}"] = {
                         "content": self.sanitizer.clean_markdown_for_editor(content),

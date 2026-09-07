@@ -21,7 +21,6 @@ import DropdownController from './DropdownController.js';
 import NavHistoryManager from './NavHistoryManager.js';
 import ConceptSelectionMenu from './ConceptSelectionMenu.js';
 import ModeManager from './ModeManager.js';
-import SkillManager from './SkillManager.js';
 import ModelManager from './ModelManager.js';
 import JudgeService from './JudgeService.js';
 import OnboardingTour from './OnboardingTour.js';
@@ -42,7 +41,6 @@ class App {
         DropdownController.init();
         ConceptSelectionMenu.init();
         ModeManager.init();
-        SkillManager.init();
         ModelManager.init();
         JudgeService.init();
 

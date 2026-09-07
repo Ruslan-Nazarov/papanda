@@ -1,6 +1,5 @@
 import NotesAPI from './api.js';
 import { renderStreamMarkdown } from './ConceptExplainManager.js';
-import SkillManager from './SkillManager.js';
 import { t } from '../i18n.js';
 
 /**
@@ -94,7 +93,7 @@ class ConceptSelectionMenu {
             let last = 0;
             const full = await NotesAPI.stream(
                 '/ai/dialectics/explain-concept/stream',
-                { text, context_before: title, context_after: body, history: [], skill: SkillManager.getSkill() },
+                { text, context_before: title, context_after: body, history: [] },
                 (_d, acc) => {
                     const now = Date.now();
                     if (now - last > 60) { last = now; renderStreamMarkdown(target, acc + ' ▍'); }

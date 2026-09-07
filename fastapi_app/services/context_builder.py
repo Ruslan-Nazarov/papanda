@@ -2,7 +2,6 @@ import re
 
 import aiofiles
 from fastapi_app.config import settings
-from fastapi_app.services.skills import render_skill_instructions
 
 # Грубое определение домена цели. Словесные маркеры — по границе слова со
 # стеммингом (\b…\w*), чтобы «кодекс» не попадал в math_code из-за «код»,
@@ -106,14 +105,8 @@ class ContextBuilder:
         self._cache[filename] = (mtime, content)
         return content
 
-    async def _render_skill_instructions(self, skill: dict = None) -> str:
-        """Инструкции скилла (регистр + уровень адресата), см.
-        fastapi_app.services.skills. Тонкая обёртка — чтобы не менять
-        существующие `await self._render_skill_instructions(...)` вызовы."""
-        return render_skill_instructions(skill)
-
     async def build_step_prompt(self, state: dict, target_step: int, question: str = None,
-                                 skill: dict = None, skeleton: dict = None) -> str:
+                                 skeleton: dict = None) -> str:
         """Сборка промпта для генерации конкретного шага (с учетом предыдущих).
         question — уточнение пользователя к этому конкретному шагу (кнопка ❓),
         учитывается при перегенерации именно этого шага.
@@ -140,12 +133,11 @@ class ContextBuilder:
         if question:
             prompt += f"\nУТОЧНЕНИЕ ПОЛЬЗОВАТЕЛЯ к этому шагу: {question}\nУчти его при перегенерации.\n"
 
-        prompt += await self._render_skill_instructions(skill)
         prompt += f"\nОбязательно верни результат строго в формате JSON, где ключ - это 'step{target_step}', а значение - сгенерированный текст для этого шага."
         return prompt
 
     async def build_process_prompt(self, state: dict, key: str, skeleton: dict,
-                                    question: str = None, skill: dict = None) -> str:
+                                    question: str = None) -> str:
         """Промпт для ОДНОГО процесса шага, у которого их несколько (Шаг 1: 1-2,
         Шаг 2: всегда 2+) — используется в "доборе" пропущенных ключей после
         основного потока. key вида "2.2"."""
@@ -178,7 +170,6 @@ class ContextBuilder:
         if question:
             prompt += f"\nУТОЧНЕНИЕ ПОЛЬЗОВАТЕЛЯ к этому шагу: {question}\nУчти его при перегенерации.\n"
 
-        prompt += await self._render_skill_instructions(skill)
         prompt += "\nОбязательно верни результат строго в формате JSON: {\"process\": \"<текст>\"}."
         return prompt
 
@@ -227,8 +218,7 @@ class ContextBuilder:
                 lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
         return f"{main_prompt}\n\n{judge_prompt}\n\nКОНСПЕКТ ДЛЯ ОЦЕНКИ:\n" + "\n".join(lines)
 
-    async def build_history_notes_prompt(self, state: dict, steps: dict, skeleton: dict = None,
-                                          skill: dict = None) -> str:
+    async def build_history_notes_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
         """Промпт для доп. прохода «короткие исторические справки по шагам»
         (см. историческая_справка_промпт.md). Модель возвращает JSON
         {"<номер шага>": "<справка>"} только по тем шагам, где она нужна.
@@ -249,12 +239,10 @@ class ContextBuilder:
         return (
             f"{hist_prompt}\n\nЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
             "ГОТОВЫЙ КОНСПЕКТ (Шаги 1–5):\n" + "\n".join(lines)
-            + render_skill_instructions(skill)
         )
 
     async def build_all_steps_prompt(self, state: dict, skeleton: dict,
-                                     pinned_step: int = None, question: str = None,
-                                     skill: dict = None) -> str:
+                                     pinned_step: int = None, question: str = None) -> str:
         """Один промпт для генерации всех 5 шагов сразу (экономит вызовы к LLM).
         Если pinned_step задан — этот шаг фиксируется (не переписывается), а
         остальные перегенерируются согласованно с ним и с уточнением question."""
@@ -285,7 +273,6 @@ class ContextBuilder:
                        "Формулы ТОЛЬКО в долларах ($$…$$ или $…$), без \\[ \\], без квадратных скобок, без обратных кавычек.\n")
         prompt += f"ПЛАН ОТ АРХИТЕКТОРА (тезисы шагов):\n{theses_block}\n\n"
         prompt += _ANTI_ECHO
-        prompt += await self._render_skill_instructions(skill)
 
         if pinned_step and 1 <= int(pinned_step) <= 5:
             # ПРЕДЕЛ СПЕЦИФИКАЦИИ: у pinned-регенерации (кнопка ❓) пока нет своего
