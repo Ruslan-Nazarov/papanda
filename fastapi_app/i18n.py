@@ -1,230 +1,35 @@
-TRANSLATIONS = {
-    "ru": {
-        "app_title": "Конспекты",
-        "btn_open": "Открытые",
-        "btn_help": "Помощь",
-        "btn_mode": "Вид",
-        "btn_versions": "Версии ▾",
-        "no_category": "Без категории",
-        "placeholder_title": "Название конспекта...",
-        "btn_checkpoint": "📌 Версия",
-        "btn_checkpoint_title": "Создать именованную версию (автосохранение работает автоматически)",
-        "menu_mode_title": "Режим отображения",
-        "menu_dialectics": "Диалектический конспект",
-        "menu_two_column": "Двуколоночный вид",
-        "menu_keep_titles": "Оставить заголовки",
-        "menu_hide_left": "Свернуть левую колонку",
-        "menu_show_hints": "Показать скрытые подсказки",
-        "btn_ai_wizard": "🪄 ИИ-генерация всего конспекта",
-        "btn_export_md": "📄 Экспорт Markdown",
-        "btn_print": "🖨 Печать / PDF",
-        "btn_toc": "📑 Оглавление",
-        "btn_search": "🔍 Поиск",
-        "btn_stickers": "📝 Заметки",
-        "lang_ru": "RU",
-        "lang_en": "EN",
-        "lang_kz": "KZ",
-        # --- Шапка и переключатель режимов ---
-        "mode_ai": "ИИ генерация",
-        "mode_manual": "Вручную",
-        "mode_substep": "По шагам",
-        "mode_toggle_title": "Режим работы: ИИ собирает конспект или вы пишете сами по алгоритму",
-        "mode_substep_title": "Генерировать конспект шаг за шагом по нажатию",
-        "nav_howto": "Как это работает",
-        "nav_parsers": "Парсеры",
-        "parser_formula": "Формулы",
-        "parser_article": "Статьи",
-        "nav_connections": "Связи",
-        "nav_menu": "Меню",
-        "nav_lang": "Язык",
-        "lang_menu_title": "Выбор языка",
-        "menu_open_note": "Открыть конспект",
-        "menu_new_note": "Новый конспект",
-        "menu_back": "Назад к предыдущему",
-        "menu_trash": "Корзина",
-        "menu_delete_note": "Удалить конспект",
-        "menu_share": "Поделиться ссылкой",
-        "menu_export": "ЭКСПОРТ",
-        "menu_nav_mobile": "Меню",
-        # --- Панель конспекта ---
-        "btn_save": "Сохранить",
-        "progress": "ПРОГРЕСС",
-        "bar_new_note": "Новый конспект",
-        "bar_toc": "Оглавление",
-        "bar_search": "Поиск",
-        "bar_stickers": "Стикеры",
-        "bar_judge": "Проверить",
-        "bar_recall": "Повторение",
-        "saved_at": "Сохранено",
-        # --- Футер ---
-        "footer_about": "О проекте",
-        "footer_changelog": "История изменений",
-        "footer_contact": "Написать разработчику",
-        "fab_top": "Наверх",
-        # --- Статус-плашка ИИ-генерации конспекта (SSE) ---
-        "gen_status_planning": "Собираю план и генерирую конспект…",
-        "gen_status_editor": "Свожу шаги в одно связное объяснение…",
-        "gen_status_judging": "Проверяю, получилось ли настоящее противоречие…",
-        "gen_status_retry": "Предыдущий вариант не прошёл проверку — пробую другой простейший процесс (попытка {n} из {total})…",
-        "gen_status_postprocess": "Собираю заголовки и исторические справки…",
-        "gen_status_postprocess_upd": "Обновляю заголовки и исторические справки…",
-        # --- Публичная страница расшаренного конспекта ---
-        "shared_anchor_label": "Теперь вы поняли",
-        "shared_made_with": "Собрано в",
-        "shared_cta": "Собрать свой конспект",
-        "shared_tagline": "Понять тему, а не зазубрить",
-    },
-    "en": {
-        "app_title": "Notes",
-        "btn_open": "Open",
-        "btn_help": "Help",
-        "btn_mode": "View",
-        "btn_versions": "Versions ▾",
-        "no_category": "No category",
-        "placeholder_title": "Note title...",
-        "btn_checkpoint": "📌 Version",
-        "btn_checkpoint_title": "Create a named version (autosave works automatically)",
-        "menu_mode_title": "Display Mode",
-        "menu_dialectics": "Dialectical layout",
-        "menu_two_column": "Two columns",
-        "menu_keep_titles": "Titles only",
-        "menu_hide_left": "Collapse left column",
-        "menu_show_hints": "Show dismissed hints",
-        "btn_ai_wizard": "🪄 AI-generate the whole note",
-        "btn_export_md": "📄 Export Markdown",
-        "btn_print": "🖨 Print / PDF",
-        "btn_toc": "📑 Contents",
-        "btn_search": "🔍 Search",
-        "btn_stickers": "📝 Notes",
-        "lang_ru": "RU",
-        "lang_en": "EN",
-        "lang_kz": "KZ",
-        "mode_ai": "AI generation",
-        "mode_manual": "Manual",
-        "mode_substep": "Step by step",
-        "mode_toggle_title": "Working mode: AI builds the note, or you write it yourself following the algorithm",
-        "mode_substep_title": "Generate the note one step per click",
-        "nav_howto": "How it works",
-        "nav_parsers": "Parsers",
-        "parser_formula": "Formulas",
-        "parser_article": "Articles",
-        "nav_connections": "Links",
-        "nav_menu": "Menu",
-        "nav_lang": "Language",
-        "lang_menu_title": "Select language",
-        "menu_open_note": "Open note",
-        "menu_new_note": "New note",
-        "menu_back": "Back to previous",
-        "menu_trash": "Trash",
-        "menu_delete_note": "Delete note",
-        "menu_share": "Share a link",
-        "menu_export": "EXPORT",
-        "menu_nav_mobile": "Menu",
-        "btn_save": "Save",
-        "progress": "PROGRESS",
-        "bar_new_note": "New note",
-        "bar_toc": "Contents",
-        "bar_search": "Search",
-        "bar_stickers": "Stickers",
-        "bar_judge": "Check",
-        "bar_recall": "Recall",
-        "saved_at": "Saved",
-        "footer_about": "About",
-        "footer_changelog": "Changelog",
-        "footer_contact": "Contact the developer",
-        "fab_top": "To top",
-        # --- AI conspect generation status pill (SSE) ---
-        "gen_status_planning": "Building the outline and generating the conspect…",
-        "gen_status_editor": "Weaving the steps into one connected explanation…",
-        "gen_status_judging": "Checking whether a real contradiction came out…",
-        "gen_status_retry": "The previous version didn't pass the check — trying a different simplest process (attempt {n} of {total})…",
-        "gen_status_postprocess": "Collecting titles and historical notes…",
-        "gen_status_postprocess_upd": "Updating titles and historical notes…",
-        "shared_anchor_label": "Now you understand",
-        "shared_made_with": "Made with",
-        "shared_cta": "Build your own conspect",
-        "shared_tagline": "Understand a topic, don't cram it",
-    },
-    "kz": {
-        "app_title": "Конспекттер",
-        "btn_open": "Ашу",
-        "btn_help": "Көмек",
-        "btn_mode": "Көрініс",
-        "btn_versions": "Нұсқалар ▾",
-        "no_category": "Санатсыз",
-        "placeholder_title": "Конспект атауы...",
-        "btn_checkpoint": "📌 Нұсқа",
-        "btn_checkpoint_title": "Атаулы нұсқаны құру (автоматты сақтау жұмыс істейді)",
-        "menu_mode_title": "Көрсету режимі",
-        "menu_dialectics": "Диалектикалық конспект",
-        "menu_two_column": "Екі баған",
-        "menu_keep_titles": "Тек тақырыптарды қалдыру",
-        "menu_hide_left": "Сол жақ бағанды жасыру",
-        "menu_show_hints": "Жасырылған кеңестерді көрсету",
-        "btn_ai_wizard": "🪄 Бүкіл конспектіні ИИ құрсын",
-        "btn_export_md": "📄 Markdown экспорты",
-        "btn_print": "🖨 Басып шығару / PDF",
-        "btn_toc": "📑 Мазмұны",
-        "btn_search": "🔍 Іздеу",
-        "btn_stickers": "📝 Жазбалар",
-        "lang_ru": "RU",
-        "lang_en": "EN",
-        "lang_kz": "KZ",
-        "mode_ai": "ИИ генерациясы",
-        "mode_manual": "Қолмен",
-        "mode_substep": "Қадаммен",
-        "mode_toggle_title": "Жұмыс режимі: конспектіні ИИ құрады немесе оны алгоритм бойынша өзіңіз жазасыз",
-        "mode_substep_title": "Конспектіні бір басқанда бір қадамнан құру",
-        "nav_howto": "Қалай жұмыс істейді",
-        "nav_parsers": "Талдағыштар",
-        "parser_formula": "Формулалар",
-        "parser_article": "Мақалалар",
-        "nav_connections": "Байланыстар",
-        "nav_menu": "Мәзір",
-        "nav_lang": "Тіл",
-        "lang_menu_title": "Тілді таңдау",
-        "menu_open_note": "Конспектіні ашу",
-        "menu_new_note": "Жаңа конспект",
-        "menu_back": "Алдыңғысына оралу",
-        "menu_trash": "Себет",
-        "menu_delete_note": "Конспектіні жою",
-        "menu_share": "Сілтемемен бөлісу",
-        "menu_export": "ЭКСПОРТ",
-        "menu_nav_mobile": "Мәзір",
-        "btn_save": "Сақтау",
-        "progress": "БАРЫСЫ",
-        "bar_new_note": "Жаңа конспект",
-        "bar_toc": "Мазмұны",
-        "bar_search": "Іздеу",
-        "bar_stickers": "Стикерлер",
-        "bar_judge": "Тексеру",
-        "bar_recall": "Қайталау",
-        "saved_at": "Сақталды",
-        "footer_about": "Жоба туралы",
-        "footer_changelog": "Өзгерістер тарихы",
-        "footer_contact": "Әзірлеушіге жазу",
-        "fab_top": "Жоғарыға",
-        # --- ЖИ конспект генерациясының күй-жолағы (SSE) ---
-        "gen_status_planning": "Жоспарды жинап, конспект генерациялап жатырмын…",
-        "gen_status_editor": "Қадамдарды бір байланысты түсіндірмеге біріктіріп жатырмын…",
-        "gen_status_judging": "Нағыз қайшылық шыққанын тексеріп жатырмын…",
-        "gen_status_retry": "Алдыңғы нұсқа тексеруден өтпеді — басқа қарапайым процесс байқап жатырмын ({total} ішінен {n}-әрекет)…",
-        "gen_status_postprocess": "Тақырыптар мен тарихи анықтамаларды жинап жатырмын…",
-        "gen_status_postprocess_upd": "Тақырыптар мен тарихи анықтамаларды жаңартып жатырмын…",
-        "shared_anchor_label": "Енді түсіндіңіз",
-        "shared_made_with": "Мұнда жасалған:",
-        "shared_cta": "Өз конспектіңді құрастыр",
-        "shared_tagline": "Тақырыпты жаттамай, түсіну",
-    },
-}
+"""Переводы интерфейса — ОДИН источник на клиент и сервер.
+
+Все строки живут в `i18n_data.json` ({ru,en,kz}). Сервер читает их отсюда
+(get_translator для Jinja), клиент получает готовый словарь текущей локали
+инлайном в страницу (см. main.py → templates → static/js/i18n.js). Раньше
+таблицы дублировались в i18n.py и i18n.js и расходились.
+"""
+import json
+from pathlib import Path
+
+_DATA_FILE = Path(__file__).parent / "i18n_data.json"
+TRANSLATIONS: dict = json.loads(_DATA_FILE.read_text(encoding="utf-8"))
+
+LOCALES = ("ru", "en", "kz")
+
+
+def normalize(locale: str) -> str:
+    loc = (locale or "ru").lower()
+    return loc if loc in TRANSLATIONS else "ru"
+
+
+def locale_dict(locale: str) -> dict:
+    """Словарь строк локали с подложенным ru-фолбэком — то, что уходит на
+    клиент (одна локаль, все ключи присутствуют)."""
+    loc = normalize(locale)
+    return {**TRANSLATIONS["ru"], **TRANSLATIONS[loc]}
 
 
 def get_translator(locale: str):
-    locale = (locale or "ru").lower()
-    if locale not in TRANSLATIONS:
-        locale = "ru"
+    loc = normalize(locale)
 
     def _(key: str) -> str:
-        return TRANSLATIONS[locale].get(key) or TRANSLATIONS["ru"].get(key, key)
+        return TRANSLATIONS[loc].get(key) or TRANSLATIONS["ru"].get(key, key)
 
     return _

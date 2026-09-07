@@ -21,7 +21,7 @@ from fastapi_app.middleware import (
     NoCacheStaticMiddleware,
 )
 from fastapi_app.tasks import cleanup_old_dbs
-from fastapi_app.i18n import get_translator
+from fastapi_app.i18n import get_translator, locale_dict
 from fastapi_app.services.manual_algorithm import get_manual_algorithm
 from fastapi_app.rate_limiter import limiter
 from fastapi_app.database import get_db, dispose_all_engines
@@ -77,9 +77,11 @@ async def index(request: Request):
     # Тексты алгоритма для ручного режима (подсказки блоков) — инлайним в
     # страницу как window.__ALGORITHM__, источник prompts/7_*.json.
     algorithm_json = json.dumps(get_manual_algorithm(locale), ensure_ascii=False).replace("<", "\\u003c")
+    i18n_json = json.dumps(locale_dict(locale), ensure_ascii=False).replace("<", "\\u003c")
     return templates.TemplateResponse(
         request=request, name="index.html",
-        context={"_": _, "locale": locale, "algorithm_json": algorithm_json},
+        context={"_": _, "locale": locale, "algorithm_json": algorithm_json,
+                 "i18n_json": i18n_json},
     )
 
 @app.get("/editor")
