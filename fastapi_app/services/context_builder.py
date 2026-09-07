@@ -310,6 +310,10 @@ class ContextBuilder:
         )
         return prompt
 
+    # На каждый предыдущий шаг в контексте — не больше этого числа символов
+    # (для добора/пошаговой генерации хватает сути шага, полный текст лишний).
+    _PREV_STEP_CAP = 600
+
     def _compile_previous_steps(self, state: dict, current_step: int, include_substeps: bool = False) -> str:
         context = ""
         steps = state.get("steps", {})
@@ -317,7 +321,10 @@ class ContextBuilder:
             step_key = f"step{i}"
             step_data = steps.get(step_key, {})
             if step_data.get("status") in ["ready", "done"]:
-                context += f"--- ШАГ {i} ---\n{step_data.get('content', '')}\n\n"
+                txt = (step_data.get("content", "") or "").strip()
+                if len(txt) > self._PREV_STEP_CAP:
+                    txt = txt[:self._PREV_STEP_CAP].rsplit(" ", 1)[0] + " …"
+                context += f"--- ШАГ {i} ---\n{txt}\n\n"
             elif i == current_step and include_substeps:
                 # Включаем уже сгенерированные подшаги текущего шага
                 context += f"--- ШАГ {i} (Частично сгенерировано) ---\n"

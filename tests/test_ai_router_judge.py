@@ -89,7 +89,7 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
 
 @pytest.mark.asyncio
 async def test_judge_gives_up_after_max_attempts_and_returns_last_result():
-    """Если судья 3 раза подряд отклоняет — не зависаем бесконечно, отдаём
+    """Если судья отклоняет все попытки подряд — не зависаем бесконечно, отдаём
     последнюю попытку пользователю (лучше так, чем ничего)."""
     ai_service = MagicMock()
 
@@ -122,8 +122,9 @@ async def test_judge_gives_up_after_max_attempts_and_returns_last_result():
         if step_key != "__status__":
             events[step_key] = content
 
-    assert stream_calls["n"] == 3  # ровно _MAX_GENERATION_ATTEMPTS попыток, не бесконечно
-    assert "attempt3" in events["step1"]  # отдали последнюю попытку, не пустоту
+    from fastapi_app.services.ai_router_service import _MAX_GENERATION_ATTEMPTS
+    assert stream_calls["n"] == _MAX_GENERATION_ATTEMPTS  # ровно столько попыток, не бесконечно
+    assert f"attempt{_MAX_GENERATION_ATTEMPTS}" in events["step1"]  # отдали последнюю попытку
 
 
 @pytest.mark.asyncio
