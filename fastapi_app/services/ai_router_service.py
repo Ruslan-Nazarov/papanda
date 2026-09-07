@@ -52,6 +52,17 @@ class ConspectusRouter:
         self.sanitizer = sanitizer
         self.rag_manager = rag_manager
 
+    async def _ground(self, state: dict) -> None:
+        """Одноразово подтягивает справку по теме (ru.wikipedia) в state['reference']
+        для заземления фактов. Тихо ничего не делает, если темы в вики нет."""
+        if state.get("reference") is not None:
+            return
+        try:
+            ref = await self.rag_manager.reference_for(state.get("target_goal", ""))
+        except Exception:  # noqa: BLE001 — fail-open
+            ref = ""
+        state["reference"] = ref or ""
+
     async def _gen_json(self, sys_prompt: str, user_msg: str, key: str, max_tokens: int) -> str:
         """Генерация JSON без строгого response_format (Groq gpt-oss часто валит его
         валидатор и уходит в медленный fallback). JSON вытаскиваем санитайзером,
@@ -217,6 +228,8 @@ class ConspectusRouter:
         if "steps" not in state:
             state["steps"] = {}
 
+        await self._ground(state)
+
         try:
             pinned = int(pinned_step) if pinned_step else None
         except (TypeError, ValueError):
@@ -270,7 +283,6 @@ class ConspectusRouter:
         для схемы-сворачивания. notes — исторические справки только по тем
         базовым шагам, где нужно (расхождение логики с историей / деталь)."""
         prompt = await self.context_builder.build_history_notes_prompt(state, collected)
-        prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         raw = await self.ai_service._generate(
             prompt, f"Верни JSON {{titles, notes}}. Язык: {locale}",
             {"type": "json_object"}, max_tokens=_MAX_TOKENS["history"], temperature=0.4,
@@ -401,7 +413,6 @@ class ConspectusRouter:
         prompt = await self.context_builder.build_step_prompt(
             state, step_idx, question=question, skeleton=skeleton or None,
         )
-        prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         if thesis:
             prompt += f"\nРЕКОМЕНДУЕМЫЙ ТЕЗИС ОТ АРХИТЕКТОРА: {thesis}\n"
         max_tokens = _MAX_TOKENS["step5"] if step_idx == 5 else _MAX_TOKENS["step"]
@@ -420,13 +431,13 @@ class ConspectusRouter:
             return await self._regen_step(state, base, thesis, locale, skeleton=skeleton)
 
         prompt = await self.context_builder.build_process_prompt(state, key, skeleton)
-        prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         max_tokens = _MAX_TOKENS["step5"] if base == 5 else _MAX_TOKENS["step"]
         return await self._gen_json(
             prompt, f"Генерируй процесс. Язык: {locale}", "process", max_tokens
         )
 
     async def _handle_auto_step(self, state: dict, target_step: int, locale: str) -> dict:
+        await self._ground(state)
         # 1. Инвалидация последующих шагов при перегенерации раннего шага
         cascading_events = self._invalidate_subsequent_steps(state, target_step)
 
@@ -449,7 +460,6 @@ class ConspectusRouter:
             prompt = await self.context_builder.build_step_prompt(
                 state, target_step, skeleton=skeleton or None,
             )
-            prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
             content = await self._gen_json(
                 prompt, f"Генерируй шаг {target_step}. Язык: {locale}", f"step{target_step}", max_tokens
             )

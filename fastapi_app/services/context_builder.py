@@ -28,6 +28,19 @@ _ANTI_ECHO = (
 )
 
 
+def _reference_block(state: dict) -> str:
+    """Справочный контекст (ru.wikipedia) для заземления фактов, если он был
+    получен в state['reference'] (см. services/rag_tool_manager.py). Пусто —
+    если темы нет в вики (заземляем только внятные понятия)."""
+    ref = (state or {}).get("reference")
+    if not ref:
+        return ""
+    return (
+        "\nСПРАВОЧНЫЙ КОНТЕКСТ (реальные факты, даты и имена берите отсюда; "
+        "дословно не пересказывайте, это опора для точности):\n" + ref + "\n"
+    )
+
+
 def _effective_goal(state: dict, skeleton: dict = None) -> str:
     """Цель как процесс: `goal_as_process` из скелета (переформулирование
     запроса по п. 5.1 главного промпта, см. 9_скелет_конспекта_промпт.md)
@@ -165,6 +178,7 @@ class ContextBuilder:
         prompt += f"УЖЕ ЗАПОЛНЕННЫЙ КОНТЕКСТ:\n{previous_context}\n"
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {target_step}.\n"
         prompt += _ANTI_ECHO
+        prompt += _reference_block(state)
         # Пошаговые правила по каждому шагу (в т.ч. Шаг 3) регулирует
         # 8_генератор_шага_промпт.md — отдельного хардкода здесь больше нет.
 
@@ -203,6 +217,7 @@ class ContextBuilder:
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {base_step}, процесс «{thesis_for_key(skeleton, key)}».\n"
         prompt += sibling_block
         prompt += _ANTI_ECHO
+        prompt += _reference_block(state)
         # Правила по каждому шагу (в т.ч. Шаг 3) — в 8_генератор_шага_промпт.md.
 
         if question:
@@ -227,6 +242,7 @@ class ContextBuilder:
         prompt += f"\nДОМЕН: {domain}."
         if domain == "math_code":
             prompt += " Для math_code подшаги допустимы только на Шаге 5 при выводе формулы."
+        prompt += _reference_block(state)
 
         if failed_attempts:
             prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ НЕ ПРОШЛИ ПРОВЕРКУ — выбери ДРУГОЙ простейший процесс, не повторяй их:\n"
@@ -303,6 +319,7 @@ class ContextBuilder:
                        "Формулы ТОЛЬКО в долларах ($$…$$ или $…$), без \\[ \\], без квадратных скобок, без обратных кавычек.\n")
         prompt += f"ПЛАН ОТ АРХИТЕКТОРА (тезисы шагов):\n{theses_block}\n\n"
         prompt += _ANTI_ECHO
+        prompt += _reference_block(state)
 
         if pinned_step and 1 <= int(pinned_step) <= 5:
             # ПРЕДЕЛ СПЕЦИФИКАЦИИ: у pinned-регенерации (кнопка ❓) пока нет своего
