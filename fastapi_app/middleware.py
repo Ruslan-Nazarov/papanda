@@ -27,8 +27,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # 'unsafe-eval' нужен function-plot (вычисляет введённые формулы для
+        # графика), 'unsafe-inline' — инлайн-бутстрапам + сниппетам Метрики/GA
+        # + importmap. Убрать их = миграция всех инлайнов на nonce +
+        # strict-dynamic (в бэклоге). Зато object/base/form/frame-ancestors
+        # закрыты жёстко, а XSS-поверхность сужена санитизацией на запись.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
@@ -41,8 +45,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self' https://mc.yandex.ru wss://mc.yandex.ru https://mc.yandex.com https://yandex.ru "
             "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; "
             "frame-src 'self' https://mc.yandex.ru; "
-            "worker-src 'self' blob:;"
+            "worker-src 'self' blob:; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "frame-ancestors 'none'"
         )
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=()"
         return response
 
 class LocaleMiddleware(BaseHTTPMiddleware):

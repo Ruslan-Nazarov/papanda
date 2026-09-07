@@ -16,9 +16,12 @@ async def test_security_headers_middleware(client: AsyncClient):
     assert res.status_code == 200
     assert res.headers.get("X-Content-Type-Options") == "nosniff"
     assert res.headers.get("X-Frame-Options") == "DENY"
-    assert res.headers.get("X-XSS-Protection") == "1; mode=block"
     assert "Strict-Transport-Security" in res.headers
-    assert "Content-Security-Policy" in res.headers
+    csp = res.headers.get("Content-Security-Policy", "")
+    assert "default-src 'self'" in csp
+    assert "object-src 'none'" in csp
+    assert "frame-ancestors 'none'" in csp
+    assert res.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
 
 
 @pytest.mark.asyncio
