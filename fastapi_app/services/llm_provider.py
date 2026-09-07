@@ -38,7 +38,8 @@ class BaseLLMProvider(ABC):
         # LLMRegistry на следующего провайдера.
         self.client = AsyncOpenAI(api_key=safe_api_key, base_url=self.base_url, max_retries=0)
 
-    def _build_kwargs(self, messages, response_format, max_tokens, temperature, fast, timeout) -> dict:
+    def _build_kwargs(self, messages, response_format, max_tokens, temperature, fast, timeout,
+                      reasoning_effort=None) -> dict:
         model = self.fast_model_name if fast else self.model_name
         kwargs = {
             "model": model,
@@ -50,9 +51,12 @@ class BaseLLMProvider(ABC):
         if temperature is not None:
             kwargs["temperature"] = temperature
         # reasoning-модели (gpt-oss, gemini-flash) без ограничения тратят лимит
-        # токенов на «размышления» и тормозят/ломают JSON. Держим усилие низким.
-        if settings.LLM_REASONING_EFFORT and ("gpt-oss" in model or "gemini" in model):
-            kwargs["extra_body"] = {"reasoning_effort": settings.LLM_REASONING_EFFORT}
+        # токенов на «размышления» и тормозят/ломают JSON. По умолчанию усилие
+        # низкое (settings.LLM_REASONING_EFFORT); вызов может поднять его явно
+        # (reasoning_effort=) — так основная генерация идёт на medium.
+        effort = reasoning_effort or settings.LLM_REASONING_EFFORT
+        if effort and ("gpt-oss" in model or "gemini" in model):
+            kwargs["extra_body"] = {"reasoning_effort": effort}
         if response_format:
             kwargs["response_format"] = response_format
         return kwargs
@@ -65,11 +69,13 @@ class BaseLLMProvider(ABC):
         temperature: Optional[float] = None,
         fast: bool = False,
         timeout: Optional[float] = None,
+        reasoning_effort: Optional[str] = None,
     ) -> str:
         if not self.api_key:
             raise ValueError(f"API key missing for provider {self.name}")
 
-        kwargs = self._build_kwargs(messages, response_format, max_tokens, temperature, fast, timeout)
+        kwargs = self._build_kwargs(messages, response_format, max_tokens, temperature, fast, timeout,
+                                    reasoning_effort)
         response = await self.client.chat.completions.create(**kwargs)
         # Некоторые OpenAI-совместимые эндпоинты (OpenRouter) на ошибке отдают
         # 200 с телом без choices — не даём этому упасть как TypeError.
@@ -87,11 +93,13 @@ class BaseLLMProvider(ABC):
         temperature: Optional[float] = None,
         fast: bool = False,
         timeout: Optional[float] = None,
+        reasoning_effort: Optional[str] = None,
     ) -> AsyncIterator[str]:
         if not self.api_key:
             raise ValueError(f"API key missing for provider {self.name}")
 
-        kwargs = self._build_kwargs(messages, None, max_tokens, temperature, fast, timeout)
+        kwargs = self._build_kwargs(messages, None, max_tokens, temperature, fast, timeout,
+                                    reasoning_effort)
         kwargs["stream"] = True
         stream = await self.client.chat.completions.create(**kwargs)
         # async with гарантирует закрытие HTTP-потока и при досрочном прерывании.
@@ -191,8 +199,13 @@ class _AllRateLimited(Exception):
 # бесплатный Groq, Cerebras — первый фолбаг (платный буфер включается ровно
 # когда Groq затроттлился), Gemini — вторым.
 TASK_ROUTES: Dict[str, List[str]] = {
-    # горячий путь и всё крупное: Groq (free) → Cerebras (платный буфер) → Gemini
-    "step_stream": ["Groq", "Cerebras", "Gemini"],   # стрим шагов конспекта
+    # ОСНОВНАЯ генерация конспекта (стрим всех шагов + добор): Cerebras первым.
+    # Причина (2026-09-07): у Groq gpt-oss-120b лимит 8000 токенов/мин на
+    # вход+выход вместе — при длинном выводе (~9k) он сразу 429. Cerebras
+    # ($5 кредит, тот же gpt-oss-120b, кэш префикса) этой стены не имеет.
+    # Gemini flash-lite — второй фолбэк (большой контекст); Groq последним как
+    # backstop (в основном 429, спасает добор по одному процессу).
+    "step_stream": ["Cerebras", "Gemini", "Groq"],   # стрим шагов конспекта
     "what_is":     ["Groq", "Cerebras", "Gemini"],   # «Что это?»
     "formula":     ["Groq", "Cerebras", "Gemini"],   # парсер формул
     "check":       ["Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
@@ -254,13 +267,15 @@ class LLMRegistry:
         temperature: Optional[float] = None,
         fast: bool = False,
         prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
+        reasoning_effort: Optional[str] = None,
     ) -> str:
         # До 3 проходов по провайдерам: если весь круг упёрся в rate-limit,
         # ждём короткую паузу и пробуем снова (на free-тарифе окна лимитов узкие).
         last_error = "unknown"
         for attempt in range(3):
             try:
-                return await self._one_pass(messages, response_format, max_tokens, temperature, fast, prefer)
+                return await self._one_pass(messages, response_format, max_tokens, temperature, fast, prefer,
+                                            reasoning_effort)
             except _AllRateLimited as e:
                 last_error = str(e)
                 await asyncio.sleep(1.5 + random.random() * (attempt + 1))
@@ -274,6 +289,7 @@ class LLMRegistry:
         temperature: Optional[float],
         fast: bool,
         prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
+        reasoning_effort: Optional[str] = None,
     ) -> str:
         provider_errors: List[str] = []
         rate_limited_count = 0
@@ -291,7 +307,8 @@ class LLMRegistry:
             try:
                 logger.info(f"Trying LLM generation with {provider.name} (fast={fast})...")
                 result = await provider.generate(
-                    messages, response_format, max_tokens=max_tokens, temperature=temperature, fast=fast
+                    messages, response_format, max_tokens=max_tokens, temperature=temperature, fast=fast,
+                    reasoning_effort=reasoning_effort,
                 )
                 return result
             except Exception as e:
@@ -322,7 +339,8 @@ class LLMRegistry:
                     logger.warning(f"Retrying {provider.name} without response_format due to error: {e}")
                     try:
                         result = await provider.generate(
-                            messages, None, max_tokens=max_tokens, temperature=temperature, fast=fast
+                            messages, None, max_tokens=max_tokens, temperature=temperature, fast=fast,
+                            reasoning_effort=reasoning_effort,
                         )
                         return result
                     except Exception as e2:
@@ -356,6 +374,8 @@ class LLMRegistry:
         temperature: Optional[float] = None,
         fast: bool = False,
         prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
+        reasoning_effort: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> AsyncIterator[str]:
         """Стрим токенов. Фолбэк на другого провайдера возможен только до первого
         отданного чанка; после — ошибка просто обрывает поток."""
@@ -372,7 +392,8 @@ class LLMRegistry:
             try:
                 logger.info(f"Streaming with {provider.name} (fast={fast})...")
                 async with aclosing(provider.generate_stream(
-                    messages, max_tokens=max_tokens, temperature=temperature, fast=fast
+                    messages, max_tokens=max_tokens, temperature=temperature, fast=fast,
+                    reasoning_effort=reasoning_effort, timeout=timeout,
                 )) as pstream:
                     async for delta in pstream:
                         started = True

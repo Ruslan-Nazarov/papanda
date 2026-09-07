@@ -2,6 +2,7 @@ import re
 from contextlib import aclosing
 from typing import Dict
 
+from fastapi_app.config import settings
 from fastapi_app.services.context_builder import expected_step_keys
 from fastapi_app.i18n import get_translator
 
@@ -17,20 +18,20 @@ def _sort_key(key: str) -> list:
 def _base_of(key: str) -> str:
     return key.split(".")[0]
 
-# Потолки на длину ОТВЕТА по фазам (не размер входа). С reasoning_effort=low
-# gpt-oss укладывается в сотни токенов; запас — на развёрнутый вывод формул.
-# ВАЖНО (2026-09-07): у Groq gpt-oss-120b лимит 8000 токенов/мин, и он считает
-# ПРОМПТ + max_tokens вместе. build_all_steps_prompt ≈ 4600 вход-токенов (весь
-# 1_главный + 8_генератор), поэтому all_steps держим так, чтобы вход+выход
-# укладывались в 8000, иначе Groq сразу 429 и всё падает на фолбэк.
-# Реальный вывод 6 блоков ≈ 2500 симв ≈ 900 токенов — 3400 с большим запасом.
+# Потолки на длину ОТВЕТА по фазам (не размер входа).
+# ВАЖНО (2026-09-07, пересмотр): раньше all_steps держали на 3400, чтобы
+# вход+выход влезали в лимит Groq gpt-oss-120b (8000 токенов/мин на всё
+# вместе) — это давало ~2500 символов на ВЕСЬ конспект (детский, обрубленный
+# вывод). Теперь основная генерация идёт первой на Cerebras (см. TASK_ROUTES
+# step_stream) — стены 8000 нет, поэтому потолки подняты под нормальный
+# объём: развёрнутый переход на каждом шаге, а не 3 предложения.
 _MAX_TOKENS = {
     "skeleton": 1200,
-    "all_steps": 3400,
-    "step": 1800,
-    "step5": 2800,
-    "judge": 500,
-    "history": 1400,
+    "all_steps": 9000,
+    "step": 2600,
+    "step5": 3800,
+    "judge": 700,
+    "history": 2000,
 }
 
 # Многопроходный поиск простейшего процесса (см. 1_главный_промпт.md п. 6.2.1):
@@ -41,8 +42,8 @@ _MAX_GENERATION_ATTEMPTS = 2
 
 # Маршрутизация вызовов под задачу — в TASK_ROUTES (llm_provider.py). Каждый
 # вызов _generate/_generate_stream ниже передаёт свой task=; скелет/справки/
-# судья уходят на Gemini (разгрузка минутного лимита Groq), стрим шагов — на
-# Groq (быстрый), Cerebras — первый платный фолбэк.
+# судья уходят на Gemini flash-lite (быстрый, чистый JSON), основной стрим
+# шагов — на Cerebras (нет стены 8000 TPM), Groq — backstop.
 
 
 class ConspectusRouter:
@@ -70,7 +71,7 @@ class ConspectusRouter:
         одна повторная попытка при провале."""
         for attempt in range(2):
             raw = await self.ai_service._generate(
-                sys_prompt, user_msg, None, max_tokens=max_tokens, temperature=0.3,
+                sys_prompt, user_msg, None, max_tokens=max_tokens, temperature=0.4,
                 use_cache=False, task="step_stream",
             )
             try:
@@ -173,8 +174,9 @@ class ConspectusRouter:
         buf = ""
         async with aclosing(self.ai_service._generate_stream(
             prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
-            max_tokens=_MAX_TOKENS["all_steps"], temperature=0.35, use_cache=False,
-            task="step_stream",
+            max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
+            task="step_stream", reasoning_effort=settings.LLM_REASONING_EFFORT_GEN,
+            timeout=settings.LLM_TIMEOUT_GEN,
         )) as gen:
             async for delta in gen:
                 buf += delta
@@ -338,8 +340,9 @@ class ConspectusRouter:
         pinned_str = str(pinned)
         async with aclosing(self.ai_service._generate_stream(
             prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
-            max_tokens=_MAX_TOKENS["all_steps"], temperature=0.35, use_cache=False,
-            task="step_stream",
+            max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
+            task="step_stream", reasoning_effort=settings.LLM_REASONING_EFFORT_GEN,
+            timeout=settings.LLM_TIMEOUT_GEN,
         )) as gen:
             async for delta in gen:
                 buf += delta

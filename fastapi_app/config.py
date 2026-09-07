@@ -43,9 +43,19 @@ class Settings(BaseSettings):
     CEREBRAS_FAST_MODEL: str = "qwen-3.8-27b"   # на аккаунте нет llama; qwen отдаёт чистый JSON
 
     # Таймаут одного запроса к провайдеру, сек (по истечении — переход к следующему).
+    # Держим коротким: вспомогательные вызовы (скелет, судья, справки) должны
+    # быстро уходить на фолбэк, если провайдер завис.
     LLM_TIMEOUT: float = 15.0
-    # Усилие reasoning для gpt-oss моделей: low | medium | high (пусто — не передавать).
+    # Отдельный таймаут для основной генерации конспекта: она идёт с
+    # reasoning_effort=medium и длинным выводом — первому чанку нужно больше.
+    LLM_TIMEOUT_GEN: float = 40.0
+    # Усилие reasoning для gpt-oss / gemini моделей: low | medium | high (пусто —
+    # не передавать). LLM_REASONING_EFFORT — дефолт для всех вызовов (скелет,
+    # судья, справки — там важны скорость и чистый JSON).
     LLM_REASONING_EFFORT: str = "low"
+    # Отдельное усилие для основной генерации конспекта (стрим шагов) — не-JSON,
+    # творческая задача «показать становление»: на low выходит плоско и обрублено.
+    LLM_REASONING_EFFORT_GEN: str = "medium"
     # ВНИМАНИЕ: на текущем Groq-ключе vision-моделей нет — OCR формул недоступен.
     GROQ_VISION_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     GROQ_VISION_FALLBACK_MODEL: str = "meta-llama/llama-4-maverick-17b-128e-instruct"
