@@ -91,9 +91,9 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2():
 
 
 @pytest.mark.asyncio
-async def test_history_pass_emits_per_step_notes():
-    """После Шагов 1–5 и судьи идёт доп. проход — событие __history_notes__
-    со справками по отдельным шагам (значок 📜 у блока)."""
+async def test_history_pass_emits_titles_and_notes():
+    """После Шагов 1–5 и судьи идёт доп. проход — события __titles__
+    (заголовок-суть на каждый ключ) и __history_notes__ (справки 📜)."""
     async def _stream(*_a, **_k):
         yield (
             "===ШАГ1===\nпростейший процесс достаточной длины для парсера\n"
@@ -108,7 +108,8 @@ async def test_history_pass_emits_per_step_notes():
 
     async def _gen(sys_prompt, *_a, **_k):
         if "историческ" in sys_prompt.lower():
-            return '{"1": "в древности так не считали", "4": "противоречие оформилось позже"}'
+            return ('{"titles": {"1": "как всё началось", "5": "чем разрешилось"}, '
+                    '"notes": {"1": "в древности так не считали", "4": "оформилось позже"}}')
         if "is_valid" in sys_prompt:
             return '{"is_valid": true, "reason": ""}'
         return "{}"
@@ -125,7 +126,8 @@ async def test_history_pass_emits_per_step_notes():
         if key not in ("__status__",):
             events[key] = content
 
-    assert "__history_notes__" in events
+    assert events["__titles__"] == {"1": "как всё началось", "5": "чем разрешилось"}
     assert events["__history_notes__"] == {"1": "в древности так не считали",
-                                           "4": "противоречие оформилось позже"}
+                                           "4": "оформилось позже"}
     assert state["history_notes"]["1"] == "в древности так не считали"
+    assert state["step_titles"]["5"] == "чем разрешилось"

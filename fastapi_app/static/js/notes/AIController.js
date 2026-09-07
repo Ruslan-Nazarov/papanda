@@ -117,6 +117,27 @@ class AIController {
     }
 
     /**
+     * Заголовки-суть к шагам. Приходят событием { "1": "…", "2.1": "…", … }
+     * после генерации. Кладём в block.title (в блоке — h3), надпись роли над
+     * блоком остаётся канонической. По ним читается схема при сворачивании.
+     */
+    static applyTitles(titles, onRenderAll) {
+        if (!titles || typeof titles !== 'object') return;
+        let changed = false;
+        AppState.currentNote.blocks.forEach(b => {
+            if (!b.role || !b.role.startsWith('step')) return;
+            const key = b.role.slice(4); // "step2.1" -> "2.1"
+            const title = (titles[key] || '').trim();
+            if (title && b.title !== title) {
+                b.title = title;
+                AppState.updateBlock(b.id, { title });
+                changed = true;
+            }
+        });
+        if (changed && onRenderAll) onRenderAll();
+    }
+
+    /**
      * Исторические справки к шагам (значок 📜 у блока). Приходят отдельным
      * событием после генерации шагов: { "1": "текст", "4": "текст" }.
      * Пустой объект тоже валиден — снимает устаревшие справки.
@@ -157,6 +178,8 @@ class AIController {
                             { [ev.step]: { content: ev.content, status: 'ready' } },
                             onRenderAll
                         );
+                    } else if (ev.titles) {
+                        this.applyTitles(ev.titles, onRenderAll);
                     } else if (ev.history_notes) {
                         this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.status) {
@@ -199,6 +222,8 @@ class AIController {
                             { [ev.step]: { content: ev.content, status: 'ready' } },
                             onRenderAll
                         );
+                    } else if (ev.titles) {
+                        this.applyTitles(ev.titles, onRenderAll);
                     } else if (ev.history_notes) {
                         this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.status) {

@@ -253,41 +253,54 @@ class ConspectusRouter:
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
 
-        # Доп. проход: короткие исторические справки по шагам (значок 📜 у блока).
+        # Доп. проход: заголовки-суть по шагам + исторические справки (📜).
         if collected:
-            yield ("__status__", "Ищу исторические справки к шагам…")
-            notes = await self._gen_history_notes(state, collected, locale)
+            yield ("__status__", "Собираю заголовки и исторические справки…")
+            notes, titles = await self._gen_postprocess(state, collected, locale)
+            if titles:
+                state["step_titles"] = titles
+                yield ("__titles__", titles)
             if notes:
                 state.setdefault("history_notes", {}).update(notes)
                 yield ("__history_notes__", notes)
 
-    async def _gen_history_notes(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
-        """Короткие исторические справки по шагам. Отдельный проход поверх
-        готовых Шагов 1–5. Возвращает {"1": "...", "4": "..."} — только те шаги,
-        где справка действительно нужна (историч. контекст или расхождение
-        логики с историей). Пусто → {}."""
+    async def _gen_postprocess(self, state: dict, collected: Dict[str, str], locale: str):
+        """Один проход поверх готовых Шагов 1–5: (notes, titles).
+        titles — короткий заголовок-суть на каждый ключ шага ("1","2.1",...),
+        для схемы-сворачивания. notes — исторические справки только по тем
+        базовым шагам, где нужно (расхождение логики с историей / деталь)."""
         prompt = await self.context_builder.build_history_notes_prompt(state, collected)
         prompt = self.rag_manager.enrich_prompt_if_needed(prompt, "generate_step")
         raw = await self.ai_service._generate(
-            prompt, f"Верни JSON со справками по шагам. Язык: {locale}",
+            prompt, f"Верни JSON {{titles, notes}}. Язык: {locale}",
             {"type": "json_object"}, max_tokens=_MAX_TOKENS["history"], temperature=0.4,
             use_cache=False, fast=True, task="history",
         )
         raw = (raw or "").strip()
         if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
-            return {}
+            return {}, {}
         try:
             parsed = self.sanitizer.extract_json(raw)
         except ValueError:
-            return {}
+            return {}, {}
+        parsed = parsed or {}
+
+        def _norm_key(k):
+            k = re.sub(r"[^\d.]", "", str(k))
+            return k if re.fullmatch(r"[1-5](\.\d+)?", k or "") else None
+
+        titles: Dict[str, str] = {}
+        for k, v in (parsed.get("titles") or {}).items():
+            nk = _norm_key(k)
+            if nk and isinstance(v, str) and v.strip():
+                titles[nk] = v.strip()
+
         notes: Dict[str, str] = {}
-        for k, v in (parsed or {}).items():
-            key = str(k).strip().lstrip("шагШАГ ").strip() or str(k)
-            key = re.sub(r"[^\d.]", "", key) or key
-            base = key.split(".")[0]
-            if base in {"1", "2", "3", "4", "5"} and isinstance(v, str) and v.strip():
-                notes[base] = v.strip()
-        return notes
+        for k, v in (parsed.get("notes") or {}).items():
+            nk = _norm_key(k)
+            if nk and isinstance(v, str) and v.strip():
+                notes[nk.split(".")[0]] = v.strip()
+        return notes, titles
 
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
                                           question: str):
@@ -347,14 +360,17 @@ class ConspectusRouter:
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
 
-        # Шаги изменились — пересобираем исторические справки (иначе останутся старые).
+        # Шаги изменились — пересобираем заголовки и исторические справки.
         base_steps = {str(i): (state["steps"].get(f"step{i}", {}) or {}).get("content", "").strip()
                       for i in range(1, 6)}
         base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
         if len(base_steps) >= 3:
-            yield ("__status__", "Обновляю исторические справки…")
-            notes = await self._gen_history_notes(state, base_steps, locale)
-            # Пустой словарь тоже шлём — фронт снимет устаревшие значки.
+            yield ("__status__", "Обновляю заголовки и исторические справки…")
+            notes, titles = await self._gen_postprocess(state, base_steps, locale)
+            if titles:
+                state["step_titles"] = titles
+                yield ("__titles__", titles)
+            # Пустой notes тоже шлём — фронт снимет устаревшие значки.
             state["history_notes"] = notes
             yield ("__history_notes__", notes)
 
@@ -363,19 +379,22 @@ class ConspectusRouter:
         Фронт обычно идёт через SSE; этот путь — для `action=generate_full`
         нестримового эндпоинта `/conspectus/route`."""
         updated_steps = {}
-        history_notes = {}
+        history_notes, step_titles = {}, {}
         async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True):
             if step_key == "__status__":
                 continue
             if step_key == "__history_notes__":
                 history_notes = content or {}
                 continue
+            if step_key == "__titles__":
+                step_titles = content or {}
+                continue
             updated_steps[step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
 
         if not any(s["content"] for s in updated_steps.values()):
             return {"action_status": "error", "error_message": "Модель не вернула шаги."}
         return {"action_status": "success", "updated_steps": updated_steps,
-                "history_notes": history_notes, "cascading_events": []}
+                "history_notes": history_notes, "step_titles": step_titles, "cascading_events": []}
 
     async def _regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
                            question: str = None, skeleton: dict = None) -> str:

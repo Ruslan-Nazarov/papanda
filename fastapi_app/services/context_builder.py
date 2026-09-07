@@ -84,10 +84,36 @@ def _group_keys_by_base(keys: list) -> dict:
     return grouped
 
 
+# Пункты 1_главного, нужные для скелета и судьи (экономия токенов — не шлём
+# весь файл 3× за генерацию). Верхний уровень: 2 (историческая форма первой),
+# 5 (переформулировка запроса в процесс), 6 (ядро алгоритма), 7 (развитие ≠
+# изменение). Пропускаем 1 (цель — мета), 3 (мир как процесс — философия),
+# 4 (пришёл запрос — тривиально), 8 (опциональный двухформенный разбор).
+_ALGO_CORE_KEEP = {"2", "5", "6", "7"}
+_NUM_LINE_RE = re.compile(r"^\s*(\d+)(?:\.\d+)*[.\s]")
+
+
+def _extract_algo_core(main_prompt: str) -> str:
+    """Из 1_главного — только рабочие пункты (см. _ALGO_CORE_KEEP). Строки без
+    номера наследуют судьбу текущего пункта; преамбула (до первого номера)
+    сохраняется. Результат детерминирован — важно для кеша префикса промпта."""
+    out, keep_current = [], True
+    for line in main_prompt.splitlines():
+        m = _NUM_LINE_RE.match(line)
+        if m:
+            keep_current = m.group(1) in _ALGO_CORE_KEEP
+        if keep_current:
+            out.append(line)
+    # схлопываем тройные+ пустые строки, подчищаем хвост
+    text = "\n".join(out)
+    return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
+
+
 class ContextBuilder:
     def __init__(self):
         self.prompts_dir = settings.PROMPTS_DIR
         self._cache = {}
+        self._algo_core = None  # (mtime, extracted) — кэш ядра 1_главного
 
     async def _load_file(self, filename: str) -> str:
         file_path = self.prompts_dir / filename
@@ -105,13 +131,25 @@ class ContextBuilder:
         self._cache[filename] = (mtime, content)
         return content
 
+    async def _load_algo_core(self) -> str:
+        """Ядро 1_главного (только рабочие пункты) — для скелета и судьи."""
+        fp = self.prompts_dir / "1_главный_промпт.md"
+        if not fp.exists():
+            return await self._load_file("1_главный_промпт.md")
+        mtime = fp.stat().st_mtime
+        if self._algo_core and self._algo_core[0] == mtime:
+            return self._algo_core[1]
+        core = _extract_algo_core(await self._load_file("1_главный_промпт.md"))
+        self._algo_core = (mtime, core)
+        return core
+
     async def build_step_prompt(self, state: dict, target_step: int, question: str = None,
                                  skeleton: dict = None) -> str:
         """Сборка промпта для генерации конкретного шага (с учетом предыдущих).
         question — уточнение пользователя к этому конкретному шагу (кнопка ❓),
         учитывается при перегенерации именно этого шага.
         skeleton — если передан, из него берётся goal_as_process."""
-        main_prompt = await self._load_file("1_главный_промпт.md")
+        main_prompt = await self._load_algo_core()
         step_generator_prompt = await self._load_file("8_генератор_шага_промпт.md")
         goal = _effective_goal(state, skeleton)
         previous_context = self._compile_previous_steps(state, target_step)
@@ -142,7 +180,7 @@ class ContextBuilder:
         Шаг 2: всегда 2+) — используется в "доборе" пропущенных ключей после
         основного потока. key вида "2.2"."""
         base_step = int(key.split(".")[0])
-        main_prompt = await self._load_file("1_главный_промпт.md")
+        main_prompt = await self._load_algo_core()
         step_generator_prompt = await self._load_file("8_генератор_шага_промпт.md")
         goal = _effective_goal(state, skeleton)
         previous_context = self._compile_previous_steps(state, base_step)
@@ -179,12 +217,12 @@ class ContextBuilder:
         build_judge_prompt/судья_противоречия.md): [{"thesis1": "...", "reason": "..."}].
         Передаётся, чтобы архитектор не повторял тот же неудачный простейший
         процесс на следующей попытке."""
-        main_prompt = await self._load_file("1_главный_промпт.md")
+        algo_core = await self._load_algo_core()
         skeleton_prompt = await self._load_file("9_скелет_конспекта_промпт.md")
         goal = state.get("target_goal", "Не указана")
         domain = _detect_domain(goal)
 
-        prompt = f"{main_prompt}\n\n"
+        prompt = f"{algo_core}\n\n"
         prompt += skeleton_prompt.replace("{goal}", goal)
         prompt += f"\nДОМЕН: {domain}."
         if domain == "math_code":
@@ -202,7 +240,7 @@ class ContextBuilder:
         настоящее ли противоречие получилось в сгенерированном конспекте.
         steps — {"1": "...", "2.1": "...", "2.2": "...", ...} (ключи как в
         expected_step_keys) — процессы одного шага группируются вместе."""
-        main_prompt = await self._load_file("1_главный_промпт.md")
+        algo_core = await self._load_algo_core()
         judge_prompt = await self._load_file("судья_противоречия.md")
         grouped = _group_keys_by_base(sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")]))
         lines = []
@@ -216,29 +254,21 @@ class ContextBuilder:
             else:
                 parts = "\n".join(f"  Процесс {k.split('.')[1]}: {steps.get(k, '(пусто)')}" for k in keys)
                 lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
-        return f"{main_prompt}\n\n{judge_prompt}\n\nКОНСПЕКТ ДЛЯ ОЦЕНКИ:\n" + "\n".join(lines)
+        return f"{algo_core}\n\n{judge_prompt}\n\nКОНСПЕКТ ДЛЯ ОЦЕНКИ:\n" + "\n".join(lines)
 
     async def build_history_notes_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
-        """Промпт для доп. прохода «короткие исторические справки по шагам»
+        """Промпт для доп. прохода — заголовки-суть + исторические справки
         (см. историческая_справка_промпт.md). Модель возвращает JSON
-        {"<номер шага>": "<справка>"} только по тем шагам, где она нужна.
+        {"titles": {ключ: заголовок}, "notes": {номер шага: справка}}.
         steps — {"1": "...", "2.1": "...", ...} (как в build_judge_prompt)."""
         hist_prompt = await self._load_file("историческая_справка_промпт.md")
         goal = _effective_goal(state, skeleton) or "Не указана"
-        grouped = _group_keys_by_base(sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")]))
-        lines = []
-        for base in ["1", "2", "3", "4", "5"]:
-            keys = grouped.get(base, [])
-            if not keys:
-                continue
-            if len(keys) == 1:
-                lines.append(f"--- ШАГ {base} ---\n{steps.get(keys[0], '')}")
-            else:
-                parts = "\n".join(f"  Процесс {k.split('.')[1]}: {steps.get(k, '')}" for k in keys)
-                lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
+        order = sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")])
+        lines = [f"[{k}] {steps.get(k, '')}" for k in order]
         return (
             f"{hist_prompt}\n\nЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
-            "ГОТОВЫЙ КОНСПЕКТ (Шаги 1–5):\n" + "\n".join(lines)
+            f"ГОТОВЫЙ КОНСПЕКТ (в квадратных скобках — ключ шага, его и используйте в titles):\n"
+            + "\n\n".join(lines)
         )
 
     async def build_all_steps_prompt(self, state: dict, skeleton: dict,
@@ -246,7 +276,7 @@ class ContextBuilder:
         """Один промпт для генерации всех 5 шагов сразу (экономит вызовы к LLM).
         Если pinned_step задан — этот шаг фиксируется (не переписывается), а
         остальные перегенерируются согласованно с ним и с уточнением question."""
-        main_prompt = await self._load_file("1_главный_промпт.md")
+        main_prompt = await self._load_algo_core()
         step_rules = await self._load_file("8_генератор_шага_промпт.md")
         goal = _effective_goal(state, skeleton) or "Не указана"
         domain = _detect_domain(goal)
