@@ -208,15 +208,25 @@ class GenerationPipeline:
         report = report if report is not None else {}
         skeleton = await self.gen_skeleton(state, locale, failed_attempts=failed_attempts) if use_skeleton else {}
         # Вторая попытка заземления: сырой запрос мог быть вопросом («почему…»)
-        # и не резолвиться в вики, а goal_as_process из скелета — чистая
-        # именная формулировка, по ней статья находится чаще.
+        # и не резолвиться в вики. Пробуем по порядку более «статейные»
+        # формулировки: цель-как-процесс, потом название простейшего процесса
+        # (часто это чистое понятие — «хлорофилл», «рассеяние Рэлея»).
         if not state.get("reference") and isinstance(skeleton, dict):
-            gp = (skeleton.get("goal_as_process") or "").strip()
-            if gp:
+            step1 = skeleton.get("step1", {})
+            candidates = [
+                (skeleton.get("goal_as_process") or "").strip(),
+                (step1.get("thesis", "") if isinstance(step1, dict) else "").strip(),
+            ]
+            for term in candidates:
+                if not term:
+                    continue
                 try:
-                    state["reference"] = await self.rag_manager.reference_for(gp) or ""
+                    ref = await self.rag_manager.reference_for(term)
                 except Exception:  # noqa: BLE001 — fail-open
-                    pass
+                    ref = ""
+                if ref:
+                    state["reference"] = ref
+                    break
         prompt_all = await self.context_builder.build_all_steps_prompt(
             state, skeleton, pinned_step=None, question=None,
         )
