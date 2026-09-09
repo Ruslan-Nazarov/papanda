@@ -251,6 +251,13 @@ class ContextBuilder:
 
         return prompt
 
+    async def build_applicability_prompt(self, raw_goal: str) -> str:
+        """Промпт оппонента-этапа-1 (см. судья_применимости.md): применим ли
+        диалектический метод к теме. Подаётся ТОЛЬКО сырая тема, без блоков."""
+        algo_core = await self._load_algo_core()
+        prompt = await self._load_file("судья_применимости.md")
+        return f"{algo_core}\n\n{prompt}\n\nТЕМА (цель разбора): {raw_goal}\n"
+
     async def build_judge_prompt(self, steps: dict) -> str:
         """Сборка промпта для судьи (см. судья_противоречия.md) — оценивает,
         настоящее ли противоречие получилось в сгенерированном конспекте.

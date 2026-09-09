@@ -236,6 +236,8 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # судья: Gemini первым осознанно — он ВНЕ семейства gpt-oss (Groq/Cerebras),
     # чтобы не оценивал выход родственной модели.
     "judge":       ["Gemini", "Cerebras", "Groq"],
+    # оппонент-этап-1 (применимость метода) — та же логика, что у судьи.
+    "applicability": ["Gemini", "Cerebras", "Groq"],
 }
 
 

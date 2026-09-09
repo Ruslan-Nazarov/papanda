@@ -476,6 +476,9 @@ class App {
 
         // --- 10. Note State Listeners ---
         document.addEventListener('noteLoaded', () => {
+            // Убираем плашки предыдущего конспекта (просадка генерации / тема невыводима).
+            document.getElementById('not-applicable-card')?.remove();
+            document.getElementById('gen-degraded-banner')?.remove();
             const titleInput = document.getElementById('note-title');
             if (titleInput) titleInput.value = AppState.currentNote.title || '';
             if (AppState.currentNote.id) {

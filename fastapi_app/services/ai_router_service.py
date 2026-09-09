@@ -87,6 +87,8 @@ class ConspectusRouter:
             if step_key == "__report__":
                 report = content or {}
                 continue
+            if step_key == "__not_applicable__":
+                return {"action_status": "not_applicable", "verdict": content or {}}
             updated_steps[step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
 
         if not any(s["content"] for s in updated_steps.values()):

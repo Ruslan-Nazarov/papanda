@@ -247,11 +247,49 @@ class AIController {
         });
     }
 
+    /**
+     * Вердикт оппонента-этапа-1: тема невыводима диалектически (конвенция /
+     * факт / определение / классификация / причинный механизм без
+     * противоположного процесса). Вместо конспекта рисуем карточку: тип,
+     * почему, и обычный краткий ответ на вопрос.
+     */
+    static applyNotApplicable(v, onRenderAll) {
+        if (!v) return;
+        AppState.currentNote.notApplicable = v;
+        // Сначала перерисовать блоки (якорь), потом вставить карточку — иначе
+        // renderAll внутри onRenderAll затрёт её.
+        if (onRenderAll) onRenderAll();
+        const host = document.getElementById('blocks-container');
+        if (!host) return;
+        document.getElementById('gen-degraded-banner')?.remove();
+        document.getElementById('not-applicable-card')?.remove();
+        const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const TYPE_KEY = {
+            'конвенция': 'na_type_convention',
+            'произвольный факт': 'na_type_fact',
+            'определение': 'na_type_definition',
+            'классификация': 'na_type_classification',
+            'механизм без противоположного': 'na_type_mechanism',
+        };
+        const typeLabel = TYPE_KEY[v.type] ? t(TYPE_KEY[v.type]) : (v.type || '');
+        const card = document.createElement('div');
+        card.id = 'not-applicable-card';
+        card.className = 'not-applicable-card';
+        card.innerHTML = `
+            <div class="na-head">🚫 ${t('na_title')}</div>
+            <div class="na-type">${esc(typeLabel)}</div>
+            ${v.reason ? `<p class="na-reason">${esc(v.reason)}</p>` : ''}
+            ${v.plain ? `<div class="na-plain"><span class="na-plain-label">${t('na_plain_label')}</span>${esc(v.plain)}</div>` : ''}
+        `;
+        host.prepend(card);
+    }
+
     static async generateFull(onRenderAll) {
         GlobalLoader.show(t('ed_ai_analyzing'));
         try {
             const state = this.buildStateForAI();
             let received = 0;
+            let notApplicable = false;
             await NotesAPI.stream(
                 '/ai/dialectics/conspectus/generate-full/stream',
                 { action: 'generate_full', context_state: state },
@@ -264,6 +302,9 @@ class AIController {
                             { [ev.step]: { content: ev.content, status: 'ready' } },
                             onRenderAll
                         );
+                    } else if (ev.not_applicable) {
+                        notApplicable = true;
+                        this.applyNotApplicable(ev.not_applicable, onRenderAll);
                     } else if (ev.titles) {
                         this.applyTitles(ev.titles, onRenderAll);
                     } else if (ev.history_notes) {
@@ -278,7 +319,7 @@ class AIController {
                     }
                 }
             );
-            if (!received) throw new Error(t('ai_no_steps'));
+            if (!received && !notApplicable) throw new Error(t('ai_no_steps'));
         } catch (e) {
             console.error("AI Generate Full Error:", e);
             throw e; // Let the caller handle UI feedback (e.g. toasts)

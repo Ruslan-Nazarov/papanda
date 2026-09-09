@@ -73,6 +73,15 @@ _MAX_TOKENS = {
     "judge": 700,
     "history": 2000,
     "editor": 6000,
+    "applicability": 600,
+}
+
+# Типы вердикта оппонента-этапа-1, при которых конспект НЕ строится вовсе
+# (это не разбор, а конвенция/факт/определение/классификация). «механизм без
+# противоположного» тоже сюда — там нет противоречия для разрешения.
+_NOT_DERIVABLE_TYPES = {
+    "конвенция", "произвольный факт", "определение",
+    "классификация", "механизм без противоположного",
 }
 
 # Многопроходный поиск простейшего процесса (см. 1_главный_промпт.md п. 6.2.1):
@@ -144,6 +153,41 @@ class GenerationPipeline:
             except ValueError:
                 pass
         return {}
+
+    async def check_applicability(self, raw_goal: str, locale: str) -> dict:
+        """Оппонент-этап-1 (судья_применимости.md): применим ли метод к теме.
+        Вход — ТОЛЬКО сырая тема. Модель — вне семейства генератора (task
+        applicability → Gemini). Плохой JSON / ошибка → {} (fail-open,
+        генерация продолжается — лучше лишний конспект, чем пропущенный)."""
+        prompt = await self.context_builder.build_applicability_prompt(raw_goal)
+        raw = await self.ai_service._generate(
+            prompt, f"Оцени применимость метода. Верни только JSON. Язык: {locale}",
+            None, max_tokens=_MAX_TOKENS["applicability"], temperature=0.1,
+            use_cache=False, fast=True, task="applicability",
+        )
+        raw = (raw or "").strip()
+        if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
+            return {}
+        try:
+            parsed = self.sanitizer.extract_json(raw)
+        except ValueError:
+            return {}
+        if not isinstance(parsed, dict) or "applicable" not in parsed:
+            return {}
+        out = {
+            "applicable": bool(parsed.get("applicable")),
+            "type": str(parsed.get("type") or "").strip().lower(),
+            "process_a": str(parsed.get("process_a") or "").strip(),
+            "process_b": str(parsed.get("process_b") or "").strip(),
+            "why_excludes": str(parsed.get("why_excludes") or "").strip(),
+            "reason": str(parsed.get("reason") or "").strip(),
+            "plain": str(parsed.get("plain") or "").strip(),
+        }
+        try:
+            out["confidence"] = max(0.0, min(1.0, float(parsed.get("confidence", 0.0))))
+        except (TypeError, ValueError):
+            out["confidence"] = 0.0
+        return out
 
     async def judge_conspect(self, collected: Dict[str, str], locale: str) -> tuple:
         """Оценка судьёй: настоящее ли противоречие получилось. Если судья
@@ -310,6 +354,22 @@ class GenerationPipeline:
             return
 
         _ = get_translator(locale)
+
+        # Оппонент-этап-1: применим ли метод к теме вообще. Если тема невыводима
+        # (конвенция / факт / определение / классификация / причинный механизм
+        # без противоположного) — не строим конспект, отдаём вердикт + обычный
+        # ответ. Судья готового разбора (этап 2) остаётся как был.
+        if settings.APPLICABILITY_GATE_ENABLED:
+            raw_goal = (state.get("target_goal") or "").strip()
+            verdict = await self.check_applicability(raw_goal, locale) if raw_goal else {}
+            if verdict and not verdict["applicable"] and verdict["type"] in _NOT_DERIVABLE_TYPES:
+                logger.info("applicability gate: NOT applicable — %s (%r)", verdict["type"], raw_goal)
+                state["applicability"] = verdict
+                yield ("__not_applicable__", verdict)
+                return
+            if verdict:
+                state["applicability"] = verdict  # для метки на конспекте, если confidence низкий
+
         t0 = time.time()
         report: Dict = {"attempts": 0, "regen": 0, "judge": "skipped",
                         "gen_provider": None, "gen_fell_back": False}
