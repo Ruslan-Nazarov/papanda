@@ -46,7 +46,8 @@ export function inferRoleFromTitle(block) {
     }
     const title = (block.title || '').trim().toLowerCase();
     const has = (...w) => w.some(x => title.includes(x));
-    if (has('что вам нужно понять', 'what do you want to understand', 'нені түсінгіңіз')) {
+    if (has('что вам надо объяснить', 'что вам нужно понять', 'what do you need to explain',
+            'what do you want to understand', 'нені түсіндіру керек', 'нені түсінгіңіз')) {
         block.role = 'anchor'; block.side = 'left'; return block.role;
     }
     if (has('простейший процесс', 'simplest process', 'қарапайым процесс') && !has('развивается', 'develops', 'дамитын')) {

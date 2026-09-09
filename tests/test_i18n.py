@@ -45,10 +45,10 @@ def test_get_translator():
     kz_t = get_translator("kz")
     fallback_t = get_translator("de") # unsupported locale falls back to ru
     
-    assert ru_t("app_title") == "Конспекты"
-    assert en_t("app_title") == "Notes"
-    assert kz_t("app_title") == "Конспекттер"
-    assert fallback_t("app_title") == "Конспекты"
+    assert ru_t("app_title") == "Объяснения"
+    assert en_t("app_title") == "Explanations"
+    assert kz_t("app_title") == "Түсіндірмелер"
+    assert fallback_t("app_title") == "Объяснения"
     
     # Missing key returns the key itself
     assert ru_t("non_existing_key_xyz") == "non_existing_key_xyz"

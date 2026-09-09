@@ -40,7 +40,8 @@ class TOCManager {
             itemsHTML = blocks.map((b) => {
                 inferRoleFromTitle(b);
                 const isSection = b.role === 'section';
-                const isAnchor = b.role === 'anchor' || (b.title || '').toLowerCase().includes('что вам нужно понять');
+                const _t = (b.title || '').toLowerCase();
+                const isAnchor = b.role === 'anchor' || _t.includes('что вам надо объяснить') || _t.includes('что вам нужно понять');
                 
                 let icon = '▪';
                 let iconColor = '#a855f7';
