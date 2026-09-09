@@ -66,6 +66,8 @@ _CTRL_TO_BACKSLASH = {"\r": "\\r", "\f": "\\f", "\t": "\\t", "\x08": "\\b", "\x0
 # \n (0x0A) не трогаем как символ (это настоящие переводы строк), но чиним
 # конкретные команды, где перед латинским хвостом стоит перенос.
 _NL_LATEX_RE = re.compile(r"\n(?=(?:abla|eq|otin|u|leq|geq|i|ni|par)\b)")
+# gpt-oss иногда пишет прямо неверную команду вместо \cdot — чиним отдельно.
+_LATEX_TYPOS = ((r"\bdots", r"\cdots"), (r"\bdot", r"\cdot"))
 
 
 def _fix_math(txt: str) -> str:
@@ -75,7 +77,46 @@ def _fix_math(txt: str) -> str:
         if ctrl in txt:
             txt = txt.replace(ctrl, rep)
     txt = _NL_LATEX_RE.sub(r"\\n", txt)
+    for bad, good in _LATEX_TYPOS:
+        if bad in txt:
+            txt = txt.replace(bad, good)
     return txt
+
+
+# Нарративная вода: модель проговаривает сам переход отдельными фразами
+# («служит отправной точкой», «вырастает процесс изучения», «раскрывает
+# скрытую структуру»). Промпт это не добил (п. 6.1 главного + 8_генератор) —
+# режем предложения-связки, в которых нет ни числа, ни формулы (значит,
+# содержания там нет).
+_FILLER_MARKERS = (
+    "служит отправной точкой", "служат отправной точкой",
+    "вырастает процесс", "вырастают процессы", "рождается процесс",
+    "раскрывает скрыт", "раскрывают скрыт",
+    "является фундаментом, из котор", "для дальнейшего построения",
+    "для дальнейшего анализа", "отправной точкой для дальнейш",
+    "новый этап, сохраняющий связь",
+)
+_SENT_SPLIT_RE = re.compile(r"(?<=[.!?…])\s+")
+_TRAILING_FILLER_RE = re.compile(
+    r",?\s*(?:тем самым\s+|одновременно\s+)?уточня[яе][^.!?$]*?"
+    r"(?:перво[а-я]*|исходн[а-я]*|начальн[а-я]*|прежн[а-я]*|предыдущ[а-я]*)"
+    r"(?:\s+процесс[а-я]*|\s+движени[ея]|\s+представлени[ея]|\s+рол[ьи])?[^.!?$]*?(?=[.!?…]|$)",
+    re.IGNORECASE,
+)
+
+
+def _strip_transition_filler(txt: str) -> str:
+    if not txt:
+        return txt
+    kept = []
+    for sent in _SENT_SPLIT_RE.split(txt):
+        low = sent.lower()
+        if "$" not in sent and not any(c.isdigit() for c in sent) and any(m in low for m in _FILLER_MARKERS):
+            continue
+        kept.append(sent)
+    out = " ".join(kept)
+    out = _TRAILING_FILLER_RE.sub("", out)
+    return re.sub(r"\s{2,}", " ", out).strip()
 
 
 # Потолки на длину ОТВЕТА по фазам (не размер входа).
@@ -99,12 +140,14 @@ _MAX_TOKENS = {
     "applicability": 600,
 }
 
-# Типы вердикта оппонента-этапа-1, при которых конспект НЕ строится вовсе
-# (это не разбор, а конвенция/факт/определение/классификация). «механизм без
-# противоположного» тоже сюда — там нет противоречия для разрешения.
+# Типы вердикта оппонента-этапа-1, при которых конспект НЕ строится вовсе:
+# это не разбор, а конвенция / произвольный факт / определение / классификация.
+# «механизм без противоположного» СЮДА НЕ ВХОДИТ: судья (Gemini) даёт по нему
+# уверенные false-negative на нормальных темах («звук в воде», «зачем
+# логарифмы»). Граница с настоящим противоречием размыта — пусть конспект
+# строится, а «есть ли оппозиция» решает судья готового разбора (этап 2).
 _NOT_DERIVABLE_TYPES = {
-    "конвенция", "произвольный факт", "определение",
-    "классификация", "механизм без противоположного",
+    "конвенция", "произвольный факт", "определение", "классификация",
 }
 
 # Многопроходный поиск простейшего процесса (см. 1_главный_промпт.md п. 6.2.1):
@@ -389,12 +432,6 @@ class GenerationPipeline:
             raw_goal = (state.get("target_goal") or "").strip()
             verdict = await self.check_applicability(raw_goal, locale) if raw_goal else {}
             blocks = bool(verdict) and not verdict["applicable"] and verdict["type"] in _NOT_DERIVABLE_TYPES
-            # «механизм без противоположного» — самый спорный тип: граница с
-            # настоящим противоречием размыта (звук в воде: упругость vs инерция).
-            # Отбиваем только при высокой уверенности; иначе строим конспект.
-            if blocks and verdict["type"] == "механизм без противоположного" and verdict.get("confidence", 0.0) < 0.75:
-                logger.info("applicability gate: low-conf mechanism verdict, generating anyway (%r)", raw_goal)
-                blocks = False
             if blocks:
                 logger.info("applicability gate: NOT applicable — %s (%r)", verdict["type"], raw_goal)
                 state["applicability"] = verdict
@@ -428,7 +465,8 @@ class GenerationPipeline:
             step1_summary = " / ".join(c for k, c in collected.items() if _base_of(k) == "1")[:200]
             failed_attempts.append({"thesis1": step1_summary, "reason": reason})
 
-        collected = {k: _fix_math(_strip_role_opener(v)) for k, v in collected.items()}
+        collected = {k: _strip_transition_filler(_fix_math(_strip_role_opener(v)))
+                     for k, v in collected.items()}
         for key in sorted(collected.keys(), key=_sort_key):
             content = collected.get(key)
             if content:
@@ -441,7 +479,7 @@ class GenerationPipeline:
         if len(collected) >= 3:
             yield ("__status__", _("gen_status_editor"))
             for key, edited in (await self._gen_editor(state, collected, locale)).items():
-                edited = _fix_math(edited)
+                edited = _strip_transition_filler(_fix_math(edited))
                 collected[key] = edited
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": edited, "status": "ready", "author": "ai", "sub_steps": []}
