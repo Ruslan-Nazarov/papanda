@@ -131,7 +131,7 @@ class BlockHintBuilder {
         // Пример в placeholder — случайный из пула, меняется при каждом новом объяснении.
         const exPool = String(t('anchor_ex_pool') || '').split('|').map(s => s.trim()).filter(Boolean);
         const exOne = exPool.length ? exPool[Math.floor(Math.random() * exPool.length)] : '';
-        const anchorPh = exOne ? t('anchor_topic_ph').replace('{ex}', exOne) : t('hint_anchor_title');
+        const anchorPh = exOne ? `${t('anchor_topic_ph')} «${exOne}»` : t('anchor_topic_ph');
 
         const div = document.createElement('div');
         div.className = 'dialectics-hint-block block-left block-hint block-anchor-starter';
