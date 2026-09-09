@@ -303,8 +303,8 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # ($5 кредит, тот же gpt-oss-120b, кэш префикса) этой стены не имеет.
     # Gemini flash-lite — второй фолбэк (большой контекст); Groq последним как
     # backstop (в основном 429, спасает добор по одному процессу).
-    "step_stream": ["Cerebras", "Gemini", "Groq"],   # стрим шагов конспекта
-    "editor":      ["Cerebras", "Gemini", "Groq"],   # редакторский проход поверх готовых шагов
+    "step_stream": ["Cerebras", "Gemini", "Groq", "GigaChat"],   # стрим шагов конспекта
+    "editor":      ["Cerebras", "Gemini", "Groq", "GigaChat"],   # редакторский проход поверх готовых шагов
     "what_is":     ["Groq", "Cerebras", "Gemini"],   # «Что это?»
     "formula":     ["Groq", "Cerebras", "Gemini"],   # парсер формул
     "check":       ["Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
@@ -315,11 +315,13 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # (на этом ключе рабочий ТОЛЬКО flash-lite, обычный flash сразу 429).
     "skeleton":    ["Gemini", "Groq", "Cerebras"],   # план-скелет (fast=True)
     "history":     ["Gemini", "Groq"],               # исторические справки 📜 (fast=True)
-    # судья: Gemini первым осознанно — он ВНЕ семейства gpt-oss (Groq/Cerebras),
-    # чтобы не оценивал выход родственной модели.
-    "judge":       ["Gemini", "Cerebras", "Groq"],
+    # судья: сначала модели ВНЕ семейства gpt-oss (Groq/Cerebras), чтобы судья
+    # не оценивал выход родственной модели. Gemini flash-lite первым (быстрый,
+    # чистый JSON), GigaChat-2 вторым (тоже вне семейства, пул 40M) — на
+    # gpt-oss (Cerebras/Groq) падаем только если оба недоступны.
+    "judge":       ["Gemini", "GigaChat", "Cerebras", "Groq"],
     # оппонент-этап-1 (применимость метода) — та же логика, что у судьи.
-    "applicability": ["Gemini", "Cerebras", "Groq"],
+    "applicability": ["Gemini", "GigaChat", "Cerebras", "Groq"],
 }
 
 

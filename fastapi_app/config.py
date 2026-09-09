@@ -49,8 +49,12 @@ class Settings(BaseSettings):
     GIGACHAT_AUTH_KEY: str = ""
     # Scope: GIGACHAT_API_PERS (физлицо), _B2B или _CORP (юрлицо).
     GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS"
-    GIGACHAT_MODEL: str = "GigaChat"           # GigaChat | GigaChat-Pro | GigaChat-Max
-    GIGACHAT_FAST_MODEL: str = "GigaChat"
+    # Проверено 2026-09-09: на аккаунте живы GigaChat-2 / -2-Pro / -2-Max
+    # (новое поколение). Free-пул (разовый промо): Lite ~250M ток., Pro 40M,
+    # Max 25M, Ultra 50M. OAuth-токен живёт 30 мин. JSON приходит в ```-заборе —
+    # Sanitizer.extract_json это снимает.
+    GIGACHAT_MODEL: str = "GigaChat-2-Pro"     # GigaChat-2 | -2-Pro | -2-Max
+    GIGACHAT_FAST_MODEL: str = "GigaChat-2"
     # Сертификат эндпоинта подписан НУЦ Минцифры — его нет в системном хранилище.
     # False = не проверять TLS (быстрый старт). Для прод-строгости: поставить True
     # и положить russian_trusted_root_ca.pem, указав путь в GIGACHAT_CA_BUNDLE.
