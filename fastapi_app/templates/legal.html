@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="{{ locale | default('ru') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} — papanda</title>
+    <meta name="robots" content="index,follow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; background: #f8fafc; color: #1e293b;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.65; font-size: 15px;
+        }
+        .legal-wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 72px; }
+        .legal-back {
+            display: inline-block; margin-bottom: 24px; color: #64748b;
+            text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        }
+        .legal-back:hover { color: #ea580c; }
+        h1 { font-size: 1.55rem; font-weight: 700; margin: 0 0 6px; }
+        h2 { font-size: 1.12rem; font-weight: 700; margin: 30px 0 8px; }
+        h3 { font-size: 1rem; font-weight: 600; margin: 18px 0 6px; color: #334155; }
+        p, ul { margin: 0 0 12px; }
+        ul { padding-left: 22px; }
+        li { margin-bottom: 5px; }
+        code {
+            background: #eef2f7; padding: 1px 5px; border-radius: 4px;
+            font-size: 0.88em; color: #0f172a;
+        }
+        a { color: #ea580c; }
+        .legal-meta { color: #64748b; font-size: 0.88rem; margin-bottom: 4px; }
+        .legal-lang { margin-top: 8px; font-size: 0.85rem; color: #94a3b8; }
+        .legal-lang a { color: #64748b; margin: 0 4px; }
+        footer {
+            margin-top: 44px; padding-top: 18px; border-top: 1px solid #e2e8f0;
+            color: #94a3b8; font-size: 0.85rem; text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-wrap">
+        <a class="legal-back" href="/">← papanda</a>
+        <div class="legal-lang">
+            <a href="?lang=ru">RU</a>·<a href="?lang=en">EN</a>·<a href="?lang=kz">KZ</a>
+        </div>
+        {% include "legal/" + page + "_" + doc_locale + ".html" %}
+        <footer>
+            papanda · <a href="/privacy">{{ _('footer_privacy') }}</a> · <a href="/terms">{{ _('footer_terms') }}</a>
+        </footer>
+    </div>
+    <script src="/static/js/consent.js?v=1"></script>
+</body>
+</html>

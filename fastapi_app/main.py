@@ -88,6 +88,26 @@ async def index(request: Request):
 async def editor_redirect():
     return RedirectResponse(url="/", status_code=307)
 
+@app.get("/privacy", response_class=HTMLResponse)
+@app.get("/terms", response_class=HTMLResponse)
+async def legal_page(request: Request):
+    """Политика конфиденциальности / Правила использования. Локаль страницы —
+    из ?lang=, иначе cookie locale, иначе ru; для kz есть свой текст."""
+    page = "privacy" if request.url.path.rstrip("/") == "/privacy" else "terms"
+    req_lang = (request.query_params.get("lang") or "").lower()
+    locale = req_lang if req_lang in ("ru", "en", "kz") else getattr(request.state, "locale", "ru")
+    doc_locale = locale if locale in ("ru", "en", "kz") else "ru"
+    _ = get_translator(locale)
+    titles = {
+        "privacy": {"ru": "Политика конфиденциальности", "en": "Privacy Policy", "kz": "Құпиялылық саясаты"},
+        "terms": {"ru": "Правила использования", "en": "Terms of Use", "kz": "Пайдалану ережелері"},
+    }
+    return templates.TemplateResponse(
+        request=request, name="legal.html",
+        context={"_": _, "locale": locale, "doc_locale": doc_locale, "page": page,
+                 "page_title": titles[page][doc_locale]},
+    )
+
 @app.get("/s/{token}", response_class=HTMLResponse)
 async def shared_conspect(request: Request, token: str, db=Depends(get_db)):
     """Публичная страница расшаренного конспекта — только чтение, без редактора."""

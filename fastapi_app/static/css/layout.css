@@ -400,6 +400,17 @@ input:checked + .toggle-slider:before {
     line-height: 1.6;
 }
 
+.footer-legal {
+    margin-top: 10px;
+    font-size: 0.76rem;
+    line-height: 1.6;
+    color: #94a3b8;
+    text-align: center;
+}
+.footer-legal a { color: #64748b; text-decoration: none; }
+.footer-legal a:hover { color: #ea580c; }
+.footer-legal-note { display: inline-block; margin-top: 3px; max-width: 480px; }
+
 .scroll-top-fab {
     position: fixed;
     bottom: 24px;

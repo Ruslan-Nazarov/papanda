@@ -83,3 +83,20 @@ async def test_editor_redirect(client: AsyncClient):
     res = await client.get("/editor", follow_redirects=False)
     assert res.status_code == 307
     assert res.headers.get("location") == "/"
+
+
+@pytest.mark.asyncio
+async def test_legal_pages(client: AsyncClient):
+    """Политика и правила отдаются, локаль переключается через ?lang."""
+    r = await client.get("/privacy?lang=ru")
+    assert r.status_code == 200
+    assert "персональных данных" in r.text
+    assert "вебвизор" in r.text.lower()  # упомянуто, что вебвизор отключён
+
+    r_en = await client.get("/terms?lang=en")
+    assert r_en.status_code == 200
+    assert "Terms of Use" in r_en.text
+
+    r_kz = await client.get("/privacy?lang=kz")
+    assert r_kz.status_code == 200
+    assert "Дербес деректерді" in r_kz.text
