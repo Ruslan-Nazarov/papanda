@@ -6,6 +6,10 @@ import contextvars
 import logging
 import asyncio
 import random
+import time
+import uuid
+
+import httpx
 
 from fastapi_app.config import settings
 
@@ -34,6 +38,7 @@ def any_llm_key_configured() -> bool:
     keys = (
         settings.GROQ_API_KEY, settings.GOOGLE_API_KEY, settings.OPENROUTER_API_KEY,
         settings.SAMBANOVA_API_KEY, settings.CEREBRAS_API_KEY, settings.HUGGINGFACE_API_KEY,
+        settings.GIGACHAT_AUTH_KEY,
     )
     return any(k and k not in _PLACEHOLDER_KEYS for k in keys)
 
@@ -205,6 +210,83 @@ class CerebrasProvider(BaseLLMProvider):
         )
 
 
+_GIGACHAT_OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+
+
+class GigaChatProvider(BaseLLMProvider):
+    """Сбер GigaChat. Три отличия от прочих провайдеров:
+
+    1. Авторизация — OAuth2. `settings.GIGACHAT_AUTH_KEY` (статичный «Authorization
+       Key» из ЛК) не является bearer-токеном: его меняют на `access_token`
+       POST-запросом к NGW; токен живёт ~30 мин (поле `expires_at`, unix-мс).
+       Кэшируем и обновляем заблаговременно.
+    2. TLS — сертификат эндпоинта подписан НУЦ Минцифры, которого нет в
+       системном хранилище. `GIGACHAT_VERIFY_SSL` (по умолчанию False) или
+       `GIGACHAT_CA_BUNDLE` с russian_trusted_root_ca.pem.
+    3. Сам chat-completions эндпоинт OpenAI-совместим — вызов идёт через
+       общий `BaseLLMProvider.generate` / `generate_stream`.
+
+    Потенциальный плюс для 152-ФЗ: обработка в РФ (в отличие от Cerebras/Groq/
+    Google в США — сейчас это отражено в политике конфиденциальности).
+    """
+
+    def __init__(self):
+        super().__init__(
+            api_key=settings.GIGACHAT_AUTH_KEY,
+            base_url="https://gigachat.devices.sberbank.ru/api/v1",
+            model_name=settings.GIGACHAT_MODEL,
+            name="GigaChat",
+            fast_model_name=settings.GIGACHAT_FAST_MODEL,
+        )
+        self._verify = settings.GIGACHAT_CA_BUNDLE or settings.GIGACHAT_VERIFY_SSL
+        self._token: Optional[str] = None
+        self._token_exp: float = 0.0            # unix-секунды, когда токен истечёт
+        self._token_lock = asyncio.Lock()
+        # Свой http-клиент: и ради verify=False/CA-бандла, и чтобы прокинуть
+        # bearer-токен, который обновляется в рантайме (self.client.api_key).
+        self.client = AsyncOpenAI(
+            api_key="dummy_key_to_bypass_init_error",
+            base_url=self.base_url,
+            max_retries=0,
+            http_client=httpx.AsyncClient(verify=self._verify, timeout=httpx.Timeout(60.0)),
+        )
+
+    async def _ensure_token(self) -> None:
+        if self._token and time.time() < self._token_exp - 60:
+            return
+        async with self._token_lock:
+            if self._token and time.time() < self._token_exp - 60:
+                return
+            headers = {
+                "Authorization": f"Basic {self.api_key}",
+                "RqUID": str(uuid.uuid4()),
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+            }
+            async with httpx.AsyncClient(verify=self._verify, timeout=30.0) as c:
+                r = await c.post(
+                    _GIGACHAT_OAUTH_URL, headers=headers,
+                    data={"scope": settings.GIGACHAT_SCOPE},
+                )
+                r.raise_for_status()
+                data = r.json()
+            self._token = data["access_token"]
+            exp_ms = data.get("expires_at") or 0
+            self._token_exp = (exp_ms / 1000.0) if exp_ms else (time.time() + 25 * 60)
+            self.client.api_key = self._token
+            logger.info("GigaChat: got access_token, expires in %.0f min",
+                        max(0.0, (self._token_exp - time.time()) / 60))
+
+    async def generate(self, *args, **kwargs) -> str:
+        await self._ensure_token()
+        return await super().generate(*args, **kwargs)
+
+    async def generate_stream(self, *args, **kwargs) -> AsyncIterator[str]:
+        await self._ensure_token()
+        async for delta in super().generate_stream(*args, **kwargs):
+            yield delta
+
+
 class _AllRateLimited(Exception):
     """Весь круг провайдеров упёрся в rate-limit — есть смысл подождать и повторить."""
 
@@ -256,6 +338,7 @@ class LLMRegistry:
             GeminiProvider(),
             GroqAltProvider(),
             OpenRouterProvider(),
+            GigaChatProvider(),   # мёртв без GIGACHAT_AUTH_KEY; вне семейства gpt-oss
         ]
         # С какого провайдера начинать следующий запрос (сдвигается при rate-limit,
         # чтобы размазать нагрузку по провайдерам и не долбить один и тот же).

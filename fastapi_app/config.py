@@ -42,6 +42,21 @@ class Settings(BaseSettings):
     GROQ_FAST_MODEL: str = "openai/gpt-oss-20b"
     CEREBRAS_FAST_MODEL: str = "qwen-3.8-27b"   # на аккаунте нет llama; qwen отдаёт чистый JSON
 
+    # --- Сбер GigaChat (services/llm_provider.py::GigaChatProvider) ---
+    # Авторизация: НЕ статичный ключ, а OAuth2 — «Authorization Key» из
+    # личного кабинета developers.sber.ru меняется на access_token (живёт ~30 мин).
+    # Пусто = провайдер выключен (как и у остальных резервных).
+    GIGACHAT_AUTH_KEY: str = ""
+    # Scope: GIGACHAT_API_PERS (физлицо), _B2B или _CORP (юрлицо).
+    GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS"
+    GIGACHAT_MODEL: str = "GigaChat"           # GigaChat | GigaChat-Pro | GigaChat-Max
+    GIGACHAT_FAST_MODEL: str = "GigaChat"
+    # Сертификат эндпоинта подписан НУЦ Минцифры — его нет в системном хранилище.
+    # False = не проверять TLS (быстрый старт). Для прод-строгости: поставить True
+    # и положить russian_trusted_root_ca.pem, указав путь в GIGACHAT_CA_BUNDLE.
+    GIGACHAT_VERIFY_SSL: bool = False
+    GIGACHAT_CA_BUNDLE: str = ""
+
     # --- Защита от злоупотребления генерацией (services/abuse_guard.py) ---
     # Сколько генераций конспекта в сутки с одной сессии (cookie). 0 = без лимита.
     SESSION_DAILY_GENERATION_CAP: int = 40
