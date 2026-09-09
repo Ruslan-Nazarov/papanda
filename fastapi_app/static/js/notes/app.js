@@ -214,6 +214,16 @@ class App {
             }
         });
 
+        document.getElementById('menu-item-copy-text')?.addEventListener('click', () => {
+            DropdownController.closeAll();
+            NoteExportService.copyText();
+        });
+
+        document.getElementById('menu-item-export-txt')?.addEventListener('click', () => {
+            DropdownController.closeAll();
+            NoteExportService.exportToTxt();
+        });
+
         document.getElementById('menu-item-export-md')?.addEventListener('click', () => {
             DropdownController.closeAll();
             NoteExportService.exportToMarkdown();
