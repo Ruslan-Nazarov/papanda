@@ -131,6 +131,7 @@ class AIService:
         prefer=None,
         task: Optional[str] = None,
         reasoning_effort: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> str:
         if not any_llm_key_configured():
             return _AI_DISABLED_MSG
@@ -156,6 +157,7 @@ class AIService:
                 fast=fast,
                 prefer=_route(task, prefer),
                 reasoning_effort=reasoning_effort,
+                timeout=timeout,
             )
         except Exception as e:
             return f"Error calling AI: {str(e)}"

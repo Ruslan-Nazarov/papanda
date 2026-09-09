@@ -6,12 +6,10 @@ from fastapi_app.services.context_builder import ContextBuilder
 from fastapi_app.services.sanitizer import Sanitizer
 
 
-async def _fake_stream(*_args, **_kwargs):
-    for chunk in [
-        "===ШАГ2===\nновый связный текст для шага номер два\n"
-        "===ШАГ3===\nновый связный текст для шага номер три\n"
-    ]:
-        yield chunk
+_PINNED_ALL_STEPS = (
+    "===ШАГ2===\nновый связный текст для шага номер два\n"
+    "===ШАГ3===\nновый связный текст для шага номер три\n"
+)
 
 
 @pytest.mark.asyncio
@@ -20,8 +18,12 @@ async def test_pinned_step_is_rewritten_with_question_not_left_untouched():
     заданном к конкретному шагу (кнопка ❓), этот шаг должен ПЕРЕПИСЫВАТЬСЯ
     с учётом вопроса — а не оставаться нетронутым, как было раньше."""
     ai_service = MagicMock()
-    ai_service._generate = AsyncMock(return_value='{"step1": "step1 переписан с учётом уточнения"}')
-    ai_service._generate_stream = MagicMock(side_effect=_fake_stream)
+
+    async def _gen(sys_prompt, user_prompt="", *_a, **_k):
+        if "Сгенерируй шаги" in user_prompt:
+            return _PINNED_ALL_STEPS
+        return '{"step1": "step1 переписан с учётом уточнения"}'
+    ai_service._generate = AsyncMock(side_effect=_gen)
 
     context_builder = ContextBuilder()
     sanitizer = Sanitizer()
@@ -94,20 +96,18 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2():
 async def test_history_pass_emits_titles_and_notes():
     """После Шагов 1–5 и судьи идёт доп. проход — события __titles__
     (заголовок-суть на каждый ключ) и __history_notes__ (справки 📜)."""
-    async def _stream(*_a, **_k):
-        yield (
-            "===ШАГ1===\nпростейший процесс достаточной длины для парсера\n"
-            "===ШАГ2===\nразвитие процесса достаточной длины для парсера\n"
-            "===ШАГ3===\nпротивоположность достаточной длины для парсера\n"
-            "===ШАГ4===\nпротиворечие достаточной длины для парсера тут\n"
-            "===ШАГ5===\nразрешение достаточной длины для парсера тут же\n"
-        )
+    _ALL_STEPS = (
+        "===ШАГ1===\nпростейший процесс достаточной длины для парсера\n"
+        "===ШАГ2===\nразвитие процесса достаточной длины для парсера\n"
+        "===ШАГ3===\nпротивоположность достаточной длины для парсера\n"
+        "===ШАГ4===\nпротиворечие достаточной длины для парсера тут\n"
+        "===ШАГ5===\nразрешение достаточной длины для парсера тут же\n"
+    )
 
     ai_service = MagicMock()
-    ai_service._generate_stream = MagicMock(side_effect=_stream)
 
-    async def _gen(sys_prompt, *_a, **_k):
-        if "историческ" in sys_prompt.lower():
+    async def _gen(sys_prompt, user_prompt="", *_a, **_k):
+        if "titles" in user_prompt or "anchor_summary" in user_prompt:
             return ('{"titles": {"1": "как всё началось", "5": "чем разрешилось"}, '
                     '"notes": {"1": "в древности так не считали", "4": "оформилось позже"}, '
                     '"note_title": "Диффузия и выравнивание", '
@@ -115,6 +115,8 @@ async def test_history_pass_emits_titles_and_notes():
                     '"anchor_summary": "Частицы переходят из плотных мест в разреженные, пока не станет ровно."}')
         if "is_valid" in sys_prompt:
             return '{"is_valid": true, "reason": ""}'
+        if "Сгенерируй шаги" in user_prompt:
+            return _ALL_STEPS
         return "{}"
     ai_service._generate = AsyncMock(side_effect=_gen)
 

@@ -35,23 +35,19 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
         "===ШАГ5===\nразрешение настоящее текст с достаточной длиной тут\n"
     )
 
-    # generate_stream вызывается один раз на попытку (не считая fast=True skeleton-вызовов,
-    # которые идут через _generate, не _generate_stream)
+    # _generate вызывается для: скелет (JSON), генерация всех шагов (===ШАГ…),
+    # судья (JSON). Различаем по промптам.
     stream_calls = {"n": 0}
-    def stream_side_effect(*_args, **_kwargs):
-        stream_calls["n"] += 1
-        text = bad_steps_text if stream_calls["n"] == 1 else good_steps_text
-        return _stream_factory(text)()
-    ai_service._generate_stream = MagicMock(side_effect=stream_side_effect)
-
-    # _generate вызывается для: скелет (JSON) и судья (JSON). Различаем по системному промпту.
-    async def generate_side_effect(sys_prompt, *_args, **_kwargs):
+    async def generate_side_effect(sys_prompt, user_prompt="", *_args, **_kwargs):
         if "is_valid" in sys_prompt:
             # Первый вызов судьи -> отклонить, второй -> принять
             if generate_side_effect.judge_calls == 0:
                 generate_side_effect.judge_calls += 1
                 return '{"is_valid": false, "reason": "натянутое противоречие"}'
             return '{"is_valid": true, "reason": "нормально"}'
+        if "Сгенерируй шаги" in user_prompt:
+            stream_calls["n"] += 1
+            return bad_steps_text if stream_calls["n"] == 1 else good_steps_text
         # Скелет
         return '{"step1": {"thesis": "тест", "sub_steps": []}}'
     generate_side_effect.judge_calls = 0
@@ -103,14 +99,12 @@ async def test_judge_gives_up_after_max_attempts_and_returns_last_result():
         )
 
     stream_calls = {"n": 0}
-    def stream_side_effect(*_args, **_kwargs):
-        stream_calls["n"] += 1
-        return _stream_factory(make_steps(f"attempt{stream_calls['n']}"))()
-    ai_service._generate_stream = MagicMock(side_effect=stream_side_effect)
-
-    async def generate_side_effect(sys_prompt, *_args, **_kwargs):
+    async def generate_side_effect(sys_prompt, user_prompt="", *_args, **_kwargs):
         if "is_valid" in sys_prompt:
             return '{"is_valid": false, "reason": "всё ещё не то"}'
+        if "Сгенерируй шаги" in user_prompt:
+            stream_calls["n"] += 1
+            return make_steps(f"attempt{stream_calls['n']}")
         return '{"step1": {"thesis": "тест", "sub_steps": []}}'
     ai_service._generate = AsyncMock(side_effect=generate_side_effect)
 

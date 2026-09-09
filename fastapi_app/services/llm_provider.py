@@ -313,7 +313,11 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # мелкие структурные вызовы: Gemini flash-lite первым — он быстрый, чистый
     # JSON, и так минутный лимит Groq не тратится на вспомогательное
     # (на этом ключе рабочий ТОЛЬКО flash-lite, обычный flash сразу 429).
-    "skeleton":    ["Gemini", "Groq", "Cerebras"],   # план-скелет (fast=True)
+    # план-скелет: выбор простейшего процесса и числа развивающих — это ядро
+    # разбора, слабый архитектор (flash-lite) даёт кривой план, который
+    # генератор уже не спасёт. Ставим полноразмерный gpt-oss-120b: Groq
+    # (бесплатный, задача мелкая — стены 8000 TPM тут нет), затем Cerebras.
+    "skeleton":    ["Groq", "Cerebras", "Gemini"],
     "history":     ["Gemini", "Groq"],               # исторические справки 📜 (fast=True)
     # судья: сначала модели ВНЕ семейства gpt-oss (Groq/Cerebras), чтобы судья
     # не оценивал выход родственной модели. Gemini flash-lite первым (быстрый,
@@ -372,6 +376,7 @@ class LLMRegistry:
         fast: bool = False,
         prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
         reasoning_effort: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> str:
         # До 3 проходов по провайдерам: если весь круг упёрся в rate-limit,
         # ждём короткую паузу и пробуем снова (на free-тарифе окна лимитов узкие).
@@ -379,7 +384,7 @@ class LLMRegistry:
         for attempt in range(3):
             try:
                 return await self._one_pass(messages, response_format, max_tokens, temperature, fast, prefer,
-                                            reasoning_effort)
+                                            reasoning_effort, timeout)
             except _AllRateLimited as e:
                 last_error = str(e)
                 await asyncio.sleep(1.5 + random.random() * (attempt + 1))
@@ -394,6 +399,7 @@ class LLMRegistry:
         fast: bool,
         prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
         reasoning_effort: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> str:
         provider_errors: List[str] = []
         rate_limited_count = 0
@@ -413,7 +419,7 @@ class LLMRegistry:
                 logger.info(f"Trying LLM generation with {provider.name} (fast={fast})...")
                 result = await provider.generate(
                     messages, response_format, max_tokens=max_tokens, temperature=temperature, fast=fast,
-                    reasoning_effort=reasoning_effort,
+                    reasoning_effort=reasoning_effort, timeout=timeout,
                 )
                 _note_call(provider.name, fell_back=tried > 0, rate_limited=rate_limited_count)
                 return result
@@ -447,7 +453,7 @@ class LLMRegistry:
                     try:
                         result = await provider.generate(
                             messages, None, max_tokens=max_tokens, temperature=temperature, fast=fast,
-                            reasoning_effort=reasoning_effort,
+                            reasoning_effort=reasoning_effort, timeout=timeout,
                         )
                         _note_call(provider.name, fell_back=tried > 0, rate_limited=rate_limited_count)
                         return result

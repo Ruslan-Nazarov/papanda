@@ -9,7 +9,6 @@
 import logging
 import re
 import time
-from contextlib import aclosing
 from typing import Dict
 
 from fastapi_app.config import settings
@@ -56,6 +55,27 @@ def _strip_role_opener(txt: str) -> str:
         return txt
     rest = txt[m.end():].lstrip()
     return (rest[:1].upper() + rest[1:]) if rest else txt
+
+
+# gpt-oss-120b на Cerebras иногда роняет обратный слэш в LaTeX-командах, и
+# управляющий символ (\r \f \t \b \a \v) уходит в текст как есть: \rho → CR+ho,
+# \frac → FF+rac, \to → TAB+o, \bullet → BS+ullet. В нашем выводе этих символов
+# быть не может (ни таблиц, ни переводов страниц), поэтому чиним 1:1 — символ
+# обратно в \r/\f/… , и команда LaTeX восстанавливается.
+_CTRL_TO_BACKSLASH = {"\r": "\\r", "\f": "\\f", "\t": "\\t", "\x08": "\\b", "\x07": "\\a", "\x0b": "\\v"}
+# \n (0x0A) не трогаем как символ (это настоящие переводы строк), но чиним
+# конкретные команды, где перед латинским хвостом стоит перенос.
+_NL_LATEX_RE = re.compile(r"\n(?=(?:abla|eq|otin|u|leq|geq|i|ni|par)\b)")
+
+
+def _fix_math(txt: str) -> str:
+    if not txt:
+        return txt
+    for ctrl, rep in _CTRL_TO_BACKSLASH.items():
+        if ctrl in txt:
+            txt = txt.replace(ctrl, rep)
+    txt = _NL_LATEX_RE.sub(r"\\n", txt)
+    return txt
 
 
 # Потолки на длину ОТВЕТА по фазам (не размер входа).
@@ -146,7 +166,7 @@ class GenerationPipeline:
         for _ in range(2):
             raw = await self.ai_service._generate(
                 prompt, f"Сгенерируй скелет. Верни только JSON. Язык: {locale}",
-                None, max_tokens=_MAX_TOKENS["skeleton"], temperature=0.3, fast=True,
+                None, max_tokens=_MAX_TOKENS["skeleton"], temperature=0.3, fast=False,
                 use_cache=False, task="skeleton",
             )
             try:
@@ -277,22 +297,25 @@ class GenerationPipeline:
         prompt_all = await self.context_builder.build_all_steps_prompt(
             state, skeleton, pinned_step=None, question=None,
         )
-        buf = ""
-        async with aclosing(self.ai_service._generate_stream(
+        # НЕ стримом: буфер всё равно собирается целиком до выдачи шагов наружу
+        # (прогрессивной отдачи тут нет), а SSE-поток Cerebras коверкает
+        # обратный слэш в LaTeX-командах (\Delta → перенос строки, \frac → rac,
+        # \to → таб). Нестримовый ответ отдаёт формулы целыми.
+        buf = await self.ai_service._generate(
             prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
-            max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
+            None, max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
             task="step_stream", reasoning_effort=settings.LLM_REASONING_EFFORT_GEN,
             timeout=settings.LLM_TIMEOUT_GEN,
-        )) as gen:
-            async for delta in gen:
-                buf += delta
+        )
+        if not buf or buf.startswith(("Error calling AI:", "AI disabled")):
+            buf = ""
 
         info = get_last_call_info() or {}
         report["gen_provider"] = info.get("provider")
         report["gen_fell_back"] = bool(info.get("fell_back"))
 
         collected = self._complete_steps(buf, final=True)
-        collected = {k: c for k, c in collected.items() if len(c) >= 20}
+        collected = {k: _fix_math(c) for k, c in collected.items() if len(c) >= 20}
 
         # Добор пропущенных процессов точечно.
         regen = 0
@@ -301,7 +324,7 @@ class GenerationPipeline:
                 continue
             content = await self.regen_process(state, key, skeleton, locale)
             if content:
-                collected[key] = content
+                collected[key] = _fix_math(content)
                 regen += 1
         report["regen"] = regen
         return collected
@@ -365,7 +388,14 @@ class GenerationPipeline:
         if settings.APPLICABILITY_GATE_ENABLED:
             raw_goal = (state.get("target_goal") or "").strip()
             verdict = await self.check_applicability(raw_goal, locale) if raw_goal else {}
-            if verdict and not verdict["applicable"] and verdict["type"] in _NOT_DERIVABLE_TYPES:
+            blocks = bool(verdict) and not verdict["applicable"] and verdict["type"] in _NOT_DERIVABLE_TYPES
+            # «механизм без противоположного» — самый спорный тип: граница с
+            # настоящим противоречием размыта (звук в воде: упругость vs инерция).
+            # Отбиваем только при высокой уверенности; иначе строим конспект.
+            if blocks and verdict["type"] == "механизм без противоположного" and verdict.get("confidence", 0.0) < 0.75:
+                logger.info("applicability gate: low-conf mechanism verdict, generating anyway (%r)", raw_goal)
+                blocks = False
+            if blocks:
                 logger.info("applicability gate: NOT applicable — %s (%r)", verdict["type"], raw_goal)
                 state["applicability"] = verdict
                 yield ("__not_applicable__", verdict)
@@ -398,7 +428,7 @@ class GenerationPipeline:
             step1_summary = " / ".join(c for k, c in collected.items() if _base_of(k) == "1")[:200]
             failed_attempts.append({"thesis1": step1_summary, "reason": reason})
 
-        collected = {k: _strip_role_opener(v) for k, v in collected.items()}
+        collected = {k: _fix_math(_strip_role_opener(v)) for k, v in collected.items()}
         for key in sorted(collected.keys(), key=_sort_key):
             content = collected.get(key)
             if content:
@@ -411,6 +441,7 @@ class GenerationPipeline:
         if len(collected) >= 3:
             yield ("__status__", _("gen_status_editor"))
             for key, edited in (await self._gen_editor(state, collected, locale)).items():
+                edited = _fix_math(edited)
                 collected[key] = edited
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": edited, "status": "ready", "author": "ai", "sub_steps": []}
@@ -573,37 +604,30 @@ class GenerationPipeline:
             state, {}, pinned_step=pinned, question=None,
         )
 
-        buf, emitted = "", {}
         pinned_str = str(pinned)
-        async with aclosing(self.ai_service._generate_stream(
+        emitted: Dict[str, str] = {}
+        # Нестримовый ответ — как в _generate_full_attempt: SSE Cerebras коверкает
+        # LaTeX. Прогресс-индикатор даёт stream_generate_full через __status__.
+        buf = await self.ai_service._generate(
             prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
-            max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
+            None, max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
             task="step_stream", reasoning_effort=settings.LLM_REASONING_EFFORT_GEN,
             timeout=settings.LLM_TIMEOUT_GEN,
-        )) as gen:
-            async for delta in gen:
-                buf += delta
-                for key, content in self._complete_steps(buf, final=False).items():
-                    if _base_of(key) == pinned_str:
-                        continue
-                    if len(content) >= 20 and emitted.get(key) != content:
-                        emitted[key] = content
-                        step_key = f"step{key}"
-                        state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
-                        yield (step_key, content)
-        info = get_last_call_info() or {}
-        report["gen_provider"] = info.get("provider")
-        report["gen_fell_back"] = bool(info.get("fell_back"))
-
-        # Хвост потока — финализируем последний процесс.
+        )
+        if not buf or buf.startswith(("Error calling AI:", "AI disabled")):
+            buf = ""
         for key, content in self._complete_steps(buf, final=True).items():
             if _base_of(key) == pinned_str:
                 continue
-            if len(content) >= 20 and emitted.get(key) != content:
+            if len(content) >= 20:
+                content = _fix_math(content)
                 emitted[key] = content
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
+        info = get_last_call_info() or {}
+        report["gen_provider"] = info.get("provider")
+        report["gen_fell_back"] = bool(info.get("fell_back"))
 
         # Добор пропущенных шагов (обычно 0). Путь без судьи -> всегда по одному
         # процессу на шаг (см. ограничение специфики в build_all_steps_prompt).
