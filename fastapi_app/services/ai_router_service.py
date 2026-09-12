@@ -63,7 +63,7 @@ class ConspectusRouter:
                 collected[str(i)] = text
         if len(collected) < 3:
             return {"action_status": "error", "error_message": "Конспект слишком короткий для проверки."}
-        is_valid, reason = await self.pipeline.judge_conspect(collected, locale)
+        is_valid, reason, _bad_steps = await self.pipeline.judge_conspect(collected, locale)
         return {"action_status": "success", "is_valid": bool(is_valid), "reason": reason or ""}
 
     async def _handle_auto_full(self, state: dict, locale: str) -> dict:

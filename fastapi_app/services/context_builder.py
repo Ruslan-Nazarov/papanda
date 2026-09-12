@@ -50,6 +50,29 @@ def _reference_block(state: dict) -> str:
     )
 
 
+def _applicability_hint_block(state: dict) -> str:
+    """Оппонент-этап-1 (судья_применимости.md) уже вычисляет пару простейший/
+    противоположный процесс (process_a/process_b/why_excludes), чтобы решить,
+    применим ли вообще метод — но раньше этот результат никуда не шёл дальше
+    вердикта applicable/not_applicable и выбрасывался (см. аудит 2026-09-12,
+    пункт 7). Прокидываем его архитектору скелета КАК КАНДИДАТ, не как приказ:
+    архитектор всё равно обязан проверить его по трём условиям п.6.2 сам и
+    вправе отвергнуть, если кандидат не годится."""
+    verdict = (state or {}).get("applicability") or {}
+    if not verdict or not verdict.get("applicable"):
+        return ""
+    a, b, why = verdict.get("process_a"), verdict.get("process_b"), verdict.get("why_excludes")
+    if not a or not b:
+        return ""
+    return (
+        "\nКАНДИДАТ от оппонента-этапа-1 (проверь сам по п.6.2 главного промпта, "
+        "не принимай на веру — можешь заменить, если не подходит):\n"
+        f"  простейший процесс (кандидат): {a}\n"
+        f"  противоположный процесс (кандидат): {b}\n"
+        + (f"  чем противоположный обходится без простейшего: {why}\n" if why else "")
+    )
+
+
 def _effective_goal(state: dict, skeleton: dict = None) -> str:
     """Цель как процесс: `goal_as_process` из скелета (переформулирование
     запроса по п. 5.1 главного промпта, см. 9_скелет_конспекта_промпт.md)
@@ -97,6 +120,59 @@ def thesis_for_key(skeleton: dict, key: str) -> str:
     return ""
 
 
+def _entry_for_key(skeleton: dict, key: str) -> dict:
+    """Как thesis_for_key, но возвращает весь словарь узла (не только
+    `thesis`) — нужен для полей перехода (см. transition_hint_for_key)."""
+    if not skeleton:
+        return {}
+    parts = key.split(".")
+    plan = skeleton.get(f"step{parts[0]}", {})
+    if not isinstance(plan, dict):
+        return {}
+    if len(parts) == 1:
+        return plan
+    k = int(parts[1])
+    if k == 1:
+        return plan
+    sub_steps = plan.get("sub_steps") or []
+    idx = k - 2
+    if 0 <= idx < len(sub_steps) and isinstance(sub_steps[idx], dict):
+        return sub_steps[idx]
+    return {}
+
+
+# Название поля(ей) перехода в узле скелета — по базовому шагу (см.
+# 9_скелет_конспекта_промпт.md, раздел "Поля перехода"). Шаг 1: разные поля
+# для основного узла ("потенциально_содержит") и для второго простейшего
+# процесса в sub_steps ("связь_с_основным") — обрабатывается отдельно ниже.
+_TRANSITION_FIELDS = {
+    "2": ("разворачивает", "обратный_ход"),
+    "3": ("обходится_без",),
+    "4": ("несовместимость",),
+    "5": ("скачок",),
+}
+
+
+def transition_hint_for_key(skeleton: dict, key: str) -> str:
+    """Поля перехода архитектора для ключа шага — план вывода для генератора
+    шага (см. аудит 2026-09-12, пункт А: план из одних именных групп ничего
+    не говорит генератору о самом становлении). Пустая строка, если
+    архитектор их не заполнил (старый скелет / модель промолчала) — тогда
+    генератор строит переход сам по правилу из 8_генератор_шага_промпт.md."""
+    entry = _entry_for_key(skeleton, key)
+    if not entry:
+        return ""
+    base, parts = key.split(".")[0], key.split(".")
+    if base == "1":
+        field = "потенциально_содержит" if len(parts) == 1 else "связь_с_основным"
+        val = (entry.get(field) or "").strip()
+        return val
+    fields = _TRANSITION_FIELDS.get(base, ())
+    vals = [str(entry.get(f) or "").strip() for f in fields]
+    vals = [v for v in vals if v]
+    return " / ".join(vals)
+
+
 def _group_keys_by_base(keys: list) -> dict:
     """{"1": ["1"], "2": ["2.1","2.2"], ...} — для человекочитаемых блоков (план, судья)."""
     grouped = {}
@@ -107,23 +183,35 @@ def _group_keys_by_base(keys: list) -> dict:
 
 
 # Пункты 1_главного, нужные для скелета и судьи (экономия токенов — не шлём
-# весь файл 3× за генерацию). Верхний уровень: 2 (историческая форма первой),
-# 5 (переформулировка запроса в процесс), 6 (ядро алгоритма), 7 (развитие ≠
-# изменение). Пропускаем 1 (цель — мета), 3 (мир как процесс — философия),
-# 4 (пришёл запрос — тривиально), 8 (опциональный двухформенный разбор).
-_ALGO_CORE_KEEP = {"2", "5", "6", "7"}
-_NUM_LINE_RE = re.compile(r"^\s*(\d+)(?:\.\d+)*[.\s]")
+# весь файл 3× за генерацию). Верхний уровень: 1 (цель разбора — вывод,
+# который должен УВИДЕТЬ читатель; без этого пункта генератор не знает, что
+# именно он строит), 2 (историческая форма первой), 5 (переформулировка
+# запроса в процесс), 6 (ядро алгоритма), 7 (развитие ≠ изменение).
+# Пропускаем 3 (мир как процесс — философия), 4 (пришёл запрос — тривиально),
+# 8 (опциональный двухформенный разбор).
+_ALGO_CORE_KEEP = {"1", "2", "5", "6", "7"}
+# Внутри п.6 отдельно исключается 6.5.1: «ИИ не способен взять простейший и
+# противоположный процесс в единстве их развития… однако может ОТНЕСТИ их
+# единство к противоречию» — методологическая заметка ДЛЯ АВТОРА промпта, а
+# не для генератора: попадая в системный промпт, она читается генератором
+# как разрешение подменить совместное развитие (Шаг 4) ярлыком-отнесением
+# вместо самого хода. См. аудит 2026-09-12.
+_ALGO_CORE_EXCLUDE_SUB = {"6.5.1"}
+_NUM_LINE_RE = re.compile(r"^\s*(\d+(?:\.\d+)*)[.\s]")
 
 
 def _extract_algo_core(main_prompt: str) -> str:
-    """Из 1_главного — только рабочие пункты (см. _ALGO_CORE_KEEP). Строки без
-    номера наследуют судьбу текущего пункта; преамбула (до первого номера)
-    сохраняется. Результат детерминирован — важно для кеша префикса промпта."""
+    """Из 1_главного — только рабочие пункты (см. _ALGO_CORE_KEEP /
+    _ALGO_CORE_EXCLUDE_SUB). Строки без номера наследуют судьбу текущего
+    пункта; преамбула (до первого номера) сохраняется. Результат
+    детерминирован — важно для кеша префикса промпта."""
     out, keep_current = [], True
     for line in main_prompt.splitlines():
         m = _NUM_LINE_RE.match(line)
         if m:
-            keep_current = m.group(1) in _ALGO_CORE_KEEP
+            full = m.group(1)
+            top = full.split(".")[0]
+            keep_current = top in _ALGO_CORE_KEEP and full not in _ALGO_CORE_EXCLUDE_SUB
         if keep_current:
             out.append(line)
     # схлопываем тройные+ пустые строки, подчищаем хвост
@@ -186,6 +274,9 @@ class ContextBuilder:
                        "НЕ используй \\[ \\], \\( \\), квадратные скобки [ ] или обратные кавычки для формул.\n")
         prompt += f"УЖЕ ЗАПОЛНЕННЫЙ КОНТЕКСТ:\n{previous_context}\n"
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {target_step}.\n"
+        hint = transition_hint_for_key(skeleton or {}, str(target_step))
+        if hint:
+            prompt += f"ПЛАН ПЕРЕХОДА ОТ АРХИТЕКТОРА (провести на материале, не называть): {hint}\n"
         prompt += _ANTI_ECHO
         prompt += _reference_block(state)
         # Пошаговые правила по каждому шагу (в т.ч. Шаг 3) регулирует
@@ -224,6 +315,9 @@ class ContextBuilder:
                        "НЕ используй \\[ \\], \\( \\), квадратные скобки [ ] или обратные кавычки для формул.\n")
         prompt += f"УЖЕ ЗАПОЛНЕННЫЙ КОНТЕКСТ:\n{previous_context}\n"
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {base_step}, процесс «{thesis_for_key(skeleton, key)}».\n"
+        hint = transition_hint_for_key(skeleton, key)
+        if hint:
+            prompt += f"ПЛАН ПЕРЕХОДА ОТ АРХИТЕКТОРА (провести на материале, не называть): {hint}\n"
         prompt += sibling_block
         prompt += _ANTI_ECHO
         prompt += _reference_block(state)
@@ -252,6 +346,7 @@ class ContextBuilder:
         if domain == "math_code":
             prompt += " Для math_code подшаги допустимы только на Шаге 5 при выводе формулы."
         prompt += _reference_block(state)
+        prompt += _applicability_hint_block(state)
 
         if failed_attempts:
             prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ НЕ ПРОШЛИ ПРОВЕРКУ — выбери ДРУГОЙ простейший процесс, не повторяй их:\n"
@@ -342,6 +437,9 @@ class ContextBuilder:
             base = key.split(".")[0]
             label = f"Шаг {base}" if "." not in key else f"Шаг {base}, процесс {key.split('.')[1]}"
             theses.append(f"  {label}: {thesis_for_key(skeleton, key)}")
+            hint = transition_hint_for_key(skeleton, key)
+            if hint:
+                theses.append(f"    план перехода (провести на материале, не называть): {hint}")
         theses_block = "\n".join(theses)
 
         prompt = f"{main_prompt}\n\n{step_rules}\n\n"

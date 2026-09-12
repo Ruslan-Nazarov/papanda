@@ -109,17 +109,33 @@ _TRAILING_FILLER_RE = re.compile(
 )
 
 
-def _strip_transition_filler(txt: str) -> str:
+def _count_transition_filler(txt: str) -> int:
+    """Сколько раз в тексте встретился ярлык-заявление о переходе (см.
+    _FILLER_MARKERS). НЕ мутирует текст — только считает, чтобы решить, нужен
+    ли точечный ретрай этого блока (см. _strip_transition_filler ниже: раньше
+    такие предложения молча вырезались, и там, где это была ЕДИНСТВЕННАЯ
+    попытка модели показать переход, конспект оставался вовсе без связки —
+    аудит 2026-09-12, пункт 6)."""
     if not txt:
-        return txt
-    kept = []
+        return 0
+    hits = 0
     for sent in _SENT_SPLIT_RE.split(txt):
         low = sent.lower()
         if "$" not in sent and not any(c.isdigit() for c in sent) and any(m in low for m in _FILLER_MARKERS):
-            continue
-        kept.append(sent)
-    out = " ".join(kept)
-    out = _TRAILING_FILLER_RE.sub("", out)
+            hits += 1
+    hits += len(_TRAILING_FILLER_RE.findall(txt))
+    return hits
+
+
+def _strip_transition_filler(txt: str) -> str:
+    """Только стилистическая подчистка: срезает служебный хвост предложения
+    вида «…, тем самым уточняя исходный процесс» — сам ход мысли перед ним
+    остаётся. Целые предложения-ярлыки больше НЕ удаляются (см.
+    _count_transition_filler) — их наличие вместо удаления теперь сигнал для
+    точечного ретрая блока на уровне вызывающего кода."""
+    if not txt:
+        return txt
+    out = _TRAILING_FILLER_RE.sub("", txt)
     return re.sub(r"\s{2,}", " ", out).strip()
 
 
@@ -131,14 +147,19 @@ def _strip_transition_filler(txt: str) -> str:
 # step_stream) — стены 8000 нет, поэтому потолки подняты под нормальный
 # объём: развёрнутый переход на каждом шаге, а не 3 предложения.
 _MAX_TOKENS = {
-    "skeleton": 1200,
+    # 1200 хватало на голые тезисы; поля вывода (что свёрнуто/что развёрнуто/
+    # обратный ход/чем обходится/в чём несовместимость/что снимает — см.
+    # аудит 2026-09-12, пункт А) занимают заметно больше места.
+    "skeleton": 2600,
     # all_steps: до 4 развивающих процессов на Шаге 2 + вывод/доказательство
     # на каждом шаге (9_скелет + 8_генератор «показывай, а не рассказывай»)
     # — конспект стал длиннее; Cerebras стены 8000 не имеет.
     "all_steps": 13000,
     "step": 2600,
     "step5": 3800,
-    "judge": 700,
+    # 700 хватало на low; medium-reasoning тратит часть бюджета на сами
+    # рассуждения до JSON-ответа — подняли, чтобы вывод не обрезался.
+    "judge": 1000,
     "history": 2000,
     "editor": 8000,
     "applicability": 600,
@@ -160,6 +181,10 @@ _NOT_DERIVABLE_TYPES = {
 # процессом, если судья отклоняет предыдущую попытку. 2 (не 3): каждый ретрай
 # = скелет + все шаги + судья заново, а на бесплатных лимитах это дорого.
 _MAX_GENERATION_ATTEMPTS = 2
+
+# Сколько блоков максимум перегенерировать точечно из-за ярлыков-переходов
+# (см. _count_transition_filler) за одну полную попытку.
+_MAX_FILLER_REGEN = 2
 
 
 class GenerationPipeline:
@@ -216,6 +241,7 @@ class GenerationPipeline:
                 prompt, f"Сгенерируй скелет. Верни только JSON. Язык: {locale}",
                 None, max_tokens=_MAX_TOKENS["skeleton"], temperature=0.3, fast=False,
                 use_cache=False, task="skeleton",
+                reasoning_effort=settings.LLM_REASONING_EFFORT_SKELETON,
             )
             try:
                 parsed = self.sanitizer.extract_json(raw)
@@ -264,20 +290,32 @@ class GenerationPipeline:
         """Оценка судьёй: настоящее ли противоречие получилось. Если судья
         сам не смог ответить (плохой JSON) — не блокируем пользователя,
         считаем валидным (см. судья_противоречия.md: "если сомневаетесь —
-        засчитывайте как валидное" — тот же принцип и для сбоя самого судьи)."""
+        засчитывайте как валидное" — тот же принцип и для сбоя самого судьи).
+
+        Возвращает (is_valid, reason, bad_steps). bad_steps — опциональный
+        список номеров шагов ("1".."5"), которые судья указал как разрушающие
+        переход (поле `bad_transitions` в ответе судьи, если промпт его
+        просит — см. аудит 2026-09-12, пункт Ж). Если поля нет или судья на
+        старом формате ответа — bad_steps пуст, и вызывающий код падает
+        обратно на полный пересбор конспекта (старое поведение)."""
         judge_prompt = await self.context_builder.build_judge_prompt(collected)
         raw = await self.ai_service._generate(
             judge_prompt, f"Оцени конспект. Верни только JSON. Язык: {locale}",
             None, max_tokens=_MAX_TOKENS["judge"], temperature=0.2, use_cache=False,
-            task="judge",
+            task="judge", reasoning_effort=settings.LLM_REASONING_EFFORT_JUDGE,
         )
         try:
             parsed = self.sanitizer.extract_json(raw)
             is_valid = bool(parsed.get("is_valid", True))
             reason = str(parsed.get("reason", "") or "")
-            return is_valid, reason
+            bad_raw = parsed.get("bad_transitions") or []
+            bad_steps = sorted({
+                str(b).strip() for b in bad_raw
+                if str(b).strip() in {"1", "2", "3", "4", "5"}
+            }) if isinstance(bad_raw, list) else []
+            return is_valid, reason, bad_steps
         except ValueError:
-            return True, ""
+            return True, "", []
 
     async def regen_step(self, state: dict, step_idx: int, thesis: str, locale: str,
                          question: str = None, skeleton: dict = None) -> str:
@@ -312,12 +350,14 @@ class GenerationPipeline:
     # ------------------------------------------------------------------ #
 
     async def _generate_full_attempt(self, state: dict, locale: str, use_skeleton: bool,
-                                     failed_attempts: list, report: dict = None) -> Dict[str, str]:
+                                     failed_attempts: list, report: dict = None) -> tuple:
         """Одна полная попытка собрать все процессы всех шагов, без
         прогрессивной выдачи наружу — используется внутри цикла судьи в
-        stream_generate_full. Ключи результата — "1", "2.1", "2.2", ... (см.
-        expected_step_keys) в зависимости от того, сколько процессов у
-        каждого шага в скелете.
+        stream_generate_full. Возвращает (collected, skeleton): collected —
+        "1", "2.1", "2.2", ... (см. expected_step_keys) в зависимости от
+        того, сколько процессов у каждого шага в скелете; skeleton нужен
+        вызывающему коду для точечного ретрая по ключам судьи (bad_transitions),
+        без пересборки плана заново (см. judge_conspect).
         report (мутируется) — телеметрия для сигнала пользователю: кто
         обслужил основной вызов, был ли фолбэк, сколько процессов добирали."""
         report = report if report is not None else {}
@@ -375,7 +415,27 @@ class GenerationPipeline:
                 collected[key] = _fix_math(content)
                 regen += 1
         report["regen"] = regen
-        return collected
+
+        # Точечный ретрай блоков, где модель заявила переход ярлыком вместо
+        # того, чтобы показать его (см. _count_transition_filler). Раньше
+        # такие предложения молча вырезались (см. старую _strip_transition_
+        # filler), и там, где это была единственная попытка модели связать
+        # блоки, конспект оставался вовсе без перехода — аудит 2026-09-12,
+        # пункт 6. Теперь пробуем переписать сам блок; лимит попыток — чтобы
+        # не утроить стоимость генерации на редком случае.
+        filler_hits = {k: _count_transition_filler(v) for k, v in collected.items()}
+        filler_regen = 0
+        for key, hits in sorted(filler_hits.items(), key=lambda kv: -kv[1]):
+            if hits == 0 or filler_regen >= _MAX_FILLER_REGEN:
+                break
+            content = await self.regen_process(state, key, skeleton, locale)
+            if content and _count_transition_filler(content) < hits:
+                collected[key] = _fix_math(content)
+                filler_regen += 1
+        report["filler_regen"] = filler_regen
+        # Итог ПОСЛЕ ретрая — это то, что реально уйдёт читателю.
+        report["filler_hits"] = sum(_count_transition_filler(v) for v in collected.values())
+        return collected, skeleton
 
     @staticmethod
     def _complete_steps(buf: str, final: bool) -> Dict[str, str]:
@@ -457,15 +517,42 @@ class GenerationPipeline:
             elif use_skeleton:
                 yield ("__status__", _("gen_status_planning"))
 
-            collected = await self._generate_full_attempt(
+            collected, skeleton = await self._generate_full_attempt(
                 state, locale, use_skeleton or attempt > 1, failed_attempts, report)
             if not collected:
                 continue
 
             yield ("__status__", _("gen_status_judging"))
-            is_valid, reason = await self.judge_conspect(collected, locale)
+            is_valid, reason, bad_steps = await self.judge_conspect(collected, locale)
             report["judge"] = "passed" if is_valid else "failed"
-            if is_valid or attempt == _MAX_GENERATION_ATTEMPTS:
+            if is_valid:
+                break
+
+            # Точечный ретрай (см. аудит 2026-09-12, пункт Ж): если судья
+            # указал КОНКРЕТНЫЕ переходы (bad_transitions в его ответе — поле
+            # опциональное, старый формат ответа просто не заполняет его) и
+            # среди них нет Шага 1 (значит сам простейший процесс не под
+            # вопросом, пересобирать план незачем) — переписываем только эти
+            # шаги на том же скелете, не открывая новую полную попытку.
+            if bad_steps and "1" not in bad_steps and skeleton:
+                yield ("__status__", _("gen_status_fix_transition"))
+                targeted = 0
+                for base in bad_steps:
+                    for key in expected_step_keys(skeleton):
+                        if _base_of(key) != base:
+                            continue
+                        content = await self.regen_process(state, key, skeleton, locale)
+                        if content:
+                            collected[key] = _fix_math(content)
+                            targeted += 1
+                report["regen"] = report.get("regen", 0) + targeted
+                if targeted:
+                    is_valid, reason, bad_steps = await self.judge_conspect(collected, locale)
+                    report["judge"] = "passed" if is_valid else "failed"
+                    if is_valid:
+                        break
+
+            if attempt == _MAX_GENERATION_ATTEMPTS:
                 break
             step1_summary = " / ".join(c for k, c in collected.items() if _base_of(k) == "1")[:200]
             failed_attempts.append({"thesis1": step1_summary, "reason": reason})
@@ -532,15 +619,18 @@ class GenerationPipeline:
             reasons.append("truncated_blocks")
         if report["regen"] >= 3:
             reasons.append("many_regens")
+        if report.get("filler_hits"):
+            reasons.append("transition_labeled_not_shown")
         report["degraded"] = bool(reasons)
         report["reasons"] = reasons
 
         logger.info(
             "conspect gen: provider=%s fell_back=%s attempts=%d judge=%s regen=%d "
-            "blocks=%d/%d short=%d dur=%.1fs degraded=%s%s",
+            "blocks=%d/%d short=%d filler=%d(regen=%d) dur=%.1fs degraded=%s%s",
             report.get("gen_provider"), report.get("gen_fell_back"), report["attempts"],
             report["judge"], report["regen"], report["got_blocks"], expected_min,
-            short_steps, report["duration_s"], report["degraded"],
+            short_steps, report.get("filler_hits", 0), report.get("filler_regen", 0),
+            report["duration_s"], report["degraded"],
             (" reasons=" + ",".join(reasons)) if reasons else "",
         )
         return report
