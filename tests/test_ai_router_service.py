@@ -180,18 +180,6 @@ async def test_report_flags_degraded_on_fallback_provider(monkeypatch):
     assert rep["gen_provider"] == "Groq"
 
 
-def test_strip_role_opener_removes_algorithm_narration():
-    from fastapi_app.services.ai_router_service import _strip_role_opener
-    assert _strip_role_opener(
-        "Противоположным процессом является дефляция — сжатие денежной массы."
-    ) == "Дефляция — сжатие денежной массы."
-    assert _strip_role_opener(
-        "Простейшим процессом здесь выступает поглощение света пигментами."
-    ) == "Поглощение света пигментами."
-    # обычный текст не трогаем
-    plain = "В древних культурах свет считали прямым лучом."
-    assert _strip_role_opener(plain) == plain
-
 
 def test_condense_step_keeps_claim_and_handoff():
     from fastapi_app.services.context_builder import ContextBuilder

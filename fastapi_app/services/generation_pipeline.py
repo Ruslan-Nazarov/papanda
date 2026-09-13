@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Провайдер, с которого ДОЛЖНА идти основная генерация (первый в TASK_ROUTES
 # step_stream). Если фактический другой — значит упали на резерв, качество
 # может просесть, и это надо показать пользователю (а не молчать).
-_PRIMARY_GEN_PROVIDER = "Cerebras"
+_PRIMARY_GEN_PROVIDER = "GigaChat"
 _MIN_STEP_CHARS = 120  # короче — процесс, похоже, оборвался
 
 # Ключ шага: "1".."5" (один процесс) или "N.k" (несколько процессов на шаге,
@@ -35,26 +35,6 @@ def _sort_key(key: str) -> list:
 
 def _base_of(key: str) -> str:
     return key.split(".")[0]
-
-
-# Модель под medium-reasoning любит открывать блок называнием его роли
-# («Простейшим процессом здесь выступает…», «Противоположным процессом
-# является…») — вопреки запрету в 8_генератор_шага. Детерминированно срезаем
-# этот зачин: он всегда в форме «<роль> процессом <связка> <предмет>».
-_ROLE_OPENER_RE = re.compile(
-    r"^\W*(?:простейшим|развивающим|противоположным|разрешающим|исходным)\s+процессом\s+"
-    r"(?:здесь\s+|тут\s+|в\s+данном\s+случае\s+)?"
-    r"(?:является|выступает|служит|становится|будет)\s+",
-    re.IGNORECASE,
-)
-
-
-def _strip_role_opener(txt: str) -> str:
-    m = _ROLE_OPENER_RE.match(txt or "")
-    if not m:
-        return txt
-    rest = txt[m.end():].lstrip()
-    return (rest[:1].upper() + rest[1:]) if rest else txt
 
 
 # gpt-oss-120b на Cerebras иногда роняет обратный слэш в LaTeX-командах, и
@@ -83,62 +63,6 @@ def _fix_math(txt: str) -> str:
     return txt
 
 
-# Нарративная вода: модель проговаривает сам переход отдельными фразами
-# («служит отправной точкой», «вырастает процесс изучения», «раскрывает
-# скрытую структуру»). Промпт это не добил (п. 6.1 главного + 8_генератор) —
-# режем предложения-связки, в которых нет ни числа, ни формулы (значит,
-# содержания там нет).
-_FILLER_MARKERS = (
-    "служит отправной точкой", "служат отправной точкой",
-    "вырастает процесс", "вырастают процессы", "рождается процесс",
-    "вырастает из процесс", "вырастает полное определение",
-    "вырастает определение", "порождает процесс", "порождает все",
-    "раскрывает скрыт", "раскрывают скрыт", "раскрывает механизм ввода",
-    "раскрывает механизм:", "раскрывает механизм ",
-    "является фундаментом, из котор", "для дальнейшего построения",
-    "для дальнейшего анализа", "отправной точкой для дальнейш",
-    "новый этап, сохраняющий связь", "именно из этой",
-    "уже содержит в себе процесс",
-)
-_SENT_SPLIT_RE = re.compile(r"(?<=[.!?…])\s+")
-_TRAILING_FILLER_RE = re.compile(
-    r",?\s*(?:тем самым\s+|одновременно\s+)?уточня[яе][^.!?$]*?"
-    r"(?:перво[а-я]*|исходн[а-я]*|начальн[а-я]*|прежн[а-я]*|предыдущ[а-я]*)"
-    r"(?:\s+процесс[а-я]*|\s+движени[ея]|\s+представлени[ея]|\s+рол[ьи])?[^.!?$]*?(?=[.!?…]|$)",
-    re.IGNORECASE,
-)
-
-
-def _count_transition_filler(txt: str) -> int:
-    """Сколько раз в тексте встретился ярлык-заявление о переходе (см.
-    _FILLER_MARKERS). НЕ мутирует текст — только считает, чтобы решить, нужен
-    ли точечный ретрай этого блока (см. _strip_transition_filler ниже: раньше
-    такие предложения молча вырезались, и там, где это была ЕДИНСТВЕННАЯ
-    попытка модели показать переход, конспект оставался вовсе без связки —
-    аудит 2026-09-12, пункт 6)."""
-    if not txt:
-        return 0
-    hits = 0
-    for sent in _SENT_SPLIT_RE.split(txt):
-        low = sent.lower()
-        if "$" not in sent and not any(c.isdigit() for c in sent) and any(m in low for m in _FILLER_MARKERS):
-            hits += 1
-    hits += len(_TRAILING_FILLER_RE.findall(txt))
-    return hits
-
-
-def _strip_transition_filler(txt: str) -> str:
-    """Только стилистическая подчистка: срезает служебный хвост предложения
-    вида «…, тем самым уточняя исходный процесс» — сам ход мысли перед ним
-    остаётся. Целые предложения-ярлыки больше НЕ удаляются (см.
-    _count_transition_filler) — их наличие вместо удаления теперь сигнал для
-    точечного ретрая блока на уровне вызывающего кода."""
-    if not txt:
-        return txt
-    out = _TRAILING_FILLER_RE.sub("", txt)
-    return re.sub(r"\s{2,}", " ", out).strip()
-
-
 # Потолки на длину ОТВЕТА по фазам (не размер входа).
 # ВАЖНО (2026-09-07, пересмотр): раньше all_steps держали на 3400, чтобы
 # вход+выход влезали в лимит Groq gpt-oss-120b (8000 токенов/мин на всё
@@ -161,30 +85,15 @@ _MAX_TOKENS = {
     # рассуждения до JSON-ответа — подняли, чтобы вывод не обрезался.
     "judge": 1000,
     "history": 2000,
-    "editor": 8000,
-    "applicability": 600,
 }
 
-# Типы вердикта оппонента-этапа-1, при которых конспект НЕ строится вовсе.
-# ОСТАВЛЕНЫ ТОЛЬКО ДВА самых однозначных: конвенция («почему в неделе 7 дней»)
-# и произвольный факт («столица Франции»). «Определение», «классификация»,
-# «механизм без противоположного» УБРАНЫ — Gemini-гейт по ним даёт
-# недетерминированные false-positive/negative (то отбивает «теорему Пифагора»
-# как «классификацию», то пропускает; то валит «зачем логарифмы»). Пусть
-# конспект строится, а годность оценивает судья готового разбора (этап 2).
-_NOT_DERIVABLE_TYPES = {
-    "конвенция", "произвольный факт",
-}
+
 
 # Многопроходный поиск простейшего процесса (см. 1_главный_промпт.md п. 6.2.1):
 # столько раз пробуем целиком пересобрать конспект с другим простейшим
 # процессом, если судья отклоняет предыдущую попытку. 2 (не 3): каждый ретрай
 # = скелет + все шаги + судья заново, а на бесплатных лимитах это дорого.
 _MAX_GENERATION_ATTEMPTS = 2
-
-# Сколько блоков максимум перегенерировать точечно из-за ярлыков-переходов
-# (см. _count_transition_filler) за одну полную попытку.
-_MAX_FILLER_REGEN = 2
 
 
 class GenerationPipeline:
@@ -250,41 +159,6 @@ class GenerationPipeline:
             except ValueError:
                 pass
         return {}
-
-    async def check_applicability(self, raw_goal: str, locale: str) -> dict:
-        """Оппонент-этап-1 (судья_применимости.md): применим ли метод к теме.
-        Вход — ТОЛЬКО сырая тема. Модель — вне семейства генератора (task
-        applicability → Gemini). Плохой JSON / ошибка → {} (fail-open,
-        генерация продолжается — лучше лишний конспект, чем пропущенный)."""
-        prompt = await self.context_builder.build_applicability_prompt(raw_goal)
-        raw = await self.ai_service._generate(
-            prompt, f"Оцени применимость метода. Верни только JSON. Язык: {locale}",
-            None, max_tokens=_MAX_TOKENS["applicability"], temperature=0.1,
-            use_cache=False, fast=True, task="applicability",
-        )
-        raw = (raw or "").strip()
-        if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
-            return {}
-        try:
-            parsed = self.sanitizer.extract_json(raw)
-        except ValueError:
-            return {}
-        if not isinstance(parsed, dict) or "applicable" not in parsed:
-            return {}
-        out = {
-            "applicable": bool(parsed.get("applicable")),
-            "type": str(parsed.get("type") or "").strip().lower(),
-            "process_a": str(parsed.get("process_a") or "").strip(),
-            "process_b": str(parsed.get("process_b") or "").strip(),
-            "why_excludes": str(parsed.get("why_excludes") or "").strip(),
-            "reason": str(parsed.get("reason") or "").strip(),
-            "plain": str(parsed.get("plain") or "").strip(),
-        }
-        try:
-            out["confidence"] = max(0.0, min(1.0, float(parsed.get("confidence", 0.0))))
-        except (TypeError, ValueError):
-            out["confidence"] = 0.0
-        return out
 
     async def judge_conspect(self, collected: Dict[str, str], locale: str) -> tuple:
         """Оценка судьёй: настоящее ли противоречие получилось. Если судья
@@ -416,25 +290,6 @@ class GenerationPipeline:
                 regen += 1
         report["regen"] = regen
 
-        # Точечный ретрай блоков, где модель заявила переход ярлыком вместо
-        # того, чтобы показать его (см. _count_transition_filler). Раньше
-        # такие предложения молча вырезались (см. старую _strip_transition_
-        # filler), и там, где это была единственная попытка модели связать
-        # блоки, конспект оставался вовсе без перехода — аудит 2026-09-12,
-        # пункт 6. Теперь пробуем переписать сам блок; лимит попыток — чтобы
-        # не утроить стоимость генерации на редком случае.
-        filler_hits = {k: _count_transition_filler(v) for k, v in collected.items()}
-        filler_regen = 0
-        for key, hits in sorted(filler_hits.items(), key=lambda kv: -kv[1]):
-            if hits == 0 or filler_regen >= _MAX_FILLER_REGEN:
-                break
-            content = await self.regen_process(state, key, skeleton, locale)
-            if content and _count_transition_filler(content) < hits:
-                collected[key] = _fix_math(content)
-                filler_regen += 1
-        report["filler_regen"] = filler_regen
-        # Итог ПОСЛЕ ретрая — это то, что реально уйдёт читателю.
-        report["filler_hits"] = sum(_count_transition_filler(v) for v in collected.values())
         return collected, skeleton
 
     @staticmethod
@@ -489,22 +344,6 @@ class GenerationPipeline:
 
         _ = get_translator(locale)
 
-        # Оппонент-этап-1: применим ли метод к теме вообще. Если тема невыводима
-        # (конвенция / факт / определение / классификация / причинный механизм
-        # без противоположного) — не строим конспект, отдаём вердикт + обычный
-        # ответ. Судья готового разбора (этап 2) остаётся как был.
-        if settings.APPLICABILITY_GATE_ENABLED:
-            raw_goal = (state.get("target_goal") or "").strip()
-            verdict = await self.check_applicability(raw_goal, locale) if raw_goal else {}
-            blocks = bool(verdict) and not verdict["applicable"] and verdict["type"] in _NOT_DERIVABLE_TYPES
-            if blocks:
-                logger.info("applicability gate: NOT applicable — %s (%r)", verdict["type"], raw_goal)
-                state["applicability"] = verdict
-                yield ("__not_applicable__", verdict)
-                return
-            if verdict:
-                state["applicability"] = verdict  # для метки на конспекте, если confidence низкий
-
         t0 = time.time()
         report: Dict = {"attempts": 0, "regen": 0, "judge": "skipped",
                         "gen_provider": None, "gen_fell_back": False}
@@ -519,6 +358,17 @@ class GenerationPipeline:
 
             collected, skeleton = await self._generate_full_attempt(
                 state, locale, use_skeleton or attempt > 1, failed_attempts, report)
+            
+            if skeleton and skeleton.get("applicable") is False:
+                logger.info("applicability gate: NOT applicable — %r", state.get("target_goal"))
+                verdict = {
+                    "applicable": False,
+                    "reason": skeleton.get("applicability_reason", ""),
+                }
+                state["applicability"] = verdict
+                yield ("__not_applicable__", verdict)
+                return
+
             if not collected:
                 continue
 
@@ -557,25 +407,12 @@ class GenerationPipeline:
             step1_summary = " / ".join(c for k, c in collected.items() if _base_of(k) == "1")[:200]
             failed_attempts.append({"thesis1": step1_summary, "reason": reason})
 
-        collected = {k: _strip_transition_filler(_fix_math(_strip_role_opener(v)))
-                     for k, v in collected.items()}
         for key in sorted(collected.keys(), key=_sort_key):
             content = collected.get(key)
             if content:
                 step_key = f"step{key}"
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
-
-        # Редакторский проход: сшить блоки в одно связное объяснение, снять
-        # жаргон и повторы. Меняет только те блоки, где реально помогло.
-        if len(collected) >= 3:
-            yield ("__status__", _("gen_status_editor"))
-            for key, edited in (await self._gen_editor(state, collected, locale)).items():
-                edited = _strip_transition_filler(_fix_math(edited))
-                collected[key] = edited
-                step_key = f"step{key}"
-                state["steps"][step_key] = {"content": edited, "status": "ready", "author": "ai", "sub_steps": []}
-                yield (step_key, edited)
 
         # Доп. проход: заголовки-суть по шагам + исторические справки (📜) +
         # имя конспекта и итоговый вывод для блока-якоря.
@@ -619,58 +456,18 @@ class GenerationPipeline:
             reasons.append("truncated_blocks")
         if report["regen"] >= 3:
             reasons.append("many_regens")
-        if report.get("filler_hits"):
-            reasons.append("transition_labeled_not_shown")
         report["degraded"] = bool(reasons)
         report["reasons"] = reasons
 
         logger.info(
             "conspect gen: provider=%s fell_back=%s attempts=%d judge=%s regen=%d "
-            "blocks=%d/%d short=%d filler=%d(regen=%d) dur=%.1fs degraded=%s%s",
+            "blocks=%d/%d short=%d dur=%.1fs degraded=%s%s",
             report.get("gen_provider"), report.get("gen_fell_back"), report["attempts"],
             report["judge"], report["regen"], report["got_blocks"], expected_min,
-            short_steps, report.get("filler_hits", 0), report.get("filler_regen", 0),
-            report["duration_s"], report["degraded"],
+            short_steps, report["duration_s"], report["degraded"],
             (" reasons=" + ",".join(reasons)) if reasons else "",
         )
         return report
-
-    async def _gen_editor(self, state: dict, collected: Dict[str, str], locale: str) -> Dict[str, str]:
-        """Редакторский проход поверх готовых Шагов 1–5 (см.
-        редактор_конспекта_промпт.md): сшивает блоки в одно связное объяснение,
-        убирает жаргон алгоритма и повторы. Возвращает {ключ: новый текст}
-        ТОЛЬКО для реально изменённых блоков, прошедших проверку на
-        вменяемость (не пустой, длина не схлопнута и не раздута). Плохой
-        JSON / ошибка → {} (оставляем оригинал — проход необязательный)."""
-        if len(collected) < 3:
-            return {}
-        prompt = await self.context_builder.build_editor_prompt(state, collected)
-        raw = await self.ai_service._generate(
-            prompt, f"Отредактируй конспект. Верни только JSON. Язык: {locale}",
-            {"type": "json_object"}, max_tokens=_MAX_TOKENS["editor"], temperature=0.3,
-            use_cache=False, task="editor",
-        )
-        raw = (raw or "").strip()
-        if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
-            return {}
-        try:
-            parsed = self.sanitizer.extract_json(raw)
-        except ValueError:
-            return {}
-        if not isinstance(parsed, dict):
-            return {}
-        out: Dict[str, str] = {}
-        for key, original in collected.items():
-            edited = parsed.get(key)
-            if not isinstance(edited, str):
-                continue
-            edited = edited.strip()
-            orig = original.strip()
-            if len(edited) < 40 or not (0.7 * len(orig) <= len(edited) <= 1.35 * len(orig)):
-                continue
-            if edited != orig:
-                out[key] = edited
-        return out
 
     async def _gen_postprocess(self, state: dict, collected: Dict[str, str], locale: str):
         """Один проход поверх готовых Шагов 1–5: (notes, titles, meta).

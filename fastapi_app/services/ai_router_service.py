@@ -14,7 +14,6 @@ from fastapi_app.services.generation_pipeline import (
     _MAX_TOKENS,
     _MAX_GENERATION_ATTEMPTS,   # noqa: F401 — реэкспорт для тестов
     _base_of,
-    _strip_role_opener,          # noqa: F401 — реэкспорт для тестов
 )
 
 

@@ -297,19 +297,15 @@ class _AllRateLimited(Exception):
 # бесплатный Groq, Cerebras — первый фолбаг (платный буфер включается ровно
 # когда Groq затроттлился), Gemini — вторым.
 TASK_ROUTES: Dict[str, List[str]] = {
-    # ОСНОВНАЯ генерация конспекта (стрим всех шагов + добор): Cerebras первым.
-    # Причина (2026-09-07): у Groq gpt-oss-120b лимит 8000 токенов/мин на
-    # вход+выход вместе — при длинном выводе (~9k) он сразу 429. Cerebras
-    # ($5 кредит, тот же gpt-oss-120b, кэш префикса) этой стены не имеет.
-    # Gemini flash-lite — второй фолбэк (большой контекст); Groq последним как
-    # backstop (в основном 429, спасает добор по одному процессу).
-    "step_stream": ["Cerebras", "Gemini", "Groq", "GigaChat"],   # стрим шагов конспекта
-    "editor":      ["Cerebras", "Gemini", "Groq", "GigaChat"],   # редакторский проход поверх готовых шагов
-    "what_is":     ["Groq", "Cerebras", "Gemini"],   # «Что это?»
-    "formula":     ["Groq", "Cerebras", "Gemini"],   # парсер формул
-    "check":       ["Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
-    "article":     ["Groq", "Cerebras", "Gemini"],   # длинный вход
-    "tiny":        ["Groq", "Cerebras", "Gemini"],   # мелкие LaTeX-преобразования
+    # ОСНОВНАЯ генерация конспекта (стрим всех шагов + добор):
+    # Этап 6: GigaChat как основная генеративная модель.
+    "step_stream": ["GigaChat", "Cerebras", "Gemini", "Groq"],   # стрим шагов конспекта
+
+    "what_is":     ["GigaChat", "Groq", "Cerebras", "Gemini"],   # «Что это?»
+    "formula":     ["GigaChat", "Groq", "Cerebras", "Gemini"],   # парсер формул
+    "check":       ["GigaChat", "Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
+    "article":     ["GigaChat", "Groq", "Cerebras", "Gemini"],   # длинный вход
+    "tiny":        ["GigaChat", "Groq", "Cerebras", "Gemini"],   # мелкие LaTeX-преобразования
     # мелкие структурные вызовы: Gemini flash-lite первым — он быстрый, чистый
     # JSON, и так минутный лимит Groq не тратится на вспомогательное
     # (на этом ключе рабочий ТОЛЬКО flash-lite, обычный flash сразу 429).
@@ -317,15 +313,12 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # разбора, слабый архитектор (flash-lite) даёт кривой план, который
     # генератор уже не спасёт. Ставим полноразмерный gpt-oss-120b: Groq
     # (бесплатный, задача мелкая — стены 8000 TPM тут нет), затем Cerebras.
-    "skeleton":    ["Groq", "Cerebras", "Gemini"],
-    "history":     ["Gemini", "Groq"],               # исторические справки 📜 (fast=True)
+    "skeleton":    ["GigaChat", "Groq", "Cerebras", "Gemini"],
+    "history":     ["GigaChat", "Gemini", "Groq"],               # исторические справки 📜 (fast=True)
     # судья: сначала модели ВНЕ семейства gpt-oss (Groq/Cerebras), чтобы судья
     # не оценивал выход родственной модели. Gemini flash-lite первым (быстрый,
-    # чистый JSON), GigaChat-2 вторым (тоже вне семейства, пул 40M) — на
-    # gpt-oss (Cerebras/Groq) падаем только если оба недоступны.
-    "judge":       ["Gemini", "GigaChat", "Cerebras", "Groq"],
-    # оппонент-этап-1 (применимость метода) — та же логика, что у судьи.
-    "applicability": ["Gemini", "GigaChat", "Cerebras", "Groq"],
+    # чистый JSON). На gpt-oss (Cerebras/Groq) падаем только если Gemini недоступен.
+    "judge":       ["Gemini", "Cerebras", "Groq"],
 }
 
 
