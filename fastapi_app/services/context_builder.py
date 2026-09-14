@@ -298,29 +298,166 @@ class ContextBuilder:
         prompt += "\nОбязательно верни результат строго в формате JSON: {\"process\": \"<текст>\"}."
         return prompt
 
-    async def build_skeleton_prompt(self, state: dict, failed_attempts: list = None) -> str:
-        """Сборка промпта для генерации скелета конспекта.
-        failed_attempts — список прошлых попыток, отклонённых судьёй (см.
-        build_judge_prompt/судья_противоречия.md): [{"thesis1": "...", "reason": "..."}].
-        Передаётся, чтобы архитектор не повторял тот же неудачный простейший
-        процесс на следующей попытке."""
+    # ------------------------------------------------------------------ #
+    #  Поблочная архитектура скелета (см. gen_skeleton в generation_       #
+    #  pipeline.py, обсуждение 2026-09-14): каждая стадия (Шаг 1-5) видит  #
+    #  ПОЛНОЕ содержимое уже построенных предыдущих шагов, не угадывает    #
+    #  вслепую по списку кандидатов (как в откаченной двухфазной схеме),   #
+    #  и проверяется независимым вызовом-валидатором.                     #
+    # ------------------------------------------------------------------ #
+
+    async def build_step1_prompt(self, state: dict, rejected: list = None) -> str:
+        """Стадия 1 прототипа: найти простейший процесс.
+        rejected — прошлые отклонённые попытки этой стадии: [{"thesis":.., "reason":..}].
+        Тезисы называются явно и их повтор запрещается — иначе модель просто
+        переформулирует обоснование того же тезиса вместо реального поиска
+        другого (см. наблюдение на теме "энтропия": 3 попытки подряд один и
+        тот же тезис "неопределённость состояния", только другими словами)."""
         algo_core = await self._load_algo_core()
-        skeleton_prompt = await self._load_file("9_скелет_конспекта_промпт.md")
+        step1_prompt = await self._load_file("11_шаг1_простейший_промпт.md")
         goal = state.get("target_goal", "Не указана")
-        domain = _detect_domain(goal)
-
-        prompt = f"{algo_core}\n\n"
-        prompt += skeleton_prompt.replace("{goal}", goal)
-        prompt += f"\nДОМЕН: {domain}."
-        if domain == "math_code":
-            prompt += " Для math_code подшаги допустимы только на Шаге 5 при выводе формулы."
+        prompt = f"{algo_core}\n\n" + step1_prompt.replace("{goal}", goal)
         prompt += _reference_block(state)
+        if rejected:
+            prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ ОТКЛОНЕНЫ независимой проверкой:\n"
+            for i, r in enumerate(rejected, 1):
+                prompt += f"  Попытка {i}: тезис «{r.get('thesis', '')}» — отклонено: {r.get('reason', '')}\n"
+            prompt += ("ВЫБЕРИ СУЩЕСТВЕННО ДРУГОЙ тезис простейшего процесса — не тот же самый другими "
+                       "словами и не косметическую правку формулировки отклонённых. Если задача в самой "
+                       "трактовке (например, простейший процесс должен быть конкретнее/абстрактнее) — "
+                       "возьми другой уровень, а не тот же самый узел.")
+        return prompt
 
-        if failed_attempts:
-            prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ НЕ ПРОШЛИ ПРОВЕРКУ — выбери ДРУГОЙ простейший процесс, не повторяй их:\n"
-            for i, attempt in enumerate(failed_attempts, 1):
-                prompt += f"  Попытка {i}: простейший процесс «{attempt.get('thesis1', '')}» — отклонено, причина: {attempt.get('reason', '')}\n"
+    async def build_step1_validation_prompt(self, goal_as_process: str, step1: dict) -> str:
+        """Независимая валидация простейшего процесса (п. 4.3, три условия одновременно)."""
+        algo_core = await self._load_algo_core()
+        val_prompt = await self._load_file("12_валидация_шаг1_промпт.md")
+        tc = step1.get("three_conditions") or {}
+        tc_lines = "\n".join(f"  - {k}: {v}" for k, v in tc.items()) or "  (не заполнено)"
+        prompt = f"{algo_core}\n\n" + val_prompt.replace(
+            "{goal_as_process}", goal_as_process).replace(
+            "{step1_thesis}", step1.get("thesis", "")).replace(
+            "{three_conditions_block}", tc_lines)
+        return prompt
 
+    async def build_step2_prompt(self, step1_thesis: str, goal_as_process: str, rejected: list = None) -> str:
+        """Стадия 2 прототипа: развернуть развитие простейшего процесса,
+        видя его целиком (не список кандидатов вслепую, как в откаченной
+        двухфазной схеме).
+        rejected — прошлые отклонённые попытки: [{"blocks": [thesis,...], "reason":..}]."""
+        algo_core = await self._load_algo_core()
+        step2_prompt = await self._load_file("13_шаг2_развитие_промпт.md")
+        prompt = f"{algo_core}\n\n" + step2_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace("{goal_as_process}", goal_as_process)
+        if rejected:
+            prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ ОТКЛОНЕНЫ независимой проверкой:\n"
+            for i, r in enumerate(rejected, 1):
+                blocks_str = ", ".join(r.get("blocks", []))
+                prompt += f"  Попытка {i}: блоки [{blocks_str}] — отклонено: {r.get('reason', '')}\n"
+            prompt += ("Построй развитие ЗАНОВО с учётом этого — не повторяй те же блоки с косметическими "
+                       "правками, при необходимости возьми другие узлы или другую иерархию.")
+        return prompt
+
+    async def build_step2_validation_prompt(self, step1_thesis: str, goal_as_process: str, blocks: list) -> str:
+        """Независимая валидация развития (иерархия абстрактное→конкретное, п. 4.4.1)."""
+        algo_core = await self._load_algo_core()
+        val_prompt = await self._load_file("14_валидация_шаг2_промпт.md")
+        lines = []
+        for b in blocks:
+            lines.append(f"- {b.get('id', '?')} (растёт из {b.get('grows_from', 'step1')}): {b.get('thesis', '')}")
+        blocks_block = "\n".join(lines)
+        prompt = f"{algo_core}\n\n" + val_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace(
+            "{goal_as_process}", goal_as_process).replace(
+            "{blocks_block}", blocks_block)
+        return prompt
+
+    @staticmethod
+    def _blocks_block(blocks: list) -> str:
+        lines = [f"- {b.get('id', '?')} (растёт из {b.get('grows_from', 'step1')}): {b.get('thesis', '')}"
+                 for b in blocks]
+        return "\n".join(lines)
+
+    async def build_step3_prompt(self, step1_thesis: str, step2_blocks: list, rejected: list = None) -> str:
+        """Стадия 3 прототипа: найти противоположный процесс, видя Шаг 1 и
+        весь уже провалидированный Шаг 2 целиком (не угадывая по списку
+        кандидатов, как в откаченной двухфазной схеме)."""
+        algo_core = await self._load_algo_core()
+        step3_prompt = await self._load_file("15_шаг3_противоположный_промпт.md")
+        prompt = f"{algo_core}\n\n" + step3_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace("{step2_block}", self._blocks_block(step2_blocks))
+        if rejected:
+            prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ ОТКЛОНЕНЫ независимой проверкой:\n"
+            for i, r in enumerate(rejected, 1):
+                prompt += f"  Попытка {i}: «{r.get('thesis', '')}» — отклонено: {r.get('reason', '')}\n"
+            prompt += "Найди СУЩЕСТВЕННО ДРУГОЙ процесс — не тот же самый другими словами."
+        return prompt
+
+    async def build_step3_validation_prompt(self, step1_thesis: str, step2_blocks: list, step3: dict) -> str:
+        """Независимая валидация противоположного процесса (тест исключения, п. 4.5.1–4.5.2)."""
+        algo_core = await self._load_algo_core()
+        val_prompt = await self._load_file("16_валидация_шаг3_промпт.md")
+        prompt = f"{algo_core}\n\n" + val_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace(
+            "{step2_block}", self._blocks_block(step2_blocks)).replace(
+            "{step3_thesis}", step3.get("thesis", "")).replace(
+            "{step3_obhoditsya}", step3.get("обходится_без", ""))
+        return prompt
+
+    async def build_step4_prompt(self, step1_thesis: str, step3: dict, rejected: list = None) -> str:
+        """Стадия 4 прототипа: построить противоречие (единство Шага 1 и Шага 3, п. 4.6)."""
+        algo_core = await self._load_algo_core()
+        step4_prompt = await self._load_file("17_шаг4_противоречие_промпт.md")
+        prompt = f"{algo_core}\n\n" + step4_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace(
+            "{step3_thesis}", step3.get("thesis", "")).replace(
+            "{step3_obhoditsya}", step3.get("обходится_без", ""))
+        if rejected:
+            prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ ОТКЛОНЕНЫ независимой проверкой:\n"
+            for i, r in enumerate(rejected, 1):
+                prompt += f"  Попытка {i}: «{r.get('thesis', '')}» — отклонено: {r.get('reason', '')}\n"
+            prompt += "Построй противоречие ЗАНОВО, устранив именно эту проблему."
+        return prompt
+
+    async def build_step4_validation_prompt(self, step1_thesis: str, step3_thesis: str, step4: dict) -> str:
+        """Независимая валидация противоречия (тест двусторонней необходимости, п. 4.6)."""
+        algo_core = await self._load_algo_core()
+        val_prompt = await self._load_file("18_валидация_шаг4_промпт.md")
+        prompt = f"{algo_core}\n\n" + val_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace(
+            "{step3_thesis}", step3_thesis).replace(
+            "{step4_thesis}", step4.get("thesis", "")).replace(
+            "{step4_nesovmestimost}", step4.get("несовместимость", "")).replace(
+            "{step4_neobhodimost_a}", step4.get("необходимость_A", "")).replace(
+            "{step4_neobhodimost_b}", step4.get("необходимость_B", ""))
+        return prompt
+
+    async def build_step5_prompt(self, step1_thesis: str, step3_thesis: str, step4: dict, rejected: list = None) -> str:
+        """Стадия 5 прототипа: найти разрешение противоречия (п. 4.7–4.7.2)."""
+        algo_core = await self._load_algo_core()
+        step5_prompt = await self._load_file("19_шаг5_разрешение_промпт.md")
+        prompt = f"{algo_core}\n\n" + step5_prompt.replace(
+            "{step1_thesis}", step1_thesis).replace(
+            "{step3_thesis}", step3_thesis).replace(
+            "{step4_thesis}", step4.get("thesis", "")).replace(
+            "{step4_nesovmestimost}", step4.get("несовместимость", ""))
+        if rejected:
+            prompt += "\n\nПРЕДЫДУЩИЕ ПОПЫТКИ ОТКЛОНЕНЫ независимой проверкой:\n"
+            for i, r in enumerate(rejected, 1):
+                prompt += f"  Попытка {i}: «{r.get('thesis', '')}» — отклонено: {r.get('reason', '')}\n"
+            prompt += "Найди ЗАНОВО разрешение, устранив именно эту проблему."
+        return prompt
+
+    async def build_step5_validation_prompt(self, step4: dict, step5: dict) -> str:
+        """Независимая валидация разрешения (тест типа разрешения, п. 4.7.2)."""
+        algo_core = await self._load_algo_core()
+        val_prompt = await self._load_file("20_валидация_шаг5_промпт.md")
+        prompt = f"{algo_core}\n\n" + val_prompt.replace(
+            "{step4_thesis}", step4.get("thesis", "")).replace(
+            "{step4_nesovmestimost}", step4.get("несовместимость", "")).replace(
+            "{step5_thesis}", step5.get("thesis", "")).replace(
+            "{step5_tip}", step5.get("тип_разрешения", "")).replace(
+            "{step5_skachok}", step5.get("скачок", ""))
         return prompt
 
     async def build_judge_prompt(self, steps: dict) -> str:

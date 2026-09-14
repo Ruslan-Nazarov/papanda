@@ -23,8 +23,11 @@ class Settings(BaseSettings):
     # Бесплатный каталог OpenRouter быстро меняется: модели уходят из :free в
     # платные (тогда 404 "unavailable for free"). Если провайдер начал падать —
     # проверить https://openrouter.ai/models?fmt=table&input_modalities=text&max_price=0
-    # и обновить строку. Проверено рабочим 2026-09-06.
-    OPENROUTER_MODEL: str = "minimax/minimax-m3:free"
+    # и обновить строку. minimax-m3:free ушла в платную 2026-09-14 (404) —
+    # заменена на nemotron (проверено рабочим 2026-09-14). Компромисс: это
+    # reasoning-модель и тратит часть ответа на раздумья даже над коротким
+    # запросом — приемлемо, т.к. это последний провайдер в кольце фолбэков.
+    OPENROUTER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
     # SambaNova / HuggingFace выпилены из кольца (402 / мёртвый эндпоинт),
     # строки оставлены на случай возврата.
     SAMBANOVA_MODEL: str = "Meta-Llama-3.3-70B-Instruct"
