@@ -65,15 +65,24 @@ async def test_pinned_step_is_rewritten_with_question_not_left_untouched():
 async def test_single_step_regen_emits_multiple_blocks_for_step2():
     """D2: перегенерация Шага 2 в режиме «по шагам» отдаёт несколько блоков
     step2.k, если скелет запланировал несколько процессов."""
-    skeleton_json = (
-        '{"step2": {"thesis": "развитие А", '
-        '"sub_steps": [{"thesis": "развитие Б"}, {"thesis": "развитие В"}]}}'
+    from test_ai_router_judge import _stage_ok_responses, _text_response
+
+    # Три блока на Шаге 2 (главный + два sub_steps) — та же поблочная схема,
+    # что и в gen_skeleton, только с тремя процессами вместо двух.
+    stages = dict(_stage_ok_responses(""))
+    stages["Выполни Шаг 2"] = (
+        '{"blocks": ['
+        '{"id": "b1", "thesis": "развитие А", "grows_from": "step1", "разворачивает": "x", "обратный_ход": "y"}, '
+        '{"id": "b2", "thesis": "развитие Б", "grows_from": "b1", "разворачивает": "x", "обратный_ход": "y"}, '
+        '{"id": "b3", "thesis": "развитие В", "grows_from": "b1", "разворачивает": "x", "обратный_ход": "y"}'
+        ']}'
     )
 
-    async def _gen(sys_prompt, user_msg, *a, **k):
-        if "sub_steps" in sys_prompt or "скелет" in user_msg.lower():
-            return skeleton_json
-        return '{"process": "текст очередного развивающего процесса, достаточно длинный"}'
+    async def _gen(sys_prompt, user_msg="", *a, **k):
+        for marker, response in stages.items():
+            if marker in user_msg:
+                return response
+        return _text_response(user_msg, "ok")
 
     ai_service = MagicMock()
     ai_service._generate = AsyncMock(side_effect=_gen)
@@ -93,31 +102,23 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2():
 
 
 @pytest.mark.asyncio
-async def test_history_pass_emits_titles_and_notes():
+async def test_postprocess_pass_emits_titles_and_meta():
     """После Шагов 1–5 и судьи идёт доп. проход — события __titles__
-    (заголовок-суть на каждый ключ) и __history_notes__ (справки 📜)."""
-    _ALL_STEPS = (
-        "===ШАГ1===\nпростейший процесс достаточной длины для парсера\n"
-        "===ШАГ2===\nразвитие процесса достаточной длины для парсера\n"
-        "===ШАГ3===\nпротивоположность достаточной длины для парсера\n"
-        "===ШАГ4===\nпротиворечие достаточной длины для парсера тут\n"
-        "===ШАГ5===\nразрешение достаточной длины для парсера тут же\n"
-    )
-
-    ai_service = MagicMock()
+    (заголовок-суть на каждый ключ) и __note_meta__ (имя конспекта + вывод).
+    Историческая справка убрана из этого прохода (см. коммит 810c393).
+    use_skeleton=False — путь "без плана" (regen_step по умолчанию)."""
+    from test_ai_router_judge import _text_response
 
     async def _gen(sys_prompt, user_prompt="", *_a, **_k):
         if "titles" in user_prompt or "anchor_summary" in user_prompt:
             return ('{"titles": {"1": "как всё началось", "5": "чем разрешилось"}, '
-                    '"notes": {"1": "в древности так не считали", "4": "оформилось позже"}, '
                     '"note_title": "Диффузия и выравнивание", '
                     '"anchor_title": "Диффузия выравнивает концентрацию", '
                     '"anchor_summary": "Частицы переходят из плотных мест в разреженные, пока не станет ровно."}')
-        if "is_valid" in sys_prompt:
+        if "Оцени конспект" in user_prompt:
             return '{"is_valid": true, "reason": ""}'
-        if "Сгенерируй шаги" in user_prompt:
-            return _ALL_STEPS
-        return "{}"
+        return _text_response(user_prompt, "ok")
+    ai_service = MagicMock()
     ai_service._generate = AsyncMock(side_effect=_gen)
 
     router = ConspectusRouter(
@@ -132,9 +133,6 @@ async def test_history_pass_emits_titles_and_notes():
             events[key] = content
 
     assert events["__titles__"] == {"1": "как всё началось", "5": "чем разрешилось"}
-    assert events["__history_notes__"] == {"1": "в древности так не считали",
-                                           "4": "оформилось позже"}
-    assert state["history_notes"]["1"] == "в древности так не считали"
     assert state["step_titles"]["5"] == "чем разрешилось"
     assert events["__note_meta__"] == {
         "note_title": "Диффузия и выравнивание",

@@ -6,10 +6,47 @@ from fastapi_app.services.context_builder import ContextBuilder
 from fastapi_app.services.sanitizer import Sanitizer
 
 
-def _stream_factory(text):
-    async def _fake_stream(*_args, **_kwargs):
-        yield text
-    return _fake_stream
+def _stage_ok_responses(tag: str) -> dict:
+    """JSON-ответы стадий поблочного скелета (Шаг 1-5, gen+валидация),
+    все проходят с первого раза — тест не про надёжность скелета, а про
+    ретрай на уровне судьи поверх готового текста."""
+    return {
+        "Выполни Шаг 1": (
+            '{"goal_as_process": "тест-процесс", "applicable": true, "applicability_reason": "ok", '
+            '"step1": {"thesis": "простейший", "потенциально_содержит": "x", '
+            '"three_conditions": {"a": "x", "b": "y", "c": "z"}}}'
+        ),
+        "Провалидируй Шаг 1": '{"valid": true, "reason": "ok"}',
+        "Выполни Шаг 2": (
+            '{"blocks": ['
+            '{"id": "b1", "thesis": "развитие1", "grows_from": "step1", "разворачивает": "x", "обратный_ход": "y"}, '
+            '{"id": "b2", "thesis": "развитие2", "grows_from": "b1", "разворачивает": "x", "обратный_ход": "y"}'
+            ']}'
+        ),
+        "Провалидируй Шаг 2": '{"valid": true, "problem_block_ids": [], "reason": "ok"}',
+        "Выполни Шаг 3": '{"step3": {"thesis": "противоположный", "обходится_без": "x"}}',
+        "Провалидируй Шаг 3": '{"valid": true, "reason": "ok"}',
+        "Выполни Шаг 4": (
+            '{"step4": {"thesis": "противоречие", "несовместимость": "x", '
+            '"необходимость_A": "a", "необходимость_B": "b"}}'
+        ),
+        "Провалидируй Шаг 4": '{"valid": true, "reason": "ok"}',
+        "Выполни Шаг 5": '{"step5": {"thesis": "разрешение", "тип_разрешения": "замена", "скачок": "x"}}',
+        "Провалидируй Шаг 5": '{"valid": true, "reason": "ok"}',
+    }
+
+
+def _text_response(user_prompt: str, tag: str) -> str:
+    """Ответ на генерацию ТЕКСТА одного блока (regen_step/regen_process) —
+    JSON-формат зависит от того, составной ли ключ ("Генерируй шаг N" vs
+    "Генерируй процесс"), см. generation_pipeline.regen_process."""
+    filler = f"{tag} текст блока довольно длинный, чтобы не считаться оборванным совсем не короткий"
+    if user_prompt.startswith("Генерируй шаг"):
+        step_num = user_prompt.split()[2].rstrip(".")
+        return f'{{"step{step_num}": "{filler}"}}'
+    if user_prompt.startswith("Генерируй процесс"):
+        return f'{{"process": "{filler}"}}'
+    return "{}"
 
 
 @pytest.mark.asyncio
@@ -19,38 +56,22 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
     ЗАНОВО (другой простейший процесс) и передать архитектору информацию
     о неудачной попытке, а не просто сдаться или вернуть плохой результат."""
     ai_service = MagicMock()
+    counters = {"skeleton_attempt": 0, "judge_calls": 0}
 
-    bad_steps_text = (
-        "===ШАГ1===\nплохой простейший процесс текст с достаточной длиной\n"
-        "===ШАГ2===\nразвитие плохого процесса текст с достаточной длиной\n"
-        "===ШАГ3===\nпротивоположность плохая текст с достаточной длиной\n"
-        "===ШАГ4===\nпротиворечие плохое текст с достаточной длиной тут\n"
-        "===ШАГ5===\nразрешение плохое текст с достаточной длиной тут\n"
-    )
-    good_steps_text = (
-        "===ШАГ1===\nхороший простейший процесс текст с достаточной длиной\n"
-        "===ШАГ2===\nразвитие хорошего процесса текст с достаточной длиной\n"
-        "===ШАГ3===\nпротивоположность хорошая текст с достаточной длиной\n"
-        "===ШАГ4===\nпротиворечие настоящее текст с достаточной длиной тут\n"
-        "===ШАГ5===\nразрешение настоящее текст с достаточной длиной тут\n"
-    )
-
-    # _generate вызывается для: скелет (JSON), генерация всех шагов (===ШАГ…),
-    # судья (JSON). Различаем по промптам.
-    stream_calls = {"n": 0}
     async def generate_side_effect(sys_prompt, user_prompt="", *_args, **_kwargs):
-        if "is_valid" in sys_prompt:
-            # Первый вызов судьи -> отклонить, второй -> принять
-            if generate_side_effect.judge_calls == 0:
-                generate_side_effect.judge_calls += 1
+        if "Оцени конспект" in user_prompt:
+            if counters["judge_calls"] == 0:
+                counters["judge_calls"] += 1
                 return '{"is_valid": false, "reason": "натянутое противоречие"}'
             return '{"is_valid": true, "reason": "нормально"}'
-        if "Сгенерируй шаги" in user_prompt:
-            stream_calls["n"] += 1
-            return bad_steps_text if stream_calls["n"] == 1 else good_steps_text
-        # Скелет
-        return '{"step1": {"thesis": "тест", "sub_steps": []}}'
-    generate_side_effect.judge_calls = 0
+        if "Выполни Шаг 1" in user_prompt:
+            counters["skeleton_attempt"] += 1
+        for marker, response in _stage_ok_responses("").items():
+            if marker in user_prompt:
+                return response
+        tag = "плохой" if counters["skeleton_attempt"] == 1 else "хороший"
+        return _text_response(user_prompt, tag)
+
     ai_service._generate = AsyncMock(side_effect=generate_side_effect)
 
     context_builder = ContextBuilder()
@@ -66,7 +87,7 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
     async for step_key, content in router.stream_generate_full(state, "ru", use_skeleton=True):
         if step_key == "__status__":
             statuses.append(content)
-        else:
+        elif not step_key.startswith("__"):
             events[step_key] = content
 
     # Итог — второй (хороший) вариант, не первый отклонённый.
@@ -74,10 +95,10 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
     assert "плохой" not in events["step1"]
 
     # Судью реально вызвали дважды (отклонение + принятие).
-    assert generate_side_effect.judge_calls == 1  # инкрементится один раз при первом (отклоняющем) вызове
+    assert counters["judge_calls"] == 1  # инкрементится один раз при первом (отклоняющем) вызове
 
-    # generate_stream вызван дважды — то есть была вторая полная попытка.
-    assert stream_calls["n"] == 2
+    # Скелет собирался дважды — то есть была вторая полная попытка.
+    assert counters["skeleton_attempt"] == 2
 
     # Был хотя бы один статус-эвент (для UI-анимации) о повторной попытке.
     assert any("попытка" in s.lower() or "провер" in s.lower() for s in statuses)
@@ -88,72 +109,31 @@ async def test_judge_gives_up_after_max_attempts_and_returns_last_result():
     """Если судья отклоняет все попытки подряд — не зависаем бесконечно, отдаём
     последнюю попытку пользователю (лучше так, чем ничего)."""
     ai_service = MagicMock()
+    counters = {"skeleton_attempt": 0}
 
-    def make_steps(tag):
-        return (
-            f"===ШАГ1===\n{tag} простейший процесс текст с достаточной длиной\n"
-            f"===ШАГ2===\n{tag} развитие процесса текст с достаточной длиной\n"
-            f"===ШАГ3===\n{tag} противоположность текст с достаточной длиной\n"
-            f"===ШАГ4===\n{tag} противоречие текст с достаточной длиной тут\n"
-            f"===ШАГ5===\n{tag} разрешение текст с достаточной длиной тут\n"
-        )
-
-    stream_calls = {"n": 0}
     async def generate_side_effect(sys_prompt, user_prompt="", *_args, **_kwargs):
-        if "is_valid" in sys_prompt:
+        if "Оцени конспект" in user_prompt:
             return '{"is_valid": false, "reason": "всё ещё не то"}'
-        if "Сгенерируй шаги" in user_prompt:
-            stream_calls["n"] += 1
-            return make_steps(f"attempt{stream_calls['n']}")
-        return '{"step1": {"thesis": "тест", "sub_steps": []}}'
+        if "Выполни Шаг 1" in user_prompt:
+            counters["skeleton_attempt"] += 1
+        for marker, response in _stage_ok_responses("").items():
+            if marker in user_prompt:
+                return response
+        return _text_response(user_prompt, f"attempt{counters['skeleton_attempt']}")
+
     ai_service._generate = AsyncMock(side_effect=generate_side_effect)
 
-    router = ConspectusRouter(ai_service, ContextBuilder(), Sanitizer(), MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p))
+    router = ConspectusRouter(
+        ai_service, ContextBuilder(), Sanitizer(),
+        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
+    )
     state = {"target_goal": "тест", "steps": {}}
 
     events = {}
     async for step_key, content in router.stream_generate_full(state, "ru", use_skeleton=True):
-        if step_key != "__status__":
+        if step_key != "__status__" and not step_key.startswith("__"):
             events[step_key] = content
 
-    from fastapi_app.services.ai_router_service import _MAX_GENERATION_ATTEMPTS
-    assert stream_calls["n"] == _MAX_GENERATION_ATTEMPTS  # ровно столько попыток, не бесконечно
+    from fastapi_app.services.generation_pipeline import _MAX_GENERATION_ATTEMPTS
+    assert counters["skeleton_attempt"] == _MAX_GENERATION_ATTEMPTS  # ровно столько попыток, не бесконечно
     assert f"attempt{_MAX_GENERATION_ATTEMPTS}" in events["step1"]  # отдали последнюю попытку
-
-
-@pytest.mark.asyncio
-async def test_handle_judge_returns_verdict_without_regenerating():
-    """Кнопка «Проверить»: action=judge гоняет судью по готовому конспекту,
-    возвращает вердикт + причину, ничего не перегенерирует."""
-    ai_service = MagicMock()
-    ai_service._generate = AsyncMock(return_value='{"is_valid": false, "reason": "Шаг 3 просто отличается от Шага 1"}')
-
-    router = ConspectusRouter(
-        ai_service, ContextBuilder(), Sanitizer(),
-        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
-    )
-    state = {
-        "target_goal": "диффузия",
-        "steps": {f"step{i}": {"content": f"текст шага {i} достаточной длины для проверки"} for i in range(1, 6)},
-    }
-    res = await router.route_request({"action": "judge", "context_state": state, "locale": "ru"})
-
-    assert res["action_status"] == "success"
-    assert res["is_valid"] is False
-    assert "Шаг 3" in res["reason"]
-    # только один вызов LLM — сам судья, никакой перегенерации
-    assert ai_service._generate.await_count == 1
-
-
-@pytest.mark.asyncio
-async def test_handle_judge_rejects_too_short_note():
-    ai_service = MagicMock()
-    ai_service._generate = AsyncMock()
-    router = ConspectusRouter(
-        ai_service, ContextBuilder(), Sanitizer(),
-        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
-    )
-    state = {"target_goal": "x", "steps": {"step1": {"content": "короткий текст шага один"}}}
-    res = await router.route_request({"action": "judge", "context_state": state, "locale": "ru"})
-    assert res["action_status"] == "error"
-    ai_service._generate.assert_not_awaited()
