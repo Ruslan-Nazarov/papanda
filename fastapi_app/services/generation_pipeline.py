@@ -391,6 +391,25 @@ class GenerationPipeline:
 
             # --- Сборка в старом формате (step1..step5), совместимом с остальным конвейером ---
             main_block, sub_blocks = blocks[0], blocks[1:]
+            # Сохраняем реальную иерархию (кто из кого растёт, п. 4.4.1) —
+            # id→ключ, чтобы "растёт_из" можно было резолвить в конкретный
+            # ключ шага ("2.2") при генерации ТЕКСТА, а не терять связь на
+            # плоском списке sub_steps (см. обсуждение 2026-09-14, Этап 4.2
+            # плана). "2.1" — главный тезис (blocks[0]), "2.2", "2.3", ... —
+            # sub_steps по порядку (см. expected_step_keys/thesis_for_key).
+            id_to_key = {main_block.get("id"): "2.1"}
+            for idx, b in enumerate(sub_blocks, start=2):
+                id_to_key[b.get("id")] = f"2.{idx}"
+
+            sub_steps_out = []
+            for b in sub_blocks:
+                entry = {"thesis": b.get("thesis", ""), "разворачивает": b.get("разворачивает", ""),
+                         "обратный_ход": b.get("обратный_ход", "")}
+                parent_key = id_to_key.get(b.get("grows_from"))
+                if parent_key:
+                    entry["растёт_из"] = parent_key
+                sub_steps_out.append(entry)
+
             skeleton = {
                 "goal_as_process": goal_as_process,
                 "applicable": True,
@@ -399,11 +418,7 @@ class GenerationPipeline:
                           "потенциально_содержит": step1.get("потенциально_содержит", "")},
                 "step2": {
                     "thesis": main_block.get("thesis", ""),
-                    "sub_steps": [
-                        {"thesis": b.get("thesis", ""), "разворачивает": b.get("разворачивает", ""),
-                         "обратный_ход": b.get("обратный_ход", "")}
-                        for b in sub_blocks
-                    ],
+                    "sub_steps": sub_steps_out,
                     "разворачивает": main_block.get("разворачивает", ""),
                     "обратный_ход": main_block.get("обратный_ход", ""),
                 },
@@ -555,6 +570,14 @@ class GenerationPipeline:
         # состояние пользователя промежуточным текстом отклонённой попытки.
         scratch_state = dict(state)
         scratch_state["steps"] = {}
+        # Полный текст каждого уже сгенерированного процесса по его ключу
+        # ("2.1", "2.2", ...) — отдельно от scratch_state["steps"] (там
+        # только АГРЕГАТ по базовому шагу). Нужен build_process_prompt,
+        # чтобы конкретный процесс мог получить РЕАЛЬНЫЙ текст своего
+        # конкретного родителя (поле "растёт_из" в скелете), а не тезис в
+        # одну строку — иначе иерархия абстрактное→конкретное (п. 4.4.1)
+        # передаётся в текст только по названию, а не по содержанию.
+        scratch_state["_process_texts"] = {}
 
         keys = expected_step_keys(skeleton) if skeleton else [str(i) for i in range(1, 6)]
         bases_order = []
@@ -586,6 +609,7 @@ class GenerationPipeline:
                     content = _fix_math(content)
                     collected[key] = content
                     parts.append(content)
+                    scratch_state["_process_texts"][key] = content
             if parts:
                 scratch_state["steps"][f"step{base}"] = {
                     "content": "\n\n".join(parts), "status": "ready", "author": "ai", "sub_steps": [],

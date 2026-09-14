@@ -269,10 +269,22 @@ class ContextBuilder:
         previous_context = self._compile_previous_steps(state, base_step)
         domain = _detect_domain(goal, previous_context)
 
+        # Иерархия абстрактное→конкретное (п. 4.4.1): если у этого процесса
+        # есть КОНКРЕТНЫЙ родитель среди соседних процессов того же шага
+        # (поле "растёт_из" в скелете — см. gen_skeleton), даём генератору
+        # его РЕАЛЬНЫЙ уже написанный текст (не тезис в одну строку) — иначе
+        # текст пишется без знания, из кого именно он растёт, и связь между
+        # соседними процессами остаётся угаданной, а не выстроенной.
+        parent_key = _entry_for_key(skeleton, key).get("растёт_из") if skeleton else None
+        parent_text = (state.get("_process_texts") or {}).get(parent_key) if parent_key else None
+
         siblings = [k for k in expected_step_keys(skeleton) if k.split(".")[0] == str(base_step) and k != key]
         sibling_block = ""
         if siblings:
-            sibling_lines = "\n".join(f"  - {thesis_for_key(skeleton, k)}" for k in siblings)
+            sibling_lines = "\n".join(
+                f"  - {thesis_for_key(skeleton, k)}" + (" (это твой родитель, см. ниже)" if k == parent_key else "")
+                for k in siblings
+            )
             sibling_block = f"\nДРУГИЕ ПРОЦЕССЫ ЭТОГО ЖЕ ШАГА (не повторяй их содержание, покажи связь):\n{sibling_lines}\n"
 
         prompt = f"{main_prompt}\n\n{step_generator_prompt}\n\n"
@@ -283,6 +295,9 @@ class ContextBuilder:
                        "Численные примеры реальные. Формулы ТОЛЬКО в долларах: $$…$$ для отдельной строки, $…$ внутри предложения. "
                        "НЕ используй \\[ \\], \\( \\), квадратные скобки [ ] или обратные кавычки для формул.\n")
         prompt += f"УЖЕ ЗАПОЛНЕННЫЙ КОНТЕКСТ:\n{previous_context}\n"
+        if parent_text:
+            prompt += (f"\nЭТОТ ПРОЦЕСС — ПРЯМОЕ ПРОДОЛЖЕНИЕ уже написанного процесса «{thesis_for_key(skeleton, parent_key)}» "
+                       f"(конкретнее его, а не простейшего процесса напрямую):\n{parent_text}\n")
         prompt += f"ЗАДАЧА: Сгенерируй текст строго для Шага {base_step}, процесс «{thesis_for_key(skeleton, key)}».\n"
         hint = transition_hint_for_key(skeleton, key)
         if hint:
