@@ -13,7 +13,7 @@ from typing import Dict
 
 from fastapi_app.config import settings
 from fastapi_app.services.context_builder import (
-    expected_step_keys, thesis_for_key, transition_hint_for_key,
+    expected_step_keys, thesis_for_key, transition_hint_for_key, _detect_domain,
 )
 from fastapi_app.services.llm_provider import get_last_call_info
 from fastapi_app.i18n import get_translator
@@ -29,6 +29,16 @@ _MIN_STEP_CHARS = 120  # короче — процесс, похоже, обор
 # Ключ шага: "1".."5" (один процесс) или "N.k" (несколько процессов на шаге,
 # см. expected_step_keys/9_скелет_конспекта_промпт.md).
 _STEP_MARK = re.compile(r"===\s*ШАГ\s*([1-5](?:\.\d+)?)\s*===")
+
+# Этап 4.3 плана: на количественном домене Шаг 5 должен доходить до числа с
+# единицей измерения, а не оставаться на уровне общей формулы/декларации.
+# Список единиц не исчерпывающий (см. план_радикального_улучшения.md п. 4.3:
+# "число с единицей" — достаточный, не обязательно ИСЧЕРПЫВАЮЩИЙ признак).
+_NUMBER_UNIT_RE = re.compile(
+    r"\d[\d\s.,]*\s*(°|%|км|м²|м³|мм|см|м\b|кг|г\b|мг|т\b|с\b|мс|мин|ч\b|сут|лет|год|дн|"
+    r"руб|\$|€|Дж|кДж|Н\b|Вт|кВт|Гц|Па|В\b|А\b|Ом|К\b|моль|л\b|мл)",
+    re.IGNORECASE,
+)
 
 
 def _sort_key(key: str) -> list:
@@ -605,6 +615,28 @@ class GenerationPipeline:
                 if info.get("provider"):
                     providers.append(info["provider"])
                 fell_back_any = fell_back_any or bool(info.get("fell_back"))
+                if content and base == "5":
+                    # Этап 4.3 плана: на количественном домене Шаг 5 должен
+                    # довести разрешение до конкретного числа с единицей, а
+                    # не остаться декларацией/голой формулой. Проверяем
+                    # только здесь (не весь текст) — это дешевле и точнее,
+                    # чем гадать по всему конспекту постфактум.
+                    goal_for_domain = ((skeleton.get("goal_as_process") if skeleton else "")
+                                       or state.get("target_goal", ""))
+                    domain = _detect_domain(goal_for_domain, *collected.values(), content)
+                    if domain == "math_code" and not _NUMBER_UNIT_RE.search(content):
+                        logger.info("Шаг5: нет числового примера на количественном домене, "
+                                    "перегенерирую с явным требованием, goal=%r", state.get("target_goal"))
+                        prompt5 = await self.context_builder.build_step_prompt(scratch_state, 5, skeleton=skeleton)
+                        prompt5 += ("\n\nОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ: доведи разрешение до конкретного "
+                                    "числового примера с единицей измерения (не общая формула, а число).")
+                        retry = await self.gen_json(
+                            prompt5, f"Генерируй шаг 5 с числовым примером. Язык: {locale}",
+                            "step5", _MAX_TOKENS["step5"],
+                        )
+                        if retry:
+                            content = retry
+                            regen += 1
                 if content:
                     content = _fix_math(content)
                     collected[key] = content
