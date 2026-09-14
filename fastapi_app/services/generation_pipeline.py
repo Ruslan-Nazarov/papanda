@@ -112,6 +112,13 @@ _MAX_GENERATION_ATTEMPTS = 2
 # 13k токенов — но большинство тем проходят стадии с 1-2 попыток.
 _MAX_STAGE_RETRIES = 3
 _STAGE_MAX_TOKENS = 3000
+# Если для выбранного Шага 1 не нашлось противоположного (Шаг 3) — или
+# сломалась любая из следующих стадий — пробуем ДРУГОЙ простейший процесс,
+# а не проваливаем весь скелет молча (см. gen_skeleton, наблюдение
+# 2026-09-14: "теорема Пифагора" дважды подряд получала один и тот же
+# Шаг 1 и там же застревала). 2 попытки плана — каждая уже сама по себе
+# состоит из нескольких стадий с ретраями, дороже не поднимаем.
+_MAX_PLAN_ATTEMPTS = 2
 
 
 def _validate_skeleton(skeleton: dict, raw_goal: str) -> str:
@@ -232,166 +239,191 @@ class GenerationPipeline:
         отклонённых тезисов Шага 1, чтобы архитектор не повторял тот же
         простейший процесс и на этом уровне ретрая тоже."""
         raw_goal = state.get("target_goal", "")
-
-        # --- Шаг 1: простейший процесс ---
-        step1 = None
-        goal_as_process = ""
-        applicability_reason = ""
         rejected1 = [{"thesis": a.get("thesis1", ""), "reason": a.get("reason", "")} for a in (failed_attempts or [])]
-        for attempt in range(1, _MAX_STAGE_RETRIES + 1):
-            prompt1 = await self.context_builder.build_step1_prompt(state, rejected=rejected1)
-            result1 = await self._gen_stage_json(prompt1, f"Выполни Шаг 1. Верни только JSON. Язык: {locale}")
-            if result1 is None:
-                logger.warning("gen_skeleton Шаг1: JSON не распарсился (попытка %d/%d), goal=%r",
-                                attempt, _MAX_STAGE_RETRIES, raw_goal)
-                rejected1.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
-                continue
-            if result1.get("applicable") is False:
-                return result1  # намеренно неполный скелет — гейт применимости сработал
-            goal_as_process = result1.get("goal_as_process", "")
-            applicability_reason = result1.get("applicability_reason", "")
-            candidate1 = result1.get("step1") or {}
-            val1_prompt = await self.context_builder.build_step1_validation_prompt(goal_as_process, candidate1)
-            val1 = await self._gen_stage_json(val1_prompt, f"Провалидируй Шаг 1. Верни только JSON. Язык: {locale}")
-            if val1 and val1.get("valid"):
-                step1 = candidate1
-                break
-            reason = (val1 or {}).get("reason", "валидатор не смог ответить")
-            logger.warning("gen_skeleton Шаг1: отклонён (попытка %d/%d), goal=%r, thesis=%r: %s",
-                            attempt, _MAX_STAGE_RETRIES, raw_goal, candidate1.get("thesis", ""), reason)
-            rejected1.append({"thesis": candidate1.get("thesis", ""), "reason": reason})
-        if not step1:
-            logger.warning("gen_skeleton: Шаг1 не прошёл ни одной попытки, goal=%r", raw_goal)
-            return {}
 
-        # --- Шаг 2: развитие простейшего процесса ---
-        blocks = None
-        rejected2 = []
-        for attempt in range(1, _MAX_STAGE_RETRIES + 1):
-            prompt2 = await self.context_builder.build_step2_prompt(
-                step1.get("thesis", ""), goal_as_process, rejected=rejected2)
-            result2 = await self._gen_stage_json(prompt2, f"Выполни Шаг 2. Верни только JSON. Язык: {locale}")
-            if result2 is None:
-                rejected2.append({"blocks": [], "reason": "предыдущий ответ не был валидным JSON"})
-                continue
-            candidate2 = [b for b in (result2.get("blocks") or []) if isinstance(b, dict) and b.get("id")]
-            val2_prompt = await self.context_builder.build_step2_validation_prompt(
-                step1.get("thesis", ""), goal_as_process, candidate2)
-            val2 = await self._gen_stage_json(val2_prompt, f"Провалидируй Шаг 2. Верни только JSON. Язык: {locale}")
-            if val2 and val2.get("valid") and len(candidate2) >= 2:
-                blocks = candidate2
-                break
-            reason = (val2 or {}).get("reason") or ("нужно минимум 2 блока" if len(candidate2) < 2 else "валидатор не смог ответить")
-            logger.warning("gen_skeleton Шаг2: отклонён (попытка %d/%d), goal=%r: %s",
-                            attempt, _MAX_STAGE_RETRIES, raw_goal, reason)
-            rejected2.append({"blocks": [b.get("thesis", "") for b in candidate2], "reason": reason})
-        if not blocks:
-            logger.warning("gen_skeleton: Шаг2 не прошёл ни одной попытки, goal=%r", raw_goal)
-            return {}
+        for plan_attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
+            # --- Шаг 1: простейший процесс ---
+            step1 = None
+            goal_as_process = ""
+            applicability_reason = ""
+            for attempt in range(1, _MAX_STAGE_RETRIES + 1):
+                prompt1 = await self.context_builder.build_step1_prompt(state, rejected=rejected1)
+                result1 = await self._gen_stage_json(prompt1, f"Выполни Шаг 1. Верни только JSON. Язык: {locale}")
+                if result1 is None:
+                    logger.warning("gen_skeleton Шаг1: JSON не распарсился (попытка %d/%d), goal=%r",
+                                    attempt, _MAX_STAGE_RETRIES, raw_goal)
+                    rejected1.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+                    continue
+                if result1.get("applicable") is False:
+                    return result1  # намеренно неполный скелет — гейт применимости сработал
+                goal_as_process = result1.get("goal_as_process", "")
+                applicability_reason = result1.get("applicability_reason", "")
+                candidate1 = result1.get("step1") or {}
+                val1_prompt = await self.context_builder.build_step1_validation_prompt(goal_as_process, candidate1)
+                val1 = await self._gen_stage_json(val1_prompt, f"Провалидируй Шаг 1. Верни только JSON. Язык: {locale}")
+                if val1 and val1.get("valid"):
+                    step1 = candidate1
+                    break
+                reason = (val1 or {}).get("reason", "валидатор не смог ответить")
+                logger.warning("gen_skeleton Шаг1: отклонён (попытка %d/%d), goal=%r, thesis=%r: %s",
+                                attempt, _MAX_STAGE_RETRIES, raw_goal, candidate1.get("thesis", ""), reason)
+                rejected1.append({"thesis": candidate1.get("thesis", ""), "reason": reason})
+            if not step1:
+                logger.warning("gen_skeleton: Шаг1 не прошёл ни одной попытки, goal=%r", raw_goal)
+                return {}
 
-        # --- Шаг 3: противоположный процесс ---
-        step3 = None
-        rejected3 = []
-        for attempt in range(1, _MAX_STAGE_RETRIES + 1):
-            prompt3 = await self.context_builder.build_step3_prompt(step1.get("thesis", ""), blocks, rejected=rejected3)
-            result3 = await self._gen_stage_json(prompt3, f"Выполни Шаг 3. Верни только JSON. Язык: {locale}")
-            if result3 is None:
-                rejected3.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+            # --- Шаг 2: развитие простейшего процесса ---
+            blocks = None
+            rejected2 = []
+            for attempt in range(1, _MAX_STAGE_RETRIES + 1):
+                prompt2 = await self.context_builder.build_step2_prompt(
+                    step1.get("thesis", ""), goal_as_process, rejected=rejected2)
+                result2 = await self._gen_stage_json(prompt2, f"Выполни Шаг 2. Верни только JSON. Язык: {locale}")
+                if result2 is None:
+                    rejected2.append({"blocks": [], "reason": "предыдущий ответ не был валидным JSON"})
+                    continue
+                candidate2 = [b for b in (result2.get("blocks") or []) if isinstance(b, dict) and b.get("id")]
+                val2_prompt = await self.context_builder.build_step2_validation_prompt(
+                    step1.get("thesis", ""), goal_as_process, candidate2)
+                val2 = await self._gen_stage_json(val2_prompt, f"Провалидируй Шаг 2. Верни только JSON. Язык: {locale}")
+                if val2 and val2.get("valid") and len(candidate2) >= 2:
+                    blocks = candidate2
+                    break
+                reason = (val2 or {}).get("reason") or ("нужно минимум 2 блока" if len(candidate2) < 2 else "валидатор не смог ответить")
+                logger.warning("gen_skeleton Шаг2: отклонён (попытка %d/%d), goal=%r: %s",
+                                attempt, _MAX_STAGE_RETRIES, raw_goal, reason)
+                rejected2.append({"blocks": [b.get("thesis", "") for b in candidate2], "reason": reason})
+            if not blocks:
+                logger.warning("gen_skeleton: Шаг2 не прошёл ни одной попытки (план %d/%d), goal=%r",
+                                plan_attempt, _MAX_PLAN_ATTEMPTS, raw_goal)
+                rejected1.append({"thesis": step1.get("thesis", ""),
+                                  "reason": "развитие простейшего процесса не удалось построить"})
                 continue
-            candidate3 = result3.get("step3") or {}
-            val3_prompt = await self.context_builder.build_step3_validation_prompt(
-                step1.get("thesis", ""), blocks, candidate3)
-            val3 = await self._gen_stage_json(val3_prompt, f"Провалидируй Шаг 3. Верни только JSON. Язык: {locale}")
-            if val3 and val3.get("valid"):
-                step3 = candidate3
-                break
-            reason = (val3 or {}).get("reason", "валидатор не смог ответить")
-            logger.warning("gen_skeleton Шаг3: отклонён (попытка %d/%d), goal=%r, thesis=%r: %s",
-                            attempt, _MAX_STAGE_RETRIES, raw_goal, candidate3.get("thesis", ""), reason)
-            rejected3.append({"thesis": candidate3.get("thesis", ""), "reason": reason})
-        if not step3:
-            logger.warning("gen_skeleton: Шаг3 (противоположный процесс) не найден, goal=%r", raw_goal)
-            return {}
 
-        # --- Шаг 4: противоречие ---
-        step4 = None
-        rejected4 = []
-        for attempt in range(1, _MAX_STAGE_RETRIES + 1):
-            prompt4 = await self.context_builder.build_step4_prompt(step1.get("thesis", ""), step3, rejected=rejected4)
-            result4 = await self._gen_stage_json(prompt4, f"Выполни Шаг 4. Верни только JSON. Язык: {locale}")
-            if result4 is None:
-                rejected4.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+            # --- Шаг 3: противоположный процесс ---
+            step3 = None
+            rejected3 = []
+            for attempt in range(1, _MAX_STAGE_RETRIES + 1):
+                prompt3 = await self.context_builder.build_step3_prompt(step1.get("thesis", ""), blocks, rejected=rejected3)
+                result3 = await self._gen_stage_json(prompt3, f"Выполни Шаг 3. Верни только JSON. Язык: {locale}")
+                if result3 is None:
+                    rejected3.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+                    continue
+                candidate3 = result3.get("step3") or {}
+                val3_prompt = await self.context_builder.build_step3_validation_prompt(
+                    step1.get("thesis", ""), blocks, candidate3)
+                val3 = await self._gen_stage_json(val3_prompt, f"Провалидируй Шаг 3. Верни только JSON. Язык: {locale}")
+                if val3 and val3.get("valid"):
+                    step3 = candidate3
+                    break
+                reason = (val3 or {}).get("reason", "валидатор не смог ответить")
+                logger.warning("gen_skeleton Шаг3: отклонён (попытка %d/%d), goal=%r, thesis=%r: %s",
+                                attempt, _MAX_STAGE_RETRIES, raw_goal, candidate3.get("thesis", ""), reason)
+                rejected3.append({"thesis": candidate3.get("thesis", ""), "reason": reason})
+            if not step3:
+                # Именно эта развилка (п. 4.5) на практике самая ненадёжная:
+                # честная фаза может не найти оппозицию для ВЫБРАННОГО Шага 1,
+                # хотя для другого простейшего процесса она нашлась бы легко.
+                # Вместо тихого провала всего скелета — помечаем этот Шаг 1
+                # как отклонённый (с явной причиной) и пробуем ДРУГОЙ простейший
+                # процесс на следующей итерации plan_attempt, а не тот же самый
+                # (см. обсуждение 2026-09-14: "теорема Пифагора" дважды подряд
+                # получала один и тот же Шаг 1 и там же и застревала).
+                logger.warning("gen_skeleton: Шаг3 не найден для Шага1=%r (план %d/%d), goal=%r — пробуем другой Шаг1",
+                                step1.get("thesis", ""), plan_attempt, _MAX_PLAN_ATTEMPTS, raw_goal)
+                rejected1.append({"thesis": step1.get("thesis", ""),
+                                  "reason": "для этого простейшего процесса не нашлось противоположного"})
                 continue
-            candidate4 = result4.get("step4") or {}
-            val4_prompt = await self.context_builder.build_step4_validation_prompt(
-                step1.get("thesis", ""), step3.get("thesis", ""), candidate4)
-            val4 = await self._gen_stage_json(val4_prompt, f"Провалидируй Шаг 4. Верни только JSON. Язык: {locale}")
-            if val4 and val4.get("valid"):
-                step4 = candidate4
-                break
-            reason = (val4 or {}).get("reason", "валидатор не смог ответить")
-            logger.warning("gen_skeleton Шаг4: отклонён (попытка %d/%d), goal=%r: %s",
-                            attempt, _MAX_STAGE_RETRIES, raw_goal, reason)
-            rejected4.append({"thesis": candidate4.get("thesis", ""), "reason": reason})
-        if not step4:
-            logger.warning("gen_skeleton: Шаг4 (противоречие) не построен, goal=%r", raw_goal)
-            return {}
 
-        # --- Шаг 5: разрешение ---
-        step5 = None
-        rejected5 = []
-        for attempt in range(1, _MAX_STAGE_RETRIES + 1):
-            prompt5 = await self.context_builder.build_step5_prompt(
-                step1.get("thesis", ""), step3.get("thesis", ""), step4, rejected=rejected5)
-            result5 = await self._gen_stage_json(prompt5, f"Выполни Шаг 5. Верни только JSON. Язык: {locale}")
-            if result5 is None:
-                rejected5.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+            # --- Шаг 4: противоречие ---
+            step4 = None
+            rejected4 = []
+            for attempt in range(1, _MAX_STAGE_RETRIES + 1):
+                prompt4 = await self.context_builder.build_step4_prompt(step1.get("thesis", ""), step3, rejected=rejected4)
+                result4 = await self._gen_stage_json(prompt4, f"Выполни Шаг 4. Верни только JSON. Язык: {locale}")
+                if result4 is None:
+                    rejected4.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+                    continue
+                candidate4 = result4.get("step4") or {}
+                val4_prompt = await self.context_builder.build_step4_validation_prompt(
+                    step1.get("thesis", ""), step3.get("thesis", ""), candidate4)
+                val4 = await self._gen_stage_json(val4_prompt, f"Провалидируй Шаг 4. Верни только JSON. Язык: {locale}")
+                if val4 and val4.get("valid"):
+                    step4 = candidate4
+                    break
+                reason = (val4 or {}).get("reason", "валидатор не смог ответить")
+                logger.warning("gen_skeleton Шаг4: отклонён (попытка %d/%d), goal=%r: %s",
+                                attempt, _MAX_STAGE_RETRIES, raw_goal, reason)
+                rejected4.append({"thesis": candidate4.get("thesis", ""), "reason": reason})
+            if not step4:
+                logger.warning("gen_skeleton: Шаг4 не построен для Шага1=%r/Шага3=%r (план %d/%d), goal=%r — пробуем другой Шаг1",
+                                step1.get("thesis", ""), step3.get("thesis", ""), plan_attempt, _MAX_PLAN_ATTEMPTS, raw_goal)
+                rejected1.append({"thesis": step1.get("thesis", ""),
+                                  "reason": "противоречие с найденным противоположным процессом не построилось"})
                 continue
-            candidate5 = result5.get("step5") or {}
-            val5_prompt = await self.context_builder.build_step5_validation_prompt(step4, candidate5)
-            val5 = await self._gen_stage_json(val5_prompt, f"Провалидируй Шаг 5. Верни только JSON. Язык: {locale}")
-            if val5 and val5.get("valid"):
-                step5 = candidate5
-                break
-            reason = (val5 or {}).get("reason", "валидатор не смог ответить")
-            logger.warning("gen_skeleton Шаг5: отклонён (попытка %d/%d), goal=%r: %s",
-                            attempt, _MAX_STAGE_RETRIES, raw_goal, reason)
-            rejected5.append({"thesis": candidate5.get("thesis", ""), "reason": reason})
-        if not step5:
-            logger.warning("gen_skeleton: Шаг5 (разрешение) не найден, goal=%r", raw_goal)
-            return {}
 
-        # --- Сборка в старом формате (step1..step5), совместимом с остальным конвейером ---
-        main_block, sub_blocks = blocks[0], blocks[1:]
-        skeleton = {
-            "goal_as_process": goal_as_process,
-            "applicable": True,
-            "applicability_reason": applicability_reason,
-            "step1": {"thesis": step1.get("thesis", ""), "sub_steps": [],
-                      "потенциально_содержит": step1.get("потенциально_содержит", "")},
-            "step2": {
-                "thesis": main_block.get("thesis", ""),
-                "sub_steps": [
-                    {"thesis": b.get("thesis", ""), "разворачивает": b.get("разворачивает", ""),
-                     "обратный_ход": b.get("обратный_ход", "")}
-                    for b in sub_blocks
-                ],
-                "разворачивает": main_block.get("разворачивает", ""),
-                "обратный_ход": main_block.get("обратный_ход", ""),
-            },
-            "step3": {"thesis": step3.get("thesis", ""), "sub_steps": [],
-                      "обходится_без": step3.get("обходится_без", "")},
-            "step4": {"thesis": step4.get("thesis", ""), "sub_steps": [],
-                      "несовместимость": step4.get("несовместимость", "")},
-            "step5": {"thesis": step5.get("thesis", ""), "sub_steps": [],
-                      "скачок": step5.get("скачок", "")},
-        }
-        problem = _validate_skeleton(skeleton, raw_goal)
-        if problem:
-            logger.warning("gen_skeleton: собранный скелет не прошёл финальную проверку, goal=%r: %s",
-                            raw_goal, problem)
-            return {}
-        return skeleton
+            # --- Шаг 5: разрешение ---
+            step5 = None
+            rejected5 = []
+            for attempt in range(1, _MAX_STAGE_RETRIES + 1):
+                prompt5 = await self.context_builder.build_step5_prompt(
+                    step1.get("thesis", ""), step3.get("thesis", ""), step4, rejected=rejected5)
+                result5 = await self._gen_stage_json(prompt5, f"Выполни Шаг 5. Верни только JSON. Язык: {locale}")
+                if result5 is None:
+                    rejected5.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
+                    continue
+                candidate5 = result5.get("step5") or {}
+                val5_prompt = await self.context_builder.build_step5_validation_prompt(step4, candidate5)
+                val5 = await self._gen_stage_json(val5_prompt, f"Провалидируй Шаг 5. Верни только JSON. Язык: {locale}")
+                if val5 and val5.get("valid"):
+                    step5 = candidate5
+                    break
+                reason = (val5 or {}).get("reason", "валидатор не смог ответить")
+                logger.warning("gen_skeleton Шаг5: отклонён (попытка %d/%d), goal=%r: %s",
+                                attempt, _MAX_STAGE_RETRIES, raw_goal, reason)
+                rejected5.append({"thesis": candidate5.get("thesis", ""), "reason": reason})
+            if not step5:
+                logger.warning("gen_skeleton: Шаг5 не найден для Шага1=%r (план %d/%d), goal=%r — пробуем другой Шаг1",
+                                step1.get("thesis", ""), plan_attempt, _MAX_PLAN_ATTEMPTS, raw_goal)
+                rejected1.append({"thesis": step1.get("thesis", ""),
+                                  "reason": "разрешение противоречия не найдено"})
+                continue
+
+            # --- Сборка в старом формате (step1..step5), совместимом с остальным конвейером ---
+            main_block, sub_blocks = blocks[0], blocks[1:]
+            skeleton = {
+                "goal_as_process": goal_as_process,
+                "applicable": True,
+                "applicability_reason": applicability_reason,
+                "step1": {"thesis": step1.get("thesis", ""), "sub_steps": [],
+                          "потенциально_содержит": step1.get("потенциально_содержит", "")},
+                "step2": {
+                    "thesis": main_block.get("thesis", ""),
+                    "sub_steps": [
+                        {"thesis": b.get("thesis", ""), "разворачивает": b.get("разворачивает", ""),
+                         "обратный_ход": b.get("обратный_ход", "")}
+                        for b in sub_blocks
+                    ],
+                    "разворачивает": main_block.get("разворачивает", ""),
+                    "обратный_ход": main_block.get("обратный_ход", ""),
+                },
+                "step3": {"thesis": step3.get("thesis", ""), "sub_steps": [],
+                          "обходится_без": step3.get("обходится_без", "")},
+                "step4": {"thesis": step4.get("thesis", ""), "sub_steps": [],
+                          "несовместимость": step4.get("несовместимость", "")},
+                "step5": {"thesis": step5.get("thesis", ""), "sub_steps": [],
+                          "скачок": step5.get("скачок", "")},
+            }
+            problem = _validate_skeleton(skeleton, raw_goal)
+            if problem:
+                logger.warning("gen_skeleton: собранный скелет не прошёл финальную проверку, goal=%r: %s",
+                                raw_goal, problem)
+                rejected1.append({"thesis": step1.get("thesis", ""), "reason": problem})
+                continue
+            return skeleton
+
+        logger.warning("gen_skeleton: все %d попытки плана провалены, goal=%r", _MAX_PLAN_ATTEMPTS, raw_goal)
+        return {}
 
     async def judge_conspect(self, collected: Dict[str, str], locale: str) -> tuple:
         """Оценка судьёй: настоящее ли противоречие получилось. Если судья
@@ -458,17 +490,42 @@ class GenerationPipeline:
 
     async def _generate_full_attempt(self, state: dict, locale: str, use_skeleton: bool,
                                      failed_attempts: list, report: dict = None) -> tuple:
-        """Одна полная попытка собрать все процессы всех шагов, без
-        прогрессивной выдачи наружу — используется внутри цикла судьи в
-        stream_generate_full. Возвращает (collected, skeleton): collected —
-        "1", "2.1", "2.2", ... (см. expected_step_keys) в зависимости от
-        того, сколько процессов у каждого шага в скелете; skeleton нужен
-        вызывающему коду для точечного ретрая по ключам судьи (bad_transitions),
-        без пересборки плана заново (см. judge_conspect).
-        report (мутируется) — телеметрия для сигнала пользователю: кто
-        обслужил основной вызов, был ли фолбэк, сколько процессов добирали."""
+        """Одна полная попытка собрать все процессы всех шагов — ПОБЛОЧНО
+        (см. обсуждение 2026-09-14, симметрично поблочной архитектуре
+        скелета в gen_skeleton): каждый ключ ("1", "2.1", "2.2", "3", "4",
+        "5" — см. expected_step_keys) генерируется ОТДЕЛЬНЫМ вызовом через
+        regen_process, который видит ПОЛНЫЙ уже написанный текст предыдущих
+        шагов (через build_step_prompt/build_process_prompt →
+        _compile_previous_steps), а не только тезисы плана. Раньше весь
+        текст шёл одним вызовом на 13k токенов — Шаг 4 (смысловой центр)
+        оказывался в хвосте длинной генерации без своего сфокусированного
+        контекста; теперь у каждого шага свой вызов с чистым контекстом.
+
+        Используется внутри цикла судьи в stream_generate_full (без
+        прогрессивной выдачи наружу — та по-прежнему одна пачка в конце,
+        после того как судья одобрит попытку целиком). Возвращает
+        (collected, skeleton): skeleton нужен вызывающему коду для точечного
+        ретрая по ключам судьи (bad_transitions), без пересборки плана
+        заново (см. judge_conspect).
+        report (мутируется) — телеметрия: кто обслужил генерацию (провайдер
+        первого блока), был ли фолбэк хоть у одного блока, сколько блоков
+        потребовали повторной попытки."""
         report = report if report is not None else {}
         skeleton = await self.gen_skeleton(state, locale, failed_attempts=failed_attempts) if use_skeleton else {}
+        if use_skeleton and not skeleton:
+            # План запрашивался, но gen_skeleton честно провалил все стадии
+            # (не "applicable: false" — тот случай отдельно проверяется
+            # вызывающим кодом, а просто "не нашли" на Шаге 1/2/3/4/5). Это
+            # НЕ повод писать текст без плана ("генератор без плана" — корень
+            # проблемы из диагностики плана, раздел 1.3): такой текст обычно
+            # проходит судью, потому что судья не видит, что план тихо
+            # подменили импровизацией. Возвращаем провал явно — вызывающий
+            # цикл (stream_generate_full) уйдёт на новую попытку gen_skeleton
+            # с нуля, а не молча сгенерирует правдоподобный, но не проверенный
+            # текст.
+            logger.warning("_generate_full_attempt: план не построен, текст без плана НЕ генерируем, goal=%r",
+                            state.get("target_goal"))
+            return {}, {}
         # Вторая попытка заземления: сырой запрос мог быть вопросом («почему…»)
         # и не резолвиться в вики. Пробуем по порядку более «статейные»
         # формулировки: цель-как-процесс, потом название простейшего процесса
@@ -489,38 +546,53 @@ class GenerationPipeline:
                 if ref:
                     state["reference"] = ref
                     break
-        prompt_all = await self.context_builder.build_all_steps_prompt(
-            state, skeleton, pinned_step=None, question=None,
-        )
-        # НЕ стримом: буфер всё равно собирается целиком до выдачи шагов наружу
-        # (прогрессивной отдачи тут нет), а SSE-поток Cerebras коверкает
-        # обратный слэш в LaTeX-командах (\Delta → перенос строки, \frac → rac,
-        # \to → таб). Нестримовый ответ отдаёт формулы целыми.
-        buf = await self.ai_service._generate(
-            prompt_all, f"Сгенерируй шаги в указанном формате. Язык: {locale}",
-            None, max_tokens=_MAX_TOKENS["all_steps"], temperature=0.5, use_cache=False,
-            task="step_stream", reasoning_effort=settings.LLM_REASONING_EFFORT_GEN,
-            timeout=settings.LLM_TIMEOUT_GEN,
-        )
-        if not buf or buf.startswith(("Error calling AI:", "AI disabled")):
-            buf = ""
 
-        info = get_last_call_info() or {}
-        report["gen_provider"] = info.get("provider")
-        report["gen_fell_back"] = bool(info.get("fell_back"))
+        # Отдельное "рабочее" состояние с собственным ["steps"]: каждый блок,
+        # как только сгенерирован, кладётся сюда, чтобы следующий блок видел
+        # его через _compile_previous_steps. В реальный state["steps"] всё
+        # уходит одной пачкой в конце stream_generate_full (после судьи) —
+        # так повторные попытки (другой простейший процесс) не засоряют
+        # состояние пользователя промежуточным текстом отклонённой попытки.
+        scratch_state = dict(state)
+        scratch_state["steps"] = {}
 
-        collected = self._complete_steps(buf, final=True)
-        collected = {k: _fix_math(c) for k, c in collected.items() if len(c) >= 20}
+        keys = expected_step_keys(skeleton) if skeleton else [str(i) for i in range(1, 6)]
+        bases_order = []
+        for k in keys:
+            b = _base_of(k)
+            if b not in bases_order:
+                bases_order.append(b)
 
-        # Добор пропущенных процессов точечно.
+        collected: Dict[str, str] = {}
+        providers: list = []
+        fell_back_any = False
         regen = 0
-        for key in expected_step_keys(skeleton):
-            if key in collected:
-                continue
-            content = await self.regen_process(state, key, skeleton, locale)
-            if content:
-                collected[key] = _fix_math(content)
-                regen += 1
+        for base in bases_order:
+            base_keys = [k for k in keys if _base_of(k) == base]
+            parts = []
+            for key in base_keys:
+                content = await self.regen_process(scratch_state, key, skeleton, locale)
+                if not content:
+                    # Одна дополнительная попытка сверх внутреннего ретрая
+                    # gen_json — на случай транзиентного сбоя провайдера.
+                    content = await self.regen_process(scratch_state, key, skeleton, locale)
+                    if content:
+                        regen += 1
+                info = get_last_call_info() or {}
+                if info.get("provider"):
+                    providers.append(info["provider"])
+                fell_back_any = fell_back_any or bool(info.get("fell_back"))
+                if content:
+                    content = _fix_math(content)
+                    collected[key] = content
+                    parts.append(content)
+            if parts:
+                scratch_state["steps"][f"step{base}"] = {
+                    "content": "\n\n".join(parts), "status": "ready", "author": "ai", "sub_steps": [],
+                }
+
+        report["gen_provider"] = providers[0] if providers else None
+        report["gen_fell_back"] = fell_back_any
         report["regen"] = regen
 
         return collected, skeleton
