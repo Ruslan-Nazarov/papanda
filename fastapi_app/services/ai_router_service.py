@@ -3,11 +3,8 @@
 `ConspectusRouter` разбирает действие из запроса и дёргает
 `GenerationPipeline` (весь LLM-конвейер вынесен в generation_pipeline.py):
 - generate_full  → полная потоковая генерация (SSE), либо её нестримовый сбор;
-- generate_step  → перегенерация одного шага (ручной режим / «по шагам»);
-- judge          → проверка готового конспекта судьёй по требованию.
+- generate_step  → перегенерация одного шага (ручной режим / «по шагам»).
 """
-from typing import Dict
-
 from fastapi_app.services.context_builder import expected_step_keys
 from fastapi_app.services.generation_pipeline import (
     GenerationPipeline,
@@ -35,8 +32,6 @@ class ConspectusRouter:
             return await self._handle_auto_full(state, locale)
         elif action == "generate_step":
             return await self._handle_auto_step(state, int(target_step), locale)
-        elif action == "judge":
-            return await self._handle_judge(state, locale)
         return {"action_status": "error", "error_message": "Unknown action"}
 
     async def stream_generate_full(self, state: dict, locale: str, use_skeleton: bool = False,
@@ -48,34 +43,14 @@ class ConspectusRouter:
         ):
             yield event
 
-    async def _handle_judge(self, state: dict, locale: str) -> dict:
-        """Проверка готового конспекта судьёй по требованию (кнопка «Проверить»
-        в ручном режиме / «по шагам» — там авто-судьи нет). Ничего не
-        перегенерирует, только возвращает вердикт + причину."""
-        steps_state = (state or {}).get("steps", {}) or {}
-        collected: Dict[str, str] = {}
-        for i in range(1, 6):
-            s = steps_state.get(f"step{i}")
-            text = (s.get("content") if isinstance(s, dict) else s) or ""
-            text = text.strip()
-            if len(text) >= 20:
-                collected[str(i)] = text
-        if len(collected) < 3:
-            return {"action_status": "error", "error_message": "Конспект слишком короткий для проверки."}
-        is_valid, reason, _bad_steps = await self.pipeline.judge_conspect(collected, locale)
-        return {"action_status": "success", "is_valid": bool(is_valid), "reason": reason or ""}
-
     async def _handle_auto_full(self, state: dict, locale: str) -> dict:
         """Нестримовый путь: собирает результат stream_generate_full целиком.
         Фронт обычно идёт через SSE; этот путь — для `action=generate_full`
         нестримового эндпоинта `/conspectus/route`."""
         updated_steps = {}
-        history_notes, step_titles, note_meta, report = {}, {}, {}, {}
+        step_titles, note_meta, report = {}, {}, {}
         async for step_key, content in self.stream_generate_full(state, locale, use_skeleton=True):
             if step_key == "__status__":
-                continue
-            if step_key == "__history_notes__":
-                history_notes = content or {}
                 continue
             if step_key == "__titles__":
                 step_titles = content or {}
@@ -93,8 +68,7 @@ class ConspectusRouter:
         if not any(s["content"] for s in updated_steps.values()):
             return {"action_status": "error", "error_message": "Модель не вернула шаги."}
         return {"action_status": "success", "updated_steps": updated_steps,
-                "history_notes": history_notes, "step_titles": step_titles,
-                "note_meta": note_meta, "report": report, "cascading_events": []}
+                "step_titles": step_titles, "note_meta": note_meta, "report": report, "cascading_events": []}
 
     async def _handle_auto_step(self, state: dict, target_step: int, locale: str) -> dict:
         await self.pipeline.ground(state)

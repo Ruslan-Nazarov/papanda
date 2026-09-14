@@ -314,7 +314,7 @@ TASK_ROUTES: Dict[str, List[str]] = {
     # генератор уже не спасёт. Ставим полноразмерный gpt-oss-120b: Groq
     # (бесплатный, задача мелкая — стены 8000 TPM тут нет), затем Cerebras.
     "skeleton":    ["GigaChat", "Groq", "Cerebras", "Gemini"],
-    "history":     ["GigaChat", "Gemini", "Groq"],               # исторические справки 📜 (fast=True)
+    "history":     ["GigaChat", "Gemini", "Groq"],               # заголовки шагов + имя/вывод конспекта (fast=True)
     # судья: сначала модели ВНЕ семейства gpt-oss (Groq/Cerebras), чтобы судья
     # не оценивал выход родственной модели. Gemini flash-lite первым (быстрый,
     # чистый JSON). На gpt-oss (Cerebras/Groq) падаем только если Gemini недоступен.

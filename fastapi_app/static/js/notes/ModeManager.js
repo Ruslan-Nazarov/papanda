@@ -1,6 +1,5 @@
 import AppState from './AppState.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
-import JudgeService from './JudgeService.js';
 
 /**
  * Главный переключатель режимов приложения:
@@ -33,7 +32,6 @@ class ModeManager {
             stepChk.addEventListener('change', (e) => {
                 AppState.isAutoFillStepByStep = e.target.checked;
                 try { localStorage.setItem(STEP_KEY, e.target.checked ? '1' : '0'); } catch {}
-                JudgeService.updateVisibility();
                 BlockDOMRenderer.renderAll();
             });
         }
@@ -73,7 +71,6 @@ class ModeManager {
         const substep = document.getElementById('mode-substep');
         if (substep) substep.classList.toggle('visible', this.mode === 'ai');
 
-        JudgeService.updateVisibility();
         BlockDOMRenderer.renderAll();
     }
 }

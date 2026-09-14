@@ -144,30 +144,6 @@ class AIController {
     }
 
     /**
-     * Исторические справки к шагам (значок 📜 у блока). Приходят отдельным
-     * событием после генерации шагов: { "1": "текст", "4": "текст" }.
-     * Пустой объект тоже валиден — снимает устаревшие справки.
-     */
-    static applyHistoryNotes(notes, onRenderAll) {
-        if (!notes || typeof notes !== 'object') return;
-        let changed = false;
-        for (let i = 1; i <= 5; i++) {
-            const note = (notes[String(i)] || '').trim();
-            AppState.currentNote.blocks.forEach(b => {
-                if (b.role === `step${i}` || (b.role && b.role.startsWith(`step${i}.`))) {
-                    if ((b.historyNote || '') !== note) {
-                        b.historyNote = note || undefined;
-                        AppState.updateBlock(b.id, { historyNote: b.historyNote });
-                        changed = true;
-                    }
-                }
-            });
-        }
-        if (changed && onRenderAll) onRenderAll();
-    }
-
-
-    /**
      * Имя конспекта + итоговый вывод для блока-якоря. Приходит событием
      * { note_title, anchor_title, anchor_summary } после генерации.
      * - note_title применяем только если автор сам не задал название;
@@ -307,8 +283,6 @@ class AIController {
                         this.applyNotApplicable(ev.not_applicable, onRenderAll);
                     } else if (ev.titles) {
                         this.applyTitles(ev.titles, onRenderAll);
-                    } else if (ev.history_notes) {
-                        this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.note_meta) {
                         this.applyNoteMeta(ev.note_meta, onRenderAll);
                     } else if (ev.report) {
@@ -355,8 +329,6 @@ class AIController {
                         );
                     } else if (ev.titles) {
                         this.applyTitles(ev.titles, onRenderAll);
-                    } else if (ev.history_notes) {
-                        this.applyHistoryNotes(ev.history_notes, onRenderAll);
                     } else if (ev.note_meta) {
                         this.applyNoteMeta(ev.note_meta, onRenderAll);
                     } else if (ev.report) {

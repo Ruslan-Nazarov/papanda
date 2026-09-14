@@ -147,10 +147,9 @@ class BlockNormalBuilder {
                     <div class="manual-only" style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 3px;"></div>
                     <button class="block-action-btn btn-edit" title="${t('tt_edit')}">✏️</button>
                     <button class="block-action-btn btn-ai-check manual-only" title="${t('tt_ai_check')}">🔬</button>
-                    ${block.historyNote ? `<button class="block-action-btn btn-history has-history" title="${t('tt_history')}">📜</button>` : ''}
                     <button class="block-action-btn btn-copy" title="${t('tt_copy')}">📋</button>
                     <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}">🎨</button>
-                    ${(block.role && block.role.startsWith('step')) ? `<button class="block-action-btn btn-ask" title="${t('ask_title')}">💬</button>` : ''}
+                    ${(block.role && block.role.startsWith('step')) ? `<button class="block-action-btn btn-ask btn-ask-prominent" title="${t('ask_title')}">💬 <span class="btn-ask-label">${t('ask_label')}</span></button>` : ''}
                     ${(block.role && block.role.startsWith('step')) || block.role === 'anchor' ? `<button class="block-action-btn btn-regenerate" title="${t('tt_regenerate')}">🔄</button>` : ''}
                     <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑️</button>
                 </div>
@@ -398,16 +397,6 @@ class BlockNormalBuilder {
         if (btnAiCheck) {
             btnAiCheck.addEventListener('click', () => {
                 AICheckModalService.show(block.id);
-            });
-        }
-
-        // Bind History note (📜) — есть только если у блока есть historyNote
-        const btnHistory = div.querySelector('.btn-history');
-        if (btnHistory) {
-            btnHistory.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const HistoryNoteService = (await import('./HistoryNoteService.js')).default;
-                HistoryNoteService.toggle(block, btnHistory, div);
             });
         }
 

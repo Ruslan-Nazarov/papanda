@@ -36,9 +36,6 @@
         .blk h3 { font-size: 1.08rem; font-weight: 600; margin: 0 0 10px; }
         .blk-body p { margin: 0 0 10px; }
         .blk-body p:last-child { margin-bottom: 0; }
-        .blk-note { margin-top: 12px; padding: 10px 12px; background: #f1f5f9;
-                    border-radius: 8px; font-size: 0.9rem; color: #475569; }
-        .blk-note::before { content: "📜 "; }
         .math-callout { overflow-x: auto; padding: 8px 0; }
         footer { margin-top: 48px; text-align: center; color: #64748b; font-size: 0.9rem; }
         footer a { display: inline-block; margin-top: 10px; padding: 10px 20px;
@@ -63,7 +60,6 @@
                     {% if label %}<div class="blk-role">{{ label }}</div>{% endif %}
                     {% if b.get('title') %}<h3>{{ b.get('title') }}</h3>{% endif %}
                     <div class="blk-body">{{ b.get('html') | safe }}</div>
-                    {% if b.get('historyNote') %}<div class="blk-note">{{ b.get('historyNote') }}</div>{% endif %}
                 </div>
             {% endif %}
         {% endfor %}

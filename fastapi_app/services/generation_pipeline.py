@@ -775,17 +775,14 @@ class GenerationPipeline:
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
 
-        # Доп. проход: заголовки-суть по шагам + исторические справки (📜) +
-        # имя конспекта и итоговый вывод для блока-якоря.
+        # Доп. проход: заголовки-суть по шагам + имя конспекта и итоговый
+        # вывод для блока-якоря.
         if collected:
             yield ("__status__", _("gen_status_postprocess"))
-            notes, titles, meta = await self._gen_postprocess(state, collected, locale)
+            titles, meta = await self._gen_postprocess(state, collected, locale)
             if titles:
                 state["step_titles"] = titles
                 yield ("__titles__", titles)
-            if notes:
-                state.setdefault("history_notes", {}).update(notes)
-                yield ("__history_notes__", notes)
             if meta:
                 state["note_meta"] = meta
                 yield ("__note_meta__", meta)
@@ -831,25 +828,24 @@ class GenerationPipeline:
         return report
 
     async def _gen_postprocess(self, state: dict, collected: Dict[str, str], locale: str):
-        """Один проход поверх готовых Шагов 1–5: (notes, titles, meta).
+        """Один проход поверх готовых Шагов 1–5: (titles, meta).
         titles — короткий заголовок-суть на каждый ключ шага ("1","2.1",...),
-        для схемы-сворачивания. notes — исторические справки только по тем
-        базовым шагам, где нужно (расхождение логики с историей / деталь).
-        meta — {note_title, anchor_title, anchor_summary}: имя конспекта и
-        итоговый вывод для блока-якоря («Теперь вы поняли»)."""
-        prompt = await self.context_builder.build_history_notes_prompt(state, collected)
+        для схемы-сворачивания. meta — {note_title, anchor_title,
+        anchor_summary}: имя конспекта и итоговый вывод для блока-якоря
+        («Теперь вы поняли»)."""
+        prompt = await self.context_builder.build_titles_meta_prompt(state, collected)
         raw = await self.ai_service._generate(
-            prompt, f"Верни JSON {{titles, notes, note_title, anchor_title, anchor_summary}}. Язык: {locale}",
+            prompt, f"Верни JSON {{titles, note_title, anchor_title, anchor_summary}}. Язык: {locale}",
             {"type": "json_object"}, max_tokens=_MAX_TOKENS["history"], temperature=0.4,
             use_cache=False, fast=True, task="history",
         )
         raw = (raw or "").strip()
         if not raw or raw.startswith(("Error calling AI:", "AI disabled")):
-            return {}, {}, {}
+            return {}, {}
         try:
             parsed = self.sanitizer.extract_json(raw)
         except ValueError:
-            return {}, {}, {}
+            return {}, {}
         parsed = parsed or {}
 
         def _norm_key(k):
@@ -862,18 +858,12 @@ class GenerationPipeline:
             if nk and isinstance(v, str) and v.strip():
                 titles[nk] = v.strip()
 
-        notes: Dict[str, str] = {}
-        for k, v in (parsed.get("notes") or {}).items():
-            nk = _norm_key(k)
-            if nk and isinstance(v, str) and v.strip():
-                notes[nk.split(".")[0]] = v.strip()
-
         meta: Dict[str, str] = {}
         for fld in ("note_title", "anchor_title", "anchor_summary"):
             v = parsed.get(fld)
             if isinstance(v, str) and v.strip():
                 meta[fld] = v.strip()
-        return notes, titles, meta
+        return titles, meta
 
     async def _stream_pinned_regeneration(self, state: dict, locale: str, pinned: int,
                                           question: str):
@@ -934,19 +924,16 @@ class GenerationPipeline:
                 state["steps"][step_key] = {"content": content, "status": "ready", "author": "ai", "sub_steps": []}
                 yield (step_key, content)
 
-        # Шаги изменились — пересобираем заголовки и исторические справки.
+        # Шаги изменились — пересобираем заголовки и имя/вывод конспекта.
         base_steps = {str(i): (state["steps"].get(f"step{i}", {}) or {}).get("content", "").strip()
                       for i in range(1, 6)}
         base_steps = {k: v for k, v in base_steps.items() if len(v) >= 20}
         if len(base_steps) >= 3:
             yield ("__status__", _("gen_status_postprocess_upd"))
-            notes, titles, meta = await self._gen_postprocess(state, base_steps, locale)
+            titles, meta = await self._gen_postprocess(state, base_steps, locale)
             if titles:
                 state["step_titles"] = titles
                 yield ("__titles__", titles)
-            # Пустой notes тоже шлём — фронт снимет устаревшие значки.
-            state["history_notes"] = notes
-            yield ("__history_notes__", notes)
             if meta:
                 state["note_meta"] = meta
                 yield ("__note_meta__", meta)

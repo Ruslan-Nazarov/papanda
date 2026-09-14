@@ -496,18 +496,18 @@ class ContextBuilder:
                 lines.append(f"--- ШАГ {base} (несколько процессов) ---\n{parts}")
         return f"{algo_core}\n\n{judge_prompt}\n\nКОНСПЕКТ ДЛЯ ОЦЕНКИ:\n" + "\n".join(lines)
 
-    async def build_history_notes_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
-        """Промпт для доп. прохода — заголовки-суть + исторические справки
-        (см. историческая_справка_промпт.md). Модель возвращает JSON
-        {"titles": {ключ: заголовок}, "notes": {номер шага: справка}}.
+    async def build_titles_meta_prompt(self, state: dict, steps: dict, skeleton: dict = None) -> str:
+        """Промпт для доп. прохода — заголовки-суть + имя конспекта + вывод
+        (см. заголовки_и_итог_промпт.md). Модель возвращает JSON
+        {"titles": {ключ: заголовок}, "note_title", "anchor_title", "anchor_summary"}.
         steps — {"1": "...", "2.1": "...", ...} (как в build_judge_prompt)."""
-        hist_prompt = await self._load_file("историческая_справка_промпт.md")
+        titles_prompt = await self._load_file("заголовки_и_итог_промпт.md")
         goal = _effective_goal(state, skeleton) or "Не указана"
         raw_goal = (state.get("target_goal") or "").strip() or goal
         order = sorted(steps.keys(), key=lambda k: [int(p) for p in k.split(".")])
         lines = [f"[{k}] {steps.get(k, '')}" for k in order]
         return (
-            f"{hist_prompt}\n\nИСХОДНЫЙ ЗАПРОС ПОЛЬЗОВАТЕЛЯ (для anchor_title/note_title): {raw_goal}\n"
+            f"{titles_prompt}\n\nИСХОДНЫЙ ЗАПРОС ПОЛЬЗОВАТЕЛЯ (для anchor_title/note_title): {raw_goal}\n"
             f"ЦЕЛЬ ИССЛЕДОВАНИЯ (как процесс): {goal}\n\n"
             f"ГОТОВЫЙ КОНСПЕКТ (в квадратных скобках — ключ шага, его и используйте в titles):\n"
             + "\n\n".join(lines)
