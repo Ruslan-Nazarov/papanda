@@ -278,6 +278,15 @@ class GenerationPipeline:
                 goal_as_process = result1.get("goal_as_process", "")
                 applicability_reason = result1.get("applicability_reason", "")
                 candidate1 = result1.get("step1") or {}
+                if not candidate1.get("thesis", "").strip():
+                    # Пустой thesis — генерация явно не удалась (см. прод-инцидент
+                    # 2026-09-14: GigaChat иногда валидно, но пусто закрывает
+                    # "step1": {}). Тратить вызов-валидатор не на что — сразу
+                    # ретраим генерацию с явной обратной связью.
+                    logger.warning("gen_skeleton Шаг1: пустой thesis (попытка %d/%d), goal=%r",
+                                    attempt, _MAX_STAGE_RETRIES, raw_goal)
+                    rejected1.append({"thesis": "(пусто)", "reason": "предыдущая попытка вернула пустой Шаг 1"})
+                    continue
                 val1_prompt = await self.context_builder.build_step1_validation_prompt(goal_as_process, candidate1)
                 val1 = await self._gen_stage_json(val1_prompt, f"Провалидируй Шаг 1. Верни только JSON. Язык: {locale}")
                 if val1 and val1.get("valid"):
@@ -302,6 +311,12 @@ class GenerationPipeline:
                     rejected2.append({"blocks": [], "reason": "предыдущий ответ не был валидным JSON"})
                     continue
                 candidate2 = [b for b in (result2.get("blocks") or []) if isinstance(b, dict) and b.get("id")]
+                if len(candidate2) < 2:
+                    # Меньше 2 блоков — валидатору нечего оценивать содержательно
+                    # (правило "минимум 2" всё равно завернёт), экономим вызов.
+                    rejected2.append({"blocks": [b.get("thesis", "") for b in candidate2],
+                                      "reason": "нужно минимум 2 блока, получено меньше"})
+                    continue
                 val2_prompt = await self.context_builder.build_step2_validation_prompt(
                     step1.get("thesis", ""), goal_as_process, candidate2)
                 val2 = await self._gen_stage_json(val2_prompt, f"Провалидируй Шаг 2. Верни только JSON. Язык: {locale}")
@@ -329,6 +344,9 @@ class GenerationPipeline:
                     rejected3.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
                     continue
                 candidate3 = result3.get("step3") or {}
+                if not candidate3.get("thesis", "").strip():
+                    rejected3.append({"thesis": "(пусто)", "reason": "предыдущая попытка вернула пустой Шаг 3"})
+                    continue
                 val3_prompt = await self.context_builder.build_step3_validation_prompt(
                     step1.get("thesis", ""), blocks, candidate3)
                 val3 = await self._gen_stage_json(val3_prompt, f"Провалидируй Шаг 3. Верни только JSON. Язык: {locale}")
@@ -364,6 +382,9 @@ class GenerationPipeline:
                     rejected4.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
                     continue
                 candidate4 = result4.get("step4") or {}
+                if not candidate4.get("thesis", "").strip():
+                    rejected4.append({"thesis": "(пусто)", "reason": "предыдущая попытка вернула пустой Шаг 4"})
+                    continue
                 val4_prompt = await self.context_builder.build_step4_validation_prompt(
                     step1.get("thesis", ""), step3.get("thesis", ""), candidate4)
                 val4 = await self._gen_stage_json(val4_prompt, f"Провалидируй Шаг 4. Верни только JSON. Язык: {locale}")
@@ -392,6 +413,9 @@ class GenerationPipeline:
                     rejected5.append({"thesis": "?", "reason": "предыдущий ответ не был валидным JSON"})
                     continue
                 candidate5 = result5.get("step5") or {}
+                if not candidate5.get("thesis", "").strip():
+                    rejected5.append({"thesis": "(пусто)", "reason": "предыдущая попытка вернула пустой Шаг 5"})
+                    continue
                 val5_prompt = await self.context_builder.build_step5_validation_prompt(step4, candidate5)
                 val5 = await self._gen_stage_json(val5_prompt, f"Провалидируй Шаг 5. Верни только JSON. Язык: {locale}")
                 if val5 and val5.get("valid"):
