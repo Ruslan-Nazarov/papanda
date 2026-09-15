@@ -6,6 +6,7 @@
 якоря) → отчёт о качестве прогона. Маршрутизацию запросов и пошаговые
 операции держит `ai_router_service.ConspectusRouter` поверх этого.
 """
+import asyncio
 import logging
 import re
 import time
@@ -13,7 +14,7 @@ from typing import Dict
 
 from fastapi_app.config import settings
 from fastapi_app.services.context_builder import (
-    expected_step_keys, thesis_for_key, transition_hint_for_key, _detect_domain,
+    expected_step_keys, thesis_for_key, transition_hint_for_key, _detect_domain, _entry_for_key,
 )
 from fastapi_app.services.llm_provider import get_last_call_info
 from fastapi_app.i18n import get_translator
@@ -633,48 +634,74 @@ class GenerationPipeline:
         providers: list = []
         fell_back_any = False
         regen = 0
+
+        async def _gen_one_block(key: str, base: str) -> str:
+            nonlocal fell_back_any, regen
+            content = await self.regen_process(scratch_state, key, skeleton, locale)
+            if not content:
+                # Одна дополнительная попытка сверх внутреннего ретрая
+                # gen_json — на случай транзиентного сбоя провайдера.
+                content = await self.regen_process(scratch_state, key, skeleton, locale)
+                if content:
+                    regen += 1
+            info = get_last_call_info() or {}
+            if info.get("provider"):
+                providers.append(info["provider"])
+            fell_back_any = fell_back_any or bool(info.get("fell_back"))
+            if content and base == "5":
+                # Этап 4.3 плана: на количественном домене Шаг 5 должен
+                # довести разрешение до конкретного числа с единицей, а
+                # не остаться декларацией/голой формулой. Проверяем
+                # только здесь (не весь текст) — это дешевле и точнее,
+                # чем гадать по всему конспекту постфактум.
+                goal_for_domain = ((skeleton.get("goal_as_process") if skeleton else "")
+                                   or state.get("target_goal", ""))
+                domain = _detect_domain(goal_for_domain, *collected.values(), content)
+                if domain == "math_code" and not _NUMBER_UNIT_RE.search(content):
+                    logger.info("Шаг5: нет числового примера на количественном домене, "
+                                "перегенерирую с явным требованием, goal=%r", state.get("target_goal"))
+                    prompt5 = await self.context_builder.build_step_prompt(scratch_state, 5, skeleton=skeleton)
+                    prompt5 += ("\n\nОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ: доведи разрешение до конкретного "
+                                "числового примера с единицей измерения (не общая формула, а число).")
+                    retry = await self.gen_json(
+                        prompt5, f"Генерируй шаг 5 с числовым примером. Язык: {locale}",
+                        "step5", _MAX_TOKENS["step5"],
+                    )
+                    if retry:
+                        content = retry
+                        regen += 1
+            return _fix_math(content) if content else content
+
         for base in bases_order:
             base_keys = [k for k in keys if _base_of(k) == base]
-            parts = []
-            for key in base_keys:
-                content = await self.regen_process(scratch_state, key, skeleton, locale)
-                if not content:
-                    # Одна дополнительная попытка сверх внутреннего ретрая
-                    # gen_json — на случай транзиентного сбоя провайдера.
-                    content = await self.regen_process(scratch_state, key, skeleton, locale)
+            base_content: Dict[str, str] = {}
+            remaining = list(base_keys)
+            # Волновая генерация: блок без "растёт_из" внутри ЭТОГО же шага
+            # (растёт прямо из предыдущего шага, не из соседа) не зависит от
+            # других процессов этого шага — такие блоки пишутся ПАРАЛЛЕЛЬНО
+            # (asyncio.gather), а не по очереди. Экономит время именно там,
+            # где параллелизм безопасен: последовательность стадий и
+            # валидация скелета не тронуты, ускоряется только генерация
+            # НЕЗАВИСИМЫХ текстовых блоков одного шага (см. обсуждение
+            # 2026-09-15 — сократить время генерации, не меняя архитектуру).
+            while remaining:
+                ready = [
+                    key for key in remaining
+                    if (_entry_for_key(skeleton, key).get("растёт_из") if skeleton else None) not in remaining
+                ]
+                if not ready:
+                    ready = remaining[:1]  # защита от цикла в данных — не должно случаться
+                results = await asyncio.gather(*[_gen_one_block(key, base) for key in ready])
+                for key, content in zip(ready, results):
                     if content:
-                        regen += 1
-                info = get_last_call_info() or {}
-                if info.get("provider"):
-                    providers.append(info["provider"])
-                fell_back_any = fell_back_any or bool(info.get("fell_back"))
-                if content and base == "5":
-                    # Этап 4.3 плана: на количественном домене Шаг 5 должен
-                    # довести разрешение до конкретного числа с единицей, а
-                    # не остаться декларацией/голой формулой. Проверяем
-                    # только здесь (не весь текст) — это дешевле и точнее,
-                    # чем гадать по всему конспекту постфактум.
-                    goal_for_domain = ((skeleton.get("goal_as_process") if skeleton else "")
-                                       or state.get("target_goal", ""))
-                    domain = _detect_domain(goal_for_domain, *collected.values(), content)
-                    if domain == "math_code" and not _NUMBER_UNIT_RE.search(content):
-                        logger.info("Шаг5: нет числового примера на количественном домене, "
-                                    "перегенерирую с явным требованием, goal=%r", state.get("target_goal"))
-                        prompt5 = await self.context_builder.build_step_prompt(scratch_state, 5, skeleton=skeleton)
-                        prompt5 += ("\n\nОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ: доведи разрешение до конкретного "
-                                    "числового примера с единицей измерения (не общая формула, а число).")
-                        retry = await self.gen_json(
-                            prompt5, f"Генерируй шаг 5 с числовым примером. Язык: {locale}",
-                            "step5", _MAX_TOKENS["step5"],
-                        )
-                        if retry:
-                            content = retry
-                            regen += 1
-                if content:
-                    content = _fix_math(content)
-                    collected[key] = content
-                    parts.append(content)
-                    scratch_state["_process_texts"][key] = content
+                        base_content[key] = content
+                        scratch_state["_process_texts"][key] = content
+                remaining = [k for k in remaining if k not in ready]
+            parts = []
+            for key in base_keys:  # исходный порядок, не порядок волн
+                if key in base_content:
+                    collected[key] = base_content[key]
+                    parts.append(base_content[key])
             if parts:
                 scratch_state["steps"][f"step{base}"] = {
                     "content": "\n\n".join(parts), "status": "ready", "author": "ai", "sub_steps": [],
