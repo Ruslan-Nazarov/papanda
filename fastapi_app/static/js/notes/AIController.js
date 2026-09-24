@@ -84,7 +84,7 @@ class AIController {
             if (stepData.status === 'invalidated') {
                 const existingIndex = AppState.currentNote.blocks.findIndex(b => b.role === stepKey);
                 if (existingIndex !== -1) {
-                    AppState.currentNote.blocks.splice(existingIndex, 1);
+                    AppState.removeBlock(AppState.currentNote.blocks[existingIndex].id);
                     hasChanges = true;
                 }
             } else if (stepData.content) {
@@ -92,9 +92,11 @@ class AIController {
                 // Add or update block
                 const existingBlock = AppState.currentNote.blocks.find(b => b.role === stepKey);
                 if (existingBlock) {
-                    existingBlock.html = htmlContent;
-                    existingBlock.status = stepData.status || 'ready';
-                    if (stepData.title) existingBlock.title = stepData.title;
+                    AppState.updateBlock(existingBlock.id, {
+                        html: htmlContent,
+                        status: AppState.normalizeBlockStatus(stepData.status || 'ready'),
+                        ...(stepData.title ? {title: stepData.title} : {})
+                    });
                 } else {
                     const [baseRole, subIndex] = stepKey.split('.');
                     const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole) || {};
@@ -108,7 +110,7 @@ class AIController {
                         role: stepKey,
                         title,
                         html: htmlContent,
-                        status: stepData.status || 'ready',
+                        status: AppState.normalizeBlockStatus(stepData.status || 'ready'),
                         isDraft: false
                     };
                     AppState.addBlock(newBlock);

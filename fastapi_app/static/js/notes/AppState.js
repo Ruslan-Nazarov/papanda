@@ -42,7 +42,9 @@ const AppState = {
         this.currentNote = {
             id: note.id,
             title: note.title || '',
-            blocks: Array.isArray(blocks) ? blocks : [],
+            blocks: Array.isArray(blocks) ? blocks.map(block => ({
+                ...block, status: this.normalizeBlockStatus(block.status)
+            })) : [],
             category_id: note.category_id,
             status: note.status || 'none'
         };
@@ -50,6 +52,10 @@ const AppState = {
         this.isDirty = false;
         this.updateProgress();
         document.dispatchEvent(new CustomEvent('noteLoaded', { detail: this.currentNote }));
+    },
+
+    normalizeBlockStatus(status) {
+        return status === 'draft' ? 'in_progress' : (status || 'none');
     },
 
     getBlock(blockId) {

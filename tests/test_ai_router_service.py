@@ -62,7 +62,7 @@ async def test_pinned_step_is_rewritten_with_question_not_left_untouched():
 
 
 @pytest.mark.asyncio
-async def test_single_step_regen_emits_multiple_blocks_for_step2():
+async def test_single_step_regen_emits_multiple_blocks_for_step2(client):
     """D2: перегенерация Шага 2 в режиме «по шагам» отдаёт несколько блоков
     step2.k, если скелет запланировал несколько процессов."""
     from test_ai_router_judge import _stage_ok_responses, _text_response
@@ -96,9 +96,19 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2():
     res = await router._handle_auto_step(state, 2, "ru")
 
     assert res["action_status"] == "success"
-    generated = {k for k, v in res["updated_steps"].items() if v.get("status") == "draft"}
+    generated = {k for k, v in res["updated_steps"].items() if v.get("status") == "in_progress"}
     assert generated == {"step2.1", "step2.2", "step2.3"}
     assert "step2" not in res["updated_steps"]  # прежнего одиночного блока нет
+    saved = await client.post('/api/dialectics/save', json={
+        'title': 'Generated step', 'blocks': [
+            {'id': key, 'role': key, 'side': 'left', 'html': item['content'], 'status': item['status']}
+            for key, item in res['updated_steps'].items() if key in generated
+        ],
+    })
+    assert saved.status_code == 200, saved.text
+    loaded = await client.get(f"/api/dialectics/{saved.json()['id']}")
+    assert len(loaded.json()['content_json']) == 3
+    assert all(b['status'] == 'in_progress' and b['html'] for b in loaded.json()['content_json'])
 
 
 @pytest.mark.asyncio

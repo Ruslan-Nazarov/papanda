@@ -100,7 +100,7 @@ class ConspectusRouter:
                 return {"action_status": "error", "error_message": "Не удалось сгенерировать шаг (пустой ответ модели)."}
             updated_steps[f"step{target_step}"] = {
                 "content": self.sanitizer.clean_markdown_for_editor(content),
-                "status": "draft", "author": "ai",
+                "status": "in_progress", "author": "ai",
             }
         else:
             # Несколько процессов — по блоку на каждый (stepN.k).
@@ -109,7 +109,7 @@ class ConspectusRouter:
                 if content:
                     updated_steps[f"step{key}"] = {
                         "content": self.sanitizer.clean_markdown_for_editor(content),
-                        "status": "draft", "author": "ai",
+                        "status": "in_progress", "author": "ai",
                     }
             if not updated_steps:
                 return {"action_status": "error", "error_message": "Не удалось сгенерировать шаг (пустой ответ модели)."}

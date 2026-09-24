@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from typing import List, Optional, Literal, Any, Dict
 from datetime import datetime, timezone
 
@@ -52,6 +52,11 @@ class NoteBlock(BaseModel):
     active_tab_id: Optional[str] = None
     
     model_config = ConfigDict(extra="allow")
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_legacy_status(cls, value):
+        return "in_progress" if value == "draft" else value
 
 class NoteCreate(BaseModel):
     title: str
