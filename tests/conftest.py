@@ -1,3 +1,13 @@
+import os
+
+# Set these before importing the app: a developer's .env must never enable
+# real provider calls or secret-file writes during the test suite.
+for key in ("GROQ_API_KEY", "OPENROUTER_API_KEY", "SAMBANOVA_API_KEY",
+            "CEREBRAS_API_KEY", "HUGGINGFACE_API_KEY", "GOOGLE_API_KEY",
+            "GIGACHAT_AUTH_KEY"):
+    os.environ[key] = ""
+os.environ["SECRET_KEY"] = "test-only-secret"
+
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
@@ -6,8 +16,21 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from fastapi_app.main import app
 from fastapi_app.database import Base, get_db
+from fastapi_app.config import settings
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+
+@pytest.fixture(autouse=True)
+def isolated_data_settings(tmp_path, monkeypatch):
+    """Even lifespan/startup must use disposable data, never the user's DB."""
+    monkeypatch.setattr(settings, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(settings, "DATA_DIR", tmp_path / "data")
+    monkeypatch.setattr(settings, "DB_DIR", tmp_path / "data" / "db")
+    monkeypatch.setattr(settings, "DEMO_DIR", tmp_path / "data" / "demo")
+    monkeypatch.setattr(settings, "DATABASE_URL", "")
+    monkeypatch.setattr(settings, "DEMO_MODE", False)
+    monkeypatch.setattr(settings, "SECRET_KEY", "test-only-secret")
 
 @pytest_asyncio.fixture
 async def test_engine():
@@ -37,12 +60,33 @@ async def client(test_engine) -> AsyncGenerator[AsyncClient, None]:
     
     # Disable rate limiting for testing
     from fastapi_app.rate_limiter import limiter
+    previous_enabled = limiter.enabled
     limiter.enabled = False
-    
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test", cookies={"session_id": "test-session-123"}) as ac:
-        yield ac
-        
-    app.dependency_overrides.clear()
-    limiter.enabled = True
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test", cookies={"session_id": "test-session-123"}) as ac:
+            yield ac
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        limiter.enabled = previous_enabled
 
+
+@pytest_asyncio.fixture
+async def file_client(isolated_data_settings):
+    """Real startup/shutdown and get_db; only paths and rate limiting differ."""
+    from fastapi_app.database import dispose_all_engines
+    from fastapi_app.rate_limiter import limiter
+
+    previous_enabled = limiter.enabled
+    limiter.enabled = False
+    await dispose_all_engines()
+    try:
+        async with app.router.lifespan_context(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test",
+                cookies={"session_id": "integration-session"},
+            ) as ac:
+                yield ac
+    finally:
+        await dispose_all_engines()
+        limiter.enabled = previous_enabled

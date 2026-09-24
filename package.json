@@ -1,0 +1,13 @@
+{
+  "name": "papanda-conspect",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Local test tooling for the existing browser ES modules",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "check:js": "node scripts/check-js.cjs",
+    "test": "node --test tests/frontend/*.test.cjs",
+    "test:browser": "node --test tests/browser/*.test.cjs"
+  },
+  "devDependencies": { "puppeteer": "25.9.0" }
+}

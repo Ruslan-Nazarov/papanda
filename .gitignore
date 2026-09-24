@@ -1,5 +1,13 @@
 # Среда разработки
 venv/
+.venv/
+.tooling/
+.cache/
+.coverage
+coverage.json
+coverage.xml
+htmlcov/
+backups/
 .env
 __pycache__/
 *.pyc
