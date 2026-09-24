@@ -6,7 +6,10 @@ function setup(extra = {}) {
     const ctx = context({ALGORITHM_STEPS: [],
         document: {addEventListener() {}, dispatchEvent() {}, getElementById() {return null;}},
         BlockDOMParser: {syncDOMToState() {}}, GlobalLoader: {show() {}, hide() {}},
-        DialogService: {confirm: async () => false}, showToast() {}, ...extra});
+        DialogService: {confirm: async () => false}, showToast() {},
+        NoteStorageService: {saveCurrentNote: async () => ctx.AppState.currentNote},
+        ProposalReview: {show: async result => ({decision:'accepted', updated_steps:result.updated_steps})},
+        NotesAPI: {addActivity: async () => {}}, ...extra});
     for (const name of ['AppState', 'GenerationChanges', 'AIController']) load(ctx, name);
     ctx.AppState.setNote({id: 1, revision: 4, title: 'Manual note', blocks: [
         {id: 'a', role: 'anchor', html: 'Question'},
@@ -19,7 +22,7 @@ function setup(extra = {}) {
     return ctx;
 }
 
-const result = (status = 'completed') => ({status, source_revision: 4,
+const result = (status = 'completed') => ({run_id:'test-run', status, source_revision: 4,
     updated_steps: {step2: {content: 'new two', status: 'in_progress'}}, replace_bases: ['2', '3', '4', '5']});
 const plain = value => JSON.parse(JSON.stringify(value));
 
@@ -50,8 +53,8 @@ test('invalid later block cannot partially mutate an active note', () => {
     assert.equal(JSON.stringify(AppState.currentNote), before);
 });
 
-test('successful result applies in one render and dirty revision', async () => {
-    const ctx = setup({NotesAPI: {routeConspectus: async () => result()}});
+test('accepted proposal applies in one render', async () => {
+    const ctx = setup({NotesAPI: {routeConspectus: async () => result(), addActivity: async () => {}}});
     let rendered = 0;
     await ctx.AIController.generateStep(2, () => rendered++);
     assert.equal(rendered, 1);
@@ -59,26 +62,30 @@ test('successful result applies in one render and dirty revision', async () => {
     assert.equal(ctx.AppState.currentNote.blocks.at(-1).html, '<p>new two</p>');
 });
 
-test('edits during generation are preserved and result can be saved separately', async () => {
+test('edits during generation are preserved and result can be saved as a variant', async () => {
     let finish, saved;
     const ctx = setup({NotesAPI: {
         routeConspectus: () => new Promise(resolve => {finish = resolve;}),
-        createNote: async note => {saved = note;},
+        addActivity: async () => {},
+        getNote: async () => ({id:1, revision:4}),
+        forkVariant: async () => ({id:3, revision:1, title:'Manual note', content_json:[], stickers:[], category_id:null}),
+        updateNote: async (id, note) => {saved = note;},
     }, DialogService: {confirm: async () => true}});
     const running = ctx.AIController.generateStep(2);
+    await new Promise(setImmediate);
     ctx.AppState.updateBlock('one', {html: 'new manual edit'});
     finish(result());
     await running;
     assert.equal(ctx.AppState.getBlock('one').html, 'new manual edit');
     assert.equal(ctx.AppState.getBlock('two-a').html, 'old-a');
-    assert.equal(saved.blocks.find(b => b.role === 'step1').html, 'manual');
     assert.equal(saved.blocks.find(b => b.role === 'step2').html, '<p>new two</p>');
 });
 
 test('late result does not mutate a different loaded document', async () => {
     let finish;
-    const ctx = setup({NotesAPI: {routeConspectus: () => new Promise(resolve => {finish = resolve;})}});
+    const ctx = setup({NotesAPI: {routeConspectus: () => new Promise(resolve => {finish = resolve;}), addActivity: async () => {}}});
     const running = ctx.AIController.generateStep(2);
+    await new Promise(setImmediate);
     ctx.AppState.setNote({id: 2, revision: 1, title: 'Other', blocks: []});
     finish(result());
     await running;
@@ -87,12 +94,12 @@ test('late result does not mutate a different loaded document', async () => {
     assert.equal(ctx.AppState.isDirty, false);
 });
 
-test('partial result requires explicit acceptance before any edit', async () => {
-    let confirms = 0;
-    const ctx = setup({NotesAPI: {routeConspectus: async () => result('partial')},
-        DialogService: {confirm: async () => {confirms++; return false;}}});
+test('rejected partial proposal leaves the note untouched', async () => {
+    let reviews = 0;
+    const ctx = setup({NotesAPI: {routeConspectus: async () => result('partial'), addActivity: async () => {}},
+        ProposalReview: {show: async () => {reviews++; return {decision:'reject'};}}});
     await ctx.AIController.generateStep(2);
-    assert.equal(confirms, 1);
+    assert.equal(reviews, 1);
     assert.equal(ctx.AppState.isDirty, false);
     assert.equal(ctx.AppState.getBlock('two-a').html, 'old-a');
 });
@@ -101,8 +108,9 @@ test('cancel aborts the request without changing the note', async () => {
     let cancel;
     const ctx = setup({NotesAPI: {routeConspectus: (payload, signal) => new Promise((resolve, reject) => {
         signal.addEventListener('abort', () => reject(Object.assign(new Error('cancel'), {name: 'AbortError'})));
-    })}, GlobalLoader: {show(text, onCancel) {cancel = onCancel;}, hide() {}}});
+    }), addActivity: async () => {}}, GlobalLoader: {show(text, onCancel) {cancel = onCancel;}, hide() {}}});
     const running = ctx.AIController.generateStep(2);
+    await new Promise(setImmediate);
     cancel();
     assert.equal(await running, null);
     assert.equal(ctx.AppState.isDirty, false);

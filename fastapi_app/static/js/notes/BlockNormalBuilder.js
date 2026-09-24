@@ -7,6 +7,7 @@ import BlockMathRenderer from './BlockMathRenderer.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
 import BlockColorPicker from './BlockColorPicker.js';
 import AIController from './AIController.js';
+import LearningWorkspace from './LearningWorkspace.js';
 import ParserWindowsManager from './ParserWindowsManager.js';
 import HtmlSafety from './HtmlSafety.js';
 
@@ -80,6 +81,7 @@ class BlockNormalBuilder {
 
     static build(block, onRenderAll) {
         const div = document.createElement('div');
+        const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
         div.className = `dialectics-block block-${block.side || 'left'}`;
         if (block.is_pinned) {
             div.classList.add('pinned-sticky');
@@ -108,7 +110,6 @@ class BlockNormalBuilder {
         } else {
             // Роль может быть под-шагом ("step2.1", "step2.2" — несколько
             // развивающих процессов); ярлык над блоком берём по базовому шагу.
-            const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
             const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole);
             // Якорь после генерации: «Что вам нужно понять?» → «Теперь вы поняли».
             const roleLabelText = (baseRole === 'anchor' && block.anchorResolved)
@@ -127,7 +128,7 @@ class BlockNormalBuilder {
                         <h3 class="block-title" contenteditable="true"></h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
-                        <button class="block-action-btn btn-autofill-ai" title="${t('tt_autofill')}" style="font-size: 1.1rem; padding: 2px 4px; border: none; background: transparent; cursor: pointer;">✨</button>
+                        ${(baseRole && baseRole.startsWith('step')) ? '<button class="btn-autofill-ai learning-block-ai" type="button" title="Получить предложение ИИ для этого шага"><span aria-hidden="true">✦</span> Предложить текст</button>' : ''}
                         <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" title="${t('tt_pin')}">📌</button>
                     </div>
                 </div>
@@ -149,16 +150,8 @@ class BlockNormalBuilder {
                     <button class="block-action-btn btn-ai-check manual-only" title="${t('tt_ai_check')}">🔬</button>
                     <button class="block-action-btn btn-copy" title="${t('tt_copy')}">📋</button>
                     <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}">🎨</button>
-                    ${(block.role && block.role.startsWith('step')) ? `<button class="block-action-btn btn-ask btn-ask-prominent" title="${t('ask_title')}">💬 <span class="btn-ask-label">${t('ask_label')}</span></button>` : ''}
-                    ${(block.role && block.role.startsWith('step')) || block.role === 'anchor' ? `<button class="block-action-btn btn-regenerate" title="${t('tt_regenerate')}">🔄</button>` : ''}
+                    ${(baseRole && baseRole.startsWith('step')) ? '<button class="block-action-btn btn-fork-step" type="button" title="Создать новый вариант от этого шага">⑂</button>' : ''}
                     <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑️</button>
-                </div>
-                <div class="block-ask-row">
-                    <textarea placeholder="${t('ask_placeholder')}"></textarea>
-                    <div class="ask-actions">
-                        <button class="ask-go">${t('ask_go')}</button>
-                        <button class="ask-cancel">${t('ask_cancel')}</button>
-                    </div>
                 </div>
                 <div class="block-content">${HtmlSafety.rich(block.html || `<p>${t('block_text_ph')}</p>`)}</div>
             `;
@@ -217,28 +210,10 @@ class BlockNormalBuilder {
             btnAutofill.addEventListener('click', async (e) => {
                 e.stopPropagation();
 
-                const isStepByStep = AppState.isAutoFillStepByStep;
-
                 showToast(t('toast_gen_started'));
                 
                 try {
-                    if (isStepByStep) {
-                        let targetStep = 1;
-                        if (block.role && block.role.startsWith('step')) {
-                            targetStep = parseInt(block.role.replace('step', '')) + 1;
-                        } else if (block.role === 'anchor') {
-                            targetStep = 1;
-                        }
-                        
-                        if (targetStep > 5) {
-                            showToast(t('toast_all_steps_done'), 'info');
-                            return;
-                        }
-                        
-                        await AIController.generateStep(targetStep, onRenderAll);
-                    } else {
-                        await AIController.generateFull(onRenderAll);
-                    }
+                    await AIController.generateStep(Number(baseRole.slice(4)), onRenderAll);
                     showToast(t('toast_gen_ok'));
                 } catch (err) {
                     // 429 (дневной лимит демо) и т.п. приходят осмысленным текстом.
@@ -367,44 +342,6 @@ class BlockNormalBuilder {
             });
         }
 
-        // Bind Ask-question → regenerate others (❓, режим ИИ)
-        const btnAsk = div.querySelector('.btn-ask');
-        const askRow = div.querySelector('.block-ask-row');
-        if (btnAsk && askRow) {
-            const ta = askRow.querySelector('textarea');
-            const btnGo = askRow.querySelector('.ask-go');
-            const btnCancel = askRow.querySelector('.ask-cancel');
-            btnAsk.addEventListener('click', (e) => {
-                e.stopPropagation();
-                askRow.classList.toggle('open');
-                if (askRow.classList.contains('open')) ta.focus();
-            });
-            btnCancel.addEventListener('click', (e) => {
-                e.stopPropagation();
-                askRow.classList.remove('open');
-                ta.value = '';
-            });
-            btnGo.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const q = ta.value.trim();
-                if (!q) { ta.focus(); return; }
-                const stepNum = parseInt((block.role || '').replace('step', ''), 10);
-                if (!stepNum) return;
-                askRow.classList.remove('open');
-                btnGo.disabled = true;
-                showToast(t('ask_running'));
-                try {
-                    await AIController.regenerateWithQuestion(stepNum, q, onRenderAll);
-                    ta.value = '';
-                    showToast(t('ask_done'));
-                } catch (err) {
-                    console.error('regenerateWithQuestion failed', err);
-                    showToast(t('ask_error'), 'error');
-                } finally {
-                    btnGo.disabled = false;
-                }
-            });
-        }
 
         // Bind AI Check (🔬)
         const btnAiCheck = div.querySelector('.btn-ai-check');
@@ -447,31 +384,10 @@ class BlockNormalBuilder {
             });
         }
 
-        // Bind Regenerate (🔄)
-        const btnRegenerate = div.querySelector('.btn-regenerate');
-        if (btnRegenerate) {
-            btnRegenerate.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (confirm(t('confirm_regen_cascade'))) {
-                    showToast(t('toast_steps_started'));
-                    let startStep = 1;
-                    if (block.role && block.role.startsWith('step')) {
-                        startStep = parseInt(block.role.replace('step', ''));
-                    }
-                    
-                    try {
-                        if (AppState.isAutoFillStepByStep) {
-                            await AIController.generateStep(startStep, onRenderAll);
-                        } else {
-                            await AIController.regenerateCascade(startStep, onRenderAll);
-                        }
-                        showToast(t('toast_regen_ok'));
-                    } catch (err) {
-                        showToast(t('toast_regen_err'), 'error');
-                    }
-                }
-            });
-        }
+        div.querySelector('.btn-fork-step')?.addEventListener('click', event => {
+            event.stopPropagation();
+            LearningWorkspace.variants(Number(baseRole.slice(4)));
+        });
 
         // Math rendering
         BlockMathRenderer.renderMath(div);

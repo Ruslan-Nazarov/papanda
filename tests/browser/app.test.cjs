@@ -58,6 +58,10 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 return request.respond({status:200, contentType:'text/event-stream',
                     body:events.map(event => 'data: '+JSON.stringify(event)+'\n\n').join('')});
             }
+            if (request.url().endsWith('/api/ai/dialectics/topic-question')) {
+                return request.respond({status:200, contentType:'application/json',
+                    body:JSON.stringify({answer:'Mock clarification'})});
+            }
             if (request.url().includes('/api/ai/')) return request.respond({status:503, contentType:'application/json',
                 body:JSON.stringify({detail:'Unexpected AI call in browser test'})});
             return request.continue();
@@ -195,13 +199,16 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.keyboard.press('Escape');
             await page.waitForSelector('#modal-container.hidden');
         });
-        await t.test('explicit AI mode applies a mock SSE result and persists it', async () => {
+        await t.test('full AI answer is reviewed and saved as a separate variant', async () => {
             await page.setViewport({width:1280, height:900});
             await page.click('#btn-new-conspect');
             await page.click('#mode-master-toggle button[data-mode="ai"]');
             await page.waitForSelector('.anchor-topic-input');
             await page.type('.anchor-topic-input', 'A controlled test topic');
             await page.click('.btn-anchor-generate');
+            await page.waitForSelector('.learning-proposal-actions [data-decision="accept"]');
+            assert.equal(await page.$eval('#blocks-container', el => el.textContent.includes('Mock generated step')), false);
+            await page.click('.learning-proposal-actions [data-decision="accept"]');
             await page.waitForFunction(() => document.querySelector('#blocks-container')?.textContent.includes('Mock generated step'));
             assert.equal(generated, 1);
             await page.click('#btn-save');
@@ -209,6 +216,32 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.reload({waitUntil:'networkidle0'});
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
             await page.click('#mode-master-toggle button[data-mode="manual"]');
+        });
+        await t.test('variants, study chat and community demo are reachable', async () => {
+            await page.click('#btn-learning-ask');
+            await page.waitForSelector('.learning-chat-compose textarea');
+            await page.type('.learning-chat-compose textarea', 'What does this mean?');
+            await page.click('.learning-chat-compose button');
+            await page.waitForFunction(() => document.querySelector('.learning-chat-log')?.textContent.includes('Mock clarification'));
+            await page.click('.learning-close');
+            await page.click('#btn-learning-variants');
+            await page.waitForSelector('.learning-variant');
+            assert.equal(await page.$$eval('.learning-variant', rows => rows.length), 2);
+            await page.click('#learning-compare');
+            await page.waitForSelector('.learning-compare section');
+            await page.click('.learning-close');
+            await page.click('#btn-learning-variants');
+            await page.waitForSelector('#learning-label');
+            await page.$eval('#learning-label', el => {el.value = 'Another attempt';});
+            await page.click('#learning-fork');
+            await page.waitForFunction(() => !document.querySelector('.learning-overlay'));
+            assert.equal(await page.$eval('#blocks-container', el => el.textContent.includes('Mock generated step')), false);
+            await page.click('#btn-main-menu');
+            await page.click('#menu-item-learning-demo');
+            await page.waitForSelector('.learning-demo-tabs');
+            await page.click('[data-tab="map"]');
+            assert.equal(await page.$$eval('.learning-demo-map [data-node]', nodes => nodes.length), 3);
+            await page.click('.learning-close');
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');
         assert.deepEqual(violations, [], 'CSP violations');

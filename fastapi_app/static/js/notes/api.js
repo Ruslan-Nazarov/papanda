@@ -107,6 +107,13 @@ class NotesAPI {
         return this.request(url); 
     }
     static getNote(id) { return this.request(`/dialectics/${id}`).then(ApiContracts.noteResponse); }
+    static getVariants(id) { return this.request(`/dialectics/${id}/variants`); }
+    static forkVariant(id, data) { return this.request(`/dialectics/${id}/variants`, 'POST', data).then(ApiContracts.noteResponse); }
+    static getActivity(id) { return this.request(`/dialectics/${id}/activity`); }
+    static addActivity(id, data) { return this.request(`/dialectics/${id}/activity`, 'POST', data); }
+    static setLongTermGoal(id, revision, enabled) {
+        return this.request(`/dialectics/${id}/goal`, 'PATCH', {revision, long_term_goal: enabled}).then(ApiContracts.noteResponse);
+    }
     static createNote(data) { return this.request('/dialectics/save', 'POST', data).then(ApiContracts.noteResponse); }
     static updateNote(id, data) { return this.request(`/dialectics/${id}`, 'PATCH', data).then(ApiContracts.noteResponse); }
     static updateNoteStatus(id, status, revision) { return this.updateNote(id, {status, revision}); }

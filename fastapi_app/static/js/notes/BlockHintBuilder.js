@@ -50,9 +50,9 @@ class BlockHintBuilder {
                 </button>
                 
                 <div style="display: flex; gap: 8px; z-index: 2;">
-                    ${(AppState.isAutoFillEnabled && AppState.isAutoFillStepByStep) ? `
-                    <button class="btn-autofill-step" title="${t('hint_continue_autofill')}" style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 12px; color: #10b981; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <span>▶</span> ${t('hint_gen_ai')}
+                    ${stepRole.startsWith('step') ? `
+                    <button class="btn-autofill-step learning-block-ai" type="button" title="Предложение ИИ для этого шага">
+                        <span>✦</span> Предложить текст
                     </button>
                     ` : ''}
                 </div>

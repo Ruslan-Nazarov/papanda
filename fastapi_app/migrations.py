@@ -1,4 +1,4 @@
-"""SQLite migrations: 001 document revisions, 002 note and version stickers.
+"""SQLite migrations: 001 revisions, 002 stickers, 003 learning variants.
 
 DDL and content adaptation run in one explicit transaction. Unknown/corrupt
 schemas fail closed. The source snapshot is made before the transaction.
@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 from fastapi_app.config import settings
 from fastapi_app.services.block_contract import normalize_legacy_blocks
 
-VERSION = 2
+VERSION = 3
 
 
 def _validate(connection, metadata, version=VERSION):
@@ -21,12 +21,16 @@ def _validate(connection, metadata, version=VERSION):
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
     for table in metadata.sorted_tables:
+        if version < 3 and table.name in {'note_families', 'note_activity'}:
+            continue
         if table.name not in tables:
             raise RuntimeError(f'Missing table: {table.name}')
         columns = {c['name'] for c in inspector.get_columns(table.name)}
         required = set(table.columns.keys())
         if version < 2 and table.name in {'notes', 'note_versions'}:
             required -= {'stickers'}
+        if version < 3 and table.name == 'notes':
+            required -= {'family_id', 'parent_note_id', 'variant_label', 'variant_origin', 'fork_step', 'long_term_goal'}
         if legacy and table.name == 'notes':
             required -= {'revision', 'schema_version'}
         if required - columns:
@@ -37,6 +41,8 @@ def _validate(connection, metadata, version=VERSION):
                          tuple(f['referred_columns']), f.get('options', {}).get('ondelete'))
                         for f in inspector.get_foreign_keys(table.name)}
         for fk in table.foreign_key_constraints:
+            if version < 3 and table.name == 'notes' and any(e.parent.name in {'family_id', 'parent_note_id'} for e in fk.elements):
+                continue
             expected = (tuple(e.parent.name for e in fk.elements), fk.referred_table.name,
                         tuple(e.column.name for e in fk.elements), fk.ondelete)
             if expected not in foreign_keys:
@@ -108,6 +114,21 @@ def _migrate(connection):
                            'created_at': None}
                 connection.exec_driver_sql('UPDATE notes SET stickers=? WHERE id=?',
                                            (json.dumps([sticker], ensure_ascii=False), note_id))
+    if version < 3:
+        Base.metadata.create_all(connection, checkfirst=True)
+        columns = {c['name'] for c in inspect(connection).get_columns('notes')}
+        additions = {
+            'family_id': 'INTEGER REFERENCES note_families(id) ON DELETE SET NULL',
+            'parent_note_id': 'INTEGER REFERENCES notes(id) ON DELETE SET NULL',
+            'variant_label': 'VARCHAR(120)',
+            'variant_origin': "VARCHAR(20) NOT NULL DEFAULT 'human'",
+            'fork_step': 'INTEGER',
+            'long_term_goal': 'BOOLEAN NOT NULL DEFAULT 0',
+        }
+        for name, definition in additions.items():
+            if name not in columns:
+                connection.exec_driver_sql(f'ALTER TABLE notes ADD COLUMN {name} {definition}')
+        connection.exec_driver_sql('CREATE INDEX IF NOT EXISTS ix_notes_family_id ON notes (family_id)')
     connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
     _validate(connection, Base.metadata)
 

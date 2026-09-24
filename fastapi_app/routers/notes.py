@@ -11,6 +11,8 @@ from fastapi_app.schemas.notes import (
 )
 from fastapi_app.schemas.notes import Status, RevisionRequest, PublicNoteView
 from fastapi_app.services.notes_service import NotesService
+from fastapi_app.services.learning_service import LearningService
+from fastapi_app.schemas.learning import ForkRequest, ActivityCreate, GoalUpdate
 
 PositiveId = Annotated[int, Path(gt=0)]
 
@@ -90,6 +92,30 @@ async def unshare_note(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
 @router.get("/shared/{token}", response_model=PublicNoteView)
 async def get_shared_note_api(token: str, db: AsyncSession = Depends(get_public_db)):
     return NotesService.public_view(await NotesService.get_shared_note(db, token))
+
+# Learning variants and significant actions
+@router.get('/{note_id}/variants', response_model=List[NoteView])
+async def get_variants(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
+    return await LearningService.variants(db, note_id)
+
+@router.post('/{note_id}/variants', response_model=NoteView)
+async def fork_variant(note_id: PositiveId, data: ForkRequest, db: AsyncSession = Depends(get_db)):
+    return await LearningService.fork(db, note_id, data)
+
+@router.get('/{note_id}/activity')
+async def get_activity(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
+    rows = await LearningService.activity(db, note_id)
+    return [{'id': row.id, 'kind': row.kind, 'data': row.data_json,
+             'created_at': row.created_at} for row in rows]
+
+@router.post('/{note_id}/activity')
+async def add_activity(note_id: PositiveId, data: ActivityCreate, db: AsyncSession = Depends(get_db)):
+    row = await LearningService.add_activity(db, note_id, data)
+    return {'id': row.id, 'kind': row.kind, 'data': row.data_json, 'created_at': row.created_at}
+
+@router.patch('/{note_id}/goal', response_model=NoteView)
+async def set_long_term_goal(note_id: PositiveId, data: GoalUpdate, db: AsyncSession = Depends(get_db)):
+    return await LearningService.set_goal(db, note_id, data.revision, data.long_term_goal)
 
 # Guide
 @router.get("/guide", deprecated=True)

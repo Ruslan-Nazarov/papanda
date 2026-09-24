@@ -63,7 +63,7 @@ async def test_v1_sticker_migration_preserves_legacy_field_and_history(tmp_path)
         await migrate(engine)
         await migrate(engine)
         with closing(sqlite3.connect(path)) as connection:
-            assert connection.execute('PRAGMA user_version').fetchone()[0] == 2
+            assert connection.execute('PRAGMA user_version').fetchone()[0] == 3
             text, stickers = connection.execute('SELECT sticker_text, stickers FROM notes').fetchone()
             assert text == json.loads(stickers)[0]['text'] == 'legacy text'
             assert connection.execute('SELECT stickers FROM note_versions').fetchone()[0] == '[]'

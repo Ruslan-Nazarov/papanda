@@ -34,6 +34,9 @@ class NoteStore {
         const blocks = note.content_json || note.blocks || [];
         const data = {id: note.id ?? null, revision: note.revision ?? null, schema_version: note.schema_version || 1,
             title: note.title || '', category_id: note.category_id ?? null, status: note.status || 'none',
+            family_id: note.family_id ?? null, parent_note_id: note.parent_note_id ?? null,
+            variant_label: note.variant_label || null, variant_origin: note.variant_origin || 'human',
+            fork_step: note.fork_step ?? null, long_term_goal: Boolean(note.long_term_goal),
             stickers: clone(note.stickers || []),
             blocks: clone(Array.isArray(blocks) ? blocks : []).map(block => ({...block,
                 status: block.status === 'draft' ? 'in_progress' : block.status || 'none',
@@ -96,7 +99,10 @@ class NoteStore {
         });
         Object.assign(record.data, clone({title: response.title ?? note.title,
             stickers: response.stickers ?? note.stickers ?? [],
-            category_id: response.category_id ?? null, status: response.status || note.status}));
+            category_id: response.category_id ?? null, status: response.status || note.status,
+            family_id: response.family_id ?? null, parent_note_id: response.parent_note_id ?? null,
+            variant_label: response.variant_label || null, variant_origin: response.variant_origin || 'human',
+            fork_step: response.fork_step ?? null, long_term_goal: Boolean(response.long_term_goal)}));
         record.data.blocks = blocks;
         record.dirty = false;
         if (record === this.#current) this.#notify('noteSaved', note);

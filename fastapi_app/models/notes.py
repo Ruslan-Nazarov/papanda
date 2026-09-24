@@ -1,6 +1,6 @@
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Boolean, DateTime, JSON, ForeignKey, UniqueConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from fastapi_app.database import Base
@@ -11,6 +11,12 @@ class NoteCategory(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+
+class NoteFamily(Base):
+    __tablename__ = "note_families"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 class Note(Base):
     __tablename__ = "notes"
@@ -29,6 +35,12 @@ class Note(Base):
     sticker_text: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     sticker_color: Mapped[str] = mapped_column(String(20), default="#fff9c4")
     sync_id: Mapped[Optional[str]] = mapped_column(String(36), unique=True, index=True, nullable=True)
+    family_id: Mapped[Optional[int]] = mapped_column(ForeignKey("note_families.id", ondelete="SET NULL"), nullable=True, index=True)
+    parent_note_id: Mapped[Optional[int]] = mapped_column(ForeignKey("notes.id", ondelete="SET NULL"), nullable=True)
+    variant_label: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    variant_origin: Mapped[str] = mapped_column(String(20), default="human", server_default="human")
+    fork_step: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    long_term_goal: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     # Публичная ссылка на конспект (только чтение). None = не расшарен.
     share_token: Mapped[Optional[str]] = mapped_column(String(32), unique=True, index=True, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
@@ -61,3 +73,12 @@ class NoteConnection(Base):
     __table_args__ = (
         UniqueConstraint('note_id_from', 'note_id_to', name='_note_connection_uc'),
     )
+
+class NoteActivity(Base):
+    __tablename__ = "note_activity"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    note_id: Mapped[int] = mapped_column(ForeignKey("notes.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(32), index=True)
+    data_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

@@ -54,6 +54,7 @@ class GenerationChanges {
         const anchor = blocks.find(block => block.role === 'anchor');
         if (anchor && meta.anchor_summary) {
             anchor.sourceGoal ||= (anchor.html || '').replace(/<[^>]+>/g, '').trim();
+            anchor.sourceTitle ||= anchor.title;
             anchor.html = toHtml(meta.anchor_summary);
             anchor.anchorResolved = true;
             if (meta.anchor_title) anchor.title = meta.anchor_title;

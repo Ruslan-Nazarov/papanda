@@ -23,7 +23,7 @@ def build(root, output, sha):
     if not (dist / 'manifest.json').is_file():
         raise ValueError('Build frontend before packaging')
     files |= {p.relative_to(root).as_posix() for p in dist.rglob('*') if p.is_file()}
-    manifest = {'revision': sha, 'db_schema': 2, 'files': {name: digest(root / name) for name in sorted(files)}}
+    manifest = {'revision': sha, 'db_schema': 3, 'files': {name: digest(root / name) for name in sorted(files)}}
     output.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(output, 'x:gz') as archive:
         for name in sorted(files):
