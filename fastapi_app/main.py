@@ -30,6 +30,7 @@ from fastapi_app.services.manual_algorithm import get_manual_algorithm
 from fastapi_app.rate_limiter import limiter
 from fastapi_app.database import get_db, dispose_all_engines, initialize_databases, get_public_db
 from fastapi_app.services.notes_service import NotesService
+from fastapi_app.frontend_assets import asset
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -75,6 +76,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Templates
 templates_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=templates_dir)
+templates.env.globals['asset'] = asset
 
 # Routers
 app.include_router(notes.router, prefix="/api/dialectics", tags=["notes"])
@@ -85,7 +87,7 @@ async def index(request: Request):
     locale = getattr(request.state, "locale", "ru")
     _ = get_translator(locale)
     # Тексты алгоритма для ручного режима (подсказки блоков) — инлайним в
-    # страницу как window.__ALGORITHM__, источник prompts/7_*.json.
+    # страницу как inert JSON #algorithm-data, источник prompts/7_*.json.
     algorithm_json = json.dumps(get_manual_algorithm(locale), ensure_ascii=False).replace("<", "\\u003c")
     i18n_json = json.dumps(locale_dict(locale), ensure_ascii=False).replace("<", "\\u003c")
     return templates.TemplateResponse(

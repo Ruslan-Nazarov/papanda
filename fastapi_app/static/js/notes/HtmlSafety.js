@@ -9,13 +9,15 @@ class HtmlSafety {
         return DOMPurify.sanitize(String(value ?? ''), {
             ADD_ATTR: ['formula', 'author'],
             // Retain the editor's internal note links, without enabling arbitrary schemes.
-            ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|internal):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+            ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|internal):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
         });
     }
 
     static link(value) {
         const url = String(value ?? '').trim();
+        // Control characters must never survive in a navigable URL.
         return /^(?:https?:\/\/|mailto:|internal:\/\/note\/)/i.test(url)
+            // eslint-disable-next-line no-control-regex
             && !/[\u0000-\u001f\u007f]/.test(url) ? url : '';
     }
 }

@@ -261,31 +261,7 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- D3 and Function-Plot -->
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/function-plot@1.24.4/dist/function-plot.js"></script>
-
-<!-- Fabric.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-
-<!-- TipTap (ESM via CDN) -->
-<script type="importmap">
-  {
-    "imports": {
-      "@tiptap/core": "https://esm.sh/@tiptap/core@2.2.4?bundle",
-      "@tiptap/starter-kit": "https://esm.sh/@tiptap/starter-kit@2.2.4?bundle",
-      "@tiptap/extension-mark": "https://esm.sh/@tiptap/core@2.2.4?bundle",
-      "@tiptap/extension-node": "https://esm.sh/@tiptap/core@2.2.4?bundle",
-      "@tiptap/extension-underline": "https://esm.sh/@tiptap/extension-underline@2.2.4?bundle",
-      "@tiptap/extension-link": "https://esm.sh/@tiptap/extension-link@2.2.4?bundle",
-      "@tiptap/extension-placeholder": "https://esm.sh/@tiptap/extension-placeholder@2.2.4?bundle",
-      "@tiptap/extension-image": "https://esm.sh/@tiptap/extension-image@2.2.4?bundle"
-    }
-  }
-</script>
-<!-- Тексты алгоритма ручного режима (подсказки блоков), источник prompts/7_*.json -->
-<script>window.__ALGORITHM__ = {{ algorithm_json | safe }};</script>
+<script type="application/json" id="algorithm-data">{{ algorithm_json | safe }}</script>
 <script type="application/json" id="i18n-data">{{ i18n_json | safe }}</script>
-<script src="/static/js/quiet-console.js?v=1"></script>
-<script type="module" src="/static/js/notes/app.js?v=39"></script>
+<script type="module" src="{{ asset('app.js') }}"></script>
 {% endblock %}

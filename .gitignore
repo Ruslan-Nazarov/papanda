@@ -34,3 +34,6 @@ prompts/11_router_controller.py
 prompts/12_context_builder.py
 prompts/13_sanitizer.py
 prompts/14_rag_tool_manager.py
+
+# Reproducible frontend output (npm ci && npm run build)
+fastapi_app/static/dist/

@@ -107,7 +107,7 @@ class SearchManager {
             const textMatch = plainText.toLowerCase().includes(lowerQuery);
 
             if (titleMatch || textMatch) {
-                let snippet = '';
+                let snippet;
                 if (textMatch) {
                     const idx = plainText.toLowerCase().indexOf(lowerQuery);
                     const start = Math.max(0, idx - 30);

@@ -51,7 +51,7 @@ class BlockStickersManager {
             });
         }
 
-        document.addEventListener('noteLoaded', () => {
+        document.addEventListener('noteOpened', () => {
             this._updateNoteBtn();
         });
 
@@ -69,22 +69,20 @@ class BlockStickersManager {
         // Remove any existing block sticker panels
         document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => p.remove());
 
-        if (!block.stickers) block.stickers = [];
+
 
         const panel = this._buildPanel(
             t('stk_block_notes'),
-            block.stickers,
+            block.stickers || [],
             (sticker) => {
-                block.stickers.push(sticker);
-                AppState.markDirty();
+                AppState.updateBlock(block.id, {stickers: [...(block.stickers || []), sticker]});
                 // Re-render panel to show new sticker
                 this.openBlockStickersPanel(block, anchorEl);
                 // Update badge on block
                 this._updateBadge(anchorEl, block.stickers.length);
             },
             (stickerId) => {
-                block.stickers = block.stickers.filter(s => s.id !== stickerId);
-                AppState.markDirty();
+                AppState.updateBlock(block.id, {stickers: (block.stickers || []).filter(s => s.id !== stickerId)});
                 this.openBlockStickersPanel(block, anchorEl);
                 this._updateBadge(anchorEl, block.stickers.length);
             },
@@ -104,21 +102,19 @@ class BlockStickersManager {
      */
     static renderBlockStickersInContainer(block, containerEl) {
         containerEl.innerHTML = '';
-        if (!block.stickers) block.stickers = [];
+
 
         const panel = this._buildPanel(
             t('stk_block_notes'),
-            block.stickers,
+            block.stickers || [],
             (sticker) => {
-                block.stickers.push(sticker);
-                AppState.markDirty();
+                AppState.updateBlock(block.id, {stickers: [...(block.stickers || []), sticker]});
                 this.renderBlockStickersInContainer(block, containerEl);
                 const blockEl = document.querySelector(`.dialectics-block[data-id="${block.id}"]`);
                 if (blockEl) this._updateBadge(blockEl, block.stickers.length);
             },
             (stickerId) => {
-                block.stickers = block.stickers.filter(s => s.id !== stickerId);
-                AppState.markDirty();
+                AppState.updateBlock(block.id, {stickers: (block.stickers || []).filter(s => s.id !== stickerId)});
                 this.renderBlockStickersInContainer(block, containerEl);
                 const blockEl = document.querySelector(`.dialectics-block[data-id="${block.id}"]`);
                 if (blockEl) this._updateBadge(blockEl, block.stickers.length);
@@ -161,20 +157,18 @@ class BlockStickersManager {
         if (!menu) return;
 
         menu.innerHTML = '';
-        if (!AppState.currentNote.stickers) AppState.currentNote.stickers = [];
+
 
         const panel = this._buildPanel(
             t('stk_note_notes'),
-            AppState.currentNote.stickers,
+            AppState.currentNote.stickers || [],
             (sticker) => {
-                AppState.currentNote.stickers.push(sticker);
-                AppState.markDirty();
+                AppState.updateNote({stickers: [...(AppState.currentNote.stickers || []), sticker]});
                 this.renderNoteStickersInDropdown();
                 this._updateNoteBtn();
             },
             (stickerId) => {
-                AppState.currentNote.stickers = AppState.currentNote.stickers.filter(s => s.id !== stickerId);
-                AppState.markDirty();
+                AppState.updateNote({stickers: (AppState.currentNote.stickers || []).filter(s => s.id !== stickerId)});
                 this.renderNoteStickersInDropdown();
                 this._updateNoteBtn();
             },

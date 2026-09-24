@@ -1,6 +1,7 @@
 import { t } from '../i18n.js';
+import Lifecycle from './Lifecycle.js';
 import AppState from './AppState.js';
-import { ALGORITHM_STEPS } from './BlockConstants.js';
+import BlockDOMRenderer from './BlockDOMRenderer.js';
 
 import { EditorTiptapSetup } from './EditorTiptapSetup.js';
 import { EditorShapesTab } from './EditorShapesTab.js';
@@ -13,21 +14,39 @@ class EditorManager {
     static shapesTab = null;
     static graphTab = null;
 
+    static lifecycle = null;
+    static session = null;
+    static epoch = null;
+    static opener = null;
+
+    static dispose() {
+        this.closeModal(false);
+        this.lifecycle?.dispose();
+        this.lifecycle = null;
+    }
+
     static init() {
-        document.addEventListener('openEditor', (e) => {
+        if (this.lifecycle && !this.lifecycle.disposed) return;
+        this.lifecycle = new Lifecycle();
+        this.lifecycle.on(document, 'noteOpened', () => this.closeModal(false));
+        this.lifecycle.on(document, 'openEditor', (e) => {
             const { blockId, el } = e.detail;
             this.openModalEditor(blockId, el);
         });
     }
 
     static openModalEditor(blockId, blockEl) {
-        if (this.currentEditor) {
+        if (this.session) {
             this.closeModal(false);
         }
 
-        this.currentBlockId = blockId;
         const block = AppState.currentNote.blocks.find(b => b.id === blockId);
         if (!block) return;
+
+        this.session = new Lifecycle();
+        this.epoch = AppState.documentEpoch;
+        this.opener = document.activeElement;
+        this.currentBlockId = blockId;
 
         const currentTitle = block.title || '';
         const currentTags = block.tags || '';
@@ -62,6 +81,8 @@ class EditorManager {
         const tiptapContainer = modalContainer.querySelector('.modal-tiptap-content');
         this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml);
         EditorTiptapSetup.bindFormatButtons(modalContainer, () => this.currentEditor);
+        this.currentEditor.on('update', () => document.dispatchEvent(new Event('editingActivity')));
+        this.session.on(modalContainer, 'input', () => document.dispatchEvent(new Event('editingActivity')));
 
         // 2. Tabs
         this.shapesTab = new EditorShapesTab(modalContainer, blockId, () => this.currentEditor);
@@ -71,7 +92,18 @@ class EditorManager {
         // 3. Dragging
         const modalEl = modalContainer.querySelector('.modal-editor-floating');
         const headerEl = modalContainer.querySelector('.modal-header');
-        EditorDragBehavior.makeDraggable(modalEl, headerEl);
+        EditorDragBehavior.makeDraggable(modalEl, headerEl, this.session);
+        this.session.on(document, 'keydown', e => {
+            if (e.target.closest('.modal-overlay, .formula-modal-backdrop')) return;
+            if (e.key === 'Escape') { e.preventDefault(); this.closeModal(false); }
+            if (e.key === 'Tab') {
+                const controls = [...modalEl.querySelectorAll('button, input, textarea, [contenteditable="true"]')]
+                    .filter(el => !el.disabled && el.getClientRects().length);
+                const first = controls[0], last = controls.at(-1);
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+            }
+        });
 
         // 4. Modal Expand & Minimize
         modalContainer.querySelector('.btn-expand')?.addEventListener('click', () => {
@@ -87,6 +119,7 @@ class EditorManager {
     }
 
     static setupTabSwitching(modalContainer, block) {
+        const session = this.session;
         const tabs = modalContainer.querySelectorAll('.modal-tab');
         const contents = modalContainer.querySelectorAll('.tab-content');
         
@@ -101,7 +134,7 @@ class EditorManager {
                 if (targetContent) targetContent.style.display = 'block';
                 
                 if (tabId === 'graphs' && this.graphTab && !this.graphTab.graphDrawn) {
-                    setTimeout(() => this.graphTab.drawGraph(), 50);
+                    this.session.timeout(() => this.graphTab?.drawGraph(), 50);
                 }
                 if (tabId === 'shapes' && this.shapesTab) {
                     this.shapesTab.init();
@@ -109,7 +142,7 @@ class EditorManager {
                 if (tabId === 'stickers') {
                     const BlockStickersManager = (await import('./BlockStickersManager.js')).default;
                     const container = modalContainer.querySelector('#tab-stickers');
-                    if (block && container) {
+                    if (!session.disposed && block && container) {
                         BlockStickersManager.renderBlockStickersInContainer(block, container);
                     }
                 }
@@ -117,13 +150,17 @@ class EditorManager {
         });
     }
 
-    static handleSave() {
+    static async handleSave() {
+        const session = this.session;
+        await this.shapesTab?.ready;
+        if (!session || session.disposed || this.session !== session) return;
+        if (this.epoch !== AppState.documentEpoch) { this.closeModal(false); return; }
         const modalContainer = document.getElementById('modal-container');
         const newTitle = modalContainer.querySelector('.modal-title-input')?.value || '';
         const newTags = modalContainer.querySelector('.modal-tags-input')?.value || '';
         const newHtml = this.currentEditor ? this.currentEditor.getHTML() : '';
         
-        let shapesData = null;
+        let shapesData;
         if (this.shapesTab && this.shapesTab.fabricCanvas) {
             shapesData = this.shapesTab.getJSON();
         } else {
@@ -173,41 +210,28 @@ class EditorManager {
     }
 
     static closeModal(save) {
-        const modalContainer = document.getElementById('modal-container');
-        modalContainer.innerHTML = '';
-        modalContainer.classList.add('hidden');
-        
-        if (this.currentEditor) {
-            this.currentEditor.destroy();
-            this.currentEditor = null;
-        }
-        
         const blockId = this.currentBlockId;
+        const sameDocument = this.epoch === AppState.documentEpoch;
+        this.session?.dispose();
+        this.session = null;
+        this.shapesTab?.dispose();
+        this.graphTab?.dispose();
+        this.currentEditor?.destroy();
+        this.currentEditor = this.shapesTab = this.graphTab = null;
         this.currentBlockId = null;
-        this.shapesTab = null;
-        this.graphTab = null;
-
-        if (blockId) {
-            const block = AppState.currentNote.blocks.find(b => b.id === blockId);
-            if (save) {
-                if (block) {
-                    block.isDraft = false;
-                    block.status = 'ready';
-                }
-            } else {
-                if (block && block.isDraft) {
-                    AppState.removeBlock(blockId);
-                }
-            }
-            import('./BlockDOMRenderer.js').then(module => {
-                module.default.renderAll();
-            });
+        const container = document.getElementById('modal-container');
+        if (container) { container.replaceChildren(); container.classList.add('hidden'); }
+        if (sameDocument && blockId) {
+            if (!save && AppState.getBlock(blockId)?.isDraft) AppState.removeBlock(blockId);
+            BlockDOMRenderer.renderAll();
         }
+        this.opener?.isConnected && this.opener.focus();
+        this.opener = null;
     }
 
     static renderEditorHTML({ top, left, currentTitle, currentTags }) {
         return `
-            <div class="modal-editor-floating" style="top: ${top}px; left: ${left}px; position: fixed; z-index: 1000;">
+            <div class="modal-editor-floating" role="dialog" aria-modal="true" aria-label="${t('editor')}" style="top: ${top}px; left: ${left}px; position: fixed; z-index: 1000;">
                 <div class="modal-header">
                     <h2>${t('editor')}</h2>
                     <div class="modal-toolbar format-group">

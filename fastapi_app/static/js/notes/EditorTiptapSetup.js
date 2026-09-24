@@ -24,6 +24,8 @@ export class EditorTiptapSetup {
                 StarterKit.configure({
                     blockquote: false,
                     orderedList: false,
+                    link: false,
+                    underline: false,
                 }), 
                 Underline,
                 InternalLink.configure({ openOnClick: false }),
@@ -109,7 +111,7 @@ export class EditorTiptapSetup {
                         icon: '❓',
                         confirmText: t('save')
                     }).then(questionText => {
-                        if (questionText === null) return;
+                        if (questionText === null || currentEditor.isDestroyed) return;
                         if (questionText === '') {
                             currentEditor.chain().focus().unsetQuestionMark().run();
                         } else {
@@ -141,7 +143,7 @@ export class EditorTiptapSetup {
                     }
 
                     FormulaModalService.open({ initialFormula: existingFormula }).then(formula => {
-                        if (formula === null || formula === '') return;
+                        if (formula === null || formula === '' || currentEditor.isDestroyed) return;
                         currentEditor.chain().focus().insertMathInline({ formula }).run();
                     });
                 }
@@ -155,7 +157,7 @@ export class EditorTiptapSetup {
                     if (!isEditing && (!selectedText || selectedText.trim().length === 0)) return;
 
                     DialogService.selectInternalLink(isEditing).then(url => {
-                        if (url === null) return;
+                        if (url === null || currentEditor.isDestroyed) return;
                         if (url === '') {
                             currentEditor.chain().focus().extendMarkRange('link').unsetLink().run();
                         } else {
@@ -228,6 +230,7 @@ export class EditorTiptapSetup {
         });
 
         const handleSave = async () => {
+            if (currentEditor.isDestroyed) {close(); return;}
             const hintText = input.value.trim();
             if (hintText) {
                 if (isEditing || (selectedText && selectedText.trim().length > 0)) {
@@ -239,6 +242,7 @@ export class EditorTiptapSetup {
                         defaultValue: t('tip_footnote_default'),
                         confirmText: t('insert_word')
                     }) || t('tip_footnote_default');
+                    if (currentEditor.isDestroyed) {close(); return;}
                     currentEditor.chain().focus().insertContent({
                         type: 'text',
                         text: placeholder,

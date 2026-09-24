@@ -61,7 +61,7 @@ class BlockMathRenderer {
             // A. Display math ($$...$$ or \[...\])
             html = html.replace(/(?:\$\$|\\\[)([\s\S]+?)(?:\$\$|\\\])/g, (match, formula) => {
                 changed = true;
-                const cleanFormula = this.unescapeHtml(formula).replace(/<br\s*[\/]?>/gi, '\n').trim();
+                const cleanFormula = this.unescapeHtml(formula).replace(/<br\s*[/]?>/gi, '\n').trim();
                 try {
                     return window.katex.renderToString(cleanFormula, { displayMode: true, throwOnError: false });
                 } catch (e) {
@@ -71,7 +71,7 @@ class BlockMathRenderer {
 
             // A2. Bare [ … ] display math — markdown ate the backslash of \[ … \].
             //     Only fires when the brackets clearly wrap a formula (contain = \ ^ _).
-            html = html.replace(/(^|>|<br\s*\/?>|\n)\s*\[\s*([^\[\]<>\n]*[=\\^_][^\[\]<>\n]*?)\s*\]\s*(?=$|<|\n)/g, (match, pre, formula) => {
+            html = html.replace(/(^|>|<br\s*\/?>|\n)\s*\[\s*([^[\]<>\n]*[=\\^_][^[\]<>\n]*?)\s*\]\s*(?=$|<|\n)/g, (match, pre, formula) => {
                 changed = true;
                 const cleanFormula = this.unescapeHtml(formula).trim().replace(/\.\s*$/, '');
                 try {
@@ -82,9 +82,9 @@ class BlockMathRenderer {
             });
 
             // B. Standalone raw LaTeX environments: \begin{pmatrix}... \end{pmatrix}, etc.
-            html = html.replace(/((?:[A-Za-z0-9_\{\}\^\\'\s]+\s*=\s*)?\\begin\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}[\s\S]+?\\end\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}(?:\s*\\begin\{matrix\}[\s\S]+?\\end\{matrix\})?)/g, (match, formula) => {
+            html = html.replace(/((?:[A-Za-z0-9_{}^\\'\s]+\s*=\s*)?\\begin\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}[\s\S]+?\\end\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}(?:\s*\\begin\{matrix\}[\s\S]+?\\end\{matrix\})?)/g, (match, formula) => {
                 changed = true;
-                const cleanFormula = this.unescapeHtml(formula).replace(/<br\s*[\/]?>/gi, '\n').trim();
+                const cleanFormula = this.unescapeHtml(formula).replace(/<br\s*[/]?>/gi, '\n').trim();
                 try {
                     return window.katex.renderToString(cleanFormula, { displayMode: true, throwOnError: false });
                 } catch (e) {
@@ -93,7 +93,7 @@ class BlockMathRenderer {
             });
 
             // C. Inline math ($...$ or \(...\))
-            html = html.replace(/(?:\$|\\\()([^\$\n]+?)(?:\$|\\\))/g, (match, formula) => {
+            html = html.replace(/(?:\$|\\\()([^$\n]+?)(?:\$|\\\))/g, (match, formula) => {
                 changed = true;
                 const cleanFormula = this.unescapeHtml(formula).trim();
                 try {
@@ -104,7 +104,7 @@ class BlockMathRenderer {
             });
 
             // D. Standalone inline LaTeX Greek/math tokens (e.g. \alpha, \beta, \cdot, etc.) inside regular prose
-            html = html.replace(/(?<=\s|^|>|\()(\\(?:alpha|beta|gamma|delta|Delta|epsilon|theta|lambda|mu|pi|sigma|Sigma|phi|omega|Omega|cdot|times|approx|ne|le|ge|pm)[a-zA-Z0-9_\^\{\}]*)(?=\s|$|<|[,\.\?!;\)])/g, (match, token) => {
+            html = html.replace(/(?<=\s|^|>|\()(\\(?:alpha|beta|gamma|delta|Delta|epsilon|theta|lambda|mu|pi|sigma|Sigma|phi|omega|Omega|cdot|times|approx|ne|le|ge|pm)[a-zA-Z0-9_^{}]*)(?=\s|$|<|[,.?!;)])/g, (match, token) => {
                 changed = true;
                 const cleanToken = this.unescapeHtml(token).trim();
                 try {

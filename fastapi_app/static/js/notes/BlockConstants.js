@@ -1,9 +1,15 @@
 import { t } from '../i18n.js';
 
 // Ручной алгоритм (подсказки блоков) приходит из prompts/7_*.json — сервер
-// инлайнит блок нужной локали в window.__ALGORITHM__. i18n (hint_*_title) —
-// только запасной вариант, если инлайн не пришёл.
-const _alg = () => (typeof window !== 'undefined' && window.__ALGORITHM__) || {};
+// передаёт блок нужной локали в inert JSON #algorithm-data. i18n — fallback.
+let algorithm;
+const _alg = () => {
+    if (!algorithm) {
+        const source = document.getElementById('algorithm-data');
+        algorithm = source ? JSON.parse(source.textContent) : {};
+    }
+    return algorithm;
+};
 
 const _stepTitle = (role) => {
     const key = role === 'anchor' ? 'anchor' : `${role}_title`;
@@ -19,7 +25,7 @@ export const ALGORITHM_STEPS = [
     { role: 'step5', side: 'center', promptKey: 'step5', titleKey: 'hint_step5_title', get title() { return _stepTitle('step5'); } }
 ];
 
-// Тексты подсказок: window.__ALGORITHM__ (из 7_*.json), fallback — i18n hint_*.
+// Тексты подсказок: #algorithm-data (из 7_*.json), fallback — i18n hint_*.
 export const ALGORITHM_TEXTS = new Proxy({}, {
     get: (_t, role) => _alg()[role] || t(role === 'anchor' ? 'hint_anchor' : `hint_${role}`),
 });
@@ -35,10 +41,11 @@ export const STEP_ORDER = {
 
 /**
  * Infers a block's dialectics role from its title text.
- * Mutates the block object in-place (sets .role and .side) if a role is detected.
+ * Leaves the input unchanged; normalization belongs to NoteStore.
  * Returns the inferred role string, or null if no match.
  */
-export function inferRoleFromTitle(block) {
+export function inferRoleFromTitle(input) {
+    const block = {...input};
     // Явно заданная роль всегда приоритетнее эвристики по тексту.
     if (block.role) {
         if (block.role === 'anchor') block.side = 'left';

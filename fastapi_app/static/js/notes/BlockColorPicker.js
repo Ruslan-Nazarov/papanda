@@ -1,4 +1,5 @@
 import AppState from './AppState.js';
+import Lifecycle from './Lifecycle.js';
 import { showToast } from './ToastService.js';
 import { t } from '../i18n.js';
 
@@ -6,9 +7,11 @@ export class BlockColorPicker {
     static open(block, buttonEl, div) {
         const existing = document.getElementById('block-color-picker-popover');
         if (existing) {
-            existing.remove();
+            this.session?.dispose();
             return;
         }
+        this.session?.dispose();
+        const session = this.session = new Lifecycle();
 
         const colors = [
             { name: t('color_blue'), color: '#3b82f6' },
@@ -55,25 +58,25 @@ export class BlockColorPicker {
         `;
 
         document.body.appendChild(popover);
+        session.own(() => popover.remove());
+        session.on(document, 'noteOpened', () => session.dispose());
 
         const close = (e) => {
             if (!popover.contains(e.target) && e.target !== buttonEl) {
-                popover.remove();
-                document.removeEventListener('click', close);
+                session.dispose();
             }
         };
-        setTimeout(() => document.addEventListener('click', close), 10);
+        session.timeout(() => session.on(document, 'click', close), 10);
 
         popover.querySelectorAll('.color-dot-btn').forEach(btn => {
             btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.2)');
             btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
             btn.addEventListener('click', () => {
                 const color = btn.dataset.color;
-                block.border_color = color;
-                AppState.updateBlock(block.id, { border_color: color });
+                AppState.updateBlock(block.id, {border_color: color});
                 div.style.borderLeftColor = color;
                 showToast(t('color_changed'));
-                popover.remove();
+                session.dispose();
             });
         });
 
@@ -81,13 +84,12 @@ export class BlockColorPicker {
         if (customPicker) {
             customPicker.addEventListener('input', (e) => {
                 const color = e.target.value;
-                block.border_color = color;
-                AppState.updateBlock(block.id, { border_color: color });
+                AppState.updateBlock(block.id, {border_color: color});
                 div.style.borderLeftColor = color;
             });
             customPicker.addEventListener('change', () => {
                 showToast(t('color_changed'));
-                popover.remove();
+                session.dispose();
             });
         }
     }

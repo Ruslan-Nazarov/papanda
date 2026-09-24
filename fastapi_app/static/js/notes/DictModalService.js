@@ -6,7 +6,7 @@ class DictModalService {
         const block = AppState.getBlock(blockId);
         if (!block) return;
 
-        if (!block.words) block.words = [];
+
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
@@ -95,8 +95,7 @@ class DictModalService {
             wordsContainer.querySelectorAll('.btn-del-word').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const idx = parseInt(btn.dataset.index, 10);
-                    block.words.splice(idx, 1);
-                    AppState.updateBlock(block.id, { words: block.words });
+                    AppState.updateBlock(block.id, {words: block.words.filter((_, i) => i !== idx)});
                     wordsContainer.innerHTML = renderWordsList();
                     bindDeleteWords();
                 });
@@ -121,8 +120,7 @@ class DictModalService {
 
             if (!word) return;
 
-            block.words.push({ word, definition, connections });
-            AppState.updateBlock(block.id, { words: block.words });
+            AppState.updateBlock(block.id, {words: [...(block.words || []), { word, definition, connections }]});
 
             wordInput.value = '';
             defInput.value = '';

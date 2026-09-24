@@ -1,7 +1,6 @@
 import AppState from './AppState.js';
 import { ALGORITHM_STEPS, ALGORITHM_TEXTS } from './BlockConstants.js';
 import { t } from '../i18n.js';
-import NotesAPI from './api.js';
 import AIController from './AIController.js';
 
 class BlockHintBuilder {
@@ -22,6 +21,14 @@ class BlockHintBuilder {
         div.dataset.hintId = stepRole;
         div.dataset.side = stepSide;
         div.dataset.role = stepRole;
+        div.tabIndex = 0;
+        div.setAttribute('role', 'button');
+        div.addEventListener('keydown', event => {
+            if (event.target === div && ['Enter', ' '].includes(event.key)) {
+                event.preventDefault();
+                div.click();
+            }
+        });
 
         div.style.backgroundColor = '#f1f5f9';
         div.style.border = 'none';

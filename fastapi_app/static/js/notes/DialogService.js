@@ -45,7 +45,6 @@ class DialogService {
             document.body.appendChild(overlay);
 
             let selectedUrl = null;
-            let selectedLabel = '';
             const confirmBtn = dialog.querySelector('.btn-confirm-dialog');
             const cancelBtn = dialog.querySelector('.btn-cancel-dialog');
             const closeBtn = dialog.querySelector('.btn-close-dialog');
@@ -70,7 +69,6 @@ class DialogService {
 
             const updateSelection = (url, label) => {
                 selectedUrl = url;
-                selectedLabel = label;
                 if (url) {
                     selectedText.textContent = label;
                     selectedText.style.color = '#2563eb';
@@ -250,7 +248,7 @@ class DialogService {
     }
 
     static confirm(optionsOrMessage, message = null) {
-        let options = {};
+        let options;
         if (typeof optionsOrMessage === 'string') {
             if (message !== null) {
                 options = { title: optionsOrMessage, message };
@@ -333,7 +331,7 @@ class DialogService {
     }
 
     static prompt(optionsOrMessage, defaultValue = '', placeholder = '') {
-        let options = {};
+        let options;
         if (typeof optionsOrMessage === 'string') {
             options = {
                 title: t('dlg_input_title'),

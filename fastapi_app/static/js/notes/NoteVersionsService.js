@@ -20,6 +20,7 @@ class NoteVersionsService {
 
         try {
             const versions = await NotesAPI.getVersions(noteId);
+            if (AppState.currentNote.id !== noteId) return;
 
             const listHTML = versions && versions.length > 0
                 ? `<div class="versions-cards-list" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-height: 400px; overflow-y: auto;">
@@ -35,13 +36,13 @@ class NoteVersionsService {
                                 ${DialogService.formatDateTime(v.created_at)}
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
-                                <button class="action-btn" onclick="window.app.versionsService.restore(${v.id})" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <button class="action-btn" data-version-action="restore" data-version-id="${v.id}" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                                     <span style="font-size: 0.95rem;">↪</span> ${t('restore_word')}
                                 </button>
-                                <button class="action-btn" onclick="window.app.versionsService.togglePin(${v.id}, ${v.is_manual})" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <button class="action-btn" data-version-action="togglePin" data-version-id="${v.id}" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                                     <span>${v.is_manual ? t('unpin_word') : t('pin_word')}</span>
                                 </button>
-                                <button class="action-btn" onclick="window.app.versionsService.delete(${v.id})" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+                                <button class="action-btn" data-version-action="delete" data-version-id="${v.id}" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
                                     ✕
                                 </button>
                             </div>
@@ -77,6 +78,13 @@ class NoteVersionsService {
                 </div>
             `;
 
+            dialog.querySelectorAll('[data-version-action]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const versionId = Number(button.dataset.versionId);
+                    if (AppState.currentNote.id === noteId) this[button.dataset.versionAction](versionId,
+                        versions.find(version => version.id === versionId)?.is_manual);
+                });
+            });
             overlay.appendChild(dialog);
             document.body.appendChild(overlay);
             this.currentModal = { overlay, dialog, close: () => { if (document.body.contains(overlay)) document.body.removeChild(overlay); } };
@@ -132,12 +140,8 @@ class NoteVersionsService {
     static async togglePin(versionId, isManual) {
         try {
             const noteId = AppState.currentNote.id;
-            if (isManual) {
-                // Unpin or delete/toggle
-                await NotesAPI.pinVersion(noteId, versionId);
-            } else {
-                await NotesAPI.pinVersion(noteId, versionId);
-            }
+            await NotesAPI.pinVersion(noteId, versionId);
+            if (AppState.currentNote.id !== noteId) return;
             const oldModal = this.currentModal;
             await this.show(window.app);
             if (oldModal) oldModal.close();
@@ -149,17 +153,18 @@ class NoteVersionsService {
     }
 
     static async delete(versionId) {
+        const noteId = AppState.currentNote.id;
         const confirmed = await DialogService.confirm({
             title: t('confirm_del_ver_title'),
             message: t('confirm_del_ver_msg'),
             isDestructive: true,
             confirmText: t('tt_delete')
         });
-        if (!confirmed) return;
+        if (!confirmed || AppState.currentNote.id !== noteId) return;
 
         try {
-            const noteId = AppState.currentNote.id;
             await NotesAPI.deleteVersion(noteId, versionId);
+            if (AppState.currentNote.id !== noteId) return;
             const oldModal = this.currentModal;
             await this.show(window.app);
             if (oldModal) oldModal.close();

@@ -33,7 +33,7 @@ class TOCManager {
 
         const blocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
 
-        let itemsHTML = '';
+        let itemsHTML;
         if (blocks.length === 0) {
             itemsHTML = `<div style="color: #94a3b8; font-style: italic; padding: 12px 16px; font-size: 0.9rem;">${t('toc_empty')}</div>`;
         } else {
@@ -177,7 +177,7 @@ class TOCManager {
                 const rect = item.getBoundingClientRect();
                 const isAfter = (e.clientY - rect.top) > rect.height / 2;
 
-                const blocksList = AppState.currentNote.blocks || [];
+                const blocksList = [...AppState.currentNote.blocks];
                 const fromIndex = blocksList.findIndex(b => b.id === sourceId);
                 let toIndex = blocksList.findIndex(b => b.id === targetId);
 
@@ -192,7 +192,7 @@ class TOCManager {
                 blocksList.splice(insertIndex, 0, movedBlock);
 
                 // Update AppState & Re-render note on canvas and TOC
-                AppState.markDirty();
+                AppState.updateNote({blocks: blocksList});
                 BlockDOMRenderer.renderAll();
                 this.render();
             });

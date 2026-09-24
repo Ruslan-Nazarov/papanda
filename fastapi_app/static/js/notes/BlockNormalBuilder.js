@@ -205,8 +205,7 @@ class BlockNormalBuilder {
         if (pinBtn) {
             pinBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                block.is_pinned = !block.is_pinned;
-                AppState.updateBlock(block.id, { is_pinned: block.is_pinned });
+                AppState.updateBlock(block.id, {is_pinned: !block.is_pinned});
                 div.classList.toggle('pinned-sticky', block.is_pinned);
                 pinBtn.classList.toggle('active', block.is_pinned);
             });
@@ -256,8 +255,7 @@ class BlockNormalBuilder {
         if (collapseBtn) {
             collapseBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                block.collapsed = !block.collapsed;
-                AppState.updateBlock(block.id, { collapsed: block.collapsed });
+                AppState.updateBlock(block.id, {collapsed: !block.collapsed});
                 div.classList.toggle('collapsed', block.collapsed);
                 collapseBtn.textContent = block.collapsed ? '▶' : '▼';
                 const content = div.querySelector('.block-content');
@@ -300,8 +298,7 @@ class BlockNormalBuilder {
                 e.stopPropagation();
                 const statuses = ['none', 'ready'];
                 const next = statuses[(statuses.indexOf(block.status || 'none') + 1) % 2];
-                block.status = next;
-                AppState.updateBlock(block.id, { status: next });
+                AppState.updateBlock(block.id, {status: next});
                 statusEl.dataset.status = next;
                 if (onRenderAll) onRenderAll();
             });

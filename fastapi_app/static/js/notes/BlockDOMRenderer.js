@@ -19,8 +19,8 @@ class BlockDOMRenderer {
         // продолжала бы показываться.
         const existingRoles = new Set();
         completedBlocks.forEach((b) => {
-            inferRoleFromTitle(b);
-            if (b.role) existingRoles.add(b.role.split('.')[0]);
+            const role = inferRoleFromTitle(b);
+            if (role) existingRoles.add(role.split('.')[0]);
         });
 
         const dismissedHints = AppState.dismissedHints || [];
@@ -54,13 +54,6 @@ class BlockDOMRenderer {
         const allBlocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
         const hasRealBlocks = allBlocks.some(b => b.role !== 'section');
         const showHints = !aiMode || !hasRealBlocks;
-
-        allBlocks.forEach(b => {
-            inferRoleFromTitle(b);
-            if (b.role === 'anchor') {
-                b.side = 'left';
-            }
-        });
 
         const nextStep = this.getNextActiveRole(allBlocks);
 

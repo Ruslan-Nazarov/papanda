@@ -29,7 +29,7 @@ class CategoryManager {
             });
         }
 
-        document.addEventListener('noteLoaded', (e) => {
+        document.addEventListener('noteOpened', (e) => {
             this.updateLabel(e.detail.category_id);
         });
 
@@ -102,8 +102,7 @@ class CategoryManager {
                 if (e.target.closest('.cat-action-btn')) return;
                 const idStr = item.dataset.id;
                 const catId = idStr ? parseInt(idStr, 10) : null;
-                AppState.currentNote.category_id = catId;
-                AppState.markDirty();
+                AppState.updateNote({category_id: catId});
                 this.updateLabel(catId);
                 menu.classList.add('hidden');
             });
@@ -164,8 +163,7 @@ class CategoryManager {
                     try {
                         await NotesAPI.deleteCategory(catId);
                         if (AppState.currentNote.category_id === catId) {
-                            AppState.currentNote.category_id = null;
-                            AppState.markDirty();
+                            AppState.updateNote({category_id: null});
                         }
                         showToast(t('cat_deleted'));
                         await this.loadAndRender();
@@ -196,8 +194,7 @@ class CategoryManager {
                 if (!name) return;
                 try {
                     const newCat = await NotesAPI.createCategory(name);
-                    AppState.currentNote.category_id = newCat.id;
-                    AppState.markDirty();
+                    AppState.updateNote({category_id: newCat.id});
                     showToast(`«${name}» ${t('conn_cat_created')}`);
                     await this.loadAndRender();
                     this.updateLabel(newCat.id);

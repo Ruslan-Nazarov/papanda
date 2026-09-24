@@ -1,3 +1,5 @@
+import Lifecycle from './Lifecycle.js';
+import SessionCheckpoints from './SessionCheckpoints.js';
 import AppState from './AppState.js';
 import NoteStorageService from './NoteStorageService.js';
 import NotesAPI from './api.js';
@@ -7,40 +9,56 @@ import { t } from '../i18n.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const AUTOSAVE_DELAY_MS = 30_000;        // 30 seconds debounce
-const SESSION_CHECKPOINT_INTERVAL = 900_000; // 15 minutes of real editing
 
 class NoteController {
     // ── Autosave state ────────────────────────────────────────────────────────
     static _autosaveTimer = null;
     static _lastSavedAt = null;
     static _statusInterval = null;
-    static _sessionCheckpointTimer = null;
     static _conflictedNote = null;
 
     // ── Init ──────────────────────────────────────────────────────────────────
+    static lifecycle = null;
+    static checkpoints = null;
+
+    static dispose() {
+        this._clearAutosaveTimer();
+        this.lifecycle?.dispose();
+        this.lifecycle = null;
+        this.checkpoints?.dispose();
+    }
+
     static init() {
+        if (this.lifecycle && !this.lifecycle.disposed) return;
+        this.lifecycle = new Lifecycle();
+        this.checkpoints = new SessionCheckpoints({
+            getNote: () => AppState.currentNote,
+            save: () => NoteStorageService.saveCurrentNote(),
+            checkpoint: note => NotesAPI.createCheckpoint(note.id, `${t('session')} ${new Date().toLocaleString()}`, false),
+        });
+        this.checkpoints.mount();
         // Listen for any state change → schedule autosave
-        document.addEventListener('stateDirty', () => {
+        this.lifecycle.on(document, 'stateDirty', () => {
             this._scheduleAutosave();
             this._updateStatusIndicator();
         });
 
         // Listen for note load → reset timers and update indicator
-        document.addEventListener('noteLoaded', () => {
+        this.lifecycle.on(document, 'noteOpened', () => {
             this._conflictedNote = null;
             this._clearAutosaveTimer();
             this._lastSavedAt = new Date();
             this._updateStatusIndicator();
-            this._scheduleSessionCheckpoint();
+
         });
-        document.addEventListener('noteSaved', () => {
+        this.lifecycle.on(document, 'noteSaved', () => {
             this._conflictedNote = null;
             this._lastSavedAt = new Date();
             this._updateStatusIndicator();
         });
 
         // Warn on page close if dirty
-        window.addEventListener('beforeunload', (e) => {
+        this.lifecycle.on(window, 'beforeunload', (e) => {
             if (AppState.isDirty) {
                 e.preventDefault();
                 e.returnValue = t('unsaved_changes_warning');
@@ -48,7 +66,7 @@ class NoteController {
         });
 
         // Update "saved X sec ago" text every 30 seconds
-        this._statusInterval = setInterval(() => this._updateStatusIndicator(), 30_000);
+        this._statusInterval = this.lifecycle.interval(() => this._updateStatusIndicator(), 30_000);
     }
 
     // ── Autosave (silent, no checkpoint) ──────────────────────────────────────
@@ -77,28 +95,6 @@ class NoteController {
             if (AppState.currentNote === note) this._setStatus(e.status === 409 ? 'conflict' : 'error');
             console.error('Autosave failed:', e);
         }
-    }
-
-    // ── Session checkpoint (auto, every 15 minutes) ──────────────────────────
-    static _scheduleSessionCheckpoint() {
-        clearTimeout(this._sessionCheckpointTimer);
-        this._sessionCheckpointTimer = setTimeout(async () => {
-            if (!AppState.currentNote.id) return;
-            const now = new Date();
-            const dateStr = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            try {
-                const saved = await NoteStorageService.saveCurrentNote(); // flush first
-                await NotesAPI.createCheckpoint(
-                    saved.id,
-                    `${t('session')} ${dateStr}`,
-                    false // is_manual = false (auto-checkpoint)
-                );
-            } catch (e) {
-                console.error('Session checkpoint failed:', e);
-            }
-            // Schedule next
-            this._scheduleSessionCheckpoint();
-        }, SESSION_CHECKPOINT_INTERVAL);
     }
 
     // ── Manual save (flush immediately, no checkpoint) ────────────────────────

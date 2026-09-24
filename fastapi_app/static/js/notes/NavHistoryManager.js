@@ -1,6 +1,5 @@
 import NoteStorageService from './NoteStorageService.js';
 import DialogService from './DialogService.js';
-import AppState from './AppState.js';
 
 import { t } from '../i18n.js';
 export class NavHistoryManager {

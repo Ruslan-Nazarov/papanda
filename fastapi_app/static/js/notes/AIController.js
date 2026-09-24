@@ -1,4 +1,5 @@
 import AppState from './AppState.js';
+import Lifecycle from './Lifecycle.js';
 import NotesAPI from './api.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
 import GlobalLoader from './GlobalLoader.js';
@@ -16,7 +17,14 @@ class AIController {
     static init() {
         if (this._initialized) return;
         this._initialized = true;
-        document.addEventListener('noteLoaded', () => this._activeRun?.controller.abort());
+        this.lifecycle = new Lifecycle();
+        this.lifecycle.on(document, 'noteOpened', () => this._activeRun?.controller.abort());
+    }
+
+    static dispose() {
+        this._activeRun?.controller.abort();
+        this.lifecycle?.dispose();
+        this._initialized = false;
     }
 
     static buildStateForAI() {
@@ -94,9 +102,8 @@ class AIController {
             {updated_steps: updatedSteps, replace_bases: replaceBases},
             text => this.contentToHtml(text), ALGORITHM_STEPS);
         if (JSON.stringify(next.blocks) === JSON.stringify(AppState.currentNote.blocks)) return;
-        AppState.currentNote.blocks = next.blocks;
+        AppState.updateNote({blocks: next.blocks});
         for (const key of Object.keys(updatedSteps)) AppState.dismissHint(key);
-        AppState.markDirty();
         if (onRenderAll) onRenderAll();
     }
 
@@ -113,7 +120,6 @@ class AIController {
             const key = b.role.slice(4); // "step2.1" -> "2.1"
             const title = (titles[key] || '').trim();
             if (title && b.title !== title) {
-                b.title = title;
                 AppState.updateBlock(b.id, { title });
                 changed = true;
             }
@@ -139,10 +145,9 @@ class AIController {
             || curTitle === t('menu_new_note')
             || curTitle === t('untitled');
         if (meta.note_title && isDefaultTitle) {
-            AppState.currentNote.title = meta.note_title.trim();
+            AppState.updateNote({title: meta.note_title.trim()});
             const input = document.getElementById('note-title');
             if (input) input.value = AppState.currentNote.title;
-            AppState.markDirty();
             changed = true;
         }
 
@@ -171,7 +176,7 @@ class AIController {
      * это не ошибка метода, а нагрузка на ИИ, и стоит пересобрать.
      */
     static applyReport(report, onRenderAll) {
-        AppState.currentNote.genReport = report || null;
+        AppState.setViewMetadata({genReport: report || null});
         const host = document.getElementById('blocks-container');
         if (!host) return;
         const existing = document.getElementById('gen-degraded-banner');
@@ -209,7 +214,7 @@ class AIController {
      */
     static applyNotApplicable(v, onRenderAll) {
         if (!v) return;
-        AppState.currentNote.notApplicable = v;
+        AppState.setViewMetadata({notApplicable: v});
         // Сначала перерисовать блоки (якорь), потом вставить карточку — иначе
         // renderAll внутри onRenderAll затрёт её.
         if (onRenderAll) onRenderAll();
@@ -316,10 +321,9 @@ class AIController {
             const next = GenerationChanges.build(note, result,
                 text => this.contentToHtml(text), ALGORITHM_STEPS);
             this._activeRun = null;
-            Object.assign(note, {title: next.title, blocks: next.blocks});
+            AppState.updateNote({title: next.title, blocks: next.blocks});
             const input = document.getElementById('note-title');
             if (input) input.value = next.title;
-            AppState.markDirty();
             if (onRenderAll) onRenderAll();
             this.applyReport(result.report, onRenderAll);
             return result;

@@ -24,7 +24,7 @@ class ConnectionsModalService {
         const currentNoteId = AppState.currentNote.id;
 
         let connections = [];
-        let allNotes = [];
+        let allNotes;
         let categories = [];
 
         try {

@@ -1,3 +1,4 @@
+import * as fabric from 'fabric';
 import AppState from './AppState.js';
 
 import { t } from '../i18n.js';
@@ -11,25 +12,31 @@ export class EditorShapesTab {
         this.canvasHistory = [];
         this.historyIndex = -1;
         this.isHistoryAction = false;
+        this.disposed = false;
         this.currentFill = 'transparent';
+        this.ready = Promise.resolve();
+        this.loading = new AbortController();
     }
 
     init() {
-        if (this.fabricCanvas || typeof fabric === 'undefined') return;
+        if (this.disposed || this.fabricCanvas || typeof fabric === 'undefined') return;
         
-        this.fabricCanvas = new fabric.Canvas('shapes-canvas', { width: 540, height: 220, isDrawingMode: false });
+        this.fabricCanvas = new fabric.Canvas(this.modalContainer.querySelector('#shapes-canvas'), { width: Math.min(540, this.modalContainer.clientWidth - 32), height: 220, isDrawingMode: false });
+        this.fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(this.fabricCanvas);
         
         const block = AppState.getBlock(this.blockId);
         if (block && block.shapesData) {
-            try {
-                this.fabricCanvas.loadFromJSON(block.shapesData, () => {
+                this.isHistoryAction = true;
+                this.ready = this.fabricCanvas.loadFromJSON(JSON.parse(JSON.stringify(block.shapesData)), undefined,
+                    {signal: this.loading.signal}).then(() => {
+                    if (this.disposed) return;
                     this.fabricCanvas.renderAll();
+                    this.isHistoryAction = false;
                     this.saveHistory();
+                }).catch(error => {
+                    this.isHistoryAction = false;
+                    if (!this.disposed) console.error('Failed to load shapesData', error);
                 });
-            } catch (e) {
-                console.error('Failed to load shapesData', e);
-                this.saveHistory();
-            }
         } else {
             this.saveHistory();
         }
@@ -41,22 +48,36 @@ export class EditorShapesTab {
         this.bindEvents();
     }
 
+    dispose() {
+        this.disposed = true;
+        this.loading.abort();
+        this.fabricCanvas?.dispose().catch(error => console.error(error));
+        this.fabricCanvas = null;
+        this.canvasHistory = [];
+    }
+
     saveHistory() {
         if (this.isHistoryAction || !this.fabricCanvas) return;
         if (this.historyIndex < this.canvasHistory.length - 1) {
             this.canvasHistory = this.canvasHistory.slice(0, this.historyIndex + 1);
         }
         this.canvasHistory.push(JSON.stringify(this.fabricCanvas));
-        this.historyIndex++;
+        if (this.canvasHistory.length > 50) this.canvasHistory.shift();
+        this.historyIndex = this.canvasHistory.length - 1;
     }
 
     undo() {
-        if (this.historyIndex > 0 && this.fabricCanvas) {
+        if (this.historyIndex > 0 && this.fabricCanvas && !this.isHistoryAction) {
             this.isHistoryAction = true;
             this.historyIndex--;
-            this.fabricCanvas.loadFromJSON(this.canvasHistory[this.historyIndex], () => {
+            this.ready = this.fabricCanvas.loadFromJSON(this.canvasHistory[this.historyIndex], undefined,
+                {signal: this.loading.signal}).then(() => {
+                if (this.disposed) return;
                 this.fabricCanvas.renderAll();
                 this.isHistoryAction = false;
+            }).catch(error => {
+                this.isHistoryAction = false;
+                if (!this.disposed) console.error('Failed to undo drawing', error);
             });
         }
     }
@@ -142,7 +163,8 @@ export class EditorShapesTab {
         mc.querySelector('#btn-shape-copy')?.addEventListener('click', () => {
             const active = fc.getActiveObject();
             if (active) {
-                active.clone(cloned => {
+                active.clone().then(cloned => {
+                    if (this.disposed) return;
                     cloned.set({ left: cloned.left + 15, top: cloned.top + 15, evented: true });
                     if (cloned.type === 'activeSelection') {
                         cloned.canvas = fc;
@@ -154,7 +176,7 @@ export class EditorShapesTab {
                     fc.setActiveObject(cloned);
                     fc.requestRenderAll();
                     this.saveHistory();
-                });
+                }).catch(error => {if (!this.disposed) console.error('Failed to copy drawing', error);});
             }
         });
 

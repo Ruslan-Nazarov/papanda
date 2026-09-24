@@ -10,13 +10,8 @@
     <meta property="og:type" content="article">
     <meta name="robots" content="noindex,nofollow">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-
+    <link rel="stylesheet" href="{{ asset('vendor.css') }}">
+    <script type="module" src="{{ asset('runtime.js') }}"></script>
     <style>
         :root { color-scheme: light; }
         * { box-sizing: border-box; }
@@ -44,7 +39,7 @@
                    text-decoration: none; border-radius: 10px; font-weight: 600; }
     </style>
 </head>
-<body>
+<body data-page="shared">
     <div class="wrap">
         <div class="doc-title">{{ note_title }}</div>
 
@@ -74,18 +69,6 @@
         </footer>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            if (window.renderMathInElement) {
-                renderMathInElement(document.body, {
-                    delimiters: [
-                        { left: "$$", right: "$$", display: true },
-                        { left: "$", right: "$", display: false },
-                    ],
-                    throwOnError: false,
-                });
-            }
-        });
-    </script>
+
 </body>
 </html>

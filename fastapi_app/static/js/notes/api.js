@@ -1,3 +1,5 @@
+import ApiContracts from './ApiContracts.js';
+
 class NotesAPI {
     static async request(endpoint, method = 'GET', body = null, signal = undefined) {
         const options = {
@@ -91,7 +93,7 @@ class NotesAPI {
                 throw Object.assign(new Error(terminal.result?.error_message || 'Generation incomplete'),
                     {result: terminal.result, partialText: full});
             }
-            return options.returnTerminal ? terminal.result : full;
+            return options.returnTerminal ? ApiContracts.generationResponse(terminal.result) : full;
         } finally {
             await reader.cancel().catch(() => {});
             reader.releaseLock();
@@ -104,9 +106,9 @@ class NotesAPI {
         if (categoryId) url += `category_id=${encodeURIComponent(categoryId)}&`;
         return this.request(url); 
     }
-    static getNote(id) { return this.request(`/dialectics/${id}`); }
-    static createNote(data) { return this.request('/dialectics/save', 'POST', data); }
-    static updateNote(id, data) { return this.request(`/dialectics/${id}`, 'PATCH', data); }
+    static getNote(id) { return this.request(`/dialectics/${id}`).then(ApiContracts.noteResponse); }
+    static createNote(data) { return this.request('/dialectics/save', 'POST', data).then(ApiContracts.noteResponse); }
+    static updateNote(id, data) { return this.request(`/dialectics/${id}`, 'PATCH', data).then(ApiContracts.noteResponse); }
     static updateNoteStatus(id, status, revision) { return this.updateNote(id, {status, revision}); }
     static deleteNote(id) { return this.request(`/dialectics/${id}`, 'DELETE'); }
     // Trash
@@ -124,7 +126,7 @@ class NotesAPI {
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
     // AI
     static routeConspectus(payload, signal) {
-        return this.request('/ai/dialectics/conspectus/route', 'POST', payload, signal);
+        return this.request('/ai/dialectics/conspectus/route', 'POST', payload, signal).then(ApiContracts.generationResponse);
     }
     static textMath(text) {
         return this.request('/ai/dialectics/text-math', 'POST', { text });

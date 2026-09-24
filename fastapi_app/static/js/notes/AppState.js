@@ -1,19 +1,19 @@
+import NoteStore from './NoteStore.js';
+
 // localStorage cleanup
 try {
     localStorage.removeItem('dialectics_dismissed_hints');
 } catch {}
 
 const AppState = {
-    currentNote: {
-        id: null,
-        title: '',
-        blocks: [],
-        category_id: null,
-        status: 'none'
-    },
-    isDirty: false,
-    editRevision: 0,
-    documentEpoch: 0,
+    store: new NoteStore((name, detail) => {
+        AppState.updateProgress();
+        document.dispatchEvent(new CustomEvent(name, {detail}));
+    }),
+    get currentNote() { return this.store.note; },
+    get isDirty() { return this.store.dirty; },
+    get editRevision() { return this.store.editRevision; },
+    get documentEpoch() { return this.store.epoch; },
     _dismissedHints: [],
 
     get dismissedHints() {
@@ -36,25 +36,14 @@ const AppState = {
     isAutoFillStepByStep: false,
 
     setNote(note) {
-        this.documentEpoch += 1;
-        this.editRevision = 0;
-        const blocks = note.content_json || note.blocks || [];
-        this.currentNote = {
-            id: note.id,
-            revision: note.revision ?? null,
-            schema_version: note.schema_version || 1,
-            title: note.title || '',
-            blocks: Array.isArray(blocks) ? blocks.map(block => ({
-                ...block, status: this.normalizeBlockStatus(block.status)
-            })) : [],
-            category_id: note.category_id,
-            status: note.status || 'none'
-        };
         this._dismissedHints = [];
-        this.isDirty = false;
-        this.updateProgress();
-        document.dispatchEvent(new CustomEvent('noteLoaded', { detail: this.currentNote }));
+        return this.store.open(note);
     },
+
+    updateNote(patch) { this.store.update(patch); },
+    setViewMetadata(patch) { this.store.metadata(patch); },
+    acceptSaveIdentity(note, response) { this.store.acceptIdentity(note, response); },
+    acceptSaved(note, response, payload) { this.store.acceptSaved(note, response, payload); },
 
     normalizeBlockStatus(status) {
         return status === 'draft' ? 'in_progress' : (status || 'none');
@@ -64,35 +53,10 @@ const AppState = {
         return (this.currentNote.blocks || []).find(b => b.id === blockId);
     },
 
-    updateBlock(blockId, updates) {
-        const block = this.getBlock(blockId);
-        if (block) {
-            Object.assign(block, updates);
-            this.markDirty();
-        }
-    },
-    
-    addBlock(block, index = -1) {
-        if (index >= 0 && index <= this.currentNote.blocks.length) {
-            this.currentNote.blocks.splice(index, 0, block);
-        } else {
-            this.currentNote.blocks.push(block);
-        }
-        this.markDirty();
-        document.dispatchEvent(new CustomEvent('blockAdded', { detail: block }));
-    },
-    
-    removeBlock(blockId) {
-        this.currentNote.blocks = this.currentNote.blocks.filter(b => b.id !== blockId);
-        this.markDirty();
-    },
-
-    markDirty() {
-        this.editRevision += 1;
-        this.isDirty = true;
-        this.updateProgress();
-        document.dispatchEvent(new Event('stateDirty'));
-    },
+    updateBlock(blockId, updates) { this.store.updateBlock(blockId, updates); },
+    addBlock(block, index = -1) { this.store.addBlock(block, index); },
+    removeBlock(blockId) { this.store.removeBlock(blockId); },
+    markDirty() { this.store.touch(); },
 
     updateProgress() {
         const blocks = this.currentNote.blocks.filter(b => b.role !== 'section' && !b.isDraft);

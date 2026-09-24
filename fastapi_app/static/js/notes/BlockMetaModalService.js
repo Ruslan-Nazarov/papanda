@@ -65,7 +65,7 @@ class BlockMetaModalService {
         const block = AppState.getBlock(blockId);
         if (!block) return;
         
-        if (!block.sources) block.sources = [];
+
         
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
@@ -155,8 +155,7 @@ class BlockMetaModalService {
             listContainer.querySelectorAll('.btn-del-src').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const idx = parseInt(btn.dataset.idx, 10);
-                    block.sources.splice(idx, 1);
-                    AppState.updateBlock(block.id, { sources: block.sources });
+                    AppState.updateBlock(block.id, {sources: block.sources.filter((_, i) => i !== idx)});
                     listContainer.innerHTML = renderSourcesList();
                     bindDelete();
                 });
@@ -171,8 +170,7 @@ class BlockMetaModalService {
 
             if (!url && !title && !quote) return;
 
-            block.sources.push({ url, title, quote });
-            AppState.updateBlock(block.id, { sources: block.sources });
+            AppState.updateBlock(block.id, {sources: [...(block.sources || []), { url, title, quote }]});
 
             urlInput.value = '';
             titleInput.value = '';

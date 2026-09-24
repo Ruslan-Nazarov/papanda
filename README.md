@@ -6,7 +6,7 @@ SQLite; frontend: браузерные ES-модули и TipTap.
 
 ## Локальный запуск
 
-Нужны **Python 3.12** и, для frontend-тестов, **Node.js >=22.12**.
+Нужны **Python 3.12** и **Node.js >=22.12** для сборки интерфейса и тестов.
 Команды выполняются из корня этого репозитория.
 
 ### Windows / PowerShell
@@ -15,6 +15,8 @@ SQLite; frontend: браузерные ES-модули и TipTap.
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-dev.txt
 # Если .env ещё нет: Copy-Item .env.example .env
+npm ci
+npm run build
 .\.venv\Scripts\python.exe run.py
 ```
 
@@ -27,6 +29,8 @@ Python 3.12. Существующий `.env` сохраняйте. `run.bat` и�
 python3.12 -m venv .venv
 .venv/bin/python -m pip install --require-hashes -r requirements-dev.txt
 # Если .env ещё нет: cp .env.example .env
+npm ci
+npm run build
 .venv/bin/python run.py
 ```
 
@@ -58,10 +62,13 @@ reload выключайте. Для demo — один worker (проверяет
 ## Проверки
 
 ```powershell
+npm ci
+npm run build
 .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 .\.venv\Scripts\python.exe -m coverage run -m pytest -q -p no:cacheprovider
 .\.venv\Scripts\python.exe -m coverage report
-npm ci
+npm run lint
+npm run check:types
 npm run check:js
 npm test
 npm run test:browser
@@ -76,8 +83,14 @@ npm run test:browser
 Python-тесты используют временные каталоги и отключённые ключи ИИ. Фикстура
 `file_client` запускает настоящий lifespan и get_db с файловой SQLite.
 JS unit-тесты загружают реальные тела модулей с подменёнными импортами; browser-тесты
-проверяют DOM в изолированном Chromium без обращения к пользовательскому серверу.
-Это ещё не полный E2E интерфейса с CDN.
+проверяют DOM и пользовательские сценарии на отдельном сервере с временной БД:
+ручной ввод, save/reload, версии, sharing, формулы, рисунки, графики, клавиатура,
+узкий экран и генерация через mock SSE. Внешние запросы блокируются.
+
+После изменения JS/CSS выполняйте `npm run build` и обновляйте страницу.
+Сборка пишет файлы с хешами в игнорируемый `fastapi_app/static/dist` и manifest
+для шаблонов. Node не нужен работающему Python-серверу после сборки.
+Подробнее: [архитектура редактора](docs/editor-architecture.md).
 
 Регрессии R1 выполняются без `xfail` и `todo`: SQLite FK/история, гонки сохранения,
 DOM-инъекции, статусы ИИ-блоков и сохранение рисунков.
@@ -105,8 +118,8 @@ DOM-инъекции, статусы ИИ-блоков и сохранение �
 ограничен runtime-lock, чтобы общие версии совпадали. Для обновления транзитивного
 пакета используйте `uv pip compile --upgrade-package <name>` с остальными флагами
 из заголовка lock, затем пересоздайте dev-lock. JS-зависимости редактируются через
-package.json/package-lock.json. CDN-библиотеки пока остаются в HTML/importmap;
-их перенос в сборку — R5. После обновления выполняйте
+package.json/package-lock.json; библиотеки, иконки и шрифты собираются локально.
+После обновления выполняйте `npm run build`, тесты,
 `python scripts/audit_dependencies.py` (все платформенные ветви) и `npm audit`.
 
 ## Резервная копия SQLite

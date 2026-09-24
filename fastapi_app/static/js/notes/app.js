@@ -1,4 +1,4 @@
-console.log('APP JS LOADED');
+import '../runtime.js';
 import AppState from './AppState.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
 import NoteController from './NoteController.js';
@@ -26,6 +26,8 @@ import { t, switchLanguage } from '../i18n.js';
 
 class App {
     static init() {
+        if (this.initialized) return;
+        this.initialized = true;
         // Initialize managers
         BlockDnDManager.init();
         EditorManager.init();
@@ -93,7 +95,7 @@ class App {
             if (container.querySelector('.katex, .math-callout, .math-inline')) {
                 container.querySelectorAll('.katex').forEach(katexEl => {
                     const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
-                    let formula = '';
+                    let formula;
                     if (annotation) {
                         formula = annotation.textContent.trim();
                     } else {
@@ -395,13 +397,12 @@ class App {
             statusDot.addEventListener('click', async () => {
                 const currentStatus = AppState.currentNote.status;
                 const newStatus = (currentStatus === 'ready' || currentStatus === 'done') ? 'in_progress' : 'ready';
-                AppState.currentNote.status = newStatus;
+                AppState.updateNote({status: newStatus});
                 this.updateSaveStatusUI();
 
                 const { showToast } = await import('./ToastService.js');
                 const isReady = (newStatus === 'ready');
 
-                AppState.markDirty();
                 try {
                     await NoteStorageService.saveCurrentNote();
                 } catch (e) {
@@ -416,8 +417,7 @@ class App {
         const noteTitleInput = document.getElementById('note-title');
         if (noteTitleInput) {
             noteTitleInput.addEventListener('input', (e) => {
-                AppState.currentNote.title = e.target.value;
-                AppState.markDirty();
+                AppState.updateNote({title: e.target.value});
             });
         }
 
@@ -477,7 +477,7 @@ class App {
         }
 
         // --- 10. Note State Listeners ---
-        document.addEventListener('noteLoaded', () => {
+        document.addEventListener('noteOpened', () => {
             // Убираем плашки предыдущего конспекта (просадка генерации / тема невыводима).
             document.getElementById('not-applicable-card')?.remove();
             document.getElementById('gen-degraded-banner')?.remove();

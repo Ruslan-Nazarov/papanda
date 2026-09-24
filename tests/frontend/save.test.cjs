@@ -25,7 +25,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 test('save queues edits made during the request and snapshots nested blocks', async () => {
     const {ctx, requests, events, finish} = setup();
     const pending = ctx.NoteStorageService.saveCurrentNote();
-    ctx.AppState.currentNote.title = 'new edit';
+    ctx.AppState.updateNote({title: 'new edit'});
     ctx.AppState.updateBlock('b', {html: 'new block'});
     assert.equal(requests[0].data.blocks[0].html, 'old block');
     finish(0);
@@ -39,7 +39,7 @@ test('save queues edits made during the request and snapshots nested blocks', as
     await pending;
     assert.equal(ctx.AppState.currentNote.blocks[0].html, 'new block');
     assert.equal(ctx.AppState.isDirty, false);
-    assert.equal(events.includes('noteLoaded'), false);
+    assert.equal(events.includes('noteOpened'), false);
     assert.equal(events.filter(e => e === 'noteSaved').length, 1);
 });
 
@@ -70,7 +70,7 @@ test('double save of a new note creates exactly one record', async () => {
 test('new note edits during create are updated with the assigned id', async () => {
     const {ctx, requests, finish} = setup(null);
     const pending = ctx.NoteStorageService.saveCurrentNote();
-    ctx.AppState.currentNote.title = 'changed during create';
+    ctx.AppState.updateNote({title: 'changed during create'});
     ctx.AppState.markDirty();
     finish(0);
     await tick();
@@ -97,7 +97,7 @@ test('failed save retains data and can be retried', async () => {
 test('409 retains the edited document and explicit copy creates a separate record', async () => {
     const {ctx, requests, finish} = setup();
     const original = ctx.AppState.currentNote;
-    original.title = 'my conflicting edit';
+    ctx.AppState.updateNote({title: 'my conflicting edit'});
     const pending = ctx.NoteStorageService.saveCurrentNote();
     requests[0].reject(Object.assign(new Error('conflict'), {status: 409}));
     await assert.rejects(pending, error => error.status === 409);
@@ -131,9 +131,7 @@ test('out of order note loads cannot replace the latest navigation', async () =>
 
 test('unchanged DOM sync does not dirty a clean document', () => {
     const {ctx} = setup();
-    ctx.AppState.isDirty = false;
-    const block = ctx.AppState.currentNote.blocks[0];
-    block.title = 'existing';
+    ctx.AppState.setNote({id: 1, blocks: [{id: 'b', title: 'existing', html: 'text'}]});
     ctx.document.querySelectorAll = () => [{dataset: {id: 'b'}, querySelector: selector =>
         selector === '.block-title' ? {textContent: 'existing'} : null}];
     load(ctx, 'BlockDOMParser');

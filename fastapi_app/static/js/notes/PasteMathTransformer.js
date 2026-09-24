@@ -13,7 +13,7 @@ class PasteMathTransformer {
             // 1. Process all .katex-display blocks (display math)
             doc.querySelectorAll('.katex-display').forEach(displayEl => {
                 const annotation = displayEl.querySelector('annotation[encoding="application/x-tex"]');
-                let formula = '';
+                let formula;
                 if (annotation) {
                     formula = annotation.textContent.trim();
                 } else {
@@ -48,7 +48,7 @@ class PasteMathTransformer {
                 if (katexEl.closest('.math-inline') || katexEl.closest('.math-callout')) return;
 
                 const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
-                let formula = '';
+                let formula;
                 if (annotation) {
                     formula = annotation.textContent.trim();
                 } else {
@@ -99,7 +99,7 @@ class PasteMathTransformer {
             });
 
             // 6. Convert $...$ or \(...\) inline math into math-inline
-            serialized = serialized.replace(/(?:\$|\\\()([^\$\n\r]+?)(?:\$|\\\))/g, (match, formula) => {
+            serialized = serialized.replace(/(?:\$|\\\()([^$\n\r]+?)(?:\$|\\\))/g, (match, formula) => {
                 const cleanFormula = this.cleanFormulaString(formula);
                 if (/^\d+(?:\.\d+)?%?$/.test(cleanFormula.trim())) return match;
                 return `<span class="math-inline" formula="${this.escapeAttr(cleanFormula)}">${this.escapeHtml(cleanFormula)}</span>`;
@@ -128,7 +128,7 @@ class PasteMathTransformer {
         });
 
         // Inline math $...$
-        html = html.replace(/(?:\$|\\\()([^\$\n\r]+?)(?:\$|\\\))/g, (match, formula) => {
+        html = html.replace(/(?:\$|\\\()([^$\n\r]+?)(?:\$|\\\))/g, (match, formula) => {
             const cleanFormula = this.cleanFormulaString(formula);
             if (/^\d+(?:\.\d+)?%?$/.test(cleanFormula.trim())) return match;
             hasMath = true;
@@ -162,9 +162,9 @@ class PasteMathTransformer {
 
         const hasMathTokens = (
             text.includes('\\') ||
-            /^[A-Za-z0-9_\{\}\^]+\s*=\s*/.test(text) ||
+            /^[A-Za-z0-9_{}^]+\s*=\s*/.test(text) ||
             /\b(?:alpha|beta|gamma|delta|Delta|theta|lambda|pi|sigma|nabla|ln|log|sin|cos|tan|tanh|frac|sqrt|sum|int|cdot|approx|pm)\b/i.test(text) ||
-            /^[A-Za-z]_[a-zA-Z0-9\{\}]/.test(text)
+            /^[A-Za-z]_[a-zA-Z0-9{}]/.test(text)
         );
 
         return hasMathTokens && (text.includes('=') || text.includes('\\') || text.includes('^') || text.includes('_'));
@@ -178,7 +178,7 @@ class PasteMathTransformer {
             .replace(/&gt;/g, '>')
             .replace(/&quot;/g, '"')
             .replace(/&#039;/g, "'")
-            .replace(/<br\s*[\/]?>/gi, '\n')
+            .replace(/<br\s*[/]?>/gi, '\n')
             .replace(/<[^>]+>/g, '')
             .trim();
     }

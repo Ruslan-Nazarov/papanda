@@ -88,7 +88,9 @@ class BlockDnDManager {
         const containerRect = container.getBoundingClientRect();
         
         // Update side based on drop horizontal position
-        const droppedBlock = AppState.currentNote.blocks.find(b => b.id === blockId);
+        const sourceBlock = AppState.getBlock(blockId);
+        if (!sourceBlock) return;
+        const droppedBlock = {...sourceBlock};
         if (droppedBlock && droppedBlock.role !== 'section' && droppedBlock.side !== 'center') {
             if (droppedBlock.role === 'anchor') {
                 droppedBlock.side = 'left';
@@ -106,12 +108,11 @@ class BlockDnDManager {
         const newBlocksOrder = [];
         container.querySelectorAll('.dialectics-block').forEach(el => {
             const id = el.dataset.id;
-            const block = AppState.currentNote.blocks.find(b => b.id === id);
+            const block = id === blockId ? droppedBlock : AppState.getBlock(id);
             if (block) newBlocksOrder.push(block);
         });
 
-        AppState.currentNote.blocks = newBlocksOrder;
-        AppState.markDirty();
+        AppState.updateNote({blocks: newBlocksOrder});
         BlockDOMRenderer.renderAll();
     }
 

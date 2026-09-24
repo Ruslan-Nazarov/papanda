@@ -121,18 +121,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        # 'unsafe-eval' нужен function-plot (вычисляет введённые формулы для
-        # графика), 'unsafe-inline' — инлайн-бутстрапам + сниппетам Метрики/GA
-        # + importmap. Убрать их = миграция всех инлайнов на nonce +
-        # strict-dynamic (в бэклоге). Зато object/base/form/frame-ancestors
-        # закрыты жёстко, а XSS-поверхность сужена санитизацией на запись.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
-            "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://d3js.org https://esm.sh "
+            "script-src 'self' "
             "https://mc.yandex.ru https://www.googletagmanager.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
-            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline'; "
+            "font-src 'self'; "
             "img-src 'self' data: blob: https://mc.yandex.ru https://yandex.ru "
             "https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com; "
             "connect-src 'self' https://mc.yandex.ru wss://mc.yandex.ru https://mc.yandex.com https://yandex.ru "
@@ -170,8 +164,10 @@ class LocaleMiddleware(BaseHTTPMiddleware):
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith("/static/"):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        if request.url.path.startswith('/static/dist/') and request.url.path != '/static/dist/manifest.json' and response.status_code == 200:
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        elif request.url.path.startswith('/static/') or 'text/html' in response.headers.get('content-type', ''):
+            response.headers.setdefault("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
         return response

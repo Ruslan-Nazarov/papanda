@@ -1,5 +1,5 @@
 export class EditorDragBehavior {
-    static makeDraggable(modalEl, headerEl) {
+    static makeDraggable(modalEl, headerEl, lifecycle) {
         if (!modalEl || !headerEl) return;
 
         let isDragging = false;
@@ -35,8 +35,8 @@ export class EditorDragBehavior {
             }
         };
 
-        headerEl.addEventListener('mousedown', onMouseDown);
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        lifecycle.on(headerEl, 'mousedown', onMouseDown);
+        lifecycle.on(document, 'mousemove', onMouseMove);
+        lifecycle.on(document, 'mouseup', onMouseUp);
     }
 }

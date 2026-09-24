@@ -1,8 +1,10 @@
 import DialogService from './DialogService.js';
+import Lifecycle from './Lifecycle.js';
 
 import { t } from '../i18n.js';
 class ParserWindowsManager {
     static init() {
+        if (this.windows) return;
         this.windows = {
             formula: {
                 id: 'formula-parser-window',
@@ -27,6 +29,15 @@ class ParserWindowsManager {
         };
 
         this.ensureDock();
+    }
+
+    static dispose() {
+        for (const type of Object.keys(this.windows || {})) {
+            this.closeWindow(type);
+            this.windows[type].el?.remove();
+        }
+        this.dockEl?.remove();
+        this.windows = null;
     }
 
     static ensureDock() {
@@ -74,6 +85,10 @@ class ParserWindowsManager {
             win.el = type === 'formula' ? this.createFormulaWindow() : this.createArticleWindow();
             document.body.appendChild(win.el);
         }
+        if (!win.lifecycle || win.lifecycle.disposed) {
+            win.lifecycle = new Lifecycle();
+            this.makeDraggable(win.el, win.lifecycle);
+        }
 
         win.el.classList.remove('hidden', 'minimized');
         this.updateDock();
@@ -96,6 +111,7 @@ class ParserWindowsManager {
         if (!win || !win.el) return;
         win.isOpen = false;
         win.isMinimized = false;
+        win.lifecycle?.dispose();
         win.el.classList.add('hidden');
         this.updateDock();
     }
@@ -164,7 +180,6 @@ class ParserWindowsManager {
         `;
 
         this.attachFormulaEvents(winEl);
-        this.makeDraggable(winEl);
         return winEl;
     }
 
@@ -258,8 +273,14 @@ class ParserWindowsManager {
                 return;
             }
             try {
+                const lifecycle = this.windows.formula.lifecycle;
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (lifecycle.disposed) {stream.getTracks().forEach(track => track.stop()); return;}
                 const mediaRecorder = new MediaRecorder(stream);
+                lifecycle.own(() => {
+                    if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+                    stream.getTracks().forEach(track => track.stop());
+                });
                 voiceBtn._mediaRecorder = mediaRecorder;
                 const chunks = [];
                 
@@ -274,6 +295,7 @@ class ParserWindowsManager {
                     voiceBtn.style.background = '';
                     voiceBtn.style.color = '';
                     voiceBtn.title = t('pw_voice_tt');
+                    if (lifecycle.disposed) return;
                     
                     const blob = new Blob(chunks, { type: 'audio/webm' });
                     const formData = new FormData();
@@ -368,7 +390,6 @@ class ParserWindowsManager {
         `;
 
         this.attachArticleEvents(winEl);
-        this.makeDraggable(winEl);
         return winEl;
     }
 
@@ -561,14 +582,14 @@ class ParserWindowsManager {
         if (el && el.parentNode) el.parentNode.removeChild(el);
     }
 
-    static makeDraggable(el) {
+    static makeDraggable(el, lifecycle) {
         const header = el.querySelector('.parser-window-header');
         if (!header) return;
 
         let isDragging = false;
         let startX, startY, initialLeft, initialTop;
 
-        header.addEventListener('mousedown', (e) => {
+        lifecycle.on(header, 'mousedown', (e) => {
             if (e.target.closest('.win-btn')) return;
             isDragging = true;
             startX = e.clientX;
@@ -583,7 +604,7 @@ class ParserWindowsManager {
             el.style.margin = '0';
         });
 
-        document.addEventListener('mousemove', (e) => {
+        lifecycle.on(document, 'mousemove', (e) => {
             if (!isDragging) return;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
@@ -591,7 +612,7 @@ class ParserWindowsManager {
             el.style.top = `${Math.max(10, initialTop + dy)}px`;
         });
 
-        document.addEventListener('mouseup', () => {
+        lifecycle.on(document, 'mouseup', () => {
             isDragging = false;
         });
     }
