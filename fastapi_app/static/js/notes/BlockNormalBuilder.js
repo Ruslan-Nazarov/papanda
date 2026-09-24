@@ -128,7 +128,7 @@ class BlockNormalBuilder {
                         <h3 class="block-title" contenteditable="true"></h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
-                        ${(baseRole && baseRole.startsWith('step')) ? '<button class="btn-autofill-ai learning-block-ai" type="button" title="Получить предложение ИИ для этого шага"><span aria-hidden="true">✦</span> Предложить текст</button>' : ''}
+                        ${(baseRole && baseRole.startsWith('step')) ? `<button class="btn-autofill-ai learning-block-ai" type="button" title="${t('learning_suggest_title')}"><span aria-hidden="true">✦</span> ${t('learning_suggest')}</button>` : ''}
                         <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" title="${t('tt_pin')}">📌</button>
                     </div>
                 </div>
@@ -150,7 +150,7 @@ class BlockNormalBuilder {
                     <button class="block-action-btn btn-ai-check manual-only" title="${t('tt_ai_check')}">🔬</button>
                     <button class="block-action-btn btn-copy" title="${t('tt_copy')}">📋</button>
                     <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}">🎨</button>
-                    ${(baseRole && baseRole.startsWith('step')) ? '<button class="block-action-btn btn-fork-step" type="button" title="Создать новый вариант от этого шага">⑂</button>' : ''}
+                    ${(baseRole && baseRole.startsWith('step')) ? `<button class="block-action-btn btn-fork-step" type="button" title="${t('learning_fork_title')}">⑂</button>` : ''}
                     <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑️</button>
                 </div>
                 <div class="block-content">${HtmlSafety.rich(block.html || `<p>${t('block_text_ph')}</p>`)}</div>

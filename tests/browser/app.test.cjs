@@ -244,6 +244,41 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await page.$$eval('.learning-demo-map [data-node]', nodes => nodes.length), 3);
             await page.click('.learning-close');
         });
+        await t.test('all learning screens follow the language switch', async () => {
+            const translations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
+            for (const locale of ['en', 'kz', 'ru']) {
+                const words = translations[locale];
+                await page.click('#btn-lang-menu');
+                await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}), page.click(`[data-lang="${locale}"]`)]);
+                assert((await page.$eval('#btn-learning-ask', el => el.textContent)).includes(words.learning_ask));
+                assert((await page.$eval('#btn-learning-variants', el => el.textContent)).includes(words.learning_variants_nav));
+                await page.click('#btn-learning-variants');
+                await page.waitForSelector('#learning-fork');
+                assert.equal(await page.$eval('#learning-fork', el => el.textContent), words.learning_create);
+                await page.click('.learning-close');
+                await page.click('#btn-learning-ask');
+                await page.waitForSelector('.learning-chat-compose textarea');
+                assert.equal(await page.$eval('.learning-chat-compose textarea', el => el.placeholder), words.learning_question);
+                await page.click('.learning-close');
+                await page.click('#btn-main-menu');
+                await page.click('#menu-item-learning-history');
+                await page.waitForSelector('.learning-stats');
+                assert((await page.$eval('.learning-stats', el => el.textContent)).includes(words.learning_calls_count.split('{count}')[0]));
+                await page.click('.learning-close');
+                await page.click('#btn-main-menu');
+                await page.click('#menu-item-learning-demo');
+                await page.waitForSelector('.learning-demo-tabs');
+                assert.equal(await page.$eval('.learning-demo-notice', el => el.textContent), words.learning_demo_notice);
+                await page.click('[data-example="1"]');
+                assert((await page.$eval('.learning-demo-detail', el => el.textContent)).includes(words.learning_send_after_accounts));
+                for (const tab of ['map','portfolio','teacher','employer']) {
+                    await page.click(`.learning-demo-tabs [data-tab="${tab}"]`);
+                    const expected = words[tab === 'map' ? 'learning_map_intro' : `learning_${tab}_title`];
+                    assert((await page.$eval('.learning-demo-content', el => el.textContent)).includes(expected));
+                }
+                await page.click('.learning-close');
+            }
+        });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');
         assert.deepEqual(violations, [], 'CSP violations');
         assert.deepEqual(errors, [], 'Uncaught browser errors');

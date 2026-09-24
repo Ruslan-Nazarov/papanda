@@ -1,6 +1,32 @@
 import pytest
 
 from fastapi_app.services.ai_service import ai_service
+from fastapi_app.i18n import get_translator
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('locale,language', [('ru','Russian'), ('en','English'), ('kz','Kazakh')])
+async def test_new_learning_text_follows_request_language(client, monkeypatch, locale, language):
+    client.cookies.set('locale', locale)
+    translate = get_translator(locale)
+    note = (await client.post('/api/dialectics/save', json={'title':'User title', 'blocks':[
+        {'id':'a', 'role':'anchor', 'side':'left', 'html':'<p>Conclusion</p>',
+         'anchorResolved':True, 'sourceGoal':'User question'}]})).json()
+    variant = (await client.post(f"/api/dialectics/{note['id']}/variants", json={
+        'revision':note['revision'], 'from_step':1, 'label':'User label'})).json()
+    assert variant['title'] == 'User title' and variant['variant_label'] == 'User label'
+    assert variant['content_json'][0]['title'] == translate('learning_anchor_fallback')
+    source = (await client.get(f"/api/dialectics/{note['id']}")).json()
+    assert source['variant_label'] == translate('learning_original_variant')
+
+    async def unavailable(system, *args, **kwargs):
+        assert f'Answer in {language}' in system
+        return 'AI disabled: no provider'
+    monkeypatch.setattr(ai_service, '_generate', unavailable)
+    response = await client.post('/api/ai/dialectics/topic-question', json={
+        'note_id':note['id'], 'question':'User question'})
+    assert response.status_code == 503
+    assert response.json()['detail'] == translate('learning_ai_unavailable')
 
 
 @pytest.mark.asyncio

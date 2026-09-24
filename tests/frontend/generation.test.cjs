@@ -7,6 +7,7 @@ function setup(extra = {}) {
         document: {addEventListener() {}, dispatchEvent() {}, getElementById() {return null;}},
         BlockDOMParser: {syncDOMToState() {}}, GlobalLoader: {show() {}, hide() {}},
         DialogService: {confirm: async () => false}, showToast() {},
+        learningDate: () => '2026-09-24',
         NoteStorageService: {saveCurrentNote: async () => ctx.AppState.currentNote},
         ProposalReview: {show: async result => ({decision:'accepted', updated_steps:result.updated_steps})},
         NotesAPI: {addActivity: async () => {}}, ...extra});

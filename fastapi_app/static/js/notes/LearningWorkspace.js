@@ -3,25 +3,8 @@ import NotesAPI from './api.js';
 import NoteStorageService from './NoteStorageService.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
 import { showToast } from './ToastService.js';
+import { lt as w, learningDate } from './LearningI18n.js';
 
-const locale = () => (document.documentElement.lang || 'ru').slice(0, 2);
-const words = {
-    ru: {variants:'Варианты конспекта', ask:'Спросить ИИ', history:'Путь работы',
-        close:'Закрыть', create:'Создать вариант', from:'Начиная с шага', open:'Открыть',
-        compare:'Сравнить', goal:'Долгосрочная задача', send:'Отправить',
-        question:'Что вы хотите уточнить по теме?', empty:'Пока нет событий',
-        choose:'Почему я выбрал этот вариант', save:'Сохранить', ai:'Создан ИИ'},
-    en: {variants:'Note variants', ask:'Ask AI', history:'Learning path', close:'Close',
-        create:'Create variant', from:'Starting at step', open:'Open', compare:'Compare',
-        goal:'Long-term challenge', send:'Send', question:'What would you like to clarify?',
-        empty:'No events yet', choose:'Why I chose this variant', save:'Save', ai:'Made by AI'},
-    kz: {variants:'Конспект нұсқалары', ask:'ЖИ-дан сұрау', history:'Жұмыс жолы',
-        close:'Жабу', create:'Нұсқа жасау', from:'Қадамнан бастап', open:'Ашу',
-        compare:'Салыстыру', goal:'Ұзақ мерзімді міндет', send:'Жіберу',
-        question:'Тақырып бойынша нені нақтылағыңыз келеді?', empty:'Әзірше оқиға жоқ',
-        choose:'Бұл нұсқаны неге таңдадым', save:'Сақтау', ai:'ЖИ жасаған'},
-};
-const w = key => (words[locale()] || words.ru)[key];
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const plain = value => String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -43,7 +26,7 @@ export default class LearningWorkspace {
 
     static async savedNote() {
         const note = await NoteStorageService.saveCurrentNote();
-        if (!note.id) throw new Error('Save the note first');
+        if (!note.id) throw new Error(w('save_first'));
         return note;
     }
 
@@ -55,12 +38,12 @@ export default class LearningWorkspace {
             body.innerHTML = `<div class="learning-form">
                 <label>${esc(w('from'))} <select id="learning-step">${[1,2,3,4,5].map(n =>
                     `<option value="${n}" ${n === startStep ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-                <input id="learning-label" maxlength="120" value="${esc(`${w('variants')} ${variants.length + 1}`)}" aria-label="${esc(w('variants'))}">
+                <input id="learning-label" maxlength="120" value="${esc(w('variant_default', {number:variants.length + 1}))}" aria-label="${esc(w('variants'))}">
                 <button id="learning-fork" class="learning-primary">${esc(w('create'))}</button></div>
                 <label class="learning-goal"><input type="checkbox" id="learning-goal" ${note.long_term_goal ? 'checked' : ''}> ${esc(w('goal'))}</label>
                 <div class="learning-variant-list">${variants.map(v => `<div class="learning-variant" data-id="${v.id}">
                     <div><strong>${esc(v.variant_label || v.title)}</strong>${v.variant_origin === 'ai' ? ` <small>${esc(w('ai'))}</small>` : ''}
-                    <p>${esc(v.title)}</p></div><div class="learning-variant-actions">${v.variant_origin === 'ai' ? `<button data-review="${v.id}">Оценить ИИ</button>` : ''}<button data-open="${v.id}">${esc(w('open'))}</button></div></div>`).join('')}</div>
+                    <p>${esc(v.title)}</p></div><div class="learning-variant-actions">${v.variant_origin === 'ai' ? `<button data-review="${v.id}">${esc(w('review_ai'))}</button>` : ''}<button data-open="${v.id}">${esc(w('open'))}</button></div></div>`).join('')}</div>
                 ${variants.length > 1 ? `<button id="learning-compare">${esc(w('compare'))}</button>` : ''}`;
             body.querySelector('#learning-fork').addEventListener('click', async () => {
                 try {
@@ -98,17 +81,17 @@ export default class LearningWorkspace {
     }
 
     static reviewAI(noteId) {
-        const {body, close} = this.modal('Оценка полного конспекта ИИ');
-        body.innerHTML = `<p>Сравните ответ ИИ со своей работой. Что помогло понять тему, где есть ошибка и какой переход остался неубедительным?</p>
-            <div class="learning-review-fields"><label>Что помогло<textarea maxlength="1500"></textarea></label>
-            <label>Где ИИ ошибся<textarea maxlength="1500"></textarea></label>
-            <label>Что неубедительно<textarea maxlength="1500"></textarea></label></div>
-            <button class="learning-primary" id="learning-review-save">Сохранить оценку</button>`;
+        const {body, close} = this.modal(w('review_title'));
+        body.innerHTML = `<p>${esc(w('review_intro'))}</p>
+            <div class="learning-review-fields"><label>${esc(w('review_helped'))}<textarea maxlength="1500"></textarea></label>
+            <label>${esc(w('review_errors'))}<textarea maxlength="1500"></textarea></label>
+            <label>${esc(w('review_unconvincing'))}<textarea maxlength="1500"></textarea></label></div>
+            <button class="learning-primary" id="learning-review-save">${esc(w('review_save'))}</button>`;
         body.querySelector('#learning-review-save').addEventListener('click', async () => {
             const [helped, error, unconvincing] = [...body.querySelectorAll('textarea')].map(el => el.value.trim());
             if (![helped,error,unconvincing].some(Boolean)) return;
-            const text = [`Помогло: ${helped || '—'}`, `Ошибки: ${error || '—'}`, `Неубедительно: ${unconvincing || '—'}`].join('\n');
-            try { await NotesAPI.addActivity(noteId, {kind:'ai_full_review', text}); close(); showToast('Оценка сохранена'); }
+            const text = [`${w('review_helped')}: ${helped || '—'}`, `${w('review_errors')}: ${error || '—'}`, `${w('review_unconvincing')}: ${unconvincing || '—'}`].join('\n');
+            try { await NotesAPI.addActivity(noteId, {kind:'ai_full_review', text}); close(); showToast(w('review_saved')); }
             catch (issue) { showToast(issue.message, 'error'); }
         });
     }
@@ -137,8 +120,8 @@ export default class LearningWorkspace {
             const events = await NotesAPI.getActivity(note.id);
             const {body} = this.modal(w('ask'));
             const pairs = events.filter(e => e.kind === 'question_answer');
-            body.innerHTML = `<div class="learning-chat-log">${pairs.map(e => `<div class="learning-chat-pair"><p><b>Вы:</b> ${esc(e.data.question)}</p>
-                <p><b>ИИ:</b> ${esc(e.data.answer)}</p></div>`).join('')}</div>
+            body.innerHTML = `<div class="learning-chat-log">${pairs.map(e => `<div class="learning-chat-pair"><p><b>${esc(w('you'))}:</b> ${esc(e.data.question)}</p>
+                <p><b>${esc(w('ai_short'))}:</b> ${esc(e.data.answer)}</p></div>`).join('')}</div>
                 <div class="learning-chat-compose"><textarea maxlength="2000" placeholder="${esc(w('question'))}"></textarea>
                 <button class="learning-primary">${esc(w('send'))}</button></div>`;
             const input = body.querySelector('textarea');
@@ -151,7 +134,7 @@ export default class LearningWorkspace {
                     const pair = document.createElement('div');
                     pair.className = 'learning-chat-pair';
                     const q = document.createElement('p'), a = document.createElement('p');
-                    q.textContent = `Вы: ${question}`; a.textContent = `ИИ: ${response.answer}`;
+                    q.textContent = `${w('you')}: ${question}`; a.textContent = `${w('ai_short')}: ${response.answer}`;
                     pair.append(q, a); body.querySelector('.learning-chat-log').appendChild(pair);
                     input.value = '';
                     pair.scrollIntoView({block:'nearest'});
@@ -172,10 +155,10 @@ export default class LearningWorkspace {
                 .sort((a,b) => new Date(a.created_at)-new Date(b.created_at) || a.id-b.id);
             const counts = events.reduce((acc,e) => {acc[e.kind]=(acc[e.kind]||0)+1; return acc;},{});
             const {body} = this.modal(w('history'));
-            body.innerHTML = `<div class="learning-stats"><span>Обращения к ИИ: ${(counts.ai_proposed||0)+(counts.question_answer||0)}</span><span>Принято: ${(counts.ai_accepted||0)+(counts.ai_edited||0)}</span><span>Варианты: ${variants.length}</span></div>
-                <div class="learning-timeline">${events.length ? events.map(e => `<article><time>${esc(new Date(e.created_at).toLocaleString())}</time>
+            body.innerHTML = `<div class="learning-stats"><span>${esc(w('calls_count', {count:(counts.ai_proposed||0)+(counts.question_answer||0)}))}</span><span>${esc(w('accepted_count', {count:(counts.ai_accepted||0)+(counts.ai_edited||0)}))}</span><span>${esc(w('variants_count', {count:variants.length}))}</span></div>
+                <div class="learning-timeline">${events.length ? events.map(e => `<article><time>${esc(learningDate(e.created_at))}</time>
                 <strong>${esc(e.variant.variant_label || e.variant.title)}</strong><p>${esc(this.eventLabel(e))}</p>
-                ${this.eventDetail(e) ? `<details><summary>Посмотреть содержание</summary><pre>${esc(this.eventDetail(e))}</pre></details>` : ''}</article>`).join('') : `<p>${esc(w('empty'))}</p>`}</div>
+                ${this.eventDetail(e) ? `<details><summary>${esc(w('view_content'))}</summary><pre>${esc(this.eventDetail(e))}</pre></details>` : ''}</article>`).join('') : `<p>${esc(w('empty'))}</p>`}</div>
                 <div class="learning-form"><input id="learning-reason" maxlength="2000" placeholder="${esc(w('choose'))}"><button id="learning-reason-save">${esc(w('save'))}</button></div>`;
             body.querySelector('#learning-reason-save').addEventListener('click', async () => {
                 const detail = body.querySelector('#learning-reason').value.trim();
@@ -188,16 +171,13 @@ export default class LearningWorkspace {
 
     static eventLabel(event) {
         const d = event.data || {};
-        return ({variant_created:`Создан вариант от шага ${d.from_step}`,
-            variant_forked:`Создан новый вариант «${d.label || ''}»`,
-            ai_proposed:`ИИ предложил шаг ${d.step || ''}`,
-            ai_accepted:`Предложение ИИ принято для шага ${d.step || ''}`,
-            ai_edited:`Предложение ИИ изменено и принято для шага ${d.step || ''}`,
-            ai_rejected:`Предложение ИИ отклонено для шага ${d.step || ''}`,
-            ai_full_review:d.text ? 'Оценка полного конспекта ИИ' : 'Полный конспект ИИ сохранён отдельным вариантом',
-            question_answer:`Вопрос: ${d.question || ''}`,
-            variant_chosen:`Выбор варианта: ${d.detail || ''}`,
-            goal_changed:d.long_term_goal ? 'Отмечена долгосрочная задача' : 'Снята отметка долгосрочной задачи'})[event.kind] || event.kind;
+        const key = ({variant_created:'event_created', variant_forked:'event_forked',
+            ai_proposed:d.step ? 'event_proposed' : 'event_full_proposed', ai_accepted:'event_accepted',
+            ai_edited:'event_edited', ai_rejected:d.step ? 'event_rejected' : 'event_full_rejected',
+            ai_full_review:d.text ? 'review_title' : 'event_full_saved', question_answer:'event_question',
+            variant_chosen:'event_chosen', goal_changed:d.long_term_goal ? 'event_goal_set' : 'event_goal_unset'})[event.kind];
+        return key ? w(key, {step:d.from_step || d.step || '', label:d.label || '',
+            question:d.question || '', detail:d.detail || ''}) : event.kind;
     }
 
     static eventDetail(event) {

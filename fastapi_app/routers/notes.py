@@ -99,8 +99,8 @@ async def get_variants(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await LearningService.variants(db, note_id)
 
 @router.post('/{note_id}/variants', response_model=NoteView)
-async def fork_variant(note_id: PositiveId, data: ForkRequest, db: AsyncSession = Depends(get_db)):
-    return await LearningService.fork(db, note_id, data)
+async def fork_variant(note_id: PositiveId, data: ForkRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    return await LearningService.fork(db, note_id, data, getattr(request.state, 'locale', 'ru'))
 
 @router.get('/{note_id}/activity')
 async def get_activity(note_id: PositiveId, db: AsyncSession = Depends(get_db)):

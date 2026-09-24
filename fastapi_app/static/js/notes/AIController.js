@@ -1,3 +1,4 @@
+import { learningDate } from './LearningI18n.js';
 import AppState from './AppState.js';
 import Lifecycle from './Lifecycle.js';
 import NotesAPI from './api.js';
@@ -271,7 +272,7 @@ class AIController {
         await NoteStorageService.saveCurrentNote();
         const current = await NotesAPI.getNote(run.note.id);
         const fork = await NotesAPI.forkVariant(current.id, {revision:current.revision, from_step:1,
-            label:`Предложение ИИ · ${new Date().toLocaleString()}`, origin:'ai'});
+            label:`${t('learning_proposal')} · ${learningDate()}`, origin:'ai'});
         const copy = GenerationChanges.build({...fork, blocks:fork.content_json}, result,
             text => this.contentToHtml(text), ALGORITHM_STEPS);
         await NotesAPI.updateNote(fork.id, {revision:fork.revision, title:copy.title, blocks:copy.blocks,
@@ -335,7 +336,7 @@ class AIController {
             }
             if (full) {
                 const fork = await NotesAPI.forkVariant(note.id, {revision:run.revision, from_step:1,
-                    label:`ИИ · ${new Date().toLocaleString()}`, origin:'ai'});
+                    label:`${t('learning_ai_short')} · ${learningDate()}`, origin:'ai'});
                 const next = GenerationChanges.build({...fork, blocks:fork.content_json}, reviewed,
                     text => this.contentToHtml(text), ALGORITHM_STEPS);
                 const saved = await NotesAPI.updateNote(fork.id, {revision:fork.revision,

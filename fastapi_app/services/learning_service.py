@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_app.models.notes import Note, NoteActivity, NoteFamily, NoteVersion
 from fastapi_app.schemas.learning import ActivityCreate, ForkRequest
 from fastapi_app.services.note_transactions import get_note, require_revision, commit
+from fastapi_app.i18n import get_translator
 
 
 def _step_number(role):
@@ -30,7 +31,8 @@ class LearningService:
         return rows.scalars().all()
 
     @staticmethod
-    async def fork(session: AsyncSession, note_id: int, data: ForkRequest):
+    async def fork(session: AsyncSession, note_id: int, data: ForkRequest, locale: str = 'ru'):
+        translate = get_translator(locale)
         source = await get_note(session, note_id)
         require_revision(source, data.revision)
         if source.is_deleted:
@@ -40,14 +42,14 @@ class LearningService:
             session.add(family)
             await session.flush()
             source.family_id = family.id
-            source.variant_label = source.variant_label or 'Исходный вариант'
+            source.variant_label = source.variant_label or translate('learning_original_variant')
         blocks = [dict(block) for block in source.content_json
                   if _step_number(block.get('role')) is None
                   or _step_number(block.get('role')) < data.from_step]
         for block in blocks:
             if block.get('role') == 'anchor' and block.get('anchorResolved') and block.get('sourceGoal'):
                 block['html'] = f"<p>{html.escape(str(block['sourceGoal']))}</p>"
-                block['title'] = block.get('sourceTitle') or 'Что нужно понять?'
+                block['title'] = block.get('sourceTitle') or translate('learning_anchor_fallback')
                 block['anchorResolved'] = False
         variant = Note(
             title=source.title, content_json=blocks, stickers=[],
@@ -59,7 +61,7 @@ class LearningService:
         )
         session.add(variant)
         await session.flush()
-        session.add(NoteVersion(note_id=variant.id, title='Создание варианта',
+        session.add(NoteVersion(note_id=variant.id, title=translate('learning_variant_checkpoint'),
                                 content_json=blocks, stickers=[], is_manual=True))
         session.add(NoteActivity(note_id=source.id, kind='variant_forked',
                                  data_json={'new_note_id': variant.id, 'from_step': data.from_step,

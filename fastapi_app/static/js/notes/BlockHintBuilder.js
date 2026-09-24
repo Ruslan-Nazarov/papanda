@@ -51,8 +51,8 @@ class BlockHintBuilder {
                 
                 <div style="display: flex; gap: 8px; z-index: 2;">
                     ${stepRole.startsWith('step') ? `
-                    <button class="btn-autofill-step learning-block-ai" type="button" title="Предложение ИИ для этого шага">
-                        <span>✦</span> Предложить текст
+                    <button class="btn-autofill-step learning-block-ai" type="button" title="${t('learning_suggest_title')}">
+                        <span>✦</span> ${t('learning_suggest')}
                     </button>
                     ` : ''}
                 </div>
