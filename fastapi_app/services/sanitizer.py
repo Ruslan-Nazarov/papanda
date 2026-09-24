@@ -1,5 +1,7 @@
 import re
 import json
+import base64
+import binascii
 
 import nh3
 
@@ -22,39 +24,92 @@ _BLOCKS = {"p", "br", "ul", "ol", "li", "pre", "blockquote", "hr",
            "h1", "h2", "h3", "h4", "h5", "h6",
            "table", "thead", "tbody", "tr", "th", "td"}
 
-_WRITE_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "a"}
+_WRITE_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "a", "img"}
 _WRITE_ATTRS = {
     "span": {"class", "formula", "data-formula", "data-type", "data-hint",
              "data-expanded", "data-question", "style"},
     "div": {"class"},
     "blockquote": {"class", "author"},
     "a": {"href", "title", "class", "target"},  # rel добавляет сам nh3
+    "img": {"src", "alt", "title", "width", "height"},
 }
 _WRITE_SCHEMES = {"http", "https", "mailto", "internal"}  # internal:// — ссылки между конспектами
 
 # Строгий набор для ПУБЛИЧНОЙ отдачи (/s/<token>): без ссылок и data-*,
 # только форматирование + формулы + выноски.
-_PUBLIC_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div"}
+_PUBLIC_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "img"}
 _PUBLIC_ATTRS = {"span": {"class", "formula", "data-formula"},
-                 "div": {"class"}, "blockquote": {"class", "author"}}
+                 "div": {"class"}, "blockquote": {"class", "author"},
+                 "img": _WRITE_ATTRS["img"]}
+
+MAX_EMBEDDED_IMAGE_BYTES = 2 * 1024 * 1024
+_IMAGE_DATA = re.compile(r"data:image/(png|jpeg|webp);base64,([A-Za-z0-9+/]*={0,2})\Z", re.I)
+
+
+def _safe_image_source(value: str) -> bool:
+    # Bound allocation before decoding; SVG and arbitrary data MIME types are excluded.
+    if len(value) > 64 + 4 * ((MAX_EMBEDDED_IMAGE_BYTES + 2) // 3):
+        return False
+    match = _IMAGE_DATA.fullmatch(value)
+    if not match:
+        return False
+    try:
+        raw = base64.b64decode(match[2], validate=True)
+    except (ValueError, binascii.Error):
+        return False
+    if len(raw) > MAX_EMBEDDED_IMAGE_BYTES:
+        return False
+    mime = match[1].lower()
+    return ((mime == 'png' and raw.startswith(b'\x89PNG\r\n\x1a\n'))
+            or (mime == 'jpeg' and raw.startswith(b'\xff\xd8\xff'))
+            or (mime == 'webp' and raw.startswith(b'RIFF') and raw[8:12] == b'WEBP'))
+
+
+def _filter_attribute(tag: str, attribute: str, value: str):
+    if tag == 'img' and attribute == 'src':
+        if _safe_image_source(value):
+            return value
+        return None
+    if tag == 'img' and attribute in {'width', 'height'}:
+        return value if re.fullmatch(r'[0-9]{1,4}', value) and 0 < int(value) <= 8192 else None
+    if attribute in {'href', 'src'}:
+        compact = re.sub(r'[\x00-\x20\x7f]', '', value).lower()
+        if compact.startswith('data:'):
+            return None
+    return value
 
 
 def sanitize_block_html(html: str) -> str:
     """Строгая очистка для публичной отдачи (страница /s/<token>)."""
     if not html:
         return ""
-    return nh3.clean(html, tags=_PUBLIC_TAGS, attributes=_PUBLIC_ATTRS)
+    return nh3.clean(html, tags=_PUBLIC_TAGS, attributes=_PUBLIC_ATTRS,
+                     url_schemes={'data'}, attribute_filter=_filter_attribute)
 
 
-def sanitize_on_write(html: str) -> str:
+def sanitize_on_write(html: str, *, reject_invalid_images: bool = False) -> str:
     """Очистка HTML блока при сохранении заметки — вырезает script/onclick/
     javascript:-ссылки и прочий актив, сохраняя всё легальное форматирование
     редактора (см. список расширений выше)."""
     if not html:
         return ""
-    return nh3.clean(
-        html, tags=_WRITE_TAGS, attributes=_WRITE_ATTRS, url_schemes=_WRITE_SCHEMES,
+    invalid_image = False
+
+    def filter_attribute(tag, attribute, value):
+        nonlocal invalid_image
+        filtered = _filter_attribute(tag, attribute, value)
+        if tag == 'img' and attribute == 'src' and filtered is None:
+            invalid_image = True
+        return filtered
+
+    cleaned = nh3.clean(
+        html, tags=_WRITE_TAGS, attributes=_WRITE_ATTRS, url_schemes=_WRITE_SCHEMES | {'data'},
+        attribute_filter=filter_attribute,
     )
+    # nh3 does not propagate exceptions from the Rust callback. Raise in Python.
+    if reject_invalid_images and invalid_image:
+        raise ValueError('Images must be embedded PNG, JPEG or WebP, at most 2 MiB each')
+    return cleaned
 
 
 def _iter_balanced_objects(text: str):

@@ -55,6 +55,16 @@ test('isolated renderer security regressions', async t => {
             assert.deepEqual(result, {inHeader: 0, handlers: 0, strong: 'Keep me'});
         });
         await page.addScriptTag({content: source('AIController')});
+        await t.test('embedded drawing survives display sanitization', async () => {
+            const result = await page.evaluate(() => {
+                const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+                const el = BlockNormalBuilder.build({id: 'drawing', title: 'Drawing',
+                    html: `<img src="${png}" alt="drawing" onerror="bad()">`}, () => {});
+                const img = el.querySelector('img');
+                return {preserved: img?.getAttribute('src') === png, handler: img?.hasAttribute('onerror')};
+            });
+            assert.deepEqual(result, {preserved: true, handler: false});
+        });
         await t.test('math is safe after markdown and final sanitization preserves formulas', async () => {
             const result = await page.evaluate(() => {
                 const container = document.createElement('div');

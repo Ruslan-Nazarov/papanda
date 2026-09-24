@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from typing import List, Optional, Literal, Any, Dict
 from datetime import datetime, timezone
+from fastapi_app.services.sanitizer import sanitize_on_write
 
 def _serialize_utc(dt: Optional[datetime]) -> Optional[str]:
     if dt is None:
@@ -57,6 +58,12 @@ class NoteBlock(BaseModel):
     @classmethod
     def normalize_legacy_status(cls, value):
         return "in_progress" if value == "draft" else value
+
+    @field_validator("html")
+    @classmethod
+    def sanitize_editor_html(cls, value):
+        # Validation errors become HTTP 422 before any database changes.
+        return sanitize_on_write(value, reject_invalid_images=True)
 
 class NoteCreate(BaseModel):
     title: str
