@@ -1,0 +1,12 @@
+{
+  "revision": "062fbe752eb24f4da30d54d7638de54b6c06cdfc",
+  "archive_sha256": "52d1df43432d47876b07fefab3868faedba07b1798272c43c695d3eb81914bf9",
+  "files_verified": 360,
+  "python_runtime_clean_install": "passed",
+  "npm_clean_install_build": "passed",
+  "packaged_application_health_and_assets": "passed",
+  "migration_1_to_2": "passed",
+  "restore_schema_1_and_fixture_data": "passed",
+  "platform": "win32",
+  "production_systemd_ssh": "not_executed"
+}
