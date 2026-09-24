@@ -251,6 +251,11 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 await page.click('#btn-lang-menu');
                 await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}), page.click(`[data-lang="${locale}"]`)]);
                 assert((await page.$eval('#btn-learning-ask', el => el.textContent)).includes(words.learning_ask));
+                await page.hover('#btn-learning-ask');
+                const askStyle = await page.$eval('#btn-learning-ask', el => ({
+                    background:getComputedStyle(el).backgroundImage, color:getComputedStyle(el).color}));
+                assert.match(askStyle.background, /linear-gradient/, 'AI button must retain its dark background on hover');
+                assert.equal(askStyle.color, 'rgb(255, 255, 255)');
                 assert((await page.$eval('#btn-learning-variants', el => el.textContent)).includes(words.learning_variants_nav));
                 await page.click('#btn-learning-variants');
                 await page.waitForSelector('#learning-fork');

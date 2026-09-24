@@ -1,5 +1,5 @@
-.learning-ask-nav {background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;border-color:#0f766e;box-shadow:0 5px 14px rgba(15,118,110,.18)}
-.learning-ask-nav:hover {filter:brightness(1.08);transform:translateY(-1px)}
+.nav-pill-btn.learning-ask-nav {background:#0f766e linear-gradient(135deg,#0f766e,#115e59);color:#fff;border-color:#0f766e;box-shadow:0 5px 14px rgba(15,118,110,.18)}
+.nav-pill-btn.learning-ask-nav:hover {filter:brightness(1.08);transform:translateY(-1px)}
 .learning-overlay {position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px}
 .learning-dialog {width:min(880px,100%);max-height:min(88vh,920px);display:flex;flex-direction:column;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.25);overflow:hidden}
 .learning-dialog>header {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 22px;border-bottom:1px solid #e2e8f0}
