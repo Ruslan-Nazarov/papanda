@@ -29,8 +29,8 @@ const AppState = {
     
     // Режим работы приложения: 'ai' (ИИ генерирует конспект) | 'manual' (ручной ввод по алгоритму).
     // Управляется ModeManager; isAutoFillEnabled держим синхронно (на него завязан старый код).
-    mode: 'ai',
-    isAutoFillEnabled: true,
+    mode: 'manual',
+    isAutoFillEnabled: false,
     isAutoFillStepByStep: false,
 
     setNote(note) {

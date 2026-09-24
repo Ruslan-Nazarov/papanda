@@ -38,7 +38,8 @@ class OnboardingTour {
         if (this._active) return;
         this._active = true;
         this._i = 0;
-        try { ModeManager.setMode('ai'); } catch {}
+        this._previousMode = ModeManager.getMode();
+        try { ModeManager.setMode('ai', false); } catch {}
 
         this._overlay = document.createElement('div');
         this._overlay.className = 'tour-overlay';
@@ -150,6 +151,8 @@ class OnboardingTour {
 
     static close() {
         try { localStorage.setItem('dialectics_onboarding_seen', '1'); } catch {}
+        if (this._previousMode) ModeManager.setMode(this._previousMode, false);
+        this._previousMode = null;
         document.removeEventListener('keydown', this._onKey);
         window.removeEventListener('resize', this._onResize);
         this._overlay?.remove();

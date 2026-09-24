@@ -7,14 +7,16 @@ import BlockDOMRenderer from './BlockDOMRenderer.js';
  *   'manual' — пользователь пишет сам по алгоритму, видит подсказки-блоки, полный тулбар.
  * Выбор хранится глобально в localStorage.
  */
-const MODE_KEY = 'dialectics_mode';
+// Новый ключ даёт всем пользователям ручной старт после смены умолчания;
+// дальнейший выбор режима по-прежнему сохраняется.
+const MODE_KEY = 'dialectics_mode_v2';
 const STEP_KEY = 'dialectics_ai_stepbystep';
 
 class ModeManager {
     static init() {
-        let saved = 'ai';
-        try { saved = localStorage.getItem(MODE_KEY) || 'ai'; } catch {}
-        this.mode = saved === 'manual' ? 'manual' : 'ai';
+        let saved = 'manual';
+        try { saved = localStorage.getItem(MODE_KEY) || 'manual'; } catch {}
+        this.mode = saved === 'ai' ? 'ai' : 'manual';
 
         let step = false;
         try { step = localStorage.getItem(STEP_KEY) === '1'; } catch {}
@@ -43,11 +45,13 @@ class ModeManager {
         return this.mode;
     }
 
-    static setMode(m) {
+    static setMode(m, persist = true) {
         m = m === 'manual' ? 'manual' : 'ai';
         if (m === this.mode) return;
         this.mode = m;
-        try { localStorage.setItem(MODE_KEY, m); } catch {}
+        if (persist) {
+            try { localStorage.setItem(MODE_KEY, m); } catch {}
+        }
         this.apply();
     }
 
