@@ -183,12 +183,8 @@ async def test_article_parser_with_text(client: AsyncClient):
 async def test_article_parser_with_valid_pdf(client: AsyncClient):
     """Проверяет парсинг статьи при загрузке PDF файла с извлечением текста."""
     with patch("fastapi_app.routers.ai.ai_service.parse_article", new_callable=AsyncMock) as mock_article:
-        with patch("fastapi_app.routers.ai.PdfReader") as mock_pdf_reader_cls:
-            mock_page = MagicMock()
-            mock_page.extract_text.return_value = "Текст статьи из PDF документа"
-            mock_reader = MagicMock()
-            mock_reader.pages = [mock_page]
-            mock_pdf_reader_cls.return_value = mock_reader
+        with patch("fastapi_app.routers.ai.extract_pdf", new_callable=AsyncMock) as mock_extract:
+            mock_extract.return_value = "Текст статьи из PDF документа\n"
 
             mock_article.return_value = "## Реконструкция из PDF"
 
@@ -222,7 +218,7 @@ async def test_article_parser_missing_input_and_invalid_pdf(client: AsyncClient)
         data={"message": "Разбери"}
     )
     assert res_corrupt.status_code == 400
-    assert "Error reading PDF" in res_corrupt.json()["detail"]
+    assert "PDF" in res_corrupt.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -289,8 +285,6 @@ async def test_generation_daily_quota_returns_429(client: AsyncClient, monkeypat
     """Суточный лимит генераций на сессию: после N-й генерации приходит 429
     с осмысленным текстом, работа не запускается."""
     import fastapi_app.services.abuse_guard as guard
-    guard._session_counts.clear()
-    guard._global[0], guard._global[1] = "", 0
     monkeypatch.setattr("fastapi_app.config.settings.SESSION_DAILY_GENERATION_CAP", 2)
 
     async def _fake_stream(*_a, **_k):
@@ -304,4 +298,3 @@ async def test_generation_daily_quota_returns_429(client: AsyncClient, monkeypat
         r = await client.post("/api/ai/dialectics/conspectus/generate-full/stream", json=body)
         assert r.status_code == 429
         assert "лимит" in r.json()["detail"].lower()
-    guard._session_counts.clear()

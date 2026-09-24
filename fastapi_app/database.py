@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 from sqlalchemy import text, event
 from fastapi import Request, HTTPException
 from fastapi_app.config import settings
@@ -16,10 +17,12 @@ class Base(DeclarativeBase):
 
 _engine_cache: Dict[str, AsyncEngine] = {}
 _cache_lock = asyncio.Lock()
+_active_leases: Dict[str, int] = {}
 
 
 def create_db_engine(db_url: str) -> AsyncEngine:
-    engine = create_async_engine(db_url, echo=False)
+    options = {'poolclass': NullPool} if db_url.startswith('sqlite') and ':memory:' not in db_url else {}
+    engine = create_async_engine(db_url, echo=False, **options)
     if engine.dialect.name == 'sqlite':
         @event.listens_for(engine.sync_engine, 'connect')
         def enable_foreign_keys(connection, _record):
@@ -35,8 +38,8 @@ def create_db_engine(db_url: str) -> AsyncEngine:
 
 def _resolve_db_url(request: Request = None) -> Tuple[str, bool]:
     if settings.DEMO_MODE and request:
-        session_id = request.cookies.get("session_id")
-        if not session_id or not re.fullmatch(r'^[a-zA-Z0-9\-_]{8,64}$', session_id):
+        session_id = getattr(request.state, 'session_id', None)
+        if not session_id or not re.fullmatch(r'[a-f0-9]{64}', session_id):
             raise HTTPException(status_code=401, detail="Session ID missing or invalid. Please refresh the page.")
             
         settings.DEMO_DIR.mkdir(parents=True, exist_ok=True)
@@ -128,11 +131,28 @@ async def _get_or_create_engine(db_url: str, needs_init: bool) -> AsyncEngine:
 
 async def get_db(request: Request = None) -> AsyncSession:
     db_url, needs_init = _resolve_db_url(request)
-    engine = await _get_or_create_engine(db_url, needs_init)
-    
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-    async with async_session() as session:
-        yield session
+    async with _cache_lock:
+        _active_leases[db_url] = _active_leases.get(db_url, 0) + 1
+    try:
+        if settings.DEMO_MODE and request:
+            from fastapi_app.services.security_store import session_is_live
+            if not await asyncio.to_thread(session_is_live, request.state.session_id):
+                raise HTTPException(401, 'Demo session expired; reload the page')
+        engine = await _get_or_create_engine(db_url, needs_init)
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            if settings.DEMO_MODE and request and request.method not in {'GET', 'HEAD', 'DELETE'}:
+                pages = (await session.execute(text('PRAGMA page_count'))).scalar()
+                free = (await session.execute(text('PRAGMA freelist_count'))).scalar()
+                page_size = (await session.execute(text('PRAGMA page_size'))).scalar()
+                if (pages - free) * page_size >= settings.DEMO_MAX_DB_BYTES:
+                    raise HTTPException(413, 'Demo storage quota reached; delete unused notes')
+            yield session
+    finally:
+        async with _cache_lock:
+            _active_leases[db_url] -= 1
+            if not _active_leases[db_url]:
+                del _active_leases[db_url]
 
 async def dispose_all_engines():
     async with _cache_lock:

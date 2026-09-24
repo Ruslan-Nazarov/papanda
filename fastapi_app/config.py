@@ -1,6 +1,7 @@
 import secrets
 import re
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 from pathlib import Path
 
 class Settings(BaseSettings):
@@ -59,9 +60,9 @@ class Settings(BaseSettings):
     GIGACHAT_MODEL: str = "GigaChat-2-Pro"     # GigaChat-2 | -2-Pro | -2-Max
     GIGACHAT_FAST_MODEL: str = "GigaChat-2"
     # Сертификат эндпоинта подписан НУЦ Минцифры — его нет в системном хранилище.
-    # False = не проверять TLS (быстрый старт). Для прод-строгости: поставить True
-    # и положить russian_trusted_root_ca.pem, указав путь в GIGACHAT_CA_BUNDLE.
-    GIGACHAT_VERIFY_SSL: bool = False
+    # Проверка обязательна. При необходимости добавить доверенный CA через
+    # GIGACHAT_CA_BUNDLE, сохраняя проверку имени хоста.
+    GIGACHAT_VERIFY_SSL: bool = True
     GIGACHAT_CA_BUNDLE: str = ""
 
     # --- Защита от злоупотребления генерацией (services/abuse_guard.py) ---
@@ -72,7 +73,18 @@ class Settings(BaseSettings):
     GLOBAL_DAILY_GENERATION_CAP: int = 3000
     # Сколько доверенных прокси перед приложением (nginx=1). Из X-Forwarded-For
     # берём запись N-ю справа как реальный IP клиента для rate-limit.
-    TRUSTED_PROXY_COUNT: int = 1
+    TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0, le=8)
+    TRUSTED_PROXY_IPS: str = ""  # comma-separated exact IPs/CIDRs, never '*'
+    IP_DAILY_GENERATION_CAP: int = Field(default=80, ge=0)
+    DEMO_SESSION_TTL_SECONDS: int = Field(default=7 * 24 * 3600, ge=60)
+    DEMO_MAX_SESSIONS: int = Field(default=1000, ge=1)
+    DEMO_MAX_DB_BYTES: int = Field(default=32 * 1024 * 1024, ge=65536)
+    MAX_REQUEST_BYTES: int = Field(default=12 * 1024 * 1024, ge=1024)
+    MAX_UPLOAD_BYTES: int = Field(default=8 * 1024 * 1024, ge=1024)
+    MAX_URL_BYTES: int = Field(default=2 * 1024 * 1024, ge=1024)
+    PDF_MAX_PAGES: int = Field(default=50, ge=1)
+    PDF_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0)
+    PDF_MEMORY_BYTES: int = Field(default=512 * 1024 * 1024, ge=64 * 1024 * 1024)
 
 
 
@@ -144,4 +156,3 @@ def ensure_secret_key():
                 f.write(f"\nSECRET_KEY={new_key}\n")
     else:
         env_path.write_text(f"SECRET_KEY={new_key}\n", encoding="utf-8")
-

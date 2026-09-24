@@ -7,6 +7,8 @@ for key in ("GROQ_API_KEY", "OPENROUTER_API_KEY", "SAMBANOVA_API_KEY",
             "GIGACHAT_AUTH_KEY"):
     os.environ[key] = ""
 os.environ["SECRET_KEY"] = "test-only-secret"
+os.environ["GIGACHAT_VERIFY_SSL"] = "true"
+os.environ["GIGACHAT_CA_BUNDLE"] = ""
 
 import pytest
 import pytest_asyncio
@@ -64,7 +66,7 @@ async def client(test_engine) -> AsyncGenerator[AsyncClient, None]:
     limiter.enabled = False
     try:
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test", cookies={"session_id": "test-session-123"}) as ac:
+        async with AsyncClient(transport=transport, base_url="http://127.0.0.1", cookies={"session_id": "test-session-123"}) as ac:
             yield ac
     finally:
         app.dependency_overrides.pop(get_db, None)
@@ -83,7 +85,7 @@ async def file_client(isolated_data_settings):
     try:
         async with app.router.lifespan_context(app):
             async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test",
+                transport=ASGITransport(app=app), base_url="http://127.0.0.1",
                 cookies={"session_id": "integration-session"},
             ) as ac:
                 yield ac

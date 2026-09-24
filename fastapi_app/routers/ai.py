@@ -3,22 +3,16 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, AsyncIterator
 from contextlib import aclosing
-from urllib.parse import urlparse
-import ipaddress
-import socket
-import html as _html
-import re
 import json
 import base64
 import tempfile
-import io
 import aiofiles.os
-import httpx
-from pypdf import PdfReader
 
+from fastapi_app.services.article_fetch import fetch_article as _fetch_article_from_url
+from fastapi_app.services.import_service import read_upload, extract_pdf
 from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
-from fastapi_app.services.abuse_guard import check_generation_quota, record_generation
+from fastapi_app.services.abuse_guard import reserve_generation
 from fastapi_app.rate_limiter import limiter
 
 from fastapi_app.services.context_builder import ContextBuilder
@@ -34,68 +28,6 @@ conspectus_router = ConspectusRouter(
     Sanitizer(), 
     RAGManager(ai_service)
 )
-
-
-def _assert_public_host(host: str) -> None:
-    """Хост резолвится только в публичные адреса — иначе 400. Проверяем ВСЕ
-    A/AAAA-записи (не только первую), чтобы не проскочил DNS с несколькими
-    записями."""
-    try:
-        infos = socket.getaddrinfo(host, None)
-    except socket.gaierror:
-        raise HTTPException(status_code=400, detail="Не удалось разрешить адрес ссылки")
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
-                or ip.is_multicast or ip.is_unspecified):
-            raise HTTPException(status_code=400, detail="Эта ссылка недоступна для загрузки")
-
-
-async def _fetch_article_from_url(url: str) -> str:
-    """Скачивает страницу по ссылке и вытаскивает основной текст (абзацы <p>).
-    Защита от SSRF: только http(s); редиректы НЕ следуются автоматически —
-    каждый хоп проверяется на публичность вручную (иначе 302 на внутренний
-    адрес / метаданные облака обходит проверку)."""
-    body = None
-    for _hop in range(4):
-        parsed = urlparse(url)
-        if parsed.scheme not in ("http", "https") or not parsed.hostname:
-            raise HTTPException(status_code=400, detail="Поддерживаются только http(s)-ссылки")
-        _assert_public_host(parsed.hostname)
-        try:
-            async with httpx.AsyncClient(
-                timeout=15.0, follow_redirects=False,
-                headers={"User-Agent": "Mozilla/5.0 (papanda article parser)"},
-            ) as client:
-                resp = await client.get(url)
-        except httpx.HTTPError as e:
-            raise HTTPException(status_code=400, detail=f"Не удалось загрузить страницу: {e}")
-        if resp.is_redirect and resp.headers.get("location"):
-            url = str(resp.next_request.url) if resp.next_request else resp.headers["location"]
-            continue
-        try:
-            resp.raise_for_status()
-        except httpx.HTTPError as e:
-            raise HTTPException(status_code=400, detail=f"Не удалось загрузить страницу: {e}")
-        ctype = resp.headers.get("content-type", "")
-        if "html" not in ctype and "text" not in ctype:
-            raise HTTPException(status_code=400, detail="По ссылке не текстовая страница")
-        body = resp.text
-        break
-    if body is None:
-        raise HTTPException(status_code=400, detail="Слишком много переадресаций по ссылке")
-
-    body = re.sub(r"(?is)<(script|style|noscript|template)[^>]*>.*?</\1>", " ", body)
-    paras = re.findall(r"(?is)<p\b[^>]*>(.*?)</p>", body)
-    chunks = []
-    for p in paras:
-        txt = _html.unescape(re.sub(r"(?s)<[^>]+>", "", p)).strip()
-        if len(txt) >= 40:  # выкидываем короткий навигационный мусор
-            chunks.append(txt)
-    text = "\n\n".join(chunks).strip()
-    if len(text) < 200:
-        raise HTTPException(status_code=400, detail="Не удалось извлечь текст статьи со страницы")
-    return text
 
 
 def _try_parse_json(raw: str, fallback: Any = None) -> Any:
@@ -213,7 +145,7 @@ async def edit_math(request: Request, data: EditMathRequest):
 @router.post("/formula/ocr")
 @limiter.limit("5/minute")
 async def ocr_formula(request: Request, file: UploadFile = File(...)):
-    contents = await file.read()
+    contents = await read_upload(file)
     base64_encoded = base64.b64encode(contents).decode('utf-8')
     result = await ai_service.ocr_formula(base64_encoded)
     return {"result": _try_parse_json(result)}
@@ -222,7 +154,7 @@ async def ocr_formula(request: Request, file: UploadFile = File(...)):
 @limiter.limit("5/minute")
 async def voice_math(request: Request, file: UploadFile = File(...)):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
-        temp_audio.write(await file.read())
+        temp_audio.write(await read_upload(file))
         temp_audio_path = temp_audio.name
         
     try:
@@ -251,17 +183,9 @@ async def article_parser(
         text_to_parse = await _fetch_article_from_url(url.strip())
 
     if file:
-        if not file.filename.lower().endswith(".pdf"):
+        if not (file.filename or "").lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Only PDF files are supported")
-        try:
-            contents = await file.read()
-            pdf_reader = PdfReader(io.BytesIO(contents))
-            for page in pdf_reader.pages:
-                extracted = page.extract_text()
-                if extracted:
-                    text_to_parse += extracted + "\n"
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Error reading PDF: {str(e)}")
+        text_to_parse += await extract_pdf(await read_upload(file))
     
     if not text_to_parse.strip():
         raise HTTPException(status_code=400, detail="Нужна ссылка, файл или текст статьи")
@@ -299,8 +223,7 @@ async def get_notes_hints(request: Request):
 async def route_conspectus_request(request: Request, data: ConspectusRouteRequest):
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
     if data.action in ("generate_full", "generate_step"):
-        check_generation_quota(request)
-        record_generation(request)
+        await reserve_generation(request)
     payload = data.dict()
     payload["locale"] = locale
     result = await conspectus_router.route_request(payload)
@@ -313,8 +236,7 @@ async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
     по мере готовности каждого шага, {"status": "..."} для долгих операций
     (проверка судьёй, повторная попытка), затем {"done": true}."""
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
-    check_generation_quota(request)  # 429 до начала работы, если исчерпан суточный лимит
-    record_generation(request)
+    await reserve_generation(request)
 
     async def events():
         async for step_key, content in conspectus_router.stream_generate_full(

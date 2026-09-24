@@ -12,4 +12,5 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", "8080")),
         reload=reload,
         workers=None if reload else int(os.getenv("WEB_CONCURRENCY", "1")),
+        proxy_headers=False,  # Trust is checked against the socket peer by the application.
     )

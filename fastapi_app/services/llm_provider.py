@@ -44,7 +44,8 @@ def any_llm_key_configured() -> bool:
 
 
 class BaseLLMProvider(ABC):
-    def __init__(self, api_key: str, base_url: str, model_name: str, name: str, fast_model_name: Optional[str] = None):
+    def __init__(self, api_key: str, base_url: str, model_name: str, name: str, fast_model_name: Optional[str] = None,
+                 client: Optional[AsyncOpenAI] = None):
         self.api_key = api_key
         self.base_url = base_url
         self.model_name = model_name
@@ -57,7 +58,7 @@ class BaseLLMProvider(ABC):
         # max_retries=0: не даём SDK делать экспоненциальный backoff на 429 —
         # на бесплатном тарифе это добавляет по 5-15 сек к вызову. Реслучаем через
         # LLMRegistry на следующего провайдера.
-        self.client = AsyncOpenAI(api_key=safe_api_key, base_url=self.base_url, max_retries=0)
+        self.client = client if client is not None else AsyncOpenAI(api_key=safe_api_key, base_url=self.base_url, max_retries=0)
 
     def _build_kwargs(self, messages, response_format, max_tokens, temperature, fast, timeout,
                       reasoning_effort=None) -> dict:
@@ -221,7 +222,7 @@ class GigaChatProvider(BaseLLMProvider):
        POST-запросом к NGW; токен живёт ~30 мин (поле `expires_at`, unix-мс).
        Кэшируем и обновляем заблаговременно.
     2. TLS — сертификат эндпоинта подписан НУЦ Минцифры, которого нет в
-       системном хранилище. `GIGACHAT_VERIFY_SSL` (по умолчанию False) или
+       системном хранилище. Проверка TLS обязательна; при необходимости задать
        `GIGACHAT_CA_BUNDLE` с russian_trusted_root_ca.pem.
     3. Сам chat-completions эндпоинт OpenAI-совместим — вызов идёт через
        общий `BaseLLMProvider.generate` / `generate_stream`.
@@ -231,25 +232,26 @@ class GigaChatProvider(BaseLLMProvider):
     """
 
     def __init__(self):
+        import ssl
+        if not settings.GIGACHAT_VERIFY_SSL:
+            raise ValueError('GIGACHAT_VERIFY_SSL=false is no longer supported; configure a trusted CA bundle')
+        self._verify = ssl.create_default_context(cafile=settings.GIGACHAT_CA_BUNDLE or None)
         super().__init__(
             api_key=settings.GIGACHAT_AUTH_KEY,
             base_url="https://gigachat.devices.sberbank.ru/api/v1",
             model_name=settings.GIGACHAT_MODEL,
             name="GigaChat",
             fast_model_name=settings.GIGACHAT_FAST_MODEL,
+            client=AsyncOpenAI(
+                api_key='dummy_key_to_bypass_init_error',
+                base_url='https://gigachat.devices.sberbank.ru/api/v1', max_retries=0,
+                http_client=httpx.AsyncClient(verify=self._verify, timeout=httpx.Timeout(60.0)),
+            ),
         )
-        self._verify = settings.GIGACHAT_CA_BUNDLE or settings.GIGACHAT_VERIFY_SSL
         self._token: Optional[str] = None
         self._token_exp: float = 0.0            # unix-секунды, когда токен истечёт
         self._token_lock = asyncio.Lock()
-        # Свой http-клиент: и ради verify=False/CA-бандла, и чтобы прокинуть
-        # bearer-токен, который обновляется в рантайме (self.client.api_key).
-        self.client = AsyncOpenAI(
-            api_key="dummy_key_to_bypass_init_error",
-            base_url=self.base_url,
-            max_retries=0,
-            http_client=httpx.AsyncClient(verify=self._verify, timeout=httpx.Timeout(60.0)),
-        )
+        # OAuth and API use the same verified SSLContext.
 
     async def _ensure_token(self) -> None:
         if self._token and time.time() < self._token_exp - 60:

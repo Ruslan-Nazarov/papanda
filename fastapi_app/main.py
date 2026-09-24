@@ -13,12 +13,16 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from fastapi_app.routers import notes, ai
-from fastapi_app.config import ensure_secret_key
+from fastapi_app.config import ensure_secret_key, settings
+from fastapi_app.services.security_store import demo_instance_lock
 from fastapi_app.middleware import (
     SessionMiddleware,
     SecurityHeadersMiddleware,
     LocaleMiddleware,
     NoCacheStaticMiddleware,
+    AccessBoundaryMiddleware,
+    BodyLimitMiddleware,
+    TrustedSchemeMiddleware,
 )
 from fastapi_app.tasks import cleanup_old_dbs
 from fastapi_app.i18n import get_translator, locale_dict
@@ -29,24 +33,26 @@ from fastapi_app.services.notes_service import NotesService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure secret key on startup
-    ensure_secret_key()
-    
-    # Import examples from json
-    examples_path = Path(__file__).parent / "data" / "example_notes.json"
-    if examples_path.exists():
-        async for session in get_db():
-            await NotesService.import_examples_from_file(session, str(examples_path))
-            break
-                
-    cleanup_task = asyncio.create_task(cleanup_old_dbs())
-    try:
-        yield
-    finally:
-        cleanup_task.cancel()
-        await dispose_all_engines()
-        from fastapi_app.services.llm_provider import llm_registry
-        await llm_registry.aclose()
+    with demo_instance_lock():
+        # Ensure secret key on startup
+        ensure_secret_key()
+
+        # Import examples from json
+        examples_path = Path(__file__).parent / "data" / "example_notes.json"
+        if not settings.DEMO_MODE and examples_path.exists():
+            async for session in get_db():
+                await NotesService.import_examples_from_file(session, str(examples_path))
+                break
+
+        cleanup_task = asyncio.create_task(cleanup_old_dbs())
+        try:
+            yield
+        finally:
+            cleanup_task.cancel()
+            await asyncio.gather(cleanup_task, return_exceptions=True)
+            await dispose_all_engines()
+            from fastapi_app.services.llm_provider import llm_registry
+            await llm_registry.aclose()
 
 app = FastAPI(title="Notes App", version="0.8.3", lifespan=lifespan)
 app.state.limiter = limiter
@@ -57,6 +63,9 @@ app.add_middleware(SessionMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(LocaleMiddleware)
 app.add_middleware(NoCacheStaticMiddleware)
+app.add_middleware(BodyLimitMiddleware)
+app.add_middleware(AccessBoundaryMiddleware)
+app.add_middleware(TrustedSchemeMiddleware)
 
 # Mount static
 static_dir = Path(__file__).parent / "static"
@@ -133,7 +142,7 @@ async def shared_conspect(request: Request, token: str, db=Depends(get_db)):
 @app.get("/health")
 async def health():
     from fastapi_app.services.abuse_guard import stats
-    return {"status": "ok", "generation": stats()}
+    return {"status": "ok", "generation": await stats()}
 
 @app.get("/api/changelog")
 async def get_changelog():
