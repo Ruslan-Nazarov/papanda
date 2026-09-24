@@ -37,9 +37,17 @@ def _validate(connection, metadata, version=VERSION):
             raise RuntimeError(f'Missing columns in {table.name}: {sorted(required - columns)}')
         if inspector.get_pk_constraint(table.name)['constrained_columns'] != ['id']:
             raise RuntimeError(f'Missing or incompatible primary key in {table.name}')
-        foreign_keys = {(tuple(f['constrained_columns']), f['referred_table'],
-                         tuple(f['referred_columns']), f.get('options', {}).get('ondelete'))
-                        for f in inspector.get_foreign_keys(table.name)}
+        # SQLite's own metadata includes inline REFERENCES added by ALTER TABLE.
+        # SQLAlchemy 2.0.28 can omit their ON DELETE action when parsing old DDL.
+        grouped_keys = {}
+        for row in connection.exec_driver_sql(f'PRAGMA foreign_key_list("{table.name}")'):
+            grouped_keys.setdefault(row[0], []).append(row)
+        foreign_keys = set()
+        for rows in grouped_keys.values():
+            rows.sort(key=lambda row: row[1])
+            foreign_keys.add((tuple(row[3] for row in rows), rows[0][2],
+                              tuple(row[4] for row in rows),
+                              None if rows[0][6] == 'NO ACTION' else rows[0][6]))
         for fk in table.foreign_key_constraints:
             if version < 3 and table.name == 'notes' and any(e.parent.name in {'family_id', 'parent_note_id'} for e in fk.elements):
                 continue

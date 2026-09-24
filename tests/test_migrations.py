@@ -109,6 +109,55 @@ async def test_pre_sharing_database_migrates_without_losing_notes(tmp_path, earl
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('version', [0, 2])
+async def test_real_pre_variant_schema_adds_enforced_foreign_keys(tmp_path, version):
+    path = tmp_path / 'old-schema.db'
+    engine = await legacy_database(path)
+    await engine.dispose()
+    with closing(sqlite3.connect(path)) as db:
+        db.executescript('''
+            CREATE TABLE old_notes (
+                id INTEGER PRIMARY KEY, title VARCHAR(150), content_json JSON,
+                category_id INTEGER REFERENCES note_categories(id) ON DELETE SET NULL,
+                is_pinned BOOLEAN, is_example BOOLEAN, status VARCHAR(20),
+                sticker_text VARCHAR(500), sticker_color VARCHAR(20), sync_id VARCHAR(36),
+                share_token VARCHAR(32), is_deleted BOOLEAN, deleted_at DATETIME,
+                created_at DATETIME, updated_at DATETIME
+            );
+            INSERT INTO old_notes (id,title,content_json,is_example,is_pinned,is_deleted)
+                SELECT id,title,content_json,is_example,is_pinned,is_deleted FROM notes;
+            DROP TABLE notes;
+            ALTER TABLE old_notes RENAME TO notes;
+            DROP TABLE note_activity;
+            DROP TABLE note_families;
+        ''')
+        if version == 2:
+            db.executescript('''
+                ALTER TABLE notes ADD COLUMN revision INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE notes ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE notes ADD COLUMN stickers JSON NOT NULL DEFAULT '[]';
+                ALTER TABLE note_versions ADD COLUMN stickers JSON NOT NULL DEFAULT '[]';
+                CREATE UNIQUE INDEX old_sync ON notes(sync_id);
+                CREATE UNIQUE INDEX old_share ON notes(share_token);
+                PRAGMA user_version=2;
+            ''')
+        db.commit()
+    engine = create_db_engine(f'sqlite+aiosqlite:///{path}')
+    try:
+        await migrate(engine)
+        await migrate(engine)
+        async with engine.begin() as conn:
+            assert (await conn.exec_driver_sql('SELECT count(*) FROM notes')).scalar() == 1
+            assert (await conn.exec_driver_sql('PRAGMA user_version')).scalar() == VERSION
+            await conn.exec_driver_sql('INSERT INTO note_families(id) VALUES (1)')
+            await conn.exec_driver_sql('UPDATE notes SET family_id=1')
+            await conn.exec_driver_sql('DELETE FROM note_families WHERE id=1')
+            assert (await conn.exec_driver_sql('SELECT family_id FROM notes')).scalar() is None
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('damage', ['json', 'table', 'future', 'revision', 'unique'])
 async def test_bad_database_fails_and_rolls_back_without_partial_schema(tmp_path, damage):
     path = tmp_path / 'bad.db'
