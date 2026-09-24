@@ -4,7 +4,7 @@ import logging
 import pytest
 
 from fastapi_app.observability import JsonFormatter
-from fastapi_app.version import RELEASE_SHA
+from fastapi_app.version import RELEASE_SHA, RELEASE_DATE, VERSION
 
 
 def test_log_event_excludes_messages_secrets_and_exception_bodies():
@@ -14,6 +14,14 @@ def test_log_event_excludes_messages_secrets_and_exception_bodies():
     encoded = JsonFormatter().format(record)
     assert 'secret' not in encoded and 'private' not in encoded
     assert json.loads(encoded)['error_type'] == 'ValueError'
+
+
+@pytest.mark.asyncio
+async def test_footer_matches_release_metadata(client):
+    page = await client.get('/')
+    assert page.status_code == 200
+    assert f'papanda version {VERSION} (last update {RELEASE_DATE})' in page.text
+    assert (await client.get('/health')).json()['version'] == VERSION
 
 
 @pytest.mark.asyncio

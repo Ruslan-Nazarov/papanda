@@ -31,7 +31,7 @@ from fastapi_app.rate_limiter import limiter
 from fastapi_app.database import get_db, dispose_all_engines, initialize_databases, get_public_db
 from fastapi_app.services.notes_service import NotesService
 from fastapi_app.frontend_assets import asset
-from fastapi_app.version import VERSION, RELEASE_SHA
+from fastapi_app.version import VERSION, RELEASE_DATE, RELEASE_SHA
 from fastapi_app.migrations import VERSION as DB_SCHEMA
 from fastapi_app.observability import RequestMetricsMiddleware, ReleaseReadinessMiddleware, release_ready
 
@@ -98,7 +98,8 @@ async def index(request: Request):
     return templates.TemplateResponse(
         request=request, name="index.html",
         context={"_": _, "locale": locale, "algorithm_json": algorithm_json,
-                 "i18n_json": i18n_json},
+                   "i18n_json": i18n_json, "app_version": VERSION,
+                   "last_update": RELEASE_DATE},
     )
 
 @app.get("/editor")
