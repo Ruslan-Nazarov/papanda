@@ -269,6 +269,8 @@ input:checked + .toggle-slider:before {
 /* 3. Note Sub Bar (Progress & Meta) */
 .note-sub-bar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
     justify-content: space-between;
     align-items: center;
     padding: 8px 24px;
@@ -278,6 +280,8 @@ input:checked + .toggle-slider:before {
 
 .sub-bar-left, .sub-bar-right {
     display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
     align-items: center;
     gap: 12px;
 }
@@ -318,6 +322,7 @@ input:checked + .toggle-slider:before {
 }
 
 .sub-bar-btn {
+    white-space: nowrap;
     background: transparent;
     border: none;
     font-size: 0.88rem;

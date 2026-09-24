@@ -5,7 +5,7 @@ from typing import List, Optional, Annotated
 from fastapi_app.database import get_db, get_public_db
 from fastapi_app.schemas.notes import (
     NoteCreate, NoteUpdate, NoteView,
-    CategoryCreate, CategoryView,
+    CategoryCreate, CategoryUpdate, CategoryView,
     NoteVersionCreate, NoteVersionView,
     ConnectionCreate, ConnectionView
 )
@@ -26,7 +26,7 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
     return await NotesService.create_category(db, data)
 
 @router.put("/categories/{category_id}", response_model=CategoryView)
-async def update_category(category_id: PositiveId, data: CategoryCreate, db: AsyncSession = Depends(get_db)):
+async def update_category(category_id: PositiveId, data: CategoryUpdate, db: AsyncSession = Depends(get_db)):
     return await NotesService.update_category(db, category_id, data)
 
 @router.delete("/categories/{category_id}")
@@ -72,6 +72,10 @@ async def pin_version(note_id: PositiveId, version_id: PositiveId, db: AsyncSess
 async def delete_version(note_id: PositiveId, version_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_version(db, note_id, version_id)
 
+@router.post("/{note_id}/versions/{version_id}/unpin", response_model=NoteVersionView)
+async def unpin_version(note_id: PositiveId, version_id: PositiveId, db: AsyncSession = Depends(get_db)):
+    return await NotesService.pin_version(db, note_id, version_id, is_manual=False)
+
 # Sharing (публичная ссылка на конспект, только чтение)
 @router.post("/{note_id}/share")
 async def share_note(note_id: PositiveId, request: Request, db: AsyncSession = Depends(get_db)):
@@ -88,7 +92,7 @@ async def get_shared_note_api(token: str, db: AsyncSession = Depends(get_public_
     return NotesService.public_view(await NotesService.get_shared_note(db, token))
 
 # Guide
-@router.get("/guide")
+@router.get("/guide", deprecated=True)
 async def get_guide():
     return {"content": "# Руководство\n\nЗдесь будет инструкция по работе с конспектами."}
 
@@ -103,11 +107,11 @@ async def get_notes(
     locale = getattr(request.state, 'locale', 'ru')
     return await NotesService.get_all_notes(db, search, category_id, locale)
 
-@router.get("/pinned/active", response_model=Optional[NoteView])
+@router.get("/pinned/active", response_model=Optional[NoteView], deprecated=True)
 async def get_active_pinned_note(db: AsyncSession = Depends(get_db)):
     return await NotesService.get_active_pinned_note(db)
 
-@router.get("/search/notes", response_model=List[NoteView])
+@router.get("/search/notes", response_model=List[NoteView], deprecated=True)
 async def search_notes(q: str = Query(...), db: AsyncSession = Depends(get_db)):
     return await NotesService.get_all_notes(db, search=q)
 
@@ -127,7 +131,7 @@ async def update_note(note_id: PositiveId, data: NoteUpdate, db: AsyncSession = 
 async def delete_note(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_note(db, note_id)
 
-@router.post("/{note_id}/status", response_model=NoteView)
+@router.post("/{note_id}/status", response_model=NoteView, deprecated=True)
 async def update_note_status(note_id: PositiveId, status: Status = Query(...), revision: int = Query(..., ge=1), db: AsyncSession = Depends(get_db)):
     update_data = NoteUpdate(status=status, revision=revision)
     return await NotesService.update_note(db, note_id, update_data)
@@ -137,7 +141,7 @@ async def pin_note(note_id: PositiveId, revision: int = Query(..., ge=1), db: As
     update_data = NoteUpdate(is_pinned=True, revision=revision)
     return await NotesService.update_note(db, note_id, update_data)
 
-@router.post("/{note_id}/unpin", response_model=NoteView)
+@router.post("/{note_id}/unpin", response_model=NoteView, deprecated=True)
 async def unpin_note(note_id: PositiveId, revision: int = Query(..., ge=1), db: AsyncSession = Depends(get_db)):
     update_data = NoteUpdate(is_pinned=False, revision=revision)
     return await NotesService.update_note(db, note_id, update_data)

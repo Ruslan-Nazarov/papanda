@@ -5,13 +5,13 @@ import { t } from '../i18n.js';
 class NoteExportService {
     static exportToMarkdown() {
         const note = AppState.currentNote;
-        if (!note || !note.blocks || note.blocks.length === 0) {
+        if (!note || (!note.blocks?.length && !note.stickers?.length)) {
             DialogService.alert(t('export_word'), t('note_empty'));
             return;
         }
 
         let md = `# ${note.title}\n\n`;
-        note.blocks.forEach(block => {
+        (note.blocks || []).forEach(block => {
             if (block.role === 'section') {
                 md += `\n---\n## ${block.title}\n---\n\n`;
             } else {
@@ -19,13 +19,16 @@ class NoteExportService {
                     md += `### ${block.title}\n`;
                 }
                 // Strip HTML tags for simple markdown export
-                let textContent = block.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                const textContent = NoteExportService._htmlToText(block.html);
                 if (textContent) {
                     md += `${textContent}\n\n`;
                 }
             }
         });
 
+        for (const sticker of note.stickers || []) {
+            md += `\n### ${sticker.title || t('tab_notes')}\n\n${sticker.text}\n`;
+        }
         const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -35,6 +38,7 @@ class NoteExportService {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     static exportToPDF() {
@@ -67,9 +71,9 @@ class NoteExportService {
      */
     static buildPlainText({ withTitles = false } = {}) {
         const note = AppState.currentNote;
-        if (!note || !Array.isArray(note.blocks) || note.blocks.length === 0) return '';
+        if (!note || (!note.blocks?.length && !note.stickers?.length)) return '';
 
-        const blocks = [...note.blocks];
+        const blocks = [...(note.blocks || [])];
         const ai = blocks.findIndex(b => b.role === 'anchor');
         if (ai >= 0) blocks.push(blocks.splice(ai, 1)[0]);   // «понято» — в конец
 
@@ -91,6 +95,7 @@ class NoteExportService {
                 parts.push(text);
             }
         });
+        for (const sticker of note.stickers || []) parts.push([sticker.title, sticker.text].filter(Boolean).join('\n'));
         return parts.join('\n\n').trim();
     }
 

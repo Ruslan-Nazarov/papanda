@@ -140,7 +140,7 @@ class NoteVersionsService {
     static async togglePin(versionId, isManual) {
         try {
             const noteId = AppState.currentNote.id;
-            await NotesAPI.pinVersion(noteId, versionId);
+            await NotesAPI.pinVersion(noteId, versionId, !isManual);
             if (AppState.currentNote.id !== noteId) return;
             const oldModal = this.currentModal;
             await this.show(window.app);

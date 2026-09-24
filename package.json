@@ -1,8 +1,8 @@
 {
   "name": "papanda-conspect",
   "private": true,
-  "version": "0.0.0",
-  "description": "Local test tooling for the existing browser ES modules",
+  "version": "0.12.0",
+  "description": "Papanda note editor, local frontend build and tests",
   "engines": {
     "node": ">=22.12.0"
   },

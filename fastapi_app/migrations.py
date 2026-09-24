@@ -1,10 +1,11 @@
-"""SQLite migration 001: strict legacy baseline, document contract and revisions.
+"""SQLite migrations: 001 document revisions, 002 note and version stickers.
 
 DDL and content adaptation run in one explicit transaction. Unknown/corrupt
 schemas fail closed. The source snapshot is made before the transaction.
 """
 import asyncio
 import json
+import re
 from pathlib import Path
 import uuid
 
@@ -12,10 +13,11 @@ from sqlalchemy import inspect
 from fastapi_app.config import settings
 from fastapi_app.services.block_contract import normalize_legacy_blocks
 
-VERSION = 1
+VERSION = 2
 
 
-def _validate(connection, metadata, legacy=False):
+def _validate(connection, metadata, version=VERSION):
+    legacy = version == 0
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
     for table in metadata.sorted_tables:
@@ -23,6 +25,8 @@ def _validate(connection, metadata, legacy=False):
             raise RuntimeError(f'Missing table: {table.name}')
         columns = {c['name'] for c in inspector.get_columns(table.name)}
         required = set(table.columns.keys())
+        if version < 2 and table.name in {'notes', 'note_versions'}:
+            required -= {'stickers'}
         if legacy and table.name == 'notes':
             required -= {'revision', 'schema_version'}
         if required - columns:
@@ -67,7 +71,7 @@ def _migrate(connection):
     if not tables:
         Base.metadata.create_all(connection)
     else:
-        _validate(connection, Base.metadata, legacy=version == 0)
+        _validate(connection, Base.metadata, version=version)
     if version == 0:
         columns = {c['name'] for c in inspect(connection).get_columns('notes')}
         for name in ('revision', 'schema_version'):
@@ -89,7 +93,22 @@ def _migrate(connection):
             ('uq_r3_connection', 'note_connections', 'note_id_from, note_id_to'),
         ):
             connection.exec_driver_sql(f'CREATE UNIQUE INDEX IF NOT EXISTS {name} ON {table} ({columns})')
-        connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
+    if version < 2:
+        for table in ('notes', 'note_versions'):
+            columns = {c['name'] for c in inspect(connection).get_columns(table)}
+            if 'stickers' not in columns:
+                connection.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN stickers JSON NOT NULL DEFAULT '[]'")
+        # Preserve the old single-sticker field without inventing version history.
+        for note_id, text, color, raw in connection.exec_driver_sql(
+            'SELECT id, sticker_text, sticker_color, stickers FROM notes'
+        ).fetchall():
+            if text and not json.loads(raw):
+                sticker = {'id': 'legacy-note-sticker', 'title': '', 'text': text,
+                           'color': color if re.fullmatch(r'#[0-9a-fA-F]{6}', color or '') else '#fff9c4',
+                           'created_at': None}
+                connection.exec_driver_sql('UPDATE notes SET stickers=? WHERE id=?',
+                                           (json.dumps([sticker], ensure_ascii=False), note_id))
+    connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
     _validate(connection, Base.metadata)
 
 

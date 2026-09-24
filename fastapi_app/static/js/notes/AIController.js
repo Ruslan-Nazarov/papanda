@@ -268,6 +268,7 @@ class AIController {
         const copy = GenerationChanges.build(run.snapshot, result,
             text => this.contentToHtml(text), ALGORITHM_STEPS);
         await NotesAPI.createNote({title: copy.title, blocks: copy.blocks,
+            stickers: copy.stickers || [],
             category_id: copy.category_id ?? null, status: 'in_progress'});
         showToast(t('gen_copy_saved'));
     }

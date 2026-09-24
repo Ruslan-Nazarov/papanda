@@ -5,7 +5,7 @@ const path = require('node:path');
 const {source} = require('../frontend/helpers.cjs');
 
 test('isolated renderer security regressions', async t => {
-    const browser = await puppeteer.launch({headless: true});
+    const browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
     try {
         const page = await browser.newPage();
         await page.setRequestInterception(true);

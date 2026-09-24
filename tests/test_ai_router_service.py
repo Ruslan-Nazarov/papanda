@@ -58,7 +58,6 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2(client):
     ai_service._generate = AsyncMock(side_effect=_gen)
 
     rag_manager = MagicMock()
-    rag_manager.enrich_prompt_if_needed = MagicMock(side_effect=lambda p, *_a, **_k: p)
 
     router = ConspectusRouter(ai_service, ContextBuilder(), Sanitizer(), rag_manager)
 
@@ -106,7 +105,7 @@ async def test_postprocess_pass_emits_titles_and_meta():
 
     router = ConspectusRouter(
         ai_service, ContextBuilder(), Sanitizer(),
-        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
+        MagicMock(),
     )
     state = {"target_goal": "диффузия", "steps": {}}
 

@@ -77,7 +77,6 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
     context_builder = ContextBuilder()
     sanitizer = Sanitizer()
     rag_manager = MagicMock()
-    rag_manager.enrich_prompt_if_needed = MagicMock(side_effect=lambda prompt, *_a, **_k: prompt)
 
     router = ConspectusRouter(ai_service, context_builder, sanitizer, rag_manager)
     state = {"target_goal": "тест", "steps": {}}
@@ -125,7 +124,7 @@ async def test_judge_gives_up_after_max_attempts_and_returns_last_result():
 
     router = ConspectusRouter(
         ai_service, ContextBuilder(), Sanitizer(),
-        MagicMock(enrich_prompt_if_needed=lambda p, *_a, **_k: p),
+        MagicMock(),
     )
     state = {"target_goal": "тест", "steps": {}}
 

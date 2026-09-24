@@ -31,6 +31,9 @@ from fastapi_app.rate_limiter import limiter
 from fastapi_app.database import get_db, dispose_all_engines, initialize_databases, get_public_db
 from fastapi_app.services.notes_service import NotesService
 from fastapi_app.frontend_assets import asset
+from fastapi_app.version import VERSION, RELEASE_SHA
+from fastapi_app.migrations import VERSION as DB_SCHEMA
+from fastapi_app.observability import RequestMetricsMiddleware, ReleaseReadinessMiddleware, release_ready
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,7 +59,7 @@ async def lifespan(app: FastAPI):
             from fastapi_app.services.llm_provider import llm_registry
             await llm_registry.aclose()
 
-app = FastAPI(title="Notes App", version="0.8.3", lifespan=lifespan)
+app = FastAPI(title="Notes App", version=VERSION, lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -68,6 +71,8 @@ app.add_middleware(NoCacheStaticMiddleware)
 app.add_middleware(BodyLimitMiddleware)
 app.add_middleware(AccessBoundaryMiddleware)
 app.add_middleware(TrustedSchemeMiddleware)
+app.add_middleware(RequestMetricsMiddleware)
+app.add_middleware(ReleaseReadinessMiddleware)
 
 # Mount static
 static_dir = Path(__file__).parent / "static"
@@ -145,7 +150,8 @@ async def shared_conspect(request: Request, token: str, db=Depends(get_public_db
 @app.get("/health")
 async def health():
     from fastapi_app.services.abuse_guard import stats
-    return {"status": "ok", "generation": await stats()}
+    return {"status": "ok", "ready": release_ready(), "version": VERSION, "revision": RELEASE_SHA,
+            "db_schema": DB_SCHEMA, "generation": await stats()}
 
 @app.get("/api/changelog")
 async def get_changelog():

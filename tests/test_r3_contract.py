@@ -113,10 +113,10 @@ async def test_invalid_ai_steps_fail_before_provider_calls(client):
                  {'action': 'generate_full', 'pinned_step': '-1'}):
         response = await client.post('/api/ai/dialectics/conspectus/route', json=body)
         assert response.status_code == 422
-    from fastapi_app.routers.ai import GenerateStepRequest
+    from fastapi_app.routers.ai import ConspectusRouteRequest
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
-        GenerateStepRequest.model_validate({'context_text': 'test', 'target_step': 'step0'})
+        ConspectusRouteRequest.model_validate({'action': 'generate_step', 'target_step': '0'})
 
 
 @pytest.mark.asyncio

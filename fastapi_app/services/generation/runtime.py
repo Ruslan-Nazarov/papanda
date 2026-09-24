@@ -101,6 +101,7 @@ async def generation_scope(context=None):
         raise
     finally:
         current_run.reset(token)
-        logger.info('generation finished run_id=%s status=%s duration_s=%.3f calls=%d tokens_reserved=%d',
-                    context.run_id, context.status, time.monotonic() - context.started,
-                    len(context.calls), context.tokens_reserved)
+        logger.info('generation finished', extra={'event': 'generation_finished',
+                    'run_id': context.run_id, 'status': context.status,
+                    'duration_s': round(time.monotonic() - context.started, 3),
+                    'calls': len(context.calls), 'tokens_reserved': context.tokens_reserved})

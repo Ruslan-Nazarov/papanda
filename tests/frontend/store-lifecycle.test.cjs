@@ -152,6 +152,8 @@ test('API contract rejects malformed note and generation payloads before renderi
     const ctx = context();
     load(ctx, 'ApiContracts');
     assert.throws(() => ctx.ApiContracts.noteResponse({id: 1, revision: 0, title: '', content_json: []}));
+    assert.throws(() => ctx.ApiContracts.noteResponse({id: 1, revision: 1, title: '', content_json: [],
+        stickers: [{id: 's', title: '', text: '', color: 'url(x)'}]}));
     assert.throws(() => ctx.ApiContracts.generationResponse({run_id: 'r', status: 'completed',
         source_revision: 1, replace_bases: ['2'], updated_steps: {step2: {content: {}, status: 'ready'}}}));
 });

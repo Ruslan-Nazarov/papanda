@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from fastapi_app.config import settings
 from fastapi_app.database import Base, create_db_engine, dispose_all_engines
 from fastapi_app.main import app
-from fastapi_app.migrations import migrate
+from fastapi_app.migrations import VERSION, migrate
 from fastapi_app.models.notes import Note, NoteVersion
 from scripts.backup_db import backup_database
 
@@ -28,6 +28,8 @@ async def legacy_database(path):
         session.add(NoteVersion(note_id=note.id, title='old', content_json=blocks))
         await session.commit()
     async with engine.begin() as conn:
+        await conn.exec_driver_sql('ALTER TABLE notes DROP COLUMN stickers')
+        await conn.exec_driver_sql('ALTER TABLE note_versions DROP COLUMN stickers')
         await conn.exec_driver_sql('ALTER TABLE notes DROP COLUMN revision')
         await conn.exec_driver_sql('ALTER TABLE notes DROP COLUMN schema_version')
     return engine
@@ -44,7 +46,7 @@ async def test_empty_database_migrates_before_use_and_is_repeatable(tmp_path, pr
         await migrate(engine)
         await migrate(engine)
         async with engine.connect() as conn:
-            assert (await conn.exec_driver_sql('PRAGMA user_version')).scalar() == 1
+            assert (await conn.exec_driver_sql('PRAGMA user_version')).scalar() == VERSION
             assert (await conn.exec_driver_sql('PRAGMA foreign_keys')).scalar() == 1
             assert (await conn.exec_driver_sql('SELECT count(*) FROM notes')).scalar() == 0
     finally:
@@ -148,7 +150,7 @@ async def test_offline_legacy_transfer_requires_issued_session_and_preserves_sou
     copied = await import_legacy_demo(path, token_file)
     assert copied.name == f'{sid}.db'
     with closing(sqlite3.connect(copied)) as db:
-        assert db.execute('PRAGMA user_version').fetchone()[0] == 1
+        assert db.execute('PRAGMA user_version').fetchone()[0] == VERSION
         assert db.execute('SELECT share_token FROM notes').fetchone()[0] is None
     assert path.read_bytes() == source_bytes
     with pytest.raises(FileExistsError):

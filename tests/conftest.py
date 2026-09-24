@@ -2,8 +2,8 @@ import os
 
 # Set these before importing the app: a developer's .env must never enable
 # real provider calls or secret-file writes during the test suite.
-for key in ("GROQ_API_KEY", "OPENROUTER_API_KEY", "SAMBANOVA_API_KEY",
-            "CEREBRAS_API_KEY", "HUGGINGFACE_API_KEY", "GOOGLE_API_KEY",
+for key in ("GROQ_API_KEY", "OPENROUTER_API_KEY",
+            "CEREBRAS_API_KEY", "GOOGLE_API_KEY",
             "GIGACHAT_AUTH_KEY"):
     os.environ[key] = ""
 os.environ["SECRET_KEY"] = "test-only-secret"

@@ -2,7 +2,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from fastapi_app.models.notes import Note, NoteCategory
-from fastapi_app.schemas.notes import CategoryCreate
+from fastapi_app.schemas.notes import CategoryCreate, CategoryUpdate
 from fastapi_app.services.note_transactions import commit
 
 class CategoryService:
@@ -23,7 +23,7 @@ class CategoryService:
 
 
     @staticmethod
-    async def update_category(session: AsyncSession, category_id: int, data):
+    async def update_category(session: AsyncSession, category_id: int, data: CategoryUpdate):
         stmt = select(NoteCategory).where(NoteCategory.id == category_id)
         result = await session.execute(stmt)
         cat = result.scalar_one_or_none()

@@ -1,5 +1,6 @@
 import secrets
 import re
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from pathlib import Path
@@ -7,13 +8,10 @@ from pathlib import Path
 class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
-    SAMBANOVA_API_KEY: str = ""
     CEREBRAS_API_KEY: str = ""
-    HUGGINGFACE_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
 
     SECRET_KEY: str = ""
-    ENABLE_ONLY_NOTES: bool = True
     DEMO_MODE: bool = False
     DATABASE_URL: str = ""
     GENERATION_TIMEOUT: float = Field(default=300, gt=0, le=1800)
@@ -33,11 +31,7 @@ class Settings(BaseSettings):
     # reasoning-модель и тратит часть ответа на раздумья даже над коротким
     # запросом — приемлемо, т.к. это последний провайдер в кольце фолбэков.
     OPENROUTER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
-    # SambaNova / HuggingFace выпилены из кольца (402 / мёртвый эндпоинт),
-    # строки оставлены на случай возврата.
-    SAMBANOVA_MODEL: str = "Meta-Llama-3.3-70B-Instruct"
     CEREBRAS_MODEL: str = "gpt-oss-120b"          # тот же gpt-oss, что у Groq; $5 кредит
-    HUGGINGFACE_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"
     # Google AI Studio (OpenAI-совместимый эндпоинт).
     # ВНИМАНИЕ (проверено 2026-09-07): на этом ключе обычный gemini-3.5-flash
     # мгновенно отдаёт 429 "exceeded your current quota" — рабочий только
@@ -140,14 +134,14 @@ class Settings(BaseSettings):
     DB_DIR: Path = DATA_DIR / "db"
     PROMPTS_DIR: Path = BASE_DIR / "prompts"
     
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=os.getenv('PAPANDA_ENV_FILE', '.env'), extra="ignore")
 
 settings = Settings()
 
 def ensure_secret_key():
     if settings.SECRET_KEY and settings.SECRET_KEY.strip():
         return
-    env_path = settings.BASE_DIR / ".env"
+    env_path = Path(os.getenv('PAPANDA_ENV_FILE', str(settings.BASE_DIR / '.env')))
     new_key = secrets.token_hex(32)
     settings.SECRET_KEY = new_key
     

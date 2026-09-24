@@ -17,9 +17,8 @@ async function server() {
     const directory = await fs.mkdtemp(path.join(root, '.cache/browser-r5-'));
     const env = {...process.env, HOST: '127.0.0.1', PORT: String(port), UVICORN_RELOAD: '0', DEMO_MODE: 'false',
         DATABASE_URL: 'sqlite+aiosqlite:///' + path.join(directory, 'test.db').replaceAll('\\','/'),
-        DB_DIR: directory, DEMO_DIR: path.join(directory, 'demo')};
-    for (const key of ['GROQ_API_KEY', 'GOOGLE_API_KEY', 'OPENROUTER_API_KEY', 'CEREBRAS_API_KEY', 'GIGACHAT_AUTH_KEY',
-        'SAMBANOVA_API_KEY', 'HUGGINGFACE_API_KEY']) env[key] = '';
+        DATA_DIR: directory, DB_DIR: directory, DEMO_DIR: path.join(directory, 'demo')};
+    for (const key of ['GROQ_API_KEY', 'GOOGLE_API_KEY', 'OPENROUTER_API_KEY', 'CEREBRAS_API_KEY', 'GIGACHAT_AUTH_KEY']) env[key] = '';
     env.SECRET_KEY = 'browser-test-only';
     const python = path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
     const child = spawn(python, ['run.py'], {cwd: root, env, windowsHide: true, stdio: ['ignore','pipe','pipe']});
@@ -40,7 +39,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
     const backend = await server();
     let browser;
     try {
-        browser = await puppeteer.launch({headless: true});
+        browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
         const page = await browser.newPage();
         const errors = [], external = [], violations = [];
         let generated = 0;
@@ -107,6 +106,21 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await listeners(), initial);
             await session.detach();
         });
+        await t.test('note stickers render as text and survive save/reload', async () => {
+            await page.click('#btn-note-stickers');
+            await page.waitForSelector('#note-stickers-dropdown-menu:not(.hidden)');
+            await page.type('#note-stickers-dropdown-menu .sticker-panel-title-input', '<img src=x onerror=alert(1)>');
+            await page.type('#note-stickers-dropdown-menu .sticker-panel-text-input', 'R6 private sticker');
+            assert(await page.$eval('#note-stickers-dropdown-menu', el => el.getBoundingClientRect().right <= innerWidth));
+            await page.click('#note-stickers-dropdown-menu .sticker-add-btn');
+            assert.equal(await page.$$eval('#note-stickers-dropdown-menu .sticker-card img', els => els.length), 0);
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await page.reload({waitUntil:'networkidle0'});
+            await page.click('#btn-note-stickers');
+            assert.match(await page.$eval('#note-stickers-dropdown-menu', el => el.textContent), /R6 private sticker/);
+            await page.click('#btn-note-stickers');
+        });
         await t.test('local formula, graph and drawing widgets work under CSP', async () => {
             await page.click('.dialectics-block .btn-edit');
             await page.waitForSelector('.tiptap');
@@ -151,6 +165,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             const checkpoint = await page.evaluate(async id => (await fetch(`/api/dialectics/${id}/checkpoint`, {method:'POST',
                 headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'R5 checkpoint',is_manual:true})})).json(), id);
             assert(checkpoint.id);
+            assert(await page.$eval('#btn-versions', el => el.getBoundingClientRect().right <= innerWidth));
             await page.click('#btn-versions');
             await page.waitForSelector('[data-version-action="restore"]');
             assert.equal(await page.$$eval('.version-history-modal [onclick]', els => els.length), 0);

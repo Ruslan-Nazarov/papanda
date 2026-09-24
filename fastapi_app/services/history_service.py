@@ -21,6 +21,7 @@ class HistoryService:
             note_id=note.id,
             title=title,
             content_json=note.content_json,
+            stickers=note.stickers,
             is_manual=is_manual
         )
         session.add(new_version)
@@ -59,6 +60,7 @@ class HistoryService:
             note_id=note.id,
             title=data.title,
             content_json=note.content_json,
+            stickers=note.stickers,
             is_manual=data.is_manual
         )
         session.add(new_v)
@@ -84,25 +86,27 @@ class HistoryService:
             note_id=note.id,
             title=f"Перед восстановлением: {version.title}",
             content_json=note.content_json,
+            stickers=note.stickers,
             is_manual=True
         )
         session.add(safety_v)
 
         note.content_json = version.content_json
+        note.stickers = version.stickers
         await commit(session)
         await session.refresh(note)
         return note
 
 
     @staticmethod
-    async def pin_version(session: AsyncSession, note_id: int, version_id: int):
+    async def pin_version(session: AsyncSession, note_id: int, version_id: int, is_manual: bool = True):
         stmt = select(NoteVersion).where(NoteVersion.id == version_id, NoteVersion.note_id == note_id)
         result = await session.execute(stmt)
         version = result.scalar_one_or_none()
         if not version:
             raise HTTPException(status_code=404, detail="Version not found")
 
-        version.is_manual = True
+        version.is_manual = is_manual
         await commit(session)
         return version
 

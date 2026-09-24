@@ -31,4 +31,6 @@ def client_ip(request: Request) -> str:
     return peer
 
 
-limiter = Limiter(key_func=client_ip, default_limits=["10/minute"])
+# CRUD includes reads, autosaves and explicit saves on the same endpoint.
+# AI routes retain their tighter individual limits and persistent quotas.
+limiter = Limiter(key_func=client_ip, default_limits=["120/minute"])

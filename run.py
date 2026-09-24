@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 import uvicorn
+from fastapi_app.observability import LOG_CONFIG
 
 if __name__ == "__main__":
-    # Дев по умолчанию (reload). Прод обычно запускается через systemd напрямую
-    # uvicorn/gunicorn'ом; но если через run.py — переопредели env-переменными:
-    #   PORT, HOST, UVICORN_RELOAD=0, WEB_CONCURRENCY=<workers>
-    reload = os.getenv("UVICORN_RELOAD", "1") != "0"
+    # Explicit process environment wins over the local/shared configuration file.
+    load_dotenv(os.getenv('PAPANDA_ENV_FILE', str(Path(__file__).with_name('.env'))))
+    reload = os.getenv("UVICORN_RELOAD", "0") != "0"
     uvicorn.run(
         "fastapi_app.main:app",
         host=os.getenv("HOST", "127.0.0.1"),
@@ -13,4 +15,6 @@ if __name__ == "__main__":
         reload=reload,
         workers=None if reload else int(os.getenv("WEB_CONCURRENCY", "1")),
         proxy_headers=False,  # Trust is checked against the socket peer by the application.
+        access_log=False,
+        log_config=LOG_CONFIG,
     )

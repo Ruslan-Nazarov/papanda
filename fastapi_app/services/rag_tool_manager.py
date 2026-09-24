@@ -32,8 +32,7 @@ _Q_PREFIXES = (
 
 
 class RAGManager:
-    def __init__(self, ai_service):
-        self.ai_service = ai_service
+    def __init__(self):
         self._cache: dict[str, tuple[float, str]] = {}
 
     async def reference_for(self, topic: str) -> str:
@@ -47,6 +46,8 @@ class RAGManager:
         if hit and time.time() - hit[0] < _CACHE_TTL:
             return hit[1]
         text = await self._fetch_wiki(topic)
+        if len(self._cache) >= 128:
+            del self._cache[next(iter(self._cache))]
         self._cache[key] = (time.time(), text)
         return text
 
@@ -89,8 +90,8 @@ class RAGManager:
                 })
                 r2.raise_for_status()
                 pages = (r2.json().get("query", {}) or {}).get("pages", {}) or {}
-        except Exception as e:  # noqa: BLE001 — fail-open
-            logger.warning("RAG wiki fetch failed for %r: %s", topic, e)
+        except Exception:  # fail-open; never log the user's topic or provider body
+            logger.warning("Reference lookup unavailable", extra={'event': 'reference_unavailable'})
             return ""
 
         for page in pages.values():
@@ -98,8 +99,3 @@ class RAGManager:
             if len(extract) >= 80:
                 return f"«{page.get('title', title)}» (ru.wikipedia):\n{extract}"
         return ""
-
-    # Совместимость со старыми вызовами в ai_router_service — no-op-проходка,
-    # реальное обогащение теперь через reference_for + context_builder.
-    def enrich_prompt_if_needed(self, base_prompt: str, action: str, user_prompt: str = None) -> str:
-        return base_prompt

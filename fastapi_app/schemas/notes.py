@@ -21,8 +21,25 @@ class CategoryCreate(CategoryBase):
     pass
 
 class CategoryUpdate(BaseModel):
-    name: Optional[str] = None
-    color: Optional[str] = None
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    color: Optional[str] = Field(default=None, max_length=20)
+
+    @model_validator(mode='after')
+    def nonnull_name(self):
+        if 'name' in self.model_fields_set and self.name is None:
+            raise ValueError('name cannot be null')
+        return self
+
+class NoteSticker(BaseModel):
+    id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,128}$')
+    title: str = Field(default='', max_length=150)
+    text: str = Field(max_length=10000)
+    color: str = Field(default='#fef9c3', pattern=r'^#[0-9a-fA-F]{6}$')
+    created_at: Optional[datetime] = None
+
+    @field_serializer('created_at')
+    def serialize_created_at(self, value):
+        return _serialize_utc(value)
 
 class CategoryView(CategoryBase):
     id: int
@@ -74,6 +91,7 @@ class NoteCreate(BaseModel):
     schema_version: Literal[1] = 1
     title: str = Field(max_length=150)
     blocks: List[NoteBlock]
+    stickers: List[NoteSticker] = Field(default_factory=list, max_length=1000)
     is_pinned: bool = False
     is_example: bool = False
     category_id: Optional[int] = Field(default=None, gt=0)
@@ -93,6 +111,7 @@ class NoteUpdate(BaseModel):
     revision: int = Field(ge=1)
     title: Optional[str] = Field(default=None, max_length=150)
     blocks: Optional[List[NoteBlock]] = None
+    stickers: Optional[List[NoteSticker]] = Field(default=None, max_length=1000)
     is_pinned: Optional[bool] = None
     is_example: Optional[bool] = None
     category_id: Optional[int] = Field(default=None, gt=0)
@@ -102,7 +121,7 @@ class NoteUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_explicit_nulls(self):
-        for field in ('title', 'blocks', 'is_pinned', 'is_example', 'status', 'sticker_color'):
+        for field in ('title', 'blocks', 'stickers', 'is_pinned', 'is_example', 'status', 'sticker_color'):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f'{field} cannot be null')
         return self
@@ -128,6 +147,7 @@ class NoteView(BaseModel):
     revision: int
     title: str
     content_json: List[BlockContent]
+    stickers: List[NoteSticker] = Field(default_factory=list)
     category_id: Optional[int]
     is_pinned: bool
     is_example: bool
@@ -157,6 +177,7 @@ class NoteVersionView(BaseModel):
     note_id: int
     title: str
     content_json: List[BlockContent]
+    stickers: List[NoteSticker] = Field(default_factory=list)
     is_manual: bool
     created_at: datetime
     

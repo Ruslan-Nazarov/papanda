@@ -1,4 +1,5 @@
 import AppState from './AppState.js';
+import HtmlSafety from './HtmlSafety.js';
 
 import { t } from '../i18n.js';
 // Sticker color palette
@@ -37,6 +38,7 @@ class BlockStickersManager {
                 if (isHidden) {
                     this.renderNoteStickersInDropdown();
                     menu.classList.remove('hidden');
+                    this._positionNoteMenu(menu);
                 }
             });
 
@@ -49,6 +51,7 @@ class BlockStickersManager {
                     document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => p.remove());
                 }
             });
+            window.addEventListener('resize', () => menu.classList.add('hidden'));
         }
 
         document.addEventListener('noteOpened', () => {
@@ -183,6 +186,15 @@ class BlockStickersManager {
         panel.style.border = 'none';
         panel.style.borderRadius = '16px';
         menu.appendChild(panel);
+        if (!menu.classList.contains('hidden')) this._positionNoteMenu(menu);
+    }
+
+    static _positionNoteMenu(menu) {
+        menu.style.marginLeft = '0';
+        const rect = menu.getBoundingClientRect();
+        const left = Math.max(12, Math.min(rect.left, window.innerWidth - rect.width - 12));
+        menu.style.marginLeft = `${left - rect.left}px`;
+        menu.style.maxHeight = `${Math.max(120, window.innerHeight - rect.top - 12)}px`;
     }
 
     /**
@@ -194,6 +206,7 @@ class BlockStickersManager {
         document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.add('hidden'));
         this.renderNoteStickersInDropdown();
         menu.classList.remove('hidden');
+        this._positionNoteMenu(menu);
     }
 
     static _updateNoteBtn() {
@@ -279,12 +292,12 @@ class BlockStickersManager {
     static _renderStickerGrid(stickers) {
         if (!stickers || stickers.length === 0) return `<p class="sticker-empty" style="text-align: center; color: #94a3b8; font-size: 0.9rem; padding: 12px 0;">${t('stk_empty')}</p>`;
         return `<div class="sticker-grid">${stickers.map(s => `
-            <div class="sticker-card" style="background: ${s.color || '#fef9c3'}">
-                ${s.title ? `<div class="sticker-card-title">${s.title}</div>` : ''}
-                <div class="sticker-card-text">${s.text}</div>
+            <div class="sticker-card" style="background: ${/^#[0-9a-fA-F]{6}$/.test(s.color) ? s.color : '#fef9c3'}">
+                ${s.title ? `<div class="sticker-card-title">${HtmlSafety.escape(s.title)}</div>` : ''}
+                <div class="sticker-card-text">${HtmlSafety.escape(s.text)}</div>
                 <div class="sticker-card-footer">
-                    <span class="sticker-card-date">${formatDate(s.created_at)}</span>
-                    <button class="sticker-delete-btn" data-id="${s.id}" title="${t('tt_delete')}">✕</button>
+                    <span class="sticker-card-date">${HtmlSafety.escape(formatDate(s.created_at))}</span>
+                    <button class="sticker-delete-btn" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_delete')}">✕</button>
                 </div>
             </div>
         `).join('')}</div>`;

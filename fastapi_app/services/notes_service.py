@@ -75,6 +75,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
         new_note = Note(
             title=data.title,
             content_json=blocks_data,
+            stickers=[s.model_dump(mode='json') for s in data.stickers],
             is_pinned=data.is_pinned,
             is_example=data.is_example,
             category_id=data.category_id,
@@ -91,6 +92,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
             note_id=new_note.id,
             title="Создание конспекта",
             content_json=blocks_data,
+            stickers=new_note.stickers,
             is_manual=True
         )
         session.add(initial_version)
@@ -127,6 +129,8 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
             note.category_id = data.category_id
         if data.status is not None:
             note.status = data.status
+        if data.stickers is not None:
+            note.stickers = [s.model_dump(mode='json') for s in data.stickers]
         if 'sticker_text' in data.model_fields_set:
             note.sticker_text = data.sticker_text
         if data.sticker_color is not None:
@@ -200,6 +204,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
             export_data.append({
                 "title": ex.title,
                 "content_json": ex.content_json,
+                "stickers": ex.stickers,
                 "is_pinned": ex.is_pinned,
                 "sticker_text": ex.sticker_text,
                 "sticker_color": ex.sticker_color,
@@ -240,6 +245,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
                     validated = NoteCreate(
                         title=data.get("title", "Пример конспекта"),
                         blocks=normalize_legacy_blocks(data.get("content_json", []), sync_id),
+                        stickers=data.get('stickers', []),
                         is_pinned=data.get("is_pinned", False),
                         sticker_text=data.get("sticker_text"),
                         sticker_color=data.get("sticker_color", "#fff9c4"),
@@ -247,6 +253,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
                     new_ex = Note(
                         title=validated.title,
                         content_json=[b.model_dump() for b in validated.blocks],
+                        stickers=[s.model_dump(mode='json') for s in validated.stickers],
                         is_pinned=validated.is_pinned,
                         is_example=True,
                         sticker_text=validated.sticker_text,

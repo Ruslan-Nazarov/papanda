@@ -27,7 +27,7 @@ conspectus_router = ConspectusRouter(
     ai_service, 
     ContextBuilder(), 
     Sanitizer(), 
-    RAGManager(ai_service)
+    RAGManager()
 )
 
 
@@ -66,14 +66,6 @@ class EditMathRequest(BaseModel):
 class CheckRequest(BaseModel):
     text: str = Field(..., max_length=50_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
-
-class AutofillRequest(BaseModel):
-    anchor_text: str = Field(..., max_length=5_000)
-    note_title: Optional[str] = Field(default="", max_length=300)
-
-class GenerateStepRequest(BaseModel):
-    context_text: str = Field(..., max_length=50_000)
-    target_step: str = Field(..., max_length=100, pattern=r'^(?:step)?[1-5](?:\.[1-9][0-9]*)?$')
 
 class GenerationInputStep(BaseModel):
     content: str = Field(default='', max_length=50_000)

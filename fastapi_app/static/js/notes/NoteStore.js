@@ -34,6 +34,7 @@ class NoteStore {
         const blocks = note.content_json || note.blocks || [];
         const data = {id: note.id ?? null, revision: note.revision ?? null, schema_version: note.schema_version || 1,
             title: note.title || '', category_id: note.category_id ?? null, status: note.status || 'none',
+            stickers: clone(note.stickers || []),
             blocks: clone(Array.isArray(blocks) ? blocks : []).map(block => ({...block,
                 status: block.status === 'draft' ? 'in_progress' : block.status || 'none',
                 role: block.role || inferRoleFromTitle(block),
@@ -94,6 +95,7 @@ class NoteStore {
             return Object.assign(target, block);
         });
         Object.assign(record.data, clone({title: response.title ?? note.title,
+            stickers: response.stickers ?? note.stickers ?? [],
             category_id: response.category_id ?? null, status: response.status || note.status}));
         record.data.blocks = blocks;
         record.dirty = false;

@@ -122,7 +122,7 @@ class NotesAPI {
         return this.request(`/dialectics/${noteId}/checkpoint`, 'POST', { title, is_manual: isManual }); 
     }
     static restoreVersion(noteId, versionId, revision) { return this.request(`/dialectics/${noteId}/versions/${versionId}/restore`, 'POST', {revision}); }
-    static pinVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/pin`, 'POST'); }
+    static pinVersion(noteId, versionId, pin = true) { return this.request(`/dialectics/${noteId}/versions/${versionId}/${pin ? 'pin' : 'unpin'}`, 'POST'); }
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
     // AI
     static routeConspectus(payload, signal) {

@@ -1,6 +1,7 @@
 // @ts-check
 /** @typedef {{id: string, side: string, html?: string, role?: string|null, status?: string, [key: string]: unknown}} NoteBlock */
-/** @typedef {{id: number, revision: number, title: string, content_json: NoteBlock[], category_id: number|null, status: string}} NoteResponse */
+/** @typedef {{id: string, title: string, text: string, color: string, created_at?: string|null}} NoteSticker */
+/** @typedef {{id: number, revision: number, title: string, content_json: NoteBlock[], stickers?: NoteSticker[], category_id: number|null, status: string}} NoteResponse */
 /** @typedef {'completed'|'partial'|'failed'|'cancelled'|'not_applicable'} RunStatus */
 /** @typedef {{content: string, status: string, author?: string}} GeneratedStep */
 /** @typedef {{run_id: string, status: RunStatus, source_revision: number|null, updated_steps: Record<string, GeneratedStep>, replace_bases: string[]}} GenerationResponse */
@@ -19,6 +20,16 @@ export function noteResponse(value) {
     for (const item of note.content_json) {
         const block = object(item);
         if (typeof block.id !== 'string' || typeof block.side !== 'string') throw new TypeError('Invalid note block');
+    }
+    if (note.stickers !== undefined) {
+        if (!Array.isArray(note.stickers)) throw new TypeError('Invalid note stickers');
+        for (const item of note.stickers) {
+            const sticker = object(item);
+            if (typeof sticker.id !== 'string' || typeof sticker.title !== 'string'
+                || typeof sticker.text !== 'string' || !/^#[a-fA-F0-9]{6}$/.test(String(sticker.color))) {
+                throw new TypeError('Invalid note sticker');
+            }
+        }
     }
     return /** @type {NoteResponse} */ (note);
 }

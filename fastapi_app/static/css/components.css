@@ -448,7 +448,8 @@
     border-radius: 16px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    overflow: hidden;
+    overflow: auto;
+    max-width: calc(100vw - 24px);
 }
 
 #note-stickers-dropdown-menu .sticker-panel {

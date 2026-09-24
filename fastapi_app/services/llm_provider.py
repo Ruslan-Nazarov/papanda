@@ -39,7 +39,7 @@ def any_llm_key_configured() -> bool:
     """Живая проверка: настроен ли хоть один рабочий API-ключ LLM."""
     keys = (
         settings.GROQ_API_KEY, settings.GOOGLE_API_KEY, settings.OPENROUTER_API_KEY,
-        settings.SAMBANOVA_API_KEY, settings.CEREBRAS_API_KEY, settings.HUGGINGFACE_API_KEY,
+        settings.CEREBRAS_API_KEY,
         settings.GIGACHAT_AUTH_KEY,
     )
     return any(k and k not in _PLACEHOLDER_KEYS for k in keys)
@@ -105,7 +105,7 @@ class BaseLLMProvider(ABC):
         # Некоторые OpenAI-совместимые эндпоинты (OpenRouter) на ошибке отдают
         # 200 с телом без choices — не даём этому упасть как TypeError.
         if not getattr(response, "choices", None):
-            raise RuntimeError(f"{self.name}: empty choices in response ({getattr(response, 'error', response)})")
+            raise RuntimeError(f"{self.name}: empty choices in response")
         if response.choices[0].finish_reason != 'stop':
             raise GenerationError('incomplete_response', 'Provider did not finish the response')
         content = response.choices[0].message.content
@@ -172,14 +172,6 @@ class GroqAltProvider(BaseLLMProvider):
         )
 
 
-class HuggingFaceProvider(BaseLLMProvider):
-    def __init__(self):
-        super().__init__(
-            api_key=settings.HUGGINGFACE_API_KEY,
-            base_url="https://api-inference.huggingface.co/v1",
-            model_name=settings.HUGGINGFACE_MODEL,
-            name="HuggingFace"
-        )
 
 
 class GeminiProvider(BaseLLMProvider):
@@ -204,14 +196,6 @@ class OpenRouterProvider(BaseLLMProvider):
         )
 
 
-class SambaNovaProvider(BaseLLMProvider):
-    def __init__(self):
-        super().__init__(
-            api_key=settings.SAMBANOVA_API_KEY,
-            base_url="https://api.sambanova.ai/v1",
-            model_name=settings.SAMBANOVA_MODEL,
-            name="SambaNova"
-        )
 
 
 class CerebrasProvider(BaseLLMProvider):
