@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import text
+from sqlalchemy import text, event
 from fastapi import Request, HTTPException
 from fastapi_app.config import settings
 
@@ -16,6 +16,22 @@ class Base(DeclarativeBase):
 
 _engine_cache: Dict[str, AsyncEngine] = {}
 _cache_lock = asyncio.Lock()
+
+
+def create_db_engine(db_url: str) -> AsyncEngine:
+    engine = create_async_engine(db_url, echo=False)
+    if engine.dialect.name == 'sqlite':
+        @event.listens_for(engine.sync_engine, 'connect')
+        def enable_foreign_keys(connection, _record):
+            cursor = connection.cursor()
+            try:
+                cursor.execute('PRAGMA foreign_keys=ON')
+                cursor.execute('PRAGMA foreign_keys')
+                if cursor.fetchone()[0] != 1:
+                    raise RuntimeError('SQLite foreign keys could not be enabled')
+            finally:
+                cursor.close()
+    return engine
 
 def _resolve_db_url(request: Request = None) -> Tuple[str, bool]:
     if settings.DEMO_MODE and request:
@@ -90,14 +106,24 @@ async def _run_migrations(engine: AsyncEngine):
 async def _get_or_create_engine(db_url: str, needs_init: bool) -> AsyncEngine:
     async with _cache_lock:
         if db_url not in _engine_cache:
-            engine = create_async_engine(db_url, echo=False)
+            engine = create_db_engine(db_url)
+            try:
+                if engine.dialect.name == 'sqlite':
+                    async with engine.begin() as conn:
+                        if needs_init:
+                            await conn.run_sync(Base.metadata.create_all)
+                    if not needs_init:
+                        await _run_migrations(engine)
+                    async with engine.connect() as conn:
+                        if (await conn.execute(text('PRAGMA foreign_key_check'))).first():
+                            raise RuntimeError(
+                                'SQLite contains orphaned records. Back up and repair a copy '
+                                'with scripts/repair_db_copy.py before using this database.'
+                            )
+            except Exception:
+                await engine.dispose()
+                raise
             _engine_cache[db_url] = engine
-            if db_url.startswith("sqlite"):
-                async with engine.begin() as conn:
-                    if needs_init:
-                        await conn.run_sync(Base.metadata.create_all)
-                if not needs_init:
-                    await _run_migrations(engine)
         return _engine_cache[db_url]
 
 async def get_db(request: Request = None) -> AsyncSession:
@@ -113,4 +139,3 @@ async def dispose_all_engines():
         for engine in _engine_cache.values():
             await engine.dispose()
         _engine_cache.clear()
-

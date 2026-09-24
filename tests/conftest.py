@@ -12,10 +12,10 @@ import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from fastapi_app.main import app
-from fastapi_app.database import Base, get_db
+from fastapi_app.database import Base, get_db, create_db_engine
 from fastapi_app.config import settings
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -34,7 +34,7 @@ def isolated_data_settings(tmp_path, monkeypatch):
 
 @pytest_asyncio.fixture
 async def test_engine():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    engine = create_db_engine(TEST_DATABASE_URL)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine

@@ -403,7 +403,8 @@ class NotesService:
         if note_id_from == note_id_to:
             raise HTTPException(status_code=400, detail="Cannot connect note to itself")
             
-        # Check if target exists
+        # Both ends must exist before the FK constraint is reached.
+        await NotesService.get_note(session, note_id_from)
         target = await NotesService.get_note(session, note_id_to)
         
         # Check if connection already exists
@@ -519,4 +520,3 @@ class NotesService:
             await session.commit()
             
         return imported_count
-
