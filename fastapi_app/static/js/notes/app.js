@@ -368,13 +368,13 @@ class App {
         if (btnSave) {
             btnSave.addEventListener('click', async () => {
                 try {
-                    await NoteStorageService.saveCurrentNote();
+                    const saved = await NoteStorageService.saveCurrentNote();
                     
-                    if (AppState.currentNote && AppState.currentNote.id) {
+                    if (saved.id) {
                         const now = new Date();
                         const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                         await NotesAPI.createCheckpoint(
-                            AppState.currentNote.id,
+                            saved.id,
                             `${t('checkpoint_label')} ${dateStr}`,
                             true
                         );
@@ -500,6 +500,11 @@ class App {
             NoteController.updateProgress();
             NoteController._updateStatusIndicator();
             this.updateSaveStatusUI();
+        });
+        document.addEventListener('noteSaved', () => {
+            if (AppState.currentNote.id) NavHistoryManager.push(AppState.currentNote.id);
+            this.updateSaveStatusUI();
+            this.updateSaveTime();
         });
 
         // --- 11. Language Switcher ---

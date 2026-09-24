@@ -12,6 +12,8 @@ const AppState = {
         status: 'none'
     },
     isDirty: false,
+    editRevision: 0,
+    documentEpoch: 0,
     _dismissedHints: [],
 
     get dismissedHints() {
@@ -34,6 +36,8 @@ const AppState = {
     isAutoFillStepByStep: false,
 
     setNote(note) {
+        this.documentEpoch += 1;
+        this.editRevision = 0;
         const blocks = note.content_json || note.blocks || [];
         this.currentNote = {
             id: note.id,
@@ -76,6 +80,7 @@ const AppState = {
     },
 
     markDirty() {
+        this.editRevision += 1;
         this.isDirty = true;
         this.updateProgress();
         document.dispatchEvent(new Event('stateDirty'));

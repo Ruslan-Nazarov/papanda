@@ -31,6 +31,10 @@ class NoteController {
             this._updateStatusIndicator();
             this._scheduleSessionCheckpoint();
         });
+        document.addEventListener('noteSaved', () => {
+            this._lastSavedAt = new Date();
+            this._updateStatusIndicator();
+        });
 
         // Warn on page close if dirty
         window.addEventListener('beforeunload', (e) => {
@@ -58,19 +62,19 @@ class NoteController {
     }
 
     static async _doAutosave() {
-        if (!AppState.isDirty || !AppState.currentNote.id) return;
+        if (!AppState.isDirty) return;
+        const note = AppState.currentNote;
         try {
             this._setStatus('saving');
             await NoteStorageService.saveCurrentNote();
-            this._lastSavedAt = new Date();
-            this._setStatus('saved');
+            if (AppState.currentNote === note) this._updateStatusIndicator();
         } catch (e) {
-            this._setStatus('error');
+            if (AppState.currentNote === note) this._setStatus('error');
             console.error('Autosave failed:', e);
         }
     }
 
-    // ── Session checkpoint (auto, every 2 hours of editing) ───────────────────
+    // ── Session checkpoint (auto, every 15 minutes) ──────────────────────────
     static _scheduleSessionCheckpoint() {
         clearTimeout(this._sessionCheckpointTimer);
         this._sessionCheckpointTimer = setTimeout(async () => {
@@ -78,9 +82,9 @@ class NoteController {
             const now = new Date();
             const dateStr = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
             try {
-                await NoteStorageService.saveCurrentNote(); // flush first
+                const saved = await NoteStorageService.saveCurrentNote(); // flush first
                 await NotesAPI.createCheckpoint(
-                    AppState.currentNote.id,
+                    saved.id,
                     `${t('session')} ${dateStr}`,
                     false // is_manual = false (auto-checkpoint)
                 );
@@ -94,27 +98,25 @@ class NoteController {
 
     // ── Manual save (flush immediately, no checkpoint) ────────────────────────
     static async saveCurrentNote() {
-        if (!AppState.isDirty) {
-            this._setStatus('saved');
-            return;
-        }
+        const note = AppState.currentNote;
         this._clearAutosaveTimer();
         try {
             this._setStatus('saving');
-            await NoteStorageService.saveCurrentNote();
-            this._lastSavedAt = new Date();
-            this._setStatus('saved');
+            const saved = await NoteStorageService.saveCurrentNote();
+            if (AppState.currentNote === note) this._updateStatusIndicator();
+            return saved;
         } catch (e) {
-            this._setStatus('error');
+            if (AppState.currentNote === note) this._setStatus('error');
             console.error('Save failed:', e);
+            throw e;
         }
     }
 
     // ── Create named checkpoint (manual version pin) ───────────────────────────
     static async createCheckpoint(customTitle = null) {
         // First make sure data is saved
-        await this.saveCurrentNote();
-        if (!AppState.currentNote.id) return;
+        const saved = await this.saveCurrentNote();
+        if (!saved.id) return;
 
         let title = customTitle;
         if (!title) {
@@ -131,7 +133,7 @@ class NoteController {
         }
 
         try {
-            await NotesAPI.createCheckpoint(AppState.currentNote.id, title, true);
+            await NotesAPI.createCheckpoint(saved.id, title, true);
             showToast(`${t('checkpoint_saved')}: «${title}»`);
         } catch (e) {
             console.error('Checkpoint failed:', e);

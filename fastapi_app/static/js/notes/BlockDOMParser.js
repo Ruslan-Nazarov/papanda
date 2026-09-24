@@ -13,7 +13,10 @@ class BlockDOMParser {
                 if (contentEl && contentEl.isContentEditable) {
                     updates.html = contentEl.innerHTML;
                 }
-                AppState.updateBlock(id, updates);
+                const block = AppState.getBlock(id);
+                if (block && Object.entries(updates).some(([key, value]) => block[key] !== value)) {
+                    AppState.updateBlock(id, updates);
+                }
             }
         });
     }
