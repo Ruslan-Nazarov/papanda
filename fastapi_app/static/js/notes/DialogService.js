@@ -171,7 +171,7 @@ class DialogService {
                         });
                     });
                 } catch (err) {
-                    listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">${t('picker_load_err')}: ${err.message}</div>`;
+                    listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">${t('picker_load_err')}: ${this.escapeHtml(err.message)}</div>`;
                 }
             };
 
@@ -442,7 +442,7 @@ class DialogService {
         if (!str) return '';
         const div = document.createElement('div');
         div.textContent = str;
-        return div.innerHTML;
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 }
 

@@ -1,4 +1,5 @@
 import NotesAPI from './api.js';
+import HtmlSafety from './HtmlSafety.js';
 import { showToast } from './ToastService.js';
 import DialogService from './DialogService.js';
 
@@ -148,7 +149,7 @@ class FormulaModalService {
                 try {
                     preview.innerHTML = window.katex.renderToString(val, { displayMode: true, throwOnError: false });
                 } catch (e) {
-                    preview.innerHTML = `<span class="formula-preview-error">${t('fm_latex_error')}${e.message}</span>`;
+                    preview.innerHTML = `<span class="formula-preview-error">${t('fm_latex_error')}${HtmlSafety.escape(e.message)}</span>`;
                 }
             } else {
                 preview.textContent = val;

@@ -1,4 +1,5 @@
 import NotesAPI from './api.js';
+import HtmlSafety from './HtmlSafety.js';
 import { renderStreamMarkdown } from './ConceptExplainManager.js';
 import { t } from '../i18n.js';
 
@@ -101,7 +102,7 @@ class ConceptSelectionMenu {
             );
             renderStreamMarkdown(target, full || t('whatis_empty'));
         } catch (e) {
-            target.innerHTML = `<span style="color:#ef4444;">${t('whatis_error')}: ${e.message}</span>`;
+            target.innerHTML = `<span style="color:#ef4444;">${t('whatis_error')}: ${HtmlSafety.escape(e.message)}</span>`;
         }
     }
 }

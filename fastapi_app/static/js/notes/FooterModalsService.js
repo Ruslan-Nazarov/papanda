@@ -69,7 +69,10 @@ class FooterModalsService {
                 return res.text();
             })
             .then(text => {
-                dialog.querySelector('.modal-dialog-body').innerHTML = `<pre style="white-space: pre-wrap; font-family: inherit;">${text}</pre>`;
+                const pre = document.createElement('pre');
+                pre.style.cssText = 'white-space:pre-wrap;font-family:inherit';
+                pre.textContent = text;
+                dialog.querySelector('.modal-dialog-body').replaceChildren(pre);
             })
             .catch(() => {
                 dialog.querySelector('.modal-dialog-body').innerHTML = `<div style="color: #64748b;">${t('changelog_not_found')}</div>`;

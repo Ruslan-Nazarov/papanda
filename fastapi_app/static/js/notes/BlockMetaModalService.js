@@ -1,4 +1,5 @@
 import AppState from './AppState.js';
+import HtmlSafety from './HtmlSafety.js';
 import { ALGORITHM_TEXTS, ALGORITHM_STEPS, inferRoleFromTitle } from './BlockConstants.js';
 
 import { t } from '../i18n.js';
@@ -89,7 +90,7 @@ class BlockMetaModalService {
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <strong style="color: #1e293b; font-size: 0.95rem;">${this.escapeHtml(src.title || src.url)}</strong>
-                                ${src.url ? `<div style="font-size: 0.82rem; color: #2563eb; margin-top: 2px;"><a href="${this.escapeHtml(src.url)}" target="_blank" style="color: #2563eb; text-decoration: none;">${this.escapeHtml(src.url)}</a></div>` : ''}
+                                ${HtmlSafety.link(src.url) ? `<div style="font-size: 0.82rem; color: #2563eb; margin-top: 2px;"><a href="${HtmlSafety.escape(HtmlSafety.link(src.url))}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: none;">${this.escapeHtml(src.url)}</a></div>` : ''}
                                 ${src.quote ? `<blockquote style="margin: 6px 0 0 0; padding-left: 8px; border-left: 2px solid #2563eb; font-size: 0.85rem; color: #475569;">${this.escapeHtml(src.quote)}</blockquote>` : ''}
                             </div>
                             <button class="btn-del-src" data-idx="${idx}" title="${t('tt_delete')}" style="color: #ef4444; font-size: 1rem; border: none; background: none; cursor: pointer; padding: 2px 6px;">✕</button>

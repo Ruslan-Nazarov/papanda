@@ -8,6 +8,7 @@ import { ALGORITHM_STEPS } from './BlockConstants.js';
 import BlockColorPicker from './BlockColorPicker.js';
 import AIController from './AIController.js';
 import ParserWindowsManager from './ParserWindowsManager.js';
+import HtmlSafety from './HtmlSafety.js';
 
 class BlockNormalBuilder {
     static setupHiddenPhrases(container) {
@@ -25,7 +26,7 @@ class BlockNormalBuilder {
             if (hint && !phrase.querySelector('.hp-content')) {
                 const content = document.createElement('span');
                 content.className = 'hp-content';
-                content.innerHTML = ` 💡 ${hint}`;
+                content.textContent = ` 💡 ${hint}`;
                 phrase.appendChild(content);
             }
 
@@ -98,7 +99,7 @@ class BlockNormalBuilder {
             div.innerHTML = `
                 <div class="block-header" style="justify-content: center; border-bottom: none; background: #e2e8f0;">
                     <span class="drag-handle" title="${t('tt_drag')}">⠿</span>
-                    <h2 class="block-title" contenteditable="true" style="font-size: 1.25rem; font-weight: bold; text-align: center; width: 100%; margin: 0;">${block.title || t('section_word')}</h2>
+                    <h2 class="block-title" contenteditable="true" style="font-size: 1.25rem; font-weight: bold; text-align: center; width: 100%; margin: 0;"></h2>
                 </div>
                 <div class="block-actions">
                     <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑</button>
@@ -121,9 +122,9 @@ class BlockNormalBuilder {
                     <div class="block-header-left">
                         <span class="drag-handle" title="${t('tt_drag')}">⠿</span>
                         <span class="block-number"></span>
-                        <div class="block-status-dot" data-status="${block.status || 'none'}" title="${t('block_status')}: ${block.status || 'none'}"></div>
+                        <div class="block-status-dot"></div>
                         <button class="btn-collapse-toggle" title="${t('tt_collapse')}">${block.collapsed ? '▶' : '▼'}</button>
-                        <h3 class="block-title" contenteditable="true">${block.title || t('hint_anchor_title')}</h3>
+                        <h3 class="block-title" contenteditable="true"></h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
                         <button class="block-action-btn btn-autofill-ai" title="${t('tt_autofill')}" style="font-size: 1.1rem; padding: 2px 4px; border: none; background: transparent; cursor: pointer;">✨</button>
@@ -132,7 +133,6 @@ class BlockNormalBuilder {
                 </div>
                 ${block.tags ? `
                 <div class="block-tags" style="padding: 0 16px 8px 46px; display: flex; flex-wrap: wrap; gap: 6px;">
-                    ${block.tags.split(',').filter(tag => tag.trim()).map(tag => `<span style="background: #e2e8f0; color: #475569; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 500;">#${tag.trim()}</span>`).join('')}
                 </div>
                 ` : ''}
                 <div class="block-toolbar-row" style="display: flex; align-items: center; gap: 4px;">
@@ -160,8 +160,25 @@ class BlockNormalBuilder {
                         <button class="ask-cancel">${t('ask_cancel')}</button>
                     </div>
                 </div>
-                <div class="block-content">${block.html || `<p>${t('block_text_ph')}</p>`}</div>
+                <div class="block-content">${HtmlSafety.rich(block.html || `<p>${t('block_text_ph')}</p>`)}</div>
             `;
+        }
+
+        div.querySelector('.block-title').textContent = block.title
+            || t(block.role === 'section' ? 'section_word' : 'hint_anchor_title');
+        const dot = div.querySelector('.block-status-dot');
+        if (dot) {
+            dot.dataset.status = block.status || 'none';
+            dot.title = `${t('block_status')}: ${block.status || 'none'}`;
+        }
+        const tags = div.querySelector('.block-tags');
+        if (tags) {
+            String(block.tags).split(',').map(tag => tag.trim()).filter(Boolean).forEach(tag => {
+                const span = document.createElement('span');
+                span.style.cssText = 'background:#e2e8f0;color:#475569;font-size:.75rem;padding:2px 8px;border-radius:12px;font-weight:500';
+                span.textContent = `#${tag}`;
+                tags.appendChild(span);
+            });
         }
 
         // Перетаскивание блока — только за «ручку».

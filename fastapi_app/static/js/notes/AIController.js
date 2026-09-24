@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import NotesAPI from './api.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
 import GlobalLoader from './GlobalLoader.js';
+import HtmlSafety from './HtmlSafety.js';
 
 import { t } from '../i18n.js';
 class AIController {
@@ -53,13 +54,13 @@ class AIController {
             html = html.replace(/@@MATH(\d+)@@/g, (_, i) => {
                 const it = math[+i];
                 if (!it) return '';
-                if (!it.display) return it.raw;
+                if (!it.display) return escHtml(it.raw);
                 const tex = it.raw.replace(/^\$\$|\$\$$/g, '').replace(/^\\\[|\\\]$/g, '').trim();
                 return `<div class="math-callout"><div class="math-content"><p><span class="math-inline" formula="${escAttr(tex)}">${escHtml(tex)}</span></p></div></div>`;
             });
             // <p> вокруг одинокой рамки — невалидная вложенность, разворачиваем.
             html = html.replace(/<p>\s*(<div class="math-callout">[\s\S]*?<\/div>)\s*<\/p>/g, '$1');
-            return html;
+            return HtmlSafety.rich(html);
         }
         // Иначе (marked/DOMPurify не загрузились): экранируем — это может быть
         // текст модели с угловыми скобками, нельзя вставлять сырым.
