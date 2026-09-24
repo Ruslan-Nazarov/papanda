@@ -259,6 +259,8 @@ async def test_generate_full_stream_sse_frames(client: AsyncClient):
         yield ("__titles__", {"1": "начало", "2.1": "ветка"})
         yield ("__note_meta__", {"note_title": "Тест", "anchor_summary": "итог"})
         yield ("__report__", {"degraded": True, "reasons": ["fallback_provider"], "judge": "passed"})
+        from fastapi_app.services.generation.runtime import current_run
+        yield ('__terminal__', {'run_id': current_run.get().run_id, 'status': 'completed'})
 
     with patch("fastapi_app.routers.ai.conspectus_router.stream_generate_full", side_effect=_fake_stream):
         frames = []
@@ -277,7 +279,11 @@ async def test_generate_full_stream_sse_frames(client: AsyncClient):
     assert any("note_meta" in f for f in frames)
     report_frame = next(f for f in frames if "report" in f)
     assert report_frame["report"]["degraded"] is True
-    assert frames[-1] == {"done": True}
+    assert frames[0]['type'] == 'started'
+    assert frames[-1]['type'] == 'terminal'
+    assert frames[-1]['status'] == 'completed'
+    assert len({f['run_id'] for f in frames}) == 1
+    assert [f['sequence'] for f in frames] == list(range(1, len(frames) + 1))
 
 
 @pytest.mark.asyncio

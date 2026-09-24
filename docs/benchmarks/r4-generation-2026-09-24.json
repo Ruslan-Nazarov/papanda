@@ -1,0 +1,776 @@
+{
+  "kind": "offline_mock_control",
+  "provider_delay_ms": 2,
+  "mock_usage_tokens_per_response": 200,
+  "warning": "Synthetic latency/usage; not real model quality, provider latency or monetary cost.",
+  "scenarios": {
+    "completed": {
+      "p50_ms": 280.226,
+      "p95_ms": 280.898,
+      "runs": [
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 280.019,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 280.898,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 278.336,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 280.433,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 277.686,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 280.473,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 280.597,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 278.933,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 280.634,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 279.927,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        }
+      ]
+    },
+    "not_applicable": {
+      "p50_ms": 15.031,
+      "p95_ms": 15.443,
+      "runs": [
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 15.004,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 15.443,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 14.905,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 15.058,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 15.237,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 13.329,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 15.144,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 15.247,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 14.86,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        },
+        {
+          "status": "not_applicable",
+          "judge": "unavailable",
+          "duration_ms": 13.846,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 200,
+          "usage_complete": true
+        }
+      ]
+    },
+    "rate_limit_fallback": {
+      "p50_ms": 296.209,
+      "p95_ms": 298.294,
+      "runs": [
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 297.491,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 291.578,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 298.294,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 297.213,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 294.513,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 290.293,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 296.418,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 294.511,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 296.633,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        },
+        {
+          "status": "completed",
+          "judge": "passed",
+          "duration_ms": 296.0,
+          "call_count": 19,
+          "reserved_tokens": 459423,
+          "usage_tokens": 3600,
+          "usage_complete": false
+        }
+      ]
+    },
+    "invalid_judge_json": {
+      "p50_ms": 279.971,
+      "p95_ms": 283.595,
+      "runs": [
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 277.59,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 276.762,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 280.341,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 279.602,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 283.595,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 279.06,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 281.706,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 282.985,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 277.609,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 282.591,
+          "call_count": 18,
+          "reserved_tokens": 437355,
+          "usage_tokens": 3600,
+          "usage_complete": true
+        }
+      ]
+    },
+    "empty_response": {
+      "p50_ms": 185.883,
+      "p95_ms": 188.959,
+      "runs": [
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 187.381,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 188.959,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 185.883,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 185.778,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 185.967,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 184.865,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 185.883,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 187.12,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 183.039,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 185.267,
+          "call_count": 12,
+          "reserved_tokens": 272259,
+          "usage_tokens": 2400,
+          "usage_complete": true
+        }
+      ]
+    },
+    "timeout": {
+      "p50_ms": 61.382,
+      "p95_ms": 63.094,
+      "runs": [
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 61.943,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 61.825,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 60.76,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 61.7,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 61.063,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 62.029,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 60.937,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 59.112,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 63.094,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "failed",
+          "judge": "unavailable",
+          "duration_ms": 59.537,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        }
+      ]
+    },
+    "interrupted_stream": {
+      "p50_ms": 15.465,
+      "p95_ms": 16.025,
+      "runs": [
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 14.265,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.256,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.279,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.783,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.942,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.65,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 14.025,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 16.025,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.046,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "partial",
+          "judge": "unavailable",
+          "duration_ms": 15.772,
+          "call_count": 1,
+          "reserved_tokens": 22,
+          "usage_tokens": 0,
+          "usage_complete": false
+        }
+      ]
+    },
+    "cancelled": {
+      "p50_ms": 4.514,
+      "p95_ms": 7.274,
+      "runs": [
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 5.701,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 7.274,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 6.159,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 4.55,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 4.246,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 2.797,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 4.43,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 4.519,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 4.51,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        },
+        {
+          "status": "cancelled",
+          "judge": "unavailable",
+          "duration_ms": 3.004,
+          "call_count": 1,
+          "reserved_tokens": 22068,
+          "usage_tokens": 0,
+          "usage_complete": false
+        }
+      ]
+    }
+  }
+}

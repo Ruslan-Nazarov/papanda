@@ -6,59 +6,29 @@ from fastapi_app.services.context_builder import ContextBuilder
 from fastapi_app.services.sanitizer import Sanitizer
 
 
-_PINNED_ALL_STEPS = (
-    "===ШАГ2===\nновый связный текст для шага номер два\n"
-    "===ШАГ3===\nновый связный текст для шага номер три\n"
-)
-
-
 @pytest.mark.asyncio
 async def test_pinned_step_is_rewritten_with_question_not_left_untouched():
-    """Регрессионный тест на фикс "Pinned-step regeneration": при вопросе,
-    заданном к конкретному шагу (кнопка ❓), этот шаг должен ПЕРЕПИСЫВАТЬСЯ
-    с учётом вопроса — а не оставаться нетронутым, как было раньше."""
-    ai_service = MagicMock()
+    from test_ai_router_judge import _stage_ok_responses, _text_response
 
-    async def _gen(sys_prompt, user_prompt="", *_a, **_k):
-        if "Сгенерируй шаги" in user_prompt:
-            return _PINNED_ALL_STEPS
-        return '{"step1": "step1 переписан с учётом уточнения"}'
-    ai_service._generate = AsyncMock(side_effect=_gen)
+    async def generate(prompt, message='', *a, **kw):
+        for marker, response in _stage_ok_responses('').items():
+            if marker in message:
+                return response
+        if 'Оцени конспект' in message:
+            return '{"is_valid": true, "reason": "ok"}'
+        if 'Генерируй шаг 1' in message:
+            assert 'а если наоборот?' in prompt
+            assert 'старый текст' in prompt
+        return _text_response(message, 'переписан')
 
-    context_builder = ContextBuilder()
-    sanitizer = Sanitizer()
-    rag_manager = MagicMock()
-    rag_manager.enrich_prompt_if_needed = MagicMock(side_effect=lambda prompt, *_a, **_k: prompt)
-
-    router = ConspectusRouter(ai_service, context_builder, sanitizer, rag_manager)
-
-    state = {
-        "target_goal": "тест",
-        "steps": {
-            "step1": {"content": "старый текст шага 1", "status": "ready"},
-        },
-    }
-
-    events = {}
-    async for step_key, content in router.stream_generate_full(
-        state, "ru", use_skeleton=False, pinned_step=1, question="а если наоборот?"
-    ):
-        events[step_key] = content
-
-    # Зафиксированный шаг присутствует в выдаче и содержит НОВЫЙ текст —
-    # раньше он всегда пропускался (see: `if num == pinned: continue`).
-    assert "step1" in events
-    assert events["step1"] == "step1 переписан с учётом уточнения"
-    assert state["steps"]["step1"]["content"] == "step1 переписан с учётом уточнения"
-
-    # Остальные шаги по-прежнему приходят из общего прохода.
-    assert events.get("step2") == "новый связный текст для шага номер два"
-    assert events.get("step3") == "новый связный текст для шага номер три"
-
-    # _generate (одиночная перегенерация step1) вызван с промптом, где есть
-    # уточнение пользователя.
-    first_call_args = ai_service._generate.call_args_list[0]
-    assert "а если наоборот?" in first_call_args[0][0]
+    ai = MagicMock(_generate=AsyncMock(side_effect=generate))
+    router = ConspectusRouter(ai, ContextBuilder(), Sanitizer(), MagicMock())
+    state = {'target_goal': 'тест', 'steps': {'step1': {'content': 'старый текст', 'status': 'ready'}}}
+    events = {k: v async for k, v in router.stream_generate_full(state, 'ru', pinned_step=1, question='а если наоборот?')}
+    assert 'переписан' in events['step1']
+    assert 'переписан' in events['step2.1']
+    assert state['steps']['step1']['content'] == 'старый текст'
+    assert events['__terminal__']['status'] == 'completed'
 
 
 @pytest.mark.asyncio
@@ -116,10 +86,13 @@ async def test_postprocess_pass_emits_titles_and_meta():
     """После Шагов 1–5 и судьи идёт доп. проход — события __titles__
     (заголовок-суть на каждый ключ) и __note_meta__ (имя конспекта + вывод).
     Историческая справка убрана из этого прохода (см. коммит 810c393).
-    use_skeleton=False — путь "без плана" (regen_step по умолчанию)."""
-    from test_ai_router_judge import _text_response
+    use_skeleton=False сохраняется как совместимый параметр; план обязателен."""
+    from test_ai_router_judge import _text_response, _stage_ok_responses
 
     async def _gen(sys_prompt, user_prompt="", *_a, **_k):
+        for marker, response in _stage_ok_responses("").items():
+            if marker in user_prompt:
+                return response
         if "titles" in user_prompt or "anchor_summary" in user_prompt:
             return ('{"titles": {"1": "как всё началось", "5": "чем разрешилось"}, '
                     '"note_title": "Диффузия и выравнивание", '
@@ -143,50 +116,42 @@ async def test_postprocess_pass_emits_titles_and_meta():
             events[key] = content
 
     assert events["__titles__"] == {"1": "как всё началось", "5": "чем разрешилось"}
-    assert state["step_titles"]["5"] == "чем разрешилось"
+    assert events["__terminal__"]["step_titles"]["5"] == "чем разрешилось"
     assert events["__note_meta__"] == {
         "note_title": "Диффузия и выравнивание",
         "anchor_title": "Диффузия выравнивает концентрацию",
         "anchor_summary": "Частицы переходят из плотных мест в разреженные, пока не станет ровно.",
     }
-    assert state["note_meta"]["note_title"] == "Диффузия и выравнивание"
+    assert events["__terminal__"]["note_meta"]["note_title"] == "Диффузия и выравнивание"
+    assert state == {"target_goal": "диффузия", "steps": {}}
     # Отчёт о прогоне тоже приходит.
     assert "__report__" in events
     assert events["__report__"]["judge"] == "passed"
 
 
 @pytest.mark.asyncio
-async def test_report_flags_degraded_on_fallback_provider(monkeypatch):
-    """Если основную генерацию обслужил НЕ основной провайдер — отчёт
-    помечает degraded с причиной fallback_provider (сигнал пользователю,
-    что просели токены, а не метод)."""
-    async def _stream(*_a, **_k):
-        yield (
-            "===ШАГ1===\nпростейший процесс достаточной длины для парсера тут\n"
-            "===ШАГ2.1===\nразвитие один достаточной длины для парсера тут да\n"
-            "===ШАГ2.2===\nразвитие два достаточной длины для парсера тут да\n"
-            "===ШАГ3===\nпротивоположность достаточной длины для парсера тут\n"
-            "===ШАГ4===\nпротиворечие достаточной длины для парсера тут же да\n"
-            "===ШАГ5===\nразрешение достаточной длины для парсера тут же да\n"
-        )
-    ai_service = MagicMock()
-    ai_service._generate_stream = MagicMock(side_effect=_stream)
-    ai_service._generate = AsyncMock(return_value='{"is_valid": true, "reason": ""}')
+async def test_report_flags_degraded_on_fallback_provider():
+    from test_ai_router_judge import _stage_ok_responses, _text_response
+    from fastapi_app.services.generation.runtime import current_run
 
-    monkeypatch.setattr(
-        "fastapi_app.services.generation_pipeline.get_last_call_info",
-        lambda: {"provider": "Groq", "fell_back": True},
-    )
-    router = ConspectusRouter(ai_service, ContextBuilder(), Sanitizer(), MagicMock())
-    events = {}
-    async for key, content in router.stream_generate_full({"target_goal": "рост", "steps": {}}, "ru", use_skeleton=False):
-        events[key] = content
+    async def generate(prompt, message='', *a, **kw):
+        for marker, response in _stage_ok_responses('').items():
+            if marker in message:
+                return response
+        if 'Оцени конспект' in message:
+            return '{"is_valid": true, "reason": "ok"}'
+        if kw.get('task') == 'step_stream':
+            call = current_run.get().reserve('Groq', 'fallback-model', [], 100, 'step_stream')
+            call['status'] = 'completed'
+        return _text_response(message, 'ok')
 
-    rep = events["__report__"]
-    assert rep["degraded"] is True
-    assert "fallback_provider" in rep["reasons"]
-    assert rep["gen_provider"] == "Groq"
-
+    router = ConspectusRouter(MagicMock(_generate=AsyncMock(side_effect=generate)), ContextBuilder(), Sanitizer(), MagicMock())
+    events = {k: v async for k, v in router.stream_generate_full({'target_goal': 'рост', 'steps': {}}, 'ru')}
+    report = events['__report__']
+    assert report['degraded'] is True
+    assert 'fallback_provider' in report['reasons']
+    assert report['gen_provider'] == 'Groq'
+    assert report['call_count'] == 6
 
 
 def test_condense_step_keeps_claim_and_handoff():

@@ -65,13 +65,14 @@ PROMPT_CHAINS = {
 }
 
 from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured, TASK_ROUTES
+from fastapi_app.services.generation.routing import route_for
+from fastapi_app.services.generation.runtime import current_run, GenerationError
 
 _AI_DISABLED_MSG = "AI disabled: не настроены API-ключи LLM (см. .env)."
 
 
-def _route(task: Optional[str], prefer):
-    """prefer, заданный явно, важнее; иначе — маршрут задачи из TASK_ROUTES."""
-    return prefer or (TASK_ROUTES.get(task) if task else None)
+def _route(task: Optional[str], prefer, allowed=None, exclude_models=()):
+    return route_for(task, prefer, allowed, exclude_models)
 
 class AIService:
     def __init__(self):
@@ -132,8 +133,12 @@ class AIService:
         task: Optional[str] = None,
         reasoning_effort: Optional[str] = None,
         timeout: Optional[float] = None,
+        allowed=None,
+        exclude_models=(),
     ) -> str:
         if not any_llm_key_configured():
+            if current_run.get() is not None:
+                raise GenerationError('ai_disabled', _AI_DISABLED_MSG)
             return _AI_DISABLED_MSG
 
         messages = [{"role": "system", "content": system_prompt}]
@@ -143,7 +148,9 @@ class AIService:
 
         cache_key = None
         if use_cache:
-            cache_key = _llm_cache.key(messages, response_format, max_tokens, temperature, fast)
+            cache_key = _llm_cache.key(messages, response_format, max_tokens, temperature, fast,
+                                       _route(task, prefer, allowed, exclude_models), reasoning_effort,
+                                       llm_registry.route_fingerprint())
             hit = _llm_cache.get(cache_key)
             if hit is not None:
                 return hit
@@ -155,11 +162,14 @@ class AIService:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 fast=fast,
-                prefer=_route(task, prefer),
+                prefer=_route(task, prefer, allowed, exclude_models),
+                task=task,
                 reasoning_effort=reasoning_effort,
                 timeout=timeout,
             )
         except Exception as e:
+            if current_run.get() is not None:
+                raise
             return f"Error calling AI: {str(e)}"
 
         if cache_key and result and not result.startswith("Error calling AI:"):
@@ -179,12 +189,13 @@ class AIService:
         task: Optional[str] = None,
         reasoning_effort: Optional[str] = None,
         timeout: Optional[float] = None,
+        allowed=None,
+        exclude_models=(),
     ):
         """Стрим токенов ответа. При попадании в кэш отдаёт целиком одним чанком.
         По завершении складывает полный ответ в кэш."""
         if not any_llm_key_configured():
-            yield _AI_DISABLED_MSG
-            return
+            raise GenerationError('ai_disabled', _AI_DISABLED_MSG)
 
         messages = [{"role": "system", "content": system_prompt}]
         if history:
@@ -193,7 +204,9 @@ class AIService:
 
         cache_key = None
         if use_cache:
-            cache_key = _llm_cache.key(messages, None, max_tokens, temperature, fast)
+            cache_key = _llm_cache.key(messages, None, max_tokens, temperature, fast,
+                                       _route(task, prefer, allowed, exclude_models), reasoning_effort,
+                                       llm_registry.route_fingerprint())
             hit = _llm_cache.get(cache_key)
             if hit is not None:
                 yield hit
@@ -202,7 +215,8 @@ class AIService:
         parts = []
         async with aclosing(llm_registry.generate_stream(
             messages, max_tokens=max_tokens, temperature=temperature, fast=fast,
-            prefer=_route(task, prefer), reasoning_effort=reasoning_effort, timeout=timeout,
+            prefer=_route(task, prefer, allowed, exclude_models), task=task,
+            reasoning_effort=reasoning_effort, timeout=timeout,
         )) as gen:
             async for delta in gen:
                 parts.append(delta)

@@ -3,11 +3,20 @@ import NotesAPI from './api.js';
 import { ALGORITHM_STEPS } from './BlockConstants.js';
 import GlobalLoader from './GlobalLoader.js';
 import HtmlSafety from './HtmlSafety.js';
+import GenerationChanges from './GenerationChanges.js';
+import BlockDOMParser from './BlockDOMParser.js';
+import DialogService from './DialogService.js';
+import { showToast } from './ToastService.js';
 
 import { t } from '../i18n.js';
 class AIController {
+    static _activeRun = null;
+    static _initialized = false;
+
     static init() {
-        console.log('AIController Initialized');
+        if (this._initialized) return;
+        this._initialized = true;
+        document.addEventListener('noteLoaded', () => this._activeRun?.controller.abort());
     }
 
     static buildStateForAI() {
@@ -26,9 +35,15 @@ class AIController {
             
             steps[`step${i}`] = {
                 content: content,
-                status: mainStepBlock ? mainStepBlock.status : 'empty',
+                status: stepBlocks.length ? (stepBlocks.every(b => b.status === 'ready') ? 'ready' : 'in_progress') : 'empty',
                 title: mainStepBlock ? mainStepBlock.title : `${t('step_word')} ${i}`
             };
+        }
+        for (const block of blocks) {
+            if (GenerationChanges.base(block.role) && block.role.includes('.')) {
+                steps[block.role] = {content: (block.html || '').replace(/<[^>]+>/g, '').trim(),
+                    status: block.status, title: block.title || ''};
+            }
         }
         return { target_goal, steps };
     }
@@ -73,56 +88,16 @@ class AIController {
             .join('');
     }
 
-    static processUpdatedSteps(updatedSteps, onRenderAll) {
+    static processUpdatedSteps(updatedSteps, onRenderAll, replaceBases) {
         if (!updatedSteps) return;
-        
-        let hasChanges = false;
-        
-        // Apply invalidations
-        Object.keys(updatedSteps).forEach(stepKey => {
-            const stepData = updatedSteps[stepKey];
-            if (stepData.status === 'invalidated') {
-                const existingIndex = AppState.currentNote.blocks.findIndex(b => b.role === stepKey);
-                if (existingIndex !== -1) {
-                    AppState.removeBlock(AppState.currentNote.blocks[existingIndex].id);
-                    hasChanges = true;
-                }
-            } else if (stepData.content) {
-                const htmlContent = this.contentToHtml(stepData.content);
-                // Add or update block
-                const existingBlock = AppState.currentNote.blocks.find(b => b.role === stepKey);
-                if (existingBlock) {
-                    AppState.updateBlock(existingBlock.id, {
-                        html: htmlContent,
-                        status: AppState.normalizeBlockStatus(stepData.status || 'ready'),
-                        ...(stepData.title ? {title: stepData.title} : {})
-                    });
-                } else {
-                    const [baseRole, subIndex] = stepKey.split('.');
-                    const stepObj = ALGORITHM_STEPS.find(s => s.role === baseRole) || {};
-                    // "step1.2" -> "Простейший процесс (2)" — чтобы несколько
-                    // процессов одного шага визуально различались.
-                    const baseTitle = stepData.title || stepObj.title || stepKey;
-                    const title = subIndex ? `${baseTitle} (${subIndex})` : baseTitle;
-                    const newBlock = {
-                        id: 'block-' + Math.random().toString(36).substr(2, 9),
-                        side: stepObj.side || 'center',
-                        role: stepKey,
-                        title,
-                        html: htmlContent,
-                        status: AppState.normalizeBlockStatus(stepData.status || 'ready'),
-                        isDraft: false
-                    };
-                    AppState.addBlock(newBlock);
-                }
-                AppState.dismissHint(stepKey);
-                hasChanges = true;
-            }
-        });
-        
-        if (hasChanges && onRenderAll) {
-            onRenderAll();
-        }
+        const next = GenerationChanges.build(AppState.currentNote,
+            {updated_steps: updatedSteps, replace_bases: replaceBases},
+            text => this.contentToHtml(text), ALGORITHM_STEPS);
+        if (JSON.stringify(next.blocks) === JSON.stringify(AppState.currentNote.blocks)) return;
+        AppState.currentNote.blocks = next.blocks;
+        for (const key of Object.keys(updatedSteps)) AppState.dismissHint(key);
+        AppState.markDirty();
+        if (onRenderAll) onRenderAll();
     }
 
     /**
@@ -264,115 +239,101 @@ class AIController {
     }
 
     static async generateFull(onRenderAll) {
-        GlobalLoader.show(t('ed_ai_analyzing'));
-        try {
-            const state = this.buildStateForAI();
-            let received = 0;
-            let notApplicable = false;
-            await NotesAPI.stream(
-                '/ai/dialectics/conspectus/generate-full/stream',
-                { action: 'generate_full', context_state: state },
-                null,
-                (ev) => {
-                    if (ev.step && ev.content) {
-                        received++;
-                        // Каждый шаг рисуем сразу, как только он пришёл.
-                        this.processUpdatedSteps(
-                            { [ev.step]: { content: ev.content, status: 'ready' } },
-                            onRenderAll
-                        );
-                    } else if (ev.not_applicable) {
-                        notApplicable = true;
-                        this.applyNotApplicable(ev.not_applicable, onRenderAll);
-                    } else if (ev.titles) {
-                        this.applyTitles(ev.titles, onRenderAll);
-                    } else if (ev.note_meta) {
-                        this.applyNoteMeta(ev.note_meta, onRenderAll);
-                    } else if (ev.report) {
-                        this.applyReport(ev.report, onRenderAll);
-                    } else if (ev.status) {
-                        // Долгая операция (судья, повторная попытка) — держим пользователя в курсе.
-                        GlobalLoader.show(ev.status);
-                    }
-                }
-            );
-            if (!received && !notApplicable) throw new Error(t('ai_no_steps'));
-        } catch (e) {
-            console.error("AI Generate Full Error:", e);
-            throw e; // Let the caller handle UI feedback (e.g. toasts)
-        } finally {
-            GlobalLoader.hide();
-        }
+        return this._runGeneration({action: 'generate_full'}, onRenderAll);
     }
 
-    /**
-     * Режим ИИ: пользователь задал вопрос/уточнение к блоку `pinnedStep`.
-     * Этот блок фиксируется, остальные (кроме anchor) перегенерируются согласованно.
-     */
     static async regenerateWithQuestion(pinnedStep, question, onRenderAll) {
-        GlobalLoader.show(t('ed_ai_analyzing'));
-        try {
-            const state = this.buildStateForAI();
-            let received = 0;
-            await NotesAPI.stream(
-                '/ai/dialectics/conspectus/generate-full/stream',
-                {
-                    action: 'generate_full',
-                    context_state: state,
-                    pinned_step: String(pinnedStep),
-                    question: question || ''
-                },
-                null,
-                (ev) => {
-                    if (ev.step && ev.content) {
-                        received++;
-                        this.processUpdatedSteps(
-                            { [ev.step]: { content: ev.content, status: 'ready' } },
-                            onRenderAll
-                        );
-                    } else if (ev.titles) {
-                        this.applyTitles(ev.titles, onRenderAll);
-                    } else if (ev.note_meta) {
-                        this.applyNoteMeta(ev.note_meta, onRenderAll);
-                    } else if (ev.report) {
-                        this.applyReport(ev.report, onRenderAll);
-                    } else if (ev.status) {
-                        GlobalLoader.show(ev.status);
-                    }
-                }
-            );
-            if (!received) throw new Error(t('ai_no_steps'));
-        } finally {
-            GlobalLoader.hide();
-        }
+        return this._runGeneration({action: 'generate_full', pinned_step: String(pinnedStep),
+            question: question || ''}, onRenderAll);
     }
 
     static async generateStep(stepNumber, onRenderAll) {
+        return this._runGeneration({action: 'generate_step', target_step: String(stepNumber)}, onRenderAll);
+    }
+
+    static _unchanged(run) {
+        return AppState.currentNote === run.note && AppState.documentEpoch === run.epoch
+            && AppState.editRevision === run.editRevision && AppState.currentNote.revision === run.revision;
+    }
+
+    static async _offerCopy(run, result) {
+        const confirmed = await DialogService.confirm({title: t('gen_conflict_title'),
+            message: t('gen_conflict_message'), confirmText: t('save_conflict_copy')});
+        if (!confirmed) return;
+        const copy = GenerationChanges.build(run.snapshot, result,
+            text => this.contentToHtml(text), ALGORITHM_STEPS);
+        await NotesAPI.createNote({title: copy.title, blocks: copy.blocks,
+            category_id: copy.category_id ?? null, status: 'in_progress'});
+        showToast(t('gen_copy_saved'));
+    }
+
+    static async _runGeneration(parameters, onRenderAll) {
+        this.init();
+        this._activeRun?.controller.abort();
+        BlockDOMParser.syncDOMToState();
+        const note = AppState.currentNote;
+        const run = {note, snapshot: JSON.parse(JSON.stringify(note)), epoch: AppState.documentEpoch,
+            editRevision: AppState.editRevision, revision: note.revision, controller: new AbortController()};
+        this._activeRun = run;
+        const cancel = () => run.controller.abort();
+        GlobalLoader.show(t('ed_ai_analyzing'), cancel);
         try {
-            const state = this.buildStateForAI();
-            const res = await NotesAPI.routeConspectus({
-                action: 'generate_step',
-                context_state: state,
-                target_step: stepNumber.toString()
-            });
-            if (res.action_status === 'success') {
-                // Если шаг вернулся несколькими процессами (stepN.k) — сносим
-                // старые блоки этого шага, чтобы не остался прежний одиночный.
-                const hasDotted = Object.keys(res.updated_steps)
-                    .some(k => k.startsWith(`step${stepNumber}.`));
-                if (hasDotted) {
-                    AppState.currentNote.blocks = AppState.currentNote.blocks.filter(
-                        b => b.role !== `step${stepNumber}` &&
-                             !(b.role && b.role.startsWith(`step${stepNumber}.`))
-                    );
-                }
-                this.processUpdatedSteps(res.updated_steps, onRenderAll);
-            } else {
-                throw new Error(res.error_message || 'Unknown error');
+            const payload = {...parameters, context_state: this.buildStateForAI(),
+                source_revision: run.revision ?? null};
+            const result = parameters.action === 'generate_step'
+                ? await NotesAPI.routeConspectus(payload, run.controller.signal)
+                : await NotesAPI.stream('/ai/dialectics/conspectus/generate-full/stream', payload, null, ev => {
+                    if (ev.type === 'status' && this._activeRun === run) {
+                        const keys = {planning: 'gen_status_planning', generating: 'ed_ai_analyzing',
+                            judging: 'gen_status_judging', repairing: 'gen_status_fix_transition',
+                            postprocess: 'gen_status_postprocess'};
+                        GlobalLoader.show(t(keys[ev.status.phase] || 'ed_ai_analyzing'), cancel);
+                    }
+                }, {signal: run.controller.signal, returnTerminal: true});
+            if (this._activeRun !== run || run.controller.signal.aborted) return null;
+            if (!result || !['completed', 'partial', 'not_applicable'].includes(result.status)) {
+                throw new Error(result?.error_message || t('ai_no_steps'));
             }
-        } catch (e) {
-            console.error(`AI Generate Step ${stepNumber} Error:`, e);
-            throw e;
+            BlockDOMParser.syncDOMToState();
+            if (result.status === 'not_applicable') {
+                if (this._unchanged(run)) this.applyNotApplicable(result.verdict, onRenderAll);
+                return result;
+            }
+            if (!Object.keys(result.updated_steps || {}).length) throw new Error(t('ai_no_steps'));
+            if (result.source_revision !== (run.revision ?? null)) throw new Error(t('gen_conflict_title'));
+            if (result.status === 'partial') {
+                const accepted = await DialogService.confirm({title: t('gen_partial_title'),
+                    message: t('gen_partial_message'), confirmText: t('gen_partial_apply')});
+                if (!accepted) return result;
+            }
+            BlockDOMParser.syncDOMToState();
+            if (this._activeRun !== run || run.controller.signal.aborted) return null;
+            if (!this._unchanged(run)) {
+                await this._offerCopy(run, result);
+                return result;
+            }
+            if (this._activeRun !== run || run.controller.signal.aborted) return null;
+            const next = GenerationChanges.build(note, result,
+                text => this.contentToHtml(text), ALGORITHM_STEPS);
+            this._activeRun = null;
+            Object.assign(note, {title: next.title, blocks: next.blocks});
+            const input = document.getElementById('note-title');
+            if (input) input.value = next.title;
+            AppState.markDirty();
+            if (onRenderAll) onRenderAll();
+            this.applyReport(result.report, onRenderAll);
+            return result;
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                if (this._activeRun === run) showToast(t('gen_cancelled'));
+                return null;
+            }
+            throw error;
+        } finally {
+            if (this._activeRun === run || this._activeRun === null) {
+                this._activeRun = null;
+                GlobalLoader.hide();
+            }
         }
     }
 
@@ -382,7 +343,7 @@ class AIController {
         // We can just call generate_step sequentially.
         try {
             for (let i = fromStepNumber; i <= 5; i++) {
-                await this.generateStep(i, onRenderAll);
+                if (!await this.generateStep(i, onRenderAll)) break;
             }
         } catch (e) {
             console.error("AI Regenerate Cascade Error:", e);

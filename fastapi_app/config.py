@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     ENABLE_ONLY_NOTES: bool = True
     DEMO_MODE: bool = False
     DATABASE_URL: str = ""
+    GENERATION_TIMEOUT: float = Field(default=300, gt=0, le=1800)
+    GENERATION_MAX_CALLS: int = Field(default=60, ge=1, le=200)
+    GENERATION_MAX_TOKENS: int = Field(default=1500000, ge=1)
+    GENERATION_CONCURRENCY: int = Field(default=2, ge=1, le=16)
     
     GROQ_MODEL: str = "openai/gpt-oss-120b"
     # Резервная модель на том же Groq-ключе, но с ОТДЕЛЬНЫМ лимитом частоты —

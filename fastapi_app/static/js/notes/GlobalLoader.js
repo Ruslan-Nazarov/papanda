@@ -4,11 +4,13 @@
  * AIController мог показывать статус судьи/повторных попыток тем же
  * визуальным языком, без дублирования разметки.
  */
+import { t } from '../i18n.js';
+
 const LOADER_ID = 'ai-global-loader';
 const SPINNER_STYLE_ID = 'ai-spinner-style';
 
 class GlobalLoader {
-    static show(text) {
+    static show(text, onCancel = null) {
         let loader = document.getElementById(LOADER_ID);
         if (!loader) {
             loader = document.createElement('div');
@@ -18,6 +20,14 @@ class GlobalLoader {
         }
         loader.innerHTML = '<span style="animation: spin 1s linear infinite; display:inline-block; flex-shrink:0;">⏳</span> <span class="loader-text"></span>';
         loader.querySelector('.loader-text').textContent = text;
+        if (onCancel) {
+            const cancel = document.createElement('button');
+            cancel.type = 'button';
+            cancel.textContent = '✕';
+            cancel.setAttribute('aria-label', t('cancel'));
+            cancel.addEventListener('click', onCancel, {once: true});
+            loader.appendChild(cancel);
+        }
         loader.style.display = 'flex';
 
         if (!document.getElementById(SPINNER_STYLE_ID)) {

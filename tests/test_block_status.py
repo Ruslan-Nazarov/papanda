@@ -16,8 +16,8 @@ async def test_single_generated_step_can_be_saved(client):
 
     router = ConspectusRouter(MagicMock(), MagicMock(), Sanitizer(), MagicMock())
     router.pipeline.ground = AsyncMock()
-    router.context_builder.build_step_prompt = AsyncMock(return_value='prompt')
-    router.pipeline.gen_json = AsyncMock(return_value='Generated text')
+    router.pipeline.gen_skeleton = AsyncMock(return_value={'applicable': True, **{f'step{i}': {'thesis': str(i), 'sub_steps': []} for i in range(1, 6)}})
+    router.pipeline.regen_process = AsyncMock(return_value='Generated text')
     result = await router._handle_auto_step({'steps': {}}, 3, 'ru')
     step = result['updated_steps']['step3']
     assert step['status'] == 'in_progress'

@@ -5,11 +5,13 @@ from openai import AsyncOpenAI
 import contextvars
 import logging
 import asyncio
-import random
 import time
 import uuid
 
 import httpx
+from fastapi_app.services.generation.provider_adapter import ProviderAdapter, record_response, response_info
+from fastapi_app.services.generation.runtime import generation_scope, current_run, GenerationError, BudgetExceeded
+from fastapi_app.services.generation.routing import RoutePolicy, route_for, model_identity
 
 from fastapi_app.config import settings
 
@@ -29,8 +31,8 @@ def get_last_call_info() -> Optional[dict]:
     return _last_call.get()
 
 
-def _note_call(provider_name: str, fell_back: bool, rate_limited: int = 0) -> None:
-    _last_call.set({"provider": provider_name, "fell_back": fell_back, "rate_limited": rate_limited})
+def _note_call(provider_name: str, fell_back: bool, rate_limited: int = 0, model=None) -> None:
+    _last_call.set({"provider": provider_name, "model": model, "fell_back": fell_back, "rate_limited": rate_limited})
 
 
 def any_llm_key_configured() -> bool:
@@ -99,10 +101,13 @@ class BaseLLMProvider(ABC):
         kwargs = self._build_kwargs(messages, response_format, max_tokens, temperature, fast, timeout,
                                     reasoning_effort)
         response = await self.client.chat.completions.create(**kwargs)
+        record_response(response)
         # Некоторые OpenAI-совместимые эндпоинты (OpenRouter) на ошибке отдают
         # 200 с телом без choices — не даём этому упасть как TypeError.
         if not getattr(response, "choices", None):
             raise RuntimeError(f"{self.name}: empty choices in response ({getattr(response, 'error', response)})")
+        if response.choices[0].finish_reason != 'stop':
+            raise GenerationError('incomplete_response', 'Provider did not finish the response')
         content = response.choices[0].message.content
         if content is None:
             raise RuntimeError(f"{self.name}: null content in response")
@@ -124,15 +129,24 @@ class BaseLLMProvider(ABC):
                                     reasoning_effort)
         kwargs["stream"] = True
         stream = await self.client.chat.completions.create(**kwargs)
+        finished = False
         # async with гарантирует закрытие HTTP-потока и при досрочном прерывании.
         async with stream:
             async for chunk in stream:
+                record_response(chunk)
                 choices = getattr(chunk, "choices", None)
                 if not choices:
                     continue
+                finish = choices[0].finish_reason
+                if finish:
+                    if finish != 'stop':
+                        raise GenerationError('incomplete_stream', 'Provider truncated the stream')
+                    finished = True
                 delta = getattr(choices[0].delta, "content", None)
                 if delta:
                     yield delta
+        if not finished:
+            raise GenerationError('incomplete_stream', 'Provider stream ended before completion')
 
 
 class GroqProvider(BaseLLMProvider):
@@ -285,249 +299,116 @@ class GigaChatProvider(BaseLLMProvider):
 
     async def generate_stream(self, *args, **kwargs) -> AsyncIterator[str]:
         await self._ensure_token()
-        async for delta in super().generate_stream(*args, **kwargs):
-            yield delta
+        async with aclosing(super().generate_stream(*args, **kwargs)) as stream:
+            async for delta in stream:
+                yield delta
 
 
-class _AllRateLimited(Exception):
-    """Весь круг провайдеров упёрся в rate-limit — есть смысл подождать и повторить."""
-
-
-# Маршрутизация вызовов под задачу (2026-09-07). Значение — список имён
-# провайдеров в порядке предпочтения для этой задачи; фолбэк на остальных из
-# кольца сохраняется. Решение по $5-кредиту Cerebras: на горячем пути первым
-# бесплатный Groq, Cerebras — первый фолбаг (платный буфер включается ровно
-# когда Groq затроттлился), Gemini — вторым.
-TASK_ROUTES: Dict[str, List[str]] = {
-    # ОСНОВНАЯ генерация конспекта (стрим всех шагов + добор):
-    # Этап 6: GigaChat как основная генеративная модель.
-    "step_stream": ["GigaChat", "Cerebras", "Gemini", "Groq"],   # стрим шагов конспекта
-
-    "what_is":     ["GigaChat", "Groq", "Cerebras", "Gemini"],   # «Что это?»
-    "formula":     ["GigaChat", "Groq", "Cerebras", "Gemini"],   # парсер формул
-    "check":       ["GigaChat", "Groq", "Cerebras", "Gemini"],   # «⚖️ Проверка ИИ» логики/фактов
-    "article":     ["GigaChat", "Groq", "Cerebras", "Gemini"],   # длинный вход
-    "tiny":        ["GigaChat", "Groq", "Cerebras", "Gemini"],   # мелкие LaTeX-преобразования
-    # план-скелет (2026-09-15, пересмотр): поблочная архитектура шлёт сюда
-    # 10-20+ вызовов за одну генерацию (5 стадий × до 3 попыток × генерация+
-    # валидация) — GigaChat на этом объёме и на этой форме ответа (сложный
-    # вложенный JSON) эмпирически нестабилен: в тесте 10 из 15 одинаковых
-    # запросов вернули валидный, но ПУСТОЙ объект вместо содержимого (не
-    # ошибка, не 429 — просто пустой JSON, который приходится отбраковывать
-    # вручную и ретраить). Тот же GigaChat на ЗАДАЧЕ "step_stream" (обычная
-    # проза блоков, не вложенный JSON) ведёт себя нормально — проблема
-    # именно в форме ответа этой задачи, не в провайдере вообще. Поэтому
-    # здесь GigaChat сдвинут со старта: Cerebras/Gemini первыми (в этой
-    # сессии ни разу не давали пустых JSON на тех же промптах).
-    "skeleton":    ["Cerebras", "Gemini", "GigaChat", "Groq"],
-    "history":     ["GigaChat", "Gemini", "Groq"],               # заголовки шагов + имя/вывод конспекта (fast=True)
-    # судья: сначала модели ВНЕ семейства gpt-oss (Groq/Cerebras), чтобы судья
-    # не оценивал выход родственной модели. Gemini flash-lite первым (быстрый,
-    # чистый JSON). На gpt-oss (Cerebras/Groq) падаем только если Gemini недоступен.
-    "judge":       ["Gemini", "Cerebras", "Groq"],
-}
+from fastapi_app.services.generation.routing import TASK_ROUTES
 
 
 class LLMRegistry:
     def __init__(self):
-        # Порядок = приоритет фолбэка по умолчанию. Живые (2026-09-07): Groq
-        # (free ~200k TPD), Cerebras (gpt-oss-120b, $5 кредит), Gemini
-        # (3.5-flash / flash-lite), GroqAlt (тот же ключ, qwen — отдельный
-        # лимит), OpenRouter (:free minimax — общий бэкстоп).
-        # SambaNova / HuggingFace выпилены: первый требует оплаты (402), у
-        # второго мёртв эндпоинт — в кольце они только жгли по 1-2 с на 402/
-        # connection error каждый проход.
-        self.providers = [
-            GroqProvider(),
-            CerebrasProvider(),
-            GeminiProvider(),
-            GroqAltProvider(),
-            OpenRouterProvider(),
-            GigaChatProvider(),   # мёртв без GIGACHAT_AUTH_KEY; вне семейства gpt-oss
-        ]
-        # С какого провайдера начинать следующий запрос (сдвигается при rate-limit,
-        # чтобы размазать нагрузку по провайдерам и не долбить один и тот же).
-        self._start_idx: int = 0
+        self.providers = [GroqProvider(), CerebrasProvider(), GeminiProvider(),
+                          GroqAltProvider(), OpenRouterProvider(), GigaChatProvider()]
+        self._start_idx = 0
 
-    def _order(self, prefer=None) -> List[int]:
-        """Порядок провайдеров: от _start_idx по кругу; если задан prefer
-        (имя провайдера ИЛИ список имён) — эти идут первыми в указанном
-        порядке. Так вызовы маршрутизируются под задачу (см. TASK_ROUTES),
-        а фолбэк на остальных сохраняется."""
-        n = len(self.providers)
-        order = [(self._start_idx + i) % n for i in range(n)]
-        names = [prefer] if isinstance(prefer, str) else list(prefer or [])
-        head: List[int] = []
-        for name in names:
-            pi = next((i for i, p in enumerate(self.providers) if p.name == name), None)
-            if pi is not None and pi not in head:
-                head.append(pi)
-        if head:
-            order = head + [i for i in order if i not in head]
-        return order
+    def _order(self, prefer=None, fast=False):
+        policy = prefer if isinstance(prefer, RoutePolicy) else route_for(prefer=prefer)
+        order = sorted(range(len(self.providers)), key=lambda i: (
+            policy.preferred.index(self.providers[i].name) if self.providers[i].name in policy.preferred
+            else len(policy.preferred) + (i - self._start_idx) % max(1, len(self.providers))))
+        return [i for i in order
+                if (policy.allowed is None or self.providers[i].name in policy.allowed)
+                and model_identity(self.providers[i].fast_model_name if fast else self.providers[i].model_name)
+                not in policy.excluded_models]
 
-    async def generate(
-        self,
-        messages: List[Dict[str, str]],
-        response_format: Optional[dict] = None,
-        max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None,
-        fast: bool = False,
-        prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
-        reasoning_effort: Optional[str] = None,
-        timeout: Optional[float] = None,
-    ) -> str:
-        # До 3 проходов по провайдерам: если весь круг упёрся в rate-limit,
-        # ждём короткую паузу и пробуем снова (на free-тарифе окна лимитов узкие).
-        last_error = "unknown"
-        for attempt in range(3):
-            try:
-                return await self._one_pass(messages, response_format, max_tokens, temperature, fast, prefer,
-                                            reasoning_effort, timeout)
-            except _AllRateLimited as e:
-                last_error = str(e)
-                await asyncio.sleep(1.5 + random.random() * (attempt + 1))
-        raise RuntimeError(f"All LLM providers rate limited after retries. {last_error}")
+    def route_fingerprint(self):
+        return [(p.name, p.model_name, p.fast_model_name) for p in self.providers]
 
-    async def _one_pass(
-        self,
-        messages: List[Dict[str, str]],
-        response_format: Optional[dict],
-        max_tokens: Optional[int],
-        temperature: Optional[float],
-        fast: bool,
-        prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
-        reasoning_effort: Optional[str] = None,
-        timeout: Optional[float] = None,
-    ) -> str:
-        provider_errors: List[str] = []
-        rate_limited_count = 0
-        tried = 0  # сколько провайдеров реально попробовали (>0 на успехе = фолбэк)
+    @staticmethod
+    def _rate_limited(error):
+        return getattr(error, 'status_code', None) == 429 or any(
+            s in str(error).lower() for s in ('429', 'rate limit', 'rate_limit', 'too many requests'))
 
-        n = len(self.providers)
-        order = self._order(prefer)
+    async def generate(self, messages, response_format=None, max_tokens=None, temperature=None,
+                       fast=False, prefer=None, reasoning_effort=None, timeout=None, task=None):
+        policy = prefer if isinstance(prefer, RoutePolicy) else route_for(task, prefer)
+        outer = current_run.get()
+        async with generation_scope() as context:
+            _last_call.set(None)
+            tried, rate_limited = 0, 0
+            for attempt in range(3):
+                retry_rate_limit = False
+                for idx in self._order(policy, fast):
+                    provider = self.providers[idx]
+                    if provider.api_key in _PLACEHOLDER_KEYS or not provider.api_key:
+                        continue
+                    formats = [response_format, None] if response_format else [None]
+                    for fmt in formats:
+                        try:
+                            result = await ProviderAdapter.generate(
+                                provider, messages, fmt, policy=policy, task=task,
+                                max_tokens=max_tokens, temperature=temperature, fast=fast,
+                                reasoning_effort=reasoning_effort, timeout=timeout or settings.LLM_TIMEOUT)
+                            model = (response_info.get() or {}).get('model') or (provider.fast_model_name if fast else provider.model_name)
+                            _note_call(provider.name, tried > 0, rate_limited, model)
+                            if outer is None:
+                                context.status = 'completed'
+                            return result
+                        except BudgetExceeded:
+                            raise
+                        except Exception as error:
+                            tried += 1
+                            if self._rate_limited(error):
+                                rate_limited += 1
+                                retry_rate_limit = True
+                                break
+                            if fmt and getattr(error, 'status_code', None) == 400:
+                                continue
+                            break
+                if not retry_rate_limit:
+                    break
+                if attempt < 2:
+                    await asyncio.sleep(min(1.5 * (attempt + 1), context.remaining()))
+            raise GenerationError('providers_unavailable', 'No allowed provider completed the request')
 
-        for idx in order:
-            provider = self.providers[idx]
-            if not provider.api_key or provider.api_key == "your_groq_api_key_here":
-                logger.warning(f"Skipping {provider.name}: API key missing.")
-                provider_errors.append(f"{provider.name}: API key missing")
-                continue
-
-            try:
-                logger.info(f"Trying LLM generation with {provider.name} (fast={fast})...")
-                result = await provider.generate(
-                    messages, response_format, max_tokens=max_tokens, temperature=temperature, fast=fast,
-                    reasoning_effort=reasoning_effort, timeout=timeout,
-                )
-                _note_call(provider.name, fell_back=tried > 0, rate_limited=rate_limited_count)
-                return result
-            except Exception as e:
-                tried += 1
-                error_msg = str(e).lower()
-                is_network_error = any(kw in error_msg for kw in ("connection", "timeout", "timed out", "connect"))
-                is_rate_limit = any(kw in error_msg for kw in ("429", "rate limit", "rate_limit", "too many requests", "quota"))
-
-                # Rate limit: сразу к следующему провайдеру и сдвигаем стартовую точку,
-                # чтобы следующие запросы не начинались с перегруженного провайдера.
-                # При prefer-маршрутизации стартовую точку не трогаем — это
-                # осознанный выбор канала, а не общая ротация.
-                if is_rate_limit:
-                    if not prefer:
-                        self._start_idx = (idx + 1) % n
-                    rate_limited_count += 1
-                    provider_errors.append(f"{provider.name}: rate limited")
-                    logger.warning(f"Provider {provider.name} rate limited, rotating to next.")
+    async def generate_stream(self, messages, max_tokens=None, temperature=None, fast=False,
+                              prefer=None, reasoning_effort=None, timeout=None, task=None):
+        policy = prefer if isinstance(prefer, RoutePolicy) else route_for(task, prefer)
+        outer = current_run.get()
+        async with generation_scope() as context:
+            _last_call.set(None)
+            tried = 0
+            for idx in self._order(policy, fast):
+                provider = self.providers[idx]
+                if provider.api_key in _PLACEHOLDER_KEYS or not provider.api_key:
                     continue
-
-                # При сетевой ошибке не тратим время на retry — сразу к следующему провайдеру
-                if is_network_error:
-                    provider_errors.append(f"{provider.name}: {e}")
-                    logger.error(f"Provider {provider.name} network error, skipping: {e}")
-                    continue
-
-                # Попробуем без response_format, если ошибка может быть связана с неподдержкой JSON режима
-                if response_format and ("400" in error_msg or "format" in error_msg or "json" in error_msg or "unsupported" in error_msg):
-                    logger.warning(f"Retrying {provider.name} without response_format due to error: {e}")
-                    try:
-                        result = await provider.generate(
-                            messages, None, max_tokens=max_tokens, temperature=temperature, fast=fast,
-                            reasoning_effort=reasoning_effort, timeout=timeout,
-                        )
-                        _note_call(provider.name, fell_back=tried > 0, rate_limited=rate_limited_count)
-                        return result
-                    except Exception as e2:
-                        provider_errors.append(f"{provider.name}: {e2}")
-                        logger.error(f"Provider {provider.name} failed on retry: {e2}")
-                else:
-                    provider_errors.append(f"{provider.name}: {e}")
-                    logger.error(f"Provider {provider.name} failed: {e}")
-                
-                continue
-
-        errors_summary = " | ".join(provider_errors)
-        # Если хоть один провайдер просто «затроттлен» (а не мёртв) — есть шанс,
-        # что пауза + повтор помогут. Остальные ошибки (402/404/сеть) неустранимы.
-        if rate_limited_count > 0:
-            raise _AllRateLimited(f"Errors: [{errors_summary}]")
-        raise RuntimeError(f"All LLM providers failed. Errors: [{errors_summary}]")
+                started = False
+                try:
+                    async with aclosing(ProviderAdapter.stream(
+                        provider, messages, policy=policy, task=task,
+                        max_tokens=max_tokens, temperature=temperature, fast=fast,
+                        reasoning_effort=reasoning_effort, timeout=timeout or settings.LLM_TIMEOUT,
+                    )) as stream:
+                        async for delta in stream:
+                            started = True
+                            yield delta
+                    _note_call(provider.name, tried > 0, model=(response_info.get() or {}).get('model') or (provider.fast_model_name if fast else provider.model_name))
+                    if outer is None:
+                        context.status = 'completed'
+                    return
+                except BudgetExceeded:
+                    raise
+                except Exception as error:
+                    tried += 1
+                    if started:
+                        raise GenerationError('incomplete_stream', 'Provider stream interrupted after content') from error
+            raise GenerationError('providers_unavailable', 'No allowed provider completed the stream')
 
     async def aclose(self):
-        """Закрыть HTTP-клиенты всех провайдеров (вызывать при остановке приложения)."""
-        for p in self.providers:
-            try:
-                await p.client.close()
-            except Exception:
-                pass
-
-    async def generate_stream(
-        self,
-        messages: List[Dict[str, str]],
-        max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None,
-        fast: bool = False,
-        prefer=None,   # str | list[str] | None — см. LLMRegistry._order/TASK_ROUTES
-        reasoning_effort: Optional[str] = None,
-        timeout: Optional[float] = None,
-    ) -> AsyncIterator[str]:
-        """Стрим токенов. Фолбэк на другого провайдера возможен только до первого
-        отданного чанка; после — ошибка просто обрывает поток."""
-        provider_errors: List[str] = []
-        n = len(self.providers)
-        order = self._order(prefer)
-        tried = 0
-
-        for idx in order:
-            provider = self.providers[idx]
-            if not provider.api_key or provider.api_key == "your_groq_api_key_here":
-                continue
-
-            started = False
-            try:
-                logger.info(f"Streaming with {provider.name} (fast={fast})...")
-                async with aclosing(provider.generate_stream(
-                    messages, max_tokens=max_tokens, temperature=temperature, fast=fast,
-                    reasoning_effort=reasoning_effort, timeout=timeout,
-                )) as pstream:
-                    async for delta in pstream:
-                        if not started:
-                            started = True
-                            _note_call(provider.name, fell_back=tried > 0)
-                        yield delta
-                return
-            except Exception as e:
-                tried += 1
-                if started:
-                    logger.error(f"Stream from {provider.name} broke mid-response: {e}")
-                    return
-                msg = str(e).lower()
-                if not prefer and any(kw in msg for kw in ("429", "rate limit", "rate_limit", "too many requests", "quota")):
-                    self._start_idx = (idx + 1) % n
-                provider_errors.append(f"{provider.name}: {e}")
-                logger.warning(f"Stream provider {provider.name} failed before first chunk: {e}")
-                continue
-
-        raise RuntimeError(f"All LLM providers failed (stream). Errors: [{' | '.join(provider_errors)}]")
+        for provider in self.providers:
+            await provider.client.close()
 
 
 llm_registry = LLMRegistry()

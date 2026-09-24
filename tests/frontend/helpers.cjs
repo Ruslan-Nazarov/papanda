@@ -11,7 +11,7 @@ function source(name, symbol = name) {
         .replace(/^export default .*;\r?$/gm, '') + `\n;globalThis.${symbol} = ${symbol};`;
 }
 function context(extra = {}) {
-    return vm.createContext({console, setTimeout, clearTimeout, TextDecoder, Response,
+    return vm.createContext({console, setTimeout, clearTimeout, TextDecoder, Response, AbortController, ReadableStream, crypto: require('node:crypto').webcrypto,
         localStorage: {getItem() {return null;}, setItem() {}, removeItem() {}},
         document: {dispatchEvent() {}, getElementById() {return null;}},
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});

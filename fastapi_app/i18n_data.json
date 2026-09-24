@@ -630,7 +630,14 @@
   "whatis_btn": "✨ What is this?",
   "whatis_empty": "The AI returned no answer.",
   "whatis_error": "Error",
-  "whatis_title": "✨ What is this?"
+  "whatis_title": "✨ What is this?",
+  "gen_conflict_title": "Note changed",
+  "gen_conflict_message": "You edited the note during generation. Save the AI result as a separate copy?",
+  "gen_copy_saved": "Result saved as a separate copy",
+  "gen_partial_title": "Generation incomplete",
+  "gen_partial_message": "The result is incomplete or unverified. Apply it as a draft?",
+  "gen_partial_apply": "Apply draft",
+  "gen_cancelled": "Generation cancelled"
  },
  "kz": {
   "save_conflict_title": "Сақтау қайшылығы",
@@ -1263,7 +1270,14 @@
   "whatis_btn": "✨ Бұл не?",
   "whatis_empty": "ИИ жауап қайтармады.",
   "whatis_error": "Қате",
-  "whatis_title": "✨ Бұл не?"
+  "whatis_title": "✨ Бұл не?",
+  "gen_conflict_title": "Конспект өзгерді",
+  "gen_conflict_message": "Генерация кезінде конспект өзгерді. ЖИ нәтижесін бөлек көшірме ретінде сақтау керек пе?",
+  "gen_copy_saved": "Нәтиже бөлек көшірме ретінде сақталды",
+  "gen_partial_title": "Генерация аяқталмады",
+  "gen_partial_message": "Нәтиже толық емес немесе тексерілмеген. Оны жоба ретінде қолдану керек пе?",
+  "gen_partial_apply": "Жобаны қолдану",
+  "gen_cancelled": "Генерация тоқтатылды"
  },
  "ru": {
   "save_conflict_title": "Конфликт сохранения",
@@ -1896,6 +1910,13 @@
   "whatis_btn": "✨ Что это?",
   "whatis_empty": "ИИ не вернул ответ.",
   "whatis_error": "Ошибка",
-  "whatis_title": "✨ Что это?"
+  "whatis_title": "✨ Что это?",
+  "gen_conflict_title": "Конспект изменился",
+  "gen_conflict_message": "За время генерации вы изменили конспект. Сохранить результат ИИ отдельной копией?",
+  "gen_copy_saved": "Результат сохранён отдельной копией",
+  "gen_partial_title": "Генерация не завершена",
+  "gen_partial_message": "Получен неполный или непроверенный результат. Применить его как черновик?",
+  "gen_partial_apply": "Применить черновик",
+  "gen_cancelled": "Генерация отменена"
  }
 }

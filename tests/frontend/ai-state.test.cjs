@@ -5,6 +5,7 @@ const {context, load} = require('./helpers.cjs');
 function setup() {
     const ctx = context({ALGORITHM_STEPS: []});
     load(ctx, 'AppState');
+    load(ctx, 'GenerationChanges');
     load(ctx, 'AIController');
     ctx.AppState.setNote({id: 1, blocks: [{id: 'one', role: 'step1', html: 'old', status: 'ready'}]});
     return ctx;

@@ -101,7 +101,7 @@ async def test_judge_rejects_first_attempt_then_accepts_second():
     assert counters["skeleton_attempt"] == 2
 
     # Был хотя бы один статус-эвент (для UI-анимации) о повторной попытке.
-    assert any("попытка" in s.lower() or "провер" in s.lower() for s in statuses)
+    assert any(s['phase'] == 'planning' and s['attempt'] == 2 for s in statuses)
 
 
 @pytest.mark.asyncio

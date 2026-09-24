@@ -176,7 +176,7 @@ def _extract_algo_core(main_prompt: str) -> str:
     детерминирован — важно для кеша префикса промпта."""
     out, keep_current = [], True
     for line in main_prompt.splitlines():
-        m = _NUM_LINE_RE.match(line)
+        m = _NUM_LINE_RE.match(line.replace(r'\.', '.'))
         if m:
             full = m.group(1)
             top = full.split(".")[0]

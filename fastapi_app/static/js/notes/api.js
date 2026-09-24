@@ -1,8 +1,9 @@
 class NotesAPI {
-    static async request(endpoint, method = 'GET', body = null) {
+    static async request(endpoint, method = 'GET', body = null, signal = undefined) {
         const options = {
             method,
             headers: { 'Content-Type': 'application/json' },
+            signal,
         };
         if (body) options.body = JSON.stringify(body);
 
@@ -26,13 +27,14 @@ class NotesAPI {
      * Стрим ответа ИИ через SSE.
      *   onDelta(chunkText, accumulatedText) — на каждый текстовый кусок ({delta})
      *   onEvent(evObject) — на любой кадр (для {step,content} и т.п.)
-     * Возвращает полный накопленный текст. Кадры: {delta}|{step,content}|{done}|{error}.
+     * Проверяет run_id/sequence и terminal; returnTerminal возвращает результат конспекта.
      */
-    static async stream(endpoint, body, onDelta, onEvent) {
+    static async stream(endpoint, body, onDelta, onEvent, options = {}) {
         const res = await fetch(`/api${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
+            signal: options.signal,
         });
         if (!res.ok || !res.body) {
             const err = await res.json().catch(() => ({}));
@@ -42,23 +44,58 @@ class NotesAPI {
         const decoder = new TextDecoder();
         let buffer = '';
         let full = '';
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const parts = buffer.split('\n\n');
-            buffer = parts.pop();
-            for (const part of parts) {
-                const line = part.trim();
-                if (!line.startsWith('data:')) continue;
-                let ev;
-                try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
-                if (ev.error) throw new Error(ev.error);
-                if (onEvent) onEvent(ev);
-                if (ev.delta) { full += ev.delta; if (onDelta) onDelta(ev.delta, full); }
+        let runId = null, sequence = 0, terminal = null;
+        const consume = part => {
+            const data = part.split(/\r?\n/).filter(line => line.startsWith('data:'))
+                .map(line => line.slice(5).trimStart()).join('\n');
+            if (!data) return;
+            const ev = JSON.parse(data);
+            if (!ev || typeof ev !== 'object' || Array.isArray(ev) || terminal
+                || !Number.isInteger(ev.sequence) || ev.sequence !== sequence + 1
+                || typeof ev.run_id !== 'string' || !ev.run_id
+                || (runId && runId !== ev.run_id)
+                || (!runId && ev.type !== 'started')) throw new Error('Invalid generation stream');
+            const types = ['started', 'status', 'step', 'titles', 'note_meta', 'report', 'not_applicable', 'delta', 'terminal'];
+            if (!types.includes(ev.type)) throw new Error('Unknown generation event');
+            if (runId && ev.type === 'started') throw new Error('Duplicate stream start');
+            runId = ev.run_id;
+            sequence = ev.sequence;
+            if (ev.type === 'terminal') {
+                if (!['completed', 'partial', 'failed', 'cancelled', 'not_applicable'].includes(ev.status)) {
+                    throw new Error('Invalid generation outcome');
+                }
+                terminal = ev;
+                if (options.returnTerminal && (!ev.result || ev.result.run_id !== ev.run_id
+                    || ev.result.status !== ev.status)) throw new Error('Invalid terminal result');
             }
+            if (onEvent) onEvent(ev);
+            if (ev.type === 'delta') {
+                if (typeof ev.delta !== 'string') throw new Error('Invalid text delta');
+                full += ev.delta;
+                if (onDelta) onDelta(ev.delta, full);
+            }
+        };
+        try {
+            for (;;) {
+                const { done, value } = await reader.read();
+                buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+                const parts = buffer.split(/\r?\n\r?\n/);
+                buffer = parts.pop();
+                for (const part of parts) consume(part);
+                if (done) break;
+            }
+            if (buffer.trim()) consume(buffer);
+            if (!terminal) throw new Error('Generation stream interrupted before completion');
+            if (['failed', 'cancelled'].includes(terminal.status)
+                || (terminal.status === 'partial' && !options.returnTerminal)) {
+                throw Object.assign(new Error(terminal.result?.error_message || 'Generation incomplete'),
+                    {result: terminal.result, partialText: full});
+            }
+            return options.returnTerminal ? terminal.result : full;
+        } finally {
+            await reader.cancel().catch(() => {});
+            reader.releaseLock();
         }
-        return full;
     }
 
     static getNotes(search = '', categoryId = '') {
@@ -86,8 +123,8 @@ class NotesAPI {
     static pinVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/pin`, 'POST'); }
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
     // AI
-    static routeConspectus(payload) {
-        return this.request('/ai/dialectics/conspectus/route', 'POST', payload);
+    static routeConspectus(payload, signal) {
+        return this.request('/ai/dialectics/conspectus/route', 'POST', payload, signal);
     }
     static textMath(text) {
         return this.request('/ai/dialectics/text-math', 'POST', { text });

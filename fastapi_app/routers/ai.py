@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List, Any, AsyncIterator, Literal
+from typing import Optional, List, Any, AsyncIterator, Literal, Annotated
 from contextlib import aclosing
 import json
 import base64
@@ -19,6 +19,7 @@ from fastapi_app.services.context_builder import ContextBuilder
 from fastapi_app.services.sanitizer import Sanitizer
 from fastapi_app.services.rag_tool_manager import RAGManager
 from fastapi_app.services.ai_router_service import ConspectusRouter
+from fastapi_app.services.generation.transport import sse_response as _sse_response, until_disconnect
 
 router = APIRouter()
 
@@ -37,25 +38,8 @@ def _try_parse_json(raw: str, fallback: Any = None) -> Any:
         return fallback if fallback is not None else raw
 
 
-def _sse_response(event_source) -> StreamingResponse:
-    async def event_stream():
-        try:
-            async with aclosing(event_source) as src:
-                async for ev in src:
-                    yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'done': True})}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
 def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
-    """Поток токенов текста → SSE-кадры {"delta": "..."}, затем {"done": true}."""
+    """Текстовый поток с типизированным конвертом и явным terminal."""
     async def as_events():
         async with aclosing(token_gen) as tg:
             async for tok in tg:
@@ -91,12 +75,24 @@ class GenerateStepRequest(BaseModel):
     context_text: str = Field(..., max_length=50_000)
     target_step: str = Field(..., max_length=100, pattern=r'^(?:step)?[1-5](?:\.[1-9][0-9]*)?$')
 
+class GenerationInputStep(BaseModel):
+    content: str = Field(default='', max_length=50_000)
+    status: str = Field(default='empty', max_length=30)
+    title: str = Field(default='', max_length=500)
+
+
+class GenerationInput(BaseModel):
+    target_goal: str = Field(default='', max_length=10_000)
+    steps: dict[Annotated[str, Field(pattern=r'^step[1-5](?:\.[1-9][0-9]*)?$')], GenerationInputStep] = Field(default_factory=dict, max_length=100)
+
+
 class ConspectusRouteRequest(BaseModel):
     action: Literal['generate_full', 'generate_step']
-    context_state: dict = Field(default_factory=dict)
+    context_state: GenerationInput = Field(default_factory=GenerationInput)
     target_step: Optional[str] = Field(default=None, pattern=r'^[1-5]$')
     pinned_step: Optional[str] = Field(default=None, pattern=r'^[1-5]$')
     question: Optional[str] = Field(default=None, max_length=2000)
+    source_revision: Optional[int] = Field(default=None, ge=1)
 
     @model_validator(mode='after')
     def require_target(self):
@@ -230,36 +226,38 @@ async def route_conspectus_request(request: Request, data: ConspectusRouteReques
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
     if data.action in ("generate_full", "generate_step"):
         await reserve_generation(request)
-    payload = data.dict()
+    payload = data.model_dump()
     payload["locale"] = locale
-    result = await conspectus_router.route_request(payload)
+    result = await until_disconnect(request, conspectus_router.route_request(payload))
     return result
 
 @router.post("/conspectus/generate-full/stream")
 @limiter.limit("15/minute")
 async def stream_generate_full(request: Request, data: ConspectusRouteRequest):
-    """Прогрессивная генерация конспекта: SSE-кадры {"step": "stepN", "content": "..."}
-    по мере готовности каждого шага, {"status": "..."} для долгих операций
-    (проверка судьёй, повторная попытка), затем {"done": true}."""
+    """Фазы работы, итоговые блоки и terminal с единым результатом генерации."""
     locale = normalize_locale(getattr(request.state, "locale", "ru"))
     await reserve_generation(request)
 
     async def events():
-        async for step_key, content in conspectus_router.stream_generate_full(
-            data.context_state or {}, locale, use_skeleton=True,
+        async with aclosing(conspectus_router.stream_generate_full(
+            data.context_state.model_dump(), locale, use_skeleton=True,
             pinned_step=data.pinned_step, question=data.question,
-        ):
-            if step_key == "__status__":
-                yield {"status": content}
-            elif step_key == "__titles__":
-                yield {"titles": content}
-            elif step_key == "__note_meta__":
-                yield {"note_meta": content}
-            elif step_key == "__report__":
-                yield {"report": content}
-            elif step_key == "__not_applicable__":
-                yield {"not_applicable": content}
-            else:
-                yield {"step": step_key, "content": content}
+            source_revision=data.source_revision,
+        )) as source:
+            async for step_key, content in source:
+                if step_key == "__terminal__":
+                    yield {"result": content}
+                elif step_key == "__status__":
+                    yield {"status": content}
+                elif step_key == "__titles__":
+                    yield {"titles": content}
+                elif step_key == "__note_meta__":
+                    yield {"note_meta": content}
+                elif step_key == "__report__":
+                    yield {"report": content}
+                elif step_key == "__not_applicable__":
+                    yield {"not_applicable": content}
+                else:
+                    yield {"step": step_key, "content": content}
 
-    return _sse_response(events())
+    return _sse_response(events(), terminal_required=True, source_revision=data.source_revision)
