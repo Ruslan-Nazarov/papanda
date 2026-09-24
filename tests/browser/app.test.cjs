@@ -14,6 +14,7 @@ async function server() {
     await once(probe, 'listening');
     const port = probe.address().port;
     await new Promise(resolve => probe.close(resolve));
+    await fs.mkdir(path.join(root, '.cache'), {recursive: true});
     const directory = await fs.mkdtemp(path.join(root, '.cache/browser-r5-'));
     const env = {...process.env, HOST: '127.0.0.1', PORT: String(port), UVICORN_RELOAD: '0', DEMO_MODE: 'false',
         DATABASE_URL: 'sqlite+aiosqlite:///' + path.join(directory, 'test.db').replaceAll('\\','/'),

@@ -32,7 +32,7 @@ def _validate(connection, metadata, version=VERSION):
         if version < 3 and table.name == 'notes':
             required -= {'family_id', 'parent_note_id', 'variant_label', 'variant_origin', 'fork_step', 'long_term_goal'}
         if legacy and table.name == 'notes':
-            required -= {'revision', 'schema_version'}
+            required -= {'revision', 'schema_version', 'is_example', 'share_token'}
         if required - columns:
             raise RuntimeError(f'Missing columns in {table.name}: {sorted(required - columns)}')
         if inspector.get_pk_constraint(table.name)['constrained_columns'] != ['id']:
@@ -77,12 +77,26 @@ def _migrate(connection):
     if not tables:
         Base.metadata.create_all(connection)
     else:
+        old_columns = {c['name'] for c in inspect(connection).get_columns('notes')} if 'notes' in tables else set()
+        if (version == 0 and 'notes' in tables and 'note_categories' in tables
+                and not {'note_versions', 'note_connections'} & tables
+                and not {'is_example', 'share_token'} & old_columns):
+            # Early installations predate history and connections. Existing
+            # tables still undergo strict column and foreign-key validation.
+            for name in ('note_versions', 'note_connections'):
+                Base.metadata.tables[name].create(connection, checkfirst=True)
         _validate(connection, Base.metadata, version=version)
     if version == 0:
         columns = {c['name'] for c in inspect(connection).get_columns('notes')}
         for name in ('revision', 'schema_version'):
             if name not in columns:
                 connection.exec_driver_sql(f'ALTER TABLE notes ADD COLUMN {name} INTEGER NOT NULL DEFAULT 1')
+        for name, definition in (
+            ('is_example', 'BOOLEAN NOT NULL DEFAULT 0'),
+            ('share_token', 'VARCHAR(32)'),
+        ):
+            if name not in columns:
+                connection.exec_driver_sql(f'ALTER TABLE notes ADD COLUMN {name} {definition}')
         for table, owner in (('notes', 'id'), ('note_versions', 'note_id')):
             rows = connection.exec_driver_sql(f'SELECT id, {owner}, content_json FROM {table}').fetchall()
             for row_id, note_id, raw in rows:

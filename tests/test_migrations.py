@@ -84,6 +84,31 @@ async def test_legacy_migration_preserves_text_stable_ids_and_backup_restore(tmp
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('early_tables', [False, True])
+async def test_pre_sharing_database_migrates_without_losing_notes(tmp_path, early_tables):
+    engine = await legacy_database(tmp_path / 'pre-sharing.db')
+    try:
+        async with engine.begin() as conn:
+            await conn.exec_driver_sql('DROP INDEX ix_notes_share_token')
+            await conn.exec_driver_sql('ALTER TABLE notes DROP COLUMN share_token')
+            await conn.exec_driver_sql('ALTER TABLE notes DROP COLUMN is_example')
+            if early_tables:
+                await conn.exec_driver_sql('DROP TABLE note_versions')
+                await conn.exec_driver_sql('DROP TABLE note_connections')
+        await migrate(engine)
+        await migrate(engine)
+        async with async_sessionmaker(engine)() as session:
+            note = (await session.execute(select(Note))).scalar_one()
+            assert note.title == 'legacy'
+            assert note.content_json[0]['html'] == '<p>Unchanged text</p>'
+            assert note.is_example is False and note.share_token is None
+            history = (await session.execute(select(NoteVersion))).scalars().all()
+            assert len(history) == (0 if early_tables else 1)
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('damage', ['json', 'table', 'future', 'revision', 'unique'])
 async def test_bad_database_fails_and_rolls_back_without_partial_schema(tmp_path, damage):
     path = tmp_path / 'bad.db'
