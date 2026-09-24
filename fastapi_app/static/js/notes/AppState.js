@@ -41,6 +41,8 @@ const AppState = {
         const blocks = note.content_json || note.blocks || [];
         this.currentNote = {
             id: note.id,
+            revision: note.revision ?? null,
+            schema_version: note.schema_version || 1,
             title: note.title || '',
             blocks: Array.isArray(blocks) ? blocks.map(block => ({
                 ...block, status: this.normalizeBlockStatus(block.status)

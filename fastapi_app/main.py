@@ -28,7 +28,7 @@ from fastapi_app.tasks import cleanup_old_dbs
 from fastapi_app.i18n import get_translator, locale_dict
 from fastapi_app.services.manual_algorithm import get_manual_algorithm
 from fastapi_app.rate_limiter import limiter
-from fastapi_app.database import get_db, dispose_all_engines
+from fastapi_app.database import get_db, dispose_all_engines, initialize_databases, get_public_db
 from fastapi_app.services.notes_service import NotesService
 
 @asynccontextmanager
@@ -37,12 +37,13 @@ async def lifespan(app: FastAPI):
         # Ensure secret key on startup
         ensure_secret_key()
 
+        await initialize_databases()
+
         # Import examples from json
         examples_path = Path(__file__).parent / "data" / "example_notes.json"
         if not settings.DEMO_MODE and examples_path.exists():
             async for session in get_db():
                 await NotesService.import_examples_from_file(session, str(examples_path))
-                break
 
         cleanup_task = asyncio.create_task(cleanup_old_dbs())
         try:
@@ -118,7 +119,7 @@ async def legal_page(request: Request):
     )
 
 @app.get("/s/{token}", response_class=HTMLResponse)
-async def shared_conspect(request: Request, token: str, db=Depends(get_db)):
+async def shared_conspect(request: Request, token: str, db=Depends(get_public_db)):
     """Публичная страница расшаренного конспекта — только чтение, без редактора."""
     locale = getattr(request.state, "locale", "ru")
     _ = get_translator(locale)

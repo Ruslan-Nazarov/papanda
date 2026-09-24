@@ -68,9 +68,10 @@ class NoteStorageService {
             this._sync(note);
             const revision = AppState.currentNote === note ? AppState.editRevision : null;
             const payload = this._payload(note);
-            const res = note.id ? await NotesAPI.updateNote(note.id, payload)
+            const res = note.id ? await NotesAPI.updateNote(note.id, {...payload, revision: note.revision})
                 : await NotesAPI.createNote(payload);
             note.id = res.id;
+            note.revision = res.revision;
             const job = this._jobs.get(note);
             if (job && !this._pendingById.has(String(note.id))) {
                 this._pendingById.set(String(note.id), job);
@@ -92,6 +93,15 @@ class NoteStorageService {
             }
             return note;
         }
+    }
+
+    static async saveCopy() {
+        const note = AppState.currentNote;
+        this._sync(note);
+        const copy = this._payload(note);
+        AppState.setNote({...copy, id: null, revision: null});
+        AppState.markDirty();
+        return this.saveCurrentNote();
     }
 }
 

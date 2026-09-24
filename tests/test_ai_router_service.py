@@ -101,7 +101,7 @@ async def test_single_step_regen_emits_multiple_blocks_for_step2(client):
     assert "step2" not in res["updated_steps"]  # прежнего одиночного блока нет
     saved = await client.post('/api/dialectics/save', json={
         'title': 'Generated step', 'blocks': [
-            {'id': key, 'role': key, 'side': 'left', 'html': item['content'], 'status': item['status']}
+            {'id': key.replace('.', '-'), 'role': key, 'side': 'left', 'html': item['content'], 'status': item['status']}
             for key, item in res['updated_steps'].items() if key in generated
         ],
     })

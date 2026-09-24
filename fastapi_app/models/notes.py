@@ -16,6 +16,9 @@ class Note(Base):
     __tablename__ = "notes"
     
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    schema_version: Mapped[int] = mapped_column(default=1, server_default='1')
+    revision: Mapped[int] = mapped_column(default=1, server_default='1')
+    __mapper_args__ = {'version_id_col': revision}
     title: Mapped[str] = mapped_column(String(150), index=True)
     content_json: Mapped[List[dict]] = mapped_column(JSON, default=list)
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("note_categories.id", ondelete="SET NULL"), nullable=True)
@@ -56,4 +59,3 @@ class NoteConnection(Base):
     __table_args__ = (
         UniqueConstraint('note_id_from', 'note_id_to', name='_note_connection_uc'),
     )
-

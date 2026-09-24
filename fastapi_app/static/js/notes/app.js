@@ -234,11 +234,9 @@ class App {
             DropdownController.closeAll();
             const { showToast } = await import('./ToastService.js');
             try {
-                if (!AppState.currentNote.id || AppState.isDirty) {
-                    await NoteStorageService.saveCurrentNote();
-                }
-                if (!AppState.currentNote.id) { showToast(t('share_need_content'), 'error'); return; }
-                const res = await NotesAPI.request(`/dialectics/${AppState.currentNote.id}/share`, 'POST');
+                const saved = await NoteStorageService.saveCurrentNote();
+                if (!saved.id) { showToast(t('share_need_content'), 'error'); return; }
+                const res = await NotesAPI.request(`/dialectics/${saved.id}/share`, 'POST');
                 const url = window.location.origin + res.path;
                 App.showModal(t('share_title'), `
                     <p style="margin:0 0 10px; color:#475569;">${t('share_hint')}</p>
@@ -368,7 +366,7 @@ class App {
         if (btnSave) {
             btnSave.addEventListener('click', async () => {
                 try {
-                    const saved = await NoteStorageService.saveCurrentNote();
+                    const saved = await NoteController.saveCurrentNote();
                     
                     if (saved.id) {
                         const now = new Date();
@@ -403,14 +401,12 @@ class App {
                 const { showToast } = await import('./ToastService.js');
                 const isReady = (newStatus === 'ready');
 
-                if (AppState.currentNote.id) {
-                    try {
-                        await NotesAPI.updateNoteStatus(AppState.currentNote.id, newStatus);
-                    } catch (e) {
-                        console.error('Failed to update status on server:', e);
-                    }
-                } else {
-                    AppState.markDirty();
+                AppState.markDirty();
+                try {
+                    await NoteStorageService.saveCurrentNote();
+                } catch (e) {
+                    showToast(e.status === 409 ? t('save_conflict_title') : t('error_saving'), 'error');
+                    return;
                 }
 
                 showToast(isReady ? t('status_note_ready') : t('status_note_draft'));

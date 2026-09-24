@@ -8,7 +8,7 @@
     <meta property="og:title" content="{{ note_title }}">
     <meta property="og:description" content="{{ _('shared_tagline') }} — papanda.kz">
     <meta property="og:type" content="article">
-    <meta name="robots" content="index,follow">
+    <meta name="robots" content="noindex,nofollow">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,6 +36,7 @@
         .blk h3 { font-size: 1.08rem; font-weight: 600; margin: 0 0 10px; }
         .blk-body p { margin: 0 0 10px; }
         .blk-body p:last-child { margin-bottom: 0; }
+        .blk-body img { max-width: 100%; height: auto; }
         .math-callout { overflow-x: auto; padding: 8px 0; }
         footer { margin-top: 48px; text-align: center; color: #64748b; font-size: 0.9rem; }
         footer a { display: inline-block; margin-top: 10px; padding: 10px 20px;
@@ -49,7 +50,10 @@
 
         {% for b in blocks %}
             {% set role = b.get('role') or '' %}
-            {% if role and role != 'section' %}
+            {% if role == 'section' %}
+                <h2>{{ b.get('title') or '' }}</h2>
+                {% if b.get('html') %}<div class="blk-body">{{ b.get('html') | safe }}</div>{% endif %}
+            {% else %}
                 {% set base = role.split('.')[0] %}
                 {% if base == 'anchor' and b.get('anchorResolved') %}
                     {% set label = _('shared_anchor_label') %}
@@ -83,6 +87,5 @@
             }
         });
     </script>
-    <script src="/static/js/consent.js?v=1"></script>
 </body>
 </html>

@@ -101,17 +101,22 @@ class NoteVersionsService {
     }
 
     static async restore(versionId) {
+        const note = AppState.currentNote;
         const confirmed = await DialogService.confirm({
             title: t('confirm_restore_ver_title'),
             message: t('confirm_restore_ver_msg'),
             icon: '⏪',
             confirmText: t('restore_word')
         });
-        if (!confirmed) return;
+        if (!confirmed || AppState.currentNote !== note) return;
 
         try {
-            const noteId = AppState.currentNote.id;
-            const updatedNote = await NotesAPI.restoreVersion(noteId, versionId);
+            const saved = await NoteController.saveCurrentNote();
+            if (AppState.currentNote !== note || saved.id !== note.id) return;
+            const editRevision = AppState.editRevision;
+            const updatedNote = await NotesAPI.restoreVersion(note.id, versionId, saved.revision);
+            if (AppState.currentNote !== note) return;
+            if (AppState.editRevision !== editRevision) throw new Error('Local edits preserved; version restored on server');
             AppState.setNote(updatedNote);
             BlockDOMRenderer.renderAll();
             const oldModal = this.currentModal;

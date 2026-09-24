@@ -17,7 +17,7 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from fastapi_app.main import app
-from fastapi_app.database import Base, get_db, create_db_engine
+from fastapi_app.database import Base, get_db, get_public_db, create_db_engine
 from fastapi_app.config import settings
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -59,6 +59,7 @@ async def client(test_engine) -> AsyncGenerator[AsyncClient, None]:
             yield session
             
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_public_db] = override_get_db
     
     # Disable rate limiting for testing
     from fastapi_app.rate_limiter import limiter
@@ -70,6 +71,7 @@ async def client(test_engine) -> AsyncGenerator[AsyncClient, None]:
             yield ac
     finally:
         app.dependency_overrides.pop(get_db, None)
+        app.dependency_overrides.pop(get_public_db, None)
         limiter.enabled = previous_enabled
 
 

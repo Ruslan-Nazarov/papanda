@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     IP_DAILY_GENERATION_CAP: int = Field(default=80, ge=0)
     DEMO_SESSION_TTL_SECONDS: int = Field(default=7 * 24 * 3600, ge=60)
     DEMO_MAX_SESSIONS: int = Field(default=1000, ge=1)
+    MAX_CACHED_ENGINES: int = Field(default=32, ge=1, le=1024)
     DEMO_MAX_DB_BYTES: int = Field(default=32 * 1024 * 1024, ge=65536)
     MAX_REQUEST_BYTES: int = Field(default=12 * 1024 * 1024, ge=1024)
     MAX_UPLOAD_BYTES: int = Field(default=8 * 1024 * 1024, ge=1024)

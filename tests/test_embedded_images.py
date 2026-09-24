@@ -45,18 +45,19 @@ async def test_image_roundtrip_update_checkpoint_restore_and_public_page(client)
     assert saved.status_code == 200, saved.text
     note_id = saved.json()['id']
     url = f'/api/dialectics/{note_id}'
-    update = await client.patch(url, json={'blocks': saved.json()['content_json']})
+    update = await client.patch(url, json={'revision': saved.json()['revision'], 'blocks': saved.json()['content_json']})
     assert update.status_code == 200 and PNG in update.json()['content_json'][0]['html']
     checkpoint = await client.post(url + '/checkpoint', json={'title': 'With drawing', 'is_manual': True})
     assert checkpoint.status_code == 200 and PNG in checkpoint.json()['content_json'][0]['html']
-    assert (await client.patch(url, json={'blocks': []})).status_code == 200
-    restored = await client.post(url + f"/versions/{checkpoint.json()['id']}/restore")
+    empty = await client.patch(url, json={'revision': update.json()['revision'], 'blocks': []})
+    assert empty.status_code == 200
+    restored = await client.post(url + f"/versions/{checkpoint.json()['id']}/restore", json={"revision": empty.json()["revision"]})
     assert restored.status_code == 200 and PNG in restored.json()['content_json'][0]['html']
     shared = await client.post(url + '/share')
     public = await client.get(shared.json()['path'])
     assert public.status_code == 200 and PNG in public.text
 
-    invalid = await client.patch(url, json={'title': 'Must not save', 'blocks': [
+    invalid = await client.patch(url, json={'revision': restored.json()['revision'], 'title': 'Must not save', 'blocks': [
         {**blocks[0], 'html': '<img src="data:image/svg+xml;base64,PHN2Zy8+">'},
     ]})
     assert invalid.status_code == 422

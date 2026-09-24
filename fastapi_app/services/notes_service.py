@@ -1,5 +1,11 @@
+from fastapi_app.services.history_service import HistoryService
+from fastapi_app.services.category_service import CategoryService
+from fastapi_app.services.connection_service import ConnectionService
+from fastapi_app.services.sharing_service import SharingService
+from fastapi_app.services.note_transactions import commit, get_note, require_revision, validate_category
+from fastapi_app.services.block_contract import normalize_legacy_blocks
 import json
-import secrets
+import asyncio
 import uuid
 from pathlib import Path
 from datetime import datetime, timezone
@@ -7,14 +13,14 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import or_, delete, update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import or_
 from fastapi import HTTPException
 
 from fastapi_app.config import settings
-from fastapi_app.models.notes import Note, NoteCategory, NoteVersion, NoteConnection
-from fastapi_app.schemas.notes import NoteCreate, NoteUpdate, CategoryCreate, NoteVersionCreate
+from fastapi_app.models.notes import Note, NoteCategory, NoteVersion
+from fastapi_app.schemas.notes import NoteCreate, NoteUpdate
 from fastapi_app.services.sanitizer import sanitize_on_write
+from fastapi_app.services.security_store import remove_share
 
 
 def _clean_blocks(blocks: list) -> list:
@@ -27,7 +33,7 @@ def _clean_blocks(blocks: list) -> list:
     return out
 
 
-class NotesService:
+class NotesService(HistoryService, CategoryService, ConnectionService, SharingService):
     @staticmethod
     async def get_all_notes(session: AsyncSession, search: Optional[str] = None, category_id: Optional[int] = None, locale: str = 'ru'):
         stmt = select(Note).where(Note.is_deleted == False)
@@ -63,6 +69,7 @@ class NotesService:
 
     @staticmethod
     async def create_note(session: AsyncSession, data: NoteCreate):
+        await validate_category(session, data.category_id)
         blocks_data = _clean_blocks([b.model_dump() for b in data.blocks])
         
         new_note = Note(
@@ -77,7 +84,7 @@ class NotesService:
             sync_id=str(uuid.uuid4())
         )
         session.add(new_note)
-        await session.flush()
+        await commit(session, flush_only=True)
         
         # Create initial manual version
         initial_version = NoteVersion(
@@ -87,47 +94,13 @@ class NotesService:
             is_manual=True
         )
         session.add(initial_version)
-        await session.commit()
+        await commit(session)
         await session.refresh(new_note)
         
         return new_note
 
-    @staticmethod
-    async def get_note(session: AsyncSession, note_id: int):
-        stmt = select(Note).where(Note.id == note_id)
-        result = await session.execute(stmt)
-        note = result.scalar_one_or_none()
-        if not note:
-            raise HTTPException(status_code=404, detail="Entry not found")
-        return note
+    get_note = staticmethod(get_note)
 
-    @staticmethod
-    async def enable_sharing(session: AsyncSession, note_id: int) -> str:
-        """Выдать (или вернуть существующий) публичный токен конспекта."""
-        note = await NotesService.get_note(session, note_id)
-        if not note.share_token:
-            note.share_token = secrets.token_urlsafe(12)  # ~16 симв.
-            await session.commit()
-            await session.refresh(note)
-        return note.share_token
-
-    @staticmethod
-    async def disable_sharing(session: AsyncSession, note_id: int) -> None:
-        note = await NotesService.get_note(session, note_id)
-        if note.share_token:
-            note.share_token = None
-            await session.commit()
-
-    @staticmethod
-    async def get_shared_note(session: AsyncSession, token: str) -> Note:
-        """Конспект по публичному токену — БЕЗ привязки к сессии (это и есть шаринг)."""
-        if not token or len(token) > 32:
-            raise HTTPException(status_code=404, detail="Not found")
-        stmt = select(Note).where(Note.share_token == token, Note.is_deleted == False)
-        note = (await session.execute(stmt)).scalar_one_or_none()
-        if not note:
-            raise HTTPException(status_code=404, detail="Not found")
-        return note
 
     @staticmethod
     async def get_active_pinned_note(session: AsyncSession):
@@ -138,6 +111,7 @@ class NotesService:
     @staticmethod
     async def update_note(session: AsyncSession, note_id: int, data: NoteUpdate):
         note = await NotesService.get_note(session, note_id)
+        require_revision(note, data.revision)
         
         if not note.sync_id:
             note.sync_id = str(uuid.uuid4())
@@ -148,11 +122,12 @@ class NotesService:
             note.is_pinned = data.is_pinned
         if data.is_example is not None:
             note.is_example = data.is_example
-        if data.category_id is not None:
+        if 'category_id' in data.model_fields_set:
+            await validate_category(session, data.category_id)
             note.category_id = data.category_id
         if data.status is not None:
             note.status = data.status
-        if data.sticker_text is not None:
+        if 'sticker_text' in data.model_fields_set:
             note.sticker_text = data.sticker_text
         if data.sticker_color is not None:
             note.sticker_color = data.sticker_color
@@ -161,47 +136,11 @@ class NotesService:
         if data.blocks is not None:
             note.content_json = _clean_blocks([b.model_dump() for b in data.blocks])
             
-        await session.commit()
+        await commit(session)
         await session.refresh(note)
         
         return note
 
-    @staticmethod
-    async def create_checkpoint(session: AsyncSession, note_id: int, title: str, is_manual: bool = True):
-        """
-        Two-tier versioning:
-        - autosave (every 30s) = just updates data, no version created (update_note above)
-        - checkpoint = creates a named version snapshot
-        
-        Limits: max 10 auto-checkpoints (session snapshots), unlimited manual ones.
-        """
-        note = await NotesService.get_note(session, note_id)
-        
-        new_version = NoteVersion(
-            note_id=note.id,
-            title=title,
-            content_json=note.content_json,
-            is_manual=is_manual
-        )
-        session.add(new_version)
-        await session.flush()
-        
-        if not is_manual:
-            # Enforce max 10 auto-checkpoints (session snapshots)
-            stmt_auto = select(NoteVersion).where(
-                NoteVersion.note_id == note_id,
-                NoteVersion.is_manual == False
-            ).order_by(NoteVersion.created_at.desc())
-            result_auto = await session.execute(stmt_auto)
-            all_auto = result_auto.scalars().all()
-            
-            if len(all_auto) > 10:
-                ids_to_delete = [v.id for v in all_auto[10:]]
-                await session.execute(delete(NoteVersion).where(NoteVersion.id.in_(ids_to_delete)))
-        
-        await session.commit()
-        await session.refresh(new_version)
-        return new_version
 
     @staticmethod
     async def delete_note(session: AsyncSession, note_id: int):
@@ -209,9 +148,13 @@ class NotesService:
         if note.is_example:
             raise HTTPException(status_code=400, detail="Cannot delete an example note")
             
+        token = note.share_token
+        note.share_token = None
         note.is_deleted = True
         note.deleted_at = datetime.now(timezone.utc)
-        await session.commit()
+        await commit(session)
+        if token:
+            await asyncio.to_thread(remove_share, token)
         return {"status": "success", "message": "Entry moved to trash"}
 
     # Trash
@@ -226,7 +169,7 @@ class NotesService:
         note = await NotesService.get_note(session, note_id)
         note.is_deleted = False
         note.deleted_at = None
-        await session.commit()
+        await commit(session)
         await session.refresh(note)
         return note
 
@@ -236,216 +179,13 @@ class NotesService:
         if note.is_example:
             raise HTTPException(status_code=400, detail="Cannot permanently delete an example note")
             
+        token = note.share_token
         await session.delete(note)
-        await session.commit()
+        await commit(session)
+        if token:
+            await asyncio.to_thread(remove_share, token)
         return {"status": "success", "message": "Note deleted permanently"}
 
-    # Versions
-    @staticmethod
-    async def get_versions(session: AsyncSession, note_id: int):
-        await NotesService.get_note(session, note_id) # Validates existence
-        stmt = select(NoteVersion).where(NoteVersion.note_id == note_id).order_by(NoteVersion.created_at.desc())
-        result = await session.execute(stmt)
-        return result.scalars().all()
-
-    @staticmethod
-    async def create_version(session: AsyncSession, note_id: int, data: NoteVersionCreate):
-        note = await NotesService.get_note(session, note_id)
-        new_v = NoteVersion(
-            note_id=note.id,
-            title=data.title,
-            content_json=note.content_json,
-            is_manual=data.is_manual
-        )
-        session.add(new_v)
-        await session.commit()
-        await session.refresh(new_v)
-        return new_v
-
-    @staticmethod
-    async def restore_version(session: AsyncSession, note_id: int, version_id: int):
-        note = await NotesService.get_note(session, note_id)
-        
-        stmt = select(NoteVersion).where(NoteVersion.id == version_id, NoteVersion.note_id == note_id)
-        result = await session.execute(stmt)
-        version = result.scalar_one_or_none()
-        
-        if not version:
-            raise HTTPException(status_code=404, detail="Version not found")
-            
-        # Create safety backup
-        safety_v = NoteVersion(
-            note_id=note.id,
-            title=f"Перед восстановлением: {version.title}",
-            content_json=note.content_json,
-            is_manual=True
-        )
-        session.add(safety_v)
-        
-        note.content_json = version.content_json
-        await session.commit()
-        await session.refresh(note)
-        return note
-
-    @staticmethod
-    async def pin_version(session: AsyncSession, note_id: int, version_id: int):
-        stmt = select(NoteVersion).where(NoteVersion.id == version_id, NoteVersion.note_id == note_id)
-        result = await session.execute(stmt)
-        version = result.scalar_one_or_none()
-        if not version:
-            raise HTTPException(status_code=404, detail="Version not found")
-            
-        version.is_manual = True
-        await session.commit()
-        return version
-
-    @staticmethod
-    async def delete_version(session: AsyncSession, note_id: int, version_id: int):
-        stmt = select(NoteVersion).where(NoteVersion.id == version_id, NoteVersion.note_id == note_id)
-        result = await session.execute(stmt)
-        version = result.scalar_one_or_none()
-        if not version:
-            raise HTTPException(status_code=404, detail="Version not found")
-            
-        await session.delete(version)
-        await session.commit()
-        return {"status": "success"}
-
-    # Categories
-    @staticmethod
-    async def get_categories(session: AsyncSession):
-        stmt = select(NoteCategory)
-        result = await session.execute(stmt)
-        return result.scalars().all()
-
-    @staticmethod
-    async def create_category(session: AsyncSession, data: CategoryCreate):
-        cat = NoteCategory(**data.model_dump())
-        session.add(cat)
-        await session.commit()
-        await session.refresh(cat)
-        return cat
-
-    @staticmethod
-    async def update_category(session: AsyncSession, category_id: int, data):
-        stmt = select(NoteCategory).where(NoteCategory.id == category_id)
-        result = await session.execute(stmt)
-        cat = result.scalar_one_or_none()
-        if not cat:
-            raise HTTPException(status_code=404, detail="Category not found")
-        if data.name is not None:
-            cat.name = data.name
-        if data.color is not None:
-            cat.color = data.color
-        await session.commit()
-        await session.refresh(cat)
-        return cat
-
-    @staticmethod
-    async def delete_category(session: AsyncSession, category_id: int):
-        stmt = select(NoteCategory).where(NoteCategory.id == category_id)
-        result = await session.execute(stmt)
-        cat = result.scalar_one_or_none()
-        if not cat:
-            raise HTTPException(status_code=404, detail="Category not found")
-        
-        # Reset category_id for notes in this category
-        await session.execute(
-            update(Note).where(Note.category_id == category_id).values(category_id=None)
-        )
-        
-        await session.delete(cat)
-        await session.commit()
-        return {"status": "deleted", "id": category_id}
-
-    @staticmethod
-    async def get_connections(session: AsyncSession, note_id: int):
-        stmt = select(NoteConnection).where(
-            or_(
-                NoteConnection.note_id_from == note_id,
-                NoteConnection.note_id_to == note_id
-            )
-        )
-        
-        result = await session.execute(stmt)
-        raw_connections = result.scalars().all()
-        
-        if not raw_connections:
-            return []
-            
-        target_ids = [c.note_id_to if c.note_id_from == note_id else c.note_id_from for c in raw_connections]
-        
-        target_stmt = select(Note).options(selectinload(Note.category)).where(Note.id.in_(target_ids))
-        target_result = await session.execute(target_stmt)
-        targets = {n.id: n for n in target_result.scalars().all()}
-        
-        connections = []
-        for conn in raw_connections:
-            target_id = conn.note_id_to if conn.note_id_from == note_id else conn.note_id_from
-            target_note = targets.get(target_id)
-            if not target_note:
-                continue
-                
-            connections.append({
-                "id": conn.id,
-                "note_id_from": conn.note_id_from,
-                "note_id_to": conn.note_id_to,
-                "label": conn.label,
-                "created_at": conn.created_at,
-                "target_title": target_note.title,
-                "target_category": target_note.category.name if target_note.category else None
-            })
-            
-        return connections
-
-    @staticmethod
-    async def create_connection(session: AsyncSession, note_id_from: int, note_id_to: int, label: str = "related"):
-        if note_id_from == note_id_to:
-            raise HTTPException(status_code=400, detail="Cannot connect note to itself")
-            
-        # Both ends must exist before the FK constraint is reached.
-        await NotesService.get_note(session, note_id_from)
-        target = await NotesService.get_note(session, note_id_to)
-        
-        # Check if connection already exists
-        stmt = select(NoteConnection).where(
-            NoteConnection.note_id_from == note_id_from,
-            NoteConnection.note_id_to == note_id_to
-        )
-        result = await session.execute(stmt)
-        if result.scalar_one_or_none():
-            raise HTTPException(status_code=409, detail="Connection already exists")
-            
-        new_conn = NoteConnection(
-            note_id_from=note_id_from,
-            note_id_to=note_id_to,
-            label=label
-        )
-        session.add(new_conn)
-        await session.commit()
-        await session.refresh(new_conn)
-        
-        return {
-            "id": new_conn.id,
-            "note_id_from": new_conn.note_id_from,
-            "note_id_to": new_conn.note_id_to,
-            "label": new_conn.label,
-            "created_at": new_conn.created_at,
-            "target_title": target.title,
-            "target_category": target.category.name if target.category else None
-        }
-
-    @staticmethod
-    async def delete_connection(session: AsyncSession, connection_id: int):
-        stmt = select(NoteConnection).where(NoteConnection.id == connection_id)
-        result = await session.execute(stmt)
-        conn = result.scalar_one_or_none()
-        if not conn:
-            raise HTTPException(status_code=404, detail="Connection not found")
-            
-        await session.delete(conn)
-        await session.commit()
-        return {"status": "success", "message": "Connection deleted"}
 
     @staticmethod
     async def export_examples_to_file(session: AsyncSession, filepath: Optional[str] = None):
@@ -494,29 +234,29 @@ class NotesService:
                 existing = result.scalar_one_or_none()
                 
                 if existing:
-                    # Update existing example
-                    existing.title = data.get("title", existing.title)
-                    existing.content_json = data.get("content_json", existing.content_json)
-                    existing.is_pinned = data.get("is_pinned", existing.is_pinned)
-                    existing.sticker_text = data.get("sticker_text", existing.sticker_text)
-                    existing.sticker_color = data.get("sticker_color", existing.sticker_color)
-                    existing.is_example = True
-                    existing.is_deleted = False
+                    # Startup seeding must preserve any edits to an existing example.
+                    continue
                 else:
-                    # Create new example
-                    new_ex = Note(
+                    validated = NoteCreate(
                         title=data.get("title", "Пример конспекта"),
-                        content_json=data.get("content_json", []),
+                        blocks=normalize_legacy_blocks(data.get("content_json", []), sync_id),
                         is_pinned=data.get("is_pinned", False),
-                        is_example=True,
                         sticker_text=data.get("sticker_text"),
                         sticker_color=data.get("sticker_color", "#fff9c4"),
+                    )
+                    new_ex = Note(
+                        title=validated.title,
+                        content_json=[b.model_dump() for b in validated.blocks],
+                        is_pinned=validated.is_pinned,
+                        is_example=True,
+                        sticker_text=validated.sticker_text,
+                        sticker_color=validated.sticker_color,
                         sync_id=sync_id
                     )
                     session.add(new_ex)
                 imported_count += 1
                 
         if imported_count > 0:
-            await session.commit()
+            await commit(session)
             
         return imported_count

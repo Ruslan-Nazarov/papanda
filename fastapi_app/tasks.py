@@ -16,6 +16,7 @@ def expired_ids():
 
 def retire(sid):
     with database() as db:
+        db.execute('DELETE FROM shares WHERE owner=?', (sid,))
         db.execute('DELETE FROM sessions WHERE id=? AND expires<=?', (sid, time.time()))
 
 async def cleanup_expired_sessions():

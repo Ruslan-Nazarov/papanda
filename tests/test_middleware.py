@@ -29,7 +29,7 @@ async def test_session_middleware_generates_cookie():
     transport = ASGITransport(app=app)
     # Request without cookies
     async with AsyncClient(transport=transport, base_url="http://127.0.0.1") as clean_client:
-        res = await clean_client.get("/health")
+        res = await clean_client.get("/")
         assert res.status_code == 200
         assert "session_id" in res.cookies
         session_id = res.cookies["session_id"]

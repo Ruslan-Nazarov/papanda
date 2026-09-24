@@ -93,7 +93,7 @@ async def test_notes_crud_and_search(client: AsyncClient):
     assert any(n["id"] == note_id for n in notes)
 
     # 5. Update Note (PATCH)
-    update_payload = {
+    update_payload = {"revision": note["revision"],
         "title": "Гегель: Логика и метод (обновлено)",
         "blocks": [
             {
@@ -115,7 +115,7 @@ async def test_notes_crud_and_search(client: AsyncClient):
     assert len(updated_note["content_json"]) == 1
 
     # 6. Update Status endpoint
-    res_status = await client.post(f"/api/dialectics/{note_id}/status?status=in_progress")
+    res_status = await client.post(f"/api/dialectics/{note_id}/status?status=in_progress&revision={updated_note['revision']}")
     assert res_status.status_code == 200
     assert res_status.json()["status"] == "in_progress"
 
@@ -179,7 +179,8 @@ async def test_note_versions_and_checkpoints(client: AsyncClient):
     version_id = cp["id"]
 
     # 2. Modify the note to create a newer state
-    await client.patch(f"/api/dialectics/{note_id}", json={
+    modified = await client.patch(f"/api/dialectics/{note_id}", json={
+        "revision": res.json()["revision"],
         "title": "Конспект по физике (измененный)",
         "blocks": [{"id": "b1", "side": "left", "html": "<p>Версия 2 (измененная)</p>", "status": "ready"}]
     })
@@ -197,7 +198,7 @@ async def test_note_versions_and_checkpoints(client: AsyncClient):
     assert res_pin.json()["is_manual"] is True
 
     # 5. Restore old version
-    res_restore = await client.post(f"/api/dialectics/{note_id}/versions/{version_id}/restore")
+    res_restore = await client.post(f"/api/dialectics/{note_id}/versions/{version_id}/restore", json={"revision": modified.json()["revision"]})
     assert res_restore.status_code == 200
     restored_note = res_restore.json()
     assert restored_note["content_json"][0]["html"] == "<p>Версия 1</p>"
@@ -250,7 +251,7 @@ async def test_note_not_found_returns_404(client: AsyncClient):
     assert res.status_code == 404
 
     # Non-existent note PATCH
-    res = await client.patch("/api/dialectics/999999", json={"title": "test"})
+    res = await client.patch("/api/dialectics/999999", json={"title": "test", "revision": 1})
     assert res.status_code == 404
 
     # Non-existent note DELETE

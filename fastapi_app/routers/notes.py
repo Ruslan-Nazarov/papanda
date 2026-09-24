@@ -1,15 +1,18 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Path
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
-from fastapi_app.database import get_db
+from fastapi_app.database import get_db, get_public_db
 from fastapi_app.schemas.notes import (
     NoteCreate, NoteUpdate, NoteView,
     CategoryCreate, CategoryView,
     NoteVersionCreate, NoteVersionView,
     ConnectionCreate, ConnectionView
 )
+from fastapi_app.schemas.notes import Status, RevisionRequest, PublicNoteView
 from fastapi_app.services.notes_service import NotesService
+
+PositiveId = Annotated[int, Path(gt=0)]
 
 router = APIRouter()
 
@@ -23,11 +26,11 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
     return await NotesService.create_category(db, data)
 
 @router.put("/categories/{category_id}", response_model=CategoryView)
-async def update_category(category_id: int, data: CategoryCreate, db: AsyncSession = Depends(get_db)):
+async def update_category(category_id: PositiveId, data: CategoryCreate, db: AsyncSession = Depends(get_db)):
     return await NotesService.update_category(db, category_id, data)
 
 @router.delete("/categories/{category_id}")
-async def delete_category(category_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_category(category_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_category(db, category_id)
 
 # Trash
@@ -36,53 +39,53 @@ async def get_trash(db: AsyncSession = Depends(get_db)):
     return await NotesService.get_trash(db)
 
 @router.post("/{note_id}/restore", response_model=NoteView)
-async def restore_note(note_id: int, db: AsyncSession = Depends(get_db)):
+async def restore_note(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.restore_note(db, note_id)
 
 @router.delete("/{note_id}/permanent")
-async def permanent_delete(note_id: int, db: AsyncSession = Depends(get_db)):
+async def permanent_delete(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.permanent_delete(db, note_id)
 
 # Versions
 @router.get("/{note_id}/versions", response_model=List[NoteVersionView])
-async def get_versions(note_id: int, db: AsyncSession = Depends(get_db)):
+async def get_versions(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.get_versions(db, note_id)
 
 @router.post("/{note_id}/versions", response_model=NoteVersionView)
-async def create_version(note_id: int, data: NoteVersionCreate, db: AsyncSession = Depends(get_db)):
+async def create_version(note_id: PositiveId, data: NoteVersionCreate, db: AsyncSession = Depends(get_db)):
     return await NotesService.create_version(db, note_id, data)
 
 @router.post("/{note_id}/checkpoint", response_model=NoteVersionView)
-async def create_checkpoint(note_id: int, data: NoteVersionCreate, db: AsyncSession = Depends(get_db)):
+async def create_checkpoint(note_id: PositiveId, data: NoteVersionCreate, db: AsyncSession = Depends(get_db)):
     """Create a named checkpoint (session snapshot or manual pin)."""
     return await NotesService.create_checkpoint(db, note_id, title=data.title, is_manual=data.is_manual)
 
 @router.post("/{note_id}/versions/{version_id}/restore", response_model=NoteView)
-async def restore_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
-    return await NotesService.restore_version(db, note_id, version_id)
+async def restore_version(note_id: PositiveId, version_id: PositiveId, data: RevisionRequest, db: AsyncSession = Depends(get_db)):
+    return await NotesService.restore_version(db, note_id, version_id, data.revision)
 
 @router.post("/{note_id}/versions/{version_id}/pin", response_model=NoteVersionView)
-async def pin_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
+async def pin_version(note_id: PositiveId, version_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.pin_version(db, note_id, version_id)
 
 @router.delete("/{note_id}/versions/{version_id}")
-async def delete_version(note_id: int, version_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_version(note_id: PositiveId, version_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_version(db, note_id, version_id)
 
 # Sharing (публичная ссылка на конспект, только чтение)
 @router.post("/{note_id}/share")
-async def share_note(note_id: int, db: AsyncSession = Depends(get_db)):
-    token = await NotesService.enable_sharing(db, note_id)
+async def share_note(note_id: PositiveId, request: Request, db: AsyncSession = Depends(get_db)):
+    token = await NotesService.enable_sharing(db, note_id, request.state.session_id)
     return {"token": token, "path": f"/s/{token}"}
 
 @router.delete("/{note_id}/share")
-async def unshare_note(note_id: int, db: AsyncSession = Depends(get_db)):
+async def unshare_note(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     await NotesService.disable_sharing(db, note_id)
     return {"ok": True}
 
-@router.get("/shared/{token}", response_model=NoteView)
-async def get_shared_note_api(token: str, db: AsyncSession = Depends(get_db)):
-    return await NotesService.get_shared_note(db, token)
+@router.get("/shared/{token}", response_model=PublicNoteView)
+async def get_shared_note_api(token: str, db: AsyncSession = Depends(get_public_db)):
+    return NotesService.public_view(await NotesService.get_shared_note(db, token))
 
 # Guide
 @router.get("/guide")
@@ -113,42 +116,41 @@ async def create_note(data: NoteCreate, db: AsyncSession = Depends(get_db)):
     return await NotesService.create_note(db, data)
 
 @router.get("/{note_id}", response_model=NoteView)
-async def get_note(note_id: int, db: AsyncSession = Depends(get_db)):
+async def get_note(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.get_note(db, note_id)
 
 @router.patch("/{note_id}", response_model=NoteView)
-async def update_note(note_id: int, data: NoteUpdate, db: AsyncSession = Depends(get_db)):
+async def update_note(note_id: PositiveId, data: NoteUpdate, db: AsyncSession = Depends(get_db)):
     return await NotesService.update_note(db, note_id, data)
 
 @router.delete("/{note_id}")
-async def delete_note(note_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_note(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_note(db, note_id)
 
 @router.post("/{note_id}/status", response_model=NoteView)
-async def update_note_status(note_id: int, status: str = Query(...), db: AsyncSession = Depends(get_db)):
-    update_data = NoteUpdate(status=status)
+async def update_note_status(note_id: PositiveId, status: Status = Query(...), revision: int = Query(..., ge=1), db: AsyncSession = Depends(get_db)):
+    update_data = NoteUpdate(status=status, revision=revision)
     return await NotesService.update_note(db, note_id, update_data)
 
 @router.post("/{note_id}/pin", response_model=NoteView)
-async def pin_note(note_id: int, db: AsyncSession = Depends(get_db)):
-    update_data = NoteUpdate(is_pinned=True)
+async def pin_note(note_id: PositiveId, revision: int = Query(..., ge=1), db: AsyncSession = Depends(get_db)):
+    update_data = NoteUpdate(is_pinned=True, revision=revision)
     return await NotesService.update_note(db, note_id, update_data)
 
 @router.post("/{note_id}/unpin", response_model=NoteView)
-async def unpin_note(note_id: int, db: AsyncSession = Depends(get_db)):
-    update_data = NoteUpdate(is_pinned=False)
+async def unpin_note(note_id: PositiveId, revision: int = Query(..., ge=1), db: AsyncSession = Depends(get_db)):
+    update_data = NoteUpdate(is_pinned=False, revision=revision)
     return await NotesService.update_note(db, note_id, update_data)
 
 # Connections
 @router.get("/{note_id}/connections", response_model=List[ConnectionView])
-async def get_connections(note_id: int, db: AsyncSession = Depends(get_db)):
+async def get_connections(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.get_connections(db, note_id)
 
 @router.post("/{note_id}/connections", response_model=ConnectionView)
-async def create_connection(note_id: int, data: ConnectionCreate, db: AsyncSession = Depends(get_db)):
+async def create_connection(note_id: PositiveId, data: ConnectionCreate, db: AsyncSession = Depends(get_db)):
     return await NotesService.create_connection(db, note_id, data.note_id_to, data.label)
 
 @router.delete("/connections/{connection_id}")
-async def delete_connection(connection_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_connection(connection_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.delete_connection(db, connection_id)
-

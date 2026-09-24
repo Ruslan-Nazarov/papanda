@@ -88,6 +88,8 @@ class BodyLimitMiddleware:
 
 class SessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        if request.url.path.startswith(('/s/', '/api/dialectics/shared/', '/static/')) or request.url.path in {'/health', '/favicon.ico'}:
+            return await call_next(request)
         session_id = request.cookies.get("session_id")
         new_cookie = None
         if settings.DEMO_MODE:
@@ -143,6 +145,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none'"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if request.url.path.startswith(('/s/', '/api/dialectics/shared/')):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=()"
         return response
 

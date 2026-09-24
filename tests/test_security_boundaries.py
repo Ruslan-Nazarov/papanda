@@ -9,7 +9,7 @@ from starlette.requests import Request
 
 from fastapi_app.main import app
 from fastapi_app.config import settings
-from fastapi_app.database import _engine_cache, _active_leases
+from fastapi_app.database import _engine_cache, _active_leases, dispose_all_engines
 from fastapi_app.rate_limiter import client_ip
 from fastapi_app.services.security_store import database, reserve_budget, quota_stats
 from fastapi_app.services.security_store import demo_instance_lock, session_for_cookie
@@ -40,6 +40,7 @@ def test_only_verified_proxy_chain_changes_quota_identity(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_demo_sessions_own_every_database_object_and_expire(file_client, monkeypatch):
+    await dispose_all_engines()
     monkeypatch.setattr(settings, 'DEMO_MODE', True)
     async with AsyncClient(transport=ASGITransport(app), base_url='http://127.0.0.1') as other:
         category = (await file_client.post('/api/dialectics/categories/new', json={'name': 'private'})).json()['id']
@@ -52,8 +53,8 @@ async def test_demo_sessions_own_every_database_object_and_expire(file_client, m
         for path in (f'/{first}', f'/{first}/versions', f'/{first}/connections'):
             result = await other.get('/api/dialectics' + path)
             assert result.status_code == 404 or result.json() == []
-        assert (await other.patch(f'/api/dialectics/{first}', json={'title': 'hacked'})).status_code == 404
-        assert (await other.post(f'/api/dialectics/{first}/versions/{checkpoint}/restore')).status_code == 404
+        assert (await other.patch(f'/api/dialectics/{first}', json={'title': 'hacked', 'revision': 1})).status_code == 404
+        assert (await other.post(f'/api/dialectics/{first}/versions/{checkpoint}/restore', json={'revision': 1})).status_code == 404
         assert (await other.put(f'/api/dialectics/categories/{category}', json={'name': 'hacked'})).status_code == 404
         # A guessed filename / legacy cookie cannot select another session's DB.
         sid = next(settings.DEMO_DIR.glob('*.db')).stem
@@ -96,6 +97,7 @@ async def test_oversized_body_rejected_before_route_for_length_and_chunks(client
 
 @pytest.mark.asyncio
 async def test_cleanup_defers_active_database(file_client, monkeypatch):
+    await dispose_all_engines()
     monkeypatch.setattr(settings, 'DEMO_MODE', True)
     await file_client.get('/api/dialectics')
     url = next(iter(_engine_cache))

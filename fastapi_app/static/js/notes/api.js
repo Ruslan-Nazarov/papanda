@@ -10,9 +10,12 @@ class NotesAPI {
             const res = await fetch(`/api${endpoint}`, options);
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.detail || `HTTP Error ${res.status}`);
+                const error = new Error(typeof errorData.detail === 'string' ? errorData.detail : `HTTP Error ${res.status}`);
+                error.status = res.status;
+                throw error;
             }
-            return await res.json();
+            const result = await res.json();
+            return result;
         } catch (error) {
             console.error('API Error:', error);
             throw error;
@@ -67,7 +70,7 @@ class NotesAPI {
     static getNote(id) { return this.request(`/dialectics/${id}`); }
     static createNote(data) { return this.request('/dialectics/save', 'POST', data); }
     static updateNote(id, data) { return this.request(`/dialectics/${id}`, 'PATCH', data); }
-    static updateNoteStatus(id, status) { return this.request(`/dialectics/${id}/status?status=${status}`, 'POST'); }
+    static updateNoteStatus(id, status, revision) { return this.updateNote(id, {status, revision}); }
     static deleteNote(id) { return this.request(`/dialectics/${id}`, 'DELETE'); }
     // Trash
     static getTrash() { return this.request('/dialectics/trash/list'); }
@@ -79,7 +82,7 @@ class NotesAPI {
     static createCheckpoint(noteId, title, isManual = true) { 
         return this.request(`/dialectics/${noteId}/checkpoint`, 'POST', { title, is_manual: isManual }); 
     }
-    static restoreVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/restore`, 'POST'); }
+    static restoreVersion(noteId, versionId, revision) { return this.request(`/dialectics/${noteId}/versions/${versionId}/restore`, 'POST', {revision}); }
     static pinVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/pin`, 'POST'); }
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
     // AI

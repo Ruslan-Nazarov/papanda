@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
-from typing import Optional, List, Any, AsyncIterator
+from pydantic import BaseModel, Field, model_validator
+from typing import Optional, List, Any, AsyncIterator, Literal
 from contextlib import aclosing
 import json
 import base64
@@ -89,14 +89,20 @@ class AutofillRequest(BaseModel):
 
 class GenerateStepRequest(BaseModel):
     context_text: str = Field(..., max_length=50_000)
-    target_step: str = Field(..., max_length=100)
+    target_step: str = Field(..., max_length=100, pattern=r'^(?:step)?[1-5](?:\.[1-9][0-9]*)?$')
 
 class ConspectusRouteRequest(BaseModel):
-    action: str = Field(..., max_length=50)
+    action: Literal['generate_full', 'generate_step']
     context_state: dict = Field(default_factory=dict)
-    target_step: Optional[str] = Field(default=None, max_length=10)
-    pinned_step: Optional[str] = Field(default=None, max_length=10)
+    target_step: Optional[str] = Field(default=None, pattern=r'^[1-5]$')
+    pinned_step: Optional[str] = Field(default=None, pattern=r'^[1-5]$')
     question: Optional[str] = Field(default=None, max_length=2000)
+
+    @model_validator(mode='after')
+    def require_target(self):
+        if self.action == 'generate_step' and self.target_step is None:
+            raise ValueError('target_step is required for generate_step')
+        return self
 
 
 @router.post("/explain-concept")

@@ -15,6 +15,7 @@ class NoteController {
     static _lastSavedAt = null;
     static _statusInterval = null;
     static _sessionCheckpointTimer = null;
+    static _conflictedNote = null;
 
     // ── Init ──────────────────────────────────────────────────────────────────
     static init() {
@@ -26,12 +27,14 @@ class NoteController {
 
         // Listen for note load → reset timers and update indicator
         document.addEventListener('noteLoaded', () => {
+            this._conflictedNote = null;
             this._clearAutosaveTimer();
             this._lastSavedAt = new Date();
             this._updateStatusIndicator();
             this._scheduleSessionCheckpoint();
         });
         document.addEventListener('noteSaved', () => {
+            this._conflictedNote = null;
             this._lastSavedAt = new Date();
             this._updateStatusIndicator();
         });
@@ -64,12 +67,14 @@ class NoteController {
     static async _doAutosave() {
         if (!AppState.isDirty) return;
         const note = AppState.currentNote;
+        if (this._conflictedNote === note) return;
         try {
             this._setStatus('saving');
             await NoteStorageService.saveCurrentNote();
             if (AppState.currentNote === note) this._updateStatusIndicator();
         } catch (e) {
-            if (AppState.currentNote === note) this._setStatus('error');
+            if (e.status === 409 && AppState.currentNote === note) this._conflictedNote = note;
+            if (AppState.currentNote === note) this._setStatus(e.status === 409 ? 'conflict' : 'error');
             console.error('Autosave failed:', e);
         }
     }
@@ -107,6 +112,13 @@ class NoteController {
             return saved;
         } catch (e) {
             if (AppState.currentNote === note) this._setStatus('error');
+            if (e.status === 409 && AppState.currentNote === note) {
+                this._conflictedNote = note;
+                this._setStatus('conflict');
+                const copy = await DialogService.confirm({title: t('save_conflict_title'),
+                    message: t('save_conflict_message'), confirmText: t('save_conflict_copy')});
+                if (copy && AppState.currentNote === note) return NoteStorageService.saveCopy();
+            }
             console.error('Save failed:', e);
             throw e;
         }
@@ -145,7 +157,10 @@ class NoteController {
     static _setStatus(state) {
         const el = document.getElementById('save-status');
         if (!el) return;
-        if (state === 'saving') {
+        if (state === 'conflict') {
+            el.className = 'save-status error';
+            el.textContent = t('save_conflict_title');
+        } else if (state === 'saving') {
             el.className = 'save-status saving';
             el.innerHTML = `<span class="save-dot"></span> ${t('saving')}`;
         } else if (state === 'saved') {
@@ -161,6 +176,10 @@ class NoteController {
     static _updateStatusIndicator() {
         const el = document.getElementById('save-status');
         if (!el) return;
+        if (this._conflictedNote === AppState.currentNote) {
+            this._setStatus('conflict');
+            return;
+        }
 
         if (AppState.isDirty) {
             el.className = 'save-status dirty';

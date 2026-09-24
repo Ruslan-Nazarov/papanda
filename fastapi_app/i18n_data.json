@@ -1,5 +1,8 @@
 {
  "en": {
+  "save_conflict_title": "Save conflict",
+  "save_conflict_message": "This note changed in another tab. Your edits are still here. Save them as a separate note?",
+  "save_conflict_copy": "Save a copy",
   "about_body": "papanda is an environment for building structured dialectical explanations, revealing opposites and synthesizing knowledge.",
   "about_title": "About",
   "add_antithesis": "Add antithesis",
@@ -630,6 +633,9 @@
   "whatis_title": "✨ What is this?"
  },
  "kz": {
+  "save_conflict_title": "Сақтау қайшылығы",
+  "save_conflict_message": "Конспект басқа қойындыда өзгертілді. Өңдеулеріңіз редакторда сақталды. Оларды бөлек конспект ретінде сақтау керек пе?",
+  "save_conflict_copy": "Көшірмені сақтау",
   "about_body": "papanda — құрылымдалған диалектикалық түсіндірмелер жасауға, қарама-қарсылықтарды анықтауға және білімді синтездеуге арналған орта.",
   "about_title": "Жоба туралы",
   "add_antithesis": "Антитезис қосу",
@@ -1260,6 +1266,9 @@
   "whatis_title": "✨ Бұл не?"
  },
  "ru": {
+  "save_conflict_title": "Конфликт сохранения",
+  "save_conflict_message": "Конспект изменён в другой вкладке. Ваши правки остались в редакторе. Сохранить их отдельным конспектом?",
+  "save_conflict_copy": "Сохранить копию",
   "about_body": "papanda — среда для создания структурированных диалектических объяснений, выявления противоположностей и синтеза знаний.",
   "about_title": "О проекте",
   "add_antithesis": "Добавить антитезис",

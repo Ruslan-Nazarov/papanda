@@ -12,10 +12,11 @@ function setup(id = 1) {
     CustomEvent: class {constructor(type, options) {this.type = type; this.detail = options?.detail;}}});
     load(ctx, 'AppState');
     load(ctx, 'NoteStorageService');
-    ctx.AppState.setNote({id, title: 'old', blocks: [{id: 'b', html: 'old block'}]});
+    ctx.AppState.setNote({id, revision: id ? 4 : null, title: 'old', blocks: [{id: 'b', html: 'old block'}]});
     ctx.AppState.markDirty();
     events.length = 0;
-    const finish = index => requests[index].resolve({id: requests[index].id || 10, ...requests[index].data});
+    const finish = index => requests[index].resolve({id: requests[index].id || 10, ...requests[index].data,
+        revision: (requests[index].data.revision || 0) + 1});
     return {ctx, requests, events, finish};
 }
 
@@ -32,6 +33,8 @@ test('save queues edits made during the request and snapshots nested blocks', as
     assert.equal(ctx.AppState.currentNote.title, 'new edit');
     assert.equal(ctx.AppState.isDirty, true);
     assert.equal(requests[1].data.title, 'new edit');
+    assert.equal(requests[0].data.revision, 4);
+    assert.equal(requests[1].data.revision, 5);
     finish(1);
     await pending;
     assert.equal(ctx.AppState.currentNote.blocks[0].html, 'new block');
@@ -72,6 +75,7 @@ test('new note edits during create are updated with the assigned id', async () =
     finish(0);
     await tick();
     assert.equal(requests[1].id, 10);
+    assert.equal(requests[1].data.revision, 1);
     finish(1);
     await pending;
     assert.equal(requests.filter(r => r.id === null).length, 1);
@@ -87,6 +91,27 @@ test('failed save retains data and can be retried', async () => {
     const retry = ctx.NoteStorageService.saveCurrentNote();
     finish(1);
     await retry;
+    assert.equal(ctx.AppState.isDirty, false);
+});
+
+test('409 retains the edited document and explicit copy creates a separate record', async () => {
+    const {ctx, requests, finish} = setup();
+    const original = ctx.AppState.currentNote;
+    original.title = 'my conflicting edit';
+    const pending = ctx.NoteStorageService.saveCurrentNote();
+    requests[0].reject(Object.assign(new Error('conflict'), {status: 409}));
+    await assert.rejects(pending, error => error.status === 409);
+    assert.equal(ctx.AppState.isDirty, true);
+    assert.equal(original.revision, 4);
+    assert.equal(requests.length, 1);
+    const copy = ctx.NoteStorageService.saveCopy();
+    assert.equal(requests[1].id, null);
+    assert.equal(requests[1].data.title, 'my conflicting edit');
+    assert.equal(requests[1].data.blocks[0].html, 'old block');
+    finish(1);
+    await copy;
+    assert.equal(original.id, 1);
+    assert.equal(ctx.AppState.currentNote.id, 10);
     assert.equal(ctx.AppState.isDirty, false);
 });
 
