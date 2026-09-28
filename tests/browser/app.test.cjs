@@ -21,7 +21,7 @@ async function server() {
         DATA_DIR: directory, DB_DIR: directory, DEMO_DIR: path.join(directory, 'demo')};
     for (const key of ['GROQ_API_KEY', 'GOOGLE_API_KEY', 'OPENROUTER_API_KEY', 'CEREBRAS_API_KEY', 'GIGACHAT_AUTH_KEY']) env[key] = '';
     env.SECRET_KEY = 'browser-test-only';
-    const python = path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+    const python = process.env.TEST_PYTHON || path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
     const child = spawn(python, ['run.py'], {cwd: root, env, windowsHide: true, stdio: ['ignore','pipe','pipe']});
     let log = '';
     child.stdout.on('data', data => {log += data;});
@@ -58,10 +58,6 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                     {type:'terminal', run_id:result.run_id, sequence:2, status:result.status, result}];
                 return request.respond({status:200, contentType:'text/event-stream',
                     body:events.map(event => 'data: '+JSON.stringify(event)+'\n\n').join('')});
-            }
-            if (request.url().endsWith('/api/ai/dialectics/topic-question')) {
-                return request.respond({status:200, contentType:'application/json',
-                    body:JSON.stringify({answer:'Mock clarification'})});
             }
             if (request.url().includes('/api/ai/')) return request.respond({status:503, contentType:'application/json',
                 body:JSON.stringify({detail:'Unexpected AI call in browser test'})});
@@ -200,16 +196,13 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.keyboard.press('Escape');
             await page.waitForSelector('#modal-container.hidden');
         });
-        await t.test('full AI answer is reviewed and saved as a separate variant', async () => {
+        await t.test('full AI answer is saved directly in the current note', async () => {
             await page.setViewport({width:1280, height:900});
             await page.click('#btn-new-conspect');
             await page.click('#mode-master-toggle button[data-mode="ai"]');
             await page.waitForSelector('.anchor-topic-input');
             await page.type('.anchor-topic-input', 'A controlled test topic');
             await page.click('.btn-anchor-generate');
-            await page.waitForSelector('.learning-proposal-actions [data-decision="accept"]');
-            assert.equal(await page.$eval('#blocks-container', el => el.textContent.includes('Mock generated step')), false);
-            await page.click('.learning-proposal-actions [data-decision="accept"]');
             await page.waitForFunction(() => document.querySelector('#blocks-container')?.textContent.includes('Mock generated step'));
             assert.equal(generated, 1);
             await page.click('#btn-save');
@@ -218,70 +211,33 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
             await page.click('#mode-master-toggle button[data-mode="manual"]');
         });
-        await t.test('variants, study chat and community demo are reachable', async () => {
-            await page.click('#btn-learning-ask');
-            await page.waitForSelector('.learning-chat-compose textarea');
-            await page.type('.learning-chat-compose textarea', 'What does this mean?');
-            await page.click('.learning-chat-compose button');
-            await page.waitForFunction(() => document.querySelector('.learning-chat-log')?.textContent.includes('Mock clarification'));
-            await page.click('.learning-close');
-            await page.click('#btn-learning-variants');
-            await page.waitForSelector('.learning-variant');
-            assert.equal(await page.$$eval('.learning-variant', rows => rows.length), 2);
-            await page.click('#learning-compare');
-            await page.waitForSelector('.learning-compare section');
-            await page.click('.learning-close');
-            await page.click('#btn-learning-variants');
-            await page.waitForSelector('#learning-label');
-            await page.$eval('#learning-label', el => {el.value = 'Another attempt';});
-            await page.click('#learning-fork');
-            await page.waitForFunction(() => !document.querySelector('.learning-overlay'));
-            assert.equal(await page.$eval('#blocks-container', el => el.textContent.includes('Mock generated step')), false);
-            await page.click('#btn-main-menu');
-            await page.click('#menu-item-learning-demo');
-            await page.waitForSelector('.learning-demo-tabs');
-            await page.click('[data-tab="map"]');
-            assert.equal(await page.$$eval('.learning-demo-map [data-node]', nodes => nodes.length), 3);
-            await page.click('.learning-close');
+        await t.test('diary keeps requests and answers without learning modes', async () => {
+            assert.equal(await page.$('#btn-learning-variants, #btn-learning-ask, #menu-item-learning-demo, #user-role-selector, .btn-fork-step'), null);
+            await page.click('#btn-ai-diary');
+            await page.waitForSelector('.ai-diary-entries article');
+            const history = await page.$eval('.ai-diary-entries', el => el.textContent);
+            assert.match(history, /A controlled test topic/);
+            assert.match(history, /Mock generated step/);
+            await page.keyboard.press('Escape');
+            assert.equal(await page.$('.ai-diary-overlay'), null);
+            await page.click('#btn-new-conspect');
+            await page.click('#btn-ai-diary');
+            await page.waitForSelector('.ai-diary-entries article');
+            assert.match(await page.$eval('.ai-diary-entries', el => el.textContent), /Mock generated step/);
+            await page.click('.ai-diary-close');
         });
-        await t.test('all learning screens follow the language switch', async () => {
+        await t.test('diary follows the language switch', async () => {
             const translations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
             for (const locale of ['en', 'kz', 'ru']) {
                 const words = translations[locale];
                 await page.click('#btn-lang-menu');
                 await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}), page.click(`[data-lang="${locale}"]`)]);
-                assert((await page.$eval('#btn-learning-ask', el => el.textContent)).includes(words.learning_ask));
-                await page.hover('#btn-learning-ask');
-                const askStyle = await page.$eval('#btn-learning-ask', el => ({
-                    background:getComputedStyle(el).backgroundImage, color:getComputedStyle(el).color}));
-                assert.match(askStyle.background, /linear-gradient/, 'AI button must retain its dark background on hover');
-                assert.equal(askStyle.color, 'rgb(255, 255, 255)');
-                assert((await page.$eval('#btn-learning-variants', el => el.textContent)).includes(words.learning_variants_nav));
-                await page.click('#btn-learning-variants');
-                await page.waitForSelector('#learning-fork');
-                assert.equal(await page.$eval('#learning-fork', el => el.textContent), words.learning_create);
-                await page.click('.learning-close');
-                await page.click('#btn-learning-ask');
-                await page.waitForSelector('.learning-chat-compose textarea');
-                assert.equal(await page.$eval('.learning-chat-compose textarea', el => el.placeholder), words.learning_question);
-                await page.click('.learning-close');
-                await page.click('#btn-main-menu');
-                await page.click('#menu-item-learning-history');
-                await page.waitForSelector('.learning-stats');
-                assert((await page.$eval('.learning-stats', el => el.textContent)).includes(words.learning_calls_count.split('{count}')[0]));
-                await page.click('.learning-close');
-                await page.click('#btn-main-menu');
-                await page.click('#menu-item-learning-demo');
-                await page.waitForSelector('.learning-demo-tabs');
-                assert.equal(await page.$eval('.learning-demo-notice', el => el.textContent), words.learning_demo_notice);
-                await page.click('[data-example="1"]');
-                assert((await page.$eval('.learning-demo-detail', el => el.textContent)).includes(words.learning_send_after_accounts));
-                for (const tab of ['map','portfolio','teacher','employer']) {
-                    await page.click(`.learning-demo-tabs [data-tab="${tab}"]`);
-                    const expected = words[tab === 'map' ? 'learning_map_intro' : `learning_${tab}_title`];
-                    assert((await page.$eval('.learning-demo-content', el => el.textContent)).includes(expected));
-                }
-                await page.click('.learning-close');
+                assert((await page.$eval('#btn-ai-diary', el => el.textContent)).includes(words.ai_diary_title));
+                await page.click('#btn-ai-diary');
+                await page.waitForSelector('#ai-diary-title');
+                assert.equal(await page.$eval('#ai-diary-title', el => el.textContent), words.ai_diary_title);
+                assert.match(await page.$eval('.ai-diary-entries', el => el.textContent), /Mock generated step/);
+                await page.click('.ai-diary-close');
             }
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');

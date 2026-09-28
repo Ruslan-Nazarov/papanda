@@ -20,8 +20,7 @@
         </div>
         <button class="mobile-nav-toggle" id="btn-mobile-nav" aria-label="{{ _('menu_nav_mobile') }}">☰</button>
         <div class="header-right" id="header-right">
-            <button class="nav-pill-btn learning-ask-nav" id="btn-learning-ask" type="button"><span class="pill-icon">✦</span> {{ _('learning_ask') }}</button>
-            <button class="nav-pill-btn" id="btn-learning-variants" type="button"><span class="pill-icon">⑂</span> {{ _('learning_variants_nav') }}</button>
+            <button class="nav-pill-btn" id="btn-ai-diary" type="button">{{ _('ai_diary_title') }}</button>
             <!-- Обучение -->
             <button class="nav-pill-btn" id="btn-howto">
                 <span class="pill-icon">🎓</span> {{ _('nav_howto') }}
@@ -83,9 +82,8 @@
                     <span class="pill-icon">☰</span> {{ _('nav_menu') }}
                 </button>
                 <div id="main-menu-dropdown" class="dropdown-menu hidden" style="min-width: 230px;">
-                    <div class="menu-item" id="menu-item-learning-history"><span class="menu-icon">↗</span><span>{{ _('learning_history') }}</span></div>
-                    <div class="menu-item" id="menu-item-learning-demo"><span class="menu-icon">◈</span><span>{{ _('learning_community') }}</span></div>
-                    <div class="menu-item" id="menu-item-ai-full"><span class="menu-icon">✦</span><span>{{ _('learning_full_note') }}</span></div>
+                    <div class="menu-item" id="menu-item-ai-diary"><span class="menu-icon">↗</span><span>{{ _('ai_diary_title') }}</span></div>
+                    <div class="menu-item" id="menu-item-ai-full"><span class="menu-icon">✦</span><span>{{ _('ai_generate_full') }}</span></div>
                     <div class="menu-item" id="menu-item-open-note">
                         <span class="menu-icon">📁</span>
                         <span>{{ _('menu_open_note') }}</span>

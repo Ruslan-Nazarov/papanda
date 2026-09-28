@@ -22,8 +22,7 @@ import NavHistoryManager from './NavHistoryManager.js';
 import ConceptSelectionMenu from './ConceptSelectionMenu.js';
 import ModeManager from './ModeManager.js';
 import OnboardingTour from './OnboardingTour.js';
-import LearningWorkspace from './LearningWorkspace.js';
-import LearningDemo from './LearningDemo.js';
+import AIDiary from './AIDiary.js';
 import AIController from './AIController.js';
 import { t, switchLanguage } from '../i18n.js';
 
@@ -31,6 +30,7 @@ class App {
     static init() {
         if (this.initialized) return;
         this.initialized = true;
+        AIDiary.init();
         // Initialize managers
         BlockDnDManager.init();
         EditorManager.init();
@@ -137,13 +137,9 @@ class App {
         // Мобильный гамбургер: показать/скрыть панель шапки
         const headerRight = document.getElementById('header-right');
         const btnMobileNav = document.getElementById('btn-mobile-nav');
-        document.getElementById('btn-learning-ask')?.addEventListener('click', () => LearningWorkspace.chat());
-        document.getElementById('btn-learning-variants')?.addEventListener('click', () => LearningWorkspace.variants());
-        document.getElementById('menu-item-learning-history')?.addEventListener('click', () => {
-            DropdownController.closeAll(); LearningWorkspace.history();
-        });
-        document.getElementById('menu-item-learning-demo')?.addEventListener('click', () => {
-            DropdownController.closeAll(); LearningDemo.open();
+        document.getElementById('btn-ai-diary')?.addEventListener('click', () => AIDiary.open());
+        document.getElementById('menu-item-ai-diary')?.addEventListener('click', () => {
+            DropdownController.closeAll(); AIDiary.open();
         });
         document.getElementById('menu-item-ai-full')?.addEventListener('click', async () => {
             DropdownController.closeAll();

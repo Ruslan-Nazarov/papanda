@@ -1,3 +1,4 @@
+import NotesAPI from './api.js';
 import DialogService from './DialogService.js';
 import Lifecycle from './Lifecycle.js';
 
@@ -215,7 +216,7 @@ class ParserWindowsManager {
             const loadingId = this.appendLoading('formula');
 
             try {
-                const res = await fetch('/api/ai/dialectics/parser', {
+                const res = await NotesAPI.aiFetch('/api/ai/dialectics/parser', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ formula: text })
@@ -248,7 +249,7 @@ class ParserWindowsManager {
             formData.append('file', file);
 
             try {
-                const res = await fetch('/api/ai/dialectics/formula/ocr', {
+                const res = await NotesAPI.aiFetch('/api/ai/dialectics/formula/ocr', {
                     method: 'POST',
                     body: formData
                 });
@@ -303,7 +304,7 @@ class ParserWindowsManager {
                     
                     const loadingId = this.appendLoading('formula');
                     try {
-                        const res = await fetch('/api/ai/dialectics/voice-math', { method: 'POST', body: formData });
+                        const res = await NotesAPI.aiFetch('/api/ai/dialectics/voice-math', { method: 'POST', body: formData });
                         const data = await res.json();
                         this.removeLoading(loadingId);
                         const recognized = data.result || '';
@@ -450,7 +451,7 @@ class ParserWindowsManager {
                 formData.append('message', t('pw_article_parse_msg'));
                 formData.append(isUrl ? 'url' : 'article_text', text);
 
-                const res = await fetch('/api/ai/dialectics/article-parser', {
+                const res = await NotesAPI.aiFetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
                     body: formData
                 });
@@ -487,7 +488,7 @@ class ParserWindowsManager {
             formData.append('file', file);
 
             try {
-                const res = await fetch('/api/ai/dialectics/article-parser', {
+                const res = await NotesAPI.aiFetch('/api/ai/dialectics/article-parser', {
                     method: 'POST',
                     body: formData
                 });

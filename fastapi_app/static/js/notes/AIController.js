@@ -1,4 +1,3 @@
-import { learningDate } from './LearningI18n.js';
 import AppState from './AppState.js';
 import Lifecycle from './Lifecycle.js';
 import NotesAPI from './api.js';
@@ -9,7 +8,6 @@ import GenerationChanges from './GenerationChanges.js';
 import BlockDOMParser from './BlockDOMParser.js';
 import DialogService from './DialogService.js';
 import NoteStorageService from './NoteStorageService.js';
-import ProposalReview from './ProposalReview.js';
 import { showToast } from './ToastService.js';
 
 import { t } from '../i18n.js';
@@ -270,14 +268,24 @@ class AIController {
             message: t('gen_conflict_message'), confirmText: t('save_conflict_copy')});
         if (!confirmed) return;
         await NoteStorageService.saveCurrentNote();
-        const current = await NotesAPI.getNote(run.note.id);
-        const fork = await NotesAPI.forkVariant(current.id, {revision:current.revision, from_step:1,
-            label:`${t('learning_proposal')} · ${learningDate()}`, origin:'ai'});
-        const copy = GenerationChanges.build({...fork, blocks:fork.content_json}, result,
+        const copy = GenerationChanges.build(run.snapshot, result,
             text => this.contentToHtml(text), ALGORITHM_STEPS);
-        await NotesAPI.updateNote(fork.id, {revision:fork.revision, title:copy.title, blocks:copy.blocks,
-            stickers:fork.stickers || [], category_id:fork.category_id, status:'in_progress'});
+        await NotesAPI.createNote({title:copy.title, blocks:copy.blocks,
+            stickers:copy.stickers || [], category_id:copy.category_id, status:'in_progress'});
         showToast(t('gen_copy_saved'));
+    }
+
+    static async _recordRequest(run, parameters, result) {
+        if (run.recorded) return;
+        await NotesAPI.addActivity(run.note.id, {kind:'ai_request',
+            step:parameters.target_step ? Number(parameters.target_step) : null,
+            request:run.requestTopic, question:parameters.question || '', status:result.status,
+            run_id:result.run_id || null,
+            operation:parameters.action,
+            text:[result.note_meta?.anchor_summary, result.verdict?.reason, result.verdict?.plain,
+                Object.entries(result.updated_steps || {}).map(([role,value]) =>
+                `${role}: ${value.content}`).join('\n\n'), result.error_message].filter(Boolean).join('\n\n')});
+        run.recorded = true;
     }
 
     static async _runGeneration(parameters, onRenderAll) {
@@ -288,6 +296,7 @@ class AIController {
         const note = AppState.currentNote;
         const run = {note, snapshot: JSON.parse(JSON.stringify(note)), epoch: AppState.documentEpoch,
             editRevision: AppState.editRevision, revision: note.revision, controller: new AbortController()};
+        run.requestTopic = this.buildStateForAI().target_goal;
         this._activeRun = run;
         const cancel = () => run.controller.abort();
         GlobalLoader.show(t('ed_ai_analyzing'), cancel);
@@ -304,67 +313,50 @@ class AIController {
                         GlobalLoader.show(t(keys[ev.status.phase] || 'ed_ai_analyzing'), cancel);
                     }
                 }, {signal: run.controller.signal, returnTerminal: true});
+            await this._recordRequest(run, parameters, result || {status: 'failed'});
             if (this._activeRun !== run || run.controller.signal.aborted) return null;
             if (!result || !['completed', 'partial', 'not_applicable'].includes(result.status)) {
                 throw new Error(result?.error_message || t('ai_no_steps'));
             }
             BlockDOMParser.syncDOMToState();
             if (result.status === 'not_applicable') {
+                await this._recordRequest(run, parameters, result);
                 if (this._unchanged(run)) this.applyNotApplicable(result.verdict, onRenderAll);
                 return result;
             }
             if (!Object.keys(result.updated_steps || {}).length) throw new Error(t('ai_no_steps'));
             if (result.source_revision !== (run.revision ?? null)) throw new Error(t('gen_conflict_title'));
             if (AppState.currentNote !== run.note) return result;
-            const full = parameters.action === 'generate_full';
-            await NotesAPI.addActivity(note.id, {kind:'ai_proposed', step:full ? null : Number(parameters.target_step),
-                detail:result.status, run_id:result.run_id,
-                text:Object.entries(result.updated_steps).map(([role,value]) => `${role}: ${value.content}`).join('\n\n').slice(0, 50000)});
+            await this._recordRequest(run, parameters, result);
             GlobalLoader.hide();
-            const choice = await ProposalReview.show(result, full);
-            if (choice.decision === 'reject') {
-                await NotesAPI.addActivity(note.id, {kind:'ai_rejected', step:full ? null : Number(parameters.target_step),
-                    run_id:result.run_id});
-                return result;
-            }
+            if (result.status === 'partial' && !await DialogService.confirm({title:t('gen_partial_title'),
+                message:t('gen_partial_message'), confirmText:t('gen_partial_apply')})) return result;
             BlockDOMParser.syncDOMToState();
             if (this._activeRun !== run || run.controller.signal.aborted) return null;
-            const reviewed = {...result, updated_steps: choice.updated_steps};
             if (!this._unchanged(run)) {
-                await this._offerCopy(run, reviewed);
+                await this._offerCopy(run, result);
                 return result;
             }
-            if (full) {
-                const fork = await NotesAPI.forkVariant(note.id, {revision:run.revision, from_step:1,
-                    label:`${t('learning_ai_short')} · ${learningDate()}`, origin:'ai'});
-                const next = GenerationChanges.build({...fork, blocks:fork.content_json}, reviewed,
-                    text => this.contentToHtml(text), ALGORITHM_STEPS);
-                const saved = await NotesAPI.updateNote(fork.id, {revision:fork.revision,
-                    title:next.title, blocks:next.blocks, stickers:fork.stickers || [],
-                    category_id:fork.category_id, status:'in_progress'});
-                await NotesAPI.addActivity(fork.id, {kind:'ai_full_review', run_id:result.run_id});
-                AppState.setNote(saved);
-                try { localStorage.setItem('papanda_last_note_id', saved.id); } catch {}
-                const input = document.getElementById('note-title');
-                if (input) input.value = saved.title;
-                if (onRenderAll) onRenderAll();
-            } else {
-                const next = GenerationChanges.build(note, reviewed,
-                    text => this.contentToHtml(text), ALGORITHM_STEPS);
-                if (choice.decision === 'edited') {
-                    next.blocks.forEach(block => { if (choice.updated_steps[block.role]) block.author = 'human_ai'; });
-                }
-                AppState.updateNote({title:next.title, blocks:next.blocks});
-                const input = document.getElementById('note-title');
-                if (input) input.value = next.title;
-                if (onRenderAll) onRenderAll();
-                await NoteStorageService.saveCurrentNote();
-                await NotesAPI.addActivity(note.id, {kind:choice.decision === 'edited' ? 'ai_edited' : 'ai_accepted',
-                    step:Number(parameters.target_step), run_id:result.run_id});
-            }
+            await NotesAPI.createCheckpoint(note.id, t('ai_before_generation'));
+            // Check again after the asynchronous backup: typing must not be overwritten.
+            BlockDOMParser.syncDOMToState();
+            if (this._activeRun !== run || run.controller.signal.aborted) return null;
+            if (!this._unchanged(run)) {await this._offerCopy(run, result); return result;}
+            const next = GenerationChanges.build(note, result,
+                text => this.contentToHtml(text), ALGORITHM_STEPS);
+            AppState.updateNote({title:next.title, blocks:next.blocks});
+            const input = document.getElementById('note-title');
+            if (input) input.value = next.title;
+            if (onRenderAll) onRenderAll();
+            await NoteStorageService.saveCurrentNote();
             this._activeRun = null;
             return result;
         } catch (error) {
+            if (!run.recorded) {
+                try {await this._recordRequest(run, parameters, {...error.result, status:error.name === 'AbortError' ? 'cancelled' : (error.result?.status || 'failed'),
+                    error_message:error.name === 'AbortError' ? '' : error.message});}
+                catch (diaryError) {showToast(t('ai_diary_save_failed'), 'error'); console.error(diaryError);}
+            }
             if (error.name === 'AbortError') {
                 if (this._activeRun === run) showToast(t('gen_cancelled'));
                 return null;

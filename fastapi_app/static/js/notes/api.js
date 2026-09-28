@@ -1,7 +1,29 @@
 import ApiContracts from './ApiContracts.js';
 
 class NotesAPI {
-    static async request(endpoint, method = 'GET', body = null, signal = undefined) {
+    static captureAI = (endpoint, body, operation) => operation();
+
+    static request(endpoint, method = 'GET', body = null, signal = undefined) {
+        const operation = () => this._request(endpoint, method, body, signal);
+        return endpoint.startsWith('/ai/') && !endpoint.includes('/conspectus/')
+            ? this.captureAI(endpoint, body, operation) : operation();
+    }
+
+    static stream(endpoint, body, onDelta, onEvent, options = {}) {
+        const operation = () => this._stream(endpoint, body, onDelta, onEvent, options);
+        return endpoint.startsWith('/ai/') && !endpoint.includes('/conspectus/')
+            ? this.captureAI(endpoint, body, operation) : operation();
+    }
+
+    static aiFetch(endpoint, options) {
+        return this.captureAI(endpoint, options.body, async () => {
+            const response = await fetch(endpoint, options);
+            if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+            return response;
+        });
+    }
+
+    static async _request(endpoint, method = 'GET', body = null, signal = undefined) {
         const options = {
             method,
             headers: { 'Content-Type': 'application/json' },
@@ -31,7 +53,7 @@ class NotesAPI {
      *   onEvent(evObject) — на любой кадр (для {step,content} и т.п.)
      * Проверяет run_id/sequence и terminal; returnTerminal возвращает результат конспекта.
      */
-    static async stream(endpoint, body, onDelta, onEvent, options = {}) {
+    static async _stream(endpoint, body, onDelta, onEvent, options = {}) {
         const res = await fetch(`/api${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -107,13 +129,9 @@ class NotesAPI {
         return this.request(url); 
     }
     static getNote(id) { return this.request(`/dialectics/${id}`).then(ApiContracts.noteResponse); }
-    static getVariants(id) { return this.request(`/dialectics/${id}/variants`); }
-    static forkVariant(id, data) { return this.request(`/dialectics/${id}/variants`, 'POST', data).then(ApiContracts.noteResponse); }
+    static getAllActivity() { return this.request('/dialectics/activity/all'); }
     static getActivity(id) { return this.request(`/dialectics/${id}/activity`); }
     static addActivity(id, data) { return this.request(`/dialectics/${id}/activity`, 'POST', data); }
-    static setLongTermGoal(id, revision, enabled) {
-        return this.request(`/dialectics/${id}/goal`, 'PATCH', {revision, long_term_goal: enabled}).then(ApiContracts.noteResponse);
-    }
     static createNote(data) { return this.request('/dialectics/save', 'POST', data).then(ApiContracts.noteResponse); }
     static updateNote(id, data) { return this.request(`/dialectics/${id}`, 'PATCH', data).then(ApiContracts.noteResponse); }
     static updateNoteStatus(id, status, revision) { return this.updateNote(id, {status, revision}); }
