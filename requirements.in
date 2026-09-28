@@ -1,4 +1,11 @@
 # Direct runtime dependencies. Regenerate requirements.txt with scripts/lock_dependencies.py.
+#
+# dialectic_world is not on PyPI: it's installed from a wheel attached to a GitHub Release of
+# https://github.com/Ruslan-Nazarov/dialectic_ai (its own repo), because pip --require-hashes
+# (enforced below) can hash a downloaded file but not a live git checkout. New dialectic_world
+# versions publish a wheel automatically on tag push (see that repo's
+# .github/workflows/release-wheel.yml) -- bump the version number and the URL together here.
+dialectic_world @ https://github.com/Ruslan-Nazarov/dialectic_ai/releases/download/v0.4.0/dialectic_world-0.4.0-py3-none-any.whl
 fastapi==0.135.1
 uvicorn[standard]==0.42.0
 SQLAlchemy==2.0.28

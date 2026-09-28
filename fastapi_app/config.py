@@ -10,6 +10,17 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     CEREBRAS_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
+    # Used only by the dialectic_v3 engine (services/generation/dialectic_v3_pipeline.py); the
+    # legacy pipeline has no OpenAI provider. Empty = that link is skipped in the engine's chain.
+    OPENAI_API_KEY: str = ""
+    DIALECTIC_OPENAI_MODEL: str = "gpt-5-mini"
+
+    # "legacy" (default): this app's own five-stage Planner+Judge pipeline. "dialectic_v3": the
+    # dialectic_world engine (services/generation/dialectic_v3_pipeline.py) for full-conspectus
+    # generation only -- generate_step/pinned-step/RAG-grounded flows always stay on legacy regardless
+    # of this setting (see that module's docstring). An env var flip, not a code change, so it can be
+    # tried locally or rolled out gradually without touching ai_router_service.py.
+    GENERATION_ENGINE: str = "legacy"
 
     SECRET_KEY: str = ""
     DEMO_MODE: bool = False
