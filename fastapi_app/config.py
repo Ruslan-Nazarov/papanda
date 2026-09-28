@@ -15,17 +15,17 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     DIALECTIC_OPENAI_MODEL: str = "gpt-5-mini"
 
-    # "legacy" (default): this app's own five-stage Planner+Judge pipeline. "dialectic_v3": the
-    # dialectic_world engine (services/generation/dialectic_v3_pipeline.py) for full-conspectus
-    # generation only -- generate_step/pinned-step/RAG-grounded flows always stay on legacy regardless
-    # of this setting (see that module's docstring). An env var flip, not a code change, so it can be
-    # tried locally or rolled out gradually without touching ai_router_service.py.
-    GENERATION_ENGINE: str = "legacy"
+    # "dialectic_v3" (default): the dialectic_world engine (services/generation/dialectic_v3_pipeline.py)
+    # for full-conspectus generation. "legacy": this app's own five-stage Planner+Judge pipeline.
+    # generate_step / pinned-step / reference-grounded flows always use legacy regardless of this setting.
+    # Set GENERATION_ENGINE=legacy in the environment to roll back without a code change.
+    GENERATION_ENGINE: str = "dialectic_v3"
 
     SECRET_KEY: str = ""
     DEMO_MODE: bool = False
     DATABASE_URL: str = ""
-    GENERATION_TIMEOUT: float = Field(default=300, gt=0, le=1800)
+    # 900: a dialectic_v3 conspectus makes 8+ sequential model calls (~290s on gpt-5-mini).
+    GENERATION_TIMEOUT: float = Field(default=900, gt=0, le=1800)
     GENERATION_MAX_CALLS: int = Field(default=60, ge=1, le=200)
     GENERATION_MAX_TOKENS: int = Field(default=1500000, ge=1)
     GENERATION_CONCURRENCY: int = Field(default=2, ge=1, le=16)
