@@ -139,12 +139,7 @@ class AIController {
         if (!meta || typeof meta !== 'object') return;
         let changed = false;
 
-        // «Не задано автором» = пусто / плейсхолдер / дефолтное имя нового конспекта.
-        const curTitle = (AppState.currentNote.title || '').trim();
-        const isDefaultTitle = !curTitle
-            || curTitle === t('placeholder_title')
-            || curTitle === t('menu_new_note')
-            || curTitle === t('untitled');
+        const isDefaultTitle = GenerationChanges.isDefaultTitle(AppState.currentNote.title);
         if (meta.note_title && isDefaultTitle) {
             AppState.updateNote({title: meta.note_title.trim()});
             const input = document.getElementById('note-title');

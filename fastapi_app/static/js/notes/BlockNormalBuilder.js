@@ -155,7 +155,15 @@ class BlockNormalBuilder {
             `;
         }
 
-        div.querySelector('.block-title').textContent = block.title
+        // Old automatic anchor titles stay in saved notes; update only their display.
+        const oldQuestion = ['Что вам нужно понять?', 'Что вам надо объяснить?',
+            'What do you need to explain?', 'Нені түсіндіру керек?'];
+        const oldResult = ['Теперь вы поняли', 'Now you understand', 'Енді түсіндіңіз'];
+        const displayTitle = baseRole === 'anchor' && oldQuestion.includes(block.title)
+            ? t('hint_anchor_title')
+            : baseRole === 'anchor' && oldResult.includes(block.title)
+                ? t('anchor_resolved_label') : block.title;
+        div.querySelector('.block-title').textContent = displayTitle
             || t(block.role === 'section' ? 'section_word' : 'hint_anchor_title');
         const dot = div.querySelector('.block-status-dot');
         if (dot) {

@@ -52,12 +52,20 @@
                 {% set base = role.split('.')[0] %}
                 {% if base == 'anchor' and b.get('anchorResolved') %}
                     {% set label = _('shared_anchor_label') %}
+                {% elif base == 'anchor' %}
+                    {% set label = _('hint_anchor_title') %}
                 {% else %}
                     {% set label = algo.get(base + '_title') or algo.get(base) or '' %}
                 {% endif %}
                 <div class="blk {% if base == 'anchor' %}blk-anchor{% endif %}">
                     {% if label %}<div class="blk-role">{{ label }}</div>{% endif %}
-                    {% if b.get('title') %}<h3>{{ b.get('title') }}</h3>{% endif %}
+                    {% set title = b.get('title') %}
+                    {% if base == 'anchor' and title in ['Что вам нужно понять?', 'Что вам надо объяснить?', 'What do you need to explain?', 'Нені түсіндіру керек?'] %}
+                        {% set title = _('hint_anchor_title') %}
+                    {% elif base == 'anchor' and title in ['Теперь вы поняли', 'Now you understand', 'Енді түсіндіңіз'] %}
+                        {% set title = _('shared_anchor_label') %}
+                    {% endif %}
+                    {% if title %}<h3>{{ title }}</h3>{% endif %}
                     <div class="blk-body">{{ b.get('html') | safe }}</div>
                 </div>
             {% endif %}

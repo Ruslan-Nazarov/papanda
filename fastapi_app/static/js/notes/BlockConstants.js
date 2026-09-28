@@ -12,7 +12,8 @@ const _alg = () => {
 };
 
 const _stepTitle = (role) => {
-    const key = role === 'anchor' ? 'anchor' : `${role}_title`;
+    if (role === 'anchor') return t('hint_anchor_title');
+    const key = `${role}_title`;
     return _alg()[key] || t(role === 'anchor' ? 'hint_anchor_title' : `hint_${role}_title`);
 };
 
@@ -27,7 +28,8 @@ export const ALGORITHM_STEPS = [
 
 // Тексты подсказок: #algorithm-data (из 7_*.json), fallback — i18n hint_*.
 export const ALGORITHM_TEXTS = new Proxy({}, {
-    get: (_t, role) => _alg()[role] || t(role === 'anchor' ? 'hint_anchor' : `hint_${role}`),
+    get: (_t, role) => role === 'anchor' ? t('hint_anchor_title')
+        : (_alg()[role] || t(`hint_${role}`)),
 });
 
 export const STEP_ORDER = {

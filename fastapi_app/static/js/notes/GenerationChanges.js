@@ -6,6 +6,16 @@ class GenerationChanges {
         return /^step([1-5])(?:\.[1-9][0-9]*)?$/.exec(role || '')?.[1] || null;
     }
 
+    static isDefaultTitle(title) {
+        const value = title?.trim() || '';
+        const previousDefaults = ['Новое объяснение', 'Название объяснения...',
+            'New explanation', 'New Explanation', 'Explanation title...',
+            'Жаңа түсіндірме', 'Түсіндірме атауы...'];
+        return !value || previousDefaults.includes(value)
+            || ['placeholder_title', 'menu_new_note', 'new_note_default', 'untitled']
+                .some(key => t(key) === value);
+    }
+
     static build(note, result, toHtml, definitions = []) {
         const copy = JSON.parse(JSON.stringify(note));
         const updates = result.updated_steps || {};
@@ -49,8 +59,7 @@ class GenerationChanges {
         }
         const meta = result.note_meta || {};
         const currentTitle = copy.title?.trim() || '';
-        if ((!currentTitle || ['placeholder_title', 'menu_new_note', 'untitled'].some(key => t(key) === currentTitle))
-            && meta.note_title) copy.title = meta.note_title.trim();
+        if (this.isDefaultTitle(currentTitle) && meta.note_title) copy.title = meta.note_title.trim();
         const anchor = blocks.find(block => block.role === 'anchor');
         if (anchor && meta.anchor_summary) {
             anchor.sourceGoal ||= (anchor.html || '').replace(/<[^>]+>/g, '').trim();

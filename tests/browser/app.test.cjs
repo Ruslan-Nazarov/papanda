@@ -75,6 +75,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         // New scratch note, through the same public UI action as the menu.
         await page.click('#btn-new-conspect');
         await page.waitForSelector('.dialectics-hint-block[data-role="anchor"]');
+        assert.match(await page.$eval('.dialectics-hint-block[data-role="anchor"]', el => el.textContent), /О чём хотите узнать\?/);
         await t.test('manual keyboard entry, save and reload', async () => {
             await page.focus('.dialectics-hint-block[data-role="anchor"]');
             await page.keyboard.press('Enter');
