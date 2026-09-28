@@ -125,6 +125,7 @@ class GenerationInputStep(BaseModel):
 
 class GenerationInput(BaseModel):
     target_goal: str = Field(default='', max_length=10_000)
+    reference: Optional[str] = Field(default=None, max_length=2 * 1024 * 1024)
     steps: dict[Annotated[str, Field(pattern=r'^step[1-5](?:\.[1-9][0-9]*)?$')], GenerationInputStep] = Field(default_factory=dict, max_length=100)
 
 

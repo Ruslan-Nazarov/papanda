@@ -14,13 +14,23 @@ def expired_ids():
     with database() as db:
         return [r[0] for r in db.execute('SELECT id FROM sessions WHERE expires<=?', (time.time(),))]
 
-def retire(sid):
+def retire(sid, path):
     with database() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row = db.execute('SELECT expires FROM sessions WHERE id=?', (sid,)).fetchone()
+        # Activity may have renewed this session since expired_ids() ran.
+        if not row or row[0] > time.time() or not settings.DEMO_DELETE_EXPIRED_DATA:
+            return
+        for suffix in ('', '-wal', '-shm'):
+            target = path.with_name(path.name + suffix)
+            if target.resolve().parent != settings.DEMO_DIR.resolve():
+                raise RuntimeError('Demo cleanup path escaped its directory')
+            target.unlink(missing_ok=True)
         db.execute('DELETE FROM shares WHERE owner=?', (sid,))
         db.execute('DELETE FROM sessions WHERE id=? AND expires<=?', (sid, time.time()))
 
 async def cleanup_expired_sessions():
-    if not settings.DEMO_MODE:
+    if not settings.DEMO_MODE or not settings.DEMO_DELETE_EXPIRED_DATA:
         return
     for sid in await asyncio.to_thread(expired_ids):
         if len(sid) != 64 or any(c not in '0123456789abcdef' for c in sid):
@@ -33,12 +43,7 @@ async def cleanup_expired_sessions():
             engine = _engine_cache.pop(url, None)
             if engine:
                 await engine.dispose()
-            for suffix in ('', '-wal', '-shm'):
-                target = path.with_name(path.name + suffix)
-                if target.resolve().parent != settings.DEMO_DIR.resolve():
-                    raise RuntimeError('Demo cleanup path escaped its directory')
-                target.unlink(missing_ok=True)
-            await asyncio.to_thread(retire, sid)
+            await asyncio.to_thread(retire, sid, path)
 
 async def cleanup_old_dbs():
     while True:

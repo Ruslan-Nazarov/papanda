@@ -3,12 +3,12 @@ engine -- a separate, pip-installed package (see requirements.in) -- instead of 
 five-stage Planner+Judge pipeline. Selected instead of GenerationPipeline in ai_router_service.py
 when Settings.GENERATION_ENGINE == "dialectic_v3".
 
-Scope (see the integration plan): only full-conspectus generation. `generate_step`/pinned-step
-clarify and reference-document RAG grounding are not supported here -- callers should keep using the
-legacy engine for those, matching the fallback already wired at the construction site.
+Full builds and step proposals use the same authored six-block algorithm. A step
+proposal returns only the requested step after building with the existing note as context.
 """
 import asyncio
 import uuid
+from contextlib import aclosing
 from pathlib import Path
 from typing import AsyncIterator
 
@@ -19,7 +19,8 @@ from dialectic_world.world.model import World
 
 from fastapi_app.config import settings as conspect_settings
 from fastapi_app.services.generation.contracts import GenerationResult, JudgeVerdict
-from fastapi_app.services.generation.runtime import current_run
+from fastapi_app.services.generation.runtime import current_run, GenerationContext, generation_scope, GenerationError
+from fastapi_app.services.generation.dialectic_llm import DialecticLLM
 
 _PHASE_OF = {
     "FindP0": "planning",
@@ -146,8 +147,11 @@ def build_generation_result(world: World, run_id: str, locale: str = "ru",
     if world.p0:
         updated_steps["step1"] = _step(_p0_content(world, locale))
     if world.iterations:
-        for i, pid in enumerate(world.iterations[-1].developing[:4], start=1):
-            updated_steps[f"step2.{i}"] = _step(world.get(pid).statement)
+        index = 0
+        for iteration in world.iterations:
+            for pid in iteration.developing:
+                index += 1
+                updated_steps[f"step2.{index}"] = _step(world.get(pid).statement)
     if world.opposite:
         updated_steps["step3"] = _step(_opposite_content(world, locale))
     if world.contradiction:
@@ -164,20 +168,31 @@ def build_generation_result(world: World, run_id: str, locale: str = "ru",
     return GenerationResult(run_id=run_id, status=status, source_revision=source_revision,
                             updated_steps=updated_steps,
                             replace_bases=["1", "2", "3", "4", "5"], step_titles={}, note_meta={},
-                            verdict={}, judge=JudgeVerdict(), report={}, error_message=error_message)
+                            verdict={}, judge=JudgeVerdict(),
+                            report={'engine': 'dialectic_v3', 'iterations': len(world.iterations)},
+                            error_message=error_message)
 
 
 class DialecticV3Pipeline:
-    """Constructor shape matches GenerationPipeline's (ConspectusRouter.__init__ calls both the same
-    way) -- the four arguments are accepted and unused, since this pipeline has its own engine
-    instead of reusing conspect's ai_service/context_builder/sanitizer/rag_manager."""
+    """Application lifecycle, context and document mapping around the packaged engine."""
 
     def __init__(self, ai_service=None, context_builder=None, sanitizer=None, rag_manager=None):
-        del ai_service, context_builder, sanitizer, rag_manager
+        self.rag_manager = rag_manager
 
     async def stream_generate_full(self, state, locale, **kwargs) -> AsyncIterator[tuple]:
-        # target_step/pinned_step/question are not supported (see module docstring). source_revision is the
-        # note revision the client sent; the client rejects a result that does not echo it back.
+        run = current_run.get() or GenerationContext(source_revision=kwargs.get('source_revision'))
+        try:
+            async with generation_scope(run):
+                async with aclosing(self._generate(state or {}, locale, **kwargs)) as source:
+                    async for event in source:
+                        yield event
+        except GenerationError as error:
+            run.status = 'failed'
+            yield '__terminal__', GenerationResult(run_id=run.run_id, status='failed',
+                source_revision=kwargs.get('source_revision'), error_message=str(error),
+                report=run.metrics()).model_dump()
+
+    async def _generate(self, state, locale, **kwargs):
         source_revision = kwargs.get("source_revision")
         # sse_response() allocates the run's id in its GenerationContext and rejects a terminal result
         # carrying any other one ("Mismatched run ID"), so take it from the ambient context.
@@ -192,8 +207,17 @@ class DialecticV3Pipeline:
 
         _ensure_api_keys_in_environ()
         model_spec = _builder_model_spec()
+        reference = state.get('reference')
+        if reference is None and self.rag_manager is not None:
+            reference = await self.rag_manager.reference_for(domain)
+        additional = {key: value for key, value in {
+            'reference_document': reference, 'existing_note_steps': state.get('steps'),
+            'requested_step': kwargs.get('target_step'), 'clarified_step': kwargs.get('pinned_step'),
+            'user_question': kwargs.get('question'),
+        }.items() if value is not None and value != '' and value != {}}
+        llm = DialecticLLM(build_llm(model_spec), additional)
         # The engine's instructions are always English; only the language of the answer follows the UI locale.
-        ctx = Context(llm=build_llm(model_spec), trace=Trace(_runs_dir() / f"{run_id}.jsonl"),
+        ctx = Context(llm=llm, trace=Trace(_runs_dir() / f"{run_id}.jsonl"),
                      settings=DialecticSettings(prompt_language="en", builder_model=model_spec,
                                                 output_language=_OUTPUT_LANGUAGE.get(locale, "Russian")))
 
@@ -204,25 +228,47 @@ class DialecticV3Pipeline:
         ctx.on_event = on_event
 
         task = asyncio.create_task(build_world(domain, ctx))
-        while not task.done():
-            get_task = asyncio.ensure_future(queue.get())
-            await asyncio.wait({task, get_task}, return_when=asyncio.FIRST_COMPLETED)
-            if get_task.done():
-                block, _data = get_task.result()
-                yield "__status__", {"phase": _PHASE_OF.get(block, "generating")}
-            else:
-                get_task.cancel()
-        while not queue.empty():
-            block, _data = queue.get_nowait()
-            yield "__status__", {"phase": _PHASE_OF.get(block, "generating")}
-
+        get_task = None
         try:
+            while not task.done():
+                get_task = asyncio.create_task(queue.get())
+                await asyncio.wait({task, get_task}, return_when=asyncio.FIRST_COMPLETED)
+                if get_task.done():
+                    block, _data = get_task.result()
+                    yield "__status__", {"phase": _PHASE_OF.get(block, "generating")}
+                else:
+                    get_task.cancel()
+                    await asyncio.gather(get_task, return_exceptions=True)
+            while not queue.empty():
+                block, _data = queue.get_nowait()
+                yield "__status__", {"phase": _PHASE_OF.get(block, "generating")}
             world = await task
+        except GenerationError:
+            raise
         except Exception as exc:  # noqa: BLE001 -- surfaced to the caller as a failed terminal result
             yield "__terminal__", GenerationResult(
                 run_id=run_id, status="failed", source_revision=source_revision, judge=JudgeVerdict(),
                 error_message=f"{type(exc).__name__}: {exc}").model_dump()
             return
+        finally:
+            pending = [t for t in (task, get_task) if t is not None]
+            for pending_task in pending:
+                if not pending_task.done():
+                    pending_task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            await llm.aclose()
 
         _save_world(world, run_id)
-        yield "__terminal__", build_generation_result(world, run_id, locale, source_revision).model_dump()
+        result = build_generation_result(world, run_id, locale, source_revision)
+        target = kwargs.get('target_step')
+        if target is not None:
+            result.updated_steps = {key: value for key, value in result.updated_steps.items()
+                                    if key.removeprefix('step').split('.')[0] == str(target)}
+            # Proposing one step must not delete any other steps from the student's note.
+            result.replace_bases = [str(target)]
+            if not result.updated_steps and result.status == 'completed':
+                result.status = 'failed'
+        if run is not None:
+            run.status = result.status
+            result.report.update(run.metrics())
+        yield "__terminal__", result.model_dump()

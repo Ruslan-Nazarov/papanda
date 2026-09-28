@@ -163,6 +163,7 @@ async def test_demo_public_live_view_revoke_delete_expiry_and_reindex(file_clien
         await file_client.post(url + '/restore')
         assert (await visitor.get(second['path'])).status_code == 404
         third = (await file_client.post(url + '/share')).json()
+        monkeypatch.setattr(settings, 'DEMO_DELETE_EXPIRED_DATA', True)
         with database() as db:
             db.execute('UPDATE sessions SET expires=?', (time.time() - 1,))
         assert (await visitor.get(third['path'])).status_code == 404

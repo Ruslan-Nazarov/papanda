@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # "dialectic_v3" (default): the dialectic_world engine (services/generation/dialectic_v3_pipeline.py)
     # for full-conspectus generation. "legacy": this app's own five-stage Planner+Judge pipeline.
-    # generate_step / pinned-step / reference-grounded flows always use legacy regardless of this setting.
+    # Full generation, individual steps and clarifications use this selected engine.
     # Set GENERATION_ENGINE=legacy in the environment to roll back without a code change.
     GENERATION_ENGINE: str = "dialectic_v3"
 
@@ -85,8 +85,10 @@ class Settings(BaseSettings):
     TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0, le=8)
     TRUSTED_PROXY_IPS: str = ""  # comma-separated exact IPs/CIDRs, never '*'
     IP_DAILY_GENERATION_CAP: int = Field(default=80, ge=0)
-    DEMO_SESSION_TTL_SECONDS: int = Field(default=7 * 24 * 3600, ge=60)
-    DEMO_MAX_SESSIONS: int = Field(default=1000, ge=1)
+    DEMO_SESSION_TTL_SECONDS: int = Field(default=30 * 24 * 3600, ge=60)
+    # Working notes are retained unless an operator explicitly enables expiry deletion.
+    DEMO_DELETE_EXPIRED_DATA: bool = False
+    DEMO_MAX_SESSIONS: int = Field(default=0, ge=0)  # 0 = no arbitrary visitor ceiling
     MAX_CACHED_ENGINES: int = Field(default=32, ge=1, le=1024)
     DEMO_MAX_DB_BYTES: int = Field(default=32 * 1024 * 1024, ge=65536)
     MAX_REQUEST_BYTES: int = Field(default=12 * 1024 * 1024, ge=1024)

@@ -2,7 +2,7 @@ import os
 
 # Set these before importing the app: a developer's .env must never enable
 # real provider calls or secret-file writes during the test suite.
-for key in ("GROQ_API_KEY", "OPENROUTER_API_KEY",
+for key in ("OPENAI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY",
             "CEREBRAS_API_KEY", "GOOGLE_API_KEY",
             "GIGACHAT_AUTH_KEY"):
     os.environ[key] = ""
@@ -35,6 +35,7 @@ def isolated_data_settings(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "DEMO_DIR", tmp_path / "data" / "demo")
     monkeypatch.setattr(settings, "DATABASE_URL", "")
     monkeypatch.setattr(settings, "DEMO_MODE", False)
+    monkeypatch.setattr(settings, "DEMO_DELETE_EXPIRED_DATA", False)
     monkeypatch.setattr(settings, "SECRET_KEY", "test-only-secret")
 
 @pytest_asyncio.fixture

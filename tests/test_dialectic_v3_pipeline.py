@@ -60,13 +60,13 @@ def test_status_mapping(world_status, resolution_kind, expected):
     assert result.status == expected
 
 
-def test_full_build_produces_all_five_steps_capped_at_four_for_step_two():
+def test_full_build_preserves_every_developing_process():
     world = _built_world(status="built")
     result = build_generation_result(world, "run1")
-    assert set(result.updated_steps) == {"step1", "step2.1", "step2.2", "step2.3", "step2.4", "step3", "step4", "step5"}
+    assert set(result.updated_steps) == {"step1", "step2.1", "step2.2", "step2.3", "step2.4", "step2.5", "step3", "step4", "step5"}
     assert "простейший процесс" in result.updated_steps["step1"]["content"]
     assert result.updated_steps["step1"]["author"] == "ai" and result.updated_steps["step1"]["status"] == "in_progress"
-    assert "развивающий 5" not in str(result.updated_steps)   # 5th developing process dropped, capped at 4
+    assert "развивающий 5" in str(result.updated_steps)
     assert "противоположный" in result.updated_steps["step3"]["content"]
     assert result.replace_bases == ["1", "2", "3", "4", "5"]
 
@@ -75,6 +75,36 @@ def test_no_p0_world_has_no_steps():
     world = World(domain="тест", status="no_p0")
     result = build_generation_result(world, "run1")
     assert result.updated_steps == {}
+
+
+def test_all_iterations_survive_document_mapping():
+    world = _built_world()
+    extra = _process('P6', 'developing', 'second iteration', iteration=2)
+    world.add(extra)
+    world.iterations.append(IterationRecord(n=2, based_on_iteration=1, developing=['P6'],
+        p0_revealed_content='more', iteration_practical_integrity='complete', raw={}))
+    result = build_generation_result(world, 'run1')
+    assert result.updated_steps['step2.1']['content'] == 'развивающий 1'
+    assert result.updated_steps['step2.6']['content'] == 'second iteration'
+
+
+@pytest.mark.asyncio
+async def test_step_proposal_preserves_other_families_and_supplies_context(monkeypatch):
+    seen = {}
+    async def build(domain, ctx):
+        seen.update(ctx.llm.context)
+        return _built_world()
+    monkeypatch.setattr(pipeline_module, 'build_world', build)
+    monkeypatch.setattr(pipeline_module, 'build_llm', lambda spec: object())
+    monkeypatch.setattr(pipeline_module.conspect_settings, 'GROQ_API_KEY', 'fixture')
+    state = {'target_goal': 'topic', 'reference': 'document', 'steps': {'step1': {'content': 'original'}}}
+    events = [event async for event in DialecticV3Pipeline().stream_generate_full(
+        state, 'en', target_step=2, pinned_step='2', question='clarify')]
+    result = events[-1][1]
+    assert result['replace_bases'] == ['2']
+    assert all(key.startswith('step2.') for key in result['updated_steps'])
+    assert seen['reference_document'] == 'document' and seen['user_question'] == 'clarify'
+    assert seen['existing_note_steps'] == state['steps']
 
 
 @pytest.mark.asyncio

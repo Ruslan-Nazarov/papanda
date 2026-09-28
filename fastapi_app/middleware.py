@@ -4,8 +4,9 @@ import ipaddress
 from fastapi import Request, HTTPException
 from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.routing import Match
 from fastapi_app.config import settings
-from fastapi_app.services.security_store import session_for_cookie
+from fastapi_app.services.security_store import session_for_cookie, pending_cookie
 from fastapi_app.rate_limiter import trusted_proxy
 
 
@@ -90,6 +91,15 @@ class SessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith(('/s/', '/api/dialectics/shared/', '/static/')) or request.url.path in {'/health', '/favicon.ico'}:
             return await call_next(request)
+        # Public pages and unmatched URLs need no private storage identity.
+        if settings.DEMO_MODE and (not request.url.path.startswith('/api/') or not any(
+                route.matches(request.scope)[0] == Match.FULL for route in request.app.routes)):
+            response = await call_next(request)
+            if request.url.path in {'/', '/editor'} and not request.cookies.get('session_id'):
+                response.set_cookie('session_id', pending_cookie(), httponly=True,
+                    secure=request.url.scheme == 'https', samesite='lax',
+                    max_age=settings.DEMO_SESSION_TTL_SECONDS)
+            return response
         session_id = request.cookies.get("session_id")
         new_cookie = None
         if settings.DEMO_MODE:

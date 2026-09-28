@@ -1,10 +1,12 @@
 """Server-issued demo sessions and atomic daily budgets on one local SQLite file."""
 import hashlib
+import hmac
 import secrets
 import sqlite3
 import time
 import os
-from contextlib import contextmanager
+import uuid
+from contextlib import contextmanager, closing
 
 from fastapi import HTTPException
 from fastapi_app.config import settings
@@ -58,17 +60,75 @@ def database():
         db.close()
 
 
+def _recover_legacy_database(token, sid):
+    """The original UUID cookie remains a bearer credential, never a public filename.
+
+    Copy SQLite consistently, keep the source, and never accept paths/symlinks or
+    an arbitrary client-selected ID. The registry transaction serializes recovery.
+    """
+    try:
+        if str(uuid.UUID(token)) != token:
+            return False
+    except (ValueError, TypeError, AttributeError):
+        return False
+    source = settings.DEMO_DIR / f'{token}.db'
+    if not source.is_file() or source.is_symlink():
+        return False
+    target = settings.DEMO_DIR / f'{sid}.db'
+    if target.exists():
+        return not target.is_symlink()
+    temporary = target.with_suffix('.recovering')
+    try:
+        with closing(sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True)) as old:
+            with closing(sqlite3.connect(temporary)) as new:
+                old.backup(new)
+                if new.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+                    raise RuntimeError('Legacy database failed integrity check; original retained')
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return True
+
+
+def pending_cookie():
+    """Bind concurrent first API requests without allocating a database/registry row."""
+    nonce = secrets.token_urlsafe(32)
+    signature = hmac.new(settings.SECRET_KEY.encode(), nonce.encode(), hashlib.sha256).hexdigest()
+    return f'v1.{nonce}.{signature}'
+
+
+def _valid_pending_cookie(token):
+    if not token or len(token) != 111 or not token.startswith('v1.'):
+        return False
+    nonce, signature = token[3:46], token[47:]
+    expected = hmac.new(settings.SECRET_KEY.encode(), nonce.encode(), hashlib.sha256).hexdigest()
+    return token[46] == '.' and hmac.compare_digest(signature, expected)
+
+
 def session_for_cookie(token):
     now = time.time()
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
-        if token and len(token) == 43:
+        if token and len(token) in {36, 43, 111}:
             sid = hashlib.sha256(token.encode()).hexdigest()
             row = db.execute('SELECT expires FROM sessions WHERE id=?', (sid,)).fetchone()
-            if row and row[0] > now:
-                db.execute('UPDATE sessions SET last_seen=? WHERE id=?', (now, sid))
-                return sid, None
-        if db.execute('SELECT count(*) FROM sessions').fetchone()[0] >= settings.DEMO_MAX_SESSIONS:
+            if row and (row[0] > now or not settings.DEMO_DELETE_EXPIRED_DATA):
+                db.execute('UPDATE sessions SET last_seen=?,expires=? WHERE id=?',
+                           (now, now + settings.DEMO_SESSION_TTL_SECONDS, sid))
+                return sid, token  # renew the browser cookie along with server expiry
+            if not row and len(token) == 36 and _recover_legacy_database(token, sid):
+                db.execute('INSERT INTO sessions(id,expires,last_seen) VALUES (?, ?, ?)',
+                           (sid, now + settings.DEMO_SESSION_TTL_SECONDS, now))
+                return sid, token
+            if not row and _valid_pending_cookie(token):
+                if (settings.DEMO_MAX_SESSIONS and db.execute('SELECT count(*) FROM sessions').fetchone()[0]
+                        >= settings.DEMO_MAX_SESSIONS):
+                    raise HTTPException(503, 'Demo session capacity reached')
+                db.execute('INSERT INTO sessions(id,expires,last_seen) VALUES (?, ?, ?)',
+                           (sid, now + settings.DEMO_SESSION_TTL_SECONDS, now))
+                return sid, token
+        if (settings.DEMO_MAX_SESSIONS and
+                db.execute('SELECT count(*) FROM sessions').fetchone()[0] >= settings.DEMO_MAX_SESSIONS):
             raise HTTPException(503, 'Demo session capacity reached')
         token = secrets.token_urlsafe(32)
         sid = hashlib.sha256(token.encode()).hexdigest()
@@ -92,7 +152,7 @@ def reserve_budget(subjects):
 def session_is_live(sid):
     with database() as db:
         row = db.execute('SELECT expires FROM sessions WHERE id=?', (sid,)).fetchone()
-        return bool(row and row[0] > time.time())
+        return bool(row and (row[0] > time.time() or not settings.DEMO_DELETE_EXPIRED_DATA))
 
 
 def quota_stats():
@@ -123,4 +183,5 @@ def share_owner(token):
 
 def live_sessions():
     with database() as db:
-        return [r[0] for r in db.execute('SELECT id FROM sessions WHERE expires>?', (time.time(),))]
+        return [r[0] for r in db.execute('SELECT id FROM sessions WHERE expires>? OR ?=0',
+                                       (time.time(), int(settings.DEMO_DELETE_EXPIRED_DATA)))]

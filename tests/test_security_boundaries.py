@@ -40,6 +40,7 @@ def test_only_verified_proxy_chain_changes_quota_identity(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_demo_sessions_own_every_database_object_and_expire(file_client, monkeypatch):
+    monkeypatch.setattr(settings, 'DEMO_DELETE_EXPIRED_DATA', True)
     await dispose_all_engines()
     monkeypatch.setattr(settings, 'DEMO_MODE', True)
     async with AsyncClient(transport=ASGITransport(app), base_url='http://127.0.0.1') as other:
@@ -97,6 +98,7 @@ async def test_oversized_body_rejected_before_route_for_length_and_chunks(client
 
 @pytest.mark.asyncio
 async def test_cleanup_defers_active_database(file_client, monkeypatch):
+    monkeypatch.setattr(settings, 'DEMO_DELETE_EXPIRED_DATA', True)
     await dispose_all_engines()
     monkeypatch.setattr(settings, 'DEMO_MODE', True)
     await file_client.get('/api/dialectics')
@@ -118,7 +120,7 @@ def test_demo_capacity_and_process_lock(monkeypatch):
     monkeypatch.setattr(settings, 'DEMO_MODE', True)
     monkeypatch.setattr(settings, 'DEMO_MAX_SESSIONS', 1)
     sid, token = session_for_cookie(None)
-    assert session_for_cookie(token) == (sid, None)
+    assert session_for_cookie(token) == (sid, token)
     with pytest.raises(HTTPException) as exc:
         session_for_cookie('forged')
     assert exc.value.status_code == 503

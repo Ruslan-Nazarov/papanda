@@ -89,7 +89,7 @@ class NoteBlock(BlockContent):
 
 class NoteCreate(BaseModel):
     schema_version: Literal[1] = 1
-    title: str = Field(max_length=150)
+    title: str
     blocks: List[NoteBlock]
     stickers: List[NoteSticker] = Field(default_factory=list, max_length=1000)
     is_pinned: bool = False
@@ -109,7 +109,7 @@ class NoteCreate(BaseModel):
 class NoteUpdate(BaseModel):
     schema_version: Literal[1] = 1
     revision: int = Field(ge=1)
-    title: Optional[str] = Field(default=None, max_length=150)
+    title: Optional[str] = None
     blocks: Optional[List[NoteBlock]] = None
     stickers: Optional[List[NoteSticker]] = Field(default=None, max_length=1000)
     is_pinned: Optional[bool] = None
