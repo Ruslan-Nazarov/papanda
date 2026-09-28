@@ -12,8 +12,10 @@ Workflow использует SSH secrets `SERVER_HOST`, `SERVER_USER`, `SERVER_
 отслеживаемых файлов на сервере, сохраняет прежний Git SHA в `.last_deploy_rev`,
 обновляет checkout до проверенного SHA, извлекает собранный frontend и `release.json`,
 устанавливает runtime lock в существующий `venv` и перезапускает `papanda`.
-Деплой успешен только после проверки `/health` с ожидаемым SHA и HTML интерфейса
-на `https://papanda.kz` через существующий nginx (приложение требует HTTPS).
+Деплой успешен только после проверки `/health` с ожидаемым SHA, manifest сборки
+и файлов интерфейса на `https://papanda.kz` через существующий nginx.
+Проверка не открывает `/` и не создаёт демо-сессии; доступность создания новых
+сессий зависит отдельно от установленного лимита `DEMO_MAX_SESSIONS`.
 SSH и ошибки команд видны в логе Actions.
 
 Сервис запускается из `/root/papanda` через `/root/papanda/venv/bin/uvicorn`.

@@ -7,7 +7,7 @@ revision=${1:?Expected Git revision}
 archive=${2:?Expected release archive}
 checksum=${3:?Expected archive checksum}
 app_dir=${PAPANDA_APP_DIR:-/root/papanda}
-# Production requires HTTPS; go through the existing nginx proxy.
+# Check the public site through the existing nginx proxy.
 health_url=${PAPANDA_HEALTH_URL:-https://papanda.kz}
 [[ "$revision" =~ ^[a-f0-9]{40}$ ]]
 [[ "$checksum" =~ ^[a-f0-9]{64}$ ]]
@@ -36,18 +36,4 @@ venv/bin/python -m pip install --require-hashes -r requirements.txt
 venv/bin/python -m pip check
 systemctl restart papanda
 systemctl is-active --quiet papanda
-venv/bin/python - "$revision" "$health_url" <<'PY'
-import sys
-import time
-from scripts.verify_release import check
-
-for attempt in range(60):
-    try:
-        check(sys.argv[2], sys.argv[1])
-        break
-    except (OSError, ValueError, RuntimeError):
-        if attempt == 59:
-            raise
-        time.sleep(0.5)
-print(f'Deployment completed: {sys.argv[1]}')
-PY
+venv/bin/python scripts/check_deployment.py --sha "$revision" --url "$health_url"
