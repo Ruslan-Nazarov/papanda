@@ -63,7 +63,7 @@ jobs:
 
   deploy:
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.PAPANDA_RELEASES_READY == 'true'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -79,7 +79,7 @@ jobs:
         with:
           name: release-${{ github.sha }}
           path: artifact
-      - name: Deploy verified archive
+      - name: Update existing server checkout
         env:
           RELEASE_SHA: ${{ github.sha }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -92,7 +92,7 @@ jobs:
           [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]
           [[ "$SERVER_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
           [[ "$SERVER_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]
-          test -n "$SERVER_KNOWN_HOSTS"
+          test -n "$SERVER_KNOWN_HOSTS" || { echo '::error::SERVER_KNOWN_HOSTS is missing'; exit 1; }
           install -d -m 700 "$HOME/.ssh"
           printf '%s\n' "$SERVER_SSH_KEY" > "$HOME/.ssh/id_ed25519"
           printf '%s\n' "$SERVER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
@@ -100,7 +100,7 @@ jobs:
           digest=$(cat artifact/release.tar.gz.sha256)
           [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
           destination="$SERVER_USER@$SERVER_HOST"
-          incoming="/opt/papanda/incoming/$RELEASE_SHA"
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$destination" "mkdir -p '$incoming'"
-          scp -o BatchMode=yes -o StrictHostKeyChecking=yes artifact/release.tar.gz scripts/deploy_release.py scripts/release_common.py "$destination:$incoming/"
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$destination" "python3.12 '$incoming/deploy_release.py' --root /opt/papanda --archive '$incoming/release.tar.gz' --sha '$RELEASE_SHA' --sha256 '$digest'"
+          incoming="/root/papanda/.cache/deploy/$RELEASE_SHA"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$destination" "test -d /root/papanda/.git && mkdir -p '$incoming'"
+          scp -o BatchMode=yes -o StrictHostKeyChecking=yes artifact/release.tar.gz scripts/deploy_checkout.sh "$destination:$incoming/"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$destination" "bash '$incoming/deploy_checkout.sh' '$RELEASE_SHA' '$incoming/release.tar.gz' '$digest'"

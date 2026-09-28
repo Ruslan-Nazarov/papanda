@@ -1,8 +1,40 @@
-# Выпуск и восстановление — R6
+# Выпуск и восстановление
 
-## Проверки и артефакт
+## Действующий автоматический деплой — с 28.09.2026
 
-`.github/workflows/deploy.yml` работает на PR, push main и workflow_dispatch.
+После проверок push в `main` обновляет существующую установку `/root/papanda`.
+Ручной `workflow_dispatch` на main работает так же; PR и другие ветки только проверяются.
+Workflow использует SSH secrets `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`,
+`SERVER_KNOWN_HOSTS` (repository или environment `production`). Для существующей
+установки `SERVER_USER=root`. Переменная `PAPANDA_RELEASES_READY` больше не используется.
+
+`scripts/deploy_checkout.sh` проверяет SHA256 CI-архива и отсутствие изменений
+отслеживаемых файлов на сервере, сохраняет прежний Git SHA в `.last_deploy_rev`,
+обновляет checkout до проверенного SHA, извлекает собранный frontend и `release.json`,
+устанавливает runtime lock в существующий `venv` и перезапускает `papanda`.
+Деплой успешен только после проверки `/health` с ожидаемым SHA и HTML интерфейса
+на `http://127.0.0.1:8000`. SSH и ошибки команд видны в логе Actions.
+
+Сервис запускается из `/root/papanda` через `/root/papanda/venv/bin/uvicorn`.
+Данные остаются в `/root/papanda/data`, настройки — в `/root/papanda/.env` и
+`/root/papanda/deployment.env`. Существующие настройки nginx и порт 8000 сохраняются.
+Workflow не переносит данные и не устанавливает unit из `deploy/papanda.service`.
+При переходе с временного `/root/papanda-releases/<SHA>` существующий systemd unit
+нужно один раз направить на checkout и venv, сохранив его остальные настройки.
+
+В этой схеме нет автоматического отката БД/окружения. После сбоя сначала изучите
+вывод команды; одна смена Git SHA не восстанавливает зависимости и схему данных.
+Перед ручным восстановлением сохраните текущие данные и используйте согласованные
+копии кода, frontend, окружения и БД. Повторный запуск выполняется через Actions.
+
+## Архив: схема R6 с отдельными релизами в /opt/papanda
+
+Ниже сохранена справочная инструкция для альтернативной схемы. Действующий
+workflow её не вызывает; настройка `/opt/papanda` для текущего деплоя не нужна.
+
+### Проверки и артефакт R6
+
+В исходной схеме R6 `.github/workflows/deploy.yml` работал на PR, push main и workflow_dispatch.
 Python 3.12 / Node 24 устанавливаются по lock; выполняются build, Python/JS
 тесты, ESLint, проверка типов DTO/синтаксиса, browser smoke и оба dependency audit.
 Chromium в изолированном CI запускается с `--no-sandbox`; внешние запросы
