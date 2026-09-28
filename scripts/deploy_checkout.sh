@@ -7,7 +7,8 @@ revision=${1:?Expected Git revision}
 archive=${2:?Expected release archive}
 checksum=${3:?Expected archive checksum}
 app_dir=${PAPANDA_APP_DIR:-/root/papanda}
-health_url=${PAPANDA_HEALTH_URL:-http://127.0.0.1:8000}
+# Production requires HTTPS; go through the existing nginx proxy.
+health_url=${PAPANDA_HEALTH_URL:-https://papanda.kz}
 [[ "$revision" =~ ^[a-f0-9]{40}$ ]]
 [[ "$checksum" =~ ^[a-f0-9]{64}$ ]]
 cd "$app_dir"
