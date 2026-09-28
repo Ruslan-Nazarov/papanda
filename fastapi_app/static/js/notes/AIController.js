@@ -289,11 +289,14 @@ class AIController {
         const run = {note, snapshot: JSON.parse(JSON.stringify(note)), epoch: AppState.documentEpoch,
             editRevision: AppState.editRevision, revision: note.revision, controller: new AbortController()};
         this._activeRun = run;
+        let requestQuery = '';
+        let requestCompleted = false;
         const cancel = () => run.controller.abort();
         GlobalLoader.show(t('ed_ai_analyzing'), cancel);
         try {
             const payload = {...parameters, context_state: this.buildStateForAI(),
                 source_revision: run.revision ?? null};
+            requestQuery = [payload.context_state.target_goal, parameters.question].filter(Boolean).join(' — ').slice(0, 10000);
             const result = parameters.action === 'generate_step'
                 ? await NotesAPI.routeConspectus(payload, run.controller.signal)
                 : await NotesAPI.stream('/ai/dialectics/conspectus/generate-full/stream', payload, null, ev => {
@@ -310,15 +313,19 @@ class AIController {
             }
             BlockDOMParser.syncDOMToState();
             if (result.status === 'not_applicable') {
+                requestCompleted = true;
+                await NotesAPI.addActivity(note.id, {kind:'ai_not_applicable', query:requestQuery,
+                    detail:String(result.verdict?.reason || '').slice(0, 2000)});
                 if (this._unchanged(run)) this.applyNotApplicable(result.verdict, onRenderAll);
                 return result;
             }
             if (!Object.keys(result.updated_steps || {}).length) throw new Error(t('ai_no_steps'));
+            requestCompleted = true;
             if (result.source_revision !== (run.revision ?? null)) throw new Error(t('gen_conflict_title'));
             if (AppState.currentNote !== run.note) return result;
             const full = parameters.action === 'generate_full';
             await NotesAPI.addActivity(note.id, {kind:'ai_proposed', step:full ? null : Number(parameters.target_step),
-                detail:result.status, run_id:result.run_id,
+                detail:result.status, run_id:result.run_id, query:requestQuery,
                 text:Object.entries(result.updated_steps).map(([role,value]) => `${role}: ${value.content}`).join('\n\n').slice(0, 50000)});
             GlobalLoader.hide();
             const choice = await ProposalReview.show(result, full);
@@ -368,6 +375,10 @@ class AIController {
             if (error.name === 'AbortError') {
                 if (this._activeRun === run) showToast(t('gen_cancelled'));
                 return null;
+            }
+            if (!requestCompleted && requestQuery && note.id) {
+                try { await NotesAPI.addActivity(note.id, {kind:'ai_request_failed', query:requestQuery,
+                    detail:String(error.message || error).slice(0, 2000)}); } catch {}
             }
             throw error;
         } finally {

@@ -83,7 +83,14 @@
                     <span class="pill-icon">☰</span> {{ _('nav_menu') }}
                 </button>
                 <div id="main-menu-dropdown" class="dropdown-menu hidden" style="min-width: 230px;">
-                    <div class="menu-item" id="menu-item-learning-history"><span class="menu-icon">↗</span><span>{{ _('learning_history') }}</span></div>
+                    <label class="menu-item" for="user-role"><span class="menu-icon">◉</span><span>{{ _('user_role') }}</span>
+                        <select id="user-role" aria-label="{{ _('user_role') }}">
+                            <option value="researcher">{{ _('role_researcher') }}</option>
+                            <option value="student">{{ _('role_student') }}</option>
+                            <option value="teacher">{{ _('role_teacher') }}</option>
+                        </select>
+                    </label>
+                    <div class="menu-item" id="menu-item-learning-history"><span class="menu-icon">↗</span><span id="learning-history-label">{{ _('learning_history') }}</span></div>
                     <div class="menu-item" id="menu-item-learning-demo"><span class="menu-icon">◈</span><span>{{ _('learning_community') }}</span></div>
                     <div class="menu-item" id="menu-item-ai-full"><span class="menu-icon">✦</span><span>{{ _('learning_full_note') }}</span></div>
                     <div class="menu-item" id="menu-item-open-note">

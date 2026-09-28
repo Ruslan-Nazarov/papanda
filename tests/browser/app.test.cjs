@@ -97,6 +97,19 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
         });
+        await t.test('research role has global request history and mock roles keep community', async () => {
+            await page.click('#btn-main-menu');
+            assert.equal(await page.$eval('#user-role', el => el.value), 'researcher');
+            assert.equal(await page.$eval('#menu-item-learning-demo', el => getComputedStyle(el).display), 'none');
+            await page.click('#menu-item-learning-history');
+            await page.waitForSelector('#research-history-results');
+            await page.click('.learning-close');
+            await page.click('#btn-main-menu');
+            await page.select('#user-role', 'student');
+            assert.notEqual(await page.$eval('#menu-item-learning-demo', el => getComputedStyle(el).display), 'none');
+            await page.reload({waitUntil:'networkidle0'});
+            assert.equal(await page.$eval('#user-role', el => el.value), 'student');
+        });
         await t.test('opening and closing editor releases document listeners', async () => {
             const session = await page.createCDPSession();
             const documentRef = await session.send('Runtime.evaluate', {expression: 'document'});
@@ -276,12 +289,22 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 assert.equal(await page.$eval('.learning-demo-notice', el => el.textContent), words.learning_demo_notice);
                 await page.click('[data-example="1"]');
                 assert((await page.$eval('.learning-demo-detail', el => el.textContent)).includes(words.learning_send_after_accounts));
-                for (const tab of ['map','portfolio','teacher','employer']) {
+                for (const tab of ['map','portfolio','employer']) {
                     await page.click(`.learning-demo-tabs [data-tab="${tab}"]`);
                     const expected = words[tab === 'map' ? 'learning_map_intro' : `learning_${tab}_title`];
                     assert((await page.$eval('.learning-demo-content', el => el.textContent)).includes(expected));
                 }
                 await page.click('.learning-close');
+                await page.click('#btn-main-menu');
+                await page.select('#user-role', 'teacher');
+                await page.click('#menu-item-learning-demo');
+                await page.waitForSelector('.learning-demo-tabs [data-tab="teacher"]');
+                assert.equal((await page.$$('.learning-demo-tabs [data-tab="portfolio"]')).length, 0);
+                await page.click('[data-tab="teacher"]');
+                assert((await page.$eval('.learning-demo-content', el => el.textContent)).includes(words.learning_teacher_title));
+                await page.click('.learning-close');
+                await page.click('#btn-main-menu');
+                await page.select('#user-role', 'student');
             }
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');

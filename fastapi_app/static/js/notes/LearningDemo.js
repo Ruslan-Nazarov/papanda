@@ -1,6 +1,7 @@
 import { lt as t } from './LearningI18n.js';
 import LearningWorkspace from './LearningWorkspace.js';
 import NotesAPI from './api.js';
+import UserRole from './UserRole.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,13 +19,16 @@ const links = [
 
 export default class LearningDemo {
     static async open(tab = 'catalog') {
+        const allowed = UserRole.communityTabs();
+        if (!allowed.length) return;
+        if (!allowed.includes(tab)) tab = allowed[0];
         const {body} = LearningWorkspace.modal(t('community'));
         const notes = await NotesAPI.getNotes().catch(() => []);
         body.innerHTML = `<p class="learning-demo-notice">${t('demo_notice')}</p>
             <nav class="learning-demo-tabs">${[
                 ['catalog',t('catalog')],['map',t('map')],['portfolio',t('portfolio')],
                 ['teacher',t('teacher')],['employer',t('employer')]
-            ].map(([id,name]) => `<button type="button" data-tab="${id}" class="${tab===id?'active':''}">${name}</button>`).join('')}</nav>
+            ].filter(([id]) => allowed.includes(id)).map(([id,name]) => `<button type="button" data-tab="${id}" class="${tab===id?'active':''}">${name}</button>`).join('')}</nav>
             <div class="learning-demo-content"></div>`;
         const content = body.querySelector('.learning-demo-content');
         const select = name => {
@@ -62,12 +66,12 @@ export default class LearningDemo {
         host.innerHTML = `<h3>${esc(item.title)} <small>${t('demo')}</small></h3><p>${esc(item.explanation)}</p>
             <h4>${t('clarity_example')}</h4><p><b>${t('clearer')}:</b> ${esc(item.clearer)}</p>
             <p><b>${t('unclear')}:</b> ${esc(item.unclear)}</p>
-            <h4>${t('your_review')}</h4><fieldset class="learning-demo-rating"><legend>${t('rating_question')}</legend>
+            ${UserRole.get() === 'student' ? `<h4>${t('your_review')}</h4><fieldset class="learning-demo-rating"><legend>${t('rating_question')}</legend>
             ${[1,2,3,4,5].map(n => `<label><input type="radio" name="demo-rating" value="${n}"> ${n}</label>`).join('')}</fieldset>
             <label class="learning-demo-field">${t('clearer')}?<textarea placeholder="${t('your_explanation')}"></textarea></label>
             <label class="learning-demo-field">${t('unclear')}?<textarea placeholder="${t('author_question')}"></textarea></label>
             <button type="button" class="learning-demo-disabled" disabled>${t('send_after_accounts')}</button>
-            <p class="learning-demo-hint">${t('error_report_hint')}</p>`;
+            <p class="learning-demo-hint">${t('error_report_hint')}</p>` : ''}`;
     }
 
     static map(host) {

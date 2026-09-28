@@ -3,7 +3,7 @@ import uuid
 import html
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_app.models.notes import Note, NoteActivity, NoteFamily, NoteVersion
@@ -20,6 +20,24 @@ def _step_number(role):
 
 
 class LearningService:
+    @staticmethod
+    async def research_history(session: AsyncSession, search: str = '', kind: str = '', limit: int = 200):
+        query = select(NoteActivity, Note.title).join(Note, Note.id == NoteActivity.note_id).where(
+            Note.is_deleted == False,
+            NoteActivity.kind.in_(['question_answer', 'ai_proposed', 'ai_request_failed', 'ai_not_applicable']))
+        if kind:
+            query = query.where(NoteActivity.kind == kind)
+        if search:
+            query = query.where(or_(
+                func.lower(Note.title).contains(search.lower(), autoescape=True),
+                func.lower(func.json_extract(NoteActivity.data_json, '$.question')).contains(search.lower(), autoescape=True),
+                func.lower(func.json_extract(NoteActivity.data_json, '$.query')).contains(search.lower(), autoescape=True),
+            ))
+        rows = await session.execute(query.order_by(NoteActivity.created_at.desc(), NoteActivity.id.desc()).limit(limit))
+        return [{'id': activity.id, 'note_id': activity.note_id, 'note_title': title,
+                 'kind': activity.kind, 'data': activity.data_json, 'created_at': activity.created_at}
+                for activity, title in rows.all()]
+
     @staticmethod
     async def variants(session: AsyncSession, note_id: int):
         note = await get_note(session, note_id)

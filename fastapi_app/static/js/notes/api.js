@@ -110,6 +110,10 @@ class NotesAPI {
     static getVariants(id) { return this.request(`/dialectics/${id}/variants`); }
     static forkVariant(id, data) { return this.request(`/dialectics/${id}/variants`, 'POST', data).then(ApiContracts.noteResponse); }
     static getActivity(id) { return this.request(`/dialectics/${id}/activity`); }
+    static getResearchHistory(search = '', kind = '') {
+        const query = new URLSearchParams({search, kind});
+        return this.request(`/dialectics/research/history?${query}`);
+    }
     static addActivity(id, data) { return this.request(`/dialectics/${id}/activity`, 'POST', data); }
     static setLongTermGoal(id, revision, enabled) {
         return this.request(`/dialectics/${id}/goal`, 'PATCH', {revision, long_term_goal: enabled}).then(ApiContracts.noteResponse);

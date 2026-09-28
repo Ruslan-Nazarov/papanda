@@ -169,6 +169,49 @@ export default class LearningWorkspace {
         } catch (error) { showToast(error.message, 'error'); }
     }
 
+    static async researchHistory() {
+        const {body, close} = this.modal(w('research_history'));
+        body.innerHTML = `<form class="learning-form" id="research-history-search">
+            <input type="search" maxlength="200" placeholder="${esc(w('research_search'))}" aria-label="${esc(w('research_search'))}">
+            <select aria-label="${esc(w('research_kind'))}">
+                <option value="">${esc(w('research_all'))}</option>
+                <option value="question_answer">${esc(w('research_question'))}</option>
+                <option value="ai_proposed">${esc(w('research_generation'))}</option>
+                <option value="ai_request_failed">${esc(w('research_failed'))}</option>
+                <option value="ai_not_applicable">${esc(w('research_not_applicable'))}</option>
+            </select><button type="submit">${esc(w('search'))}</button></form>
+            <p class="learning-demo-hint">${esc(w('research_limit'))}</p>
+            <div class="learning-timeline" id="research-history-results"></div>`;
+        const form = body.querySelector('#research-history-search');
+        const host = body.querySelector('#research-history-results');
+        const render = async () => {
+            host.textContent = '…';
+            try {
+                const events = await NotesAPI.getResearchHistory(form.querySelector('input').value.trim(),
+                    form.querySelector('select').value);
+                host.innerHTML = events.length ? events.map(event => {
+                    const data = event.data || {};
+                    const query = data.question || data.query || event.note_title;
+                    const detail = data.answer || data.text || data.detail || '';
+                    const label = ({question_answer:'research_question', ai_proposed:'research_generation',
+                        ai_request_failed:'research_failed', ai_not_applicable:'research_not_applicable'})[event.kind];
+                    return `<article><time>${esc(learningDate(event.created_at))}</time>
+                        <button type="button" data-note="${event.note_id}">${esc(event.note_title)}</button>
+                        <p>${esc(w(label))}: ${esc(query)}</p>
+                        ${detail ? `<details><summary>${esc(w('view_content'))}</summary><pre>${esc(detail)}</pre></details>` : ''}</article>`;
+                }).join('') : `<p>${esc(w('empty'))}</p>`;
+                host.querySelectorAll('[data-note]').forEach(button => button.addEventListener('click', async () => {
+                    try {
+                        await NoteStorageService.loadNote(Number(button.dataset.note));
+                        BlockDOMRenderer.renderAll(); close();
+                    } catch (error) { showToast(error.message, 'error'); }
+                }));
+            } catch (error) { host.textContent = error.message; }
+        };
+        form.addEventListener('submit', event => { event.preventDefault(); render(); });
+        await render();
+    }
+
     static eventLabel(event) {
         const d = event.data || {};
         const key = ({variant_created:'event_created', variant_forked:'event_forked',

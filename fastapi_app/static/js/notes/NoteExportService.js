@@ -65,7 +65,7 @@ class NoteExportService {
     }
 
     /**
-     * Связный текст всего объяснения: заголовок, затем абзацы блоков по
+     * Связный текст всего конспекта: заголовок, затем абзацы блоков по
      * порядку без заголовков-ролей; блок «Теперь вы поняли» — в конце.
      * withTitles=true — оставить заголовки блоков (как в MD-экспорте).
      */
@@ -120,7 +120,7 @@ class NoteExportService {
     static exportToTxt() {
         const txt = NoteExportService.buildPlainText();
         if (!txt) { DialogService.alert(t('export_word'), t('note_empty')); return; }
-        const name = (AppState.currentNote?.title || 'explanation').trim() || 'explanation';
+        const name = (AppState.currentNote?.title || 'conspect').trim() || 'conspect';
         const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);

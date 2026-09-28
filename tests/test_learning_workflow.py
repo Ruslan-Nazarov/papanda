@@ -27,6 +27,9 @@ async def test_new_learning_text_follows_request_language(client, monkeypatch, l
         'note_id':note['id'], 'question':'User question'})
     assert response.status_code == 503
     assert response.json()['detail'] == translate('learning_ai_unavailable')
+    history = (await client.get('/api/dialectics/research/history')).json()
+    assert history[0]['kind'] == 'ai_request_failed'
+    assert history[0]['data']['query'] == 'User question'
 
 
 @pytest.mark.asyncio
@@ -85,3 +88,25 @@ async def test_learning_activity_goal_and_question_do_not_change_blocks(client, 
     assert events[-1]['data']['question'] == 'Что здесь важно?'
     after = (await client.get(f'/api/dialectics/{note_id}')).json()
     assert after['content_json'] == created['content_json']
+
+
+@pytest.mark.asyncio
+async def test_research_history_searches_all_notes_and_excludes_trash(client):
+    first = (await client.post('/api/dialectics/save', json={'title':'Тепло', 'blocks':[]})).json()
+    second = (await client.post('/api/dialectics/save', json={'title':'Давление', 'blocks':[]})).json()
+    await client.post(f"/api/dialectics/{first['id']}/activity", json={
+        'kind':'ai_proposed', 'query':'Почему лёд тает?', 'text':'Ответ ИИ'})
+    await client.post(f"/api/dialectics/{second['id']}/activity", json={
+        'kind':'ai_request_failed', 'query':'Почему растёт давление?', 'detail':'Provider unavailable'})
+
+    history = await client.get('/api/dialectics/research/history')
+    assert history.status_code == 200, history.text
+    assert [item['note_id'] for item in history.json()] == [second['id'], first['id']]
+    matching = (await client.get('/api/dialectics/research/history', params={'search':'лёд'})).json()
+    assert [item['note_id'] for item in matching] == [first['id']]
+    failures = (await client.get('/api/dialectics/research/history', params={'kind':'ai_request_failed'})).json()
+    assert [item['note_id'] for item in failures] == [second['id']]
+
+    await client.delete(f"/api/dialectics/{first['id']}")
+    remaining = (await client.get('/api/dialectics/research/history')).json()
+    assert [item['note_id'] for item in remaining] == [second['id']]

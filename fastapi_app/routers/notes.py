@@ -18,6 +18,12 @@ PositiveId = Annotated[int, Path(gt=0)]
 
 router = APIRouter()
 
+@router.get('/research/history')
+async def research_history(search: str = Query(default='', max_length=200),
+                           kind: str = Query(default='', pattern='^(|question_answer|ai_proposed|ai_request_failed|ai_not_applicable)$'),
+                           db: AsyncSession = Depends(get_db)):
+    return await LearningService.research_history(db, search.strip(), kind)
+
 # Categories
 @router.get("/categories/all", response_model=List[CategoryView])
 async def get_all_categories(db: AsyncSession = Depends(get_db)):

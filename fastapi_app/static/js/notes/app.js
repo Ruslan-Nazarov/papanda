@@ -24,6 +24,7 @@ import ModeManager from './ModeManager.js';
 import OnboardingTour from './OnboardingTour.js';
 import LearningWorkspace from './LearningWorkspace.js';
 import LearningDemo from './LearningDemo.js';
+import UserRole from './UserRole.js';
 import AIController from './AIController.js';
 import { t, switchLanguage } from '../i18n.js';
 
@@ -140,8 +141,12 @@ class App {
         document.getElementById('btn-learning-ask')?.addEventListener('click', () => LearningWorkspace.chat());
         document.getElementById('btn-learning-variants')?.addEventListener('click', () => LearningWorkspace.variants());
         document.getElementById('menu-item-learning-history')?.addEventListener('click', () => {
-            DropdownController.closeAll(); LearningWorkspace.history();
+            DropdownController.closeAll();
+            if (UserRole.get() === 'researcher') LearningWorkspace.researchHistory();
+            else LearningWorkspace.history();
         });
+        document.getElementById('user-role')?.addEventListener('change', event => UserRole.set(event.target.value));
+        UserRole.apply();
         document.getElementById('menu-item-learning-demo')?.addEventListener('click', () => {
             DropdownController.closeAll(); LearningDemo.open();
         });

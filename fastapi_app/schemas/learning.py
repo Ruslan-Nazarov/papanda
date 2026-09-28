@@ -11,10 +11,12 @@ class ForkRequest(BaseModel):
 
 class ActivityCreate(BaseModel):
     kind: Literal['ai_proposed', 'ai_accepted', 'ai_edited', 'ai_rejected',
-                  'ai_full_review', 'question_answer', 'variant_chosen']
+                  'ai_full_review', 'question_answer', 'variant_chosen', 'ai_request_failed',
+                  'ai_not_applicable']
     step: int | None = Field(default=None, ge=1, le=5)
     text: str = Field(default='', max_length=50000)
     detail: str = Field(default='', max_length=2000)
+    query: str = Field(default='', max_length=10000)
     run_id: str | None = Field(default=None, max_length=100)
 
 
