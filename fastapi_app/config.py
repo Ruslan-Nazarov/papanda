@@ -10,11 +10,22 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     CEREBRAS_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
+    # Used only by the dialectic_v3 engine (services/generation/dialectic_v3_pipeline.py); the
+    # legacy pipeline has no OpenAI provider. Empty = that link is skipped in the engine's chain.
+    OPENAI_API_KEY: str = ""
+    DIALECTIC_OPENAI_MODEL: str = "gpt-5-mini"
+
+    # "dialectic_v3" (default): the dialectic_world engine (services/generation/dialectic_v3_pipeline.py)
+    # for full-conspectus generation. "legacy": this app's own five-stage Planner+Judge pipeline.
+    # generate_step / pinned-step / reference-grounded flows always use legacy regardless of this setting.
+    # Set GENERATION_ENGINE=legacy in the environment to roll back without a code change.
+    GENERATION_ENGINE: str = "dialectic_v3"
 
     SECRET_KEY: str = ""
     DEMO_MODE: bool = False
     DATABASE_URL: str = ""
-    GENERATION_TIMEOUT: float = Field(default=300, gt=0, le=1800)
+    # 900: a dialectic_v3 conspectus makes 8+ sequential model calls (~290s on gpt-5-mini).
+    GENERATION_TIMEOUT: float = Field(default=900, gt=0, le=1800)
     GENERATION_MAX_CALLS: int = Field(default=60, ge=1, le=200)
     GENERATION_MAX_TOKENS: int = Field(default=1500000, ge=1)
     GENERATION_CONCURRENCY: int = Field(default=2, ge=1, le=16)
