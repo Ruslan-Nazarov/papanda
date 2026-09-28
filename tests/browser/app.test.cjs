@@ -75,7 +75,10 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         // New scratch note, through the same public UI action as the menu.
         await page.click('#btn-new-conspect');
         await page.waitForSelector('.dialectics-hint-block[data-role="anchor"]');
-        assert.match(await page.$eval('.dialectics-hint-block[data-role="anchor"]', el => el.textContent), /О чём хотите узнать\?/);
+        const initialLocale = await page.$eval('html', el => el.lang);
+        const initialTranslations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
+        assert((await page.$eval('.dialectics-hint-block[data-role="anchor"]', el => el.textContent))
+            .includes(initialTranslations[initialLocale].hint_anchor_title));
         await t.test('manual keyboard entry, save and reload', async () => {
             await page.focus('.dialectics-hint-block[data-role="anchor"]');
             await page.keyboard.press('Enter');
