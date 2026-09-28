@@ -375,6 +375,11 @@ deprecated==1.3.1 \
     # via
     #   -c requirements.txt
     #   limits
+dialectic-world @ https://github.com/Ruslan-Nazarov/dialectic_ai/releases/download/v0.4.0/dialectic_world-0.4.0-py3-none-any.whl \
+    --hash=sha256:8c8ae5567da08262fb983f66eee3aff92d93f112a30cec4834a3369cac6b9507
+    # via
+    #   -c requirements.txt
+    #   -r requirements.in
 distro==1.9.0 \
     --hash=sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed \
     --hash=sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2
@@ -971,6 +976,7 @@ pydantic==2.13.5 \
     # via
     #   -c requirements.txt
     #   -r requirements.in
+    #   dialectic-world
     #   fastapi
     #   groq
     #   openai
@@ -1137,6 +1143,7 @@ python-dotenv==1.2.2 \
     # via
     #   -c requirements.txt
     #   -r requirements.in
+    #   dialectic-world
     #   pydantic-settings
     #   uvicorn
 python-multipart==0.0.32 \

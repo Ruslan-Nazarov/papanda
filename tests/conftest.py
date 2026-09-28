@@ -6,6 +6,9 @@ for key in ("GROQ_API_KEY", "OPENROUTER_API_KEY",
             "CEREBRAS_API_KEY", "GOOGLE_API_KEY",
             "GIGACHAT_AUTH_KEY"):
     os.environ[key] = ""
+# The legacy pipeline is what the existing router tests exercise; a developer's .env
+# selecting the dialectic_v3 engine must not change which pipeline they hit.
+os.environ["GENERATION_ENGINE"] = "legacy"
 os.environ["SECRET_KEY"] = "test-only-secret"
 os.environ["GIGACHAT_VERIFY_SSL"] = "true"
 os.environ["GIGACHAT_CA_BUNDLE"] = ""
