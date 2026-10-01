@@ -20,7 +20,7 @@ TASK_ROUTES = {
     'judge': ('Gemini', 'Cerebras', 'Groq'),
     'history': ('GigaChat', 'Gemini', 'Groq'),
     **{task: ('GigaChat', 'Groq', 'Cerebras', 'Gemini')
-       for task in ('what_is', 'formula', 'check', 'article', 'tiny')},
+       for task in ('what_is', 'check', 'tiny')},
 }
 
 

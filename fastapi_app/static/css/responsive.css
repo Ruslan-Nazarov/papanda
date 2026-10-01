@@ -163,18 +163,8 @@
     .modal-editor-floating .modal-body { max-height: none; flex: 1; overflow-y: auto; }
     .modal-editor-floating.expanded { inset: 8px !important; }
 
-    /* ---------- Прочие модалки / окна парсеров ---------- */
+    /* ---------- Прочие модалки ---------- */
     .modal-dialog { width: 94% !important; max-height: 88vh; overflow-y: auto; }
-    .parser-floating-window {
-        position: fixed !important;
-        inset: 6px !important;
-        left: 6px !important;
-        top: 6px !important;
-        right: 6px !important;
-        width: auto !important;
-        height: auto !important;
-        max-height: calc(100dvh - 12px);
-    }
 
     /* ---------- FAB ---------- */
     .scroll-top-fab { bottom: 14px; right: 14px; width: 40px; height: 40px; font-size: 1.1rem; }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Request, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List, Any, AsyncIterator, Literal, Annotated
@@ -8,8 +8,7 @@ import base64
 import tempfile
 import aiofiles.os
 
-from fastapi_app.services.article_fetch import fetch_article as _fetch_article_from_url
-from fastapi_app.services.import_service import read_upload, extract_pdf
+from fastapi_app.services.import_service import read_upload
 from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
 from fastapi_app.services.abuse_guard import reserve_generation
@@ -52,9 +51,6 @@ class ExplainRequest(BaseModel):
     context_before: Optional[str] = Field(default="", max_length=5_000)
     context_after: Optional[str] = Field(default="", max_length=5_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
-
-class ParserRequest(BaseModel):
-    formula: str = Field(..., max_length=5_000)
 
 class TextMathRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
@@ -119,12 +115,6 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         locale=locale,
     ))
 
-@router.post("/parser")
-@limiter.limit("20/minute")
-async def parser(request: Request, data: ParserRequest):
-    result = await ai_service.generate_parser(data.formula)
-    return {"result": _try_parse_json(result)}
-
 @router.post("/text-math")
 @limiter.limit("10/minute")
 async def text_math(request: Request, data: TextMathRequest):
@@ -162,31 +152,6 @@ async def voice_math(request: Request, file: UploadFile = File(...)):
     finally:
         if await aiofiles.os.path.exists(temp_audio_path):
             await aiofiles.os.remove(temp_audio_path)
-
-@router.post("/article-parser")
-@limiter.limit("5/minute")
-async def article_parser(
-    request: Request,
-    message: str = Form(...),
-    file: Optional[UploadFile] = File(None),
-    article_text: Optional[str] = Form(None),
-    url: Optional[str] = Form(None),
-):
-    text_to_parse = article_text or ""
-
-    if url and url.strip():
-        text_to_parse = await _fetch_article_from_url(url.strip())
-
-    if file:
-        if not (file.filename or "").lower().endswith(".pdf"):
-            raise HTTPException(status_code=400, detail="Only PDF files are supported")
-        text_to_parse += await extract_pdf(await read_upload(file))
-    
-    if not text_to_parse.strip():
-        raise HTTPException(status_code=400, detail="Нужна ссылка, файл или текст статьи")
-
-    result = await ai_service.parse_article(text_to_parse[:15000], user_instruction=message)
-    return {"result": result}
 
 @router.post("/check-ai")
 @limiter.limit("10/minute")

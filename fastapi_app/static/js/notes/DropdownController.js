@@ -2,14 +2,12 @@ export class DropdownController {
     static init() {
         const btnMode = document.getElementById('btn-mode');
         const modeDropdown = document.getElementById('mode-dropdown');
-        const btnParsersNav = document.getElementById('btn-parsers-nav');
-        const parsersDropdown = document.getElementById('parsers-dropdown');
         const btnMainMenu = document.getElementById('btn-main-menu');
         const mainMenuDropdown = document.getElementById('main-menu-dropdown');
         const btnLangMenu = document.getElementById('btn-lang-menu');
         const langMenuDropdown = document.getElementById('lang-menu-dropdown');
 
-        const allDropdowns = [modeDropdown, parsersDropdown, mainMenuDropdown, langMenuDropdown];
+        const allDropdowns = [modeDropdown, mainMenuDropdown, langMenuDropdown];
 
         const closeAllDropdowns = () => {
             allDropdowns.forEach(d => { if (d) d.classList.add('hidden'); });
@@ -28,7 +26,6 @@ export class DropdownController {
         };
 
         bindToggle(btnMode, modeDropdown);
-        bindToggle(btnParsersNav, parsersDropdown);
         bindToggle(btnMainMenu, mainMenuDropdown);
         bindToggle(btnLangMenu, langMenuDropdown);
 

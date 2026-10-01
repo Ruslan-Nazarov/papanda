@@ -10,7 +10,6 @@ import LoadNotesModalService from './LoadNotesModalService.js';
 import ConnectionsModalService from './ConnectionsModalService.js';
 import NoteExportService from './NoteExportService.js';
 import NoteVersionsService from './NoteVersionsService.js';
-import ParserWindowsManager from './ParserWindowsManager.js';
 import FooterModalsService from './FooterModalsService.js';
 import CategoryManager from './CategoryManager.js';
 import TOCManager from './TOCManager.js';
@@ -40,7 +39,6 @@ class App {
         SearchManager.init();
         BlockStickersManager.init();
         NoteController.init();
-        ParserWindowsManager.init();
         DropdownController.init();
         ConceptSelectionMenu.init();
         ModeManager.init();
@@ -160,17 +158,6 @@ class App {
             DropdownController.closeAll();
             headerRight?.classList.remove('mobile-open');
             ConnectionsModalService.show(this);
-        });
-
-        // --- 2. Parsers Menu Actions ---
-        document.getElementById('menu-item-formula-parser')?.addEventListener('click', () => {
-            DropdownController.closeAll();
-            ParserWindowsManager.openWindow('formula');
-        });
-
-        document.getElementById('menu-item-article-parser')?.addEventListener('click', () => {
-            DropdownController.closeAll();
-            ParserWindowsManager.openWindow('article');
         });
 
         // --- 3. Main Menu Actions ---

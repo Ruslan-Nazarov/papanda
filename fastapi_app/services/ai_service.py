@@ -47,19 +47,12 @@ PROMPT_MAP = {
     "base":      "1_главный_промпт.md",
     "restore":   "2_восстановление_промпт.md",
     "what_is":   "3_контекст.md",
-    "formula":   "4_формулы_промпт.md",
-    "article":   "5_статьи_промпт.md",
     "check_ai":  "6_проверка_промпт.md",
     "format_short": "формат_кратко.md",
     "format_check": "формат_отчета_проверки.md",
 }
 
-# restore (2_восстановление) осталось только в what_is: 4_формулы и 5_статьи
-# несут свою процедуру восстановления к диалектике внутри себя, 3_контекст
-# явно на restore ссылается (п.2).
 PROMPT_CHAINS = {
-    "formula": ["base", "formula", "format_short"],
-    "article": ["base", "formula", "article", "format_short"],
     "what_is": ["base", "restore", "what_is", "format_short"],
     "check_ai": ["base", "check_ai", "format_check"],
 }
@@ -247,36 +240,6 @@ class AIService:
         async with aclosing(self._generate_stream(sys_prompt, user_prompt, history=history, max_tokens=900, task="what_is")) as g:
             async for d in g:
                 yield d
-
-    async def generate_parser(self, formula: str) -> str:
-        sys_prompt = await self.get_bundled_prompt("formula")
-        user_prompt = (
-            f"Формула: {formula}\n\n"
-            f"Постройте диалектическую цепочку от суммирования к этой формуле. "
-            f"Для каждого звена: операция-предшественник → кризис записи/вычисления → "
-            f"операция, разрешающая кризис. Только количественный анализ, без физического "
-            f"или содержательного смысла символов. Формат ответа — Markdown."
-        )
-        return await self._generate(sys_prompt, user_prompt, task="formula")
-
-    async def parse_article(self, text: str, user_instruction: str = "") -> str:
-        sys_prompt = await self.get_bundled_prompt("article")
-        instr = (user_instruction or "").strip()
-        user_prompt = (
-            f"{instr}\n\n" if instr and "диалектич" not in instr.lower() else ""
-        ) + (
-            f"Текст статьи:\n---\n{text}\n---\n\n"
-            "Уберите академический шум, выделите простейший процесс, покажите его "
-            "развитие через противоположность к синтезу. Ответ — связный Markdown "
-            "(заголовки, короткие абзацы), без JSON, ТРЕМЯ разделами:\n"
-            "## Историческая форма — как процесс из статьи разворачивался в реальной "
-            "истории предмета (п. 3.1 промпта статей).\n"
-            "## Логическая форма — тот же процесс строго по алгоритму диалектического "
-            "анализа; приоритет — соответствие алгоритму, а не факты (п. 3.2).\n"
-            "## Расхождение — где логическая форма расходится с исторической и почему; "
-            "как содержание статьи повлияло на дальнейшее развитие предмета (п. 4)."
-        )
-        return await self._generate(sys_prompt, user_prompt, task="article")
 
     @staticmethod
     def _check_prompt(note_text, locale):

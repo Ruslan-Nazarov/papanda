@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from io import BytesIO
-from fastapi_app.services.ai_service import AIService, PROMPT_MAP, PROMPT_CHAINS
+from fastapi_app.services.ai_service import AIService, PROMPT_CHAINS
 from fastapi_app.services.locale_utils import normalize_locale
 from fastapi_app.config import settings
 
@@ -16,8 +15,6 @@ async def test_prompt_chains_composition_and_caching():
     service = AIService()
 
     # Проверяем структуру цепочек
-    assert "formula" in PROMPT_CHAINS
-    assert "article" in PROMPT_CHAINS
     assert "what_is" in PROMPT_CHAINS
     assert "check_ai" in PROMPT_CHAINS
 
@@ -28,15 +25,15 @@ async def test_prompt_chains_composition_and_caching():
         mock_aio_open.return_value.__aenter__.return_value = mock_file
 
         with patch("pathlib.Path.exists", return_value=True):
-            bundled = await service.get_bundled_prompt("formula")
+            bundled = await service.get_bundled_prompt("check_ai")
             assert isinstance(bundled, str)
             assert "\n\n---\n\n" in bundled
-            # 3 элемента в цепочке formula: base, formula, format_short (restore убран)
+            # 3 элемента в цепочке check_ai: base, check_ai, format_check
             assert bundled.count("PROMPT_CHUNK") == 3
 
             # Проверяем кэширование: повторный вызов возвращает закэшированную строку без повторного чтения
-            assert "formula" in service._prompts_cache
-            cached_val = await service.get_bundled_prompt("formula")
+            assert "check_ai" in service._prompts_cache
+            cached_val = await service.get_bundled_prompt("check_ai")
             assert cached_val is bundled
 
 
@@ -51,28 +48,6 @@ async def test_prompt_bundle_fallback_for_missing_files():
 # ==============================================================================
 # 2. ТЕСТЫ ПРИМЕНЕНИЯ ПРОМПТОВ В AIService
 # ==============================================================================
-
-@pytest.mark.asyncio
-async def test_generate_parser_prompt_application():
-    """generate_parser: системный промпт «formula», формула в user-промпте, вывод Markdown (без json_object)."""
-    service = AIService()
-    with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
-        mock_bundle.return_value = "SYSTEM_FORMULA_PROMPT"
-        with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
-            mock_gen.return_value = "## Цепочка\n1 + 1 → …"
-
-            res = await service.generate_parser("E=mc^2")
-            assert res == "## Цепочка\n1 + 1 → …"
-            mock_bundle.assert_awaited_with("formula")
-            args = mock_gen.call_args[0]
-            sys_prompt, user_prompt = args[0], args[1]
-            response_fmt = args[2] if len(args) > 2 else mock_gen.call_args[1].get("response_format")
-            assert sys_prompt == "SYSTEM_FORMULA_PROMPT"
-            assert "E=mc^2" in user_prompt
-            # промпт запрещает объяснять смысл — user-промпт не должен этого требовать
-            assert "смысл формулы целиком" not in user_prompt
-            assert response_fmt is None
-
 
 @pytest.mark.asyncio
 async def test_edit_math_prompt_application():
@@ -92,30 +67,6 @@ async def test_edit_math_prompt_application():
             assert "y = 2x" in user_prompt
             assert "прибавь единицу" in user_prompt
             assert response_fmt == {"type": "json_object"}
-
-
-@pytest.mark.asyncio
-async def test_parse_article_prompt_application():
-    """parse_article: системный промпт «article», текст статьи в user-промпте, вывод Markdown (без json_object)."""
-    service = AIService()
-    with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as mock_bundle:
-        mock_bundle.return_value = "SYSTEM_ARTICLE_PROMPT"
-        with patch.object(service, "_generate", new_callable=AsyncMock) as mock_gen:
-            mock_gen.return_value = "## Реконструкция\nТезис …"
-
-            res = await service.parse_article(
-                text="Текст исследовательской статьи...",
-                user_instruction="Выдели основные этапы"
-            )
-            assert "Тезис" in res
-            mock_bundle.assert_awaited_with("article")
-            args = mock_gen.call_args[0]
-            sys_prompt, user_prompt = args[0], args[1]
-            response_fmt = args[2] if len(args) > 2 else mock_gen.call_args[1].get("response_format")
-            assert sys_prompt == "SYSTEM_ARTICLE_PROMPT"
-            assert "Выдели основные этапы" in user_prompt
-            assert "Текст исследовательской статьи..." in user_prompt
-            assert response_fmt is None
 
 
 @pytest.mark.asyncio

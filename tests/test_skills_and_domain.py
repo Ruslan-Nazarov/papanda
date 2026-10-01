@@ -1,5 +1,3 @@
-import pytest
-
 from fastapi_app.services.context_builder import _detect_domain
 from fastapi_app.services.ai_service import ai_service
 
@@ -14,17 +12,3 @@ def test_detect_domain_word_boundary():
 def test_explain_prompt_has_history_hint():
     p = ai_service._explain_prompt("энтропия", "до", "после")
     assert "историческ" in p.lower()
-
-
-@pytest.mark.asyncio
-async def test_parse_article_asks_three_sections():
-    from unittest.mock import AsyncMock, patch
-    with patch.object(ai_service, "get_bundled_prompt", new_callable=AsyncMock) as gb, \
-         patch.object(ai_service, "_generate", new_callable=AsyncMock) as gen:
-        gb.return_value = "SYS"
-        gen.return_value = "ok"
-        await ai_service.parse_article("текст статьи")
-        user_prompt = gen.call_args[0][1]
-        assert "Историческая форма" in user_prompt
-        assert "Логическая форма" in user_prompt
-        assert "Расхождение" in user_prompt

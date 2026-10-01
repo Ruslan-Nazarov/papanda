@@ -22,6 +22,9 @@ async def test_hashed_assets_are_cached_but_html_manifest_and_missing_files_are_
 @pytest.mark.asyncio
 async def test_template_scripts_are_local_or_inert_and_csp_forbids_eval(client):
     page = await client.get('/')
+    assert 'btn-parsers-nav' not in page.text
+    assert 'menu-item-formula-parser' not in page.text
+    assert 'menu-item-article-parser' not in page.text
     script_policy = next(rule for rule in page.headers['content-security-policy'].split(';')
                          if rule.strip().startswith('script-src'))
     assert 'unsafe-eval' not in script_policy
