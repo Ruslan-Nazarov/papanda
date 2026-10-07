@@ -1,5 +1,35 @@
 import pytest
+import re
 from fastapi_app.i18n import TRANSLATIONS, get_translator
+
+
+def test_all_translation_keys_and_placeholders_match():
+    reference = TRANSLATIONS["ru"]
+    for locale, words in TRANSLATIONS.items():
+        assert words.keys() == reference.keys(), locale
+        for key, value in words.items():
+            assert isinstance(value, str) and value.strip(), (locale, key)
+            assert set(re.findall(r"\{\w+\}", value)) == set(
+                re.findall(r"\{\w+\}", reference[key])
+            ), (locale, key)
+    assert not any(re.search(r"[А-Яа-яЁё]", value) for value in TRANSLATIONS["en"].values())
+
+
+@pytest.mark.parametrize("cookie,header,expected", [
+    (None, "en-GB,en;q=0.9", "en"),
+    ("ru", "en-GB", "ru"),
+    ("EN", "ru", "en"),
+    ("invalid", "en-GB", "en"),
+    (None, "ru;q=0.2,en-GB;q=0.9", "en"),
+    (None, "ru;q=0,en;q=1", "en"),
+    (None, "fr,kk-KZ;q=0.8,en;q=0.5", "kz"),
+    (None, "ru;q=bad,en", "en"),
+    (None, "ru;q=NaN,en", "en"),
+    (None, "", "en"),
+])
+def test_request_locale(cookie, header, expected):
+    from fastapi_app.i18n import request_locale
+    assert request_locale(cookie, header) == expected
 
 def test_translations_structure():
     assert "ru" in TRANSLATIONS

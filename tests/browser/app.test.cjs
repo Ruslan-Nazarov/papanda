@@ -188,6 +188,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             const publicUrl = share.url || `/s/${share.token || share.share_token}`;
             await viewer.goto(new URL(publicUrl, backend.url).href, {waitUntil:'networkidle0'});
             assert.match(await viewer.$eval('body', el => el.textContent), /Ручной текст контрольного конспекта/);
+            assert(await viewer.$('.blk-body .katex'), 'Saved formula is rendered on the public page');
             await context.close();
         });
         await t.test('narrow screen editor and keyboard dismissal', async () => {
@@ -237,11 +238,53 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 await page.click('#btn-lang-menu');
                 await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}), page.click(`[data-lang="${locale}"]`)]);
                 assert((await page.$eval('#btn-ai-diary', el => el.textContent)).includes(words.ai_diary_title));
+                assert.equal(await page.$eval('html', el => el.lang), locale);
+                assert.equal(await page.$eval('[data-mode="manual"]', el => el.getAttribute('aria-label')), words.mode_manual);
+                assert.equal(await page.$eval('[data-mode="ai"]', el => el.getAttribute('aria-label')), words.mode_ai);
+                if (locale === 'en') {
+                    const chromeText = await page.$$eval('header, footer', els => els.map(el => el.innerText).join(' '));
+                    assert(!/[А-Яа-яЁё]/.test(chromeText), 'English navigation contains Russian text');
+                    await page.click('#btn-note-stickers');
+                    await page.waitForSelector('#note-stickers-dropdown-menu:not(.hidden)');
+                    assert((await page.$eval('#note-stickers-dropdown-menu', el => el.textContent)).includes(words.stk_note_notes));
+                    await page.click('#btn-note-stickers');
+                }
                 await page.click('#btn-ai-diary');
                 await page.waitForSelector('#ai-diary-title');
                 assert.equal(await page.$eval('#ai-diary-title', el => el.textContent), words.ai_diary_title);
                 assert.match(await page.$eval('.ai-diary-entries', el => el.textContent), /Mock generated step/);
                 await page.click('.ai-diary-close');
+            }
+        });
+        await t.test('cancelling the starter preserves the question and restores editing', async () => {
+            const context = await browser.createBrowserContext();
+            try {
+                const cancelPage = await context.newPage();
+                await cancelPage.evaluateOnNewDocument(() => {
+                    localStorage.setItem('dialectics_onboarding_seen', '1');
+                    localStorage.setItem('papanda-cookie-consent', 'essential');
+                });
+                await cancelPage.setRequestInterception(true);
+                cancelPage.on('request', request => {
+                    if (request.url().includes('/api/ai/')) return; // Stall until UI cancellation.
+                    if (/^https?:/.test(request.url()) && !request.url().startsWith(backend.url)) return request.abort();
+                    return request.continue();
+                });
+                await cancelPage.goto(backend.url, {waitUntil: 'networkidle0'});
+                await cancelPage.click('#btn-new-conspect');
+                await cancelPage.click('#mode-master-toggle button[data-mode="ai"]');
+                await cancelPage.waitForSelector('.anchor-topic-input');
+                await cancelPage.type('.anchor-topic-input', 'Cancellation control question');
+                await cancelPage.click('.btn-anchor-generate');
+                await cancelPage.waitForSelector('#ai-global-loader button');
+                await cancelPage.click('#ai-global-loader button');
+                await cancelPage.waitForSelector('.dialectics-block .btn-edit');
+                assert.match(await cancelPage.$eval('#blocks-container', el => el.textContent), /Cancellation control question/);
+                assert.equal(await cancelPage.$('.btn-anchor-generate:disabled'), null);
+                await cancelPage.click('.dialectics-block .btn-edit');
+                await cancelPage.waitForSelector('.tiptap');
+            } finally {
+                await context.close();
             }
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');

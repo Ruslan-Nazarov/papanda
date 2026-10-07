@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Match
 from fastapi_app.config import settings
+from fastapi_app.i18n import request_locale
 from fastapi_app.services.security_store import session_for_cookie, pending_cookie
 from fastapi_app.rate_limiter import trusted_proxy
 
@@ -157,18 +158,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 class LocaleMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        locale = request.cookies.get("locale")
-        if not locale:
-            accept_lang = request.headers.get("Accept-Language", "").lower()
-            primary_lang = accept_lang.split(",")[0][:2] if accept_lang else "en"
-            
-            if primary_lang == "ru":
-                locale = "ru"
-            elif primary_lang in ("kk", "kz"):
-                locale = "kz"
-            else:
-                locale = "en"
-        request.state.locale = locale
+        request.state.locale = request_locale(
+            request.cookies.get("locale"), request.headers.get("Accept-Language", "")
+        )
         return await call_next(request)
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):

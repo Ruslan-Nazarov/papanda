@@ -40,7 +40,7 @@ _STATUS_MAP = {
     "failed": "failed",
 }
 
-_OUTPUT_LANGUAGE = {"ru": "Russian", "en": "English", "kz": "Kazakh"}
+_OUTPUT_LANGUAGE = "the language of the original user request, respecting any explicit response-language choice in it"
 
 _LABELS = {
     "ru": {"practical_link": "Практическая связь", "why_initial": "Почему выбран исходным",
@@ -215,11 +215,12 @@ class DialecticV3Pipeline:
             'requested_step': kwargs.get('target_step'), 'clarified_step': kwargs.get('pinned_step'),
             'user_question': kwargs.get('question'),
         }.items() if value is not None and value != '' and value != {}}
-        llm = DialecticLLM(build_llm(model_spec), additional)
-        # The engine's instructions are always English; only the language of the answer follows the UI locale.
+        llm = DialecticLLM(build_llm(model_spec), additional,
+                          original_request=(kwargs.get('question') or domain).strip())
+        # Authored instructions stay English; the user's request determines answer language.
         ctx = Context(llm=llm, trace=Trace(_runs_dir() / f"{run_id}.jsonl"),
                      settings=DialecticSettings(prompt_language="en", builder_model=model_spec,
-                                                output_language=_OUTPUT_LANGUAGE.get(locale, "Russian")))
+                                                output_language=_OUTPUT_LANGUAGE))
 
         queue: asyncio.Queue = asyncio.Queue()
 

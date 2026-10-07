@@ -18,7 +18,7 @@ import PasteMathTransformer from './PasteMathTransformer.js';
 import { t } from '../i18n.js';
 export class EditorTiptapSetup {
     static createEditor(containerEl, currentHtml, autofocus = true) {
-        return new Editor({
+        const editor = new Editor({
             element: containerEl,
             extensions: [
                 StarterKit.configure({
@@ -42,13 +42,16 @@ export class EditorTiptapSetup {
                 })
             ],
             content: currentHtml,
-            autofocus: autofocus,
+            // TipTap's delayed autofocus can reset the selection after typing starts.
+            autofocus: false,
             editorProps: {
                 transformPastedHTML(html) {
                     return PasteMathTransformer.transformHTML(html);
                 }
             }
         });
+        if (autofocus) editor.view.focus();
+        return editor;
     }
 
     static bindFormatButtons(modalContainer, getEditor) {

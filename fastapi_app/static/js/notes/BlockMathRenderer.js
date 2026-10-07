@@ -136,6 +136,37 @@ class BlockMathRenderer {
                 console.warn('KaTeX renderMathInElement error:', e);
             }
         }
+
+        // Older AI answers sometimes omit delimiters. Recover only explicit
+        // algebraic equalities with powers; never interpret arbitrary prose as TeX.
+        const atom = String.raw`(?:[A-Za-z]+(?:\([A-Za-z]+\))?|\d+)(?:\^\{?\d+\}?)?`;
+        const expression = `${atom}(?:\\s*[+*/·−-]\\s*${atom})*`;
+        const equation = new RegExp(`(?<![\\w\\\\])${expression}\\s*=\\s*${expression}(?![\\w^])`, 'g');
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            if (!node.parentElement?.closest('code, pre, textarea, script, style, .katex, .math-inline, .math-callout')) nodes.push(node);
+        }
+        for (const node of nodes) {
+            const text = node.textContent;
+            const matches = [...text.matchAll(equation)].filter(match => match[0].includes('^'));
+            if (!matches.length) continue;
+            const fragment = document.createDocumentFragment();
+            let offset = 0;
+            for (const match of matches) {
+                fragment.append(document.createTextNode(text.slice(offset, match.index)));
+                const span = document.createElement('span');
+                const formula = match[0].replace(/·/g, '\\cdot ');
+                span.className = 'math-inline';
+                span.setAttribute('formula', formula);
+                window.katex.render(formula, span, {displayMode: false, throwOnError: false});
+                fragment.append(span);
+                offset = match.index + match[0].length;
+            }
+            fragment.append(document.createTextNode(text.slice(offset)));
+            node.replaceWith(fragment);
+        }
     }
 }
 

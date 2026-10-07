@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import katex from 'katex';
 import renderMathInElement from 'katex/contrib/auto-render';
+import BlockMathRenderer from './notes/BlockMathRenderer.js';
 import './consent.js';
 import './quiet-console.js';
 
@@ -15,7 +16,5 @@ if (!document.cookie.includes('locale=')) {
 }
 
 if (document.body.dataset.page === 'shared') {
-    renderMathInElement(document.body, {delimiters: [
-        {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false},
-    ], throwOnError: false});
+    document.querySelectorAll('.blk-body').forEach(el => BlockMathRenderer.renderMath(el));
 }

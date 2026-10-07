@@ -192,8 +192,9 @@ def test_no_provider_configured_raises(monkeypatch):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("locale,expected", [("ru", "Russian"), ("en", "English"), ("kz", "Kazakh"), ("xx", "Russian")])
-async def test_prompts_always_english_answer_language_follows_locale(monkeypatch, locale, expected):
+@pytest.mark.parametrize("locale,user_request", [("ru", "The Pythagorean theorem"), ("en", "Теорема Пифагора"),
+                                         ("en", "Пифагор теоремасын түсіндір"), ("ru", "Explain photosynthesis")])
+async def test_answer_language_follows_request_not_interface(monkeypatch, locale, user_request):
     seen = {}
 
     class RecordingSettings:
@@ -201,15 +202,17 @@ async def test_prompts_always_english_answer_language_follows_locale(monkeypatch
             seen.update(kw)
 
     async def fake_build_world(domain, ctx):
+        assert ctx.llm.original_request == user_request
+        assert ctx.llm.output_language is None
         return _built_world(status="built")
     monkeypatch.setattr(pipeline_module, "DialecticSettings", RecordingSettings)
     monkeypatch.setattr(pipeline_module, "build_world", fake_build_world)
     monkeypatch.setattr(pipeline_module, "build_llm", lambda spec: object())
     monkeypatch.setattr(pipeline_module.conspect_settings, "GROQ_API_KEY", "fake-key", raising=False)
 
-    _ = [e async for e in DialecticV3Pipeline().stream_generate_full({"target_goal": "тема"}, locale)]
+    _ = [e async for e in DialecticV3Pipeline().stream_generate_full({"target_goal": user_request}, locale)]
     assert seen["prompt_language"] == "en"
-    assert seen["output_language"] == expected
+    assert seen["output_language"] == pipeline_module._OUTPUT_LANGUAGE
 
 
 def test_step_labels_follow_locale():

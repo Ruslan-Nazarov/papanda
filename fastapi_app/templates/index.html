@@ -11,8 +11,8 @@
                 <span>{{ _('app_title') }}</span>
             </div>
             <div class="mode-master-toggle" id="mode-master-toggle" title="{{ _('mode_toggle_title') }}">
-                <button type="button" data-mode="ai"><span class="mm-ico">✨</span><span class="mm-label">{{ _('mode_ai') }}</span></button>
-                <button type="button" data-mode="manual"><span class="mm-ico">✍️</span><span class="mm-label">{{ _('mode_manual') }}</span></button>
+                <button type="button" data-mode="ai" aria-label="{{ _('mode_ai') }}"><span class="mm-ico" aria-hidden="true">✨</span><span class="mm-label">{{ _('mode_ai') }}</span></button>
+                <button type="button" data-mode="manual" aria-label="{{ _('mode_manual') }}"><span class="mm-ico" aria-hidden="true">✍️</span><span class="mm-label">{{ _('mode_manual') }}</span></button>
             </div>
             <label class="mode-substep" id="mode-substep" title="{{ _('mode_substep_title') }}">
                 <input type="checkbox" id="toggle-autofill-step"> {{ _('mode_substep') }}

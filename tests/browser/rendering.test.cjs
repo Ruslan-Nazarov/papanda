@@ -80,6 +80,33 @@ test('isolated renderer security regressions', async t => {
             assert.equal(result.formula, 'x^2+y^2=z^2');
             assert.match(result.text, /<img/);
         });
+        await page.addScriptTag({path: path.resolve(__dirname, '../../node_modules/katex/dist/katex.min.js')});
+        await page.addScriptTag({path: path.resolve(__dirname, '../../node_modules/katex/dist/contrib/auto-render.min.js')});
+        await page.addScriptTag({content: source('BlockMathRenderer')});
+        await t.test('AI math renders with delimiters and recovers screenshot equations without changing code', async () => {
+            const result = await page.evaluate(() => {
+                const container = document.createElement('div');
+                container.className = 'block-content';
+                container.innerHTML = AIController.contentToHtml(
+                    'The area is $x^2$. Also \\(y^2\\).\n\n' +
+                    'a^2 + b^2 = c^2 and A(side)=const·side^2.\n\n' +
+                    '`a^2 + b^2 = c^2`\n\nOrdinary text and version 1.2.');
+                document.body.append(container);
+                BlockMathRenderer.renderMath(container);
+                const first = container.innerHTML;
+                BlockMathRenderer.renderMath(container);
+                return {count: container.querySelectorAll('.katex').length,
+                    errors: container.querySelectorAll('.katex-error').length,
+                    code: container.querySelector('code').textContent,
+                    stable: first === container.innerHTML,
+                    text: container.textContent};
+            });
+            assert.equal(result.count, 4);
+            assert.equal(result.errors, 0);
+            assert.equal(result.code, 'a^2 + b^2 = c^2');
+            assert(result.stable);
+            assert.match(result.text, /Ordinary text and version 1.2/);
+        });
         await t.test('source URLs reject script schemes and escape attribute quotes', async () => {
             const result = await page.evaluate(() => ({
                 unsafe: HtmlSafety.link('javascript:alert(1)'),

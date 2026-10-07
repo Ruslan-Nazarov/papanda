@@ -181,6 +181,8 @@ class BlockHintBuilder {
                 console.error('Anchor autofill failed', err);
                 const m = await import('./ToastService.js');
                 m.showToast(t('ed_ai_gen_error') + (err.message || ''), 'error');
+            } finally {
+                // Cancellation also leaves a saved anchor: replace the disabled starter.
                 if (onRenderAll) onRenderAll();
             }
         };
