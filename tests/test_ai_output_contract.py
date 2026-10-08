@@ -63,7 +63,39 @@ async def test_http_requests_enforce_language_and_math_and_retry_wrong_language(
             assert request['messages'][0]['role'] == 'system'
             assert 'Output language: English' in request['messages'][0]['content']
             assert '$a^2 + b^2 = c^2$' in request['messages'][0]['content']
-            assert request['messages'][1]['content'] == 'Return the required JSON.'
+            assert RUSSIAN in request['messages'][1]['content']
+            assert request['messages'][2]['content'] == 'Return the required JSON.'
+    finally:
+        await llm.aclose()
+
+
+@pytest.mark.asyncio
+async def test_long_document_has_stable_prefix_and_cache_usage_is_reported():
+    document = 'Начало ТЗ\n' + 'Условие создания изделия. ' * 1400 + '\nКонец ТЗ'
+    requests = []
+    async def handler(request):
+        requests.append(json.loads(request.content)['messages'])
+        return httpx.Response(200, json={'choices': [{'message': {'content': '{"ok":true}'}}],
+            'usage': {'prompt_tokens': 10000, 'completion_tokens': 50,
+                      'prompt_tokens_details': {'cached_tokens': 8192}}})
+    llm = DialecticLLM(OpenAICompatible('fixture', 'https://fixture.invalid', 'fixture'),
+        {'reference_document': document, 'existing_note_steps': {'step1': 'earlier'}, 'requested_step': 2},
+        original_request='Создать одноканальный ЭКГ по ТЗ')
+    llm.client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    context = GenerationContext()
+    try:
+        async with generation_scope(context):
+            await llm.generate([{'role': 'user', 'content': '[BLOCK FindP0] first stage'}])
+            await llm.generate([{'role': 'user', 'content': '[BLOCK BuildIteration] different stage'}])
+        assert requests[0][:2] == requests[1][:2]
+        for messages in requests:
+            source = json.loads(messages[1]['content'].split('\n', 1)[1])
+            assert source['reference_document'] == document
+            dynamic = json.loads(messages[-1]['content'].split('\n', 1)[1])
+            assert dynamic['existing_note_steps'] == {'step1': 'earlier'}
+            assert 'reference_document' not in dynamic
+        assert [c['cached_input_tokens'] for c in context.calls] == [8192, 8192]
+        assert context.metrics()['cached_input_tokens'] == 16384
     finally:
         await llm.aclose()
 

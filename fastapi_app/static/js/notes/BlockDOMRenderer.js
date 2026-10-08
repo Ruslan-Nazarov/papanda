@@ -10,8 +10,10 @@ class BlockDOMRenderer {
      * Steps are sequentially evaluated: anchor -> step1 -> step2 -> step3 -> step4 -> step5.
      */
     static getNextActiveRole(blocks) {
+        const pendingAnchor = BlockHintBuilder.pendingAnchor();
         // Only consider blocks that are fully confirmed/saved (not in-progress drafts)
-        const completedBlocks = (blocks || []).filter(b => b.role !== 'section' && b.status !== 'in_progress' && !b.isDraft);
+        const completedBlocks = (blocks || []).filter(b => b.id !== pendingAnchor?.id
+            && b.role !== 'section' && b.status !== 'in_progress' && !b.isDraft);
         
         // Роли вида "step1.2" (несколько простейших/развивающих процессов на
         // одном шаге, см. expected_step_keys на бэкенде) считаются частью
@@ -52,13 +54,14 @@ class BlockDOMRenderer {
         // исключение: пустой конспект, где anchor-подсказка нужна для старта.
         const aiMode = AppState.mode === 'ai';
         const allBlocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
-        const hasRealBlocks = allBlocks.some(b => b.role !== 'section');
+        const pendingAnchor = BlockHintBuilder.pendingAnchor();
+        const hasRealBlocks = allBlocks.some(b => b.role !== 'section' && b.id !== pendingAnchor?.id);
         const showHints = !aiMode || !hasRealBlocks;
 
         const nextStep = this.getNextActiveRole(allBlocks);
 
         const nonAnchorBlocks = allBlocks.filter(b => b.role !== 'anchor');
-        const anchorBlocks = allBlocks.filter(b => b.role === 'anchor');
+        const anchorBlocks = allBlocks.filter(b => b.role === 'anchor' && b.id !== pendingAnchor?.id);
 
         container.innerHTML = '';
         let dividerIdx = 0;

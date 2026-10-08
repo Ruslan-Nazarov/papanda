@@ -10,11 +10,11 @@ from fastapi_app.config import settings
 _pdf_slots = asyncio.Semaphore(2)
 
 
-async def read_upload(file):
+async def read_upload(file, max_bytes=None):
     chunks, size = [], 0
     while chunk := await file.read(64 * 1024):
         size += len(chunk)
-        if size > settings.MAX_UPLOAD_BYTES:
+        if size > (settings.MAX_UPLOAD_BYTES if max_bytes is None else max_bytes):
             raise HTTPException(413, 'File too large')
         chunks.append(chunk)
     return b''.join(chunks)

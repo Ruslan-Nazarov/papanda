@@ -4,6 +4,10 @@ import { t } from '../i18n.js';
 import AIController from './AIController.js';
 
 class BlockHintBuilder {
+    static pendingAnchor() {
+        return AppState.currentNote.blocks.find(block => block.role === 'anchor'
+            && block.request_document && !(block.html || '').trim() && !block.sourceGoal);
+    }
     /**
      * Build a hint block element.
      */
@@ -77,9 +81,13 @@ class BlockHintBuilder {
                 status: 'in_progress',
                 isDraft: true
             };
-            AppState.addBlock(block);
+            const pending = stepRole === 'anchor' ? this.pendingAnchor() : null;
+            if (pending) {
+                block.id = pending.id;
+                AppState.updateBlock(pending.id, block);
+            } else AppState.addBlock(block);
             
-            document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: id, el: div } }));
+            document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div } }));
         });
 
         // Autofill step button -> generate next step automatically
@@ -173,7 +181,9 @@ class BlockHintBuilder {
             const id = 'block-' + Math.random().toString(36).substring(2, 9);
             const esc = topic.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
             const html = `<p>${esc}</p>`;
-            AppState.addBlock({ id, side: 'left', role: 'anchor', title: anchorObj.title, html, status: 'ready' });
+            const pending = this.pendingAnchor();
+            if (pending) AppState.updateBlock(pending.id, {html, status: 'ready'});
+            else AppState.addBlock({ id, side: 'left', role: 'anchor', title: anchorObj.title, html, status: 'ready' });
             try {
                 const { default: EditorManager } = await import('./EditorManager.js');
                 await EditorManager.triggerAutofill(html);
@@ -193,13 +203,16 @@ class BlockHintBuilder {
         });
 
         btnEditor.addEventListener('click', () => {
-            const id = 'block-' + Math.random().toString(36).substring(2, 9);
+            const pending = this.pendingAnchor();
+            const id = pending?.id || 'block-' + Math.random().toString(36).substring(2, 9);
             const topic = ta.value.trim();
             const esc = topic.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
-            AppState.addBlock({
+            const block = {
                 id, side: 'left', role: 'anchor', title: anchorObj.title,
                 html: topic ? `<p>${esc}</p>` : '', status: 'in_progress', isDraft: true
-            });
+            };
+            if (pending) AppState.updateBlock(id, block);
+            else AppState.addBlock(block);
             document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: id, el: div } }));
         });
 

@@ -55,6 +55,17 @@ class Word(BaseModel):
     definition: str
     connections: Optional[str] = None
 
+class RequestDocument(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    text: str = Field(min_length=1, max_length=50_000)
+
+    @field_validator('text')
+    @classmethod
+    def readable_text(cls, value):
+        if not value.strip() or '\x00' in value:
+            raise ValueError('Document must contain readable text')
+        return value
+
 class BlockContent(BaseModel):
     schema_version: Literal[1] = 1
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), pattern=r"^[A-Za-z0-9_-]{1,128}$")
@@ -72,6 +83,7 @@ class BlockContent(BaseModel):
     words: Optional[List[Word]] = []
     tabs: Optional[Any] = None
     active_tab_id: Optional[str] = None
+    request_document: Optional[RequestDocument] = None
     
     model_config = ConfigDict(extra="allow")
 

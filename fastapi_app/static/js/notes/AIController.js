@@ -54,7 +54,8 @@ class AIController {
                     status: block.status, title: block.title || ''};
             }
         }
-        return { target_goal, steps };
+        return { target_goal, steps,
+            ...(anchorBlock?.request_document?.text ? {reference: anchorBlock.request_document.text} : {}) };
     }
 
     static contentToHtml(text) {

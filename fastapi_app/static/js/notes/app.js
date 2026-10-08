@@ -24,6 +24,7 @@ import OnboardingTour from './OnboardingTour.js';
 import AIDiary from './AIDiary.js';
 import AIController from './AIController.js';
 import LibraryPublisher from './LibraryPublisher.js';
+import RequestDocuments from './RequestDocuments.js';
 import { t, switchLanguage } from '../i18n.js';
 
 class App {
@@ -47,6 +48,7 @@ class App {
         // Setup UI bindings & listeners
         this.setupBindings();
         LibraryPublisher.init();
+        RequestDocuments.init(() => BlockDOMRenderer.renderAll());
         this.setupCopyHandler();
         
         // Load initial note state

@@ -5,10 +5,13 @@ from typing import Optional, List, Any, AsyncIterator, Literal, Annotated
 from contextlib import aclosing
 import json
 import base64
+import asyncio
 import tempfile
 import aiofiles.os
 
 from fastapi_app.services.import_service import read_upload
+from fastapi_app.services.request_document import extract_request_document, MAX_DOCUMENT_BYTES
+from fastapi_app.schemas.notes import RequestDocument
 from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
 from fastapi_app.services.abuse_guard import reserve_generation
@@ -88,6 +91,13 @@ class ConspectusRouteRequest(BaseModel):
         if self.action == 'generate_step' and self.target_step is None:
             raise ValueError('target_step is required for generate_step')
         return self
+
+
+@router.post('/documents/extract', response_model=RequestDocument)
+@limiter.limit('20/minute')
+async def extract_document(request: Request, file: UploadFile = File(...)):
+    data = await read_upload(file, max_bytes=MAX_DOCUMENT_BYTES)
+    return await asyncio.to_thread(extract_request_document, data, file.filename or '')
 
 
 @router.post("/explain-concept")

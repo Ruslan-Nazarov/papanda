@@ -10,6 +10,12 @@
 @import './math.css?v=5';
 @import './responsive.css?v=5';
 @import './ai-diary.css';
+.request-documents {width:100%;max-width:1100px;margin:0 auto 24px;padding:12px 16px;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#475569;}
+.request-document-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.request-documents [hidden] {display:none;}
+.request-documents details {margin-top:8px;}
+.request-documents summary {cursor:pointer;overflow-wrap:anywhere;}
+.request-documents pre {white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;max-height:280px;overflow:auto;padding:12px;background:#f8fafc;border-radius:8px;}
 /* Local author publication dialog and public copy action. */
 .library-publisher {width:min(560px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #e2e8f0;border-radius:16px;padding:24px;color:#1e293b;}
 .library-publisher::backdrop {background:#0f172a66;}

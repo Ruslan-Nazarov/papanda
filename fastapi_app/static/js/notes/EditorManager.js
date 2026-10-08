@@ -222,7 +222,12 @@ class EditorManager {
         const container = document.getElementById('modal-container');
         if (container) { container.replaceChildren(); container.classList.add('hidden'); }
         if (sameDocument && blockId) {
-            if (!save && AppState.getBlock(blockId)?.isDraft) AppState.removeBlock(blockId);
+            const block = AppState.getBlock(blockId);
+            if (!save && block?.isDraft) {
+                if (block.request_document) AppState.updateBlock(blockId, {isDraft: false,
+                    status: (block.html || '').trim() ? 'in_progress' : 'none'});
+                else AppState.removeBlock(blockId);
+            }
             BlockDOMRenderer.renderAll();
         }
         this.opener?.isConnected && this.opener.focus();

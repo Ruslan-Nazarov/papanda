@@ -68,9 +68,11 @@ class GenerationContext:
 
     def metrics(self):
         measured = [c['usage_tokens'] for c in self.calls if c['usage_tokens'] is not None]
+        cached = [c['cached_input_tokens'] for c in self.calls if c.get('cached_input_tokens') is not None]
         return {'run_id': self.run_id, 'duration_s': round(time.monotonic() - self.started, 3),
                 'calls': [dict(c) for c in self.calls], 'call_count': len(self.calls),
                 'reserved_tokens': self.tokens_reserved, 'usage_tokens': sum(measured),
+                'cached_input_tokens': sum(cached) if cached else None,
                 'usage_complete': len(measured) == len(self.calls)}
 
 

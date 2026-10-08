@@ -1,6 +1,18 @@
 import ApiContracts from './ApiContracts.js';
 
 class NotesAPI {
+    static async extractRequestDocument(file, signal) {
+        const form = new FormData();
+        form.append('file', file);
+        const response = await fetch('/api/ai/dialectics/documents/extract', {method: 'POST', body: form, signal});
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP Error ${response.status}`);
+        if (typeof data.name !== 'string' || typeof data.text !== 'string' || !data.text.trim()) {
+            throw new Error('Invalid document response');
+        }
+        return {name: data.name, text: data.text};
+    }
+
     static captureAI = (endpoint, body, operation) => operation();
 
     static request(endpoint, method = 'GET', body = null, signal = undefined) {

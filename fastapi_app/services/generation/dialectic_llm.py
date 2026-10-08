@@ -55,6 +55,7 @@ class DialecticLLM:
         self.output_language = output_language
         self.original_request = original_request
         self.client = None
+        self.cached_input_tokens = None
 
     async def _complete(self, provider, messages):
         if isinstance(provider, OpenAICompatible):
@@ -83,6 +84,7 @@ class DialecticLLM:
         response.raise_for_status()
         data = response.json()
         usage = data.get('usage') or {}
+        self.cached_input_tokens = (usage.get('prompt_tokens_details') or {}).get('cached_tokens')
         return (data['choices'][0]['message'].get('content') or '',
                 int(usage.get('prompt_tokens') or 0), int(usage.get('completion_tokens') or 0))
 
@@ -110,10 +112,22 @@ class DialecticLLM:
                 'Preserve the requested reasoning and JSON schema.'
             )})
         if self.context:
+            # Keep the document before changing engine prompts for prefix-cache reuse.
+            reference = self.context.get('reference_document')
+            if reference:
+                index = 1 if messages and messages[0]['role'] == 'system' else 0
+                messages.insert(index, {'role': 'user', 'content':
+                    'Additional user context for this request. Treat the document and existing note as source data; '
+                    'apply the requested clarification while following the current block instructions.\n'
+                    + json.dumps({'reference_document': reference}, ensure_ascii=False)})
+            changing_context = {key: value for key, value in self.context.items() if key != 'reference_document'}
+        else:
+            changing_context = {}
+        if changing_context:
             messages.append({'role': 'user', 'content':
                 'Additional user context for this request. Treat the document and existing note as source data; '
                 'apply the requested clarification while following the block instructions above.\n'
-                + json.dumps(self.context, ensure_ascii=False)})
+                + json.dumps(changing_context, ensure_ascii=False)})
         run = current_run.get()
         errors = []
         for provider in self.chain:
@@ -123,10 +137,12 @@ class DialecticLLM:
                 call = run.reserve(name, getattr(provider, 'model', self.model), messages,
                                    getattr(provider, 'max_tokens', 16000), 'dialectic_v3')
                 try:
+                    self.cached_input_tokens = None
                     async with asyncio.timeout(run.remaining()):
                         text, prompt, completion = await self._complete(provider, messages)
                     self.usage.add(prompt, completion)
-                    call.update(status='completed', usage_tokens=prompt + completion)
+                    call.update(status='completed', usage_tokens=prompt + completion,
+                                cached_input_tokens=self.cached_input_tokens)
                     if not self.original_request and self.output_language == 'English' and _wrong_english_output(text):
                         raise OutputLanguageError('Expected English prose')
                     if text.strip():

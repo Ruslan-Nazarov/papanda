@@ -29,7 +29,7 @@ async function server() {
     const url = `http://127.0.0.1:${port}`;
     for (let i = 0; i < 120; i++) {
         if (child.exitCode !== null) throw new Error(log);
-        if (await fetch(url+'/health').then(res => res.ok).catch(() => false)) return {child, url, log: () => log};
+        if (await fetch(url+'/health').then(res => res.ok).catch(() => false)) return {child, url, directory, log: () => log};
         await new Promise(resolve => setTimeout(resolve, 100));
     }
     child.kill();
@@ -44,6 +44,9 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         const page = await browser.newPage();
         const errors = [], external = [], violations = [];
         let generated = 0;
+        let generatedReference;
+        const documentText = 'Создание одноканального ЭКГ\n' + 'Полное условие ТЗ. '.repeat(1700)
+            + '\nПоследний пункт <img src=x onerror=alert(1)>';
         page.on('pageerror', error => errors.push(error.message));
         page.on('console', message => {if (message.text().includes('Content Security Policy')) violations.push(message.text());});
         await page.setRequestInterception(true);
@@ -52,6 +55,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             if (request.url().endsWith('/api/ai/dialectics/conspectus/generate-full/stream')) {
                 generated++;
                 const payload = JSON.parse(request.postData());
+                generatedReference = payload.context_state.reference;
                 const result = {run_id: 'browser-mock', status: 'completed', source_revision: payload.source_revision,
                     replace_bases: ['1','2','3','4','5'], updated_steps: {step1: {content: '**Mock generated step**', status: 'ready'}}};
                 const events = [{type:'started', run_id:result.run_id, sequence:1},
@@ -59,6 +63,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 return request.respond({status:200, contentType:'text/event-stream',
                     body:events.map(event => 'data: '+JSON.stringify(event)+'\n\n').join('')});
             }
+            if (request.url().endsWith('/api/ai/dialectics/documents/extract')) return request.continue();
             if (request.url().includes('/api/ai/')) return request.respond({status:503, contentType:'application/json',
                 body:JSON.stringify({detail:'Unexpected AI call in browser test'})});
             return request.continue();
@@ -96,6 +101,21 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.reload({waitUntil: 'networkidle0'});
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
+        });
+        await t.test('attached material renders as text and survives save and reload', async () => {
+            const fixture = path.join(backend.directory, 'material.txt');
+            await fs.writeFile(fixture, documentText, 'utf8');
+            await (await page.$('#request-document-input')).uploadFile(fixture);
+            await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
+            await page.click('#request-document-preview summary');
+            assert.equal(await page.$eval('#request-document-text', el => el.textContent), documentText);
+            assert.equal(await page.$$eval('#request-document-text img', els => els.length), 0);
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await page.reload({waitUntil: 'networkidle0'});
+            await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
+            assert.equal(await page.$eval('#request-document-text', el => el.textContent), documentText);
+            await page.screenshot({path: path.join(root, '.cache/request-documents-browser.png')});
         });
         await t.test('opening and closing editor releases document listeners', async () => {
             const session = await page.createCDPSession();
@@ -207,14 +227,27 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.click('#mode-master-toggle button[data-mode="ai"]');
             await page.waitForSelector('.anchor-topic-input');
             await page.type('.anchor-topic-input', 'A controlled test topic');
+            await (await page.$('#request-document-input')).uploadFile(path.join(backend.directory, 'material.txt'));
+            await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
+            assert.equal(await page.$eval('.anchor-topic-input', el => el.value), 'A controlled test topic');
             await page.click('.btn-anchor-generate');
             await page.waitForFunction(() => document.querySelector('#blocks-container')?.textContent.includes('Mock generated step'));
             assert.equal(generated, 1);
+            assert.equal(generatedReference, documentText);
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await page.reload({waitUntil:'networkidle0'});
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
             await page.click('#mode-master-toggle button[data-mode="manual"]');
+        });
+        await t.test('removing request material persists without deleting the goal', async () => {
+            await page.click('#btn-remove-request-document');
+            assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await page.reload({waitUntil: 'networkidle0'});
+            assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
+            assert.match(await page.$eval('#blocks-container', el => el.textContent), /A controlled test topic/);
         });
         await t.test('diary keeps requests and answers without learning modes', async () => {
             assert.equal(await page.$('#btn-learning-variants, #btn-learning-ask, #menu-item-learning-demo, #user-role-selector, .btn-fork-step'), null);
@@ -315,6 +348,23 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             } finally {
                 await context.close();
             }
+        });
+        await t.test('attaching before the goal survives cancelling the manual editor', async () => {
+            await page.click('#btn-new-conspect');
+            await page.click('#mode-master-toggle button[data-mode="manual"]');
+            await (await page.$('#request-document-input')).uploadFile(path.join(backend.directory, 'material.txt'));
+            await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
+            await page.click('.dialectics-hint-block[data-role="anchor"]');
+            await page.waitForSelector('.tiptap');
+            await page.keyboard.press('Escape');
+            await page.waitForSelector('#modal-container.hidden');
+            assert.equal(await page.$eval('#request-document-text', el => el.textContent), documentText);
+            assert(await page.$('.dialectics-hint-block[data-role="anchor"]'));
+            await page.click('#mode-master-toggle button[data-mode="ai"]');
+            await page.type('.anchor-topic-input', 'Создать одноканальный ЭКГ');
+            await page.click('#btn-remove-request-document');
+            assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
+            assert.equal(await page.$eval('.anchor-topic-input', el => el.value), 'Создать одноканальный ЭКГ');
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');
         assert.deepEqual(violations, [], 'CSP violations');

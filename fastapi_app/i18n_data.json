@@ -630,7 +630,15 @@
   "library_close": "Close",
   "library_sending": "Sending…",
   "library_published": "Published. Further edits require an explicit publication update.",
-  "library_removed": "Publication removed."
+  "library_removed": "Publication removed.",
+  "request_document_material": "Request material",
+  "request_document_attach": "Attach document",
+  "request_document_replace": "Replace document",
+  "request_document_remove": "Remove",
+  "request_document_preview": "Extracted text",
+  "request_document_reading": "Reading document…",
+  "request_document_limits": "DOCX or UTF-8 TXT, up to 2 MiB and 50,000 characters",
+  "request_document_error": "Could not read document"
  },
  "kz": {
   "save_conflict_title": "Сақтау қайшылығы",
@@ -1263,7 +1271,15 @@
   "library_close": "Жабу",
   "library_sending": "Жіберілуде…",
   "library_published": "Жарияланды. Кейінгі өзгерістер үшін жарияланымды жаңартыңыз.",
-  "library_removed": "Жарияланым алынды."
+  "library_removed": "Жарияланым алынды.",
+  "request_document_material": "Сұрауға арналған материал",
+  "request_document_attach": "Құжатты тіркеу",
+  "request_document_replace": "Құжатты ауыстыру",
+  "request_document_remove": "Жою",
+  "request_document_preview": "Оқылған мәтін",
+  "request_document_reading": "Құжат оқылуда…",
+  "request_document_limits": "DOCX немесе UTF-8 TXT, 2 МиБ және 50 000 таңбаға дейін",
+  "request_document_error": "Құжатты оқу мүмкін болмады"
  },
  "ru": {
   "save_conflict_title": "Конфликт сохранения",
@@ -1896,6 +1912,14 @@
   "library_close": "Закрыть",
   "library_sending": "Отправка…",
   "library_published": "Опубликовано. Следующие правки появятся на сайте только после обновления публикации.",
-  "library_removed": "Публикация снята."
+  "library_removed": "Публикация снята.",
+  "request_document_material": "Материал к запросу",
+  "request_document_attach": "Прикрепить документ",
+  "request_document_replace": "Заменить документ",
+  "request_document_remove": "Удалить",
+  "request_document_preview": "Прочитанный текст",
+  "request_document_reading": "Чтение документа…",
+  "request_document_limits": "DOCX или TXT в UTF-8, до 2 МиБ и 50 000 символов",
+  "request_document_error": "Не удалось прочитать документ"
  }
 }

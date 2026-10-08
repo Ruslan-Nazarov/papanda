@@ -129,8 +129,9 @@ async def test_v3_context_reaches_model_and_budget_stops_fallback(monkeypatch):
         with pytest.raises(BudgetExceeded):
             await llm.generate([{'role': 'user', 'content': 'authored prompt'}])
     assert len(context.calls) == 1 and context.calls[0]['status'] == 'failed'
-    assert seen[0]['content'] == 'authored prompt'
-    assert 'source marker' in seen[1]['content'] and 'question marker' in seen[1]['content']
+    assert 'source marker' in seen[0]['content']
+    assert seen[1]['content'] == 'authored prompt'
+    assert 'question marker' in seen[2]['content']
 
 
 @pytest.mark.asyncio
