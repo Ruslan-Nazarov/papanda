@@ -42,6 +42,11 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
     try {
         browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
         const page = await browser.newPage();
+        const reopenSavedNote = async () => {
+            const id = await page.evaluate(() => localStorage.getItem('papanda_last_note_id'));
+            assert(id);
+            await page.goto(`${backend.url}/?note=${encodeURIComponent(id)}`, {waitUntil: 'networkidle0'});
+        };
         const errors = [], external = [], violations = [];
         let generated = 0;
         let generatedReference;
@@ -84,7 +89,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         const initialTranslations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
         assert((await page.$eval('.dialectics-hint-block[data-role="anchor"]', el => el.textContent))
             .includes(initialTranslations[initialLocale].hint_anchor_title));
-        await t.test('manual keyboard entry, save and reload', async () => {
+        await t.test('manual entry persists while the homepage starts a new note', async () => {
             await page.focus('.dialectics-hint-block[data-role="anchor"]');
             await page.keyboard.press('Enter');
             await page.waitForSelector('.tiptap');
@@ -99,6 +104,15 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await page.reload({waitUntil: 'networkidle0'});
+            assert.equal(await page.$eval('#note-title', el => el.value), '');
+            assert.equal(await page.$$('.dialectics-block').then(els => els.length), 0);
+            assert(await page.$('.dialectics-hint-block[data-role="anchor"]'));
+            assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
+            await page.click('#btn-main-menu');
+            await page.click('#menu-item-open-note');
+            await page.waitForSelector('.notes-list .note-item');
+            await page.click('.notes-list .note-title-link');
+            await page.waitForSelector('.dialectics-block .block-content');
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
         });
@@ -114,7 +128,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await page.$$eval('#request-document-text img', els => els.length), 0);
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
-            await page.reload({waitUntil: 'networkidle0'});
+            await reopenSavedNote();
             await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
             assert.equal(await page.$eval('#request-document-text', el => el.textContent), documentText);
             await page.screenshot({path: path.join(root, '.cache/request-documents-browser.png')});
@@ -143,7 +157,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await page.$$eval('#note-stickers-dropdown-menu .sticker-card img', els => els.length), 0);
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
-            await page.reload({waitUntil:'networkidle0'});
+            await reopenSavedNote();
             await page.click('#btn-note-stickers');
             assert.match(await page.$eval('#note-stickers-dropdown-menu', el => el.textContent), /R6 private sticker/);
             await page.click('#btn-note-stickers');
@@ -173,7 +187,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.waitForSelector('.dialectics-block img[src^="data:image/png"]');
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
-            await page.reload({waitUntil:'networkidle0'});
+            await reopenSavedNote();
             await page.click('.dialectics-block .btn-edit');
             await page.click('[data-tab="shapes"]');
             await page.click('#btn-modal-ok');
@@ -214,7 +228,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await context.close();
         });
         await t.test('narrow screen editor and keyboard dismissal', async () => {
-            await page.reload({waitUntil:'networkidle0'});
+            await reopenSavedNote();
             await page.setViewport({width:390, height:844});
             await page.click('.dialectics-block .btn-edit');
             await page.waitForSelector('.tiptap');
@@ -240,7 +254,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(generatedReference, documentText);
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
-            await page.reload({waitUntil:'networkidle0'});
+            await reopenSavedNote();
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
             await page.click('#mode-master-toggle button[data-mode="manual"]');
         });
@@ -249,7 +263,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
-            await page.reload({waitUntil: 'networkidle0'});
+            await reopenSavedNote();
             assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /A controlled test topic/);
         });
@@ -294,6 +308,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             }
         });
         await t.test('library publication, independent copy and withdrawal', async () => {
+            await reopenSavedNote();
             await page.click('#btn-library-publish');
             await page.waitForSelector('.library-publisher[open]');
             await page.type('#library-description', 'Public browser example');

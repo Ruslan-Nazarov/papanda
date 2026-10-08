@@ -563,11 +563,9 @@ class App {
     static async loadInitialState() {
         try {
             const requestedId = new URLSearchParams(window.location.search).get('note');
-            let lastId = requestedId;
-            if (!lastId) { try { lastId = localStorage.getItem('papanda_last_note_id'); } catch {} }
-            if (lastId) {
+            if (requestedId) {
                 try {
-                    const note = await NotesAPI.getNote(lastId);
+                    const note = await NotesAPI.getNote(requestedId);
                     if (note && !note.is_deleted) {
                         await NoteStorageService.loadNote(note.id);
                         if (requestedId) {
@@ -578,16 +576,10 @@ class App {
                         return;
                     }
                 } catch (e) {
-                    // Fallback to list
+                    // A missing explicit note opens a blank page.
                 }
             }
-
-            const notes = await NotesAPI.getNotes();
-            if (notes && notes.length > 0) {
-                await NoteStorageService.loadNote(notes[0].id);
-            } else {
-                AppState.setNote({ id: null, title: '', blocks: [] });
-            }
+            AppState.setNote({ id: null, title: '', blocks: [] });
         } catch (e) {
             console.error('Failed to load initial state', e);
             AppState.setNote({ id: null, title: '', blocks: [] });
