@@ -20,6 +20,10 @@
         </div>
         <button class="mobile-nav-toggle" id="btn-mobile-nav" aria-label="{{ _('menu_nav_mobile') }}">☰</button>
         <div class="header-right" id="header-right">
+            <a href="/library" class="nav-pill-btn" style="text-decoration:none;">📚 {{ _('library_title') }}</a>
+            {% if author_mode %}
+            <button type="button" class="nav-pill-btn" id="btn-library-publish">{{ _('library_manage') }}</button>
+            {% endif %}
             <button class="nav-pill-btn" id="btn-ai-diary" type="button">{{ _('ai_diary_title') }}</button>
             <!-- Обучение -->
             <button class="nav-pill-btn" id="btn-howto">

@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '..');
 async function main() {
     const result = await esbuild.build({absWorkingDir: root, entryPoints: {
         app: 'fastapi_app/static/js/notes/app.js', runtime: 'fastapi_app/static/js/runtime.js',
+        library: 'fastapi_app/static/js/library.js',
         styles: 'fastapi_app/static/css/notes.css', vendor: 'fastapi_app/static/css/vendor.css',
     }, outdir: 'fastapi_app/static/dist', bundle: true, format: 'esm', splitting: true,
     entryNames: '[name]-[hash]', chunkNames: 'chunks/[name]-[hash]', assetNames: 'assets/[name]-[hash]',

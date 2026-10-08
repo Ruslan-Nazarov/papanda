@@ -2,8 +2,9 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
+from uuid import UUID
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,7 +13,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from fastapi_app.routers import notes, ai
+from fastapi_app.routers import notes, ai, library
 from fastapi_app.config import ensure_secret_key, settings
 from fastapi_app.services.security_store import demo_instance_lock
 from fastapi_app.middleware import (
@@ -30,6 +31,8 @@ from fastapi_app.services.manual_algorithm import get_manual_algorithm
 from fastapi_app.rate_limiter import limiter
 from fastapi_app.database import get_db, dispose_all_engines, initialize_databases, get_public_db
 from fastapi_app.services.notes_service import NotesService
+from fastapi_app.services import library_store
+from fastapi_app.services.note_transactions import get_note
 from fastapi_app.frontend_assets import asset
 from fastapi_app.version import VERSION, RELEASE_DATE, RELEASE_SHA
 from fastapi_app.migrations import VERSION as DB_SCHEMA
@@ -86,6 +89,7 @@ templates.env.globals['asset'] = asset
 # Routers
 app.include_router(notes.router, prefix="/api/dialectics", tags=["notes"])
 app.include_router(ai.router, prefix="/api/ai/dialectics", tags=["ai"])
+app.include_router(library.router, tags=["library"])
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -99,7 +103,7 @@ async def index(request: Request):
         request=request, name="index.html",
         context={"_": _, "locale": locale, "algorithm_json": algorithm_json,
                    "i18n_json": i18n_json, "app_version": VERSION,
-                   "last_update": RELEASE_DATE},
+                   "last_update": RELEASE_DATE, "author_mode": not settings.DEMO_MODE},
     )
 
 @app.get("/editor")
@@ -147,6 +151,46 @@ async def shared_conspect(request: Request, token: str, db=Depends(get_public_db
         context={"_": _, "locale": locale, "blocks": blocks, "note_title": title,
                  "token": token, "algo": algo},
     )
+
+@app.get('/library', response_class=HTMLResponse)
+async def library_page(request: Request):
+    locale = getattr(request.state, 'locale', 'ru')
+    return templates.TemplateResponse(request=request, name='library.html', context={
+        '_': get_translator(locale), 'locale': locale,
+        'publications': await asyncio.to_thread(library_store.list_publications)})
+
+
+@app.get('/library/{publication_id}', response_class=HTMLResponse)
+async def library_note(request: Request, publication_id: UUID):
+    item = await asyncio.to_thread(library_store.get_publication, str(publication_id))
+    if not item:
+        raise HTTPException(404, 'Not found')
+    return render_library_note(request, item, publication_id=str(publication_id))
+
+
+def render_library_note(request, item, **extra):
+    from fastapi_app.services.sanitizer import sanitize_block_html
+    locale = getattr(request.state, 'locale', 'ru')
+    blocks = [{**b, 'html': sanitize_block_html(b.get('html', ''))} for b in item['blocks']]
+    return templates.TemplateResponse(request=request, name='shared.html', context={
+        '_': get_translator(locale), 'locale': locale, 'note_title': item['title'],
+        'blocks': blocks, 'description': item.get('description', ''),
+        'algo': get_manual_algorithm(locale), 'library_view': True, **extra})
+
+
+@app.get('/author/library/{note_id}/preview', response_class=HTMLResponse,
+         dependencies=[Depends(library.author_only)])
+async def preview_library_note(request: Request, note_id: int, revision: int,
+                               description: str = '', db=Depends(get_db)):
+    if len(description) > 1000:
+        raise HTTPException(422, 'Description is too long')
+    note = await get_note(db, note_id)
+    if note.is_deleted:
+        raise HTTPException(404, 'Not found')
+    if note.revision != revision:
+        raise HTTPException(409, 'Note changed; save and preview again')
+    return render_library_note(request, await library.snapshot(note, description), preview=True)
+
 
 @app.get("/health")
 async def health():

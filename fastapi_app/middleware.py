@@ -90,7 +90,8 @@ class BodyLimitMiddleware:
 
 class SessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith(('/s/', '/api/dialectics/shared/', '/static/')) or request.url.path in {'/health', '/favicon.ico'}:
+        if (request.url.path.startswith(('/s/', '/api/dialectics/shared/', '/static/', '/api/author/', '/author/', '/api/library/publications/'))
+                or request.url.path in {'/health', '/favicon.ico', '/api/library'}):
             return await call_next(request)
         # Public pages and unmatched URLs need no private storage identity.
         if settings.DEMO_MODE and (not request.url.path.startswith('/api/') or not any(

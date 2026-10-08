@@ -8,7 +8,7 @@
     <meta property="og:title" content="{{ note_title }}">
     <meta property="og:description" content="{{ _('shared_tagline') }} — papanda.kz">
     <meta property="og:type" content="article">
-    <meta name="robots" content="noindex,nofollow">
+    {% if not library_view or preview %}<meta name="robots" content="noindex,nofollow">{% endif %}
 
     <link rel="stylesheet" href="{{ asset('vendor.css') }}">
     <script type="module" src="{{ asset('runtime.js') }}"></script>
@@ -37,11 +37,15 @@
         footer a { display: inline-block; margin-top: 10px; padding: 10px 20px;
                    background: linear-gradient(135deg,#fb923c,#ea580c); color: #fff;
                    text-decoration: none; border-radius: 10px; font-weight: 600; }
+        .library-copy {padding:10px 20px;border:1px solid #cbd5e1;border-radius:10px;background:white;font:inherit;cursor:pointer;}
     </style>
 </head>
 <body data-page="shared">
     <div class="wrap">
+        {% if library_view %}<a href="/library">← {{ _('library_title') }}</a>{% endif %}
+        {% if preview %}<p>{{ _('library_preview_hint') }}</p>{% endif %}
         <div class="doc-title">{{ note_title }}</div>
+        {% if description %}<p>{{ description }}</p>{% endif %}
 
         {% for b in blocks %}
             {% set role = b.get('role') or '' %}
@@ -72,11 +76,16 @@
         {% endfor %}
 
         <footer>
+            {% if publication_id %}
+            <button type="button" class="library-copy" data-publication-id="{{ publication_id }}"
+                    data-error="{{ _('library_copy_error') }}">{{ _('library_copy') }}</button>
+            <p id="library-copy-status" role="status"></p>
+            {% endif %}
             {{ _('shared_made_with') }} <strong>papanda</strong> · {{ _('shared_tagline') }}<br>
             <a href="/">{{ _('shared_cta') }}</a>
         </footer>
     </div>
-
+    {% if publication_id %}<script type="module" src="{{ asset('library.js') }}"></script>{% endif %}
 
 </body>
 </html>

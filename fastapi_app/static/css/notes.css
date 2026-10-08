@@ -10,3 +10,14 @@
 @import './math.css?v=5';
 @import './responsive.css?v=5';
 @import './ai-diary.css';
+/* Local author publication dialog and public copy action. */
+.library-publisher {width:min(560px,calc(100vw - 32px));max-height:85vh;overflow:auto;border:1px solid #e2e8f0;border-radius:16px;padding:24px;color:#1e293b;}
+.library-publisher::backdrop {background:#0f172a66;}
+.library-publisher h2 {margin:0 0 16px;overflow-wrap:anywhere;}
+.library-publisher p {line-height:1.6;}
+.library-publisher label {display:block;}
+.library-publisher textarea {display:block;box-sizing:border-box;width:100%;margin-top:8px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;}
+.library-actions {display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.library-actions button,.library-copy {padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer;font:inherit;}
+.library-actions button:disabled {opacity:.5;cursor:wait;}
+#library-publish {background:#ea580c;color:white;border-color:#ea580c;}

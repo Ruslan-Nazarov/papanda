@@ -23,6 +23,9 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = ""
     DEMO_MODE: bool = False
+    # Publishing credentials are backend-only. Empty URL publishes to a local shelf.
+    LIBRARY_PUBLISH_URL: str = ""
+    LIBRARY_PUBLISH_KEY: str = ""
     DATABASE_URL: str = ""
     # 900: a dialectic_v3 conspectus makes 8+ sequential model calls (~290s on gpt-5-mini).
     GENERATION_TIMEOUT: float = Field(default=900, gt=0, le=1800)

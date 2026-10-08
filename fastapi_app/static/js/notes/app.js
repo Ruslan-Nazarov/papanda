@@ -23,6 +23,7 @@ import ModeManager from './ModeManager.js';
 import OnboardingTour from './OnboardingTour.js';
 import AIDiary from './AIDiary.js';
 import AIController from './AIController.js';
+import LibraryPublisher from './LibraryPublisher.js';
 import { t, switchLanguage } from '../i18n.js';
 
 class App {
@@ -45,6 +46,7 @@ class App {
 
         // Setup UI bindings & listeners
         this.setupBindings();
+        LibraryPublisher.init();
         this.setupCopyHandler();
         
         // Load initial note state
@@ -558,12 +560,19 @@ class App {
 
     static async loadInitialState() {
         try {
-            const lastId = localStorage.getItem('papanda_last_note_id');
+            const requestedId = new URLSearchParams(window.location.search).get('note');
+            let lastId = requestedId;
+            if (!lastId) { try { lastId = localStorage.getItem('papanda_last_note_id'); } catch {} }
             if (lastId) {
                 try {
                     const note = await NotesAPI.getNote(lastId);
                     if (note && !note.is_deleted) {
                         await NoteStorageService.loadNote(note.id);
+                        if (requestedId) {
+                            const url = new URL(window.location.href);
+                            url.searchParams.delete('note');
+                            window.history.replaceState(null, '', url);
+                        }
                         return;
                     }
                 } catch (e) {
