@@ -103,6 +103,8 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
         });
         await t.test('attached material renders as text and survives save and reload', async () => {
+            assert(await page.$('.dialectics-block > .request-documents'));
+            assert.equal(await page.$('#canvas-area > .request-documents'), null);
             const fixture = path.join(backend.directory, 'material.txt');
             await fs.writeFile(fixture, documentText, 'utf8');
             await (await page.$('#request-document-input')).uploadFile(fixture);
@@ -226,10 +228,12 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.click('#btn-new-conspect');
             await page.click('#mode-master-toggle button[data-mode="ai"]');
             await page.waitForSelector('.anchor-topic-input');
+            assert(await page.$('.block-anchor-starter > .anchor-topic-input + .request-documents'));
             await page.type('.anchor-topic-input', 'A controlled test topic');
             await (await page.$('#request-document-input')).uploadFile(path.join(backend.directory, 'material.txt'));
             await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
             assert.equal(await page.$eval('.anchor-topic-input', el => el.value), 'A controlled test topic');
+            await page.screenshot({path: path.join(root, '.cache/request-documents-starter.png')});
             await page.click('.btn-anchor-generate');
             await page.waitForFunction(() => document.querySelector('#blocks-container')?.textContent.includes('Mock generated step'));
             assert.equal(generated, 1);
@@ -352,9 +356,13 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         await t.test('attaching before the goal survives cancelling the manual editor', async () => {
             await page.click('#btn-new-conspect');
             await page.click('#mode-master-toggle button[data-mode="manual"]');
-            await (await page.$('#request-document-input')).uploadFile(path.join(backend.directory, 'material.txt'));
+            assert(await page.$('.dialectics-hint-block[data-role="anchor"] > .request-documents'));
+            const [chooser] = await Promise.all([page.waitForFileChooser(), page.click('#btn-request-document')]);
+            await chooser.accept([path.join(backend.directory, 'material.txt')]);
             await page.waitForFunction(() => document.querySelector('#request-document-name').textContent === 'material.txt');
-            await page.click('.dialectics-hint-block[data-role="anchor"]');
+            assert(await page.$('#modal-container.hidden'));
+            await page.focus('.dialectics-hint-block[data-role="anchor"]');
+            await page.keyboard.press('Enter');
             await page.waitForSelector('.tiptap');
             await page.keyboard.press('Escape');
             await page.waitForSelector('#modal-container.hidden');

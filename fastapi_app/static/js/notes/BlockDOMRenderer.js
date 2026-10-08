@@ -1,6 +1,7 @@
 import AppState from './AppState.js';
 import BlockNormalBuilder from './BlockNormalBuilder.js';
 import BlockHintBuilder from './BlockHintBuilder.js';
+import RequestDocuments from './RequestDocuments.js';
 import { ALGORITHM_STEPS, inferRoleFromTitle } from './BlockConstants.js';
 import { t } from '../i18n.js';
 
@@ -96,6 +97,7 @@ class BlockDOMRenderer {
 
         // Divider after the last block
         container.appendChild(this.createDivider(dividerIdx));
+        RequestDocuments.mount(container);
     }
 
     static createDivider(index) {

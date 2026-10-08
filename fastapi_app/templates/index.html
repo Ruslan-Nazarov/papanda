@@ -210,9 +210,9 @@
 
         <!-- Холст конспекта -->
         <main class="canvas-area" id="canvas-area">
+            <template id="request-document-template">
             <section class="request-documents" aria-label="{{ _('request_document_material') }}">
                 <div class="request-document-actions">
-                    <span>{{ _('request_document_material') }}</span>
                     <button type="button" class="sub-bar-btn" id="btn-request-document">{{ _('request_document_attach') }}</button>
                     <input type="file" id="request-document-input" accept=".docx,.txt" hidden>
                     <button type="button" class="sub-bar-btn" id="btn-remove-request-document" hidden>{{ _('request_document_remove') }}</button>
@@ -222,6 +222,7 @@
                     <pre id="request-document-text"></pre>
                 </details>
             </section>
+            </template>
             <div class="dialectics-canvas" id="blocks-container">
                 <!-- Блоки рендерятся динамически -->
             </div>

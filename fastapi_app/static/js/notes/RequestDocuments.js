@@ -12,14 +12,17 @@ class RequestDocuments {
         if (this.lifecycle && !this.lifecycle.disposed) return;
         this.lifecycle = new Lifecycle();
         this.onRenderAll = onRenderAll;
-        this.lifecycle.on(document.getElementById('btn-request-document'), 'click', () =>
-            document.getElementById('request-document-input')?.click());
-        this.lifecycle.on(document.getElementById('request-document-input'), 'change', event => {
+        this.panel = document.getElementById('request-document-template')?.content.firstElementChild.cloneNode(true);
+        this.lifecycle.on(this.panel, 'click', event => event.stopPropagation());
+        this.lifecycle.on(this.panel, 'keydown', event => event.stopPropagation());
+        this.lifecycle.on(this.panel?.querySelector('#btn-request-document'), 'click', () =>
+            this.panel.querySelector('#request-document-input')?.click());
+        this.lifecycle.on(this.panel?.querySelector('#request-document-input'), 'change', event => {
             const file = event.target.files?.[0];
             event.target.value = '';
             if (file) this.attach(file);
         });
-        this.lifecycle.on(document.getElementById('btn-remove-request-document'), 'click', () => {
+        this.lifecycle.on(this.panel?.querySelector('#btn-remove-request-document'), 'click', () => {
             const anchor = this.anchor();
             if (anchor && !(anchor.html || '').trim() && !anchor.sourceGoal) {
                 AppState.removeBlock(anchor.id);
@@ -40,10 +43,27 @@ class RequestDocuments {
         this.upload?.abort();
         this.upload = null;
         this.lifecycle?.dispose();
+        this.panel?.remove();
+        this.panel = null;
     }
 
     static anchor() {
         return AppState.currentNote.blocks.find(block => block.role === 'anchor');
+    }
+
+    static mount(container) {
+        if (!this.panel) return;
+        const anchor = this.anchor();
+        const block = container.querySelector('.dialectics-hint-block[data-role="anchor"]')
+            || (anchor && document.getElementById(anchor.id));
+        if (!block) {
+            this.panel.remove();
+            return;
+        }
+        const topic = block.querySelector('.anchor-topic-input');
+        if (topic) topic.insertAdjacentElement('afterend', this.panel);
+        else block.appendChild(this.panel);
+        this.render();
     }
 
     static renderCanvas() {
@@ -90,9 +110,9 @@ class RequestDocuments {
     }
 
     static render() {
-        const button = document.getElementById('btn-request-document');
-        const preview = document.getElementById('request-document-preview');
-        const remove = document.getElementById('btn-remove-request-document');
+        const button = this.panel?.querySelector('#btn-request-document');
+        const preview = this.panel?.querySelector('#request-document-preview');
+        const remove = this.panel?.querySelector('#btn-remove-request-document');
         if (!button || !preview || !remove) return;
         const attachment = this.anchor()?.request_document;
         button.disabled = Boolean(this.upload);
@@ -101,8 +121,8 @@ class RequestDocuments {
         remove.disabled = Boolean(this.upload);
         remove.hidden = !attachment;
         preview.hidden = !attachment;
-        document.getElementById('request-document-name').textContent = attachment?.name || '';
-        document.getElementById('request-document-text').textContent = attachment?.text || '';
+        this.panel.querySelector('#request-document-name').textContent = attachment?.name || '';
+        this.panel.querySelector('#request-document-text').textContent = attachment?.text || '';
     }
 }
 
