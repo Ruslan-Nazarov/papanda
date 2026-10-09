@@ -56,7 +56,8 @@ class BlockDOMRenderer {
         // В режиме ИИ-генерации подсказки-блоки не показываем вовсе —
         // исключение: пустой конспект, где anchor-подсказка нужна для старта.
         const aiMode = AppState.mode === 'ai';
-        const allBlocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
+        const storedBlocks = AppState.currentNote.blocks || [];
+        const allBlocks = storedBlocks.filter(b => !b.isDraft);
         const pendingAnchor = BlockHintBuilder.pendingAnchor();
         const hasRealBlocks = allBlocks.some(b => b.role !== 'section' && b.id !== pendingAnchor?.id);
         const showHints = !aiMode || !hasRealBlocks;
@@ -67,38 +68,39 @@ class BlockDOMRenderer {
         const anchorBlocks = allBlocks.filter(b => b.role === 'anchor' && b.id !== pendingAnchor?.id);
 
         container.innerHTML = '';
-        let dividerIdx = 0;
-
         // 1. Render all non-anchor blocks
         nonAnchorBlocks.forEach((block) => {
-            container.appendChild(this.createDivider(dividerIdx++));
+            // Anchor blocks are displayed last, even when stored earlier. Divider
+            // indices must refer to the stored array used by NoteStore.addBlock.
+            const storedIndex = storedBlocks.findIndex(item => item.id === block.id);
+            container.appendChild(this.createDivider(storedIndex));
             const el = BlockNormalBuilder.build(block, () => this.renderAll());
             container.appendChild(el);
         });
 
         // 2. Render next dialectics hint if active and not anchor (e.g. step1..step5 hint grows above anchor)
         if (showHints && !noDialectics && nextStep && nextStep.role !== 'anchor') {
-            container.appendChild(this.createDivider(dividerIdx++));
+            container.appendChild(this.createDivider(storedBlocks.length));
             const hintEl = BlockHintBuilder.build(nextStep.role, nextStep.side, () => this.renderAll());
             container.appendChild(hintEl);
         }
 
         // 3. Render anchor blocks at the bottom, left
         anchorBlocks.forEach((block) => {
-            container.appendChild(this.createDivider(dividerIdx++));
+            container.appendChild(this.createDivider(storedBlocks.length));
             const el = BlockNormalBuilder.build(block, () => this.renderAll());
             container.appendChild(el);
         });
 
         // 4. If next step is anchor (note is empty / no anchor yet)
         if (showHints && !noDialectics && nextStep && nextStep.role === 'anchor') {
-            container.appendChild(this.createDivider(dividerIdx++));
+            container.appendChild(this.createDivider(storedBlocks.length));
             const hintEl = BlockHintBuilder.build(nextStep.role, nextStep.side, () => this.renderAll());
             container.appendChild(hintEl);
         }
 
         // Divider after the last block
-        container.appendChild(this.createDivider(dividerIdx));
+        container.appendChild(this.createDivider(storedBlocks.length));
         RequestDocuments.mount(container);
     }
 
