@@ -1,7 +1,7 @@
 {
   "name": "papanda-conspect",
   "private": true,
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "Papanda note editor, local frontend build and tests",
   "engines": {
     "node": ">=22.12.0"
@@ -20,6 +20,7 @@
     "esbuild": "0.28.2",
     "eslint": "10.11.0",
     "globals": "17.12.0",
+    "jsdom": "26.1.0",
     "marked": "12.0.2",
     "puppeteer": "25.9.0",
     "typescript": "7.0.2"

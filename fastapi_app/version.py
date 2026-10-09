@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import re
 
-VERSION = '0.12.0'
+VERSION = '0.12.1'
 _root = Path(__file__).resolve().parents[1]
 _changelog = (_root / 'CHANGELOG.md').read_text(encoding='utf-8')
 _release_heading = re.search(rf'^## \[{re.escape(VERSION)}\] - (\d{{4}}-\d{{2}}-\d{{2}})$', _changelog, re.M)

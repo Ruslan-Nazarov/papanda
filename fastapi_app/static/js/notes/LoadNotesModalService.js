@@ -11,6 +11,8 @@ class LoadNotesModalService {
         let currentCategory = '';
         let categories = [];
         let activeTab = openTab; // 'notes' | 'trash'
+        let requestSequence = 0;
+        let debounceTimer;
         
         try {
             const catRes = await fetch('/api/dialectics/categories/all');
@@ -131,13 +133,17 @@ class LoadNotesModalService {
 
         // --- Load and re-render notes tab ---
         const loadNotes = async (dialog) => {
+            clearTimeout(debounceTimer);
+            const sequence = ++requestSequence;
             const body = dialog.querySelector('.modal-dialog-body');
             try {
                 const notes = await NotesAPI.getNotes(currentSearch, currentCategory);
+                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'notes') return;
                 body.innerHTML = renderTabBar() + `<div id="tab-content">${renderNotesTab(notes)}</div>`;
                 bindTabButtons(dialog);
                 bindNotesEvents(dialog, notes);
             } catch(e) {
+                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'notes') return;
                 body.innerHTML = renderTabBar() + `<p style="color:#ef4444;">${t('load_error')}</p>`;
                 bindTabButtons(dialog);
             }
@@ -145,13 +151,17 @@ class LoadNotesModalService {
 
         // --- Load and re-render trash tab ---
         const loadTrash = async (dialog) => {
+            clearTimeout(debounceTimer);
+            const sequence = ++requestSequence;
             const body = dialog.querySelector('.modal-dialog-body');
             try {
                 const trashedNotes = await NotesAPI.getTrash();
+                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'trash') return;
                 body.innerHTML = renderTabBar() + `<div id="tab-content">${renderTrashTab(trashedNotes)}</div>`;
                 bindTabButtons(dialog);
                 bindTrashEvents(dialog, trashedNotes);
             } catch(e) {
+                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'trash') return;
                 body.innerHTML = renderTabBar() + `<p style="color:#ef4444;">${t('trash_load_failed')}</p>`;
                 bindTabButtons(dialog);
             }
@@ -169,7 +179,6 @@ class LoadNotesModalService {
             });
         };
 
-        let debounceTimer;
         // --- Notes tab event bindings ---
         const bindNotesEvents = (dialog, currentNotes) => {
             const searchInput = dialog.querySelector('#modal-search');
@@ -179,6 +188,7 @@ class LoadNotesModalService {
             if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
                     currentSearch = e.target.value;
+                    ++requestSequence;
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => loadNotes(dialog), 300);
                 });
@@ -206,8 +216,12 @@ class LoadNotesModalService {
                     if (e.target.closest('.btn-delete-note')) return;
                     const id = card.dataset.id;
                     if (id) {
-                        await NoteStorageService.loadNote(id);
-                        if (dialog.closeModal) dialog.closeModal();
+                        try {
+                            await NoteStorageService.openNote(id);
+                            if (dialog.closeModal) dialog.closeModal();
+                        } catch {
+                            await DialogService.alert(t('error_word'), t('note_load_failed'));
+                        }
                     }
                 });
             });
@@ -226,11 +240,10 @@ class LoadNotesModalService {
                         try {
                             await NotesAPI.deleteNote(id);
                             if (AppState.currentNote && String(AppState.currentNote.id) === String(id)) {
+                                await NoteStorageService.createNewNote({preserveChanges: false});
                                 const remaining = await NotesAPI.getNotes(currentSearch, currentCategory);
                                 if (remaining && remaining.length > 0) {
                                     await NoteStorageService.loadNote(remaining[0].id);
-                                } else {
-                                    await NoteStorageService.createNewNote();
                                 }
                             }
                             loadNotes(dialog);
@@ -245,8 +258,12 @@ class LoadNotesModalService {
             const btnNew = dialog.querySelector('#btn-create-new-note');
             if (btnNew) {
                 btnNew.addEventListener('click', async () => {
-                    await NoteStorageService.createNewNote();
-                    if (dialog.closeModal) dialog.closeModal();
+                    try {
+                        await NoteStorageService.createNewNote();
+                        if (dialog.closeModal) dialog.closeModal();
+                    } catch {
+                        await DialogService.alert(t('error_word'), t('error_saving'));
+                    }
                 });
             }
         };
@@ -259,7 +276,7 @@ class LoadNotesModalService {
                     const id = btn.dataset.id;
                     try {
                         const restored = await NotesAPI.restoreNote(id);
-                        await NoteStorageService.loadNote(restored.id);
+                        await NoteStorageService.openNote(restored.id);
                         if (dialog.closeModal) dialog.closeModal();
                     } catch(err) {
                         await DialogService.alert(t('error_word'), t('restore_failed'));
@@ -282,11 +299,10 @@ class LoadNotesModalService {
                             await NotesAPI.permanentDelete(id);
                             // If we just permanently deleted the currently open note — clear state
                             if (AppState.currentNote && String(AppState.currentNote.id) === String(id)) {
+                                await NoteStorageService.createNewNote({preserveChanges: false});
                                 const remaining = await NotesAPI.getNotes();
                                 if (remaining && remaining.length > 0) {
                                     await NoteStorageService.loadNote(remaining[0].id);
-                                } else {
-                                    await NoteStorageService.createNewNote();
                                 }
                             }
                             loadTrash(dialog);

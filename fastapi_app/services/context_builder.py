@@ -377,10 +377,7 @@ class ContextBuilder:
         """Независимая валидация развития (иерархия абстрактное→конкретное, п. 4.4.1)."""
         algo_core = await self._load_algo_core()
         val_prompt = await self._load_file("14_валидация_шаг2_промпт.md")
-        lines = []
-        for b in blocks:
-            lines.append(f"- {b.get('id', '?')} (растёт из {b.get('grows_from', 'step1')}): {b.get('thesis', '')}")
-        blocks_block = "\n".join(lines)
+        blocks_block = self._blocks_block(blocks)
         prompt = f"{algo_core}\n\n" + val_prompt.replace(
             "{step1_thesis}", step1_thesis).replace(
             "{goal_as_process}", goal_as_process).replace(
@@ -390,6 +387,7 @@ class ContextBuilder:
     @staticmethod
     def _blocks_block(blocks: list) -> str:
         lines = [f"- {b.get('id', '?')} (растёт из {b.get('grows_from', 'step1')}): {b.get('thesis', '')}"
+                 + ''.join(f"\n  {field}: {b[field]}" for field in ('разворачивает', 'обратный_ход') if b.get(field))
                  for b in blocks]
         return "\n".join(lines)
 

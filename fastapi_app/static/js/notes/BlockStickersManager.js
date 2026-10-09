@@ -48,7 +48,7 @@ class BlockStickersManager {
                 }
                 // Close any open block-level sticker panel on outside click
                 if (!e.target.closest('.sticker-panel') && !e.target.closest('.btn-sticker')) {
-                    document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => p.remove());
+                    document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => this._closeBlockPanel(p));
                 }
             });
             window.addEventListener('resize', () => menu.classList.add('hidden'));
@@ -63,6 +63,20 @@ class BlockStickersManager {
 
     // ── Block stickers ─────────────────────────────────────────────────────────
 
+    static _closeBlockPanel(panel) {
+        panel.closest('.dialectics-block')?.querySelector('.btn-sticker')?.setAttribute('aria-expanded', 'false');
+        panel.remove();
+    }
+
+    static toggleBlockStickersPanel(block, anchorEl) {
+        const panel = anchorEl.querySelector('.sticker-panel');
+        if (panel) {
+            this._closeBlockPanel(panel);
+        } else {
+            this.openBlockStickersPanel(block, anchorEl);
+        }
+    }
+
     /**
      * Open the sticker panel anchored below a block element.
      * @param {object} block  - AppState block object
@@ -70,7 +84,7 @@ class BlockStickersManager {
      */
     static openBlockStickersPanel(block, anchorEl) {
         // Remove any existing block sticker panels
-        document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => p.remove());
+        document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => this._closeBlockPanel(p));
 
 
 
@@ -89,12 +103,13 @@ class BlockStickersManager {
                 this.openBlockStickersPanel(block, anchorEl);
                 this._updateBadge(anchorEl, block.stickers.length);
             },
-            () => panel.remove()
+            () => this._closeBlockPanel(panel)
         );
 
         // Position below anchor element
         anchorEl.style.position = 'relative';
         anchorEl.appendChild(panel);
+        anchorEl.querySelector('.btn-sticker')?.setAttribute('aria-expanded', 'true');
         panel.querySelector('.sticker-panel-title-input')?.focus();
     }
 
@@ -137,14 +152,18 @@ class BlockStickersManager {
     }
 
     static _updateBadge(blockEl, count) {
-        let badge = blockEl.querySelector('.sticker-badge');
+        const button = blockEl.querySelector('.btn-sticker');
+        if (!button) return;
+        button.setAttribute('aria-label', `${t('tt_sticker')} (${count})`);
+        let badge = button.querySelector('.sticker-badge');
         if (count > 0) {
             if (!badge) {
                 badge = document.createElement('span');
                 badge.className = 'sticker-badge';
-                blockEl.querySelector('.block-header')?.appendChild(badge);
+                badge.setAttribute('aria-hidden', 'true');
+                button.appendChild(badge);
             }
-            badge.textContent = `🟨 ${count}`;
+            badge.textContent = String(count);
         } else if (badge) {
             badge.remove();
         }

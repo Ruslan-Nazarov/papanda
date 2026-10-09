@@ -20,6 +20,8 @@ test('isolated renderer security regressions', async t => {
             window.BlockMathRenderer = {renderMath() {}};
             window.AppState = {currentNote: {blocks: []}, updateBlock() {}};
         });
+        await page.addScriptTag({content: source('BlockStickersManager')});
+        await page.addScriptTag({content: source('BlockStickersManager')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
         await t.test('section title must remain text', async () => {
             const count = await page.evaluate(() => {
@@ -55,6 +57,12 @@ test('isolated renderer security regressions', async t => {
             assert.deepEqual(result, {inHeader: 0, handlers: 0, strong: 'Keep me'});
         });
         await page.addScriptTag({content: source('AIController')});
+        await page.addScriptTag({content: source('NoteText')});
+        await t.test('generation context preserves paragraph boundaries and mathematical source', async () => {
+            const text = await page.evaluate(() => NoteText.fromHtml(
+                '<p>A &lt; B</p><p>Next<br>line</p><span formula="x &amp; y">duplicate</span>'));
+            assert.equal(text, 'A < B\n\nNext\nline\n$x & y$');
+        });
         await t.test('embedded drawing survives display sanitization', async () => {
             const result = await page.evaluate(() => {
                 const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';

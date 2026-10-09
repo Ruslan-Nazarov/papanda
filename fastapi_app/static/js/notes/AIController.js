@@ -8,6 +8,7 @@ import GenerationChanges from './GenerationChanges.js';
 import BlockDOMParser from './BlockDOMParser.js';
 import DialogService from './DialogService.js';
 import NoteStorageService from './NoteStorageService.js';
+import NoteText from './NoteText.js';
 import { showToast } from './ToastService.js';
 
 import { t } from '../i18n.js';
@@ -34,24 +35,26 @@ class AIController {
         // После генерации тело якоря — это вывод, а не исходный вопрос; исходный
         // запрос сохраняём в sourceGoal и берём цель отсюда при перегенерации.
         const target_goal = anchorBlock
-            ? (anchorBlock.sourceGoal || (anchorBlock.html || '').replace(/<[^>]+>/g, '').trim())
+            ? (anchorBlock.sourceGoal || NoteText.fromHtml(anchorBlock.html))
             : AppState.currentNote.title;
         const steps = {};
         for (let i = 1; i <= 5; i++) {
             const stepBlocks = blocks.filter(b => b.role === `step${i}` || (b.role && b.role.startsWith(`step${i}.`)));
-            const content = stepBlocks.map(b => (b.html || '').replace(/<[^>]+>/g, '').trim()).join('\n\n');
+            const content = stepBlocks.map(b => NoteText.fromHtml(b.html)).join('\n\n');
             const mainStepBlock = stepBlocks.find(b => b.role === `step${i}`);
             
             steps[`step${i}`] = {
                 content: content,
                 status: stepBlocks.length ? (stepBlocks.every(b => b.status === 'ready') ? 'ready' : 'in_progress') : 'empty',
-                title: mainStepBlock ? mainStepBlock.title : `${t('step_word')} ${i}`
+                ...GenerationChanges.blockContext(mainStepBlock)
             };
+            if (mainStepBlock?.generation_data) steps[`step${i}`].generation_data = mainStepBlock.generation_data;
         }
         for (const block of blocks) {
             if (GenerationChanges.base(block.role) && block.role.includes('.')) {
-                steps[block.role] = {content: (block.html || '').replace(/<[^>]+>/g, '').trim(),
-                    status: block.status, title: block.title || ''};
+                steps[block.role] = {content: NoteText.fromHtml(block.html),
+                    status: block.status, ...GenerationChanges.blockContext(block),
+                    ...(block.generation_data ? {generation_data: block.generation_data} : {})};
             }
         }
         return { target_goal, steps,
@@ -156,7 +159,7 @@ class AIController {
             };
             // Сохранить исходный вопрос до перезаписи тела выводом.
             if (!anchor.sourceGoal) {
-                patch.sourceGoal = (anchor.html || '').replace(/<[^>]+>/g, '').trim();
+                patch.sourceGoal = NoteText.fromHtml(anchor.html);
             }
             if (!anchor.sourceTitle) patch.sourceTitle = anchor.title;
             if (meta.anchor_title) patch.title = meta.anchor_title.trim();

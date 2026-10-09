@@ -1,6 +1,7 @@
 import AppState from './AppState.js';
 import NotesAPI from './api.js';
 import BlockDOMParser from './BlockDOMParser.js';
+import NoteLocation from './NoteLocation.js';
 
 class SaveCoordinator {
     static _jobs = new WeakMap();
@@ -62,7 +63,7 @@ class SaveCoordinator {
 
             AppState.acceptSaved(note, res, payload);
             if (active) {
-                try { localStorage.setItem('papanda_last_note_id', res.id); } catch {}
+                NoteLocation.remember(res.id);
             }
             return note;
         }

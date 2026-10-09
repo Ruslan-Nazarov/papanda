@@ -1,4 +1,6 @@
 import AppState from './AppState.js';
+import NoteText from './NoteText.js';
+import HtmlSafety from './HtmlSafety.js';
 
 import { t } from '../i18n.js';
 class SearchManager {
@@ -99,9 +101,7 @@ class SearchManager {
 
         blocks.forEach((b, index) => {
             const rawTitle = b.title || t('hint_anchor_title');
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = b.html || '';
-            const plainText = tempDiv.textContent || tempDiv.innerText || '';
+            const plainText = NoteText.fromHtml(b.html);
 
             const titleMatch = rawTitle.toLowerCase().includes(lowerQuery);
             const textMatch = plainText.toLowerCase().includes(lowerQuery);
@@ -114,17 +114,14 @@ class SearchManager {
                     const end = Math.min(plainText.length, idx + lowerQuery.length + 40);
                     const prefix = start > 0 ? '...' : '';
                     const suffix = end < plainText.length ? '...' : '';
-                    snippet = prefix + this.escapeHtml(plainText.substring(start, end)) + suffix;
-                    const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
-                    snippet = snippet.replace(regex, `<mark style="background: #fef08a; padding: 1px 3px; border-radius: 3px; font-weight: 600; color: #1e293b;">$1</mark>`);
+                    snippet = prefix + this.highlight(plainText.substring(start, end), query) + suffix;
                 } else {
                     snippet = this.escapeHtml(plainText.substring(0, 70)) + (plainText.length > 70 ? '...' : '');
                 }
 
                 let highlightedTitle = this.escapeHtml(rawTitle);
                 if (titleMatch) {
-                    const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
-                    highlightedTitle = highlightedTitle.replace(regex, `<mark style="background: #fef08a; padding: 1px 3px; border-radius: 3px; font-weight: 600; color: #1e293b;">$1</mark>`);
+                    highlightedTitle = this.highlight(rawTitle, query);
                 }
 
                 matches.push({
@@ -167,7 +164,8 @@ class SearchManager {
             });
             item.addEventListener('click', () => {
                 const blockId = item.dataset.id;
-                const targetEl = document.querySelector(`.dialectics-block[data-id="${blockId}"]`);
+                const targetEl = Array.from(document.querySelectorAll('.dialectics-block'))
+                    .find(el => el.dataset.id === blockId);
                 if (targetEl) {
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     targetEl.style.transition = 'box-shadow 0.3s ease, transform 0.2s ease';
@@ -183,10 +181,13 @@ class SearchManager {
     }
 
     static escapeHtml(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        return HtmlSafety.escape(str);
+    }
+
+    static highlight(text, query) {
+        const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+        return text.split(regex).map((part, index) => index % 2
+            ? `<mark>${this.escapeHtml(part)}</mark>` : this.escapeHtml(part)).join('');
     }
 
     static escapeRegex(str) {

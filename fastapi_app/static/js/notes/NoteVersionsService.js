@@ -64,11 +64,14 @@ class NoteVersionsService {
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 1.25rem;">⏱️</span>
                         <h2 style="font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0;">${t('versions_title')}</h2>
-                        <span style="color: #ec4899; font-weight: 800; font-size: 1.1rem; cursor: pointer;" title="${t('versions_autosave_note')}">❓</span>
                     </div>
-                    <button class="icon-btn btn-close-modal" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">✕</button>
+                    <div class="version-history-header-actions">
+                        <button type="button" class="version-history-help-toggle" aria-label="${t('versions_help_title')}" title="${t('versions_help_title')}" aria-expanded="false" aria-controls="version-history-help"><span aria-hidden="true">?</span></button>
+                        <button type="button" class="icon-btn btn-close-modal" aria-label="${t('close_word')}" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">✕</button>
+                    </div>
                 </div>
                 <div class="modal-dialog-body" style="padding: 18px 20px;">
+                    <p id="version-history-help" class="version-history-help" hidden>${t('versions_autosave_note')}</p>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <input type="text" id="new-version-title" placeholder="${t('version_name_ph')}" style="flex: 1; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.92rem; outline: none;">
                         <button id="btn-save-custom-version" style="background: #2563eb; color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 0.92rem; font-weight: 600; cursor: pointer; white-space: nowrap;">+ ${t('save')}</button>
@@ -78,6 +81,12 @@ class NoteVersionsService {
                 </div>
             `;
 
+            const helpToggle = dialog.querySelector('.version-history-help-toggle');
+            const help = dialog.querySelector('#version-history-help');
+            helpToggle.addEventListener('click', () => {
+                help.hidden = !help.hidden;
+                helpToggle.setAttribute('aria-expanded', String(!help.hidden));
+            });
             dialog.querySelectorAll('[data-version-action]').forEach(button => {
                 button.addEventListener('click', () => {
                     const versionId = Number(button.dataset.versionId);
@@ -127,9 +136,7 @@ class NoteVersionsService {
             if (AppState.editRevision !== editRevision) throw new Error('Local edits preserved; version restored on server');
             AppState.setNote(updatedNote);
             BlockDOMRenderer.renderAll();
-            const oldModal = this.currentModal;
-            await this.show(window.app);
-            if (oldModal) oldModal.close();
+            this.currentModal?.close();
             NoteController._showToast(t('version_restored'));
         } catch (e) {
             console.error(e);

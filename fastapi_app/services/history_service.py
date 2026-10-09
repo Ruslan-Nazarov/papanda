@@ -81,6 +81,10 @@ class HistoryService:
         if not version:
             raise HTTPException(status_code=404, detail="Version not found")
 
+        # Restoring identical content is a no-op, not another backup of itself.
+        if note.content_json == version.content_json and note.stickers == version.stickers:
+            return note
+
         # Create safety backup
         safety_v = NoteVersion(
             note_id=note.id,

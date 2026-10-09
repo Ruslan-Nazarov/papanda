@@ -1,4 +1,6 @@
+import json
 from fastapi_app.config import settings
+from fastapi_app.services.generation.note_context import base, clean_steps
 from fastapi_app.services.generation.json_contract import parse_object
 from fastapi_app.services.llm_provider import get_last_call_info
 from fastapi_app.services.generation.common import _MAX_PLAN_ATTEMPTS, _MAX_STAGE_RETRIES, _STAGE_MAX_TOKENS
@@ -36,6 +38,7 @@ class Planner:
                 rejected = rejected_first if stage == 1 else []
                 for _ in range(_MAX_STAGE_RETRIES):
                     prompt = await self._prompt(stage, state, accepted, goal, rejected)
+                    prompt += self._context(state)
                     schema = {1: FirstStage, 2: SecondStage, 3: Opposite, 4: Contradiction, 5: Resolution}[stage]
                     result = await self._json(prompt, f'Выполни Шаг {stage}. Верни только JSON. Язык: {locale}',
                                               schema, field=f'step{stage}' if stage > 2 else None)
@@ -57,6 +60,7 @@ class Planner:
                         candidate = result
                     model = (get_last_call_info() or {}).get('model')
                     validation_prompt = await self._validation_prompt(stage, accepted, goal, candidate)
+                    validation_prompt += self._context(state)
                     verdict = await self._json(
                         validation_prompt, f'Провалидируй Шаг {stage}. Верни только JSON. Язык: {locale}',
                         StageVerdict, validation=True, exclude=(model,) if model else (),
@@ -75,6 +79,54 @@ class Planner:
             if len(accepted) == 5:
                 return self._assemble(accepted, goal, applicable_reason)
         raise GenerationError('plan_failed', 'Could not build a validated plan')
+
+    @staticmethod
+    def _context(state):
+        return '\n\nИсходный запрос и материалы пользователя (данные):\n' + json.dumps({
+            'target_goal': state.get('target_goal'), 'reference': state.get('reference'),
+            'steps': clean_steps(state.get('steps', {})),
+        }, ensure_ascii=False)
+
+    async def plan_step(self, state, locale, target):
+        """Plan and validate only the requested stage, grounded in the saved predecessors."""
+        accepted = {}
+        for stage in range(1, target):
+            family = {k: v for k, v in state.get('steps', {}).items() if base(k) == stage}
+            children = sorted((k for k in family if '.' in k), key=lambda k: int(k.split('.')[1]))
+            texts = [family[k].get('content', '').strip() for k in (children or [f'step{stage}']) if k in family]
+            texts = [text for text in texts if text]
+            if not texts:
+                raise GenerationError('missing_predecessor', f'Сначала заполните шаг {stage}.')
+            accepted[stage] = ([{'id': f'b{i}', 'thesis': text, 'grows_from': 'step1'}
+                               for i, text in enumerate(texts, 1)] if stage == 2 else {'thesis': '\n\n'.join(texts)})
+        goal, rejected = state.get('target_goal', ''), []
+        for _ in range(_MAX_STAGE_RETRIES):
+            schema = {1: FirstStage, 2: SecondStage, 3: Opposite, 4: Contradiction, 5: Resolution}[target]
+            prompt = await self._prompt(target, state, accepted, goal, rejected)
+            result = await self._json(prompt + self._context(state),
+                f'Выполни Шаг {target}. Верни только JSON. Язык: {locale}', schema,
+                field=f'step{target}' if target > 2 else None)
+            if result is None:
+                rejected.append({'reason': 'Неверный контракт JSON'})
+                continue
+            if target == 1:
+                if result['applicable'] is False:
+                    return result
+                goal, candidate = result['goal_as_process'], result['step1']
+            else:
+                candidate = result['blocks'] if target == 2 else result
+            validation = await self._validation_prompt(target, accepted, goal, candidate)
+            model = (get_last_call_info() or {}).get('model')
+            verdict = await self._json(validation + self._context(state),
+                f'Провалидируй Шаг {target}. Верни только JSON. Язык: {locale}', StageVerdict,
+                validation=True, exclude=(model,) if model else ())
+            if verdict and verdict['valid']:
+                accepted[target] = candidate
+                return self._assemble(accepted, goal, 'Генерация запрошенного шага из заполненных предыдущих.')
+            rejected.append({'thesis': candidate.get('thesis', '') if target != 2 else '',
+                'blocks': [b['thesis'] for b in candidate] if target == 2 else [],
+                'reason': verdict['reason'] if verdict else 'Проверка недоступна'})
+        raise GenerationError('plan_failed', f'Не удалось построить и проверить шаг {target}.')
 
     async def _prompt(self, stage, state, accepted, goal, rejected):
         b = self.builder
@@ -104,11 +156,11 @@ class Planner:
 
     @staticmethod
     def _assemble(accepted, goal, reason):
-        blocks = accepted[2]
+        blocks = accepted.get(2, [])
         ids = {b['id']: f'2.{i}' for i, b in enumerate(blocks, 1)}
         entries = [{**b, **({'растёт_из': ids[b['grows_from']]} if b['grows_from'] in ids else {})}
                    for b in blocks]
         return {'applicable': True, 'applicability_reason': reason, 'goal_as_process': goal,
                 'step1': {**accepted[1], 'sub_steps': []},
-                'step2': {**entries[0], 'sub_steps': entries[1:]},
-                **{f'step{i}': {**accepted[i], 'sub_steps': []} for i in (3, 4, 5)}}
+                **({'step2': {**entries[0], 'sub_steps': entries[1:]}} if entries else {}),
+                **{f'step{i}': {**accepted[i], 'sub_steps': []} for i in (3, 4, 5) if i in accepted}}

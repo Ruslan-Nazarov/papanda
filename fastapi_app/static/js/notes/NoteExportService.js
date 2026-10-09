@@ -1,5 +1,6 @@
 import AppState from './AppState.js';
 import DialogService from './DialogService.js';
+import NoteText from './NoteText.js';
 
 import { t } from '../i18n.js';
 class NoteExportService {
@@ -49,19 +50,10 @@ class NoteExportService {
 
     /** HTML одного блока → читаемый плоский текст (без разметки). */
     static _htmlToText(html) {
-        return String(html || '')
-            .replace(/<(br|hr)\s*\/?>/gi, '\n')
-            .replace(/<\/(p|div|h[1-6]|blockquote)>/gi, '\n\n')
-            .replace(/<li[^>]*>/gi, '• ')
-            .replace(/<\/li>/gi, '\n')
-            .replace(/<[^>]+>/g, '')
-            .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
-            .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
-            .replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
-            .replace(/[ \t]+/g, ' ')
-            .replace(/ *\n */g, '\n')
-            .replace(/\n{3,}/g, '\n\n')
-            .trim();
+        const template = document.createElement('template');
+        template.innerHTML = html || '';
+        template.content.querySelectorAll('li').forEach(item => item.prepend('• '));
+        return NoteText.fromHtml(template.innerHTML);
     }
 
     /**

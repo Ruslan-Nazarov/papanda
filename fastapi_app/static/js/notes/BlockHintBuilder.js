@@ -117,7 +117,10 @@ class BlockHintBuilder {
                     }, 100);
                 } catch (err) {
                     console.error("Next step generation failed", err);
-                    import('./ToastService.js').then(m => m.showToast(t('hint_gen_step_err'), 'error'));
+                    import('./ToastService.js').then(m => m.showToast(err.message || t('hint_gen_step_err'), 'error'));
+                    btnAutofillStep.innerHTML = originalHtml;
+                    btnAutofillStep.disabled = false;
+                } finally {
                     btnAutofillStep.innerHTML = originalHtml;
                     btnAutofillStep.disabled = false;
                 }

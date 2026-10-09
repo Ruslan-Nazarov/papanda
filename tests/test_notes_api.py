@@ -209,6 +209,19 @@ async def test_note_versions_and_checkpoints(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_restoring_identical_version_does_not_add_backup(client):
+    created = (await client.post('/api/dialectics/save', json={'title': 'Same', 'blocks': []})).json()
+    url = f"/api/dialectics/{created['id']}"
+    versions = (await client.get(url + '/versions')).json()
+    for _ in range(2):
+        restored = await client.post(url + f"/versions/{versions[0]['id']}/restore",
+                                    json={'revision': created['revision']})
+        assert restored.status_code == 200
+        assert restored.json()['revision'] == created['revision']
+    assert len((await client.get(url + '/versions')).json()) == len(versions)
+
+
+@pytest.mark.asyncio
 async def test_note_connections(client: AsyncClient):
     # Create two notes
     res1 = await client.post("/api/dialectics/save", json={"title": "Тема А", "blocks": []})

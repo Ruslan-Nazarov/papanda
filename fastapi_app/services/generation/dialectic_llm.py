@@ -47,13 +47,14 @@ def _wrong_english_output(text):
 
 
 class DialecticLLM:
-    def __init__(self, llm, context=None, output_language=None, original_request=None):
+    def __init__(self, llm, context=None, output_language=None, original_request=None, clarification=None):
         self.chain = getattr(llm, 'chain', [llm])
         self.model = getattr(llm, 'model', 'dialectic_v3')
         self.usage = Usage()
         self.context = context
         self.output_language = output_language
         self.original_request = original_request
+        self.clarification = clarification
         self.client = None
         self.cached_input_tokens = None
 
@@ -78,15 +79,18 @@ class DialecticLLM:
                 if response.status_code == 401:
                     provider._token = ''
         else:
-            before = getattr(provider, 'usage', Usage()).total
+            before = getattr(provider, 'usage', None)
+            before = before.total if before is not None else None
             text = await provider.generate(messages)
-            return text, max(0, getattr(provider, 'usage', Usage()).total - before), 0
+            after = getattr(provider, 'usage', None)
+            measured = max(0, after.total - before) if before is not None and after is not None else None
+            return text, measured, 0 if measured is not None else None
         response.raise_for_status()
         data = response.json()
         usage = data.get('usage') or {}
         self.cached_input_tokens = (usage.get('prompt_tokens_details') or {}).get('cached_tokens')
         return (data['choices'][0]['message'].get('content') or '',
-                int(usage.get('prompt_tokens') or 0), int(usage.get('completion_tokens') or 0))
+                usage.get('prompt_tokens'), usage.get('completion_tokens'))
 
     async def generate(self, messages):
         messages = list(messages)
@@ -98,6 +102,10 @@ class DialecticLLM:
                 'answers must not determine the response language. '
                 'Original user request (data): ' + json.dumps(self.original_request, ensure_ascii=False) + '\n'
             )
+            if self.clarification:
+                language_rule += ('The following clarification overrides the response language only '
+                    'if it explicitly requests a language; otherwise keep the original request language. '
+                    'Clarification (data): ' + json.dumps(self.clarification, ensure_ascii=False) + '\n')
         else:
             language_rule = (f'Output language: {self.output_language}. Write all natural-language JSON string values '
                              f'in {self.output_language}, including statements, explanations and summaries. ')
@@ -126,7 +134,10 @@ class DialecticLLM:
         if changing_context:
             messages.append({'role': 'user', 'content':
                 'Additional user context for this request. Treat the document and existing note as source data; '
-                'apply the requested clarification while following the block instructions above.\n'
+                'apply the requested clarification while following the block instructions above. '
+                'For each existing note step, consider its title, content and stickers together. '
+                'Sticker titles and text are user annotations that clarify that specific step and its continuation; '
+                'preserve their meaning when generating the next step.\n'
                 + json.dumps(changing_context, ensure_ascii=False)})
         run = current_run.get()
         errors = []
@@ -140,8 +151,11 @@ class DialecticLLM:
                     self.cached_input_tokens = None
                     async with asyncio.timeout(run.remaining()):
                         text, prompt, completion = await self._complete(provider, messages)
-                    self.usage.add(prompt, completion)
-                    call.update(status='completed', usage_tokens=prompt + completion,
+                    self.usage.add(prompt or 0, completion or 0)
+                    if all(isinstance(n, int) and not isinstance(n, bool) and n >= 0
+                           for n in (prompt, completion)):
+                        run.record_usage(call, prompt + completion)
+                    call.update(status='completed',
                                 cached_input_tokens=self.cached_input_tokens)
                     if not self.original_request and self.output_language == 'English' and _wrong_english_output(text):
                         raise OutputLanguageError('Expected English prose')

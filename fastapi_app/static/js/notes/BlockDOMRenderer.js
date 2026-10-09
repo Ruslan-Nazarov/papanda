@@ -7,14 +7,16 @@ import { t } from '../i18n.js';
 
 class BlockDOMRenderer {
     /**
-     * Compute which hint to show next based on confirmed blocks in the note.
+     * Compute which hint to show next based on saved content in the note.
      * Steps are sequentially evaluated: anchor -> step1 -> step2 -> step3 -> step4 -> step5.
      */
     static getNextActiveRole(blocks) {
         const pendingAnchor = BlockHintBuilder.pendingAnchor();
-        // Only consider blocks that are fully confirmed/saved (not in-progress drafts)
+        // Saved proposals occupy their step even before the author marks them ready.
+        // Unsaved editor drafts and empty blocks still need a hint.
         const completedBlocks = (blocks || []).filter(b => b.id !== pendingAnchor?.id
-            && b.role !== 'section' && b.status !== 'in_progress' && !b.isDraft);
+            && b.role !== 'section' && !b.isDraft
+            && (b.html || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim());
         
         // Роли вида "step1.2" (несколько простейших/развивающих процессов на
         // одном шаге, см. expected_step_keys на бэкенде) считаются частью

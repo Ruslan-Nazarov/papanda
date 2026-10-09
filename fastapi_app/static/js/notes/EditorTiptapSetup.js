@@ -23,7 +23,6 @@ export class EditorTiptapSetup {
             extensions: [
                 StarterKit.configure({
                     blockquote: false,
-                    orderedList: false,
                     link: false,
                     underline: false,
                 }), 

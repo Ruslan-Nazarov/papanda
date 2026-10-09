@@ -11,6 +11,13 @@ from fastapi_app.services.generation import dialectic_v3_pipeline as pipeline_mo
 from fastapi_app.services.generation.dialectic_v3_pipeline import DialecticV3Pipeline, build_generation_result
 
 
+@pytest.fixture(autouse=True)
+def no_live_presentation(monkeypatch):
+    async def present(ctx, world, keys):
+        return {}
+    monkeypatch.setattr(pipeline_module, 'present', present)
+
+
 def _process(pid, role, statement, iteration=0):
     return Process(id=pid, source="", target="", statement=statement, role=role, iteration=iteration)
 
@@ -91,20 +98,30 @@ def test_all_iterations_survive_document_mapping():
 @pytest.mark.asyncio
 async def test_step_proposal_preserves_other_families_and_supplies_context(monkeypatch):
     seen = {}
-    async def build(domain, ctx):
+    async def build(domain, ctx, supplied_state, target):
+        assert target == 2
+        assert supplied_state['steps']['step1']['content'] == 'original'
         seen.update(ctx.llm.context)
         return _built_world()
-    monkeypatch.setattr(pipeline_module, 'build_world', build)
+    monkeypatch.setattr(pipeline_module, 'build_step', build)
+    async def forbidden(*args):
+        raise AssertionError('A single step must not build the whole world')
+    monkeypatch.setattr(pipeline_module, 'build_world', forbidden)
     monkeypatch.setattr(pipeline_module, 'build_llm', lambda spec: object())
     monkeypatch.setattr(pipeline_module.conspect_settings, 'GROQ_API_KEY', 'fixture')
-    state = {'target_goal': 'topic', 'reference': 'document', 'steps': {'step1': {'content': 'original'}}}
+    from fastapi_app.routers.ai import GenerationInput
+    state = GenerationInput.model_validate({'target_goal': 'topic', 'reference': 'document', 'steps': {
+        'step1': {'content': 'original', 'title': 'ECG measurement',
+                  'stickers': [{'title': 'Development', 'text': 'Specific electrodes and frequency'}]},
+    }}).model_dump()
     events = [event async for event in DialecticV3Pipeline().stream_generate_full(
         state, 'en', target_step=2, pinned_step='2', question='clarify')]
     result = events[-1][1]
     assert result['replace_bases'] == ['2']
     assert all(key.startswith('step2.') for key in result['updated_steps'])
     assert seen['reference_document'] == 'document' and seen['user_question'] == 'clarify'
-    assert seen['existing_note_steps'] == state['steps']
+    assert seen['existing_note_steps'] == {key: {field: value for field, value in step.items()
+        if field != 'generation_data'} for key, step in state['steps'].items()}
 
 
 @pytest.mark.asyncio
@@ -132,9 +149,10 @@ async def test_events_stream_then_terminal(monkeypatch):
     events = [e async for e in DialecticV3Pipeline().stream_generate_full({"target_goal": "фотосинтез"}, "ru")]
     kinds = [k for k, _ in events]
     assert kinds[-1] == "__terminal__"
-    assert kinds.count("__status__") == 2
+    assert kinds.count("__status__") == 3
     assert events[0] == ("__status__", {"phase": "planning"})
     assert events[1] == ("__status__", {"phase": "generating"})
+    assert events[2] == ("__status__", {"phase": "postprocess"})
     assert events[-1][1]["status"] == "completed"
 
 
@@ -271,3 +289,31 @@ async def test_generated_world_and_trace_are_kept_for_inspection(monkeypatch, tm
     run_id = events[-1][1]["run_id"]
     assert (tmp_path / "dialectic_v3_runs" / f"{run_id}.json").exists()
     assert (tmp_path / "dialectic_v3_runs" / f"{run_id}.jsonl").exists()
+
+
+@pytest.mark.asyncio
+async def test_target_annotations_are_supplied_without_future_steps_or_changing_request_language(monkeypatch):
+    seen = {}
+    async def build(domain, ctx, state, target):
+        seen.update(ctx.llm.context)
+        assert ctx.llm.original_request == 'Explain a structural relation'
+        assert ctx.llm.clarification == 'Подробнее'
+        return _built_world()
+    monkeypatch.setattr(pipeline_module, 'build_step', build)
+    monkeypatch.setattr(pipeline_module, 'build_llm', lambda spec: object())
+    monkeypatch.setattr(pipeline_module.conspect_settings, 'GROQ_API_KEY', 'fixture')
+    state = {'target_goal': 'Explain a structural relation', 'reference': 'DOCUMENT', 'steps': {
+        'step1': {'content': 'previous'},
+        'step2': {'content': 'current version', 'title': 'current heading',
+                  'stickers': [{'title': 'requirement', 'text': 'preserve this nuance'}]},
+        'step5': {'content': 'FUTURE TEXT MUST NOT LEAK'},
+    }}
+    events = [e async for e in DialecticV3Pipeline().stream_generate_full(state, 'ru', target_step=2, question='Подробнее')]
+    assert seen['step_to_revise'] == {'step2': state['steps']['step2']}
+    assert seen['existing_note_steps'] == {'step1': state['steps']['step1']}
+    assert 'FUTURE TEXT' not in str(seen)
+    from fastapi_app.services.generation.note_context import source_signature, prompt_signature
+    result = events[-1][1]
+    data = next(v['generation_data'] for v in result['updated_steps'].values() if 'generation_data' in v)
+    assert data['source_signature'] == source_signature(state['target_goal'], 'DOCUMENT')
+    assert data['prompt_signature'] == prompt_signature()

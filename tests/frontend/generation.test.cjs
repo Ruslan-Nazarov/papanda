@@ -61,6 +61,66 @@ test('AI result applies in one render', async () => {
     assert.equal(ctx.AppState.currentNote.blocks.at(-1).html, '<p>new two</p>');
 });
 
+test('a generated content heading replaces the step role title', async () => {
+    const ctx = setup({NotesAPI: {routeConspectus: async () => ({...result(),
+        step_titles: {'2': 'A readable signal from the electrodes'}})}});
+    await ctx.AIController.generateStep(2);
+    assert.equal(ctx.AppState.currentNote.blocks.find(b => b.role === 'step2').title,
+        'A readable signal from the electrodes');
+});
+
+test('saved engine data is bound to rendered predecessors and sent to the next step', async () => {
+    const generated = {...result(), replace_bases: ['2'], updated_steps: {
+        'step2.1': {content: 'new first', status: 'in_progress', generation_data: {world: {domain: 'Question'}}},
+        'step2.2': {content: 'new second', status: 'in_progress'},
+    }};
+    const ctx = setup({NotesAPI: {routeConspectus: async () => generated}});
+    await ctx.AIController.generateStep(2);
+    const payload = ctx.AIController.buildStateForAI();
+    const data = payload.steps['step2.1'].generation_data;
+    assert.equal(data.world.domain, 'Question');
+    assert.equal(data.dependencies.step1, payload.steps.step1.content);
+    assert.equal(data.dependencies.step2, payload.steps.step2.content);
+    assert.equal(data.dependencies['step2.2'], payload.steps['step2.2'].content);
+    assert(!('step3' in data.dependencies));
+    ctx.AppState.updateBlock('one', {html: 'manual revision'});
+    assert.notEqual(data.dependencies.step1, ctx.AIController.buildStateForAI().steps.step1.content);
+});
+
+test('generation sends headings and sticker meanings attached to their own blocks', () => {
+    const {AppState, AIController} = setup();
+    AppState.updateBlock('one', {title: 'Measure the ECG signal', stickers: [
+        {id: 's', title: 'For development', text: 'Electrodes for a specific frequency', color: '#ffffff'},
+        {title: '  ', text: ''},
+    ]});
+    AppState.updateBlock('two-a', {title: 'First development', stickers: [{text: 'Child annotation'}]});
+    const steps = plain(AIController.buildStateForAI().steps);
+    assert.equal(steps.step1.title, 'Measure the ECG signal');
+    assert.equal(steps.step1.content, 'manual');
+    assert.deepEqual(steps.step1.stickers, [{title: 'For development', text: 'Electrodes for a specific frequency'}]);
+    assert.deepEqual(steps['step2.1'].stickers, [{title: '', text: 'Child annotation'}]);
+    assert.equal(steps['step2.1'].title, 'First development');
+    assert.deepEqual(steps['step2.2'].stickers, []);
+    assert.deepEqual(steps.step2.stickers, []);
+});
+
+test('engine context snapshot includes final generated headings and detects annotation edits', async () => {
+    const ctx = setup({NotesAPI: {routeConspectus: async () => ({...result(), replace_bases: ['2'],
+        step_titles: {'2': 'Final heading'}, updated_steps: {step2: {
+            content: 'new two', generation_data: {world: {domain: 'Question'}},
+        }}})}});
+    ctx.AppState.updateBlock('one', {title: 'Original heading', stickers: [{title: 'Note', text: 'Original annotation'}]});
+    await ctx.AIController.generateStep(2);
+    const data = ctx.AIController.buildStateForAI().steps.step2.generation_data;
+    assert.equal(data.context_dependencies.step2.title, 'Final heading');
+    assert.deepEqual(plain(data.context_dependencies.step1.stickers), [{title: 'Note', text: 'Original annotation'}]);
+    ctx.AppState.updateBlock('one', {title: 'Revised heading', stickers: []});
+    const updated = ctx.AIController.buildStateForAI().steps.step1;
+    assert.equal(data.dependencies.step1, updated.content);
+    assert.notEqual(data.context_dependencies.step1.title, updated.title);
+    assert.notDeepEqual(plain(data.context_dependencies.step1.stickers), plain(updated.stickers));
+});
+
 test('edits during generation are preserved and result can be saved as an ordinary copy', async () => {
     let finish, saved;
     const ctx = setup({NotesAPI: {

@@ -18,7 +18,6 @@ class BlockDnDManager {
         // Only allow dragging if the user is grabbing the drag handle.
         // This prevents accidental dragging when interacting with the inline editor or content.
         if (!e.target.closest('.drag-handle')) {
-            e.preventDefault();
             return;
         }
 
@@ -51,6 +50,7 @@ class BlockDnDManager {
     }
 
     static handleDragOver(e) {
+        if (!window._draggedBlock) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         
@@ -71,13 +71,12 @@ class BlockDnDManager {
     }
 
     static handleDrop(e) {
-        e.preventDefault();
-        const blockId = e.dataTransfer.getData('text/plain');
-        if (!blockId) return;
-
         const container = document.getElementById('blocks-container');
+        const draggedEl = window._draggedBlock;
+        if (!draggedEl || !container.contains(draggedEl)) return;
+        e.preventDefault();
+        const blockId = draggedEl.dataset.id;
         const indicator = document.querySelector('.drop-indicator');
-        const draggedEl = document.querySelector(`.dialectics-block[data-id="${blockId}"]`);
         
         if (draggedEl && indicator) {
             container.insertBefore(draggedEl, indicator);
@@ -112,7 +111,12 @@ class BlockDnDManager {
             if (block) newBlocksOrder.push(block);
         });
 
-        AppState.updateNote({blocks: newBlocksOrder});
+        // Drafts and an attachment-only anchor need not have a rendered card.
+        const visible = new Set(newBlocksOrder.map(block => block.id));
+        let index = 0;
+        const blocks = AppState.currentNote.blocks.map(block => visible.has(block.id)
+            ? newBlocksOrder[index++] : block);
+        AppState.updateNote({blocks});
         BlockDOMRenderer.renderAll();
     }
 

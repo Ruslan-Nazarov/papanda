@@ -145,6 +145,25 @@
     background: #f1f5f9;
 }
 
+.btn-sticker {
+    position: relative;
+}
+
+.btn-sticker .sticker-badge {
+    position: absolute;
+    top: -4px;
+    right: -5px;
+    min-width: 14px;
+    padding: 1px 4px;
+    border-radius: 8px;
+    background: #fef08a;
+    color: #854d0e;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+}
+
 .add-block-actions-wrapper {
     display: flex;
     justify-content: center;

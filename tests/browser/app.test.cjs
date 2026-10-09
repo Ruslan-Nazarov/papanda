@@ -42,9 +42,11 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
     try {
         browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
         const page = await browser.newPage();
+        let testSavedNoteId;
         const reopenSavedNote = async () => {
-            const id = await page.evaluate(() => localStorage.getItem('papanda_last_note_id'));
+            const id = await page.evaluate(() => localStorage.getItem('papanda_last_note_id')) || testSavedNoteId;
             assert(id);
+            testSavedNoteId = id;
             await page.goto(`${backend.url}/?note=${encodeURIComponent(id)}`, {waitUntil: 'networkidle0'});
         };
         const errors = [], external = [], violations = [];
@@ -53,6 +55,10 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         const documentText = 'Создание одноканального ЭКГ\n' + 'Полное условие ТЗ. '.repeat(1700)
             + '\nПоследний пункт <img src=x onerror=alert(1)>';
         page.on('pageerror', error => errors.push(error.message));
+        page.on('dialog', async dialog => {
+            if (dialog.type() === 'beforeunload') await dialog.accept();
+            else { errors.push('Unexpected dialog: ' + dialog.message()); await dialog.dismiss(); }
+        });
         page.on('console', message => {if (message.text().includes('Content Security Policy')) violations.push(message.text());});
         await page.setRequestInterception(true);
         page.on('request', request => {
@@ -89,7 +95,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         const initialTranslations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
         assert((await page.$eval('.dialectics-hint-block[data-role="anchor"]', el => el.textContent))
             .includes(initialTranslations[initialLocale].hint_anchor_title));
-        await t.test('manual entry persists while the homepage starts a new note', async () => {
+        await t.test('manual entry stays open after reload', async () => {
             await page.focus('.dialectics-hint-block[data-role="anchor"]');
             await page.keyboard.press('Enter');
             await page.waitForSelector('.tiptap');
@@ -104,15 +110,10 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await page.reload({waitUntil: 'networkidle0'});
-            assert.equal(await page.$eval('#note-title', el => el.value), '');
-            assert.equal(await page.$$('.dialectics-block').then(els => els.length), 0);
-            assert(await page.$('.dialectics-hint-block[data-role="anchor"]'));
-            assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
-            await page.click('#btn-main-menu');
-            await page.click('#menu-item-open-note');
-            await page.waitForSelector('.notes-list .note-item');
-            await page.click('.notes-list .note-title-link');
-            await page.waitForSelector('.dialectics-block .block-content');
+            assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
+            assert.equal(await page.$$('.dialectics-block').then(els => els.length), 1);
+            assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
+            await reopenSavedNote();
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
         });
@@ -206,6 +207,18 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             const checkpoint = await page.evaluate(async id => (await fetch(`/api/dialectics/${id}/checkpoint`, {method:'POST',
                 headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'R5 checkpoint',is_manual:true})})).json(), id);
             assert(checkpoint.id);
+            const changed = await page.evaluate(async id => {
+                const note = await (await fetch(`/api/dialectics/${id}`)).json();
+                const blocks = note.content_json.map(block => block.role === 'anchor'
+                    ? {...block, html: '<p>Changed after checkpoint</p>'} : block);
+                const response = await fetch(`/api/dialectics/${id}`, {method:'PATCH',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({revision:note.revision, blocks})});
+                return response.status;
+            }, id);
+            assert.equal(changed, 200);
+            await reopenSavedNote();
+            assert.match(await page.$eval('#blocks-container', el => el.textContent), /Changed after checkpoint/);
             assert(await page.$eval('#btn-versions', el => el.getBoundingClientRect().right <= innerWidth));
             await page.click('#btn-versions');
             await page.waitForSelector('[data-version-action="restore"]');
@@ -214,6 +227,9 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.waitForSelector('.btn-confirm-dialog');
             await page.click('.btn-confirm-dialog');
             await page.waitForFunction(() => document.querySelector('.toast')?.textContent.includes('восстанов'), {timeout: 5000});
+            assert.equal(await page.$('.version-history-modal'), null);
+            assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
+            assert(!/Changed after checkpoint/.test(await page.$eval('#blocks-container', el => el.textContent)));
         });
         await t.test('public share opens without editor state', async () => {
             const id = await page.evaluate(() => localStorage.getItem('papanda_last_note_id'));
@@ -237,6 +253,20 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.keyboard.press('Escape');
             await page.waitForSelector('#modal-container.hidden');
         });
+        await t.test('internal block link scrolls within the note without reloading it', async () => {
+            await page.evaluate(() => {
+                const target = document.querySelector('.dialectics-block');
+                window.internalLinkScrolled = false;
+                window.internalLinkReloaded = false;
+                target.scrollIntoView = () => { window.internalLinkScrolled = true; };
+                document.addEventListener('noteOpened', () => {window.internalLinkReloaded = true;}, {once: true});
+                const link = document.createElement('a');
+                link.href = `internal://note/${new URL(location.href).searchParams.get('note')}/block/${target.dataset.id}`;
+                document.body.append(link); link.click(); link.remove();
+            });
+            await page.waitForFunction(() => window.internalLinkScrolled, {timeout: 3000});
+            assert.equal(await page.evaluate(() => window.internalLinkReloaded), false);
+        });
         await t.test('full AI answer is saved directly in the current note', async () => {
             await page.setViewport({width:1280, height:900});
             await page.click('#btn-new-conspect');
@@ -256,6 +286,13 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await reopenSavedNote();
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
+            const savedId = await page.evaluate(() => localStorage.getItem('papanda_last_note_id'));
+            await page.reload({waitUntil:'networkidle0'});
+            assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
+            assert.equal(new URL(page.url()).searchParams.get('note'), savedId);
+            await page.goto(backend.url, {waitUntil:'networkidle0'});
+            assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
+            assert.equal(new URL(page.url()).searchParams.get('note'), savedId);
             await page.click('#mode-master-toggle button[data-mode="manual"]');
         });
         await t.test('removing request material persists without deleting the goal', async () => {
@@ -329,7 +366,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.equal(await reader.$('#btn-library-publish'), null);
             await Promise.all([reader.waitForNavigation({waitUntil: 'networkidle0'}), reader.click('.library-copy')]);
             await reader.waitForSelector('.dialectics-block');
-            await reader.waitForFunction(() => !window.location.search.includes('note='));
+            await reader.waitForFunction(() => window.location.search.includes('note='));
             assert.equal(await reader.$eval('#note-title', el => el.value), await page.$eval('#note-title', el => el.value));
             await reader.close();
             await page.click('#library-unpublish');
@@ -388,6 +425,105 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.click('#btn-remove-request-document');
             assert.equal(await page.$eval('#request-document-preview', el => el.hidden), true);
             assert.equal(await page.$eval('.anchor-topic-input', el => el.value), 'Создать одноканальный ЭКГ');
+        });
+        await t.test('new note from the list preserves unsaved edits', async () => {
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            const previousId = new URL(page.url()).searchParams.get('note');
+            await page.$eval('#note-title', el => {
+                el.value = 'Saved when leaving via note list'; el.dispatchEvent(new Event('input', {bubbles:true}));
+            });
+            await page.click('#btn-main-menu');
+            await page.click('#menu-item-open-note');
+            await page.waitForSelector('#btn-create-new-note');
+            await page.click('#btn-create-new-note');
+            await page.waitForFunction(() => !document.querySelector('#btn-create-new-note') && !location.search.includes('note='));
+            const savedTitle = await page.evaluate(async id => (await (await fetch(`/api/dialectics/${id}`)).json()).title, previousId);
+            assert.equal(savedTitle, 'Saved when leaving via note list');
+            await page.click('#mode-master-toggle button[data-mode="manual"]');
+            await page.focus('.dialectics-hint-block[data-role="anchor"]');
+            await page.keyboard.press('Enter');
+            await page.waitForSelector('.tiptap');
+            await page.type('.tiptap', 'Technical audit note');
+            await page.click('#btn-modal-ok');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            assert.notEqual(new URL(page.url()).searchParams.get('note'), previousId);
+        });
+        await t.test('category deletion leaves the current note saveable and quotes remain intact', async () => {
+            await page.click('#btn-category-select');
+            await page.waitForSelector('#new-cat-btn-row');
+            await page.click('#new-cat-btn-row');
+            await page.type('#new-cat-input', 'Audit "quoted" category');
+            await page.click('#btn-save-new-cat');
+            await page.waitForFunction(() => document.getElementById('category-label').textContent === 'Audit "quoted" category');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await page.click('#btn-category-select');
+            await page.waitForSelector('#category-dropdown-menu:not(.hidden) .btn-del-cat');
+            assert.equal(await page.$eval('.btn-edit-cat', el => el.dataset.name), 'Audit "quoted" category');
+            await page.click('.btn-del-cat');
+            await page.waitForSelector('.btn-confirm-dialog');
+            await page.click('.btn-confirm-dialog');
+            await page.waitForFunction(() => !document.querySelector('.btn-del-cat'));
+            await page.click('#btn-category-select');
+            await page.$eval('#note-title', el => {
+                el.value = 'Saved after category deletion'; el.dispatchEvent(new Event('input', {bubbles:true}));
+            });
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$eval('#note-title', el => el.value), 'Saved after category deletion');
+        });
+        await t.test('connections window opens another note and saves current edits', async () => {
+            const currentId = new URL(page.url()).searchParams.get('note');
+            await page.$eval('#note-title', el => {
+                el.value = 'Saved before connection navigation'; el.dispatchEvent(new Event('input', {bubbles:true}));
+            });
+            await page.click('#btn-connections-nav');
+            await page.waitForSelector('.btn-open-note');
+            const targetId = await page.$eval('.btn-open-note', el => el.closest('.connections-note-card').dataset.id);
+            await page.click('.btn-open-note');
+            await page.waitForFunction(id => new URL(location.href).searchParams.get('note') === id, {}, targetId);
+            assert.equal(await page.$('.connections-modal-dialog'), null);
+            assert.equal(await page.evaluate(async id => (await (await fetch(`/api/dialectics/${id}`)).json()).title, currentId),
+                'Saved before connection navigation');
+        });
+        await t.test('deleting the last note from the list and restoring it works', async () => {
+            const isolatedBackend = await server();
+            const context = await browser.createBrowserContext();
+            try {
+                const isolated = await context.newPage();
+                isolated.on('pageerror', error => errors.push(error.message));
+                await isolated.evaluateOnNewDocument(() => {
+                    localStorage.setItem('dialectics_onboarding_seen', '1');
+                    localStorage.setItem('papanda-cookie-consent', 'essential');
+                });
+                await isolated.goto(isolatedBackend.url, {waitUntil:'networkidle0'});
+                const note = await isolated.evaluate(async () => (await fetch('/api/dialectics/save', {method:'POST',
+                    headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'Only note', blocks:[]})})).json());
+                await isolated.goto(`${isolatedBackend.url}/?note=${note.id}`, {waitUntil:'networkidle0'});
+                await isolated.click('#btn-main-menu');
+                await isolated.click('#menu-item-open-note');
+                await isolated.waitForSelector('.btn-delete-note');
+                await isolated.click('.btn-delete-note');
+                await isolated.waitForSelector('.btn-confirm-dialog');
+                await isolated.click('.btn-confirm-dialog');
+                await isolated.waitForFunction(() => !document.querySelector('.btn-delete-note') && !location.search.includes('note='));
+                assert.equal(await isolated.evaluate(() => localStorage.getItem('papanda_last_note_id')), null);
+                await isolated.click('#tab-btn-trash');
+                await isolated.waitForSelector('.btn-restore-note');
+                await isolated.click('.btn-restore-note');
+                await isolated.waitForFunction(id => new URL(location.href).searchParams.get('note') === String(id), {}, note.id);
+                assert.equal(await isolated.$eval('#note-title', el => el.value), 'Only note');
+            } finally {
+                await context.close();
+                if (isolatedBackend.child.exitCode === null) {
+                    const exited = once(isolatedBackend.child, 'exit');
+                    isolatedBackend.child.kill(); await exited;
+                }
+            }
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');
         assert.deepEqual(violations, [], 'CSP violations');

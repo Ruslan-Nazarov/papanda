@@ -18,6 +18,12 @@ function context(extra = {}) {
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});
 }
 function load(ctx, name, symbol) {
+    if (['AIController', 'GenerationChanges'].includes(name) && !ctx.NoteText) load(ctx, 'NoteText');
+    if (name === 'NoteText' && !ctx.document.createElement) {
+        const doc = new (require('jsdom').JSDOM)('').window.document;
+        ctx.document.createElement = doc.createElement.bind(doc);
+    }
+    if (['NoteStorageService', 'SaveCoordinator'].includes(name) && !ctx.NoteLocation) load(ctx, 'NoteLocation');
     if (['AIController', 'SessionCheckpoints'].includes(name) && !ctx.Lifecycle) load(ctx, 'Lifecycle');
     if (name === 'api' && !ctx.ApiContracts) load(ctx, 'ApiContracts');
     if (name === 'AppState' && !ctx.NoteStore) {

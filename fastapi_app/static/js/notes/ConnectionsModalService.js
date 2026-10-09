@@ -1,6 +1,7 @@
 import AppState from './AppState.js';
 import DialogService from './DialogService.js';
 import NotesAPI from './api.js';
+import NoteStorageService from './NoteStorageService.js';
 import { showToast } from './ToastService.js';
 
 import { t } from '../i18n.js';
@@ -9,7 +10,6 @@ class ConnectionsModalService {
         // Ensure current note is saved
         if (!AppState.currentNote || !AppState.currentNote.id) {
             try {
-                const NoteStorageService = (await import('./NoteStorageService.js')).default;
                 await NoteStorageService.saveCurrentNote();
             } catch (e) {
                 console.error('Error auto-saving before connections modal:', e);
@@ -278,9 +278,7 @@ class ConnectionsModalService {
                     openBtn.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         try {
-                            const NoteController = (await import('./NoteController.js')).default;
-                            await NoteController.saveCurrentNote();
-                            await NoteController.loadNote(targetId);
+                            await NoteStorageService.openNote(targetId);
                             closeModal();
                         } catch (err) {
                             await DialogService.alert(t('error_word'), t('conn_open_failed') + err.message);

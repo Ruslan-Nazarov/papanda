@@ -12,6 +12,7 @@ from fastapi_app.services.generation.planner import Planner
 from fastapi_app.services.generation.repair import RepairPolicy
 from fastapi_app.services.generation.runtime import GenerationContext, GenerationError, generation_scope, current_run
 from fastapi_app.services.generation.text_generator import TextGenerator
+from fastapi_app.services.generation.note_context import base, replacement_bases
 
 
 class GenerationPipeline:
@@ -31,7 +32,9 @@ class GenerationPipeline:
             logger.warning('Reference lookup unavailable; continuing without reference')
             state['reference'] = ''
 
-    async def gen_skeleton(self, state, locale, failed_attempts=None):
+    async def gen_skeleton(self, state, locale, failed_attempts=None, target_step=None):
+        if target_step is not None:
+            return await self.planner.plan_step(state, locale, target_step)
         return await self.planner.plan(state, locale, failed_attempts or [])
 
     async def gen_json(self, prompt, message, key, max_tokens):
@@ -98,7 +101,7 @@ class GenerationPipeline:
             for attempt in range(1, (1 if target_step else _MAX_GENERATION_ATTEMPTS) + 1):
                 attempts = attempt
                 yield ('__status__', {'phase': 'planning', 'attempt': attempt})
-                context.plan = await self.gen_skeleton(state, locale, rejected)
+                context.plan = await self.gen_skeleton(state, locale, rejected, **({'target_step': target_step} if target_step else {}))
                 if context.plan['applicable'] is False:
                     result.status = 'not_applicable'
                     result.verdict = {'applicable': False, 'reason': context.plan['applicability_reason'],
@@ -144,7 +147,7 @@ class GenerationPipeline:
                              if target_step is None or _base_of(k) == str(target_step)}
                 result.updated_steps = {f'step{k}': {'content': v, 'status': 'in_progress', 'author': 'ai'}
                                         for k, v in sorted(generated.items(), key=lambda pair: _sort_key(pair[0]))}
-                result.replace_bases = [str(i) for i in range(target_step or 1, 6)]
+                result.replace_bases = replacement_bases(target_step)
                 if not target_step and context.collected:
                     yield ('__status__', {'phase': 'postprocess', 'attempt': attempts})
                     result.step_titles, result.note_meta = await self.generator.postprocess(state, context.collected, locale)
@@ -159,7 +162,7 @@ class GenerationPipeline:
             result.updated_steps = {f'step{k}': {'content': v, 'status': 'in_progress', 'author': 'ai'}
                                     for k, v in context.collected.items()
                                     if target_step is None or _base_of(k) == str(target_step)}
-            result.replace_bases = [str(i) for i in range(target_step or 1, 6)]
+            result.replace_bases = replacement_bases(target_step)
         result.report = self._report(context, result, attempts, regen)
         context.status = result.status
         for key, value in result.updated_steps.items():
@@ -175,10 +178,14 @@ class GenerationPipeline:
                                    question=None, source_revision=None, target_step=None):
         context = current_run.get() or GenerationContext(source_revision=source_revision)
         context.target_step = target_step
+        state = deepcopy(state)
+        if target_step is not None:
+            state['steps'] = {key: value for key, value in state.get('steps', {}).items() if base(key) <= target_step}
+            pinned_step = target_step if question else pinned_step
         try:
             async with generation_scope(context):
                 async with aclosing(self._operation(
-                    deepcopy(state), locale, context, target_step=target_step,
+                    state, locale, context, target_step=target_step,
                     pinned_step=pinned_step, question=question,
                 )) as operation:
                     async for event in operation:
@@ -189,6 +196,6 @@ class GenerationPipeline:
                                       source_revision=context.source_revision, error_message=str(error),
                                       updated_steps={f'step{k}': {'content': v, 'status': 'in_progress', 'author': 'ai'}
                                                      for k, v in context.generated_texts().items()},
-                                      replace_bases=[str(i) for i in range(target_step or 1, 6)],
+                                      replace_bases=replacement_bases(target_step),
                                       report=context.metrics())
             yield '__terminal__', result.model_dump()

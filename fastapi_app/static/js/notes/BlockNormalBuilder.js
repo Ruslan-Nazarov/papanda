@@ -8,6 +8,7 @@ import { ALGORITHM_STEPS } from './BlockConstants.js';
 import BlockColorPicker from './BlockColorPicker.js';
 import AIController from './AIController.js';
 import HtmlSafety from './HtmlSafety.js';
+import BlockStickersManager from './BlockStickersManager.js';
 
 class BlockNormalBuilder {
     static setupHiddenPhrases(container) {
@@ -106,7 +107,7 @@ class BlockNormalBuilder {
                     </button>
                     <button class="block-action-btn btn-dict manual-only" title="${t('tt_dict')}">📖</button>
                     <button class="block-action-btn btn-hint manual-only" title="${t('tt_hacks')}">💡</button>
-                    <button class="block-action-btn btn-sticker manual-only" title="${t('tt_sticker')}">🟨</button>
+                    <button class="block-action-btn btn-sticker manual-only" title="${t('tt_sticker')}" aria-expanded="false">🟨</button>
                     <button class="block-action-btn btn-hide manual-only" title="${t('tt_hide_phrases')}">👁️</button>
                     <div class="manual-only" style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 3px;"></div>
                     <button class="block-action-btn btn-edit" title="${t('tt_edit')}">✏️</button>
@@ -287,9 +288,10 @@ class BlockNormalBuilder {
         // Bind Sticker / Color
         const btnSticker = div.querySelector('.btn-sticker');
         if (btnSticker) {
-            btnSticker.addEventListener('click', async () => {
-                const BlockStickersManager = (await import('./BlockStickersManager.js')).default;
-                BlockStickersManager.openBlockStickersPanel(block, div);
+            BlockStickersManager._updateBadge(div, block.stickers?.length || 0);
+            btnSticker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                BlockStickersManager.toggleBlockStickersPanel(block, div);
             });
         }
 

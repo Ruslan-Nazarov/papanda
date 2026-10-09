@@ -1,4 +1,5 @@
 import { t } from '../i18n.js';
+import NoteText from './NoteText.js';
 
 // Build a complete replacement before touching the active document.
 class GenerationChanges {
@@ -14,6 +15,24 @@ class GenerationChanges {
         return !value || previousDefaults.includes(value)
             || ['placeholder_title', 'menu_new_note', 'new_note_default', 'untitled']
                 .some(key => t(key) === value);
+    }
+
+    static blockContext(block) {
+        return {
+            title: block?.title || '',
+            stickers: (block?.stickers || []).map(sticker => ({
+                title: sticker.title || '', text: sticker.text || '',
+            })).filter(sticker => sticker.title.trim() || sticker.text.trim()),
+        };
+    }
+
+    static stepContexts(blocks, number) {
+        const family = blocks.filter(block => this.base(block.role) === String(number));
+        return {
+            ['step' + number]: this.blockContext(family.find(block => block.role === 'step' + number)),
+            ...Object.fromEntries(family.filter(block => block.role.includes('.'))
+                .map(block => [block.role, this.blockContext(block)])),
+        };
     }
 
     static build(note, result, toHtml, definitions = []) {
@@ -37,7 +56,7 @@ class GenerationChanges {
                 schema_version: 1, side: previous?.side || definition.side || 'center',
                 role, title: suffix && !previous && !value.title ? title + ' (' + suffix + ')' : title,
                 html: toHtml(value.content), status: value.status === 'ready' ? 'ready' : 'in_progress',
-                isDraft: false, author: 'ai'});
+                isDraft: false, author: 'ai', generation_data: value.generation_data || null});
         }
         const seen = new Set(), blocks = [];
         const insert = base => {
@@ -57,12 +76,28 @@ class GenerationChanges {
             const title = result.step_titles?.[block.role?.slice(4)];
             if (this.base(block.role) && typeof title === 'string' && title.trim()) block.title = title.trim();
         }
+        // Bind structured engine data to the exact saved predecessor texts,
+        // including the aggregate role used by buildStateForAI for substeps.
+        for (const block of blocks) {
+            if (!updates[block.role]?.generation_data) continue;
+            const dependencies = {};
+            const context_dependencies = {};
+            for (let i = 1; i <= Number(this.base(block.role)); i++) {
+                Object.assign(context_dependencies, this.stepContexts(blocks, i));
+                const family = blocks.filter(b => this.base(b.role) === String(i));
+                dependencies['step' + i] = family.map(b => NoteText.fromHtml(b.html)).join('\n\n');
+                for (const child of family.filter(b => b.role.includes('.'))) {
+                    dependencies[child.role] = NoteText.fromHtml(child.html);
+                }
+            }
+            block.generation_data = {...block.generation_data, dependencies, context_dependencies};
+        }
         const meta = result.note_meta || {};
         const currentTitle = copy.title?.trim() || '';
         if (this.isDefaultTitle(currentTitle) && meta.note_title) copy.title = meta.note_title.trim();
         const anchor = blocks.find(block => block.role === 'anchor');
         if (anchor && meta.anchor_summary) {
-            anchor.sourceGoal ||= (anchor.html || '').replace(/<[^>]+>/g, '').trim();
+            anchor.sourceGoal ||= NoteText.fromHtml(anchor.html);
             anchor.sourceTitle ||= anchor.title;
             anchor.html = toHtml(meta.anchor_summary);
             anchor.anchorResolved = true;

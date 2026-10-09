@@ -66,10 +66,17 @@ class CheckRequest(BaseModel):
     text: str = Field(..., max_length=50_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
 
+class GenerationInputSticker(BaseModel):
+    title: str = Field(default='', max_length=500)
+    text: str = Field(default='', max_length=10_000)
+
+
 class GenerationInputStep(BaseModel):
     content: str = Field(default='', max_length=50_000)
     status: str = Field(default='empty', max_length=30)
     title: str = Field(default='', max_length=500)
+    stickers: List[GenerationInputSticker] = Field(default_factory=list, max_length=1000)
+    generation_data: Optional[dict] = None
 
 
 class GenerationInput(BaseModel):

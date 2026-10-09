@@ -2,6 +2,8 @@ import AppState from './AppState.js';
 import NotesAPI from './api.js';
 import { showToast } from './ToastService.js';
 import DialogService from './DialogService.js';
+import NoteStorageService from './NoteStorageService.js';
+import HtmlSafety from './HtmlSafety.js';
 
 import { t } from '../i18n.js';
 class CategoryManager {
@@ -161,6 +163,12 @@ class CategoryManager {
                 });
                 if (confirmed) {
                     try {
+                        // Detach through the normal revision-checked save before deletion.
+                        // The server otherwise bumps this note's revision behind the editor.
+                        if (AppState.currentNote.category_id === catId) {
+                            AppState.updateNote({category_id: null});
+                            await NoteStorageService.saveCurrentNote();
+                        }
                         await NotesAPI.deleteCategory(catId);
                         if (AppState.currentNote.category_id === catId) {
                             AppState.updateNote({category_id: null});
@@ -223,10 +231,7 @@ class CategoryManager {
     }
 
     static escapeHtml(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        return HtmlSafety.escape(str);
     }
 }
 

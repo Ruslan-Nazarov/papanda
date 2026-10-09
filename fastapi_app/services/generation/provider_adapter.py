@@ -35,8 +35,7 @@ class ProviderAdapter:
         call.update(status=status, duration_s=round(time.monotonic() - started, 3))
         call['model'] = info.get('model') or call['model']
         usage = info.get('usage_tokens')
-        if isinstance(usage, int) and not isinstance(usage, bool) and usage >= 0:
-            call['usage_tokens'] = usage
+        current_run.get().record_usage(call, usage)
         if status == 'completed' and model_identity(call['model']) in policy.excluded_models:
             call['status'] = 'rejected_model'
             raise GenerationError('model_policy', 'Provider returned an excluded model')

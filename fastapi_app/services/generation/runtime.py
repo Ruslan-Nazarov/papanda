@@ -55,9 +55,21 @@ class GenerationContext:
             raise BudgetExceeded('token_budget', 'Generation token budget exhausted')
         self.tokens_reserved += estimate
         call = {'provider': provider, 'model': model, 'task': task,
-                'reserved_tokens': estimate, 'usage_tokens': None, 'status': 'running'}
+                'reserved_tokens': estimate, 'budget_tokens': estimate,
+                'usage_tokens': None, 'status': 'running'}
         self.calls.append(call)
         return call
+
+    def record_usage(self, call, usage):
+        """Replace a pending estimate with measured total usage, including input.
+
+        Missing usage keeps the full reservation, including for failed attempts.
+        Cached input is still part of total usage and is not subtracted.
+        """
+        if not isinstance(usage, int) or isinstance(usage, bool) or usage < 0:
+            return
+        self.tokens_reserved += usage - call['budget_tokens']
+        call.update(usage_tokens=usage, budget_tokens=usage)
 
     def generated_texts(self):
         return {k: v for k, v in self.collected.items()

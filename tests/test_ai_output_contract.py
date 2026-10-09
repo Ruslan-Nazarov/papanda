@@ -42,6 +42,27 @@ def test_language_check_ignores_keys_symbols_and_short_quotes():
 
 
 @pytest.mark.asyncio
+async def test_step_annotations_reach_provider_as_source_context():
+    async def handler(request):
+        messages = json.loads(request.content)['messages']
+        context = messages[-1]
+        assert context['role'] == 'user'
+        for text in ('ECG measurement', 'For development', 'Specific electrodes and frequency',
+                     'consider its title, content and stickers together'):
+            assert text in context['content']
+        return httpx.Response(200, json={'choices': [{'message': {'content': '{"statement":"Development"}'}}]})
+    llm = DialecticLLM(OpenAICompatible('fixture', 'https://fixture.invalid', 'fixture'),
+        {'existing_note_steps': {'step1': {'title': 'ECG measurement', 'content': 'Measuring the signal',
+            'stickers': [{'title': 'For development', 'text': 'Specific electrodes and frequency'}]}}})
+    llm.client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        async with generation_scope(GenerationContext()):
+            await llm.generate([{'role': 'user', 'content': 'Build the next step; return JSON.'}])
+    finally:
+        await llm.aclose()
+
+
+@pytest.mark.asyncio
 async def test_http_requests_enforce_language_and_math_and_retry_wrong_language():
     requests = []
     answers = [RUSSIAN, 'The areas satisfy $a^2 + b^2 = c^2$.']

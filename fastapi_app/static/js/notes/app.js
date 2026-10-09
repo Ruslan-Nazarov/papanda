@@ -5,6 +5,7 @@ import NoteController from './NoteController.js';
 import BlockDnDManager from './BlockDnDManager.js';
 import EditorManager from './EditorManager.js';
 import NoteStorageService from './NoteStorageService.js';
+import NoteLocation from './NoteLocation.js';
 import NotesAPI from './api.js';
 import LoadNotesModalService from './LoadNotesModalService.js';
 import ConnectionsModalService from './ConnectionsModalService.js';
@@ -25,6 +26,7 @@ import AIDiary from './AIDiary.js';
 import AIController from './AIController.js';
 import LibraryPublisher from './LibraryPublisher.js';
 import RequestDocuments from './RequestDocuments.js';
+import { showToast } from './ToastService.js';
 import { t, switchLanguage } from '../i18n.js';
 
 class App {
@@ -180,6 +182,7 @@ class App {
                 });
                 if (!confirmed) return;
             }
+            NoteLocation.clear();
             AppState.setNote({ id: null, title: t('menu_new_note'), blocks: [] });
             BlockDOMRenderer.renderAll();
         };
@@ -188,7 +191,8 @@ class App {
 
         document.getElementById('menu-item-back-note')?.addEventListener('click', async () => {
             DropdownController.closeAll();
-            await NavHistoryManager.goBack();
+            try { await NavHistoryManager.goBack(); }
+            catch { showToast(t('note_load_failed'), 'error'); }
         });
 
         document.getElementById('menu-item-trash')?.addEventListener('click', async () => {
@@ -324,7 +328,7 @@ class App {
                     const noteId = match[1];
                     const blockId = match[2];
                     
-                    if (AppState.currentNote.id !== noteId) {
+                    if (String(AppState.currentNote.id) !== noteId) {
                         if (AppState.isDirty) {
                             const confirmed = await DialogService.confirm({
                                 title: t('link_nav_title'),
@@ -343,7 +347,7 @@ class App {
                             BlockDOMRenderer.renderAll();
                             if (blockId) {
                                 setTimeout(() => {
-                                    const blockEl = document.getElementById(`block-${blockId}`);
+                                    const blockEl = document.getElementById(blockId);
                                     if (blockEl) {
                                         blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                         blockEl.style.boxShadow = '0 0 0 3px #3b82f6';
@@ -355,7 +359,7 @@ class App {
                             DialogService.alert(t('error_word'), t('note_load_failed'));
                         }
                     } else if (blockId) {
-                        const blockEl = document.getElementById(`block-${blockId}`);
+                        const blockEl = document.getElementById(blockId);
                         if (blockEl) {
                             blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             blockEl.style.boxShadow = '0 0 0 3px #3b82f6';
@@ -562,27 +566,24 @@ class App {
 
     static async loadInitialState() {
         try {
-            const requestedId = new URLSearchParams(window.location.search).get('note');
+            const requestedId = NoteLocation.initialId();
             if (requestedId) {
                 try {
                     const note = await NotesAPI.getNote(requestedId);
                     if (note && !note.is_deleted) {
                         await NoteStorageService.loadNote(note.id);
-                        if (requestedId) {
-                            const url = new URL(window.location.href);
-                            url.searchParams.delete('note');
-                            window.history.replaceState(null, '', url);
-                        }
                         return;
                     }
                 } catch (e) {
-                    // A missing explicit note opens a blank page.
+                    // A transient load failure must not silently become a new note.
+                    if (e.status !== 404) throw e;
+                    NoteLocation.clear();
                 }
             }
             AppState.setNote({ id: null, title: '', blocks: [] });
         } catch (e) {
             console.error('Failed to load initial state', e);
-            AppState.setNote({ id: null, title: '', blocks: [] });
+            showToast(t('versions_load_failed'), 'error');
         } finally {
             // Первый заход — один раз показываем обзорный тур.
             let seen = true;

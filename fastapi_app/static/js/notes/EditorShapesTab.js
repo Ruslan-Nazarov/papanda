@@ -31,6 +31,7 @@ export class EditorShapesTab {
                     {signal: this.loading.signal}).then(() => {
                     if (this.disposed) return;
                     this.fabricCanvas.renderAll();
+                    this.isGridVisible = Boolean(this.fabricCanvas.backgroundColor);
                     this.isHistoryAction = false;
                     this.saveHistory();
                 }).catch(error => {
@@ -58,12 +59,24 @@ export class EditorShapesTab {
 
     saveHistory() {
         if (this.isHistoryAction || !this.fabricCanvas) return;
+        const snapshot = this.getJSON();
+        if (this.canvasHistory[this.historyIndex] === snapshot) return;
         if (this.historyIndex < this.canvasHistory.length - 1) {
             this.canvasHistory = this.canvasHistory.slice(0, this.historyIndex + 1);
         }
-        this.canvasHistory.push(JSON.stringify(this.fabricCanvas));
+        this.canvasHistory.push(snapshot);
         if (this.canvasHistory.length > 50) this.canvasHistory.shift();
         this.historyIndex = this.canvasHistory.length - 1;
+    }
+
+    change(action) {
+        if (this.disposed || this.isHistoryAction || !this.fabricCanvas) return;
+        this.isHistoryAction = true;
+        try { action(); }
+        finally {
+            this.isHistoryAction = false;
+            this.saveHistory();
+        }
     }
 
     undo() {
@@ -74,6 +87,7 @@ export class EditorShapesTab {
                 {signal: this.loading.signal}).then(() => {
                 if (this.disposed) return;
                 this.fabricCanvas.renderAll();
+                this.isGridVisible = Boolean(this.fabricCanvas.backgroundColor);
                 this.isHistoryAction = false;
             }).catch(error => {
                 this.isHistoryAction = false;
@@ -83,7 +97,7 @@ export class EditorShapesTab {
     }
 
     toggleGrid() {
-        if (!this.fabricCanvas) return;
+        if (!this.fabricCanvas || this.isHistoryAction) return;
         this.isGridVisible = !this.isGridVisible;
         if (this.isGridVisible) {
             const gridPattern = new fabric.Pattern({
@@ -108,6 +122,7 @@ export class EditorShapesTab {
             this.fabricCanvas.backgroundColor = '';
         }
         this.fabricCanvas.requestRenderAll();
+        this.saveHistory();
     }
 
     getFill() { return this.currentFill; }
@@ -117,6 +132,12 @@ export class EditorShapesTab {
     bindEvents() {
         const mc = this.modalContainer;
         const fc = this.fabricCanvas;
+        // Do not mutate a canvas while Fabric is restoring a snapshot.
+        for (const type of ['click', 'change', 'input', 'pointerdown']) {
+            mc.querySelector('#tab-shapes')?.addEventListener(type, event => {
+                if (this.isHistoryAction) event.stopImmediatePropagation();
+            }, true);
+        }
 
         mc.querySelector('#btn-shape-select')?.addEventListener('click', (e) => {
             fc.isDrawingMode = false;
@@ -163,10 +184,11 @@ export class EditorShapesTab {
         mc.querySelector('#btn-shape-copy')?.addEventListener('click', () => {
             const active = fc.getActiveObject();
             if (active) {
-                active.clone().then(cloned => {
+                this.isHistoryAction = true;
+                this.ready = active.clone().then(cloned => {
                     if (this.disposed) return;
                     cloned.set({ left: cloned.left + 15, top: cloned.top + 15, evented: true });
-                    if (cloned.type === 'activeSelection') {
+                    if (cloned.isType('ActiveSelection')) {
                         cloned.canvas = fc;
                         cloned.forEachObject(obj => fc.add(obj));
                         cloned.setCoords();
@@ -175,23 +197,23 @@ export class EditorShapesTab {
                     }
                     fc.setActiveObject(cloned);
                     fc.requestRenderAll();
-                    this.saveHistory();
-                }).catch(error => {if (!this.disposed) console.error('Failed to copy drawing', error);});
+                }).catch(error => {if (!this.disposed) console.error('Failed to copy drawing', error);})
+                    .finally(() => { this.isHistoryAction = false; this.saveHistory(); });
             }
         });
 
         mc.querySelector('#btn-shape-delete')?.addEventListener('click', () => {
             const active = fc.getActiveObjects();
             if (active.length) {
-                active.forEach(obj => fc.remove(obj));
-                fc.discardActiveObject();
+                this.change(() => {
+                    active.forEach(obj => fc.remove(obj));
+                    fc.discardActiveObject();
+                });
             }
         });
 
         mc.querySelector('#btn-clear-canvas')?.addEventListener('click', () => {
-            fc.clear();
-            this.isGridVisible = false;
-            this.saveHistory();
+            this.change(() => { fc.clear(); this.isGridVisible = false; });
         });
 
         mc.querySelector('#btn-shape-undo')?.addEventListener('click', () => this.undo());
@@ -209,6 +231,7 @@ export class EditorShapesTab {
                     });
                 });
                 fc.requestRenderAll();
+                this.saveHistory();
             }
         });
 
@@ -217,6 +240,7 @@ export class EditorShapesTab {
             const active = fc.getActiveObjects();
             active.forEach(obj => { if (obj.type !== 'i-text' && obj.type !== 'line') obj.set('fill', 'transparent'); });
             fc.requestRenderAll();
+            this.saveHistory();
         });
 
         mc.querySelector('#shape-color-fill')?.addEventListener('change', (e) => {
@@ -224,6 +248,7 @@ export class EditorShapesTab {
             const active = fc.getActiveObjects();
             active.forEach(obj => { if (obj.type !== 'i-text' && obj.type !== 'line' && obj.type !== 'group') obj.set('fill', this.currentFill); });
             fc.requestRenderAll();
+            this.saveHistory();
         });
 
         mc.querySelector('#shape-color-stroke')?.addEventListener('change', (e) => {
@@ -236,6 +261,7 @@ export class EditorShapesTab {
             });
             fc.freeDrawingBrush.color = color;
             fc.requestRenderAll();
+            this.saveHistory();
         });
 
         mc.querySelector('#shape-stroke-width')?.addEventListener('input', (e) => {
@@ -250,6 +276,7 @@ export class EditorShapesTab {
             fc.freeDrawingBrush.width = width;
             fc.requestRenderAll();
         });
+        mc.querySelector('#shape-stroke-width')?.addEventListener('change', () => this.saveHistory());
 
         mc.querySelector('#btn-insert-shapes')?.addEventListener('click', () => {
             const dataUrl = fc.toDataURL({ format: 'png', quality: 1 });
@@ -262,6 +289,8 @@ export class EditorShapesTab {
     }
 
     getJSON() {
-        return this.fabricCanvas ? JSON.stringify(this.fabricCanvas.toJSON()) : null;
+        return this.fabricCanvas ? JSON.stringify(this.fabricCanvas.toObject([
+            'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls',
+        ])) : null;
     }
 }

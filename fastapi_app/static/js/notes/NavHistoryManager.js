@@ -15,9 +15,10 @@ export class NavHistoryManager {
 
     static async goBack() {
         if (this._navHistory.length >= 2) {
-            this._navHistory.pop(); // Pop current
-            const prevId = this._navHistory[this._navHistory.length - 1];
-            await NoteStorageService.loadNote(prevId);
+            const history = [...this._navHistory];
+            const prevId = history[history.length - 2];
+            const opened = await NoteStorageService.openNote(prevId);
+            if (opened) this._navHistory = history.slice(0, -1);
         } else {
             await DialogService.alert(t('back_word'), t('nav_no_prev'));
         }

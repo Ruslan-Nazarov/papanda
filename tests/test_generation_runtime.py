@@ -56,7 +56,7 @@ async def test_fallback_shares_call_and_token_budget_and_records_actual_usage():
     assert [c['status'] for c in context.calls] == ['failed', 'completed']
     assert context.metrics()['usage_tokens'] == 17
     assert context.metrics()['usage_complete'] is False
-    assert context.tokens_reserved == 44
+    assert context.tokens_reserved == 39  # Failed attempt retains 22; completed uses 17.
 
 
 @pytest.mark.asyncio
@@ -66,6 +66,25 @@ async def test_token_admission_prevents_request():
         with pytest.raises(BudgetExceeded, match='token budget'):
             await registry(provider).generate([], max_tokens=20)
     assert provider.calls == 0
+
+
+@pytest.mark.parametrize('usage', [None, True, -1, '17'])
+def test_unknown_usage_keeps_reservation(usage):
+    context = GenerationContext()
+    call = context.reserve('A', 'model', [], 20, 'test')
+    context.record_usage(call, usage)
+    assert context.tokens_reserved == call['budget_tokens'] == 22
+    assert call['usage_tokens'] is None
+
+
+def test_actual_usage_above_reservation_blocks_next_call():
+    context = GenerationContext(max_tokens=30)
+    call = context.reserve('A', 'model', [], 20, 'test')
+    context.record_usage(call, 35)
+    context.record_usage(call, 35)  # Reporting twice must not charge twice.
+    assert context.tokens_reserved == 35
+    with pytest.raises(BudgetExceeded):
+        context.reserve('A', 'model', [], 1, 'test')
 
 
 @pytest.mark.asyncio
