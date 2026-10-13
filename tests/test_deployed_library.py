@@ -74,3 +74,24 @@ async def test_author_selection_keeps_full_note_and_both_languages(file_client):
     assert (await file_client.delete(f"/api/author/deployment/{note['id']}")).status_code == 200
     assert len(deployed_library.read_library()['notes']) == 1
     assert (await file_client.get(f"/api/dialectics/{note['id']}")).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_reopening_an_existing_note_expands_blocks_and_uses_the_linked_title(file_client, monkeypatch):
+    write_bundle()
+    monkeypatch.setattr(settings, 'DEMO_MODE', True)
+    for language, target_title in (('ru', 'ЭКГ initial'), ('en', 'ECG initial')):
+        headers = {'x-note-language': language}
+        note = (await file_client.get('/api/dialectics/library/final/open', headers=headers)).json()
+        blocks = deepcopy(note['content_json'])
+        blocks[0].update(collapsed=True, html='<p>My preserved content</p>')
+        saved = await file_client.patch(f"/api/dialectics/{note['id']}", headers=headers, json={
+            'revision': note['revision'], 'blocks': blocks,
+            'note_notice': f'Context\n[Old label](/?conspect=initial&lang={language})'})
+        assert saved.status_code == 200
+        reopened = (await file_client.get('/api/dialectics/library/final/open', headers=headers)).json()
+        assert reopened['id'] == note['id']
+        assert all(not block['collapsed'] for block in reopened['content_json'])
+        assert reopened['content_json'][0]['html'] == '<p>My preserved content</p>'
+        assert reopened['content_json'][0]['stickers'] == blocks[0]['stickers']
+        assert reopened['note_notice'] == f'Context\n[{target_title}](/?conspect=initial&lang={language})'

@@ -23,13 +23,18 @@ router = APIRouter()
 async def open_library_note(slug: str, db: AsyncSession = Depends(get_db)):
     from sqlalchemy import select
     from fastapi_app.models.notes import Note
-    from fastapi_app.services.deployed_library import find_note, seed_library
+    from fastapi_app.services.deployed_library import find_note, seed_library, prepare_open_note
     item = find_note(slug)
     await seed_library(db)
     note = (await db.execute(select(Note).where(Note.sync_id == item['source_sync_id']))).scalar_one()
     if note.is_deleted:
         from fastapi import HTTPException
         raise HTTPException(404, 'Restore this note from your trash to open it')
+    from fastapi_app.services.note_transactions import commit
+    prepare_open_note(note)
+    if db.is_modified(note):
+        await commit(db)
+        await db.refresh(note)
     return note.use_locale(db.info.get('locale', 'ru'))
 
 @router.get("/categories/all", response_model=List[CategoryView])

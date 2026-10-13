@@ -40,6 +40,31 @@ def find_note(slug):
         raise HTTPException(404, 'Library note not found')
     return item
 
+def prepare_open_note(note):
+    """Permanent links start with all blocks open and use the destination's title."""
+    catalog = {item['slug']: item for item in read_library()['notes']}
+    def notice_links(text):
+        def rename(match):
+            target = catalog.get(match['slug'])
+            if not target:
+                return match[0]
+            document = target['languages'].get(match['lang'], target['languages']['ru'])
+            return '[' + document['title'] + '](' + match['url'] + ')'
+        return re.sub(r'\[[^\]\n]+\]\((?P<url>/\?conspect=(?P<slug>[a-z0-9_-]+)&lang=(?P<lang>ru|en))\)', rename, text or '')
+
+    if any(block.get('collapsed') for block in note._content_json):
+        note._content_json = [{**block, 'collapsed': False} for block in note._content_json]
+    notice = notice_links(note._note_notice)
+    if notice != note._note_notice:
+        note._note_notice = notice
+    translations = deepcopy(note.translations or {})
+    for document in translations.values():
+        for block in document.get('content_json', []):
+            block['collapsed'] = False
+        document['note_notice'] = notice_links(document.get('note_notice', ''))
+    if translations != note.translations:
+        note.translations = translations
+
 def list_notes(locale):
     return [{'id': item['slug'], 'title': item['languages'].get(locale, item['languages']['ru'])['title'],
              'description': item.get('description', {}).get(locale, ''), 'languages': list(item['languages']),
