@@ -636,7 +636,7 @@ class App {
             // Первый заход — один раз показываем обзорный тур.
             let seen = true;
             try { seen = localStorage.getItem('dialectics_onboarding_seen') === '1'; } catch {}
-            if (!seen) setTimeout(() => OnboardingTour.start(), 700);
+            if (!seen && !NoteLocation.initialLibrarySlug()) setTimeout(() => OnboardingTour.start(), 700);
         }
     }
 }
