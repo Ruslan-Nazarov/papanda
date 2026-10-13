@@ -5,7 +5,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -81,6 +81,11 @@ app.add_middleware(ReleaseReadinessMiddleware)
 # Mount static
 static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+@app.get('/favicon.ico')
+async def favicon():
+    return FileResponse(static_dir / 'favicon.png', media_type='image/png')
 
 # Templates
 templates_dir = Path(__file__).parent / "templates"

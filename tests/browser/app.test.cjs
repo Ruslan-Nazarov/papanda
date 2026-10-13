@@ -897,10 +897,17 @@ test('the four deployed ECG links render full HTML and still open the editor', {
             await noScript.close();
 
             const editor = await browser.newPage();
+            const pageErrors = [];
+            editor.on('pageerror', error => pageErrors.push(error.message));
+            editor.on('response', response => {
+                if (response.url().startsWith(backend.url) && response.status() >= 400)
+                    pageErrors.push(`${response.status()} ${response.url()}`);
+            });
             await editor.goto(url, {waitUntil: 'networkidle0'});
             await editor.waitForFunction(() => !document.querySelector('#public-conspect') &&
                 document.querySelectorAll('.dialectics-block').length > 0);
             assert.equal(await editor.$eval('#note-title', el => el.value), title);
+            assert.deepEqual(pageErrors, []);
             await editor.close();
         }
     } finally {

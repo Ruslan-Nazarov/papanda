@@ -76,6 +76,9 @@ async def test_robots_and_sitemap_contain_only_published_languages(client, monke
     assert sitemap.text.count('<url>') == 4
     image = await client.get('/static/og/conspect.png')
     assert image.status_code == 200 and image.headers['content-type'].startswith('image/png')
+    favicon = await client.get('/static/favicon.png')
+    assert favicon.status_code == 200 and favicon.headers['content-type'].startswith('image/png')
+    assert (await client.get('/favicon.ico')).status_code == 200
     for slug in ('ecg-original', 'ecg-final'):
         for language in ('ru', 'en'):
             assert f'conspect={slug}&amp;lang={language}' in sitemap.text
