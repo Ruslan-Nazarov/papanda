@@ -608,8 +608,16 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             reader.on('pageerror', error => errors.push(error.message));
             await reader.goto(backend.url + '/library', {waitUntil: 'networkidle0'});
             assert.equal(await reader.$eval('.library-card', el => el.href), publicUrl);
+            const noScriptReader = await browser.newPage();
+            await noScriptReader.setJavaScriptEnabled(false);
+            await noScriptReader.goto(publicUrl, {waitUntil: 'load'});
+            assert(await noScriptReader.$('#public-conspect h1'));
+            assert((await noScriptReader.$eval('#public-conspect', el => el.textContent)).includes('Public reader sticker'));
+            assert.equal(await noScriptReader.$eval('.app-container', el => getComputedStyle(el).display), 'none');
+            await noScriptReader.close();
             await reader.goto(publicUrl, {waitUntil: 'networkidle0'});
             await reader.waitForSelector('.dialectics-block');
+            assert.equal(await reader.$('#public-conspect'), null);
             assert(await reader.$('#btn-save'));
             assert(await reader.$('.btn-edit'));
             assert(await reader.$('.btn-sticker'));
@@ -851,6 +859,50 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         assert.deepEqual(external, [], 'Editor tried to load remote assets');
         assert.deepEqual(violations, [], 'CSP violations');
         assert.deepEqual(errors, [], 'Uncaught browser errors');
+    } finally {
+        await browser?.close();
+        if (backend.child.exitCode === null) {
+            const exited = once(backend.child, 'exit');
+            backend.child.kill();
+            await exited;
+        }
+    }
+});
+
+test('the four deployed ECG links render full HTML and still open the editor', {timeout: 120_000}, async () => {
+    const backend = await server();
+    let browser;
+    try {
+        await fs.copyFile(path.join(root, 'fastapi_app/data/library_notes.json'),
+            path.join(backend.directory, 'library_notes.json'));
+        browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
+        const variants = [
+            ['ecg-original', 'ru', 'ЭКГ', 'Как собрать одноканальный ЭКГ'],
+            ['ecg-original', 'en', 'ECG — Initial Annotated Version', 'ADS1292 internal test generator'],
+            ['ecg-final', 'ru', 'Как собрать одноканальный ЭКГ?', 'ADS1291'],
+            ['ecg-final', 'en', 'How to Build a Single-Channel ECG Device', 'ADS1291'],
+        ];
+        for (const [slug, language, title, phrase] of variants) {
+            const url = `${backend.url}/?conspect=${slug}&lang=${language}`;
+            const response = await fetch(url);
+            const html = await response.text();
+            assert.equal(response.status, 200);
+            assert(html.includes(`<h1>${title}</h1>`));
+            assert(html.includes(phrase));
+            const noScript = await browser.newPage();
+            await noScript.setJavaScriptEnabled(false);
+            await noScript.goto(url, {waitUntil: 'load'});
+            assert.equal(await noScript.$eval('#public-conspect h1', el => el.textContent), title);
+            assert((await noScript.$eval('#public-conspect', el => el.textContent)).includes(phrase));
+            await noScript.close();
+
+            const editor = await browser.newPage();
+            await editor.goto(url, {waitUntil: 'networkidle0'});
+            await editor.waitForFunction(() => !document.querySelector('#public-conspect') &&
+                document.querySelectorAll('.dialectics-block').length > 0);
+            assert.equal(await editor.$eval('#note-title', el => el.value), title);
+            await editor.close();
+        }
     } finally {
         await browser?.close();
         if (backend.child.exitCode === null) {

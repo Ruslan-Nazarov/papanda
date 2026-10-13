@@ -32,6 +32,7 @@ from fastapi_app.rate_limiter import limiter
 from fastapi_app.database import get_db, dispose_all_engines, initialize_databases, get_public_db
 from fastapi_app.services.notes_service import NotesService
 from fastapi_app.services import library_store
+from fastapi_app.services.public_conspect import public_conspect, public_url
 from fastapi_app.services.note_transactions import get_note
 from fastapi_app.frontend_assets import asset
 from fastapi_app.version import VERSION, RELEASE_DATE, RELEASE_SHA
@@ -85,6 +86,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=templates_dir)
 templates.env.globals['asset'] = asset
+templates.env.globals['public_url'] = public_url
 
 # Routers
 app.include_router(notes.router, prefix="/api/dialectics", tags=["notes"])
@@ -94,6 +96,8 @@ app.include_router(library.router, tags=["library"])
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     locale = getattr(request.state, "locale", "ru")
+    slug = request.query_params.get('conspect')
+    public_note = public_conspect(slug, locale) if slug and locale in {'ru', 'en'} else None
     _ = get_translator(locale)
     # Тексты алгоритма для ручного режима (подсказки блоков) — инлайним в
     # страницу как inert JSON #algorithm-data, источник prompts/7_*.json.
@@ -103,8 +107,27 @@ async def index(request: Request):
         request=request, name="index.html",
         context={"_": _, "locale": locale, "algorithm_json": algorithm_json,
                    "i18n_json": i18n_json, "app_version": VERSION,
-                   "last_update": RELEASE_DATE, "author_mode": not settings.DEMO_MODE},
+                   "last_update": RELEASE_DATE, "author_mode": not settings.DEMO_MODE,
+                   "public_note": public_note},
     )
+
+
+@app.get('/robots.txt')
+async def robots_txt():
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse('User-agent: *\nAllow: /\nSitemap: https://papanda.kz/sitemap.xml\n')
+
+
+@app.get('/sitemap.xml')
+async def sitemap_xml():
+    from fastapi.responses import Response
+    from fastapi_app.services.deployed_library import read_library
+    urls = [f'https://papanda.kz/?conspect={item["slug"]}&amp;lang={language}'
+            for item in read_library()['notes'] for language in ('ru', 'en')
+            if language in item['languages']]
+    body = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    body += ''.join(f'<url><loc>{url}</loc></url>' for url in urls) + '</urlset>'
+    return Response(body, media_type='application/xml')
 
 @app.get("/editor")
 async def editor_redirect():

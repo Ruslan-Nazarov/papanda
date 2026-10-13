@@ -1,0 +1,14 @@
+body.public-loading .app-container { display: none; }
+.public-conspect { max-width: 850px; margin: 0 auto; padding: 32px 20px 80px; color: #1e293b; background: #fff; line-height: 1.65; overflow-wrap: anywhere; }
+.public-conspect h1 { font-size: 2rem; margin: 20px 0; }
+.public-conspect h2 { font-size: 1.35rem; margin: 0 0 12px; }
+.public-conspect h3 { font-size: 1rem; margin: 0 0 8px; }
+.public-conspect a { color: #b45309; }
+.public-conspect-notice, .public-conspect-block, .public-conspect-dictionary { border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin: 20px 0; }
+.public-conspect-notice { background: #fff7ed; border-color: #fdba74; }
+.public-conspect-extra { border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 14px; }
+.public-conspect-html img { max-width: 100%; height: auto; }
+.public-conspect pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f8fafc; padding: 12px; }
+.public-conspect dt { font-weight: 700; }
+.public-conspect dd { margin: 0 0 12px; white-space: pre-wrap; }
+.public-conspect footer { padding-top: 20px; }

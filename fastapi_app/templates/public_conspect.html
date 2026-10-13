@@ -1,0 +1,50 @@
+{% if public_note %}
+<article id="public-conspect" class="public-conspect" lang="{{ public_note.language }}">
+    <nav><a href="/library?lang={{ public_note.language }}">{{ _('library_title') }}</a></nav>
+    <h1>{{ public_note.title }}</h1>
+    {% if public_note.notice %}<aside class="public-conspect-notice">{{ public_note.notice }}</aside>{% endif %}
+    {% if public_note.stickers %}
+    <section><h2>{{ _('public_stickers') }}</h2>
+        {% for sticker in public_note.stickers %}<div class="public-conspect-extra">
+            {% if sticker.title %}<strong>{{ sticker.title }}</strong>{% endif %}<p>{{ sticker.text }}</p>
+        </div>{% endfor %}
+    </section>
+    {% endif %}
+    {% for b in public_note.blocks %}
+    <section class="public-conspect-block" id="{{ b.id }}">
+        {% if b.title %}<h2>{{ b.title }}</h2>{% endif %}
+        {% if b.role %}<small>{{ b.role }}</small>{% endif %}
+        <div class="public-conspect-html">{{ b.html | safe }}</div>
+        {% if b.stickers %}<section class="public-conspect-extra"><h3>{{ _('public_stickers') }}</h3>
+            {% for sticker in b.stickers %}<p>{% if sticker.title %}<strong>{{ sticker.title }}:</strong> {% endif %}{{ sticker.text }}</p>{% endfor %}
+        </section>{% endif %}
+        {% if b.inline_notes %}<section class="public-conspect-extra"><h3>{{ _('public_inline_notes') }}</h3>
+            {% for note in b.inline_notes %}<p><strong>{{ note.phrase }}:</strong> {{ note.text }}</p>{% endfor %}
+        </section>{% endif %}
+        {% if b.sources %}<section class="public-conspect-extra"><h3>{{ _('public_sources') }}</h3><ul>
+            {% for source in b.sources %}<li>
+                {% if public_url(source.url) %}<a href="{{ source.url }}">{{ source.title or source.url }}</a>{% else %}{{ source.title or '' }}{% endif %}
+                {% if source.quote %}<p>{{ source.quote }}</p>{% endif %}
+            </li>{% endfor %}
+        </ul></section>{% endif %}
+        {% if b.words %}<section class="public-conspect-extra"><h3>{{ _('public_dictionary') }}</h3>
+            {% for word in b.words %}<p><strong>{{ word.word }}:</strong> {{ word.definition }}</p>{% endfor %}
+        </section>{% endif %}
+        {% if b.rejected_drafts %}<section class="public-conspect-extra"><h3>{{ _('public_rejected_drafts') }}</h3>
+            {% for draft in b.rejected_drafts %}<div>{% if draft.reason %}<p>{{ draft.reason }}</p>{% endif %}<div>{{ draft.html | safe }}</div></div>{% endfor %}
+        </section>{% endif %}
+        {% if b.derivations %}<section class="public-conspect-extra"><h3>{{ _('public_derivations') }}</h3>
+            {% for derivation in b.derivations %}<div>{{ derivation.html | safe }}</div>{% endfor %}
+        </section>{% endif %}
+        {% if b.request_document %}<section class="public-conspect-extra"><h3>{{ _('public_request_document') }} · {{ b.request_document.name }}</h3><pre>{{ b.request_document.text }}</pre></section>{% endif %}
+        {% if b.attached_conspects %}<section class="public-conspect-extra"><h3>{{ _('public_attached_conspects') }}</h3>
+            {% for attached in b.attached_conspects %}<h4>{{ attached.name }}</h4><pre>{{ attached.text }}</pre>{% endfor %}
+        </section>{% endif %}
+    </section>
+    {% endfor %}
+    {% if public_note.dictionary %}<section class="public-conspect-dictionary"><h2>{{ _('public_dictionary') }}</h2><dl>
+        {% for word in public_note.dictionary %}<dt>{{ word.word }}</dt><dd>{{ word.definition }}</dd>{% endfor %}
+    </dl></section>{% endif %}
+    <footer><a href="/library?lang={{ public_note.language }}">{{ _('library_title') }}</a></footer>
+</article>
+{% endif %}

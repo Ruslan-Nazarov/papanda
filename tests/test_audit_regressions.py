@@ -20,7 +20,7 @@ async def test_public_pages_and_missing_api_do_not_allocate_at_capacity(file_cli
     monkeypatch.setattr(settings, 'DEMO_MAX_SESSIONS', 1)
     store.session_for_cookie(None)
     async with AsyncClient(transport=ASGITransport(app), base_url='http://127.0.0.1') as visitor:
-        for path, expected in [('/', 200), ('/privacy', 200), ('/robots.txt', 404),
+        for path, expected in [('/', 200), ('/privacy', 200), ('/robots.txt', 200),
                                ('/api/no-such-route', 404)]:
             response = await visitor.get(path)
             assert response.status_code == expected

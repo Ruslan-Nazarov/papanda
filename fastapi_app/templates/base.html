@@ -10,7 +10,7 @@
     <script type="module" src="{{ asset('runtime.js') }}"></script>
     {% block head %}{% endblock %}
 </head>
-<body>
+<body{% if public_note %} class="public-loading"{% endif %}>
     {% block content %}{% endblock %}
     
     {% block scripts %}{% endblock %}

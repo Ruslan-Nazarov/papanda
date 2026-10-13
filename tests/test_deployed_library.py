@@ -31,7 +31,7 @@ async def test_two_bilingual_notes_keep_identity_and_all_editor_data(file_client
     monkeypatch.setattr(settings, 'DEMO_MODE', True)
     page = await file_client.get('/?conspect=final&lang=en')
     assert '<html lang="en">' in page.text and 'id="btn-save"' in page.text
-    assert 'public-conspect' not in page.text
+    assert 'id="public-conspect"' in page.text and 'Process' in page.text
     en = (await file_client.get('/api/dialectics/library/final/open', headers={'x-note-language': 'en'})).json()
     assert en['title'] == 'ECG final' and en['library_slug'] == 'final'
     assert en['content_json'][0]['is_pinned'] is True

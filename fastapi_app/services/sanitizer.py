@@ -41,6 +41,8 @@ _PUBLIC_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "img"}
 _PUBLIC_ATTRS = {"span": {"class", "formula", "data-formula", "data-text-size"},
                  "div": {"class"}, "blockquote": {"class", "author"},
                  "img": _WRITE_ATTRS["img"]}
+_PUBLIC_LINK_TAGS = _PUBLIC_TAGS | {"a"}
+_PUBLIC_LINK_ATTRS = {**_PUBLIC_ATTRS, "a": {"href", "title"}}
 
 MAX_EMBEDDED_IMAGE_BYTES = 2 * 1024 * 1024
 _IMAGE_DATA = re.compile(r"data:image/(png|jpeg|webp);base64,([A-Za-z0-9+/]*={0,2})\Z", re.I)
@@ -97,12 +99,22 @@ def _filter_attribute(tag: str, attribute: str, value: str):
     return value
 
 
-def sanitize_block_html(html: str) -> str:
+def sanitize_block_html(html: str, *, allow_public_links: bool = False) -> str:
     """Строгая очистка для публичной отдачи (страница /s/<token>)."""
     if not html:
         return ""
-    return nh3.clean(html, tags=_PUBLIC_TAGS, attributes=_PUBLIC_ATTRS,
-                     url_schemes={'data'}, attribute_filter=_filter_attribute)
+    def public_attribute(tag, attribute, value):
+        if tag == 'a' and attribute == 'href':
+            if value.startswith(('https://', 'http://')) or (value.startswith('/') and not value.startswith(('//', '/\\'))
+                                                  and (value.startswith('/?conspect=') or value.startswith('/static/'))):
+                return value
+            return None
+        return _filter_attribute(tag, attribute, value)
+
+    return nh3.clean(html, tags=_PUBLIC_LINK_TAGS if allow_public_links else _PUBLIC_TAGS,
+                     attributes=_PUBLIC_LINK_ATTRS if allow_public_links else _PUBLIC_ATTRS,
+                     url_schemes={'data', 'https', 'http'} if allow_public_links else {'data'},
+                     attribute_filter=public_attribute if allow_public_links else _filter_attribute)
 
 
 def sanitize_on_write(html: str, *, reject_invalid_images: bool = False) -> str:

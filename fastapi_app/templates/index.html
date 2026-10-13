@@ -1,8 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('app_title') }}{% endblock %}
+{% block title %}{% if public_note %}{{ public_note.title }} — papanda{% else %}{{ _('app_title') }}{% endif %}{% endblock %}
+
+{% block head %}
+{% if public_note %}
+<meta name="description" content="{{ public_note.description }}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ public_note.title }} — papanda">
+<meta property="og:description" content="{{ public_note.description }}">
+<meta property="og:image" content="{{ public_note.image }}">
+<meta property="og:url" content="{{ public_note.canonical }}">
+<meta property="og:locale" content="{{ public_note.language }}_{{ 'RU' if public_note.language == 'ru' else 'US' }}">
+<link rel="canonical" href="{{ public_note.canonical }}">
+{% if public_note.alternate_url %}
+<link rel="alternate" hreflang="{{ public_note.alternate_language }}" href="{{ public_note.alternate_url }}">
+{% endif %}
+<link rel="stylesheet" href="/static/css/public-conspect.css">
+{% endif %}
+{% endblock %}
 
 {% block content %}
+{% include 'public_conspect.html' %}
 <div class="app-container">
     <!-- Верхняя шапка -->
     <header class="top-header">

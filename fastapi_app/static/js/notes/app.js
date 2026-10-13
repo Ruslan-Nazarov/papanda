@@ -612,6 +612,8 @@ class App {
             if (librarySlug) {
                 const note = await NotesAPI.request(`/dialectics/library/${encodeURIComponent(librarySlug)}/open`);
                 await NoteStorageService.loadNote(note.id);
+                document.getElementById('public-conspect')?.remove();
+                document.body.classList.remove('public-loading');
                 return;
             }
             const requestedId = NoteLocation.initialId();
