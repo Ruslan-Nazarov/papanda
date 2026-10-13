@@ -894,6 +894,7 @@ test('the four deployed ECG links render full HTML and still open the editor', {
             await noScript.goto(url, {waitUntil: 'load'});
             assert.equal(await noScript.$eval('#public-conspect h1', el => el.textContent), title);
             assert((await noScript.$eval('#public-conspect', el => el.textContent)).includes(phrase));
+            assert.notEqual(await noScript.$eval('#public-conspect', el => getComputedStyle(el).display), 'none');
             await noScript.close();
 
             const editor = await browser.newPage();
@@ -903,7 +904,25 @@ test('the four deployed ECG links render full HTML and still open the editor', {
                 if (response.url().startsWith(backend.url) && response.status() >= 400)
                     pageErrors.push(`${response.status()} ${response.url()}`);
             });
-            await editor.goto(url, {waitUntil: 'networkidle0'});
+            if (slug === 'ecg-original' && language === 'ru') {
+                await editor.setRequestInterception(true);
+                let releaseOpen;
+                const openBlocked = new Promise(resolve => {
+                    editor.on('request', request => {
+                        if (request.url().includes('/dialectics/library/') && request.url().endsWith('/open')) {
+                            releaseOpen = () => request.continue();
+                            resolve();
+                        } else request.continue();
+                    });
+                });
+                await editor.goto(url, {waitUntil: 'domcontentloaded'});
+                await openBlocked;
+                assert.equal(await editor.$eval('#public-conspect', el => getComputedStyle(el).display), 'none');
+                assert.notEqual(await editor.$eval('.public-app-loading', el => getComputedStyle(el).display), 'none');
+                releaseOpen();
+            } else {
+                await editor.goto(url, {waitUntil: 'networkidle0'});
+            }
             await editor.waitForFunction(() => !document.querySelector('#public-conspect') &&
                 document.querySelectorAll('.dialectics-block').length > 0);
             assert.equal(await editor.$eval('#note-title', el => el.value), title);

@@ -4,6 +4,7 @@
 
 {% block head %}
 {% if public_note %}
+<script src="/static/js/public-bootstrap.js"></script>
 <meta name="description" content="{{ public_note.description }}">
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ public_note.title }} — papanda">
@@ -21,6 +22,7 @@
 
 {% block content %}
 {% include 'public_conspect.html' %}
+{% if public_note %}<div class="public-app-loading" role="status" aria-live="polite"><span class="public-app-loading-mark">papanda</span><span class="public-app-loading-spinner" aria-hidden="true"></span></div>{% endif %}
 <div class="app-container">
     <!-- Верхняя шапка -->
     <header class="top-header">

@@ -85,7 +85,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get('/favicon.ico')
 async def favicon():
-    return FileResponse(static_dir / 'favicon.png', media_type='image/png')
+    return FileResponse(static_dir / 'logo.ico', media_type='image/x-icon')
 
 # Templates
 templates_dir = Path(__file__).parent / "templates"

@@ -633,6 +633,7 @@ class App {
             AppState.setNote({ id: null, title: '', blocks: [] });
         } catch (e) {
             console.error('Failed to load initial state', e);
+            document.documentElement.classList.remove('public-js');
             showToast(t('versions_load_failed'), 'error');
         } finally {
             // Первый заход — один раз показываем обзорный тур.

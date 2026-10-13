@@ -48,6 +48,8 @@ async def test_public_html_contains_complete_selected_language_without_authentic
     assert len(note['content_json']) == html.count('class="public-conspect-block"')
     assert note['dictionary'][-1]['definition'].split('\n')[0] in text
     assert 'id="btn-save"' in html  # The editor still ships on the same URL.
+    assert '<script src="/static/js/public-bootstrap.js"></script>' in html
+    assert '<link rel="icon" type="image/x-icon" href="/static/logo.ico">' in html
     assert f'<link rel="canonical" href="https://papanda.kz/?conspect={slug}&amp;lang={language}">' in html
     assert f'<meta property="og:url" content="https://papanda.kz/?conspect={slug}&amp;lang={language}">' in html
     assert '<meta property="og:image" content="https://papanda.kz/static/og/conspect.png">' in html
@@ -76,9 +78,12 @@ async def test_robots_and_sitemap_contain_only_published_languages(client, monke
     assert sitemap.text.count('<url>') == 4
     image = await client.get('/static/og/conspect.png')
     assert image.status_code == 200 and image.headers['content-type'].startswith('image/png')
-    favicon = await client.get('/static/favicon.png')
-    assert favicon.status_code == 200 and favicon.headers['content-type'].startswith('image/png')
-    assert (await client.get('/favicon.ico')).status_code == 200
+    original_icon = (Path(__file__).resolve().parents[1] / 'fastapi_app/static/logo.ico').read_bytes()
+    favicon = await client.get('/static/logo.ico')
+    assert favicon.status_code == 200 and favicon.content == original_icon
+    browser_favicon = await client.get('/favicon.ico')
+    assert browser_favicon.status_code == 200 and browser_favicon.content == original_icon
+    assert browser_favicon.headers['content-type'].startswith('image/x-icon')
     for slug in ('ecg-original', 'ecg-final'):
         for language in ('ru', 'en'):
             assert f'conspect={slug}&amp;lang={language}' in sitemap.text
