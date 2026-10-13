@@ -13,6 +13,7 @@ from dialectic_world.llm.base import Usage
 from dialectic_world.llm.providers import GigaChat, OpenAICompatible
 
 from fastapi_app.services.generation.runtime import BudgetExceeded, current_run
+from fastapi_app.services.generation.rejected_drafts import REJECTED_DRAFT_RULE
 
 
 class OutputLanguageError(ValueError):
@@ -138,6 +139,7 @@ class DialecticLLM:
                 'For each existing note step, consider its title, content and stickers together. '
                 'Sticker titles and text are user annotations that clarify that specific step and its continuation; '
                 'preserve their meaning when generating the next step.\n'
+                + (REJECTED_DRAFT_RULE if changing_context.get('rejected_drafts') else '')
                 + json.dumps(changing_context, ensure_ascii=False)})
         run = current_run.get()
         errors = []

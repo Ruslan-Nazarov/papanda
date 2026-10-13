@@ -57,7 +57,11 @@ class AIController {
                     ...(block.generation_data ? {generation_data: block.generation_data} : {})};
             }
         }
-        return { target_goal, steps,
+        const rejected_drafts = blocks.flatMap(block => (block.rejected_drafts || []).map(draft => ({
+            block_id: block.id, role: block.role || '', title: block.title || '',
+            content: NoteText.fromHtml(draft.html), reason: draft.reason || '',
+        })));
+        return { target_goal, steps, rejected_drafts,
             ...(anchorBlock?.request_document?.text ? {reference: anchorBlock.request_document.text} : {}) };
     }
 
@@ -257,6 +261,54 @@ class AIController {
         return this._runGeneration({action: 'generate_step', target_step: String(stepNumber)}, onRenderAll);
     }
 
+    static async generateBlock(blockId, onRenderAll) {
+        this.init();
+        this._activeRun?.controller.abort();
+        BlockDOMParser.syncDOMToState();
+        await NoteStorageService.saveCurrentNote();
+        const note = AppState.currentNote;
+        const index = note.blocks.findIndex(block => block.id === blockId);
+        if (index < 0 || note.blocks[index].role === 'section') return null;
+        const block = note.blocks[index];
+        const nearby = offset => {
+            const neighbor = note.blocks[index + offset];
+            return neighbor ? `${neighbor.title || ''}\n${NoteText.fromHtml(neighbor.html || '')}`.trim().slice(0, 5000) : '';
+        };
+        const run = {note, epoch: AppState.documentEpoch, editRevision: AppState.editRevision,
+            revision: note.revision, controller: new AbortController()};
+        this._activeRun = run;
+        GlobalLoader.show(t('ed_ai_analyzing'), () => run.controller.abort());
+        try {
+            const response = await NotesAPI.fillBlock({
+                note_title: (note.title || '').slice(0, 255),
+                block_title: (block.title || note.title || 'Block').slice(0, 500),
+                block_text: NoteText.fromHtml(block.html || '').slice(0, 10000),
+                context_before: nearby(-1), context_after: nearby(1),
+            }, run.controller.signal);
+            if (this._activeRun !== run || run.controller.signal.aborted) return null;
+            if (typeof response?.content !== 'string' || !response.content.trim()) throw new Error(t('ai_no_steps'));
+            BlockDOMParser.syncDOMToState();
+            if (!this._unchanged(run) || !AppState.getBlock(blockId)) throw new Error(t('gen_conflict_title'));
+            await NotesAPI.createCheckpoint(note.id, t('ai_before_generation'));
+            BlockDOMParser.syncDOMToState();
+            if (this._activeRun !== run || run.controller.signal.aborted) return null;
+            if (!this._unchanged(run) || !AppState.getBlock(blockId)) throw new Error(t('gen_conflict_title'));
+            AppState.updateBlock(blockId, {html: this.contentToHtml(response.content),
+                status: 'in_progress', isDraft: false, author: 'ai'});
+            if (onRenderAll) onRenderAll();
+            await NoteStorageService.saveCurrentNote();
+            return response;
+        } catch (error) {
+            if (error.name === 'AbortError') return null;
+            throw error;
+        } finally {
+            if (this._activeRun === run) {
+                this._activeRun = null;
+                GlobalLoader.hide();
+            }
+        }
+    }
+
     static _unchanged(run) {
         return AppState.currentNote === run.note && AppState.documentEpoch === run.epoch
             && AppState.editRevision === run.editRevision && AppState.currentNote.revision === run.revision;
@@ -269,8 +321,9 @@ class AIController {
         await NoteStorageService.saveCurrentNote();
         const copy = GenerationChanges.build(run.snapshot, result,
             text => this.contentToHtml(text), ALGORITHM_STEPS);
-        await NotesAPI.createNote({title:copy.title, blocks:copy.blocks,
-            stickers:copy.stickers || [], category_id:copy.category_id, status:'in_progress'});
+        await NotesAPI.createNote({title:copy.title, note_notice:copy.note_notice || '', blocks:copy.blocks,
+            stickers:copy.stickers || [], dictionary:copy.dictionary || [],
+            category_id:copy.category_id, status:'in_progress'});
         showToast(t('gen_copy_saved'));
     }
 
@@ -280,6 +333,7 @@ class AIController {
             step:parameters.target_step ? Number(parameters.target_step) : null,
             request:run.requestTopic, question:parameters.question || '', status:result.status,
             run_id:result.run_id || null,
+            started_at:run.startedAt, duration_ms:Math.max(0, Date.now() - run.startedMs),
             operation:parameters.action,
             text:[result.note_meta?.anchor_summary, result.verdict?.reason, result.verdict?.plain,
                 Object.entries(result.updated_steps || {}).map(([role,value]) =>
@@ -296,6 +350,8 @@ class AIController {
         const run = {note, snapshot: JSON.parse(JSON.stringify(note)), epoch: AppState.documentEpoch,
             editRevision: AppState.editRevision, revision: note.revision, controller: new AbortController()};
         run.requestTopic = this.buildStateForAI().target_goal;
+        run.startedMs = Date.now();
+        run.startedAt = new Date(run.startedMs).toISOString();
         this._activeRun = run;
         const cancel = () => run.controller.abort();
         GlobalLoader.show(t('ed_ai_analyzing'), cancel);

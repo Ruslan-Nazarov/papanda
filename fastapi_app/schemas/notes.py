@@ -54,6 +54,7 @@ class Word(BaseModel):
     word: str
     definition: str
     connections: Optional[str] = None
+    connection_explanations: Dict[str, str] = Field(default_factory=dict)
 
 class RequestDocument(BaseModel):
     name: str = Field(min_length=1, max_length=255)
@@ -66,6 +67,39 @@ class RequestDocument(BaseModel):
             raise ValueError('Document must contain readable text')
         return value
 
+class AttachedConspect(RequestDocument):
+    id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,128}$')
+
+class IncludedConspect(BaseModel):
+    note_id: int = Field(gt=0)
+    title: str = Field(min_length=1, max_length=255)
+
+class RejectedDraft(BaseModel):
+    id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,128}$')
+    html: str = Field(max_length=3_000_000)
+    reason: str = Field(default='', max_length=2000)
+    created_at: datetime
+
+    @field_validator('html')
+    @classmethod
+    def sanitize_html(cls, value):
+        return sanitize_on_write(value, reject_invalid_images=True)
+
+    @field_serializer('created_at')
+    def serialize_created_at(self, value):
+        return _serialize_utc(value)
+
+
+class BlockDerivation(BaseModel):
+    source_id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,128}$')
+    html: str = Field(max_length=3_000_000)
+
+    @field_validator('html')
+    @classmethod
+    def sanitize_html(cls, value):
+        return sanitize_on_write(value, reject_invalid_images=True)
+
+
 class BlockContent(BaseModel):
     schema_version: Literal[1] = 1
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), pattern=r"^[A-Za-z0-9_-]{1,128}$")
@@ -75,6 +109,7 @@ class BlockContent(BaseModel):
     role: Optional[str] = None
     tags: Optional[str] = None
     status: Optional[Literal["none", "in_progress", "ready"]] = "none"
+    author: Optional[Literal["ai", "ai_checked", "ai_edited", "human"]] = None
     collapsed: Optional[bool] = False
     color: Optional[str] = None
     border_color: Optional[str] = None
@@ -84,6 +119,10 @@ class BlockContent(BaseModel):
     tabs: Optional[Any] = None
     active_tab_id: Optional[str] = None
     request_document: Optional[RequestDocument] = None
+    attached_conspects: List[AttachedConspect] = Field(default_factory=list, max_length=20)
+    included_conspects: List[IncludedConspect] = Field(default_factory=list, max_length=20)
+    rejected_drafts: List[RejectedDraft] = Field(default_factory=list, max_length=100)
+    derivations: List[BlockDerivation] = Field(default_factory=list, max_length=1000)
     
     model_config = ConfigDict(extra="allow")
 
@@ -102,8 +141,10 @@ class NoteBlock(BlockContent):
 class NoteCreate(BaseModel):
     schema_version: Literal[1] = 1
     title: str
+    note_notice: str = Field(default='', max_length=5000)
     blocks: List[NoteBlock]
     stickers: List[NoteSticker] = Field(default_factory=list, max_length=1000)
+    dictionary: List[Word] = Field(default_factory=list, max_length=1000)
     is_pinned: bool = False
     is_example: bool = False
     category_id: Optional[int] = Field(default=None, gt=0)
@@ -122,8 +163,10 @@ class NoteUpdate(BaseModel):
     schema_version: Literal[1] = 1
     revision: int = Field(ge=1)
     title: Optional[str] = None
+    note_notice: Optional[str] = Field(default=None, max_length=5000)
     blocks: Optional[List[NoteBlock]] = None
     stickers: Optional[List[NoteSticker]] = Field(default=None, max_length=1000)
+    dictionary: Optional[List[Word]] = Field(default=None, max_length=1000)
     is_pinned: Optional[bool] = None
     is_example: Optional[bool] = None
     category_id: Optional[int] = Field(default=None, gt=0)
@@ -133,7 +176,7 @@ class NoteUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_explicit_nulls(self):
-        for field in ('title', 'blocks', 'stickers', 'is_pinned', 'is_example', 'status', 'sticker_color'):
+        for field in ('title', 'note_notice', 'blocks', 'stickers', 'dictionary', 'is_pinned', 'is_example', 'status', 'sticker_color'):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f'{field} cannot be null')
         return self
@@ -150,6 +193,7 @@ class RevisionRequest(BaseModel):
 
 class PublicNoteView(BaseModel):
     title: str
+    note_notice: str = ''
     schema_version: Literal[1] = 1
     content_json: List[Dict[str, Any]]
 
@@ -158,8 +202,10 @@ class NoteView(BaseModel):
     schema_version: Literal[1] = 1
     revision: int
     title: str
+    note_notice: str = ''
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)
+    dictionary: List[Word] = Field(default_factory=list)
     category_id: Optional[int]
     is_pinned: bool
     is_example: bool
@@ -194,14 +240,29 @@ class NoteVersionView(BaseModel):
     id: int
     note_id: int
     title: str
+    note_notice: str = ''
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)
+    dictionary: List[Word] = Field(default_factory=list)
     is_manual: bool
+    material_token: Optional[str] = None
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("created_at", check_fields=False)
+    def serialize_created_at(self, dt: Optional[datetime]) -> Optional[str]:
+        return _serialize_utc(dt)
+
+class NoteMaterialView(BaseModel):
+    id: int
+    title: str
+    material_token: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("created_at")
     def serialize_created_at(self, dt: Optional[datetime]) -> Optional[str]:
         return _serialize_utc(dt)
 

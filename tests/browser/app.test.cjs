@@ -42,6 +42,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
     try {
         browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
         const page = await browser.newPage();
+        await page.emulateTimezone('Asia/Qyzylorda');
         let testSavedNoteId;
         const reopenSavedNote = async () => {
             const id = await page.evaluate(() => localStorage.getItem('papanda_last_note_id')) || testSavedNoteId;
@@ -117,6 +118,183 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
         });
+        await t.test('note dictionary is shared and survives editing and reload', async () => {
+            assert.equal(await page.$$('.dialectics-block .btn-dict').then(items => items.length), 1);
+            assert.equal(await page.$$('.dialectics-block .dict-badge').then(items => items.length), 0);
+            await page.click('.dialectics-block .btn-dict');
+            assert.equal(await page.$eval('.dict-add', el => getComputedStyle(el).backgroundColor), 'rgb(234, 88, 12)');
+            await page.click('.dict-add');
+            await page.type('.dict-word', 'ЭКГ');
+            await page.type('.dict-definition', 'Электрокардиограмма');
+            await page.click('.dict-save');
+            assert.equal(await page.$eval('.dialectics-block .dict-badge', el => el.textContent), '1');
+            assert.match(await page.$eval('.dict-list', el => el.textContent), /Электрокардиограмма/);
+            await page.click('.dict-done');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$eval('.dialectics-block .dict-badge', el => el.textContent), '1');
+            await page.click('.dialectics-block .btn-dict');
+            assert.match(await page.$eval('.dict-list', el => el.textContent), /Электрокардиограмма/);
+            await page.click('.dict-edit');
+            await page.$eval('.dict-definition', el => { el.value = 'Запись электрической активности сердца'; });
+            await page.click('.dict-save');
+            assert.match(await page.$eval('.dict-list', el => el.textContent), /Запись электрической активности сердца/);
+            await page.click('.dict-done');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            await page.click('.dialectics-block .btn-dict');
+            assert.match(await page.$eval('.dict-list', el => el.textContent), /Запись электрической активности сердца/);
+            await page.click('.dict-done');
+        });
+        await t.test('materials panel attaches, previews and removes other AI notes', async () => {
+            const filePath = path.join(backend.directory, 'other-ai.txt');
+            await fs.writeFile(filePath, 'Внешний конспект по ЭКГ', 'utf8');
+            await page.click('#btn-note-materials');
+            assert.match(await page.$eval('#note-materials-panel', el => el.textContent), /Конспекты других ИИ/);
+            assert(await page.$eval('#note-materials-panel', el => {
+                const rect = el.getBoundingClientRect();
+                return rect.left >= 0 && rect.right <= innerWidth;
+            }));
+            await (await page.$('#note-materials-panel input[type=file]')).uploadFile(filePath);
+            await page.waitForSelector('.materials-card');
+            assert.match(await page.$eval('.materials-name', el => el.textContent), /other-ai\.txt/);
+            await page.click('.materials-preview summary');
+            assert.match(await page.$eval('.materials-preview pre', el => el.textContent), /Внешний конспект по ЭКГ/);
+            await page.screenshot({path: path.join(root, '.cache/materials-panel.png')});
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            await page.click('#btn-note-materials');
+            assert.match(await page.$eval('.materials-name', el => el.textContent), /other-ai\.txt/);
+            await page.click('.materials-remove');
+            await page.waitForFunction(() => !document.querySelector('.materials-card'));
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            await page.click('#btn-note-materials');
+            assert.equal(await page.$$('.materials-card').then(items => items.length), 0);
+            await page.click('#btn-note-materials');
+        });
+        await t.test('block check reports an AI failure instead of a made-up review', async () => {
+            await page.click('.dialectics-block .btn-ai-check');
+            await page.waitForFunction(() => document.querySelector('#ai-check-response-area')?.textContent.includes('Не удалось проверить блок'));
+            assert.doesNotMatch(await page.$eval('#ai-check-response-area', el => el.textContent), /Диалектический анализ блока|Структура соответствует/);
+            await page.click('.ai-check-modal .btn-close-modal');
+        });
+        await t.test('block authorship labels can be chosen and survive saving', async () => {
+            const select = '.dialectics-block .block-author-select';
+            for (const value of ['ai', 'ai_checked', 'ai_edited', 'human']) {
+                await page.select(select, value);
+                assert.equal(await page.$eval('.block-author-control', el => el.dataset.author), value);
+            }
+            assert(await page.$eval('.block-author-control', el => {
+                const badge = el.getBoundingClientRect();
+                const block = el.closest('.dialectics-block').getBoundingClientRect();
+                return badge.left >= block.left && badge.right <= block.right;
+            }), 'The authorship label must remain inside a narrow block');
+            await page.click('.block-author-help-button');
+            assert.match(await page.$eval('.block-author-explainer', el => el.textContent), /ИИ.*проверено.*исправлено.*Мой текст/s);
+            assert.equal(await page.$eval('.block-author-help-button', el => el.getAttribute('aria-expanded')), 'true');
+            assert(await page.$eval('.block-author-explainer', el => {
+                const rect = el.getBoundingClientRect();
+                return rect.top >= 8 && rect.bottom <= innerHeight - 8 && rect.left >= 8 && rect.right <= innerWidth - 8;
+            }), 'The label explanation must fit inside the viewport');
+            await page.screenshot({path: path.join(root, '.cache/block-author-help.png')});
+            await page.click('.block-author-help-close');
+            assert(await page.$eval('.block-author-explainer', el => el.hidden));
+            await page.click('.block-author-help-button');
+            await page.keyboard.press('Escape');
+            assert(await page.$eval('.block-author-explainer', el => el.hidden));
+            await (await page.$('.dialectics-block')).screenshot({path: path.join(root, '.cache/block-author-label.png')});
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$eval(select, el => el.value), 'human');
+            await page.select(select, '');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$eval(select, el => el.value), '');
+        });
+        await t.test('text size persists in note and editor, and clear removes it from the entire block', async () => {
+            await page.click('.dialectics-block .btn-edit');
+            await page.waitForSelector('#btn-editor-text-size');
+            assert.equal(await page.$$('.editor-text-options').then(els => els.length), 0);
+            await page.click('#btn-editor-text-size');
+            await page.waitForSelector('.editor-size-popover:not([hidden])');
+            await page.screenshot({path: path.join(root, '.cache/editor-text-size-menu.png')});
+            await page.click('.editor-size-option[data-size="24"]');
+            assert.equal(await page.$eval('#btn-editor-text-size', el => el.dataset.currentSize), '24');
+            assert.equal(await page.$eval('.tiptap .text-size-24', el => getComputedStyle(el).fontSize), '24px');
+            await page.screenshot({path: path.join(root, '.cache/editor-text-size.png')});
+            await page.click('#btn-modal-ok');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$eval('.block-content .text-size-24', el => getComputedStyle(el).fontSize), '24px');
+            await page.click('.dialectics-block .btn-edit');
+            await page.waitForSelector('.tiptap .text-size-24');
+            await page.click('.format-btn-clear');
+            assert.equal(await page.$$('.tiptap [data-text-size]').then(els => els.length), 0);
+            await page.click('#btn-modal-ok');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$$('.block-content [data-text-size]').then(els => els.length), 0);
+            await page.click('.dialectics-block .btn-edit');
+            await page.click('#btn-editor-text-size');
+            await page.click('.editor-size-option[data-size="24"]');
+            await page.click('#btn-modal-ok');
+            assert(await page.$('.block-content [data-text-size="24"]'));
+            await page.click('.dialectics-block .btn-clear-format');
+            await page.waitForFunction(() => !document.querySelector('.block-content [data-text-size]'));
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$$('.block-content [data-text-size]').then(els => els.length), 0);
+        });
+        await t.test('rewrite archives rich text, supports undo and cancel, and persists reasons', async () => {
+            await page.setViewport({width: 1440, height: 1000});
+            await page.click('.dialectics-block .btn-edit');
+            await page.waitForSelector('.tiptap');
+            const original = await page.$eval('.tiptap', el => el.innerText);
+            await page.click('#btn-editor-rewrite');
+            assert.equal(await page.$eval('.tiptap', el => el.innerText.trim()), '');
+            assert(await page.$eval('#btn-editor-rewrite', el => el.disabled));
+            assert.equal(await page.$$('.draft-archive-item').then(items => items.length), 1);
+            await page.click('#btn-editor-rewrite-undo');
+            assert.equal(await page.$eval('.tiptap', el => el.innerText), original);
+            assert.equal(await page.$$('.draft-archive-item').then(items => items.length), 0);
+            await page.click('#btn-editor-rewrite');
+            await page.click('.draft-archive-item summary');
+            await page.type('.draft-archive-reason textarea', 'Описан результат, а нужен процесс. <img src=x onerror=alert(1)>');
+            await page.type('.tiptap', original);
+            await page.click('#btn-modal-ok');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            await page.click('.dialectics-block .btn-edit');
+            await page.waitForSelector('.draft-archive-item');
+            await page.click('.draft-archive-item summary');
+            assert.equal(await page.$eval('.draft-archive-content', el => el.innerText.trim()), original.trim());
+            assert.match(await page.$eval('.draft-archive-reason textarea', el => el.value), /Описан результат/);
+            assert.equal(await page.$$('.editor-draft-archive img').then(items => items.length), 0);
+            await page.screenshot({path: path.join(root, '.cache/rejected-drafts-desktop.png')});
+            await page.setViewport({width: 390, height: 844});
+            assert(await page.$eval('.modal-editor-floating', el => el.getBoundingClientRect().right <= innerWidth));
+            assert(await page.$eval('.editor-draft-archive', el => el.scrollWidth <= el.clientWidth));
+            await page.screenshot({path: path.join(root, '.cache/rejected-drafts-mobile.png')});
+            await page.click('#btn-editor-rewrite');
+            await page.keyboard.press('Escape');
+            await page.setViewport({width: 1280, height: 900});
+            await page.click('.dialectics-block .btn-edit');
+            await page.waitForSelector('.tiptap');
+            assert.equal(await page.$$('.draft-archive-item').then(items => items.length), 1, 'Cancel must discard the uncommitted archive entry');
+            assert.equal(await page.$eval('.tiptap', el => el.innerText), original);
+            await page.keyboard.press('Escape');
+        });
         await t.test('attached material renders as text and survives save and reload', async () => {
             assert(await page.$('.dialectics-block > .request-documents'));
             assert.equal(await page.$('#canvas-area > .request-documents'), null);
@@ -161,6 +339,20 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await reopenSavedNote();
             await page.click('#btn-note-stickers');
             assert.match(await page.$eval('#note-stickers-dropdown-menu', el => el.textContent), /R6 private sticker/);
+            const stickerId = await page.$eval('#note-stickers-dropdown-menu .sticker-edit-btn', el => el.dataset.id);
+            await page.click('#note-stickers-dropdown-menu .sticker-edit-btn');
+            assert.equal(await page.$eval('#note-stickers-dropdown-menu .sticker-panel-text-input', el => el.value), 'R6 private sticker');
+            await page.$eval('#note-stickers-dropdown-menu .sticker-panel-text-input', el => {el.value = 'R6 private sticker edited';});
+            await page.click('#note-stickers-dropdown-menu .sticker-color-btn[data-color="#dbeafe"]');
+            await page.click('#note-stickers-dropdown-menu .sticker-add-btn');
+            assert.equal(await page.$eval('#note-stickers-dropdown-menu .sticker-edit-btn', el => el.dataset.id), stickerId);
+            assert.match(await page.$eval('#note-stickers-dropdown-menu .sticker-card', el => el.textContent), /R6 private sticker edited/);
+            await page.click('#btn-note-stickers');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            await page.click('#btn-note-stickers');
+            assert.match(await page.$eval('#note-stickers-dropdown-menu .sticker-card', el => el.textContent), /R6 private sticker edited/);
             await page.click('#btn-note-stickers');
         });
         await t.test('local formula, graph and drawing widgets work under CSP', async () => {
@@ -282,10 +474,25 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.waitForFunction(() => document.querySelector('#blocks-container')?.textContent.includes('Mock generated step'));
             assert.equal(generated, 1);
             assert.equal(generatedReference, documentText);
+            assert.equal(await page.$eval('.dialectics-block .block-author-select', el => el.value), 'ai');
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await reopenSavedNote();
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
+            await page.click('#btn-note-materials');
+            assert.equal(await page.$$('.materials-app-card').then(items => items.length), 0,
+                'Generated blocks must not be included automatically');
+            await page.click('.materials-add-app');
+            await page.waitForSelector('.materials-picker-choice');
+            await page.evaluate(() => [...document.querySelectorAll('.materials-picker-choice')]
+                .find(button => button.textContent.includes('R5 browser control')).click());
+            assert.match(await page.$eval('.materials-open-app', el => el.textContent), /R5 browser control/);
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            await page.click('#btn-note-materials');
+            assert.match(await page.$eval('.materials-open-app', el => el.textContent), /R5 browser control/);
+            await page.click('#btn-note-materials');
             const savedId = await page.evaluate(() => localStorage.getItem('papanda_last_note_id'));
             await page.reload({waitUntil:'networkidle0'});
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Mock generated step/);
@@ -306,18 +513,49 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         });
         await t.test('diary keeps requests and answers without learning modes', async () => {
             assert.equal(await page.$('#btn-learning-variants, #btn-learning-ask, #menu-item-learning-demo, #user-role-selector, .btn-fork-step'), null);
+            assert(await page.$('.note-header-bar #btn-ai-diary'));
+            await page.evaluate(async () => {
+                const post = (url, data) => fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}).then(r => r.json());
+                const id = localStorage.getItem('papanda_last_note_id');
+                await post(`/api/dialectics/${id}/activity`, {kind:'ai_request', step:2, status:'partial',
+                    request:'Проверка измерения ЭКГ', text:'step2.1: Уточнить измерительный процесс',
+                    started_at:'2026-10-09T03:51:26Z', duration_ms:12500});
+                const other = await post('/api/dialectics/save', {title:'Other diary note', blocks:[]});
+                await post(`/api/dialectics/${other.id}/activity`, {kind:'ai_request', status:'completed',
+                    request:'OTHER NOTE SECRET', text:'Must not appear'});
+            });
             await page.click('#btn-ai-diary');
             await page.waitForSelector('.ai-diary-entries article');
             const history = await page.$eval('.ai-diary-entries', el => el.textContent);
             assert.match(history, /A controlled test topic/);
             assert.match(history, /Mock generated step/);
+            assert(!history.includes('OTHER NOTE SECRET'));
+            assert.match(history, /08:51/);
+            assert.match(history, /12,5 с/);
+            assert.match(await page.$eval('.ai-diary-zone', el => el.textContent), /\+5/);
+            await page.select('.ai-diary-filter', 'issues');
+            assert.equal(await page.$$('.ai-diary-entry').then(entries => entries.length), 1);
+            await page.type('.ai-diary-search input', 'ничего не найдено');
+            assert.equal(await page.$$('.ai-diary-entry').then(entries => entries.length), 0);
+            await page.$eval('.ai-diary-search input', el => {el.value=''; el.dispatchEvent(new Event('input', {bubbles:true}));});
+            await page.select('.ai-diary-filter', 'all');
+            await page.screenshot({path:path.join(root, '.cache/ai-diary-desktop.png')});
+            await page.setViewport({width:390, height:844});
+            assert(await page.$eval('.ai-diary-dialog', el => el.getBoundingClientRect().right <= innerWidth));
+            await page.screenshot({path:path.join(root, '.cache/ai-diary-mobile.png')});
+            await page.focus('.ai-diary-close');
+            await page.keyboard.press('Tab');
+            assert.equal(await page.$eval('.ai-diary-search input', el => document.activeElement === el), true);
             await page.keyboard.press('Escape');
             assert.equal(await page.$('.ai-diary-overlay'), null);
+            await page.setViewport({width:1280, height:900});
             await page.click('#btn-new-conspect');
             await page.click('#btn-ai-diary');
-            await page.waitForSelector('.ai-diary-entries article');
-            assert.match(await page.$eval('.ai-diary-entries', el => el.textContent), /Mock generated step/);
+            await page.waitForSelector('.ai-diary-message:not([hidden])');
+            assert.equal(await page.$$('.ai-diary-entry').then(entries => entries.length), 0);
+            assert.match(await page.$eval('.ai-diary-message', el => el.textContent), /Запросов к ИИ пока нет/);
             await page.click('.ai-diary-close');
+            await reopenSavedNote();
         });
         await t.test('diary follows the language switch', async () => {
             const translations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
@@ -325,7 +563,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 const words = translations[locale];
                 await page.click('#btn-lang-menu');
                 await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}), page.click(`[data-lang="${locale}"]`)]);
-                assert((await page.$eval('#btn-ai-diary', el => el.textContent)).includes(words.ai_diary_title));
+                assert((await page.$eval('#btn-ai-diary', el => el.textContent)).includes(words.ai_diary_button));
                 assert.equal(await page.$eval('html', el => el.lang), locale);
                 assert.equal(await page.$eval('[data-mode="manual"]', el => el.getAttribute('aria-label')), words.mode_manual);
                 assert.equal(await page.$eval('[data-mode="ai"]', el => el.getAttribute('aria-label')), words.mode_ai);
@@ -339,12 +577,22 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 }
                 await page.click('#btn-ai-diary');
                 await page.waitForSelector('#ai-diary-title');
+                await page.waitForSelector('.ai-diary-entry');
                 assert.equal(await page.$eval('#ai-diary-title', el => el.textContent), words.ai_diary_title);
                 assert.match(await page.$eval('.ai-diary-entries', el => el.textContent), /Mock generated step/);
                 await page.click('.ai-diary-close');
             }
         });
         await t.test('library publication, independent copy and withdrawal', async () => {
+            await reopenSavedNote();
+            await page.click('#btn-note-stickers');
+            await page.waitForSelector('#note-stickers-dropdown-menu:not(.hidden)');
+            await page.type('#note-stickers-dropdown-menu .sticker-panel-title-input', '<img src=x onerror=alert(1)>');
+            await page.type('#note-stickers-dropdown-menu .sticker-panel-text-input', 'Public reader sticker');
+            await page.click('#note-stickers-dropdown-menu .sticker-add-btn');
+            await page.click('#btn-note-stickers');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await reopenSavedNote();
             await page.click('#btn-library-publish');
             await page.waitForSelector('.library-publisher[open]');
@@ -353,7 +601,8 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             const previewPage = await browser.newPage();
             await previewPage.goto(previewUrl, {waitUntil: 'networkidle0'});
             assert((await previewPage.content()).includes('Public browser example'));
-            assert(!(await previewPage.content()).includes('R6 private sticker'));
+            assert((await previewPage.content()).includes('Public reader sticker'));
+            assert.equal(await previewPage.$$eval('.public-sticker img', els => els.length), 0);
             await previewPage.close();
             await page.click('#library-publish');
             await page.waitForSelector('#library-public-link:not([hidden])');
@@ -524,6 +773,82 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                     isolatedBackend.child.kill(); await exited;
                 }
             }
+        });
+        await t.test('archiving the simplest process keeps the next hint after save and reload', async () => {
+            await page.click('#btn-new-conspect');
+            await page.waitForSelector('.dialectics-hint-block[data-role="anchor"]');
+            await page.click('.dialectics-hint-block[data-role="anchor"]');
+            await page.waitForSelector('.tiptap');
+            await page.type('.tiptap', 'Understand a simple process');
+            await page.click('#btn-modal-ok');
+            await page.waitForSelector('.dialectics-hint-block[data-role="step1"]');
+            await page.click('.dialectics-hint-block[data-role="step1"]');
+            await page.waitForSelector('.tiptap');
+            await page.type('.tiptap', 'An initial simplest process');
+            await page.click('#btn-modal-ok');
+            await page.waitForSelector('.dialectics-hint-block[data-role="step2"]');
+            await page.click('.dialectics-block .btn-edit');
+            await page.click('#btn-editor-rewrite');
+            await page.click('#btn-modal-ok');
+            assert(await page.$('.dialectics-hint-block[data-role="step2"]'));
+            assert.equal(await page.$('.dialectics-hint-block[data-role="step1"]'), null);
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert(await page.$('.dialectics-hint-block[data-role="step2"]'));
+            assert.equal(await page.$('.dialectics-hint-block[data-role="step1"]'), null);
+        });
+        await t.test('a section appears after submission and the contents distinguish both sides', async () => {
+            await page.hover('.block-divider[data-index="2"]');
+            await page.click('.block-divider[data-index="2"] .section-add-btn');
+            await page.waitForSelector('#section-title-input');
+            await page.type('#section-title-input', 'Раздел проверки');
+            await page.click('.modal-dialog .btn-ok-modal');
+            assert.match(await page.$eval('.dialectics-block.block-section .block-title', el => el.textContent), /Раздел проверки/);
+            assert(await page.$eval('.dialectics-block.block-section', el => {
+                const section = el.getBoundingClientRect();
+                const canvas = document.querySelector('#blocks-container').getBoundingClientRect();
+                return Math.abs((section.left + section.right) / 2 - (canvas.left + canvas.right) / 2) < 3
+                    && section.width > canvas.width * .55;
+            }), 'The section title must span and center on the canvas');
+            await page.screenshot({path: path.join(root, '.cache/centered-section.png')});
+            await page.click('.dialectics-hint-block[data-role="step2"]');
+            await page.waitForSelector('.tiptap');
+            await page.type('.tiptap', 'Развитие процесса');
+            await page.click('#btn-modal-ok');
+            await page.hover('.block-divider[data-index="4"]');
+            await page.click('.block-divider[data-index="4"] .section-add-btn');
+            await page.waitForSelector('#section-title-input');
+            await page.type('#section-title-input', 'Следующий раздел');
+            await page.click('.modal-dialog .btn-ok-modal');
+            assert.deepEqual(await page.$$eval('.block-section .section-label', elements => elements.map(el => el.textContent.trim())),
+                ['Раздел 1', 'Раздел 2']);
+            const counterStyles = () => page.$$eval('#blocks-container > .dialectics-block', elements =>
+                elements.map(el => ({section: el.classList.contains('block-section'), increment: getComputedStyle(el).counterIncrement})));
+            const styles = await counterStyles();
+            const sectionIndex = styles.findIndex(item => item.section);
+            assert(sectionIndex > 0 && sectionIndex < styles.length - 1, 'Section must sit between numbered blocks');
+            assert(styles.filter(item => item.section).every(item => item.increment === 'none'), 'Section headings must not consume block numbers');
+            assert(styles.filter(item => !item.section).every(item => item.increment.startsWith('block-number')));
+            await page.screenshot({path: path.join(root, '.cache/section-numbering.png')});
+            await page.click('#btn-toc');
+            await page.waitForSelector('#toc-dropdown-menu:not(.hidden)');
+            assert(await page.$('#toc-dropdown-menu .toc-side-legend'));
+            assert(await page.$('#toc-dropdown-menu .toc-side-left'));
+            assert(await page.$('#toc-dropdown-menu .toc-side-right'));
+            assert.match(await page.$eval('#toc-dropdown-menu .toc-section-item .toc-title', el => el.textContent), /Раздел проверки/);
+            assert.deepEqual(await page.$$eval('#toc-dropdown-menu .toc-section-item .toc-title', elements => elements.map(el => el.textContent)),
+                ['Раздел 1 · Раздел проверки', 'Раздел 2 · Следующий раздел']);
+            await page.screenshot({path: path.join(root, '.cache/toc-sides-and-section.png')});
+            await page.click('.btn-close-toc');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.match(await page.$eval('.dialectics-block.block-section .block-title', el => el.textContent), /Раздел проверки/);
+            assert.deepEqual(await page.$$eval('.block-section .section-label', elements => elements.map(el => el.textContent.trim())),
+                ['Раздел 1', 'Раздел 2']);
+            const reloadedStyles = await counterStyles();
+            assert(reloadedStyles.filter(item => item.section).every(item => item.increment === 'none'));
         });
         assert.deepEqual(external, [], 'Editor tried to load remote assets');
         assert.deepEqual(violations, [], 'CSP violations');

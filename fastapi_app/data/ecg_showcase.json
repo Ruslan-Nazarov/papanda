@@ -1,0 +1,86 @@
+{
+  "languages": {
+    "ru": {
+      "publications": {
+        "initial": "64b88de2-5d7b-4f3c-b2cd-2bb414e7eaac",
+        "final": "fb00b28c-422b-431f-b00d-656aabf57751"
+      },
+      "title": "От ответа ИИ к разобранному конспекту",
+      "eyebrow": "papanda · пример учебного разбора",
+      "intro": "На примере одноканального ЭКГ можно проследить весь путь: исходное задание и ответ ИИ, авторские замечания рядом с текстом и окончательное объяснение после разбора.",
+      "route_title": "Как смотреть этот пример",
+      "source_title": "Посмотрите исходные материалы",
+      "source_text": "PDF фиксирует первоначальный ответ ИИ. Техническое задание позволяет сопоставить ответ с поставленной задачей.",
+      "source_pdf": "Ответ ИИ · PDF на русском",
+      "source_pdf_url": "/static/showcase/ecg/original-ai-ru.pdf",
+      "requirements": "Техническое задание · DOCX",
+      "requirements_url": "/static/showcase/ecg/technical-requirements-ru.docx",
+      "initial_title": "Откройте первоначальный конспект «ЭКГ»",
+      "initial_text": "Стикеры, вопросы и отклонённые варианты показывают, что автор уточнял и почему менял формулировки. Текст этого конспекта уже содержит правки; неизменённая отправная точка находится в PDF.",
+      "initial_link": "Смотреть конспект с замечаниями",
+      "final_title": "Сравните с «Как собрать одноканальный ЭКГ?»",
+      "final_text": "Окончательный вариант показывает результат разбора: последовательность объяснения, определения, источники и сохранившиеся комментарии к материалу.",
+      "final_link": "Смотреть окончательный конспект",
+      "pending": "Публикация подготавливается.",
+      "features_title": "Что здесь можно увидеть",
+      "features": [
+        {
+          "title": "Происхождение текста",
+          "text": "Метки блока показывают вклад ИИ и автора, а также авторскую отметку о проверке. Точка готовности показывает состояние работы над блоком."
+        },
+        {
+          "title": "Причины изменений",
+          "text": "Стикеры и отклонённые варианты сохраняют замечание рядом с формулировкой. Читатель может проследить, из какой проблемы возникло исправление."
+        },
+        {
+          "title": "Связь шагов объяснения",
+          "text": "Вопросы, пояснения, словарь и источники помогают разобрать предпосылки и понять, почему становится необходим следующий шаг."
+        }
+      ],
+      "legend": "«ИИ · проверено» означает авторскую проверку текста. «Готово» — состояние учебного блока. Эти отметки описывают работу над конспектом; пример не является отчётом об испытаниях изготовленного медицинского изделия.",
+      "library": "Все публикации",
+      "editor": "Открыть приложение"
+    },
+    "en": {
+      "publications": {
+        "initial": "ccacd1b0-b326-40df-ab16-4134eb4a9643",
+        "final": "f4af0b0b-8834-4a8c-846e-72dac4d8e3f3"
+      },
+      "title": "From an AI answer to a reviewed learning guide",
+      "eyebrow": "papanda · a worked learning example",
+      "intro": "This single-channel ECG example follows the whole process: the original task and AI answer, the author's comments alongside the text, and the final explanation after review.",
+      "route_title": "How to explore this example",
+      "source_title": "Start with the source materials",
+      "source_text": "The PDF is an English translation of the initial AI answer. The translated task brief provides the criteria for comparing the answer with the original task.",
+      "source_pdf": "Initial AI answer · English PDF translation",
+      "source_pdf_url": "/static/showcase/ecg/original-ai-en.pdf",
+      "requirements": "Technical requirements · English PDF translation",
+      "requirements_url": "/static/showcase/ecg/technical-requirements-en.pdf",
+      "initial_title": "Explore the initial annotated ECG notes",
+      "initial_text": "Stickers, questions and rejected drafts show what the author clarified and why the wording changed. These notes already contain edits; the original starting point is preserved in the PDF.",
+      "initial_link": "Read the notes with annotations",
+      "final_title": "Compare with How to Build a Single-Channel ECG Device",
+      "final_text": "The final version presents the result of the review: a sequence of explanations, definitions, references and the comments that remain attached to the material.",
+      "final_link": "Read the final notes",
+      "pending": "The publication is being prepared.",
+      "features_title": "What this example makes visible",
+      "features": [
+        {
+          "title": "Where the text came from",
+          "text": "Block labels distinguish contributions from AI and the author, including the author's review mark. The readiness dot shows the state of work on a block."
+        },
+        {
+          "title": "Why the text changed",
+          "text": "Stickers and rejected drafts keep a comment beside the wording it addresses. Readers can trace the problem that led to a correction."
+        },
+        {
+          "title": "How explanation steps connect",
+          "text": "Questions, explanations, the glossary and references help readers examine the premises and understand why the next step becomes necessary."
+        }
+      ],
+      "legend": "AI · reviewed denotes the author's review of the Russian source. Ready is the state of a learning block. These labels describe work on the notes; this example is not a test report for a manufactured medical device. The English notes preserve the Russian example and its annotations in translation.",
+      "library": "All publications",
+      "editor": "Open the app"
+    }
+  }
+}

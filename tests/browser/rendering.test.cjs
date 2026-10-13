@@ -16,13 +16,60 @@ test('isolated renderer security regressions', async t => {
         await page.addScriptTag({content: source('HtmlSafety')});
         await page.evaluate(() => {
             window.t = key => key;
-            window.ALGORITHM_STEPS = [];
+            window.ALGORITHM_STEPS = [{role: 'step1', title: 'Простейший процесс'}];
+            window.ALGORITHM_TEXTS = {step1: '<p>Пояснение первого этапа.</p>'};
             window.BlockMathRenderer = {renderMath() {}};
             window.AppState = {currentNote: {blocks: []}, updateBlock() {}};
+            window.showToast = message => {window.lastToast = message;};
         });
-        await page.addScriptTag({content: source('BlockStickersManager')});
+        await page.addScriptTag({content: source('BlockCodeRenderer')});
         await page.addScriptTag({content: source('BlockStickersManager')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
+        await t.test('sticker editing keeps its identity and can be cancelled', async () => {
+            const result = await page.evaluate(() => {
+                const original = {id: 'st-one', title: 'Old', text: 'Original text',
+                    color: '#fef9c3', created_at: '2026-10-01T00:00:00Z'};
+                let updated;
+                const panel = BlockStickersManager._buildPanel('Notes', [original], () => {}, () => {},
+                    () => {}, sticker => {updated = sticker;});
+                document.body.appendChild(panel);
+                panel.querySelector('.sticker-edit-btn').click();
+                const filled = panel.querySelector('.sticker-panel-title-input').value === 'Old'
+                    && panel.querySelector('.sticker-panel-text-input').value === 'Original text';
+                panel.querySelector('.sticker-cancel-btn').click();
+                const cancelled = panel.querySelector('.sticker-panel-text-input').value === ''
+                    && panel.querySelector('.sticker-cancel-btn').hidden;
+                panel.querySelector('.sticker-edit-btn').click();
+                panel.querySelector('.sticker-panel-title-input').value = 'Revised';
+                panel.querySelector('.sticker-panel-text-input').value = 'Updated text';
+                panel.querySelector('.sticker-color-btn[data-color="#dbeafe"]').click();
+                panel.querySelector('.sticker-add-btn').click();
+                panel.remove();
+                return {filled, cancelled, updated};
+            });
+            assert.equal(result.filled, true);
+            assert.equal(result.cancelled, true);
+            assert.deepEqual(result.updated, {id: 'st-one', title: 'Revised', text: 'Updated text',
+                color: '#dbeafe', created_at: '2026-10-01T00:00:00Z'});
+        });
+        await t.test('sticker copy includes its title and text without changing it', async () => {
+            const result = await page.evaluate(async () => {
+                const sticker = {id: 'st-copy', title: 'Comment', text: 'First line\nSecond line',
+                    color: '#fef9c3', created_at: '2026-10-01T00:00:00Z'};
+                let copied = '';
+                Object.defineProperty(navigator, 'clipboard', {configurable: true,
+                    value: {writeText: async text => {copied = text;}}});
+                const panel = BlockStickersManager._buildPanel('Notes', [sticker], () => {}, () => {},
+                    () => {}, () => {});
+                document.body.appendChild(panel);
+                panel.querySelector('.sticker-copy-btn').click();
+                await new Promise(resolve => setTimeout(resolve, 0));
+                panel.remove();
+                return {copied, toast: window.lastToast, original: sticker.text};
+            });
+            assert.deepEqual(result, {copied: 'Comment\n\nFirst line\nSecond line',
+                toast: 'stk_copied', original: 'First line\nSecond line'});
+        });
         await t.test('section title must remain text', async () => {
             const count = await page.evaluate(() => {
                 const el = BlockNormalBuilder.build({
@@ -31,6 +78,39 @@ test('isolated renderer security regressions', async t => {
                 return el.querySelectorAll('h2 img').length;
             });
             assert.equal(count, 0);
+        });
+        await t.test('AI icon is available on an ordinary block and fills that block', async () => {
+            const result = await page.evaluate(async () => {
+                let filledId = null;
+                window.AIController = {generateBlock: async id => {
+                    filledId = id;
+                    return {content: 'Generated'};
+                }};
+                const block = BlockNormalBuilder.build({id: 'ordinary', title: 'Signal', html: '<p>Text</p>'}, () => {});
+                const section = BlockNormalBuilder.build({id: 'divider', role: 'section', title: 'Part'}, () => {});
+                const icon = block.querySelector('.btn-autofill-ai');
+                icon.click();
+                await new Promise(resolve => setTimeout(resolve, 0));
+                return {icon: icon.textContent.trim(), filledId,
+                    sectionHasIcon: !!section.querySelector('.btn-autofill-ai')};
+            });
+            assert.deepEqual(result, {icon: '✦', filledId: 'ordinary', sectionHasIcon: false});
+        });
+        await t.test('step label help opens and closes by keyboard', async () => {
+            const result = await page.evaluate(() => {
+                const el = BlockNormalBuilder.build({id: 'help-test', role: 'step1', title: 'Тема'}, () => {});
+                document.body.appendChild(el);
+                const button = el.querySelector('.block-role-help-button');
+                const help = el.querySelector('.block-role-explainer');
+                button.click();
+                const opened = !help.hidden && button.getAttribute('aria-expanded') === 'true'
+                    && help.textContent.includes('Пояснение первого этапа.');
+                document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+                const closed = help.hidden && button.getAttribute('aria-expanded') === 'false';
+                el.remove();
+                return {opened, closed};
+            });
+            assert.deepEqual(result, {opened: true, closed: true});
         });
         await t.test('hint attribute must not become active HTML', async () => {
             const count = await page.evaluate(() => {
@@ -52,7 +132,7 @@ test('isolated renderer security regressions', async t => {
                     html: '<p><strong>Keep me</strong><img src=x onerror="window.untrusted=1"></p>'}, () => {});
                 return {inHeader: el.querySelectorAll('.block-title img, .block-tags img').length,
                     handlers: el.querySelectorAll('[onerror]').length,
-                    strong: el.querySelector('strong')?.textContent};
+                    strong: el.querySelector('.block-content strong')?.textContent};
             });
             assert.deepEqual(result, {inHeader: 0, handlers: 0, strong: 'Keep me'});
         });

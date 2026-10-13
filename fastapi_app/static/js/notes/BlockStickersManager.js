@@ -1,5 +1,6 @@
 import AppState from './AppState.js';
 import HtmlSafety from './HtmlSafety.js';
+import { showToast } from './ToastService.js';
 
 import { t } from '../i18n.js';
 // Sticker color palette
@@ -103,7 +104,11 @@ class BlockStickersManager {
                 this.openBlockStickersPanel(block, anchorEl);
                 this._updateBadge(anchorEl, block.stickers.length);
             },
-            () => this._closeBlockPanel(panel)
+            () => this._closeBlockPanel(panel),
+            (sticker) => {
+                AppState.updateBlock(block.id, {stickers: (block.stickers || []).map(s => s.id === sticker.id ? sticker : s)});
+                this.openBlockStickersPanel(block, anchorEl);
+            }
         );
 
         // Position below anchor element
@@ -137,7 +142,11 @@ class BlockStickersManager {
                 const blockEl = document.querySelector(`.dialectics-block[data-id="${block.id}"]`);
                 if (blockEl) this._updateBadge(blockEl, block.stickers.length);
             },
-            () => {}
+            () => {},
+            (sticker) => {
+                AppState.updateBlock(block.id, {stickers: (block.stickers || []).map(s => s.id === sticker.id ? sticker : s)});
+                this.renderBlockStickersInContainer(block, containerEl);
+            }
         );
         
         // Remove close button as it is in a tab
@@ -196,6 +205,10 @@ class BlockStickersManager {
             },
             () => {
                 menu.classList.add('hidden');
+            },
+            (sticker) => {
+                AppState.updateNote({stickers: (AppState.currentNote.stickers || []).map(s => s.id === sticker.id ? sticker : s)});
+                this.renderNoteStickersInDropdown();
             }
         );
 
@@ -239,8 +252,9 @@ class BlockStickersManager {
 
     // ── Shared panel builder ───────────────────────────────────────────────────
 
-    static _buildPanel(title, stickers, onAdd, onDelete, onClose) {
+    static _buildPanel(title, stickers, onAdd, onDelete, onClose, onUpdate) {
         let selectedColor = STICKER_COLORS[0].color;
+        let editingId = null;
 
         const panel = document.createElement('div');
         panel.className = 'sticker-panel';
@@ -261,7 +275,8 @@ class BlockStickersManager {
                             data-color="${c.color}"
                             title="${c.label}"></button>
                     `).join('')}
-                    <button class="sticker-add-btn">OK</button>
+                    <button class="sticker-cancel-btn" type="button" hidden>${t('cancel')}</button>
+                    <button class="sticker-add-btn" type="button">OK</button>
                 </div>
             </div>
             <div class="sticker-panel-list">
@@ -269,24 +284,93 @@ class BlockStickersManager {
             </div>
         `;
 
+        const form = panel.querySelector('.sticker-panel-form');
+        const titleInput = panel.querySelector('.sticker-panel-title-input');
+        const textInput = panel.querySelector('.sticker-panel-text-input');
+        const saveButton = panel.querySelector('.sticker-add-btn');
+        const cancelButton = panel.querySelector('.sticker-cancel-btn');
+        const selectColor = color => {
+            selectedColor = color;
+            panel.querySelectorAll('.sticker-color-btn').forEach(btn =>
+                btn.classList.toggle('selected', btn.dataset.color === color));
+            form.style.background = color;
+        };
+        const resetForm = () => {
+            editingId = null;
+            titleInput.value = '';
+            textInput.value = '';
+            selectColor(STICKER_COLORS[0].color);
+            form.style.removeProperty('background');
+            saveButton.textContent = 'OK';
+            cancelButton.hidden = true;
+            panel.querySelectorAll('.sticker-card').forEach(card => card.classList.remove('is-editing'));
+        };
+
         // Color picker
         panel.querySelectorAll('.sticker-color-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                panel.querySelectorAll('.sticker-color-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedColor = btn.dataset.color;
-                // Preview color on form
-                panel.querySelector('.sticker-panel-form').style.background = selectedColor;
+                selectColor(btn.dataset.color);
             });
         });
 
-        // Add sticker
-        panel.querySelector('.sticker-add-btn').addEventListener('click', () => {
-            const text = panel.querySelector('.sticker-panel-text-input').value.trim();
+        panel.querySelectorAll('.sticker-edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sticker = stickers.find(s => s.id === btn.dataset.id);
+                if (!sticker) return;
+                editingId = sticker.id;
+                titleInput.value = sticker.title || '';
+                textInput.value = sticker.text || '';
+                selectColor(sticker.color || STICKER_COLORS[0].color);
+                saveButton.textContent = t('save');
+                cancelButton.hidden = false;
+                panel.querySelectorAll('.sticker-card').forEach(card =>
+                    card.classList.toggle('is-editing', card.contains(btn)));
+                titleInput.focus();
+            });
+        });
+        cancelButton.addEventListener('click', resetForm);
+
+        panel.querySelectorAll('.sticker-copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const sticker = stickers.find(s => s.id === btn.dataset.id);
+                if (!sticker) return;
+                const content = [sticker.title?.trim(), sticker.text?.trim()].filter(Boolean).join('\n\n');
+                try {
+                    if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+                    await navigator.clipboard.writeText(content);
+                } catch {
+                    const input = document.createElement('textarea');
+                    input.value = content;
+                    input.style.position = 'fixed';
+                    input.style.opacity = '0';
+                    document.body.appendChild(input);
+                    let copied;
+                    try {
+                        input.select();
+                        copied = document.execCommand('copy');
+                    } catch {
+                        copied = false;
+                    } finally {
+                        input.remove();
+                    }
+                    if (!copied) { showToast(t('stk_copy_failed'), 'error'); return; }
+                }
+                showToast(t('stk_copied'));
+            });
+        });
+
+        // Add or update sticker
+        saveButton.addEventListener('click', () => {
+            const text = textInput.value.trim();
             if (!text) return;
+            if (editingId) {
+                const original = stickers.find(s => s.id === editingId);
+                if (original) onUpdate({...original, title: titleInput.value.trim(), text, color: selectedColor});
+                return;
+            }
             const sticker = {
                 id: 'st-' + Math.random().toString(36).slice(2, 9),
-                title: panel.querySelector('.sticker-panel-title-input').value.trim(),
+                title: titleInput.value.trim(),
                 text,
                 color: selectedColor,
                 created_at: new Date().toISOString()
@@ -302,7 +386,10 @@ class BlockStickersManager {
 
         // Delete existing stickers
         panel.querySelectorAll('.sticker-delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => onDelete(btn.dataset.id));
+            btn.addEventListener('click', () => {
+                if (editingId === btn.dataset.id) resetForm();
+                onDelete(btn.dataset.id);
+            });
         });
 
         return panel;
@@ -316,7 +403,11 @@ class BlockStickersManager {
                 <div class="sticker-card-text">${HtmlSafety.escape(s.text)}</div>
                 <div class="sticker-card-footer">
                     <span class="sticker-card-date">${HtmlSafety.escape(formatDate(s.created_at))}</span>
-                    <button class="sticker-delete-btn" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_delete')}">✕</button>
+                    <span class="sticker-card-actions">
+                        <button class="sticker-copy-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('stk_copy')}" aria-label="${t('stk_copy')}">⧉</button>
+                        <button class="sticker-edit-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_edit')}" aria-label="${t('tt_edit')}">✎</button>
+                        <button class="sticker-delete-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_delete')}" aria-label="${t('tt_delete')}">✕</button>
+                    </span>
                 </div>
             </div>
         `).join('')}</div>`;

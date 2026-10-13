@@ -54,7 +54,7 @@ PROMPT_MAP = {
 
 PROMPT_CHAINS = {
     "what_is": ["base", "restore", "what_is", "format_short"],
-    "check_ai": ["base", "check_ai", "format_check"],
+    "check_ai": ["check_ai", "format_check"],
 }
 
 from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured, TASK_ROUTES
@@ -219,34 +219,81 @@ class AIService:
         if cache_key and full:
             _llm_cache.set(cache_key, full)
 
-    def _explain_prompt(self, text, context_before, context_after):
+    @staticmethod
+    def _explain_prompt(text, context_before, context_after, question="", note_title=""):
+        parts = []
+        if note_title.strip():
+            parts.append(f"Тема конспекта: {note_title.strip()[:255]}")
+        if context_before.strip():
+            parts.append(f"Блок: {context_before.strip()[:500]}")
+        parts.append(f"Выделенный фрагмент: {text.strip()[:1000]}")
+        block_text = context_after.strip()[:2000]
+        if block_text and block_text != text.strip():
+            parts.append(f"Контекст блока: {block_text}")
+        parts.append(f"Вопрос: {question.strip() if question.strip() else 'Что означает выделенный фрагмент здесь?'}")
+        return "\n".join(parts)
+
+    @staticmethod
+    def _explain_history(history):
+        """Keep only a small, plain-text tail of this dialog for follow-up questions."""
+        return [
+            {"role": item["role"], "content": item["content"][:500]}
+            for item in (history or [])[-2:]
+            if isinstance(item, dict) and item.get("role") in ("user", "assistant")
+            and isinstance(item.get("content"), str)
+        ]
+
+    @staticmethod
+    def _explain_system_prompt(locale):
         return (
-            f"Выделенный фрагмент: \"{text}\"\n\n"
-            f"Контекст (до): {context_before}\n\n"
-            f"Контекст (после): {context_after}\n\n"
-            f"Объясни, что такое \"{text}\" в контексте данного конспекта. "
-            f"Если у фрагмента есть внятный исторический путь (как к нему пришли) — "
-            f"коротко покажи его, затем логическое объяснение (п. 3.1 промпта восстановления)."
+            "Отвечай прямо на вопрос пользователя о выделенном фрагменте конспекта. "
+            "Контекст блока нужен для понимания, а не для пересказа. "
+            "Если спрашивают, как сделать, дай конкретные шаги, что измерить или проверить и как оценить результат. "
+            "Не выдумывай отсутствующие в контексте численные нормы или характеристики. "
+            "Не добавляй исторический обзор и формальные разделы без запроса. "
+            f"Пиши кратко на языке: {locale}."
         )
 
-    async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском") -> str:
-        sys_prompt = await self.get_bundled_prompt("what_is")
-        user_prompt = self._explain_prompt(text, context_before, context_after)
-        return await self._generate(sys_prompt, user_prompt, history=history, max_tokens=900, task="what_is")
+    async def explain_concept(self, text: str, context_before: str, context_after: str, history: list, locale: str = "русском", question: str = "", note_title: str = "") -> str:
+        return await self._generate(
+            self._explain_system_prompt(locale),
+            self._explain_prompt(text, context_before, context_after, question, note_title),
+            history=self._explain_history(history), max_tokens=650, task="what_is", reasoning_effort="low",
+        )
 
-    async def explain_concept_stream(self, text, context_before, context_after, history, locale="русском"):
-        sys_prompt = await self.get_bundled_prompt("what_is")
-        user_prompt = self._explain_prompt(text, context_before, context_after)
-        async with aclosing(self._generate_stream(sys_prompt, user_prompt, history=history, max_tokens=900, task="what_is")) as g:
+    async def explain_concept_stream(self, text, context_before, context_after, history, locale="русском", question="", note_title=""):
+        async with aclosing(self._generate_stream(
+            self._explain_system_prompt(locale),
+            self._explain_prompt(text, context_before, context_after, question, note_title),
+            history=self._explain_history(history), max_tokens=650, task="what_is", reasoning_effort="low",
+        )) as g:
             async for d in g:
                 yield d
+
+    async def fill_block(self, note_title: str, block_title: str, block_text: str,
+                         context_before: str, context_after: str, locale: str = "русском") -> str:
+        system = (
+            "Напиши содержимое ровно одного блока конспекта. Ориентируйся на его заголовок "
+            "и соседние блоки. Если в блоке уже есть текст, сохрани его смысл и расширь или "
+            "улучши его; не повторяй соседние блоки. Не выдумывай факты, измерения и источники. "
+            "Верни только текст блока в Markdown, без заголовка и вступления. "
+            f"Язык ответа: {locale}."
+        )
+        prompt = (
+            f"Тема конспекта: {note_title}\n"
+            f"Заголовок выбранного блока: {block_title}\n"
+            f"Текущий текст блока: {block_text or '(пусто)'}\n"
+            f"Предыдущий блок: {context_before or '(нет)'}\n"
+            f"Следующий блок: {context_after or '(нет)'}"
+        )
+        return await self._generate(system, prompt, max_tokens=1200,
+                                    task="what_is", reasoning_effort="low", use_cache=False)
 
     @staticmethod
     def _check_prompt(note_text, locale):
         return (
-            f"Конспект для проверки:\n---\n{note_text}\n---\n\n"
-            f"Проверь логическую связность диалектического конспекта.\n"
-            f"Дай структурированную оценку по каждому критерию.\n"
+            f"Один блок конспекта для проверки:\n---\n{note_text}\n---\n\n"
+            f"Проверь только этот блок. Укажи конкретные ошибки и то, как их исправить.\n"
             f"Ответ на {locale}."
         )
 

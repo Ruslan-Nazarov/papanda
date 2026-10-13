@@ -28,8 +28,9 @@ async def test_prompt_chains_composition_and_caching():
             bundled = await service.get_bundled_prompt("check_ai")
             assert isinstance(bundled, str)
             assert "\n\n---\n\n" in bundled
-            # 3 элемента в цепочке check_ai: base, check_ai, format_check
-            assert bundled.count("PROMPT_CHUNK") == 3
+            # Проверка одного блока не получает общий промпт анализа всего процесса.
+            assert PROMPT_CHAINS["check_ai"] == ["check_ai", "format_check"]
+            assert bundled.count("PROMPT_CHUNK") == 2
 
             # Проверяем кэширование: повторный вызов возвращает закэшированную строку без повторного чтения
             assert "check_ai" in service._prompts_cache
@@ -43,6 +44,69 @@ async def test_prompt_bundle_fallback_for_missing_files():
     service = AIService()
     fallback_prompt = await service.get_bundled_prompt("unknown_hypothetical_feature")
     assert "Instruction for unknown_hypothetical_feature" in fallback_prompt
+
+
+@pytest.mark.asyncio
+async def test_block_check_uses_scoped_instructions_without_main_prompt():
+    bundle = await AIService().get_bundled_prompt("check_ai")
+    assert "Проверяйте только переданный блок" in bundle
+    assert "до трёх коротких пунктов" in bundle
+    assert "Диалектический анализ начинается с исторического развития" not in bundle
+    assert "пригласите пользователя" not in bundle
+
+
+def test_explain_follow_up_targets_question_and_keeps_fragment_context():
+    prompt = AIService()._explain_prompt(
+        "управление измерительным трактом", "Прошивка ЭКГ", "Получение отсчётов",
+        "Зачем здесь отдельное управление?", "ЭКГ-устройство",
+    )
+    assert "управление измерительным трактом" in prompt
+    assert "Прошивка ЭКГ" in prompt
+    assert "ЭКГ-устройство" in prompt
+    assert "Контекст блока: Получение отсчётов" in prompt
+    assert "исторический" not in prompt.lower()
+    assert prompt.endswith("Зачем здесь отдельное управление?")
+
+
+@pytest.mark.asyncio
+async def test_explain_uses_direct_short_instruction_without_file_prompts():
+    service = AIService()
+    history = [{"role": "user", "content": "старый вопрос"},
+               {"role": "assistant", "content": "старый ответ"},
+               {"role": "user", "content": "уточнение"}]
+    with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as bundle:
+        with patch.object(service, "_generate", new_callable=AsyncMock, return_value="Шаги") as generate:
+            result = await service.explain_concept(
+                "Измеряем температуру", "Тепловой режим", "Текст блока", history,
+                question="Как это сделать?", note_title="Устройство",
+            )
+    assert result == "Шаги"
+    bundle.assert_not_awaited()
+    system, user = generate.call_args.args[:2]
+    assert "конкретные шаги" in system
+    assert "исторический обзор" in system
+    assert "Как это сделать?" in user
+    assert "Тема конспекта: Устройство" in user
+    assert generate.call_args.kwargs["max_tokens"] == 650
+    assert generate.call_args.kwargs["reasoning_effort"] == "low"
+
+
+@pytest.mark.asyncio
+async def test_explain_stream_uses_same_direct_instruction():
+    service = AIService()
+
+    async def stream(*args, **kwargs):
+        yield "Шаг 1"
+
+    with patch.object(service, "get_bundled_prompt", new_callable=AsyncMock) as bundle:
+        with patch.object(service, "_generate_stream", side_effect=stream) as generate:
+            result = [part async for part in service.explain_concept_stream(
+                "температуру", "Тепловой режим", "Текст блока", [], question="Как?",
+            )]
+    assert result == ["Шаг 1"]
+    bundle.assert_not_awaited()
+    assert "Как?" in generate.call_args.args[1]
+    assert generate.call_args.kwargs["max_tokens"] == 650
 
 
 # ==============================================================================
@@ -91,6 +155,8 @@ async def test_check_logic_prompt_application():
             sys_prompt, user_prompt = args[0], args[1]
             assert sys_prompt == "SYSTEM_CHECK_PROMPT"
             assert "Блок 1 -> Блок 2 -> Синтез" in user_prompt
+            assert "Один блок конспекта" in user_prompt
+            assert "весь конспект" not in user_prompt
             assert kwargs["history"] == history
 
 

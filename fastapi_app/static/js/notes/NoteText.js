@@ -8,12 +8,18 @@ class NoteText {
             if (node.nodeType === 3) return node.nodeValue || '';
             if (node.nodeType !== 1 && node.nodeType !== 11) return '';
             if (['SCRIPT', 'STYLE', 'TEMPLATE'].includes(node.nodeName)) return '';
+            // Display controls are derived from data-hint, not additional content.
+            if (node.nodeType === 1 && node.matches('.hp-arrow, .hp-content')) return '';
             if (node.nodeName === 'BR') return '\n';
             if (node.nodeType === 1 && node.hasAttribute('formula')) {
                 const delimiter = node.closest('.math-callout') ? '$$' : '$';
                 return delimiter + node.getAttribute('formula') + delimiter;
             }
             const text = Array.from(node.childNodes, read).join('');
+            if (node.nodeType === 1 && node.matches('span[data-type="hidden-phrase"], .hidden-phrase-mark')) {
+                const explanation = (node.getAttribute('data-hint') || '').trim();
+                return explanation ? `${text} (${explanation})` : text;
+            }
             if (blocks.has(node.nodeName)) return '\n' + text + '\n';
             if (['TD', 'TH'].includes(node.nodeName)) return text + '\t';
             return text;

@@ -6,13 +6,13 @@ from fastapi_app.database import get_db, get_public_db
 from fastapi_app.schemas.notes import (
     NoteCreate, NoteUpdate, NoteView,
     CategoryCreate, CategoryUpdate, CategoryView,
-    NoteVersionCreate, NoteVersionView,
+    NoteVersionCreate, NoteVersionView, NoteMaterialView,
     ConnectionCreate, ConnectionView
 )
 from fastapi_app.schemas.notes import Status, RevisionRequest, PublicNoteView
 from fastapi_app.services.notes_service import NotesService
 from fastapi_app.services.ai_diary_service import AIDiaryService
-from fastapi_app.schemas.ai_diary import ActivityCreate
+from fastapi_app.schemas.ai_diary import ActivityCreate, ActivityView
 
 PositiveId = Annotated[int, Path(gt=0)]
 
@@ -78,6 +78,23 @@ async def delete_version(note_id: PositiveId, version_id: PositiveId, db: AsyncS
 async def unpin_version(note_id: PositiveId, version_id: PositiveId, db: AsyncSession = Depends(get_db)):
     return await NotesService.pin_version(db, note_id, version_id, is_manual=False)
 
+@router.get("/{note_id}/materials", response_model=List[NoteMaterialView])
+async def get_materials(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
+    return await NotesService.get_materials(db, note_id)
+
+@router.post("/{note_id}/versions/{version_id}/material", response_model=NoteVersionView)
+async def add_version_material(note_id: PositiveId, version_id: PositiveId, request: Request,
+                               db: AsyncSession = Depends(get_db)):
+    return await NotesService.publish_version(db, note_id, version_id, request.state.session_id)
+
+@router.delete("/{note_id}/versions/{version_id}/material", response_model=NoteVersionView)
+async def remove_version_material(note_id: PositiveId, version_id: PositiveId, db: AsyncSession = Depends(get_db)):
+    return await NotesService.unpublish_version(db, note_id, version_id)
+
+@router.get("/shared-material/{token}", response_model=PublicNoteView)
+async def get_shared_material(token: str, db: AsyncSession = Depends(get_public_db)):
+    return NotesService.public_view(await NotesService.get_public_material(db, token))
+
 # Sharing (публичная ссылка на конспект, только чтение)
 @router.post("/{note_id}/share")
 async def share_note(note_id: PositiveId, request: Request, db: AsyncSession = Depends(get_db)):
@@ -94,20 +111,20 @@ async def get_shared_note_api(token: str, db: AsyncSession = Depends(get_public_
     return NotesService.public_view(await NotesService.get_shared_note(db, token))
 
 # AI request diary, scoped to the current user's database.
-@router.get('/activity/all')
+@router.get('/activity/all', response_model=List[ActivityView])
 async def get_all_activity(db: AsyncSession = Depends(get_db)):
     return await AIDiaryService.all_activity(db)
 
-@router.get('/{note_id}/activity')
+@router.get('/{note_id}/activity', response_model=List[ActivityView])
 async def get_activity(note_id: PositiveId, db: AsyncSession = Depends(get_db)):
     rows = await AIDiaryService.activity(db, note_id)
-    return [{'id': row.id, 'kind': row.kind, 'data': row.data_json,
+    return [{'id': row.id, 'note_id': row.note_id, 'kind': row.kind, 'data': row.data_json,
              'created_at': row.created_at} for row in rows]
 
-@router.post('/{note_id}/activity')
+@router.post('/{note_id}/activity', response_model=ActivityView)
 async def add_activity(note_id: PositiveId, data: ActivityCreate, db: AsyncSession = Depends(get_db)):
     row = await AIDiaryService.add_activity(db, note_id, data)
-    return {'id': row.id, 'kind': row.kind, 'data': row.data_json, 'created_at': row.created_at}
+    return {'id': row.id, 'note_id': row.note_id, 'kind': row.kind, 'data': row.data_json, 'created_at': row.created_at}
 
 # Guide
 @router.get("/guide", deprecated=True)

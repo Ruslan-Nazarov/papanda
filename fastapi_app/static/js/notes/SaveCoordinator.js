@@ -18,8 +18,9 @@ class SaveCoordinator {
 
     static _payload(note) {
         // Snapshot nested blocks as well: later editor mutations cannot change a request.
-        return JSON.parse(JSON.stringify({title: note.title || '', blocks: note.blocks || [],
+        return JSON.parse(JSON.stringify({title: note.title || '', note_notice: note.note_notice || '', blocks: note.blocks || [],
             stickers: note.stickers || [],
+            dictionary: note.dictionary || [],
             category_id: note.category_id ?? null, status: note.status || 'in_progress'}));
     }
 

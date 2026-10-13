@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import BlockNormalBuilder from './BlockNormalBuilder.js';
 import BlockHintBuilder from './BlockHintBuilder.js';
 import RequestDocuments from './RequestDocuments.js';
+import PinnedDerivations from './PinnedDerivations.js';
 import { ALGORITHM_STEPS, inferRoleFromTitle } from './BlockConstants.js';
 import { t } from '../i18n.js';
 
@@ -13,10 +14,12 @@ class BlockDOMRenderer {
     static getNextActiveRole(blocks) {
         const pendingAnchor = BlockHintBuilder.pendingAnchor();
         // Saved proposals occupy their step even before the author marks them ready.
-        // Unsaved editor drafts and empty blocks still need a hint.
+        // An archived proposal also keeps its step while the author rewrites it;
+        // only a new empty block without history still needs the same hint.
         const completedBlocks = (blocks || []).filter(b => b.id !== pendingAnchor?.id
             && b.role !== 'section' && !b.isDraft
-            && (b.html || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim());
+            && ((b.html || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+                || b.rejected_drafts?.length));
         
         // Роли вида "step1.2" (несколько простейших/развивающих процессов на
         // одном шаге, см. expected_step_keys на бэкенде) считаются частью
@@ -69,12 +72,16 @@ class BlockDOMRenderer {
 
         container.innerHTML = '';
         // 1. Render all non-anchor blocks
+        let sectionNumber = 0;
         nonAnchorBlocks.forEach((block) => {
             // Anchor blocks are displayed last, even when stored earlier. Divider
             // indices must refer to the stored array used by NoteStore.addBlock.
             const storedIndex = storedBlocks.findIndex(item => item.id === block.id);
             container.appendChild(this.createDivider(storedIndex));
             const el = BlockNormalBuilder.build(block, () => this.renderAll());
+            if (block.role === 'section') {
+                el.querySelector('.section-number').textContent = String(++sectionNumber);
+            }
             container.appendChild(el);
         });
 
@@ -102,6 +109,7 @@ class BlockDOMRenderer {
         // Divider after the last block
         container.appendChild(this.createDivider(storedBlocks.length));
         RequestDocuments.mount(container);
+        PinnedDerivations.mount(container);
     }
 
     static createDivider(index) {

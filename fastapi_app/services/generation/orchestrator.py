@@ -179,6 +179,8 @@ class GenerationPipeline:
         context = current_run.get() or GenerationContext(source_revision=source_revision)
         context.target_step = target_step
         state = deepcopy(state)
+        from fastapi_app.services.generation.rejected_drafts import relevant_drafts
+        state['rejected_drafts'] = relevant_drafts(state, target_step)
         if target_step is not None:
             state['steps'] = {key: value for key, value in state.get('steps', {}).items() if base(key) <= target_step}
             pinned_step = target_step if question else pinned_step

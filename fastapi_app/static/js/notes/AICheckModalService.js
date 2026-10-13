@@ -88,23 +88,9 @@ class AICheckModalService {
                 );
                 renderStreamMarkdown(streamBody, full || t('aicheck_done'));
                 return;
-            } catch {}
-
-            // Fallback dialectical analysis stub if backend AI is not available
-            const plainContent = (block.html || '').replace(/<[^>]+>/g, '').trim();
-            const fallbackReport = `
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px; font-size: 1.02rem;">${t('aicheck_fb_title')}</div>
-                    <ul style="margin: 0; padding-left: 18px; color: #475569; display: flex; flex-direction: column; gap: 6px;">
-                        <li><strong>${t('aicheck_fb_thesis_label')}</strong> «${this.escapeHtml(block.title || t('hint_anchor_title'))}» ${t('aicheck_fb_thesis')}</li>
-                        <li><strong>${t('aicheck_fb_content_label')}</strong> ${plainContent ? `${t('aicheck_fb_fixed')} ${plainContent.length} ${t('aicheck_fb_chars')}. ${t('aicheck_fb_have')}` : t('aicheck_fb_none')}</li>
-                        <li><strong>${t('aicheck_fb_logic')}</strong> ${t('aicheck_fb_logic_text')}</li>
-                        <li><strong>${t('aicheck_fb_rec')}</strong> ${t('aicheck_fb_rec_text')}</li>
-                    </ul>
-                </div>
-            `;
-
-            respArea.innerHTML = fallbackReport;
+            } catch {
+                respArea.textContent = t('aicheck_unavailable');
+            }
         };
 
         // Initial check call

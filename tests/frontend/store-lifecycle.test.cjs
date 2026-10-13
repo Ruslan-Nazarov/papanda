@@ -25,6 +25,18 @@ test('store isolates input, rejects nested mutations, and preserves document ide
     assert.equal(state.editRevision, 1, 'no-op must not dirty the document again');
 });
 
+test('old block words become one note dictionary without losing distinct meanings', () => {
+    const state = store();
+    state.open({id: 1, dictionary: [{word: 'ЭКГ', definition: 'Измерение', connections: ''}], blocks: [
+        {id: 'a', words: [{word: 'ЭКГ', definition: 'Измерение'}, {word: 'Ток', definition: 'Движение заряда'}]},
+        {id: 'b', words: [{word: 'ЭКГ', definition: 'Другой смысл'}]},
+    ]});
+    assert.deepEqual(Array.from(state.note.dictionary, item => item.definition),
+        ['Измерение', 'Движение заряда', 'Другой смысл']);
+    assert.equal(state.note.blocks[0].words, undefined);
+    assert.equal(state.note.blocks[1].words, undefined);
+});
+
 test('autosave preserves block views used by render handlers and emits only noteSaved', () => {
     const events = [];
     const initial = store();

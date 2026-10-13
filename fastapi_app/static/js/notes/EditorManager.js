@@ -7,6 +7,9 @@ import { EditorTiptapSetup } from './EditorTiptapSetup.js';
 import { EditorShapesTab } from './EditorShapesTab.js';
 import { EditorGraphTab } from './EditorGraphTab.js';
 import { EditorDragBehavior } from './EditorDragBehavior.js';
+import EditorDraftArchive from './EditorDraftArchive.js';
+import NoteText from './NoteText.js';
+import { TEXT_SIZES } from './extensions/TextSize.js';
 
 class EditorManager {
     static currentEditor = null;
@@ -18,6 +21,7 @@ class EditorManager {
     static session = null;
     static epoch = null;
     static opener = null;
+    static draftArchive = null;
 
     static dispose() {
         this.closeModal(false);
@@ -80,8 +84,10 @@ class EditorManager {
         // 1. TipTap
         const tiptapContainer = modalContainer.querySelector('.modal-tiptap-content');
         this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml);
-        EditorTiptapSetup.bindFormatButtons(modalContainer, () => this.currentEditor);
+        EditorTiptapSetup.bindFormatButtons(modalContainer, () => this.currentEditor, this.session,
+            {blockId, noteId: AppState.currentNote.id});
         this.currentEditor.on('update', () => document.dispatchEvent(new Event('editingActivity')));
+        this.draftArchive = new EditorDraftArchive(modalContainer, this.currentEditor, block.rejected_drafts, this.session);
         this.session.on(modalContainer, 'input', () => document.dispatchEvent(new Event('editingActivity')));
 
         // 2. Tabs
@@ -97,7 +103,7 @@ class EditorManager {
             if (e.target.closest('.modal-overlay, .formula-modal-backdrop')) return;
             if (e.key === 'Escape') { e.preventDefault(); this.closeModal(false); }
             if (e.key === 'Tab') {
-                const controls = [...modalEl.querySelectorAll('button, input, textarea, [contenteditable="true"]')]
+                const controls = [...modalEl.querySelectorAll('button, input, select, textarea, summary, [contenteditable="true"]')]
                     .filter(el => !el.disabled && el.getClientRects().length);
                 const first = controls[0], last = controls.at(-1);
                 if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
@@ -175,8 +181,12 @@ class EditorManager {
             title: newTitle,
             tags: newTags,
             html: newHtml,
+            rejected_drafts: this.draftArchive.drafts,
+            ...(block?.role === 'anchor' && this.draftArchive.hasNewDrafts ? {
+                sourceGoal: NoteText.fromHtml(newHtml), sourceTitle: newTitle, anchorResolved: false,
+            } : {}),
             shapesData: shapesData,
-            status: 'ready',
+            status: this.currentEditor?.isEmpty ? 'in_progress' : 'ready',
             isDraft: false
         });
         this.closeModal(true);
@@ -218,6 +228,7 @@ class EditorManager {
         this.graphTab?.dispose();
         this.currentEditor?.destroy();
         this.currentEditor = this.shapesTab = this.graphTab = null;
+        this.draftArchive = null;
         this.currentBlockId = null;
         const container = document.getElementById('modal-container');
         if (container) { container.replaceChildren(); container.classList.add('hidden'); }
@@ -244,14 +255,23 @@ class EditorManager {
                         <button class="format-btn" data-format="italic"><i>I</i></button>
                         <button class="format-btn" data-format="underline" style="text-decoration: underline;">U</button>
                         <button class="format-btn" data-format="strike" style="text-decoration: line-through;">S</button>
-                        <button class="format-btn" data-format="code">&lt;&gt;</button>
-                        <button class="format-btn" data-format="quote">"</button>
                         <button class="format-btn" data-format="question" style="color: #ef4444; font-weight: bold;" title="${t('ed_tt_question')}">?</button>
                         <button class="format-btn" data-format="hidden" style="color: #7c3aed;" title="${t('ed_tt_hidden')}">👁</button>
                         <button class="format-btn" data-format="link">🔗</button>
-                        <button class="format-btn" data-format="math" style="color: #2563eb; font-weight: bold;" title="${t('ed_tt_math')}">∑</button>
+                        <button class="format-btn" data-format="math" style="color: #2563eb; font-weight: bold;" title="${t('ed_tt_math')}" aria-label="${t('ed_tt_math')}">∑</button>
                         <button class="format-btn" data-format="latex" style="color: #8b5cf6; font-weight: 800; font-size: 0.78rem; letter-spacing: -0.5px;" title="${t('ed_tt_latex')}">LTX</button>
-                        <button class="format-btn format-btn-clear" data-format="clear"></button>
+                        <div class="editor-size-control">
+                            <button type="button" class="format-btn format-btn-size" id="btn-editor-text-size" aria-label="${t('ed_text_size')}" aria-haspopup="true" aria-expanded="false" title="${t('ed_text_size')}"><span class="editor-size-icon">Aa</span><span class="editor-size-chevron" aria-hidden="true">⌄</span></button>
+                            <div class="editor-size-popover" role="group" aria-label="${t('ed_text_size')}" hidden>
+                                <div class="editor-size-title">${t('ed_text_size')}</div>
+                                <div class="editor-size-options">
+                                    <button type="button" class="editor-size-option editor-size-auto" data-size="">${t('ed_text_size_auto')}</button>
+                                    ${TEXT_SIZES.map(size => `<button type="button" class="editor-size-option" data-size="${size}">${size}</button>`).join('')}
+                                </div>
+                                <div class="editor-size-hint">${t('ed_text_scope')}</div>
+                            </div>
+                        </div>
+                        <button class="format-btn format-btn-clear" data-format="clear" title="${t('ed_clear_format_hint')}" aria-label="${t('ed_clear_format')}"></button>
                     </div>
                     <div class="modal-header-actions">
                         <button class="window-btn btn-expand" title="${t('expand')}" style="background: transparent; color: #64748b; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 4px;">⤢</button>
@@ -277,6 +297,12 @@ class EditorManager {
                             <input type="text" class="modal-tags-input" value="${this.escapeHtml(currentTags)}">
                         </div>
                         <div class="modal-tiptap-content"></div>
+                        <div class="editor-rewrite-actions">
+                            <button type="button" id="btn-editor-rewrite"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> ${t('ed_rewrite')}</button>
+                            <button type="button" id="btn-editor-rewrite-undo" hidden>${t('ed_rewrite_undo')}</button>
+                        </div>
+                        <p class="editor-rewrite-notice" role="status" aria-live="polite"></p>
+                        <section class="editor-draft-archive" aria-label="${t('ed_archive_title')}" hidden></section>
                     </div>
 
                     <div id="tab-stickers" class="tab-content" style="display: none; min-height: 250px;"></div>

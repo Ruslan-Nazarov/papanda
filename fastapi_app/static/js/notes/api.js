@@ -141,7 +141,6 @@ class NotesAPI {
         return this.request(url); 
     }
     static getNote(id) { return this.request(`/dialectics/${id}`).then(ApiContracts.noteResponse); }
-    static getAllActivity() { return this.request('/dialectics/activity/all'); }
     static getActivity(id) { return this.request(`/dialectics/${id}/activity`); }
     static addActivity(id, data) { return this.request(`/dialectics/${id}/activity`, 'POST', data); }
     static createNote(data) { return this.request('/dialectics/save', 'POST', data).then(ApiContracts.noteResponse); }
@@ -161,9 +160,15 @@ class NotesAPI {
     static restoreVersion(noteId, versionId, revision) { return this.request(`/dialectics/${noteId}/versions/${versionId}/restore`, 'POST', {revision}); }
     static pinVersion(noteId, versionId, pin = true) { return this.request(`/dialectics/${noteId}/versions/${versionId}/${pin ? 'pin' : 'unpin'}`, 'POST'); }
     static deleteVersion(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}`, 'DELETE'); }
+    static getMaterials(noteId) { return this.request(`/dialectics/${noteId}/materials`); }
+    static addVersionMaterial(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/material`, 'POST'); }
+    static removeVersionMaterial(noteId, versionId) { return this.request(`/dialectics/${noteId}/versions/${versionId}/material`, 'DELETE'); }
     // AI
     static routeConspectus(payload, signal) {
         return this.request('/ai/dialectics/conspectus/route', 'POST', payload, signal).then(ApiContracts.generationResponse);
+    }
+    static fillBlock(payload, signal) {
+        return this.request('/ai/dialectics/fill-block', 'POST', payload, signal);
     }
     static textMath(text) {
         return this.request('/ai/dialectics/text-math', 'POST', { text });

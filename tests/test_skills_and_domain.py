@@ -9,6 +9,9 @@ def test_detect_domain_word_boundary():
     assert _detect_domain("вывод: a = b + c") == "math_code"                  # символ
 
 
-def test_explain_prompt_has_history_hint():
+def test_explain_prompt_keeps_the_selected_fragment_and_its_context():
     p = ai_service._explain_prompt("энтропия", "до", "после")
-    assert "историческ" in p.lower()
+    assert "Выделенный фрагмент: энтропия" in p
+    assert "Блок: до" in p
+    assert "Контекст блока: после" in p
+    assert p.endswith("Что означает выделенный фрагмент здесь?")

@@ -26,6 +26,9 @@ import AIDiary from './AIDiary.js';
 import AIController from './AIController.js';
 import LibraryPublisher from './LibraryPublisher.js';
 import RequestDocuments from './RequestDocuments.js';
+import MaterialsPanel from './MaterialsPanel.js';
+import QuestionsManager from './QuestionsManager.js';
+import NoteNoticeManager from './NoteNoticeManager.js';
 import { showToast } from './ToastService.js';
 import { t, switchLanguage } from '../i18n.js';
 
@@ -51,6 +54,9 @@ class App {
         this.setupBindings();
         LibraryPublisher.init();
         RequestDocuments.init(() => BlockDOMRenderer.renderAll());
+        MaterialsPanel.init();
+        QuestionsManager.init();
+        NoteNoticeManager.init();
         this.setupCopyHandler();
         
         // Load initial note state
@@ -214,8 +220,13 @@ class App {
                 confirmText: t('move_word')
             });
             if (confirmed) {
-                await NotesAPI.deleteNote(AppState.currentNote.id);
-                this.loadInitialState();
+                try {
+                    await NotesAPI.deleteNote(AppState.currentNote.id);
+                    this.loadInitialState();
+                } catch (error) {
+                    await DialogService.alert(t('error_word'), error.status === 409
+                        ? t('version_material_delete_blocked') : t('trash_move_failed'));
+                }
             }
         });
 
@@ -232,6 +243,11 @@ class App {
         document.getElementById('menu-item-export-md')?.addEventListener('click', () => {
             DropdownController.closeAll();
             NoteExportService.exportToMarkdown();
+        });
+
+        document.getElementById('menu-item-export-md-full')?.addEventListener('click', () => {
+            DropdownController.closeAll();
+            NoteExportService.exportFullMarkdown();
         });
 
         document.getElementById('menu-item-export-pdf')?.addEventListener('click', () => {
@@ -318,11 +334,28 @@ class App {
         }
 
         // --- 5. Internal Links Handler ---
+        document.addEventListener('mouseover', (e) => {
+            const link = e.target.closest('a[href^="internal://"]');
+            if (link) link.setAttribute('data-link-hint', t('internal_link_hint'));
+        });
+        document.addEventListener('focusin', (e) => {
+            const link = e.target.closest('a[href^="internal://"]');
+            if (link) link.setAttribute('data-link-hint', t('internal_link_hint'));
+        });
         document.addEventListener('click', async (e) => {
             const link = e.target.closest('a[href^="internal://"]');
             if (link) {
+                if (link.closest('.tiptap[contenteditable="true"]')) return;
                 e.preventDefault();
-                const url = link.getAttribute('href');
+                let url = link.getAttribute('href');
+                const multiple = link.getAttribute('data-internal-links');
+                if (multiple) {
+                    try {
+                        const targets = JSON.parse(multiple).filter(item => item?.url?.startsWith('internal://note/'));
+                        if (targets.length > 1) url = await DialogService.chooseInternalDestination(targets);
+                    } catch { /* Fall back to the primary link. */ }
+                }
+                if (!url) return;
                 const match = url.match(/^internal:\/\/note\/([a-zA-Z0-9_-]+)(?:\/block\/([a-zA-Z0-9_-]+))?/);
                 if (match) {
                     const noteId = match[1];

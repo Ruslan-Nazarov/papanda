@@ -42,9 +42,11 @@ async def test_explain_concept_endpoint(client: AsyncClient):
         client.cookies.set("locale", "ru")
         payload = {
             "text": "Отрицание отрицания",
+            "note_title": "Развитие понятий",
             "context_before": "Рассматривая развитие тезиса и антитезиса",
             "context_after": "мы приходим к синтезу.",
-            "history": [{"role": "user", "content": "Поясни подробнее"}]
+            "history": [{"role": "user", "content": "Поясни подробнее"}],
+            "question": "Какое противоречие здесь разрешается?",
         }
         res = await client.post("/api/ai/dialectics/explain-concept", json=payload)
         
@@ -54,10 +56,12 @@ async def test_explain_concept_endpoint(client: AsyncClient):
         assert data["user_query"] == "Отрицание отрицания"
         mock_explain.assert_awaited_once_with(
             text="Отрицание отрицания",
+            note_title="Развитие понятий",
             context_before="Рассматривая развитие тезиса и антитезиса",
             context_after="мы приходим к синтезу.",
             history=[{"role": "user", "content": "Поясни подробнее"}],
             locale="русском",
+            question="Какое противоречие здесь разрешается?",
         )
         client.cookies.delete("locale")
 
@@ -80,6 +84,23 @@ async def test_check_logic_endpoint(client: AsyncClient):
         assert data["result"] == "Логическая цепочка выстроена безупречно."
         mock_check.assert_awaited_once_with("Тезис -> Антитезис -> Противоречие -> Синтез", [], locale="русском")
         client.cookies.delete("locale")
+
+
+@pytest.mark.asyncio
+async def test_fill_block_endpoint(client: AsyncClient):
+    client.cookies.set("locale", "ru")
+    with patch("fastapi_app.routers.ai.reserve_generation", new_callable=AsyncMock), \
+            patch("fastapi_app.routers.ai.ai_service.fill_block", new_callable=AsyncMock) as mock_fill:
+        mock_fill.return_value = "Generated block"
+        payload = {"note_title": "ECG", "block_title": "Measure signal",
+                   "block_text": "Existing", "context_before": "Electrodes",
+                   "context_after": "Numbers"}
+        response = await client.post("/api/ai/dialectics/fill-block", json=payload)
+        assert response.status_code == 200
+        assert response.json() == {"content": "Generated block"}
+        mock_fill.assert_awaited_once_with("ECG", "Measure signal", "Existing",
+                                           "Electrodes", "Numbers", locale="русском")
+    client.cookies.delete("locale")
 
 
 # ==============================================================================

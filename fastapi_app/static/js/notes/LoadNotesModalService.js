@@ -249,7 +249,8 @@ class LoadNotesModalService {
                             loadNotes(dialog);
                         } catch(err) {
                             console.error('Delete error:', err);
-                            await DialogService.alert(t('error_word'), t('trash_move_failed'));
+                            await DialogService.alert(t('error_word'), err.status === 409
+                                ? t('version_material_delete_blocked') : t('trash_move_failed'));
                         }
                     }
                 });
@@ -307,7 +308,8 @@ class LoadNotesModalService {
                             }
                             loadTrash(dialog);
                         } catch(err) {
-                            await DialogService.alert(t('error_word'), t('perma_delete_failed'));
+                            await DialogService.alert(t('error_word'), err.status === 409
+                                ? t('version_material_delete_blocked') : t('perma_delete_failed'));
                         }
                     }
                 });

@@ -123,6 +123,7 @@ async def initialize_databases():
         engine = await _get_or_create_engine(f'sqlite+aiosqlite:///{path}')
         async with engine.connect() as conn:
             rows = (await conn.execute(text('SELECT id,share_token FROM notes WHERE share_token IS NOT NULL AND is_deleted=0'))).all()
+            rows += (await conn.execute(text('SELECT note_id,material_token FROM note_versions WHERE material_token IS NOT NULL'))).all()
             for note_id, token in rows:
                 await asyncio.to_thread(register_share, token, sid, note_id)
 

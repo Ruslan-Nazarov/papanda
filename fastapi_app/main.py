@@ -85,6 +85,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=templates_dir)
 templates.env.globals['asset'] = asset
+ECG_SHOWCASE_PATH = Path(__file__).parent / 'data/ecg_showcase.json'
 
 # Routers
 app.include_router(notes.router, prefix="/api/dialectics", tags=["notes"])
@@ -149,15 +150,52 @@ async def shared_conspect(request: Request, token: str, db=Depends(get_public_db
     return templates.TemplateResponse(
         request=request, name="shared.html",
         context={"_": _, "locale": locale, "blocks": blocks, "note_title": title,
+                 "note_notice": note.note_notice,
                  "token": token, "algo": algo},
     )
+
+@app.get('/v/{token}', response_class=HTMLResponse)
+async def shared_version_material(request: Request, token: str, db=Depends(get_public_db)):
+    """Immutable, read-only snapshot selected from a note's saved versions."""
+    from fastapi_app.services.sanitizer import sanitize_block_html
+    version = await NotesService.get_public_material(db, token)
+    locale = getattr(request.state, 'locale', 'ru')
+    blocks = [{**block, 'html': sanitize_block_html(block.get('html', ''))}
+              for block in version.content_json if isinstance(block, dict)]
+    return templates.TemplateResponse(request=request, name='shared.html', context={
+        '_': get_translator(locale), 'locale': locale, 'blocks': blocks,
+        'note_title': version.title, 'note_notice': version.note_notice,
+        'algo': get_manual_algorithm(locale), 'material_view': True})
 
 @app.get('/library', response_class=HTMLResponse)
 async def library_page(request: Request):
     locale = getattr(request.state, 'locale', 'ru')
+    publications = await asyncio.to_thread(library_store.list_publications)
+    examples = json.loads(ECG_SHOWCASE_PATH.read_text(encoding='utf-8'))['languages']
+    example_locale = 'ru' if locale == 'ru' else 'en'
+    example_ids = set(examples[example_locale]['publications'].values()) - {None}
     return templates.TemplateResponse(request=request, name='library.html', context={
         '_': get_translator(locale), 'locale': locale,
-        'publications': await asyncio.to_thread(library_store.list_publications)})
+        'publications': publications,
+        'showcase_url': f'/showcase/ecg?lang={example_locale}' if example_ids & {p['id'] for p in publications} else None,
+        'showcase_title': examples[example_locale]['title']})
+
+
+@app.get('/showcase/ecg', response_class=HTMLResponse)
+async def ecg_showcase(request: Request, lang: str = ''):
+    locale = lang if lang in {'ru', 'en'} else getattr(request.state, 'locale', 'en')
+    if locale not in {'ru', 'en'}:
+        locale = 'en'
+    manifest = json.loads(ECG_SHOWCASE_PATH.read_text(encoding='utf-8'))
+    content = manifest['languages'][locale]
+
+    def available_notes():
+        return {key: library_store.get_publication(value) if value else None
+                for key, value in content['publications'].items()}
+
+    return templates.TemplateResponse(request=request, name='ecg_showcase.html', context={
+        '_': get_translator(locale), 'locale': locale, 'content': content,
+        'publications': await asyncio.to_thread(available_notes)})
 
 
 @app.get('/library/{publication_id}', response_class=HTMLResponse)
@@ -170,18 +208,34 @@ async def library_note(request: Request, publication_id: UUID):
 
 def render_library_note(request, item, **extra):
     from fastapi_app.services.sanitizer import sanitize_block_html
-    locale = getattr(request.state, 'locale', 'ru')
-    blocks = [{**b, 'html': sanitize_block_html(b.get('html', ''))} for b in item['blocks']]
+    payload = library.Publication.model_validate({
+        key: value for key, value in item.items()
+        if key in library.Publication.model_fields
+    }).model_dump(mode='json')
+    locale = payload['language']
+    examples = json.loads(ECG_SHOWCASE_PATH.read_text(encoding='utf-8'))['languages'][locale]
+    showcase_url = (f'/showcase/ecg?lang={locale}' if extra.get('publication_id') in
+                    examples['publications'].values() else None)
+    blocks = [{**b, 'html': sanitize_block_html(b.get('html', '')),
+               'rejected_drafts': [{**draft, 'html': sanitize_block_html(draft.get('html', ''))}
+                                   for draft in b.get('rejected_drafts', [])],
+               'derivations': [{**derivation, 'html': sanitize_block_html(derivation.get('html', ''))}
+                               for derivation in b.get('derivations', [])]}
+              for b in payload['blocks']]
     return templates.TemplateResponse(request=request, name='shared.html', context={
-        '_': get_translator(locale), 'locale': locale, 'note_title': item['title'],
-        'blocks': blocks, 'description': item.get('description', ''),
+        '_': get_translator(locale), 'locale': locale, 'note_title': payload['title'],
+        'blocks': blocks, 'description': payload['description'],
+        'note_notice': payload['note_notice'], 'stickers': payload['stickers'],
+        'dictionary': payload['dictionary'], 'resources': payload['resources'],
+        'showcase_url': showcase_url, 'showcase_title': examples['title'],
         'algo': get_manual_algorithm(locale), 'library_view': True, **extra})
 
 
 @app.get('/author/library/{note_id}/preview', response_class=HTMLResponse,
          dependencies=[Depends(library.author_only)])
 async def preview_library_note(request: Request, note_id: int, revision: int,
-                               description: str = '', db=Depends(get_db)):
+                               description: str = '', language: str = 'ru',
+                               resources: str = '[]', db=Depends(get_db)):
     if len(description) > 1000:
         raise HTTPException(422, 'Description is too long')
     note = await get_note(db, note_id)
@@ -189,7 +243,13 @@ async def preview_library_note(request: Request, note_id: int, revision: int,
         raise HTTPException(404, 'Not found')
     if note.revision != revision:
         raise HTTPException(409, 'Note changed; save and preview again')
-    return render_library_note(request, await library.snapshot(note, description), preview=True)
+    if language not in {'ru', 'en'}:
+        raise HTTPException(422, 'Unsupported publication language')
+    try:
+        resource_items = json.loads(resources)
+    except ValueError:
+        raise HTTPException(422, 'Invalid publication resources') from None
+    return render_library_note(request, await library.snapshot(note, description, language, resource_items), preview=True)
 
 
 @app.get("/health")

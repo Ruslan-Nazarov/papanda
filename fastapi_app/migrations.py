@@ -1,4 +1,4 @@
-"""SQLite migrations: 001 revisions, 002 stickers, 003 learning variants.
+"""SQLite migrations: 001 revisions, 002 stickers, 003 learning variants, 004 dictionary, 005 note notice.
 
 DDL and content adaptation run in one explicit transaction. Unknown/corrupt
 schemas fail closed. The source snapshot is made before the transaction.
@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 from fastapi_app.config import settings
 from fastapi_app.services.block_contract import normalize_legacy_blocks
 
-VERSION = 3
+VERSION = 6
 
 
 def _validate(connection, metadata, version=VERSION):
@@ -31,6 +31,12 @@ def _validate(connection, metadata, version=VERSION):
             required -= {'stickers'}
         if version < 3 and table.name == 'notes':
             required -= {'family_id', 'parent_note_id', 'variant_label', 'variant_origin', 'fork_step', 'long_term_goal'}
+        if version < 4 and table.name in {'notes', 'note_versions'}:
+            required -= {'dictionary'}
+        if version < 5 and table.name in {'notes', 'note_versions'}:
+            required -= {'note_notice'}
+        if version < 6 and table.name == 'note_versions':
+            required -= {'material_token'}
         if legacy and table.name == 'notes':
             required -= {'revision', 'schema_version', 'is_example', 'share_token'}
         if required - columns:
@@ -60,6 +66,7 @@ def _validate(connection, metadata, version=VERSION):
             unique |= {tuple(i['column_names']) for i in inspector.get_unique_constraints(table.name)}
             expected_unique = {
                 'notes': {('sync_id',), ('share_token',)},
+                'note_versions': {('material_token',)} if version >= 6 else set(),
                 'note_categories': {('name',)},
                 'note_connections': {('note_id_from', 'note_id_to')},
             }.get(table.name, set())
@@ -151,6 +158,21 @@ def _migrate(connection):
             if name not in columns:
                 connection.exec_driver_sql(f'ALTER TABLE notes ADD COLUMN {name} {definition}')
         connection.exec_driver_sql('CREATE INDEX IF NOT EXISTS ix_notes_family_id ON notes (family_id)')
+    if version < 4:
+        for table in ('notes', 'note_versions'):
+            columns = {c['name'] for c in inspect(connection).get_columns(table)}
+            if 'dictionary' not in columns:
+                connection.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN dictionary JSON NOT NULL DEFAULT '[]'")
+    if version < 5:
+        for table in ('notes', 'note_versions'):
+            columns = {c['name'] for c in inspect(connection).get_columns(table)}
+            if 'note_notice' not in columns:
+                connection.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN note_notice VARCHAR(5000) NOT NULL DEFAULT ''")
+    if version < 6:
+        columns = {c['name'] for c in inspect(connection).get_columns('note_versions')}
+        if 'material_token' not in columns:
+            connection.exec_driver_sql('ALTER TABLE note_versions ADD COLUMN material_token VARCHAR(32)')
+        connection.exec_driver_sql('CREATE UNIQUE INDEX IF NOT EXISTS ix_note_versions_material_token ON note_versions (material_token)')
     connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
     _validate(connection, Base.metadata)
 

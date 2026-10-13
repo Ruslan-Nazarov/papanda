@@ -24,7 +24,6 @@
             {% if author_mode %}
             <button type="button" class="nav-pill-btn" id="btn-library-publish">{{ _('library_manage') }}</button>
             {% endif %}
-            <button class="nav-pill-btn" id="btn-ai-diary" type="button">{{ _('ai_diary_title') }}</button>
             <!-- Обучение -->
             <button class="nav-pill-btn" id="btn-howto">
                 <span class="pill-icon">🎓</span> {{ _('nav_howto') }}
@@ -108,7 +107,11 @@
                     </div>
                     <div class="menu-item" id="menu-item-export-md">
                         <span class="menu-icon">📄</span>
-                        <span>Markdown (.md)</span>
+                        <span>{{ _('menu_export_md_clean') }}</span>
+                    </div>
+                    <div class="menu-item" id="menu-item-export-md-full">
+                        <span class="menu-icon">📦</span>
+                        <span>{{ _('menu_export_md_full') }}</span>
                     </div>
                     <div class="menu-item" id="menu-item-export-pdf">
                         <span class="menu-icon">📄</span>
@@ -153,6 +156,9 @@
                 <input type="text" id="note-title" class="note-title-input" placeholder="{{ _('placeholder_title') }}" autocomplete="off">
             </div>
             <div class="note-header-right" style="display: flex; gap: 8px; align-items: center;">
+                <button class="nav-pill-btn note-diary-button" id="btn-ai-diary" type="button" title="{{ _('ai_diary_title') }}">
+                    <i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i> {{ _('ai_diary_button') }}
+                </button>
                 <div class="save-status-dot-indicator" id="save-status-dot"></div>
                 <button class="btn-save-primary" id="btn-save">
                     <span class="save-icon">💾</span> {{ _('btn_save') }}
@@ -200,6 +206,21 @@
                         <!-- populated by BlockStickersManager -->
                     </div>
                 </div>
+                <div class="dropdown-wrapper materials-wrapper">
+                    <button class="sub-bar-btn" id="btn-note-materials" type="button" aria-expanded="false" aria-controls="note-materials-panel">
+                        <span class="sub-icon" aria-hidden="true">📚</span> {{ _('materials_title') }} <span class="materials-count" hidden></span>
+                    </button>
+                    <section id="note-materials-panel" class="dropdown-menu materials-panel hidden" aria-label="{{ _('materials_title') }}"></section>
+                </div>
+                <div class="dropdown-wrapper questions-wrapper">
+                    <button class="sub-bar-btn" id="btn-questions" type="button" aria-expanded="false" aria-controls="questions-panel">
+                        <span class="sub-icon" aria-hidden="true">❓</span> {{ _('bar_questions') }} <span class="questions-count" hidden></span>
+                    </button>
+                    <section id="questions-panel" class="dropdown-menu questions-panel hidden" aria-label="{{ _('questions_title') }}"></section>
+                </div>
+                <button class="sub-bar-btn" id="btn-note-notice" type="button" aria-controls="note-notice-editor" aria-expanded="false">
+                    <span class="sub-icon" aria-hidden="true">📝</span> {{ _('note_notice_title') }}
+                </button>
             </div>
             <div class="sub-bar-right">
                 <button class="sub-bar-btn" id="btn-versions">
@@ -210,6 +231,19 @@
 
         <!-- Холст конспекта -->
         <main class="canvas-area" id="canvas-area">
+            <section class="note-notice-editor" id="note-notice-editor" hidden>
+                <label for="note-notice-input">{{ _('note_notice_title') }}</label>
+                <textarea id="note-notice-input" maxlength="5000" rows="4" placeholder="{{ _('note_notice_placeholder') }}"></textarea>
+                <div class="note-notice-actions">
+                    <button type="button" id="btn-note-notice-save">{{ _('save') }}</button>
+                    <button type="button" id="btn-note-notice-cancel">{{ _('cancel') }}</button>
+                    <button type="button" id="btn-note-notice-remove">{{ _('note_notice_remove') }}</button>
+                </div>
+            </section>
+            <aside class="note-notice-banner" id="note-notice-banner" aria-label="{{ _('note_notice_title') }}" hidden>
+                <div class="note-notice-heading"><strong>{{ _('note_notice_title') }}</strong><button type="button" id="btn-note-notice-edit">{{ _('note_notice_edit') }}</button></div>
+                <div id="note-notice-text"></div>
+            </aside>
             <template id="request-document-template">
             <section class="request-documents" aria-label="{{ _('request_document_material') }}">
                 <div class="request-document-actions">

@@ -64,120 +64,133 @@ class BlockMetaModalService {
     static showSourcesModal(blockId) {
         const block = AppState.getBlock(blockId);
         if (!block) return;
-        
-
-        
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.style.zIndex = '1200';
-
         const dialog = document.createElement('div');
-        dialog.className = 'modal-dialog';
-        dialog.style.maxWidth = '540px';
-        dialog.style.width = '90%';
-        dialog.style.borderRadius = '16px';
-        dialog.style.overflow = 'hidden';
-        dialog.style.boxShadow = '0 20px 40px rgba(0,0,0,0.18)';
-        dialog.style.background = '#ffffff';
-
-        const renderSourcesList = () => {
-            if (!block.sources || block.sources.length === 0) {
-                return `<p style="color: #94a3b8; font-style: italic; margin: 8px 0 0 0;">${t('meta_no_sources')}</p>`;
-            }
-            return `
-                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                    ${block.sources.map((src, idx) => `
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div>
-                                <strong style="color: #1e293b; font-size: 0.95rem;">${this.escapeHtml(src.title || src.url)}</strong>
-                                ${HtmlSafety.link(src.url) ? `<div style="font-size: 0.82rem; color: #2563eb; margin-top: 2px;"><a href="${HtmlSafety.escape(HtmlSafety.link(src.url))}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: none;">${this.escapeHtml(src.url)}</a></div>` : ''}
-                                ${src.quote ? `<blockquote style="margin: 6px 0 0 0; padding-left: 8px; border-left: 2px solid #2563eb; font-size: 0.85rem; color: #475569;">${this.escapeHtml(src.quote)}</blockquote>` : ''}
-                            </div>
-                            <button class="btn-del-src" data-idx="${idx}" title="${t('tt_delete')}" style="color: #ef4444; font-size: 1rem; border: none; background: none; cursor: pointer; padding: 2px 6px;">✕</button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        };
-
+        dialog.className = 'modal-dialog block-sources-modal';
         dialog.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; background: #ffffff;">
-                <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.15rem; color: #1e293b;">
-                    <span style="font-size: 1.25rem;">🔗</span>
+            <div class="modal-dialog-header">
+                <h2 class="block-sources-title"><span aria-hidden="true">🔗</span>
                     <span>${t('meta_sources_title')}</span>
-                </div>
-                <button class="btn-close-modal" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 4px 8px; border-radius: 6px;">✕</button>
+                </h2>
+                <button class="btn-close-modal block-sources-icon-btn" type="button" aria-label="${t('close_word')}">✕</button>
             </div>
-            <div style="padding: 20px; max-height: 70vh; overflow-y: auto;">
-                <div style="margin-bottom: 16px;">
-                    <div style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${t('meta_attached')}</div>
-                    <div id="sources-list-container">${renderSourcesList()}</div>
+            <div class="modal-dialog-body">
+                <div class="block-sources-list-header">
+                    <span>${t('meta_attached')}</span>
+                    <button class="block-sources-primary btn-new-src" type="button">${t('meta_attach_btn')}</button>
                 </div>
-
-                <div style="border-top: 1px dotted #cbd5e1; margin: 16px 0;"></div>
-
-                <div>
-                    <div style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 12px;">${t('meta_new_source')}</div>
-                    
-                    <input type="text" id="src-url-input" placeholder="${t('src_url_ph')}" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-bottom: 10px; outline: none; box-sizing: border-box;">
-                    
-                    <input type="text" id="src-title-input" placeholder="${t('src_name_ph')}" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-bottom: 10px; outline: none; box-sizing: border-box;">
-                    
-                    <textarea id="src-quote-input" placeholder="${t('src_quote_ph')}" rows="3" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-bottom: 12px; outline: none; resize: vertical; box-sizing: border-box; font-family: inherit;"></textarea>
-
-                    <button type="button" id="btn-add-src" style="background: #2563eb; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">${t('meta_attach_btn')}</button>
-                </div>
+                <div class="sources-list-container"></div>
+                <form class="block-sources-form" hidden>
+                    <h3 class="block-sources-form-title"></h3>
+                    <input type="text" class="src-url-input" placeholder="${t('src_url_ph')}" aria-label="${t('src_url_ph')}">
+                    <input type="text" class="src-title-input" placeholder="${t('src_name_ph')}" aria-label="${t('src_name_ph')}">
+                    <textarea class="src-quote-input" placeholder="${t('src_quote_ph')}" aria-label="${t('src_quote_ph')}" rows="3"></textarea>
+                    <div class="block-sources-form-actions">
+                        <button class="block-sources-secondary btn-cancel-src" type="button">${t('cancel')}</button>
+                        <button class="block-sources-primary btn-save-src" type="submit"></button>
+                    </div>
+                </form>
             </div>
-            <div style="padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
-                <button class="btn-done" style="background: #2563eb; color: white; border: none; padding: 8px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;">${t('meta_done')}</button>
+            <div class="modal-dialog-footer">
+                <button class="block-sources-secondary btn-done" type="button">${t('meta_done')}</button>
             </div>
         `;
-
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
-
-        const close = () => {
-            if (document.body.contains(overlay)) document.body.removeChild(overlay);
+        const list = dialog.querySelector('.sources-list-container');
+        const form = dialog.querySelector('.block-sources-form');
+        const urlInput = form.querySelector('.src-url-input');
+        const titleInput = form.querySelector('.src-title-input');
+        const quoteInput = form.querySelector('.src-quote-input');
+        let editingIndex = null;
+        const blockElement = [...document.querySelectorAll('.dialectics-block')].find(el => el.dataset.id === String(block.id));
+        const button = blockElement?.querySelector('.btn-connections');
+        const updateBadge = () => {
+            if (!button) return;
+            const count = block.sources?.length || 0;
+            button.setAttribute('aria-label', `${t('tt_block_sources')} (${count})`);
+            let badge = button.querySelector('.sources-badge');
+            if (count && !badge) {
+                badge = document.createElement('span');
+                badge.className = 'sources-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                button.appendChild(badge);
+            }
+            if (badge) {
+                if (count) badge.textContent = String(count);
+                else badge.remove();
+            }
         };
-
+        const renderList = () => {
+            list.innerHTML = (block.sources?.length || 0) ? block.sources.map((src, idx) => `
+                <article class="block-source-card">
+                    <div class="block-source-content">
+                        <strong>${this.escapeHtml(src.title || src.url)}</strong>
+                        ${HtmlSafety.link(src.url) ? `<a href="${HtmlSafety.escape(HtmlSafety.link(src.url))}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(src.url)}</a>` : ''}
+                        ${src.quote ? `<blockquote>${this.escapeHtml(src.quote)}</blockquote>` : ''}
+                    </div>
+                    <div class="block-source-actions">
+                        <button class="block-sources-icon-btn btn-edit-src" type="button" data-idx="${idx}" title="${t('tt_edit')}" aria-label="${t('tt_edit')}">✎</button>
+                        <button class="block-sources-icon-btn btn-del-src" type="button" data-idx="${idx}" title="${t('tt_delete')}" aria-label="${t('tt_delete')}">✕</button>
+                    </div>
+                </article>`).join('') : `<p class="block-sources-empty">${t('meta_no_sources')}</p>`;
+        };
+        const closeForm = () => {
+            editingIndex = null;
+            form.reset();
+            form.hidden = true;
+            list.hidden = false;
+            dialog.querySelector('.btn-new-src').hidden = false;
+        };
+        const openForm = (index = null) => {
+            editingIndex = index;
+            form.reset();
+            if (index !== null) {
+                const source = block.sources[index];
+                urlInput.value = source.url || '';
+                titleInput.value = source.title || '';
+                quoteInput.value = source.quote || '';
+            }
+            form.querySelector('.block-sources-form-title').textContent = index === null ? t('meta_new_source') : t('meta_edit_source');
+            form.querySelector('.btn-save-src').textContent = index === null ? t('meta_attach_btn') : t('save');
+            form.hidden = false;
+            list.hidden = true;
+            dialog.querySelector('.btn-new-src').hidden = true;
+            urlInput.focus();
+        };
+        renderList();
+        const close = () => overlay.remove();
         dialog.querySelector('.btn-close-modal').addEventListener('click', close);
         dialog.querySelector('.btn-done').addEventListener('click', close);
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) close();
+        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        dialog.querySelector('.btn-new-src').addEventListener('click', () => openForm());
+        dialog.querySelector('.btn-cancel-src').addEventListener('click', closeForm);
+        list.addEventListener('click', e => {
+            const edit = e.target.closest('.btn-edit-src');
+            const del = e.target.closest('.btn-del-src');
+            if (edit) openForm(Number(edit.dataset.idx));
+            if (del) {
+                const idx = Number(del.dataset.idx);
+                AppState.updateBlock(block.id, {sources: block.sources.filter((_, i) => i !== idx)});
+                renderList();
+                updateBadge();
+            }
         });
-
-        const urlInput = dialog.querySelector('#src-url-input');
-        const titleInput = dialog.querySelector('#src-title-input');
-        const quoteInput = dialog.querySelector('#src-quote-input');
-        const listContainer = dialog.querySelector('#sources-list-container');
-
-        const bindDelete = () => {
-            listContainer.querySelectorAll('.btn-del-src').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const idx = parseInt(btn.dataset.idx, 10);
-                    AppState.updateBlock(block.id, {sources: block.sources.filter((_, i) => i !== idx)});
-                    listContainer.innerHTML = renderSourcesList();
-                    bindDelete();
-                });
-            });
-        };
-        bindDelete();
-
-        dialog.querySelector('#btn-add-src').addEventListener('click', () => {
+        form.addEventListener('submit', e => {
+            e.preventDefault();
             const url = urlInput.value.trim();
             const title = titleInput.value.trim();
             const quote = quoteInput.value.trim();
-
             if (!url && !title && !quote) return;
-
-            AppState.updateBlock(block.id, {sources: [...(block.sources || []), { url, title, quote }]});
-
-            urlInput.value = '';
-            titleInput.value = '';
-            quoteInput.value = '';
-
-            listContainer.innerHTML = renderSourcesList();
-            bindDelete();
+            const sources = [...(block.sources || [])];
+            if (editingIndex === null) sources.push({url, title, quote});
+            else sources[editingIndex] = {...sources[editingIndex], url, title, quote};
+            AppState.updateBlock(block.id, {sources});
+            renderList();
+            updateBadge();
+            closeForm();
         });
     }
 

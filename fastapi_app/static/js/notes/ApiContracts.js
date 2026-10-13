@@ -1,7 +1,7 @@
 // @ts-check
 /** @typedef {{id: string, side: string, html?: string, role?: string|null, status?: string, [key: string]: unknown}} NoteBlock */
 /** @typedef {{id: string, title: string, text: string, color: string, created_at?: string|null}} NoteSticker */
-/** @typedef {{id: number, revision: number, title: string, content_json: NoteBlock[], stickers?: NoteSticker[], category_id: number|null, status: string}} NoteResponse */
+/** @typedef {{id: number, revision: number, title: string, note_notice?: string, content_json: NoteBlock[], stickers?: NoteSticker[], category_id: number|null, status: string}} NoteResponse */
 /** @typedef {'completed'|'partial'|'failed'|'cancelled'|'not_applicable'} RunStatus */
 /** @typedef {{content: string, status: string, author?: string}} GeneratedStep */
 /** @typedef {{run_id: string, status: RunStatus, source_revision: number|null, updated_steps: Record<string, GeneratedStep>, replace_bases: string[]}} GenerationResponse */
@@ -17,6 +17,7 @@ export function noteResponse(value) {
     const note = object(value);
     if (!Number.isInteger(note.id) || !Number.isInteger(note.revision) || Number(note.revision) < 1
         || typeof note.title !== 'string' || !Array.isArray(note.content_json)) throw new TypeError('Invalid note response');
+    if (note.note_notice !== undefined && typeof note.note_notice !== 'string') throw new TypeError('Invalid note notice');
     for (const item of note.content_json) {
         const block = object(item);
         if (typeof block.id !== 'string' || typeof block.side !== 'string') throw new TypeError('Invalid note block');

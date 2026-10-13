@@ -30,7 +30,7 @@ class AIDiaryService:
         if note.is_deleted:
             raise HTTPException(404, 'Not found')
         event = NoteActivity(note_id=note_id, kind=data.kind,
-                             data_json=data.model_dump(exclude_none=True))
+                             data_json=data.model_dump(mode='json', exclude_none=True))
         session.add(event)
         await commit(session)
         await session.refresh(event)

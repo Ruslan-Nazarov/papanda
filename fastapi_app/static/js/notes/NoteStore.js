@@ -31,14 +31,27 @@ class NoteStore {
     get epoch() { return this.#epoch; }
 
     open(note, notify = true) {
-        const blocks = note.content_json || note.blocks || [];
+        const blocks = clone(Array.isArray(note.content_json || note.blocks) ? (note.content_json || note.blocks) : []);
+        const dictionary = clone(note.dictionary || []);
+        const seenWords = new Set(dictionary.map(item => JSON.stringify([item.word, item.definition, item.connections || ''])));
+        for (const block of blocks) {
+            for (const item of block.words || []) {
+                if (!item || typeof item.word !== 'string' || !item.word.trim()) continue;
+                const entry = {word: item.word, definition: item.definition || '', connections: item.connections || ''};
+                const key = JSON.stringify([entry.word, entry.definition, entry.connections]);
+                if (!seenWords.has(key)) { dictionary.push(entry); seenWords.add(key); }
+            }
+            delete block.words;
+        }
         const data = {id: note.id ?? null, revision: note.revision ?? null, schema_version: note.schema_version || 1,
-            title: note.title || '', category_id: note.category_id ?? null, status: note.status || 'none',
+            title: note.title || '', note_notice: note.note_notice || '',
+            category_id: note.category_id ?? null, status: note.status || 'none',
             family_id: note.family_id ?? null, parent_note_id: note.parent_note_id ?? null,
             variant_label: note.variant_label || null, variant_origin: note.variant_origin || 'human',
             fork_step: note.fork_step ?? null, long_term_goal: Boolean(note.long_term_goal),
             stickers: clone(note.stickers || []),
-            blocks: clone(Array.isArray(blocks) ? blocks : []).map(block => ({...block,
+            dictionary,
+            blocks: blocks.map(block => ({...block,
                 status: block.status === 'draft' ? 'in_progress' : block.status || 'none',
                 role: block.role || inferRoleFromTitle(block),
                 side: (block.role || inferRoleFromTitle(block)) === 'anchor' ? 'left' : block.side
@@ -77,7 +90,11 @@ class NoteStore {
         this.#notify('blockAdded', this.note.blocks.find(item => item.id === block.id));
     }
 
-    removeBlock(id) { this.update({blocks: this.note.blocks.filter(block => block.id !== id)}); }
+    removeBlock(id) {
+        this.update({blocks: this.note.blocks.filter(block => block.id !== id).map(block =>
+            block.derivations?.some(item => item.source_id === id)
+                ? {...block, derivations: block.derivations.filter(item => item.source_id !== id)} : block)});
+    }
 
     metadata(patch) { Object.assign(this.#current.data, clone(patch)); }
 
@@ -98,7 +115,9 @@ class NoteStore {
             return Object.assign(target, block);
         });
         Object.assign(record.data, clone({title: response.title ?? note.title,
+            note_notice: response.note_notice ?? note.note_notice ?? '',
             stickers: response.stickers ?? note.stickers ?? [],
+            dictionary: response.dictionary ?? note.dictionary ?? [],
             category_id: response.category_id ?? null, status: response.status || note.status,
             family_id: response.family_id ?? null, parent_note_id: response.parent_note_id ?? null,
             variant_label: response.variant_label || null, variant_origin: response.variant_origin || 'human',

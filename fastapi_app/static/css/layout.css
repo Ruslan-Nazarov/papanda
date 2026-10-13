@@ -270,10 +270,10 @@ input:checked + .toggle-slider:before {
 .note-sub-bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 12px;
+    gap: 6px;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 24px;
+    padding: 8px 16px;
     background: #fcfcfd;
     border-bottom: 1px solid #f1f5f9;
 }
@@ -283,13 +283,16 @@ input:checked + .toggle-slider:before {
     flex-wrap: wrap;
     min-width: 0;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
 }
+
+.sub-bar-right { flex: none; }
 
 .progress-section {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .progress-label {
@@ -300,7 +303,8 @@ input:checked + .toggle-slider:before {
 }
 
 .progress-track {
-    width: 75px;
+    width: 60px;
+    flex: none;
     height: 6px;
     background: #e2e8f0;
     border-radius: 9999px;
@@ -318,7 +322,7 @@ input:checked + .toggle-slider:before {
     width: 1px;
     height: 14px;
     background: #cbd5e1;
-    margin: 0 4px;
+    margin: 0 2px;
 }
 
 .sub-bar-btn {
@@ -331,8 +335,8 @@ input:checked + .toggle-slider:before {
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
+    gap: 4px;
+    padding: 4px 6px;
     border-radius: 6px;
     transition: all 0.15s;
 }

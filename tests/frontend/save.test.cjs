@@ -22,6 +22,16 @@ function setup(id = 1) {
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
+test('note notice is included in the save snapshot', async () => {
+    const {ctx, requests, finish} = setup();
+    ctx.AppState.updateNote({note_notice: 'По заданию кафедры'});
+    const pending = ctx.NoteStorageService.saveCurrentNote();
+    assert.equal(requests[0].data.note_notice, 'По заданию кафедры');
+    finish(0);
+    await pending;
+    assert.equal(ctx.AppState.currentNote.note_notice, 'По заданию кафедры');
+});
+
 test('save queues edits made during the request and snapshots nested blocks', async () => {
     const {ctx, requests, events, finish} = setup();
     const pending = ctx.NoteStorageService.saveCurrentNote();

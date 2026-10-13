@@ -17,15 +17,28 @@ def _connect():
             id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS author_state (
             source TEXT PRIMARY KEY, id TEXT NOT NULL, target TEXT NOT NULL,
-            revision INTEGER, description TEXT NOT NULL DEFAULT '', published INTEGER NOT NULL DEFAULT 0);
+            revision INTEGER, description TEXT NOT NULL DEFAULT '',
+            language TEXT NOT NULL DEFAULT 'ru', resources TEXT NOT NULL DEFAULT '[]',
+            published INTEGER NOT NULL DEFAULT 0);
     ''')
+    columns = {row['name'] for row in db.execute('PRAGMA table_info(author_state)')}
+    if 'language' not in columns:
+        db.execute("ALTER TABLE author_state ADD COLUMN language TEXT NOT NULL DEFAULT 'ru'")
+    if 'resources' not in columns:
+        db.execute("ALTER TABLE author_state ADD COLUMN resources TEXT NOT NULL DEFAULT '[]'")
     return db
 
 
 def list_publications():
     with closing(_connect()) as db:
-        return [dict(json.loads(row['payload']), id=row['id'], updated_at=row['updated_at'])
-                for row in db.execute('SELECT * FROM publications ORDER BY updated_at DESC, id')]
+        rows = []
+        for row in db.execute('SELECT * FROM publications ORDER BY updated_at DESC, id'):
+            payload = json.loads(row['payload'])
+            rows.append({'id': row['id'], 'title': payload['title'],
+                         'description': payload.get('description', ''),
+                         'language': payload.get('language', 'ru'),
+                         'updated_at': row['updated_at']})
+        return rows
 
 
 def get_publication(publication_id):
@@ -54,7 +67,7 @@ def author_state(source, target):
         return dict(db.execute('SELECT * FROM author_state WHERE source=?', (source,)).fetchone())
 
 
-def record_publication(source, revision, description, published):
+def record_publication(source, revision, description, language, resources, published):
     with closing(_connect()) as db, db:
-        db.execute('UPDATE author_state SET revision=?, description=?, published=? WHERE source=?',
-                   (revision, description, int(published), source))
+        db.execute('UPDATE author_state SET revision=?, description=?, language=?, resources=?, published=? WHERE source=?',
+                   (revision, description, language, json.dumps(resources, ensure_ascii=False), int(published), source))

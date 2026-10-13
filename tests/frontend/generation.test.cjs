@@ -25,6 +25,23 @@ const result = (status = 'completed') => ({run_id:'test-run', status, source_rev
     updated_steps: {step2: {content: 'new two', status: 'in_progress'}}, replace_bases: ['2', '3', '4', '5']});
 const plain = value => JSON.parse(JSON.stringify(value));
 
+test('rejected writing remains separate from active AI content and survives family replacement', () => {
+    const {AppState, AIController, GenerationChanges} = setup();
+    const draft = {id: 'old-variant', html: '<p>Rejected <b>argument</b></p>', reason: 'Wrong premise', created_at: '2026-10-10T01:00:00Z'};
+    AppState.updateBlock('two-b', {rejected_drafts: [draft]});
+    const state = AIController.buildStateForAI();
+    assert(!state.steps.step2.content.includes('Rejected'));
+    assert.deepEqual(plain(state.rejected_drafts), [{block_id: 'two-b', role: 'step2.2', title: '',
+        content: 'Rejected argument', reason: 'Wrong premise'}]);
+    const next = GenerationChanges.build(AppState.currentNote, result(), text => text);
+    assert.deepEqual(plain(next.blocks.find(b => b.role === 'step2').rejected_drafts), [draft]);
+    const invalidated = GenerationChanges.build(AppState.currentNote,
+        {updated_steps: {}, replace_bases: ['2']}, text => text);
+    const retained = invalidated.blocks.find(b => b.id === 'two-b');
+    assert.equal(retained.html, '');
+    assert.deepEqual(plain(retained.rejected_drafts), [draft]);
+});
+
 test('atomic family replacement collapses multiple blocks and invalidates descendants', () => {
     const {AppState, GenerationChanges} = setup();
     const before = JSON.stringify(AppState.currentNote);
@@ -231,4 +248,41 @@ test('late result is kept in the original note diary after navigation', async ()
     assert.equal(logged.id, 1);
     assert.match(logged.data.text, /new two/);
     assert.equal(ctx.AppState.currentNote.id, 2);
+});
+
+test('a roleless block is filled without replacing its neighbors', async () => {
+    let payload, checkpoints = 0;
+    const ctx = setup({NotesAPI: {
+        fillBlock: async body => {payload = body; return {content: 'Generated explanation'};},
+        createCheckpoint: async () => {checkpoints++;},
+    }});
+    ctx.AppState.addBlock({id: 'custom', title: 'Record the signal', html: '<p>Initial text</p>'});
+    const before = ctx.AppState.currentNote.blocks.find(block => block.id === 'three').html;
+    await ctx.AIController.generateBlock('custom');
+    assert.equal(payload.block_title, 'Record the signal');
+    assert.equal(payload.block_text, 'Initial text');
+    assert.equal(ctx.AppState.getBlock('custom').html, '<p>Generated explanation</p>');
+    assert.equal(ctx.AppState.getBlock('custom').author, 'ai');
+    assert.equal(ctx.AppState.getBlock('three').html, before);
+    assert.equal(checkpoints, 1);
+});
+
+test('a labeled block is filled without replacing another block with the same role family', async () => {
+    const ctx = setup({NotesAPI: {fillBlock: async () => ({content: 'Only this block'})}});
+    const neighbor = ctx.AppState.getBlock('two-b').html;
+    await ctx.AIController.generateBlock('two-a');
+    assert.equal(ctx.AppState.getBlock('two-a').html, '<p>Only this block</p>');
+    assert.equal(ctx.AppState.getBlock('two-b').html, neighbor);
+});
+
+test('editing while a roleless block is being generated preserves the edit', async () => {
+    let finish;
+    const ctx = setup({NotesAPI: {fillBlock: () => new Promise(resolve => {finish = resolve;})}});
+    ctx.AppState.addBlock({id: 'custom', title: 'Record the signal', html: 'Original'});
+    const running = ctx.AIController.generateBlock('custom');
+    await new Promise(setImmediate);
+    ctx.AppState.updateBlock('custom', {html: 'User edit'});
+    finish({content: 'Generated explanation'});
+    await assert.rejects(running, /gen_conflict_title/);
+    assert.equal(ctx.AppState.getBlock('custom').html, 'User edit');
 });

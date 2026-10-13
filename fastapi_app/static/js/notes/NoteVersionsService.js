@@ -26,25 +26,32 @@ class NoteVersionsService {
                 ? `<div class="versions-cards-list" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-height: 400px; overflow-y: auto;">
                     ${versions.map(v => `
                         <div class="version-card-item" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong style="font-size: 1.05rem; font-weight: 700; color: #1e293b;">${this.escapeHtml(v.title)}</strong>
-                                ${v.is_manual
-                                    ? `<span style="background: #e0f2fe; color: #0284c7; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="color: #ec4899;">📌</span> ${t('version_manual')}</span>`
-                                    : `<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">🤖 ${t('version_auto')}</span>`}
+                            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
+                                <strong style="min-width: 0; overflow-wrap: anywhere; font-size: 1.05rem; font-weight: 700; color: #1e293b;">${this.escapeHtml(v.title)}</strong>
+                                ${v.material_token
+                                    ? `<span class="version-material-badge">${t('version_material')}</span>`
+                                    : v.is_manual
+                                    ? `<span style="background: #e0f2fe; color: #0284c7; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">📌 ${t('version_manual')}</span>`
+                                    : `<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">🕒 ${t('version_auto')}</span>`}
                             </div>
                             <div style="color: #64748b; font-size: 0.88rem;">
                                 ${DialogService.formatDateTime(v.created_at)}
                             </div>
-                            <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 2px;">
                                 <button class="action-btn" data-version-action="restore" data-version-id="${v.id}" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                                     <span style="font-size: 0.95rem;">↪</span> ${t('restore_word')}
                                 </button>
+                                ${v.material_token
+                                    ? `<button class="action-btn" data-version-action="copyMaterialLink" data-version-id="${v.id}">${t('version_copy_material_link')}</button>
+                                       <button class="action-btn" data-version-action="unlockMaterial" data-version-id="${v.id}">${t('version_unlock_material')}</button>`
+                                    : `<button class="action-btn" data-version-action="addMaterial" data-version-id="${v.id}">${t('version_add_material')}</button>`}
+                                ${v.material_token ? '' : `
                                 <button class="action-btn" data-version-action="togglePin" data-version-id="${v.id}" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                                     <span>${v.is_manual ? t('unpin_word') : t('pin_word')}</span>
                                 </button>
                                 <button class="action-btn" data-version-action="delete" data-version-id="${v.id}" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
                                     ✕
-                                </button>
+                                </button>`}
                             </div>
                         </div>
                     `).join('')}
@@ -76,6 +83,8 @@ class NoteVersionsService {
                         <input type="text" id="new-version-title" placeholder="${t('version_name_ph')}" style="flex: 1; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.92rem; outline: none;">
                         <button id="btn-save-custom-version" style="background: #2563eb; color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 0.92rem; font-weight: 600; cursor: pointer; white-space: nowrap;">+ ${t('save')}</button>
                     </div>
+                    <p class="version-retention-hint">${t('version_retention_hint')}</p>
+                    <button type="button" id="btn-save-current-material" class="action-btn">🔒 ${t('version_save_current_material')}</button>
 
                     ${listHTML}
                 </div>
@@ -90,8 +99,10 @@ class NoteVersionsService {
             dialog.querySelectorAll('[data-version-action]').forEach(button => {
                 button.addEventListener('click', () => {
                     const versionId = Number(button.dataset.versionId);
-                    if (AppState.currentNote.id === noteId) this[button.dataset.versionAction](versionId,
-                        versions.find(version => version.id === versionId)?.is_manual);
+                    if (AppState.currentNote.id === noteId) {
+                        const version = versions.find(item => item.id === versionId);
+                        this[button.dataset.versionAction](versionId, version);
+                    }
                 });
             });
             overlay.appendChild(dialog);
@@ -110,6 +121,8 @@ class NoteVersionsService {
                 this.currentModal.close();
                 this.show(app);
             });
+            dialog.querySelector('#btn-save-current-material').addEventListener('click', () =>
+                this.saveCurrentMaterial(noteId, dialog.querySelector('#new-version-title').value.trim()));
 
         } catch (e) {
             console.error(e);
@@ -144,15 +157,15 @@ class NoteVersionsService {
         }
     }
 
-    static async togglePin(versionId, isManual) {
+    static async togglePin(versionId, version) {
         try {
             const noteId = AppState.currentNote.id;
-            await NotesAPI.pinVersion(noteId, versionId, !isManual);
+            await NotesAPI.pinVersion(noteId, versionId, !version?.is_manual);
             if (AppState.currentNote.id !== noteId) return;
             const oldModal = this.currentModal;
             await this.show(window.app);
             if (oldModal) oldModal.close();
-            NoteController._showToast(isManual ? t('version_unpinned') : t('version_pinned'));
+            NoteController._showToast(version?.is_manual ? t('version_unpinned') : t('version_pinned'));
         } catch (e) {
             console.error(e);
             NoteController._showToast(t('version_pin_failed'), 'error');
@@ -178,6 +191,74 @@ class NoteVersionsService {
         } catch (e) {
             console.error(e);
             NoteController._showToast(t('version_del_failed'), 'error');
+        }
+    }
+
+    static async refresh() {
+        const oldModal = this.currentModal;
+        await this.show(window.app);
+        oldModal?.close();
+        document.dispatchEvent(new Event('materialsChanged'));
+    }
+
+    static async addMaterial(versionId) {
+        const noteId = AppState.currentNote.id;
+        try {
+            const version = await NotesAPI.addVersionMaterial(noteId, versionId);
+            if (AppState.currentNote.id !== noteId) return;
+            await this.refresh();
+            await this.copyMaterialLink(versionId, version);
+        } catch (error) {
+            console.error(error);
+            NoteController._showToast(t('version_material_error'), 'error');
+        }
+    }
+
+    static async saveCurrentMaterial(noteId, title = '') {
+        if (this.materialSavePending) return;
+        this.materialSavePending = true;
+        try {
+            const saved = await NoteController.saveCurrentNote();
+            if (!saved?.id || AppState.currentNote.id !== noteId) return;
+            const version = await NotesAPI.createCheckpoint(noteId,
+                (title || `${saved.title || t('version')} — ${new Date().toLocaleString()}`).slice(0, 150), true);
+            await this.addMaterial(version.id);
+        } catch (error) {
+            console.error(error);
+            NoteController._showToast(t('version_material_error'), 'error');
+        } finally {
+            this.materialSavePending = false;
+        }
+    }
+
+    static async copyMaterialLink(_versionId, version) {
+        if (!version?.material_token) return;
+        const url = `${location.origin}/v/${version.material_token}`;
+        try {
+            await navigator.clipboard.writeText(url);
+        } catch {
+            const input = document.createElement('textarea');
+            input.value = url;
+            document.body.append(input);
+            input.select();
+            document.execCommand('copy');
+            input.remove();
+        }
+        NoteController._showToast(t('share_copied'));
+    }
+
+    static async unlockMaterial(versionId) {
+        const noteId = AppState.currentNote.id;
+        const confirmed = await DialogService.confirm({title: t('version_unlock_material'),
+            message: t('version_unlock_confirm'), confirmText: t('version_unlock_material'),
+            isDestructive: true});
+        if (!confirmed || AppState.currentNote.id !== noteId) return;
+        try {
+            await NotesAPI.removeVersionMaterial(noteId, versionId);
+            if (AppState.currentNote.id === noteId) await this.refresh();
+        } catch (error) {
+            console.error(error);
+            NoteController._showToast(t('version_material_error'), 'error');
         }
     }
 

@@ -55,8 +55,8 @@ class BlockHintBuilder {
                 
                 <div style="display: flex; gap: 8px; z-index: 2;">
                     ${stepRole.startsWith('step') ? `
-                    <button class="btn-autofill-step ai-block-button" type="button" title="${t('ai_generate_step')}">
-                        <span>✦</span> ${t('ai_generate_step')}
+                    <button class="btn-autofill-step ai-block-button ai-block-icon" type="button" aria-label="${t('ai_generate_step')}" data-tooltip="${t('ai_generate_step')}">
+                        <span aria-hidden="true">✦</span>
                     </button>
                     ` : ''}
                 </div>
@@ -97,7 +97,10 @@ class BlockHintBuilder {
                 e.stopPropagation();
                 
                 const originalHtml = btnAutofillStep.innerHTML;
-                btnAutofillStep.innerHTML = t('hint_generating');
+                const originalTooltip = btnAutofillStep.dataset.tooltip;
+                btnAutofillStep.textContent = '…';
+                btnAutofillStep.dataset.tooltip = t('hint_generating');
+                btnAutofillStep.setAttribute('aria-label', t('hint_generating'));
                 btnAutofillStep.disabled = true;
 
                 try {
@@ -118,10 +121,10 @@ class BlockHintBuilder {
                 } catch (err) {
                     console.error("Next step generation failed", err);
                     import('./ToastService.js').then(m => m.showToast(err.message || t('hint_gen_step_err'), 'error'));
-                    btnAutofillStep.innerHTML = originalHtml;
-                    btnAutofillStep.disabled = false;
                 } finally {
                     btnAutofillStep.innerHTML = originalHtml;
+                    btnAutofillStep.dataset.tooltip = originalTooltip;
+                    btnAutofillStep.setAttribute('aria-label', originalTooltip);
                     btnAutofillStep.disabled = false;
                 }
             });

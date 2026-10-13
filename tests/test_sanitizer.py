@@ -92,3 +92,21 @@ def test_public_sanitize_drops_links_keeps_formatting():
     out = sanitize_block_html('<p><a href="https://x.com">л-ка</a> и <strong>жир</strong></p>')
     assert "<a " not in out
     assert "<strong>жир</strong>" in out
+
+
+def test_multiple_internal_targets_survive_write_only_when_valid():
+    import html as html_module
+    targets = '[{"url":"internal://note/1","text":"Первый","label":"Первый"},{"url":"internal://note/2/block/3","text":"Второй","label":"Второй"}]'
+    source = f'<p><a href="internal://note/1" data-internal-links="{html_module.escape(targets, quote=True)}">текст</a></p>'
+    assert 'data-internal-links=' in sanitize_on_write(source)
+    assert 'data-internal-links' not in sanitize_block_html(source)
+    unsafe = '<a href="internal://note/1" data-internal-links="[&quot;javascript:alert(1)&quot;,&quot;internal://note/2&quot;]">текст</a>'
+    assert 'data-internal-links' not in sanitize_on_write(unsafe)
+
+
+@pytest.mark.parametrize('clean', [sanitize_on_write, sanitize_block_html])
+def test_text_size_survives_storage_and_public_view(clean):
+    html = '<p><span class="text-size-24" data-text-size="24">Large text</span></p>'
+    assert clean(html) == html
+    invalid = clean('<span data-text-size="999" onclick="alert(1)">Text</span>')
+    assert 'data-text-size' not in invalid and 'onclick' not in invalid

@@ -1,15 +1,83 @@
-.ai-diary-overlay {position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px}
-.ai-diary-dialog {width:min(800px,100%);max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.25);overflow:hidden}
-.ai-diary-dialog>header {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 22px;border-bottom:1px solid #e2e8f0}
-.ai-diary-dialog h2 {font:700 1.15rem Inter,system-ui,sans-serif;margin:0;color:#0f172a}
-.ai-diary-close {border:0;background:#f1f5f9;color:#334155;border-radius:9px;font-size:1.4rem;min-width:36px;min-height:36px;cursor:pointer}
-.ai-diary-entries {padding:18px 22px;overflow:auto;min-height:0}
-.ai-diary-entries article {border:1px solid #e2e8f0;border-radius:10px;padding:15px;margin-bottom:12px}
-.ai-diary-entries time {color:#64748b;font-size:.8rem}
-.ai-diary-entries h3 {margin:8px 0 14px;font-size:1rem;color:#0f172a}
-.ai-diary-entries strong {font-size:.85rem;color:#0f766e}
-.ai-diary-entries pre {white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.5;color:#334155;margin:6px 0 15px}
-.ai-diary-entries article>p {color:#64748b;font-size:.85rem;margin-bottom:0}
+.note-diary-button {gap:7px; white-space:nowrap; color:#526179;}
+.note-diary-button i {font-size:1.05rem; color:#7c6aa4;}
+.ai-diary-overlay {position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,.42);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px}
+.ai-diary-dialog {width:min(840px,100%);height:min(800px,90dvh);display:flex;flex-direction:column;background:#f8fafc;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 24px 80px rgba(15,23,42,.22);overflow:hidden;color:#334155}
+.ai-diary-header {display:flex;align-items:center;gap:13px;padding:22px 24px;background:#fff;border-bottom:1px solid #edf0f5;flex-shrink:0}
+.ai-diary-heading-icon {display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border-radius:14px;background:#f0ebfa;color:#8062ac;font-size:1.5rem}
+.ai-diary-heading {flex:1;min-width:0}
+.ai-diary-dialog h2 {font:700 1.12rem var(--font-main),system-ui,sans-serif;margin:0;color:#17243b}
+#ai-diary-note {font-size:.78rem;color:#64748b;margin:7px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#ai-diary-note strong {font-weight:500;color:#475569;margin-left:4px}
+.ai-diary-close,.ai-diary-refresh {border:1px solid #e7ebf1;background:#fff;color:#64748b;border-radius:10px;min-width:36px;height:36px;cursor:pointer;flex-shrink:0}
+.ai-diary-close {font-size:1.4rem}
+.ai-diary-refresh {font-size:1.1rem}
+.ai-diary-close:hover,.ai-diary-refresh:hover {background:#f1f5f9;color:#334155}
+.ai-diary-tools {display:flex;gap:9px;padding:18px 24px 10px;flex-shrink:0}
+.ai-diary-search {flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:0 11px;border:1px solid #dfe5ed;border-radius:10px;background:#fff;color:#94a3b8}
+.ai-diary-search input {width:100%;min-width:0;border:0;outline:none;background:transparent;padding:9px 0;font:inherit;font-size:.82rem;color:#334155}
+.ai-diary-search:focus-within {outline:2px solid #a78bfa;outline-offset:2px}
+.ai-diary-filter {max-width:42%;border:1px solid #dfe5ed;border-radius:10px;padding:0 10px;background:#fff;font:inherit;font-size:.78rem;color:#475569}
+.ai-diary-info {display:flex;justify-content:space-between;gap:12px;padding:0 25px 12px;font-size:.7rem;color:#64748b;flex-shrink:0}
+.ai-diary-scroll {flex:1;min-height:0;overflow-y:auto;padding:0 24px 20px;overscroll-behavior:contain}
+.ai-diary-day {font-size:.74rem;font-weight:600;color:#64748b;display:flex;align-items:center;gap:12px;margin:18px 0 12px}
+.ai-diary-day::after {content:'';height:1px;background:#e4e9f0;flex:1}
+.ai-diary-entry {margin:0 0 10px;border:1px solid #e2e7ee;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 2px 3px rgba(15,23,42,.02)}
+.ai-diary-detail summary {display:flex;align-items:flex-start;gap:11px;padding:16px;cursor:pointer;list-style:none}
+.ai-diary-detail summary::-webkit-details-marker {display:none}
+.ai-diary-detail summary:hover {background:#fcfbff}
+.ai-diary-entry-icon {width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#f1f5f9;color:#7c6aa4;flex-shrink:0}
+.ai-diary-entry-summary {min-width:0;flex:1}
+.ai-diary-entry-top {display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ai-diary-entry-top strong {font-size:.87rem;font-weight:650;color:#24334b}
+.ai-diary-status {font-size:.66rem;font-weight:500;padding:3px 7px;border-radius:6px;background:#f1f5f9;color:#64748b}
+.ai-diary-status.completed {background:#eaf8f2;color:#28755c}
+.ai-diary-status.failed {background:#fef0f0;color:#b14949}
+.ai-diary-status.partial,.ai-diary-status.not_applicable {background:#fff5e7;color:#9a6526}
+.ai-diary-preview {display:block;margin-top:7px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#526179;font-size:.83rem}
+.ai-diary-entry-time {display:block;margin-top:8px;font-size:.7rem;color:#718096;font-variant-numeric:tabular-nums}
+.ai-diary-chevron {font-size:.9rem;color:#94a3b8;margin-top:6px;transition:transform .15s}
+.ai-diary-detail[open] .ai-diary-chevron {transform:rotate(180deg)}
+.ai-diary-entry-body {padding:2px 18px 18px 57px;border-top:1px solid #f0f2f6}
+.ai-diary-entry-body h4 {font-size:.71rem;font-weight:600;color:#7c6aa4;margin:16px 0 8px}
+.ai-diary-entry-body pre {white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:.87rem;line-height:1.65;color:#334155;margin:0}
+.ai-diary-entry-body section:first-child pre {padding:11px 13px;border-radius:9px;background:#f8f7fc}
+.ai-diary-request-fields {display:grid;gap:8px}
+.ai-diary-request-field {min-width:0;padding:10px 13px;border:1px solid #e9edf3;border-radius:10px;background:#fff}
+.ai-diary-request-field.is-primary {border-color:#e9e4f4;background:#f8f7fc}
+.ai-diary-field-label {display:block;margin-bottom:5px;color:#7966a4;font-size:.72rem;font-weight:650}
+.ai-diary-field-value {white-space:pre-wrap;overflow-wrap:anywhere;color:#334155;font-size:.87rem;line-height:1.55}
+.ai-diary-request-field summary {margin:0;cursor:pointer;list-style:none}
+.ai-diary-request-field summary::-webkit-details-marker {display:none}
+.ai-diary-request-field summary::before {content:'▸';display:inline-block;margin-right:7px;color:#94a3b8;transition:transform .15s}
+.ai-diary-request-field[open] summary::before {transform:rotate(90deg)}
+.ai-diary-request-field[open] .ai-diary-field-value {margin-top:8px}
+.ai-diary-message {text-align:center;margin:45px auto;max-width:360px;padding:10px;color:#64748b}
+.ai-diary-message>i {display:inline-block;font-size:2rem;color:#a49ab9;background:#f0ebfa;padding:15px;border-radius:18px}
+.ai-diary-message h3 {font-size:.95rem;color:#475569;margin:18px 0 8px}
+.ai-diary-message p {font-size:.83rem;line-height:1.6;margin:0}
+.ai-diary-retry {margin-top:16px;border:1px solid #ddd6fe;border-radius:9px;padding:8px 14px;background:#f5f3ff;color:#6d28d9;cursor:pointer;font:inherit;font-size:.8rem}
+.ai-diary-footer {padding:12px 24px;background:#fff;border-top:1px solid #e7ebf1;font-size:.7rem;line-height:1.5;color:#64748b;flex-shrink:0}
+.ai-diary-dialog button:focus-visible,.ai-diary-dialog select:focus-visible,.ai-diary-dialog summary:focus-visible {outline:2px solid #a78bfa;outline-offset:-2px}
+.ai-diary-dialog button:disabled {opacity:.5;cursor:default}
 .ai-block-button {display:inline-flex;align-items:center;gap:6px;border:1px solid #0d9488;border-radius:9px;padding:6px 10px;background:#f0fdfa;color:#0f766e;font:700 .79rem Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer}
 .ai-block-button:hover {background:#ccfbf1}.ai-block-button:focus-visible {outline:3px solid #5eead4;outline-offset:2px}
-@media(max-width:640px){.ai-diary-dialog {max-height:94vh}.ai-diary-entries {padding:14px}}
+.ai-block-button.ai-block-icon {position:relative;justify-content:center;flex:0 0 30px;width:30px;height:30px;padding:0;border-color:transparent;border-radius:8px;background:transparent;color:#64748b;font-size:1rem;line-height:1}
+.ai-block-button.ai-block-icon:hover,.ai-block-button.ai-block-icon:focus-visible {background:#e6f4f1;color:#0f766e}
+.ai-block-button.ai-block-icon:disabled {opacity:.55;cursor:wait}
+.ai-block-button.ai-block-icon:is(:hover,:focus-visible)::after {content:attr(data-tooltip);position:absolute;top:calc(100% + 7px);right:0;z-index:20;width:max-content;max-width:min(220px,80vw);padding:6px 9px;border-radius:6px;background:#1e293b;color:white;font:500 .75rem/1.3 Inter,system-ui,sans-serif;white-space:normal;text-align:left;box-shadow:0 4px 12px #0f172a33;pointer-events:none}
+@media(max-width:640px){
+    .ai-diary-overlay {padding:8px}
+    .ai-diary-dialog {height:calc(100dvh - 16px);border-radius:16px}
+    .ai-diary-header {padding:16px 14px;gap:10px}
+    .ai-diary-heading-icon {display:none}
+    .ai-diary-dialog h2 {font-size:1rem}
+    .ai-diary-tools {padding:14px 12px 10px;gap:6px}
+    .ai-diary-search {padding:0 8px}
+    .ai-diary-filter {max-width:38%;padding:0 5px;font-size:.72rem}
+    .ai-diary-info {padding:0 14px 4px;flex-wrap:wrap;gap:4px}
+    .ai-diary-scroll {padding:0 12px 16px}
+    .ai-diary-entry-body {padding:2px 13px 16px}
+    .ai-diary-detail summary {padding:13px;gap:8px}
+    .ai-diary-entry-icon {display:none}
+    .ai-diary-footer {padding:10px 14px}
+}

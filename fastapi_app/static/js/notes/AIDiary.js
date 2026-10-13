@@ -2,10 +2,15 @@ import NotesAPI from './api.js';
 import NoteStorageService from './NoteStorageService.js';
 import { showToast } from './ToastService.js';
 import { t } from '../i18n.js';
+import AppState from './AppState.js';
+import Lifecycle from './Lifecycle.js';
+import AIDiaryView from './AIDiaryView.js';
 
 const kinds = new Set(['ai_request', 'ai_proposed', 'ai_full_review', 'question_answer']);
 
 class AIDiary {
+    static session = null;
+
     static init() {
         NotesAPI.captureAI = async (endpoint, body, operation) => {
             const note = await NoteStorageService.saveCurrentNote();
@@ -13,6 +18,7 @@ class AIDiary {
                 ? [...body.entries()].map(([key, value]) => `${key}: ${typeof value === 'string' ? value : value.name}`).join('\n')
                 : typeof body === 'string' ? body : JSON.stringify(body, null, 2);
             let answer = '', status = 'completed';
+            const startedMs = Date.now();
             try {
                 const result = await operation();
                 const value = result instanceof Response ? await result.clone().json() : result;
@@ -24,62 +30,51 @@ class AIDiary {
                 throw error;
             } finally {
                 try {await NotesAPI.addActivity(note.id, {kind:'ai_request', request:request || '',
-                    text:answer || '', status, operation:endpoint});}
+                    text:answer || '', status, operation:endpoint,
+                    started_at:new Date(startedMs).toISOString(), duration_ms:Math.max(0, Date.now() - startedMs)});}
                 catch (error) {showToast(t('ai_diary_save_failed'), 'error'); console.error(error);}
             }
         };
     }
 
     static async open() {
-        try {
-            const events = (await NotesAPI.getAllActivity()).filter(event => kinds.has(event.kind));
-            document.querySelector('.ai-diary-overlay')?.remove();
-            const previous = document.activeElement;
-            const overlay = document.createElement('div');
-            overlay.className = 'ai-diary-overlay';
-            overlay.innerHTML = '<section class="ai-diary-dialog" role="dialog" aria-modal="true" aria-labelledby="ai-diary-title">'
-                + '<header><h2 id="ai-diary-title"></h2><button type="button" class="ai-diary-close">×</button></header>'
-                + '<div class="ai-diary-entries"></div></section>';
-            overlay.querySelector('h2').textContent = t('ai_diary_title');
-            const closeButton = overlay.querySelector('button');
-            closeButton.setAttribute('aria-label', t('close'));
-            const close = () => {overlay.remove(); previous?.focus();};
-            closeButton.addEventListener('click', close);
-            overlay.addEventListener('click', event => {if (event.target === overlay) close();});
-            overlay.addEventListener('keydown', event => {
-                if (event.key === 'Escape') close();
-                if (event.key === 'Tab') {event.preventDefault(); closeButton.focus();}
-            });
-            const entries = overlay.querySelector('.ai-diary-entries');
-            const locale = {ru:'ru-RU', en:'en-US', kz:'kk-KZ'}[document.documentElement.lang] || 'ru-RU';
-            for (const event of [...events].reverse()) {
-                const data = event.data || {};
-                const article = document.createElement('article');
-                const when = document.createElement('time');
-                when.textContent = new Date(event.created_at).toLocaleString(locale);
-                article.appendChild(when);
-                const heading = document.createElement('h3');
-                heading.textContent = [event.note_title, data.step ? `${t('ai_diary_step')} ${data.step}` : ''].filter(Boolean).join(' · ') || t('ai_diary_request');
-                article.appendChild(heading);
-                const add = (label, text) => {
-                    if (!text) return;
-                    const title = document.createElement('strong'), body = document.createElement('pre');
-                    title.textContent = label; body.textContent = text;
-                    article.append(title, body);
-                };
-                add(t('ai_diary_request'), [data.request, data.question].filter(Boolean).join('\n\n'));
-                add(t('ai_diary_answer'), data.answer || data.text || '');
-                if (data.status) {
-                    const status = document.createElement('p');
-                    status.textContent = t(`ai_diary_${data.status}`);
-                    article.appendChild(status);
-                }
-                entries.appendChild(article);
+        this.session?.dispose();
+        const session = this.session = new Lifecycle();
+        const note = AppState.currentNote, epoch = AppState.documentEpoch;
+        const previous = document.activeElement;
+        const view = new AIDiaryView(note.title);
+        session.own(() => {view.overlay.remove(); if (previous?.isConnected) previous.focus();});
+        session.on(document, 'noteOpened', () => session.dispose());
+        const close = () => session.dispose();
+        session.on(view.closeButton, 'click', close);
+        session.on(view.overlay, 'click', event => {if (event.target === view.overlay) close();});
+        session.on(view.overlay, 'keydown', event => {
+            if (event.key === 'Escape') {event.preventDefault(); event.stopPropagation(); close();}
+            if (event.key === 'Tab') {
+                const controls = [...view.overlay.querySelectorAll('button, input, select, summary')]
+                    .filter(el => !el.disabled && el.getClientRects().length);
+                const first = controls[0], last = controls.at(-1);
+                if (event.shiftKey && document.activeElement === first) {event.preventDefault(); last?.focus();}
+                else if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first?.focus();}
             }
-            if (!events.length) entries.textContent = t('ai_diary_empty');
-            document.body.appendChild(overlay);
-            closeButton.focus();
-        } catch (error) {showToast(error.message, 'error');}
+        });
+        session.on(view.search, 'input', () => view.render());
+        session.on(view.filter, 'change', () => view.render());
+        const refresh = async () => {
+            view.setLoading();
+            try {
+                const events = note.id ? await NotesAPI.getActivity(note.id) : [];
+                if (session.disposed || epoch !== AppState.documentEpoch) return;
+                view.setEvents(events.filter(event => kinds.has(event.kind) && event.note_id === note.id));
+            } catch {
+                if (!session.disposed) view.setError();
+            }
+        };
+        session.on(view.refreshButton, 'click', refresh);
+        session.on(view.retryButton, 'click', refresh);
+        document.body.appendChild(view.overlay);
+        view.closeButton.focus();
+        await refresh();
     }
 }
 

@@ -31,6 +31,7 @@ function load(ctx, name, symbol) {
         load(ctx, 'NoteStore');
     }
     if (name === 'NoteStorageService' && !ctx.SaveCoordinator) load(ctx, 'SaveCoordinator');
+    if (name === 'BlockNormalBuilder' && !ctx.BlockCodeRenderer) load(ctx, 'BlockCodeRenderer');
     vm.runInContext(source(name, symbol), ctx);
 }
 module.exports = {source, context, load};

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ content.title }} — papanda{% endblock %}
+{% block head %}
+<meta name="description" content="{{ content.intro }}">
+<style>
+    .ecg-showcase {max-width:1040px;margin:auto;padding:28px 24px 56px;color:#24354b;}
+    .ecg-nav {display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+    .ecg-nav a,.ecg-footer a {color:#40576f;text-decoration:none;}
+    .ecg-languages {display:flex;gap:6px;}
+    .ecg-languages a {padding:8px 12px;border-radius:9px;}
+    .ecg-languages [aria-current="page"] {background:#e9eff5;color:#102a43;font-weight:600;}
+    .ecg-hero {padding:54px 0 28px;max-width:850px;}
+    .ecg-eyebrow {font-size:.8rem;font-weight:600;color:#947047;letter-spacing:.04em;}
+    .ecg-hero h1 {font-size:clamp(2rem,5vw,3.3rem);line-height:1.15;letter-spacing:-.035em;margin:18px 0;}
+    .ecg-hero p {font-size:1.12rem;line-height:1.75;color:#52647a;}
+    .ecg-showcase h2 {font-size:1.35rem;margin:22px 0;}
+    .ecg-route {list-style:none;padding:0;display:grid;gap:16px;counter-reset:route;}
+    .ecg-route li {counter-increment:route;position:relative;padding:26px 28px 26px 80px;background:#fff;border:1px solid #e0e7ee;border-radius:16px;}
+    .ecg-route li::before {content:counter(route);position:absolute;left:25px;top:27px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:#f6eee3;color:#805e30;font-weight:600;}
+    .ecg-route h3 {font-size:1.1rem;margin:0 0 10px;}
+    .ecg-route p,.ecg-feature p {font-size:.95rem;line-height:1.7;color:#52647a;margin:0 0 16px;}
+    .ecg-links {display:flex;gap:12px;flex-wrap:wrap;}
+    .ecg-links a {padding:10px 14px;border:1px solid #d5e0eb;border-radius:9px;text-decoration:none;color:#164d76;font-weight:600;font-size:.9rem;overflow-wrap:anywhere;}
+    .ecg-links a:hover {background:#edf5fc;}
+    .ecg-features {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:26px 0;}
+    .ecg-feature h3 {font-size:1rem;margin:0 0 10px;}
+    .ecg-legend {font-size:.82rem;line-height:1.65;color:#62738a;padding:18px 20px;border-left:3px solid #d7b98c;background:#f7f8fa;}
+    .ecg-footer {display:flex;gap:20px;flex-wrap:wrap;margin-top:28px;font-size:.9rem;}
+    @media(max-width:650px) {.ecg-showcase{padding:20px 16px 40px;}.ecg-hero{padding-top:32px;}.ecg-route li{padding:22px 20px 22px 62px;}.ecg-route li::before{left:16px;top:24px;width:28px;height:28px;}.ecg-features{grid-template-columns:1fr;gap:8px;}}
+</style>
+{% endblock %}
+{% block content %}
+<main class="ecg-showcase">
+    <nav class="ecg-nav" aria-label="{{ content.eyebrow }}">
+        <a href="/library"><strong>papanda</strong></a>
+        <div class="ecg-languages">
+            <a href="/showcase/ecg?lang=ru" lang="ru" {% if locale == 'ru' %}aria-current="page"{% endif %}>Русский</a>
+            <a href="/showcase/ecg?lang=en" lang="en" {% if locale == 'en' %}aria-current="page"{% endif %}>English</a>
+        </div>
+    </nav>
+    <header class="ecg-hero">
+        <span class="ecg-eyebrow">{{ content.eyebrow }}</span>
+        <h1>{{ content.title }}</h1>
+        <p>{{ content.intro }}</p>
+    </header>
+    <section aria-labelledby="ecg-route-title">
+        <h2 id="ecg-route-title">{{ content.route_title }}</h2>
+        <ol class="ecg-route">
+            <li>
+                <h3>{{ content.source_title }}</h3><p>{{ content.source_text }}</p>
+                <div class="ecg-links"><a href="{{ content.source_pdf_url }}">{{ content.source_pdf }}</a><a href="{{ content.requirements_url }}">{{ content.requirements }}</a></div>
+            </li>
+            {% for kind in ['initial', 'final'] %}
+            <li>
+                <h3>{{ content[kind ~ '_title'] }}</h3><p>{{ content[kind ~ '_text'] }}</p>
+                {% if publications[kind] %}<div class="ecg-links"><a href="/library/{{ publications[kind].id }}">{{ content[kind ~ '_link'] }}</a></div>
+                {% else %}<small>{{ content.pending }}</small>{% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+    </section>
+    <section aria-labelledby="ecg-features-title">
+        <h2 id="ecg-features-title">{{ content.features_title }}</h2>
+        <div class="ecg-features">{% for feature in content.features %}<article class="ecg-feature"><h3>{{ feature.title }}</h3><p>{{ feature.text }}</p></article>{% endfor %}</div>
+        <p class="ecg-legend">{{ content.legend }}</p>
+    </section>
+    <footer class="ecg-footer"><a href="/library">{{ content.library }}</a><a href="/">{{ content.editor }}</a></footer>
+</main>
+{% endblock %}

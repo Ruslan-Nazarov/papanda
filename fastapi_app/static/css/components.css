@@ -564,6 +564,20 @@
     transition: filter 0.15s;
 }
 .sticker-add-btn:hover { filter: brightness(1.06); }
+.sticker-cancel-btn {
+    margin-left: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 12px;
+    background: #fff;
+    color: #475569;
+    font: inherit;
+    font-size: .85rem;
+    cursor: pointer;
+}
+.sticker-cancel-btn[hidden] { display: none; }
+.sticker-cancel-btn:not([hidden]) + .sticker-add-btn { margin-left: 0; }
+.sticker-cancel-btn:hover { background: #f1f5f9; }
 
 .sticker-panel-list {
     padding: 12px 14px;
@@ -581,6 +595,7 @@
     border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
+.sticker-card.is-editing { outline: 2px solid #f59e0b; outline-offset: 1px; }
 .sticker-card-title { font-weight: 700; font-size: 0.85rem; color: #1f2937; margin-bottom: 2px; }
 .sticker-card-text { font-size: 0.85rem; color: #334155; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
 .sticker-card-footer {
@@ -590,17 +605,18 @@
     margin-top: 6px;
 }
 .sticker-card-date { font-size: 0.72rem; color: #64748b; }
-.sticker-delete-btn {
+.sticker-card-actions { display: inline-flex; align-items: center; gap: 4px; }
+.sticker-copy-btn,.sticker-edit-btn,.sticker-delete-btn {
     background: none;
     border: none;
     color: #475569;
-    opacity: 0.5;
-    font-size: 0.8rem;
+    opacity: 0.7;
+    font-size: 0.9rem;
     cursor: pointer;
-    padding: 0 4px;
+    padding: 3px 6px;
     border-radius: 4px;
 }
-.sticker-delete-btn:hover { opacity: 1; background: rgba(0, 0, 0, 0.08); }
+.sticker-copy-btn:hover,.sticker-edit-btn:hover,.sticker-delete-btn:hover { opacity: 1; background: rgba(0, 0, 0, 0.08); }
 .sticker-empty { text-align: center; color: #94a3b8; font-size: 0.88rem; padding: 10px 0; }
 
 .breadcrumb-chevron {
@@ -1085,6 +1101,24 @@
     color: #64748b;
     cursor: pointer;
 }
+
+.toc-side-legend { display: flex; gap: 8px; padding: 10px 16px 4px; color: #64748b; font-size: .72rem; }
+.toc-side-legend span { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 8px; font-weight: 600; }
+.toc-legend-left { background: #eff6ff; color: #1d4ed8; }
+.toc-legend-right { background: #fdf0f7; color: #be185d; }
+.toc-side-legend b { font-size: .95rem; line-height: 1; }
+.toc-item { border: 2px solid transparent; }
+.toc-item.toc-side-left { border-left-color: #3b82f6; background: #f8fbff; }
+.toc-item.toc-side-right { border-left-color: #ec4899; background: #fff8fc; }
+.toc-item.toc-side-center { border-left-color: #a78bfa; background: #f8f7fc; }
+.toc-item:hover { filter: brightness(.975); }
+.toc-item .toc-marker { display: inline-flex; flex: 0 0 23px; height: 23px; align-items: center; justify-content: center; border-radius: 7px; font-size: .95rem; font-weight: 800; }
+.toc-item.toc-side-left .toc-marker { color: #1d4ed8; background: #dbeafe; }
+.toc-item.toc-side-right .toc-marker { color: #be185d; background: #fce7f3; }
+.toc-item.toc-side-center .toc-marker { color: #7c3aed; background: #ede9fe; }
+.toc-item.toc-anchor-item .toc-marker { color: #c2410c; background: #ffedd5; }
+.toc-item.toc-section-item .toc-title { font-weight: 700; }
+.toc-item.toc-anchor-item .toc-title { font-weight: 600; }
 .version-history-help-toggle span {
     display: inline-flex;
     align-items: center;

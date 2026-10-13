@@ -20,18 +20,23 @@ class BlockMathRenderer {
             return;
         }
 
-        // 1. Render custom TipTap mathCallout blocks (.math-callout)
+        // A callout may contain both an equation and prose beginning with «где».
+        // Render only its first formula line; keep the remaining editable content.
         element.querySelectorAll('.math-callout').forEach(el => {
-            if (el.querySelector('.katex')) return; // Already rendered
             const contentEl = el.querySelector('.math-content') || el;
-            const rawFormula = el.getAttribute('formula') || contentEl.innerText.trim();
-            const formula = this.unescapeHtml(rawFormula);
-            if (formula) {
-                try {
-                    window.katex.render(formula, el, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    console.error('KaTeX error in math-callout:', e);
-                }
+            const firstLine = contentEl.firstElementChild;
+            if (!firstLine || firstLine.querySelector('.math-inline, .katex')) return;
+            const formula = this.unescapeHtml(el.getAttribute('formula') || firstLine.textContent.trim());
+            if (!formula || !/[=\\^_]/.test(formula) || /^где\b/i.test(formula)) return;
+            const markedText = firstLine.children.length === 1
+                && firstLine.firstElementChild.matches('[data-text-size]')
+                && firstLine.firstElementChild.textContent.trim() === formula
+                ? firstLine.firstElementChild : null;
+            if (firstLine.children.length && !markedText) return;
+            try {
+                window.katex.render(formula, markedText || firstLine, { displayMode: true, throwOnError: false });
+            } catch (e) {
+                console.error('KaTeX error in math-callout:', e);
             }
         });
 
@@ -52,7 +57,7 @@ class BlockMathRenderer {
         // 3. Render paragraphs and block contents
         const targets = element.querySelectorAll ? element.querySelectorAll('.block-content p, .block-content li, .block-content > div') : [element];
         targets.forEach(target => {
-            if (target.querySelector('.katex')) return;
+            if (target.closest('.math-callout, pre, code') || target.querySelector('.katex')) return;
             let html = target.innerHTML;
             if (!html || !html.trim()) return;
 

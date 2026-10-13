@@ -58,6 +58,14 @@ class GenerationChanges {
                 html: toHtml(value.content), status: value.status === 'ready' ? 'ready' : 'in_progress',
                 isDraft: false, author: 'ai', generation_data: value.generation_data || null});
         }
+        // Replacing a family may rename or remove roles. Keep their rejection history.
+        for (const previous of copy.blocks) {
+            const group = groups.get(this.base(previous.role));
+            if (!group || !previous.rejected_drafts?.length || group.some(block => block.id === previous.id)) continue;
+            const recipient = group.find(block => (block.rejected_drafts?.length || 0) + previous.rejected_drafts.length <= 100);
+            if (recipient) recipient.rejected_drafts = [...(recipient.rejected_drafts || []), ...previous.rejected_drafts];
+            else group.push({...previous, html: '', status: 'none', generation_data: null, isDraft: false});
+        }
         const seen = new Set(), blocks = [];
         const insert = base => {
             if (!seen.has(base)) {

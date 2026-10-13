@@ -5,7 +5,7 @@ import sqlite3
 import pytest
 
 from fastapi_app.database import create_db_engine
-from fastapi_app.migrations import migrate
+from fastapi_app.migrations import VERSION, migrate
 
 STICKER = {'id': 'st-1', 'title': '<script>literal</script>', 'text': 'Private note',
            'color': '#fef9c3', 'created_at': '2026-09-24T10:00:00Z'}
@@ -63,7 +63,7 @@ async def test_v1_sticker_migration_preserves_legacy_field_and_history(tmp_path)
         await migrate(engine)
         await migrate(engine)
         with closing(sqlite3.connect(path)) as connection:
-            assert connection.execute('PRAGMA user_version').fetchone()[0] == 3
+            assert connection.execute('PRAGMA user_version').fetchone()[0] == VERSION
             text, stickers = connection.execute('SELECT sticker_text, stickers FROM notes').fetchone()
             assert text == json.loads(stickers)[0]['text'] == 'legacy text'
             assert connection.execute('SELECT stickers FROM note_versions').fetchone()[0] == '[]'

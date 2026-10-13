@@ -4,6 +4,14 @@ import { showToast } from './ToastService.js';
 import { t } from '../i18n.js';
 
 export class BlockColorPicker {
+    static applyColor(blockElement, color) {
+        if (blockElement.classList.contains('block-section')) {
+            blockElement.style.setProperty('--section-accent', color);
+        } else {
+            blockElement.style.borderLeftColor = color;
+        }
+    }
+
     static open(block, buttonEl, div) {
         const existing = document.getElementById('block-color-picker-popover');
         if (existing) {
@@ -74,7 +82,7 @@ export class BlockColorPicker {
             btn.addEventListener('click', () => {
                 const color = btn.dataset.color;
                 AppState.updateBlock(block.id, {border_color: color});
-                div.style.borderLeftColor = color;
+                this.applyColor(div, color);
                 showToast(t('color_changed'));
                 session.dispose();
             });
@@ -85,7 +93,7 @@ export class BlockColorPicker {
             customPicker.addEventListener('input', (e) => {
                 const color = e.target.value;
                 AppState.updateBlock(block.id, {border_color: color});
-                div.style.borderLeftColor = color;
+                this.applyColor(div, color);
             });
             customPicker.addEventListener('change', () => {
                 showToast(t('color_changed'));

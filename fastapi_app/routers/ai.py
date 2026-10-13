@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, UploadFile, File
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List, Any, AsyncIterator, Literal, Annotated
@@ -51,9 +51,11 @@ def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
 
 class ExplainRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
+    note_title: str = Field(default="", max_length=255)
     context_before: Optional[str] = Field(default="", max_length=5_000)
     context_after: Optional[str] = Field(default="", max_length=5_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
+    question: str = Field(default="", max_length=2_000)
 
 class TextMathRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
@@ -65,6 +67,13 @@ class EditMathRequest(BaseModel):
 class CheckRequest(BaseModel):
     text: str = Field(..., max_length=50_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
+
+class FillBlockRequest(BaseModel):
+    note_title: str = Field(default='', max_length=255)
+    block_title: str = Field(..., min_length=1, max_length=500)
+    block_text: str = Field(default='', max_length=10_000)
+    context_before: str = Field(default='', max_length=5_000)
+    context_after: str = Field(default='', max_length=5_000)
 
 class GenerationInputSticker(BaseModel):
     title: str = Field(default='', max_length=500)
@@ -79,9 +88,18 @@ class GenerationInputStep(BaseModel):
     generation_data: Optional[dict] = None
 
 
+class GenerationRejectedDraft(BaseModel):
+    block_id: str = Field(max_length=128)
+    role: str = Field(default='', max_length=100)
+    title: str = Field(default='', max_length=500)
+    content: str = Field(max_length=3_000_000)
+    reason: str = Field(default='', max_length=2000)
+
+
 class GenerationInput(BaseModel):
     target_goal: str = Field(default='', max_length=10_000)
     reference: Optional[str] = Field(default=None, max_length=2 * 1024 * 1024)
+    rejected_drafts: List[GenerationRejectedDraft] = Field(default_factory=list, max_length=10_000)
     steps: dict[Annotated[str, Field(pattern=r'^step[1-5](?:\.[1-9][0-9]*)?$')], GenerationInputStep] = Field(default_factory=dict, max_length=100)
 
 
@@ -115,8 +133,10 @@ async def explain_concept(request: Request, data: ExplainRequest):
         text=data.text,
         context_before=data.context_before or "",
         context_after=data.context_after or "",
+        note_title=data.note_title,
         history=data.history or [],
         locale=locale,
+        question=data.question,
     )
     return {"result": result, "user_query": data.text}
 
@@ -128,8 +148,10 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         text=data.text,
         context_before=data.context_before or "",
         context_after=data.context_after or "",
+        note_title=data.note_title,
         history=data.history or [],
         locale=locale,
+        question=data.question,
     ))
 
 @router.post("/text-math")
@@ -182,6 +204,19 @@ async def check_logic(request: Request, data: CheckRequest):
 async def check_logic_stream(request: Request, data: CheckRequest):
     locale = normalize_locale(request.state.locale)
     return _sse(ai_service.check_logic_stream(data.text, data.history or [], locale=locale))
+
+@router.post('/fill-block')
+@limiter.limit('15/minute')
+async def fill_block(request: Request, data: FillBlockRequest):
+    await reserve_generation(request)
+    locale = normalize_locale(getattr(request.state, 'locale', 'ru'))
+    content = await ai_service.fill_block(
+        data.note_title, data.block_title, data.block_text,
+        data.context_before, data.context_after, locale=locale,
+    )
+    if not content or content.startswith(('AI disabled:', 'Error calling AI:')):
+        raise HTTPException(status_code=503, detail=content or 'AI returned an empty block')
+    return {'content': content}
 
 @router.get("/notes/hints")
 @limiter.limit("20/minute")

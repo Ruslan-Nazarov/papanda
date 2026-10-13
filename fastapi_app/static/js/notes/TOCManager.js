@@ -37,37 +37,32 @@ class TOCManager {
         if (blocks.length === 0) {
             itemsHTML = `<div style="color: #94a3b8; font-style: italic; padding: 12px 16px; font-size: 0.9rem;">${t('toc_empty')}</div>`;
         } else {
+            let sectionNumber = 0;
             itemsHTML = blocks.map((b) => {
                 inferRoleFromTitle(b);
                 const isSection = b.role === 'section';
                 const _t = (b.title || '').toLowerCase();
                 const isAnchor = b.role === 'anchor' || _t.includes('что вам надо объяснить') || _t.includes('что вам нужно понять');
-                
-                let icon = '▪';
-                let iconColor = '#a855f7';
-                let itemBg = 'transparent';
-                let fontWeight = '500';
-                let titleText = b.title || (isAnchor ? t('hint_anchor_title') : (isSection ? t('section_word') : t('block_word')));
+                const side = isSection ? 'center' : b.side === 'right' ? 'right' : b.side === 'left' ? 'left' : 'center';
+                let icon = side === 'left' ? '←' : side === 'right' ? '→' : '•';
+                const titleText = b.title || (isAnchor ? t('hint_anchor_title') : (isSection ? t('section_word') : t('block_word')));
+                const displayTitle = isSection ? `${t('section_word')} ${++sectionNumber} · ${titleText}` : titleText;
 
                 if (isSection) {
                     icon = '📄';
-                    iconColor = '#3b82f6';
-                    itemBg = '#f1f5f9';
-                    fontWeight = '700';
                 } else if (isAnchor) {
                     icon = '🧠';
-                    iconColor = '#ea580c';
-                    fontWeight = '600';
                 }
 
                 return `
-                    <div class="toc-item ${isSection ? 'toc-section-item' : ''}" 
+                    <div class="toc-item toc-side-${side} ${isSection ? 'toc-section-item' : ''} ${isAnchor ? 'toc-anchor-item' : ''}"
                          data-id="${b.id}" 
                          draggable="true" 
-                         style="display: flex; align-items: center; gap: 8px; padding: ${isSection ? '8px 10px' : '6px 10px'}; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.92rem; color: #1e293b; background: ${itemBg}; border: 2px solid transparent; user-select: none;">
+                         data-side="${side}"
+                         style="display: flex; align-items: center; gap: 8px; padding: ${isSection ? '8px 10px' : '6px 10px'}; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.92rem; color: #1e293b; user-select: none;">
                         <span class="toc-drag-handle" title="${t('drag_word')}" style="color: #94a3b8; font-size: 1.1rem; cursor: grab; padding: 0 2px; line-height: 1;">⠿</span>
-                        <span class="toc-marker" style="color: ${iconColor}; font-size: ${isSection ? '1rem' : '0.85rem'}; display: inline-flex; align-items: center; justify-content: center;">${icon}</span>
-                        <span class="toc-title" style="flex: 1; font-weight: ${fontWeight}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(titleText)}</span>
+                        <span class="toc-marker" aria-hidden="true">${icon}</span>
+                        <span class="toc-title" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(displayTitle)}</span>
                     </div>
                 `;
             }).join('');
@@ -81,6 +76,7 @@ class TOCManager {
                 </div>
                 <button class="btn-close-toc" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;">✕</button>
             </div>
+            <div class="toc-side-legend"><span class="toc-legend-left"><b aria-hidden="true">←</b> ${t('toc_left_side')}</span><span class="toc-legend-right"><b aria-hidden="true">→</b> ${t('toc_right_side')}</span></div>
             <div class="toc-items-list" style="padding: 6px 8px 10px 8px; display: flex; flex-direction: column; gap: 4px; max-height: 380px; overflow-y: auto;">
                 ${itemsHTML}
             </div>
@@ -102,18 +98,8 @@ class TOCManager {
             });
         };
 
-        items.forEach(item => {
-            item.addEventListener('mouseenter', () => {
-                if (!item.classList.contains('toc-section-item')) {
-                    item.style.background = '#f8fafc';
-                }
-            });
-            item.addEventListener('mouseleave', () => {
-                if (!item.classList.contains('toc-section-item')) {
-                    item.style.background = 'transparent';
-                }
-            });
-
+        items.forEach((item, index) => {
+            if (blocks[index]?.border_color) item.style.borderLeftColor = blocks[index].border_color;
             // Click navigation
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.toc-drag-handle')) return;

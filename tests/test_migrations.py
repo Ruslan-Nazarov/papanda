@@ -54,6 +54,31 @@ async def test_empty_database_migrates_before_use_and_is_repeatable(tmp_path, pr
 
 
 @pytest.mark.asyncio
+async def test_v4_migration_adds_notice_to_notes_and_versions(tmp_path):
+    engine = create_db_engine(f'sqlite+aiosqlite:///{tmp_path / "v4.db"}')
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        async with async_sessionmaker(engine)() as session:
+            note = Note(title='old', content_json=[])
+            session.add(note)
+            await session.flush()
+            session.add(NoteVersion(note_id=note.id, title='old', content_json=[]))
+            await session.commit()
+        async with engine.begin() as conn:
+            await conn.exec_driver_sql('ALTER TABLE notes DROP COLUMN note_notice')
+            await conn.exec_driver_sql('ALTER TABLE note_versions DROP COLUMN note_notice')
+            await conn.exec_driver_sql('PRAGMA user_version=4')
+        await migrate(engine)
+        async with engine.connect() as conn:
+            assert (await conn.exec_driver_sql('PRAGMA user_version')).scalar() == VERSION
+            assert (await conn.exec_driver_sql('SELECT note_notice FROM notes WHERE id=1')).scalar() == ''
+            assert (await conn.exec_driver_sql('SELECT note_notice FROM note_versions WHERE id=1')).scalar() == ''
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
 async def test_legacy_migration_preserves_text_stable_ids_and_backup_restore(tmp_path):
     path = tmp_path / 'legacy.db'
     engine = await legacy_database(path)

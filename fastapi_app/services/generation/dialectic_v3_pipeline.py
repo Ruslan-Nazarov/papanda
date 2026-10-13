@@ -27,6 +27,7 @@ from fastapi_app.services.generation.block_titles import generate_titles
 from fastapi_app.services.generation.development import development_content
 from fastapi_app.services.generation.presentation import final_sources, explanation_paragraphs, present
 from fastapi_app.services.generation.note_context import clean_steps, current_steps, source_signature, prompt_signature
+from fastapi_app.services.generation.rejected_drafts import relevant_drafts
 
 _PHASE_OF = {
     "FindP0": "planning",
@@ -221,6 +222,7 @@ class DialecticV3Pipeline:
         if input_steps:
             input_steps = clean_steps(input_steps)
         additional = {key: value for key, value in {
+            'rejected_drafts': relevant_drafts(state, target),
             'reference_document': reference, 'existing_note_steps': input_steps,
             'requested_step': kwargs.get('target_step'), 'clarified_step': kwargs.get('pinned_step'),
             'user_question': kwargs.get('question'),
@@ -303,7 +305,7 @@ class DialecticV3Pipeline:
                         if key.removeprefix('step').split('.')[0] == str(base)), None)
             if key:
                 result.updated_steps[key]['generation_data'] = {'world': world.model_dump(),
-                    'source_signature': source_signature(domain, state.get('reference')),
+                    'source_signature': source_signature(domain, state.get('reference'), state.get('rejected_drafts')),
                     'prompt_signature': request_rules_signature}
         if run is not None:
             run.status = result.status

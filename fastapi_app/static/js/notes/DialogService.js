@@ -1,179 +1,204 @@
 import NotesAPI from './api.js';
+import AppState from './AppState.js';
 
 import { t } from '../i18n.js';
 class DialogService {
-    static async selectInternalLink(isEditing = false) {
-        return new Promise((resolve) => {
+    static async selectInternalLinks(context = {}) {
+        return new Promise(resolve => {
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
             overlay.style.zIndex = '4000';
-
             const dialog = document.createElement('div');
-            dialog.className = 'modal-dialog';
-            dialog.style.maxWidth = '600px';
-            dialog.style.width = '90%';
-            dialog.style.maxHeight = '80vh';
-            dialog.style.display = 'flex';
-            dialog.style.flexDirection = 'column';
-            dialog.style.borderRadius = '16px';
-            dialog.style.boxShadow = '0 20px 40px rgba(0,0,0,0.18)';
-            dialog.style.background = '#ffffff';
-
+            dialog.className = 'modal-dialog internal-links-dialog';
+            dialog.setAttribute('role', 'dialog');
+            dialog.setAttribute('aria-modal', 'true');
+            dialog.setAttribute('aria-label', t('dlg_internal_link'));
             dialog.innerHTML = `
-                <div class="modal-dialog-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-                        <span>🔗</span> ${t('dlg_internal_link')}
-                    </h2>
-                    <button class="btn-close-dialog" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;">✕</button>
+                <header class="internal-links-header">
+                    <div><h2>🔗 ${t('dlg_internal_link')}</h2><p>${t('picker_multi_hint')}</p></div>
+                    <button type="button" class="internal-links-close" aria-label="${t('close')}">✕</button>
+                </header>
+                <div class="internal-links-body">
+                    <input type="search" class="internal-links-search" placeholder="${t('search_input_ph')}" aria-label="${t('search_input_ph')}">
+                    <div class="internal-links-list" aria-live="polite">${t('loading')}</div>
                 </div>
-                <div class="modal-dialog-body" style="padding: 0; flex: 1; overflow-y: auto; background: #f8fafc;">
-                    <div id="internal-link-list" style="padding: 12px;">
-                        <div style="text-align: center; padding: 20px; color: #64748b;">${t('loading')}</div>
+                <footer class="internal-links-footer">
+                    <div class="internal-links-selected" aria-live="polite"></div>
+                    <div class="internal-links-error" role="status"></div>
+                    <div class="internal-links-actions">
+                        ${context.isEditing ? `<button type="button" class="internal-links-delete">${t('tt_delete')}</button>` : ''}
+                        <button type="button" class="internal-links-cancel">${t('cancel')}</button>
+                        <button type="button" class="internal-links-confirm" disabled>${t('insert_word')}</button>
                     </div>
-                </div>
-                <div class="modal-dialog-footer" style="padding: 12px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                    <div id="internal-link-selected" style="font-size: 0.9rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;">${t('dlg_nothing_selected')}</div>
-                    <div style="display: flex; gap: 10px;">
-                        ${isEditing ? `<button class="btn-delete-dialog" style="background: #ef4444; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${t('tt_delete')}</button>` : ''}
-                        <button class="btn-cancel-dialog" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${t('cancel')}</button>
-                        <button class="btn-confirm-dialog" style="background: #2563eb; color: white; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;" disabled>${t('insert_word')}</button>
-                    </div>
-                </div>
-            `;
-
+                </footer>`;
             overlay.appendChild(dialog);
             document.body.appendChild(overlay);
-
-            let selectedUrl = null;
-            const confirmBtn = dialog.querySelector('.btn-confirm-dialog');
-            const cancelBtn = dialog.querySelector('.btn-cancel-dialog');
-            const closeBtn = dialog.querySelector('.btn-close-dialog');
-            const deleteBtn = dialog.querySelector('.btn-delete-dialog');
-            const listContainer = dialog.querySelector('#internal-link-list');
-            const selectedText = dialog.querySelector('#internal-link-selected');
-
-            const finish = (val) => {
-                if (document.body.contains(overlay)) document.body.removeChild(overlay);
-                resolve(val);
+            const list = dialog.querySelector('.internal-links-list');
+            const search = dialog.querySelector('.internal-links-search');
+            const selected = dialog.querySelector('.internal-links-selected');
+            const notice = dialog.querySelector('.internal-links-error');
+            const confirm = dialog.querySelector('.internal-links-confirm');
+            const targets = new Map((context.existingLinks || []).filter(item => item?.url?.startsWith('internal://note/'))
+                .map(item => [item.url, item]));
+            let done = false;
+            const finish = value => {
+                if (done) return;
+                done = true;
+                document.removeEventListener('keydown', onKey);
+                overlay.remove();
+                resolve(value);
             };
+            const onKey = event => { if (event.key === 'Escape') finish(null); };
+            document.addEventListener('keydown', onKey);
+            dialog.querySelector('.internal-links-close').addEventListener('click', () => finish(null));
+            dialog.querySelector('.internal-links-cancel').addEventListener('click', () => finish(null));
+            dialog.querySelector('.internal-links-delete')?.addEventListener('click', () => finish([]));
+            overlay.addEventListener('click', event => { if (event.target === overlay) finish(null); });
+            confirm.addEventListener('click', () => finish([...targets.values()]));
 
-            confirmBtn.addEventListener('click', () => finish(selectedUrl));
-            cancelBtn.addEventListener('click', () => finish(null));
-            closeBtn.addEventListener('click', () => finish(null));
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => finish(''));
-            }
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) finish(null);
+            const refresh = () => {
+                notice.textContent = '';
+                selected.replaceChildren();
+                if (!targets.size) selected.textContent = t('dlg_nothing_selected');
+                targets.forEach((target, url) => {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'internal-links-chip';
+                    chip.textContent = `${target.label || target.text} ×`;
+                    chip.title = t('tt_delete');
+                    chip.addEventListener('click', () => { targets.delete(url); refresh(); });
+                    selected.appendChild(chip);
+                });
+                list.querySelectorAll('[data-link-url]').forEach(button => {
+                    const active = targets.has(button.dataset.linkUrl);
+                    button.classList.toggle('is-selected', active);
+                    button.setAttribute('aria-pressed', String(active));
+                });
+                confirm.disabled = !targets.size;
+            };
+            const addTarget = (url, text, label, displayLabel = label) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'internal-links-target';
+                button.dataset.linkUrl = url;
+                button.textContent = displayLabel;
+                button.addEventListener('click', () => {
+                    if (targets.has(url)) targets.delete(url);
+                    else if (targets.size < 24) targets.set(url, {url, text, label});
+                    else { notice.textContent = t('picker_limit'); return; }
+                    refresh();
+                });
+                return button;
+            };
+            search.addEventListener('input', () => {
+                const query = search.value.trim().toLocaleLowerCase();
+                list.querySelectorAll('.internal-links-note').forEach(note => {
+                    const noteMatches = note.dataset.search.includes(query);
+                    let blockMatches = false;
+                    note.querySelectorAll('.internal-links-block').forEach(block => {
+                        const matches = block.dataset.search.includes(query);
+                        block.hidden = !!query && !noteMatches && !matches;
+                        blockMatches ||= matches;
+                    });
+                    note.hidden = !!query && !noteMatches && !blockMatches;
+                    if (blockMatches && !noteMatches) note.querySelector('.internal-links-blocks').hidden = false;
+                });
             });
-
-            const updateSelection = (url, label) => {
-                selectedUrl = url;
-                if (url) {
-                    selectedText.textContent = label;
-                    selectedText.style.color = '#2563eb';
-                    confirmBtn.disabled = false;
-                } else {
-                    selectedText.textContent = t('picker_nothing');
-                    selectedText.style.color = '#64748b';
-                    confirmBtn.disabled = true;
-                }
-            };
-
-            const renderNotes = async () => {
+            const loadNotes = async () => {
                 try {
                     const notes = await NotesAPI.getNotes();
-                    listContainer.innerHTML = '';
-                    if (notes.length === 0) {
-                        listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #64748b;">${t('picker_no_notes')}</div>`;
-                        return;
-                    }
-                    
+                    if (done) return;
+                    list.replaceChildren();
+                    if (!notes.length) list.textContent = t('picker_no_notes');
                     notes.forEach(note => {
-                        const noteEl = document.createElement('div');
-                        noteEl.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; overflow: hidden; transition: all 0.2s;';
-                        
-                        const noteHeader = document.createElement('div');
-                        noteHeader.style.cssText = 'padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;';
-                        noteHeader.innerHTML = `
-                            <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                                <span style="font-size: 1.2rem;">📓</span>
-                                <span style="font-weight: 600; color: #1e293b;">${this.escapeHtml(note.title || t('untitled'))}</span>
-                            </div>
-                            <div style="display: flex; gap: 6px;">
-                                <button class="btn-select-note" style="padding: 4px 10px; background: #e0e7ff; color: #4f46e5; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">${t('dlg_select')}</button>
-                                <button class="btn-expand-note" style="padding: 4px 10px; background: #f1f5f9; color: #64748b; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">${t('picker_blocks')} ▾</button>
-                            </div>
-                        `;
-                        
-                        const blocksContainer = document.createElement('div');
-                        blocksContainer.style.cssText = 'display: none; padding: 8px; background: #f8fafc; border-top: 1px solid #f1f5f9; max-height: 200px; overflow-y: auto;';
-                        
-                        noteEl.appendChild(noteHeader);
-                        noteEl.appendChild(blocksContainer);
-                        listContainer.appendChild(noteEl);
-
-                        noteHeader.querySelector('.btn-select-note').addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            document.querySelectorAll('.internal-link-active').forEach(el => {
-                                el.classList.remove('internal-link-active');
-                                el.style.border = '1px solid #e2e8f0';
-                            });
-                            noteEl.classList.add('internal-link-active');
-                            noteEl.style.border = '1px solid #3b82f6';
-                            updateSelection(`internal://note/${note.id}`, note.title || t('untitled'));
-                        });
-
-                        noteHeader.querySelector('.btn-expand-note').addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            if (blocksContainer.style.display === 'block') {
-                                blocksContainer.style.display = 'none';
-                                e.target.textContent = t('picker_blocks') + ' ▾';
+                        const card = document.createElement('section');
+                        card.className = 'internal-links-note';
+                        card.dataset.search = (note.title || t('untitled')).toLocaleLowerCase();
+                        const row = document.createElement('div');
+                        row.className = 'internal-links-note-row';
+                        const title = document.createElement('span');
+                        title.className = 'internal-links-note-title';
+                        title.textContent = `📓 ${note.title || t('untitled')}`;
+                        const choose = addTarget(`internal://note/${note.id}`, note.title || t('untitled'), t('dlg_select'));
+                        const expand = document.createElement('button');
+                        expand.type = 'button';
+                        expand.className = 'internal-links-expand';
+                        expand.textContent = `${t('picker_blocks')} ▾`;
+                        const blocksArea = document.createElement('div');
+                        blocksArea.className = 'internal-links-blocks';
+                        blocksArea.hidden = true;
+                        row.append(title, choose, expand);
+                        card.append(row, blocksArea);
+                        list.appendChild(card);
+                        expand.addEventListener('click', async () => {
+                            if (blocksArea.dataset.loaded) {
+                                blocksArea.hidden = !blocksArea.hidden;
+                                expand.setAttribute('aria-expanded', String(!blocksArea.hidden));
                                 return;
                             }
-                            
-                            e.target.textContent = t('loading');
+                            expand.disabled = true;
                             try {
-                                const fullNote = await NotesAPI.getNote(note.id);
-                                blocksContainer.innerHTML = '';
-                                const blocks = (fullNote.content_json || fullNote.blocks || []).filter(b => b.role !== 'section' && b.title);
-                                
-                                if (blocks.length === 0) {
-                                    blocksContainer.innerHTML = `<div style="padding: 8px 12px; color: #94a3b8; font-size: 0.85rem;">${t('picker_no_blocks')}</div>`;
-                                } else {
-                                    blocks.forEach(block => {
-                                        const blockEl = document.createElement('div');
-                                        blockEl.style.cssText = 'padding: 8px 12px; margin-bottom: 4px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: #334155; display: flex; align-items: center; gap: 8px; transition: background 0.2s;';
-                                        blockEl.innerHTML = `<span>🔹</span> <span style="flex: 1;">${this.escapeHtml(block.title)}</span>`;
-                                        
-                                        blockEl.addEventListener('click', () => {
-                                            document.querySelectorAll('.internal-link-active').forEach(el => {
-                                                el.classList.remove('internal-link-active');
-                                                el.style.border = '1px solid #e2e8f0';
-                                                el.style.background = '#ffffff';
-                                            });
-                                            blockEl.classList.add('internal-link-active');
-                                            blockEl.style.border = '1px solid #3b82f6';
-                                            blockEl.style.background = '#eff6ff';
-                                            updateSelection(`internal://note/${note.id}/block/${block.id}`, `${note.title || t('untitled')} → ${block.title}`);
-                                        });
-                                        
-                                        blocksContainer.appendChild(blockEl);
-                                    });
-                                }
-                                blocksContainer.style.display = 'block';
-                                e.target.textContent = t('picker_blocks') + ' ▴';
-                            } catch (err) {
-                                e.target.textContent = t('error_word');
-                            }
+                                const full = context.noteId != null && String(note.id) === String(context.noteId)
+                                    ? AppState.currentNote : await NotesAPI.getNote(note.id);
+                                if (done) return;
+                                const stored = (full?.content_json || full?.blocks || []).filter(block => !block.isDraft);
+                                const ordered = [...stored.filter(block => block.role !== 'anchor'),
+                                    ...stored.filter(block => block.role === 'anchor')]
+                                    .filter(block => block.role !== 'section');
+                                ordered.forEach((block, index) => {
+                                    if (!block.title) return;
+                                    const label = `${index + 1}. ${block.title}`;
+                                    const button = addTarget(`internal://note/${note.id}/block/${block.id}`, block.title,
+                                        `${note.title || t('untitled')} → ${label}`, label);
+                                    button.classList.add('internal-links-block');
+                                    button.dataset.search = `${note.title || t('untitled')} ${label}`.toLocaleLowerCase();
+                                    blocksArea.appendChild(button);
+                                });
+                                if (!blocksArea.childElementCount) blocksArea.textContent = t('picker_no_blocks');
+                                blocksArea.dataset.loaded = 'true';
+                                blocksArea.hidden = false;
+                                expand.setAttribute('aria-expanded', 'true');
+                                refresh();
+                                search.dispatchEvent(new document.defaultView.Event('input'));
+                            } catch { blocksArea.textContent = t('picker_load_err'); blocksArea.hidden = false; }
+                            finally { expand.disabled = false; }
                         });
                     });
-                } catch (err) {
-                    listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">${t('picker_load_err')}: ${this.escapeHtml(err.message)}</div>`;
-                }
+                    refresh();
+                } catch (error) { if (!done) list.textContent = `${t('picker_load_err')}: ${error.message}`; }
             };
+            refresh();
+            loadNotes();
+            search.focus();
+        });
+    }
 
-            renderNotes();
+    static chooseInternalDestination(targets) {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.zIndex = '4000';
+            const dialog = document.createElement('div');
+            dialog.className = 'modal-dialog internal-links-dialog internal-links-chooser';
+            dialog.setAttribute('role', 'dialog');
+            dialog.setAttribute('aria-modal', 'true');
+            dialog.innerHTML = `<header class="internal-links-header"><h2>🔗 ${t('picker_choose_destination')}</h2><button type="button" class="internal-links-close" aria-label="${t('close')}">✕</button></header><div class="internal-links-choices"></div>`;
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            const onKey = event => { if (event.key === 'Escape') finish(null); };
+            const finish = value => { document.removeEventListener('keydown', onKey); overlay.remove(); resolve(value); };
+            document.addEventListener('keydown', onKey);
+            dialog.querySelector('.internal-links-close').addEventListener('click', () => finish(null));
+            overlay.addEventListener('click', event => { if (event.target === overlay) finish(null); });
+            targets.forEach(target => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'internal-links-choice';
+                button.textContent = target.label || target.text;
+                button.addEventListener('click', () => finish(target.url));
+                dialog.querySelector('.internal-links-choices').appendChild(button);
+            });
+            dialog.querySelector('.internal-links-choice')?.focus();
         });
     }
 
@@ -350,6 +375,7 @@ class DialogService {
         const icon = options.icon || '✏️';
         const confirmText = options.confirmText || t('save');
         const cancelText = options.cancelText || t('cancel');
+        const deleteText = options.deleteText || '';
 
         return new Promise((resolve) => {
             const overlay = document.createElement('div');
@@ -376,6 +402,7 @@ class DialogService {
                     <input type="text" id="dialog-prompt-input" value="${this.escapeHtml(defVal)}" placeholder="${this.escapeHtml(ph)}" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1.5px solid #2563eb; border-radius: 10px; font-size: 0.95rem; outline: none; margin-top: 4px;">
                 </div>
                 <div class="modal-dialog-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px;">
+                    ${deleteText ? `<button class="btn-delete-dialog" style="margin-right: auto; background: #fff; color: #b91c1c; border: 1px solid #fecaca; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">${this.escapeHtml(deleteText)}</button>` : ''}
                     <button class="btn-cancel-dialog" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer;">
                         ${this.escapeHtml(cancelText)}
                     </button>
@@ -404,10 +431,12 @@ class DialogService {
             const confirmBtn = dialog.querySelector('.btn-confirm-dialog');
             const cancelBtn = dialog.querySelector('.btn-cancel-dialog');
             const closeBtn = dialog.querySelector('.btn-close-dialog');
+            const deleteBtn = dialog.querySelector('.btn-delete-dialog');
 
             confirmBtn.addEventListener('click', () => finish(input.value));
             cancelBtn.addEventListener('click', () => finish(null));
             closeBtn.addEventListener('click', () => finish(null));
+            deleteBtn?.addEventListener('click', () => finish(''));
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) finish(null);
             });

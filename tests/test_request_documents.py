@@ -56,7 +56,7 @@ async def test_attachment_upload_save_reload_and_public_view(client):
     assert loaded.json()['content_json'][0]['request_document'] == attachment
     from fastapi_app.services.sharing_service import SharingService
     from types import SimpleNamespace
-    public = SharingService.public_view(SimpleNamespace(title=note['title'], schema_version=1,
+    public = SharingService.public_view(SimpleNamespace(title=note['title'], note_notice='', schema_version=1,
                                                        content_json=loaded.json()['content_json']))
     assert 'request_document' not in public['content_json'][0]
 

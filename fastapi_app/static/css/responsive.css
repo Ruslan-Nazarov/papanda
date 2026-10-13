@@ -121,8 +121,13 @@
     .block-anchor-starter { padding: 16px !important; }
     /* невидимые разделители между блоками съедают место на пустом экране */
     .block-divider { height: 20px; }
-    /* Ярлык роли дублирует заголовок и на узком экране налезает — прячем */
-    .block-role-label { display: none !important; }
+    .block-role-label {
+        position: relative;
+        top: auto;
+        left: auto;
+        max-width: 100%;
+        margin-bottom: 8px;
+    }
     .block-content { font-size: 0.95rem; }
     .block-title { word-break: break-word; }
     /* Заголовок — на своей строке под контролами, а не в тесной колонке */
@@ -155,6 +160,7 @@
         max-width: none !important;
         max-height: none !important;
         resize: none !important;
+        transition: none !important;
         display: flex;
         flex-direction: column;
     }

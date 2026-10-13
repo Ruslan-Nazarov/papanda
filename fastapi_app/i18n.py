@@ -10,8 +10,21 @@ from pathlib import Path
 
 _DATA_FILE = Path(__file__).parent / "i18n_data.json"
 TRANSLATIONS: dict = json.loads(_DATA_FILE.read_text(encoding="utf-8"))
+_DATA_STAMP = _DATA_FILE.stat().st_mtime_ns
 
 LOCALES = ("ru", "en", "kz")
+
+
+def _refresh_translations():
+    """Keep a running local server in sync with rebuilt frontend labels."""
+    global _DATA_STAMP
+    stamp = _DATA_FILE.stat().st_mtime_ns
+    if stamp != _DATA_STAMP:
+        words = json.loads(_DATA_FILE.read_text(encoding="utf-8"))
+        # Preserve references held by translators and other imported consumers.
+        TRANSLATIONS.clear()
+        TRANSLATIONS.update(words)
+        _DATA_STAMP = stamp
 
 
 def request_locale(cookie: str | None, accept_language: str) -> str:
@@ -51,11 +64,13 @@ def normalize(locale: str) -> str:
 def locale_dict(locale: str) -> dict:
     """Словарь строк локали с подложенным ru-фолбэком — то, что уходит на
     клиент (одна локаль, все ключи присутствуют)."""
+    _refresh_translations()
     loc = normalize(locale)
     return {**TRANSLATIONS["ru"], **TRANSLATIONS[loc]}
 
 
 def get_translator(locale: str):
+    _refresh_translations()
     loc = normalize(locale)
 
     def _(key: str) -> str:

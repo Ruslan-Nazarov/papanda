@@ -145,7 +145,7 @@ async def test_demo_public_live_view_revoke_delete_expiry_and_reindex(file_clien
         await visitor.get('/favicon.ico')
         assert 'session_id' not in visitor.cookies
         public = (await visitor.get(f'/api/dialectics/shared/{token}')).json()
-        assert set(public) == {'title', 'schema_version', 'content_json'}
+        assert set(public) == {'title', 'note_notice', 'schema_version', 'content_json'}
         assert 'SECRET' not in json.dumps(public) and 'PRIVATE STICKER' not in json.dumps(public)
         assert len(list(settings.DEMO_DIR.glob('*.db'))) == 1
         with database() as db:

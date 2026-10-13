@@ -22,8 +22,11 @@ def current_steps(state, target):
     return {key: value for key, value in state.get('steps', {}).items() if base(key) == target}
 
 
-def source_signature(domain, reference):
-    return hashlib.sha256(json.dumps([domain, reference], ensure_ascii=False).encode('utf-8')).hexdigest()
+def source_signature(domain, reference, rejected_drafts=None):
+    source = [domain, reference]
+    if rejected_drafts:
+        source.append(rejected_drafts)
+    return hashlib.sha256(json.dumps(source, ensure_ascii=False).encode('utf-8')).hexdigest()
 
 
 def prompt_signature():

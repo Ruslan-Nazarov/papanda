@@ -1,6 +1,22 @@
 import Link from '@tiptap/extension-link';
 
 export default Link.extend({
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            targets: {
+                default: null,
+                parseHTML: element => {
+                    try {
+                        const value = JSON.parse(element.getAttribute('data-internal-links') || 'null');
+                        return Array.isArray(value) ? value : null;
+                    } catch { return null; }
+                },
+                renderHTML: attributes => attributes.targets?.length > 1
+                    ? {'data-internal-links': JSON.stringify(attributes.targets)} : {},
+            },
+        };
+    },
     addKeyboardShortcuts() {
         const parentShortcuts = this.parent?.() || {};
         return {

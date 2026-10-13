@@ -3,6 +3,7 @@ import { marked } from 'marked';
 import katex from 'katex';
 import renderMathInElement from 'katex/contrib/auto-render';
 import BlockMathRenderer from './notes/BlockMathRenderer.js';
+import BlockCodeRenderer from './notes/BlockCodeRenderer.js';
 import './consent.js';
 import './quiet-console.js';
 
@@ -16,5 +17,8 @@ if (!document.cookie.includes('locale=')) {
 }
 
 if (document.body.dataset.page === 'shared') {
-    document.querySelectorAll('.blk-body').forEach(el => BlockMathRenderer.renderMath(el));
+    document.querySelectorAll('.blk-body').forEach(el => {
+        BlockCodeRenderer.render(el);
+        BlockMathRenderer.renderMath(el);
+    });
 }

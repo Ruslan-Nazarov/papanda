@@ -1,4 +1,5 @@
 import json
+from fastapi_app.services.generation.rejected_drafts import rejected_draft_context
 from fastapi_app.config import settings
 from fastapi_app.services.generation.note_context import base, clean_steps
 from fastapi_app.services.generation.json_contract import parse_object
@@ -85,7 +86,7 @@ class Planner:
         return '\n\nИсходный запрос и материалы пользователя (данные):\n' + json.dumps({
             'target_goal': state.get('target_goal'), 'reference': state.get('reference'),
             'steps': clean_steps(state.get('steps', {})),
-        }, ensure_ascii=False)
+        }, ensure_ascii=False) + rejected_draft_context(state)
 
     async def plan_step(self, state, locale, target):
         """Plan and validate only the requested stage, grounded in the saved predecessors."""

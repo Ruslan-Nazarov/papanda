@@ -26,8 +26,10 @@ class Note(Base):
     revision: Mapped[int] = mapped_column(default=1, server_default='1')
     __mapper_args__ = {'version_id_col': revision}
     title: Mapped[str] = mapped_column(String(150), index=True)
+    note_notice: Mapped[str] = mapped_column(String(5000), default='', server_default='')
     content_json: Mapped[List[dict]] = mapped_column(JSON, default=list)
     stickers: Mapped[List[dict]] = mapped_column(JSON, default=list, server_default='[]')
+    dictionary: Mapped[List[dict]] = mapped_column(JSON, default=list, server_default='[]')
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("note_categories.id", ondelete="SET NULL"), nullable=True)
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     is_example: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -56,9 +58,12 @@ class NoteVersion(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     note_id: Mapped[int] = mapped_column(ForeignKey("notes.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(150), default="Автосохранение")
+    note_notice: Mapped[str] = mapped_column(String(5000), default='', server_default='')
     content_json: Mapped[List[dict]] = mapped_column(JSON, default=list)
     stickers: Mapped[List[dict]] = mapped_column(JSON, default=list, server_default='[]')
+    dictionary: Mapped[List[dict]] = mapped_column(JSON, default=list, server_default='[]')
     is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
+    material_token: Mapped[Optional[str]] = mapped_column(String(32), unique=True, index=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
 
 class NoteConnection(Base):

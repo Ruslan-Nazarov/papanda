@@ -1,6 +1,101 @@
 import pytest
 from httpx import AsyncClient
 
+
+@pytest.mark.asyncio
+async def test_note_notice_survives_save_versions_and_public_view(client: AsyncClient):
+    notice = 'Составлен по заданию <Кафедры>'
+    created = await client.post('/api/dialectics/save', json={
+        'title': 'Конспект с примечанием', 'blocks': [], 'note_notice': notice})
+    assert created.status_code == 200, created.text
+    note = created.json()
+    note_id = note['id']
+    assert note['note_notice'] == notice
+    assert (await client.get(f'/api/dialectics/{note_id}')).json()['note_notice'] == notice
+
+    versions = (await client.get(f'/api/dialectics/{note_id}/versions')).json()
+    assert versions[0]['note_notice'] == notice
+    changed = await client.patch(f'/api/dialectics/{note_id}', json={
+        'revision': note['revision'], 'note_notice': 'Новое примечание'})
+    assert changed.status_code == 200, changed.text
+    assert changed.json()['note_notice'] == 'Новое примечание'
+
+    share = await client.post(f'/api/dialectics/{note_id}/share')
+    assert share.status_code == 200, share.text
+    token = share.json()['token']
+    assert (await client.get(f'/api/dialectics/shared/{token}')).json()['note_notice'] == 'Новое примечание'
+    page = await client.get(f'/s/{token}')
+    assert 'Новое примечание' in page.text
+
+    restored = await client.post(f'/api/dialectics/{note_id}/versions/{versions[0]["id"]}/restore',
+        json={'revision': changed.json()['revision']})
+    assert restored.status_code == 200, restored.text
+    assert restored.json()['note_notice'] == notice
+    page = await client.get(f'/s/{token}')
+    assert '&lt;Кафедры&gt;' in page.text
+    assert '<Кафедры>' not in page.text
+
+    rejected = await client.patch(f'/api/dialectics/{note_id}', json={
+        'revision': restored.json()['revision'], 'note_notice': 'x' * 5001})
+    assert rejected.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_note_dictionary_is_shared_and_restored_with_versions(client: AsyncClient):
+    entry = {"word": "ЭКГ", "definition": "Измерение активности сердца", "connections": "сердце",
+             "connection_explanations": {}}
+    created = await client.post('/api/dialectics/save', json={"title": "Тест словаря", "blocks": [], "dictionary": [entry]})
+    assert created.status_code == 200, created.text
+    note = created.json()
+    assert note['dictionary'] == [entry]
+    note_id = note['id']
+    checkpoint = await client.post(f'/api/dialectics/{note_id}/checkpoint', json={"title": "До правки"})
+    assert checkpoint.status_code == 200, checkpoint.text
+    assert checkpoint.json()['dictionary'] == [entry]
+    updated = await client.patch(f'/api/dialectics/{note_id}', json={"revision": note['revision'],
+        "dictionary": [{**entry, "definition": "Новая формулировка"}]})
+    assert updated.status_code == 200, updated.text
+    assert updated.json()['dictionary'][0]['definition'] == 'Новая формулировка'
+    restored = await client.post(f'/api/dialectics/{note_id}/versions/{checkpoint.json()["id"]}/restore',
+        json={"revision": updated.json()['revision']})
+    assert restored.status_code == 200, restored.text
+    assert restored.json()['dictionary'] == [entry]
+
+@pytest.mark.asyncio
+async def test_dictionary_explanations_survive_save_and_reload(client: AsyncClient):
+    entry = {"word": "Микроконтроллер", "definition": "Управляет измерениями",
+             "connections": "SPI, АЦП", "connection_explanations": {
+                 "SPI": "Обмен данными по SPI", "АЦП": "АЦП выполняет измерения"}}
+    created = await client.post('/api/dialectics/save', json={
+        "title": "Проверка объяснений связей", "blocks": [], "dictionary": [entry]})
+    assert created.status_code == 200, created.text
+    note = created.json()
+    updated_entry = {**entry, "connection_explanations": {
+        **entry["connection_explanations"], "SPI": "Передача результатов измерения по SPI"}}
+    updated = await client.patch(f'/api/dialectics/{note["id"]}', json={
+        "revision": note["revision"], "dictionary": [updated_entry]})
+    assert updated.status_code == 200, updated.text
+    reloaded = await client.get(f'/api/dialectics/{note["id"]}')
+    assert reloaded.status_code == 200, reloaded.text
+    assert reloaded.json()['dictionary'] == [updated_entry]
+
+
+@pytest.mark.asyncio
+async def test_attached_conspects_survive_note_save(client: AsyncClient):
+    attachment = {'id': 'other-ai-1', 'name': 'Другой ИИ.txt', 'text': 'Текст конспекта'}
+    included = {'note_id': 1, 'title': 'Конспект из приложения'}
+    created = await client.post('/api/dialectics/save', json={'title': 'ЭКГ', 'blocks': [
+        {'id': 'anchor-materials', 'side': 'left', 'role': 'anchor', 'html': '',
+         'attached_conspects': [attachment], 'included_conspects': [included]}]})
+    assert created.status_code == 200, created.text
+    note = created.json()
+    assert note['content_json'][0]['attached_conspects'] == [attachment]
+    assert note['content_json'][0]['included_conspects'] == [included]
+    loaded = await client.get(f"/api/dialectics/{note['id']}")
+    assert loaded.status_code == 200, loaded.text
+    assert loaded.json()['content_json'][0]['attached_conspects'] == [attachment]
+    assert loaded.json()['content_json'][0]['included_conspects'] == [included]
+
 @pytest.mark.asyncio
 async def test_categories_crud(client: AsyncClient):
     # 1. Create Category
@@ -52,6 +147,7 @@ async def test_notes_crud_and_search(client: AsyncClient):
                 "role": "step1",
                 "title": "Тезис",
                 "html": "<p>Чистое бытие есть ничто.</p>",
+                "author": "ai_checked",
                 "status": "ready"
             }
         ],
@@ -67,6 +163,7 @@ async def test_notes_crud_and_search(client: AsyncClient):
     assert note["id"] is not None
     assert note["title"] == "Гегель и диалектический метод"
     assert len(note["content_json"]) == 2
+    assert note["content_json"][1]["author"] == "ai_checked"
     note_id = note["id"]
 
     # 2. Get Note by ID
@@ -77,6 +174,7 @@ async def test_notes_crud_and_search(client: AsyncClient):
     assert note_fetched["title"] == "Гегель и диалектический метод"
     assert note_fetched["category_id"] == cat_id
     assert note_fetched["is_pinned"] is True
+    assert note_fetched["content_json"][1]["author"] == "ai_checked"
 
     # 3. Search note by text
     res_search = await client.get("/api/dialectics?search=Гегель")

@@ -8,7 +8,7 @@ class BlockSectionsManager {
     static handleAddSection(app, index) {
         ModalsController.showSectionTitleModal(app, '', (title) => {
             if (title && title.trim().length > 0) {
-                app.constructor.addNewBlock('center', index, 'section', title.trim());
+                app.addNewBlock('center', index, 'section', title.trim());
             }
         });
     }

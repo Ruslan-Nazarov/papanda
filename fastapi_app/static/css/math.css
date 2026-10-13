@@ -8,18 +8,36 @@
     border-radius: 14px;
     padding: 12px 20px;
     margin: 12px 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
+    display: block;
     color: #1e293b;
     font-size: 1.05rem;
     line-height: 1.5;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.04);
     transition: all 0.2s ease;
     cursor: pointer;
-    user-select: all;
+    user-select: text;
     box-sizing: border-box;
     width: 100%;
+}
+
+.math-callout .math-content { min-width: 0; width: 100%; }
+.math-callout .math-content > :first-child {
+    margin: 0;
+    padding: 2px 0 10px;
+    text-align: center;
+    overflow-x: auto;
+}
+.math-callout .math-content > :not(:first-child) {
+    margin: 0;
+    padding: 10px 0 0;
+    border-top: 1px solid #dbe2ff;
+    font-size: .88em;
+    line-height: 1.6;
+    text-align: left;
+}
+.math-callout .math-content > :not(:first-child) + :not(:first-child) {
+    border-top: 0;
+    padding-top: 4px;
 }
 
 .math-callout:hover {

@@ -19,7 +19,7 @@ def _content(steps, number):
             if (steps.get(key, {}).get('content') or '').strip()]
 
 
-def world_from_steps(domain, steps, target, reference=None):
+def world_from_steps(domain, steps, target, reference=None, rejected_drafts=None):
     for number in range(1, target):
         if not _content(steps, number):
             raise ValueError(f'Сначала заполните шаг {number}. Генерация предыдущих шагов автоматически не запускается.')
@@ -41,7 +41,8 @@ def world_from_steps(domain, steps, target, reference=None):
         context_matches = (saved_context == expected_context if saved_context is not None else
                            all(not item['title'] and not item['stickers'] for item in expected_context.values()))
         signature = data.get('source_signature')
-        source_matches = signature == source_signature(domain, reference) if signature else reference is None
+        source_matches = (signature == source_signature(domain, reference, rejected_drafts)
+                          if signature else reference is None and not rejected_drafts)
         snapshot = data.get('world')
         if (isinstance(snapshot, dict) and snapshot.get('domain') == domain and dependencies == expected
                 and context_matches and source_matches and data.get('prompt_signature') == rules_signature):
@@ -127,7 +128,8 @@ def world_from_steps(domain, steps, target, reference=None):
 
 async def build_step(domain, ctx, state, target):
     steps = predecessor_steps(state, target)
-    world = world_from_steps(domain, steps, target, reference=state.get('reference'))
+    world = world_from_steps(domain, steps, target, reference=state.get('reference'),
+                             rejected_drafts=state.get('rejected_drafts'))
     # Metadata may include a snapshot from an older full run. It is for local
     # reconstruction only, never part of the model's textual context.
     steps = clean_steps(steps)

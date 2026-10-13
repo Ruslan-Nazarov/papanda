@@ -24,6 +24,38 @@ test('export preserves formula source, lists and decoded Unicode', () => {
     assert.equal(text, 'А < B\n$$x^2$$\n• one\n\n• two');
 });
 
+test('Markdown exports separate the note text from the full snapshot', () => {
+    const ctx = setup();
+    load(ctx, 'NoteExportService');
+    const note = {
+        id: 7, title: 'Тема', note_notice: 'Общее замечание',
+        stickers: [{id: 'n1', title: 'Напомнить', text: 'Проверить'}],
+        dictionary: [{word: 'термин', definition: 'значение'}],
+        blocks: [{id: 'b1', title: 'Шаг', role: 'explanation',
+            html: '<p><span data-type="hidden-phrase" data-hint="пояснение">скрытое</span> ' +
+                '<span class="question-mark-text" data-question="Почему?">текст</span></p>',
+            stickers: [{id: 's1', title: 'На полях', text: 'Важно'}],
+            tabs: [{title: '```', html: '<p>Дополнение</p>'}]}]
+    };
+    const clean = ctx.NoteExportService.buildMarkdown(note);
+    assert.match(clean, /# Тема/);
+    assert.match(clean, /### Шаг/);
+    assert.match(clean, /скрытое \(пояснение\)/);
+    assert.doesNotMatch(clean, /Почему\?|На полях|Напомнить|conspect-snapshot|Данные конспекта/);
+
+    const md = ctx.NoteExportService.buildSnapshotMarkdown(note);
+    assert.match(md, /скрытое \(пояснение\)/);
+    assert.match(md, /Почему\?/);
+    assert.match(md, /На полях: Важно/);
+    assert.match(md, /Напомнить/);
+    const match = md.match(/\n(`{3,})json\n([\s\S]*?)\n\1\n$/);
+    assert.ok(match, 'snapshot JSON has a matching Markdown fence');
+    const archive = JSON.parse(match[2]);
+    assert.equal(archive.format, 'conspect-snapshot');
+    assert.equal(archive.version, 1);
+    assert.deepEqual(archive.note, note);
+});
+
 test('search highlights symbols without corrupting entities or markup', () => {
     const ctx = setup('<div id="results"></div>');
     load(ctx, 'SearchManager');

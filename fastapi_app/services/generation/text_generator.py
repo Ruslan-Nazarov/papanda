@@ -1,4 +1,5 @@
 from fastapi_app.config import settings
+from fastapi_app.services.generation.rejected_drafts import rejected_draft_context
 from fastapi_app.services.generation.json_contract import parse_object
 from fastapi_app.services.context_builder import thesis_for_key, _detect_domain
 from fastapi_app.services.generation.common import _MAX_TOKENS, _fix_math, _NUMBER_UNIT_RE
@@ -45,6 +46,7 @@ class TextGenerator:
         if reason:
             prompt += f'\nЗАМЕЧАНИЕ СУДЬИ: {reason}\nИСПРАВЛЯЕМЫЙ ТЕКСТ:\n{state.get("_process_texts", {}).get(key, "")}\n'
         cap = _MAX_TOKENS['step5' if base == 5 else 'step']
+        prompt += rejected_draft_context(state)
         text = await self.json_text(prompt, message, output_key, cap)
         if base == 5 and _detect_domain(skeleton.get('goal_as_process', ''), text) == 'math_code' and not _NUMBER_UNIT_RE.search(text):
             prompt += '\nДоведи разрешение до конкретного числового примера с единицей измерения.\n'

@@ -1,45 +1,88 @@
 import AppState from './AppState.js';
 import DialogService from './DialogService.js';
 import NoteText from './NoteText.js';
+import SaveCoordinator from './SaveCoordinator.js';
 
 import { t } from '../i18n.js';
 class NoteExportService {
     static exportToMarkdown() {
+        this._exportMarkdown(false);
+    }
+
+    static exportFullMarkdown() {
+        this._exportMarkdown(true);
+    }
+
+    static _exportMarkdown(full) {
+        SaveCoordinator._sync(AppState.currentNote);
         const note = AppState.currentNote;
-        if (!note || (!note.blocks?.length && !note.stickers?.length)) {
+        if (!note || (!note.title?.trim() && !note.blocks?.length && !note.stickers?.length && !note.note_notice && !note.dictionary?.length)) {
             DialogService.alert(t('export_word'), t('note_empty'));
             return;
         }
-
-        let md = `# ${note.title}\n\n`;
-        (note.blocks || []).forEach(block => {
-            if (block.role === 'section') {
-                md += `\n---\n## ${block.title}\n---\n\n`;
-            } else {
-                if (block.title) {
-                    md += `### ${block.title}\n`;
-                }
-                // Strip HTML tags for simple markdown export
-                const textContent = NoteExportService._htmlToText(block.html);
-                if (textContent) {
-                    md += `${textContent}\n\n`;
-                }
-            }
-        });
-
-        for (const sticker of note.stickers || []) {
-            md += `\n### ${sticker.title || t('tab_notes')}\n\n${sticker.text}\n`;
-        }
+        const md = full ? this.buildSnapshotMarkdown(note) : this.buildMarkdown(note);
         const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `${note.title || 'Note'}.md`);
+        link.setAttribute("download", `${note.title || 'Note'}${full ? '-full' : ''}.md`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    }
+
+    /** Just the text of the note, in block order. */
+    static buildMarkdown(note) {
+        const lines = [`# ${note.title || ''}`, ''];
+        if (note.note_notice) lines.push(`> ${note.note_notice.trim().replace(/\n/g, '\n> ')}`, '');
+        for (const block of note.blocks || []) {
+            if (block.role === 'section') {
+                lines.push('---', `## ${block.title || ''}`, '');
+                continue;
+            }
+            if (block.title) lines.push(`### ${block.title}`, '');
+            const body = this._htmlToText(block.html);
+            if (body) lines.push(body, '');
+        }
+        return lines.join('\n');
+    }
+
+    /** Readable Markdown followed by the complete editor state for archival. */
+    static buildSnapshotMarkdown(note) {
+        const snapshot = JSON.parse(JSON.stringify(note));
+        const lines = [`# ${snapshot.title || ''}`, ''];
+        if (snapshot.note_notice) lines.push(`> ${snapshot.note_notice.trim().replace(/\n/g, '\n> ')}`, '');
+        for (const block of snapshot.blocks || []) {
+            if (block.role === 'section') {
+                lines.push('---', `## ${block.title || ''}`, '');
+                continue;
+            }
+            if (block.title) lines.push(`### ${block.title}`, '');
+            const body = this._htmlToText(block.html);
+            if (body) lines.push(body, '');
+
+            const template = document.createElement('template');
+            template.innerHTML = block.html || '';
+            const questions = [...template.content.querySelectorAll('.question-mark-text[data-question]')]
+                .map(mark => mark.getAttribute('data-question')?.trim()).filter(Boolean);
+            if (questions.length) lines.push(`**${t('questions_title')}**`, ...[...new Set(questions)].map(q => `- ${q}`), '');
+            for (const sticker of block.stickers || []) {
+                lines.push(`> 🟨 ${sticker.title || t('tab_notes')}: ${sticker.text || ''}`, '');
+            }
+        }
+        for (const sticker of snapshot.stickers || []) {
+            lines.push(`### 🟨 ${sticker.title || t('tab_notes')}`, '', sticker.text || '', '');
+        }
+
+        // A fence longer than any backtick run in user data keeps the JSON intact.
+        const json = JSON.stringify({format: 'conspect-snapshot', version: 1, note: snapshot}, null, 2);
+        let fenceLength = 3;
+        for (const match of json.matchAll(/`+/g)) fenceLength = Math.max(fenceLength, match[0].length + 1);
+        const fence = '`'.repeat(fenceLength);
+        lines.push('---', `## ${t('snapshot_data_title')}`, '', t('snapshot_data_description'), '', `${fence}json`, json, fence, '');
+        return lines.join('\n');
     }
 
     static exportToPDF() {
@@ -63,7 +106,7 @@ class NoteExportService {
      */
     static buildPlainText({ withTitles = false } = {}) {
         const note = AppState.currentNote;
-        if (!note || (!note.blocks?.length && !note.stickers?.length)) return '';
+        if (!note || (!note.blocks?.length && !note.stickers?.length && !note.note_notice)) return '';
 
         const blocks = [...(note.blocks || [])];
         const ai = blocks.findIndex(b => b.role === 'anchor');
@@ -71,6 +114,7 @@ class NoteExportService {
 
         const parts = [];
         if (note.title) parts.push(note.title.trim());
+        if (note.note_notice) parts.push(note.note_notice.trim());
 
         blocks.forEach(block => {
             if (block.role === 'section') {

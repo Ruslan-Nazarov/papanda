@@ -17,7 +17,7 @@ import nh3
 # MathInline      → <span class="math-inline" formula data-formula>
 # HiddenPhrase    → <span data-type="hidden-phrase" data-hint data-expanded class>
 # QuestionMark    → <span data-question class="question-mark-text">
-# InternalLink    → <a href=(http/https/mailto/internal://note/…) target rel class>
+# InternalLink    → <a href=(http/https/mailto/internal://note/…) data-internal-links target rel class>
 
 _INLINE_MARKS = {"strong", "b", "em", "i", "u", "s", "strike", "code", "mark", "sub", "sup"}
 _BLOCKS = {"p", "br", "ul", "ol", "li", "pre", "blockquote", "hr",
@@ -27,10 +27,10 @@ _BLOCKS = {"p", "br", "ul", "ol", "li", "pre", "blockquote", "hr",
 _WRITE_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "a", "img"}
 _WRITE_ATTRS = {
     "span": {"class", "formula", "data-formula", "data-type", "data-hint",
-             "data-expanded", "data-question", "style"},
+             "data-expanded", "data-question", "data-text-size", "style"},
     "div": {"class"},
     "blockquote": {"class", "author"},
-    "a": {"href", "title", "class", "target"},  # rel добавляет сам nh3
+    "a": {"href", "title", "class", "target", "data-internal-links"},  # rel добавляет сам nh3
     "img": {"src", "alt", "title", "width", "height"},
 }
 _WRITE_SCHEMES = {"http", "https", "mailto", "internal"}  # internal:// — ссылки между конспектами
@@ -38,7 +38,7 @@ _WRITE_SCHEMES = {"http", "https", "mailto", "internal"}  # internal:// — сс
 # Строгий набор для ПУБЛИЧНОЙ отдачи (/s/<token>): без ссылок и data-*,
 # только форматирование + формулы + выноски.
 _PUBLIC_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "img"}
-_PUBLIC_ATTRS = {"span": {"class", "formula", "data-formula"},
+_PUBLIC_ATTRS = {"span": {"class", "formula", "data-formula", "data-text-size"},
                  "div": {"class"}, "blockquote": {"class", "author"},
                  "img": _WRITE_ATTRS["img"]}
 
@@ -66,6 +66,24 @@ def _safe_image_source(value: str) -> bool:
 
 
 def _filter_attribute(tag: str, attribute: str, value: str):
+    if tag == 'a' and attribute == 'data-internal-links':
+        if len(value) > 4096:
+            return None
+        try:
+            targets = json.loads(value)
+        except (ValueError, TypeError):
+            return None
+        if not isinstance(targets, list) or not 2 <= len(targets) <= 24:
+            return None
+        pattern = r'internal://note/[a-zA-Z0-9_-]+(?:/block/[a-zA-Z0-9_-]+)?'
+        if any(not isinstance(item, dict) or not isinstance(item.get('url'), str)
+               or not re.fullmatch(pattern, item['url'])
+               or not isinstance(item.get('text'), str) or len(item['text']) > 200
+               for item in targets):
+            return None
+        return value
+    if attribute == 'data-text-size':
+        return value if value in {'12', '14', '16', '18', '20', '24', '28', '32'} else None
     if tag == 'img' and attribute == 'src':
         if _safe_image_source(value):
             return value

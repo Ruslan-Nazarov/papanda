@@ -1,4 +1,5 @@
 import NotesAPI from './api.js';
+import AppState from './AppState.js';
 import HtmlSafety from './HtmlSafety.js';
 import { renderStreamMarkdown } from './ConceptExplainManager.js';
 import { t } from '../i18n.js';
@@ -75,35 +76,86 @@ class ConceptSelectionMenu {
                     <button class="icon-btn btn-close-modal">✕</button>
                 </div>
                 <div class="modal-dialog-body">
-                    <div style="margin-bottom:10px;padding:8px 12px;background:#eff6ff;border-radius:8px;color:#1e40af;font-size:0.9rem;">«${fragment.replace(/</g, '&lt;')}»</div>
-                    <div id="concept-explain-stream" style="font-size:0.95rem;line-height:1.6;color:#334155;">▍</div>
+                    <div style="margin-bottom:10px;padding:8px 12px;background:#eff6ff;border-radius:8px;color:#1e40af;font-size:0.9rem;">«${HtmlSafety.escape(fragment)}»</div>
+                    <div class="concept-explain-messages" style="font-size:0.95rem;line-height:1.6;color:#334155;">
+                        <div class="concept-explain-answer">▍</div>
+                    </div>
+                </div>
+                <div class="modal-dialog-footer" style="gap:10px;align-items:center;">
+                    <input class="concept-explain-input" type="text" maxlength="2000" placeholder="${t('aicheck_ask_ph')}" style="flex:1;min-width:0;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.95rem;">
+                    <button class="concept-explain-send" type="button" style="background:#ea580c;color:#fff;border:0;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">${t('send_word')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
         const close = () => overlay.remove();
         overlay.querySelector('.btn-close-modal').addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-        return overlay.querySelector('#concept-explain-stream');
+        return {
+            target: overlay.querySelector('.concept-explain-answer'),
+            messages: overlay.querySelector('.concept-explain-messages'),
+            input: overlay.querySelector('.concept-explain-input'),
+            send: overlay.querySelector('.concept-explain-send'),
+        };
     }
 
     static async _explain(text, blockEl) {
+        const noteTitle = (AppState.currentNote?.title || '').slice(0, 255);
         const title = blockEl?.querySelector('.block-title')?.textContent?.trim() || '';
         const body = blockEl?.querySelector('.block-content')?.innerText?.trim().slice(0, 2000) || '';
-        const target = this._modal(text);
-        try {
-            let last = 0;
-            const full = await NotesAPI.stream(
-                '/ai/dialectics/explain-concept/stream',
-                { text, context_before: title, context_after: body, history: [] },
-                (_d, acc) => {
-                    const now = Date.now();
-                    if (now - last > 60) { last = now; renderStreamMarkdown(target, acc + ' ▍'); }
-                }
-            );
-            renderStreamMarkdown(target, full || t('whatis_empty'));
-        } catch (e) {
-            target.innerHTML = `<span style="color:#ef4444;">${t('whatis_error')}: ${HtmlSafety.escape(e.message)}</span>`;
-        }
+        const { target, messages, input, send } = this._modal(text);
+        const history = [];
+        let busy = false;
+        const request = async (question = '') => {
+            if (busy) return;
+            busy = true;
+            send.disabled = true;
+            let answer = target;
+            if (question) {
+                const userMessage = document.createElement('div');
+                userMessage.style.cssText = 'margin-top:16px;font-weight:600;color:#1e293b;';
+                userMessage.textContent = question;
+                messages.appendChild(userMessage);
+                answer = document.createElement('div');
+                answer.className = 'concept-explain-answer';
+                answer.style.marginTop = '8px';
+                answer.textContent = '▍';
+                messages.appendChild(answer);
+                answer.scrollIntoView?.({ block: 'nearest' });
+            }
+            try {
+                let last = 0;
+                const full = await NotesAPI.stream(
+                    '/ai/dialectics/explain-concept/stream',
+                    { text, note_title: noteTitle, context_before: title, context_after: body,
+                        history: history.slice(-2), question },
+                    (_d, acc) => {
+                        const now = Date.now();
+                        if (now - last > 60) { last = now; renderStreamMarkdown(answer, acc + ' ▍'); }
+                    }
+                );
+                renderStreamMarkdown(answer, full || t('whatis_empty'));
+                history.push(
+                    { role: 'user', content: question || `Объясни выделенный фрагмент: ${text}` },
+                    { role: 'assistant', content: full || t('whatis_empty') }
+                );
+            } catch (e) {
+                answer.innerHTML = `<span style="color:#ef4444;">${t('whatis_error')}: ${HtmlSafety.escape(e.message)}</span>`;
+                if (question) input.value = question;
+            } finally {
+                busy = false;
+                send.disabled = false;
+            }
+        };
+        send.addEventListener('click', () => {
+            const question = input.value.trim();
+            if (!question || busy) return;
+            input.value = '';
+            request(question);
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') send.click();
+        });
+        request();
     }
 }
 

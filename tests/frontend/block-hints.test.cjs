@@ -28,6 +28,16 @@ test('empty content and unsaved drafts retain the hint', () => {
     }
 });
 
+test('archiving a step keeps the following hint while its replacement is empty', () => {
+    const archived = {id: 'old', html: '<p>Rejected process</p>', created_at: '2026-10-10T00:00:00Z'};
+    assert.equal(next([anchor, {role: 'step1', html: '<p></p>', status: 'in_progress',
+        rejected_drafts: [archived]}]), 'step2');
+    assert.equal(next([anchor, {role: 'step1', html: '<p></p>', status: 'in_progress',
+        rejected_drafts: []}]), 'step1');
+    assert.equal(next([anchor, {role: 'step1', html: '<p></p>', status: 'in_progress',
+        isDraft: true, rejected_drafts: [archived]}]), 'step1');
+});
+
 test('a divider below a visible block inserts the new block below it when the anchor is stored first', () => {
     const document = new JSDOM('<div id="blocks-container"></div>').window.document;
     const ctx = context({document, CustomEvent: document.defaultView.CustomEvent,
@@ -36,9 +46,10 @@ test('a divider below a visible block inserts the new block below it when the an
             const el = document.createElement('div');
             el.className = 'dialectics-block';
             el.dataset.id = block.id;
+            if (block.role === 'section') el.innerHTML = '<span class="section-number"></span>';
             return el;
         }},
-        RequestDocuments: {mount() {}}});
+        RequestDocuments: {mount() {}}, PinnedDerivations: {mount() {}}});
     load(ctx, 'AppState');
     load(ctx, 'BlockDOMRenderer');
     ctx.AppState.mode = 'ai';

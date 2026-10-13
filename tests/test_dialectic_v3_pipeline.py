@@ -302,7 +302,10 @@ async def test_target_annotations_are_supplied_without_future_steps_or_changing_
     monkeypatch.setattr(pipeline_module, 'build_step', build)
     monkeypatch.setattr(pipeline_module, 'build_llm', lambda spec: object())
     monkeypatch.setattr(pipeline_module.conspect_settings, 'GROQ_API_KEY', 'fixture')
-    state = {'target_goal': 'Explain a structural relation', 'reference': 'DOCUMENT', 'steps': {
+    state = {'target_goal': 'Explain a structural relation', 'reference': 'DOCUMENT', 'rejected_drafts': [
+        {'role': 'step2', 'content': 'Incorrect attempt', 'reason': 'Wrong premise'},
+        {'role': 'step5', 'content': 'FUTURE TEXT MUST NOT LEAK'},
+    ], 'steps': {
         'step1': {'content': 'previous'},
         'step2': {'content': 'current version', 'title': 'current heading',
                   'stickers': [{'title': 'requirement', 'text': 'preserve this nuance'}]},
@@ -312,8 +315,9 @@ async def test_target_annotations_are_supplied_without_future_steps_or_changing_
     assert seen['step_to_revise'] == {'step2': state['steps']['step2']}
     assert seen['existing_note_steps'] == {'step1': state['steps']['step1']}
     assert 'FUTURE TEXT' not in str(seen)
+    assert seen['rejected_drafts'] == state['rejected_drafts'][:1]
     from fastapi_app.services.generation.note_context import source_signature, prompt_signature
     result = events[-1][1]
     data = next(v['generation_data'] for v in result['updated_steps'].values() if 'generation_data' in v)
-    assert data['source_signature'] == source_signature(state['target_goal'], 'DOCUMENT')
+    assert data['source_signature'] == source_signature(state['target_goal'], 'DOCUMENT', state['rejected_drafts'])
     assert data['prompt_signature'] == prompt_signature()

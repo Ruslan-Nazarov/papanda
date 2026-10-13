@@ -22,6 +22,10 @@
         }
         .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
         .doc-title { font-size: 1.7rem; font-weight: 700; margin: 8px 0 28px; }
+        .material-snapshot-label {display:inline-block;margin:0 0 8px;padding:4px 10px;border-radius:8px;background:#ecfdf5;color:#047857;font-size:.85rem;font-weight:600;}
+        .note-notice {margin: 0 0 28px; padding: 16px 18px; border: 1px solid #fdba74;
+                      border-left: 4px solid #ea580c; border-radius: 12px; background: #fff7ed;
+                      white-space: pre-wrap; overflow-wrap: anywhere;}
         .blk { position: relative; background: #fff; border: 1px solid #e2e8f0;
                border-radius: 12px; padding: 18px 20px; margin: 34px 0 0; }
         .blk-role { position: absolute; top: -22px; left: 14px;
@@ -32,25 +36,75 @@
         .blk-body p { margin: 0 0 10px; }
         .blk-body p:last-child { margin-bottom: 0; }
         .blk-body img { max-width: 100%; height: auto; }
-        .math-callout { overflow-x: auto; padding: 8px 0; }
+        .blk-body pre {max-width:100%;margin:12px 0;padding:14px 16px;overflow-x:auto;border:1px solid #dbe3ee;border-radius:10px;background:#f8fafc;white-space:pre;text-align:left;}
+        .blk-body pre code {font:.88em/1.55 Consolas,'Courier New',monospace;white-space:inherit;}
+        .math-callout {margin:12px 0;padding:12px 20px;border:1px solid #c7d2fe;border-radius:12px;background:#f8f9ff;overflow-x:auto;}
+        .math-callout .math-content > :first-child {margin:0;padding:2px 0 10px;text-align:center;}
+        .math-callout .math-content > :not(:first-child) {margin:0;padding:10px 0 0;border-top:1px solid #dbe2ff;font-size:.88em;line-height:1.6;}
+        .math-callout .math-content > :not(:first-child) + :not(:first-child) {border:0;padding-top:4px;}
         footer { margin-top: 48px; text-align: center; color: #64748b; font-size: 0.9rem; }
         footer a { display: inline-block; margin-top: 10px; padding: 10px 20px;
                    background: linear-gradient(135deg,#fb923c,#ea580c); color: #fff;
                    text-decoration: none; border-radius: 10px; font-weight: 600; }
         .library-copy {padding:10px 20px;border:1px solid #cbd5e1;border-radius:10px;background:white;font:inherit;cursor:pointer;}
+        .public-note-stickers {margin:24px 0 34px;}
+        .public-note-stickers h2, .public-dictionary h2 {font-size:1.1rem;}
+        .public-stickers {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin:14px 0;}
+        .public-sticker {padding:12px 14px;border:1px solid #d1d5db;border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere;}
+        .public-sticker strong {display:block;margin-bottom:5px;}
+        .public-meta {display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;}
+        .public-badge {display:inline-block;padding:3px 9px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.76rem;font-weight:600;}
+        .public-badge[data-author="ai"] {background:#f3edff;color:#6d28d9;}
+        .public-badge[data-author="ai_checked"] {background:#e8f7f2;color:#0f766e;}
+        .public-badge[data-author="ai_edited"] {background:#fff4df;color:#9a590a;}
+        .public-badge[data-author="human"] {background:#eef8eb;color:#28713b;}
+        .public-badge[data-status="ready"] {background:#dcfce7;color:#166534;}
+        .public-badge[data-status="in_progress"] {background:#fef9c3;color:#854d0e;}
+        .public-badge[data-status]::before {content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:currentColor;vertical-align:1px;}
+        .public-extra {margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0;}
+        .public-extra h4 {margin:0 0 8px;font-size:.87rem;}
+        .public-extra p {margin:6px 0;}
+        .public-extra ul {margin:8px 0;padding-left:20px;}
+        .public-extra li {margin:5px 0;overflow-wrap:anywhere;}
+        .public-extra a {overflow-wrap:anywhere;}
+        .public-extra details {margin:8px 0;}
+        .public-extra summary {cursor:pointer;font-weight:600;}
+        .public-document {white-space:pre-wrap;overflow-wrap:anywhere;max-height:450px;overflow:auto;}
+        .public-dictionary {margin:34px 0;padding:16px 20px;border:1px solid #e2e8f0;border-radius:12px;background:white;}
+        .public-dictionary dt {font-weight:700;margin-top:10px;}
+        .public-dictionary dd {margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
     </style>
 </head>
 <body data-page="shared">
     <div class="wrap">
         {% if library_view %}<a href="/library">← {{ _('library_title') }}</a>{% endif %}
+        {% if showcase_url %}<p><a href="{{ showcase_url }}">← {{ showcase_title }}</a></p>{% endif %}
         {% if preview %}<p>{{ _('library_preview_hint') }}</p>{% endif %}
+        {% if material_view %}<p class="material-snapshot-label">{{ _('version_material') }}</p>{% endif %}
         <div class="doc-title">{{ note_title }}</div>
+        {% if note_notice %}<aside class="note-notice" aria-label="{{ _('note_notice_title') }}">{{ note_notice }}</aside>{% endif %}
         {% if description %}<p>{{ description }}</p>{% endif %}
+        {% if library_view and resources %}
+        <section class="public-dictionary" aria-label="{{ _('public_resources') }}">
+            <h2>{{ _('public_resources') }}</h2>
+            <ul>{% for resource in resources %}<li><a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">{{ resource.title }}</a></li>{% endfor %}</ul>
+        </section>
+        {% endif %}
+        {% if library_view and stickers %}
+        <section class="public-note-stickers" aria-label="{{ _('public_stickers') }}">
+            <h2>{{ _('public_stickers') }}</h2>
+            <div class="public-stickers">
+                {% for sticker in stickers %}<div class="public-sticker" style="background:{{ sticker.color }}">
+                    {% if sticker.title %}<strong>{{ sticker.title }}</strong>{% endif %}{{ sticker.text }}
+                </div>{% endfor %}
+            </div>
+        </section>
+        {% endif %}
 
         {% for b in blocks %}
             {% set role = b.get('role') or '' %}
             {% if role == 'section' %}
-                <h2>{{ b.get('title') or '' }}</h2>
+                <h2 id="{{ b.id }}">{{ b.get('title') or '' }}</h2>
                 {% if b.get('html') %}<div class="blk-body">{{ b.get('html') | safe }}</div>{% endif %}
             {% else %}
                 {% set base = role.split('.')[0] %}
@@ -61,7 +115,7 @@
                 {% else %}
                     {% set label = algo.get(base + '_title') or algo.get(base) or '' %}
                 {% endif %}
-                <div class="blk {% if base == 'anchor' %}blk-anchor{% endif %}">
+                <div id="{{ b.id }}" class="blk {% if base == 'anchor' %}blk-anchor{% endif %}"{% if library_view and b.border_color %} style="border-color:{{ b.border_color }}"{% endif %}>
                     {% if label %}<div class="blk-role">{{ label }}</div>{% endif %}
                     {% set title = b.get('title') %}
                     {% if base == 'anchor' and title in ['Что вам нужно понять?', 'Что вам надо объяснить?', 'What do you need to explain?', 'Нені түсіндіру керек?'] %}
@@ -70,10 +124,78 @@
                         {% set title = _('shared_anchor_label') %}
                     {% endif %}
                     {% if title %}<h3>{{ title }}</h3>{% endif %}
+                    {% if library_view and (b.author or b.status) %}
+                    <div class="public-meta">
+                        {% if b.author %}<span class="public-badge" data-author="{{ b.author }}">{{ _('block_author_' ~ b.author) }}</span>{% endif %}
+                        {% if b.status %}<span class="public-badge" data-status="{{ b.status }}">{{ _('public_status_' ~ b.status) }}</span>{% endif %}
+                    </div>
+                    {% endif %}
                     <div class="blk-body">{{ b.get('html') | safe }}</div>
+                    {% if library_view %}
+                        {% if b.stickers %}
+                        <section class="public-extra" aria-label="{{ _('public_stickers') }}">
+                            <h4>{{ _('public_stickers') }}</h4>
+                            <div class="public-stickers">{% for sticker in b.stickers %}
+                                <div class="public-sticker" style="background:{{ sticker.color }}">
+                                    {% if sticker.title %}<strong>{{ sticker.title }}</strong>{% endif %}{{ sticker.text }}
+                                </div>
+                            {% endfor %}</div>
+                        </section>
+                        {% endif %}
+                        {% if b.inline_notes %}
+                        <section class="public-extra" aria-label="{{ _('public_inline_notes') }}">
+                            <h4>{{ _('public_inline_notes') }}</h4>
+                            <ul>{% for note in b.inline_notes %}<li><strong>{{ _('public_' ~ note.kind) }}{% if note.phrase %} · {{ note.phrase }}{% endif %}:</strong> {{ note.text }}</li>{% endfor %}</ul>
+                        </section>
+                        {% endif %}
+                        {% if b.sources %}
+                        <section class="public-extra" aria-label="{{ _('public_sources') }}">
+                            <h4>{{ _('public_sources') }}</h4>
+                            <ul>{% for source in b.sources %}<li>
+                                {% if source.url %}<a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title or source.url }}</a>{% else %}{{ source.title or '' }}{% endif %}
+                                {% if source.quote %}<p>{{ source.quote }}</p>{% endif %}
+                            </li>{% endfor %}</ul>
+                        </section>
+                        {% endif %}
+                        {% if b.words %}
+                        <section class="public-extra"><h4>{{ _('public_dictionary') }}</h4>
+                            {% for word in b.words %}<p><strong>{{ word.word }}:</strong> {{ word.definition }}</p>{% endfor %}
+                        </section>
+                        {% endif %}
+                        {% if b.rejected_drafts %}
+                        <section class="public-extra"><h4>{{ _('public_rejected_drafts') }}</h4>
+                            {% for draft in b.rejected_drafts %}<details><summary>{{ _('public_rejected_drafts') }} {{ loop.index }}</summary>
+                                {% if draft.reason %}<p><strong>{{ _('public_rejection_reason') }}:</strong> {{ draft.reason }}</p>{% endif %}
+                                <div class="blk-body">{{ draft.html | safe }}</div>
+                            </details>{% endfor %}
+                        </section>
+                        {% endif %}
+                        {% if b.derivations %}
+                        <section class="public-extra"><h4>{{ _('public_derivations') }}</h4>
+                            {% for derivation in b.derivations %}<div class="blk-body">{{ derivation.html | safe }}</div>{% endfor %}
+                        </section>
+                        {% endif %}
+                        {% if b.request_document %}
+                        <section class="public-extra"><details><summary>{{ _('public_request_document') }} · {{ b.request_document.name }}</summary>
+                            <div class="public-document">{{ b.request_document.text }}</div></details>
+                        </section>
+                        {% endif %}
+                        {% if b.attached_conspects %}
+                        <section class="public-extra"><h4>{{ _('public_attached_conspects') }}</h4>
+                            {% for attached in b.attached_conspects %}<details><summary>{{ attached.name }}</summary>
+                                <div class="public-document">{{ attached.text }}</div></details>{% endfor %}
+                        </section>
+                        {% endif %}
+                    {% endif %}
                 </div>
             {% endif %}
         {% endfor %}
+
+        {% if library_view and dictionary %}
+        <section class="public-dictionary"><h2>{{ _('public_dictionary') }}</h2><dl>
+            {% for word in dictionary %}<dt>{{ word.word }}</dt><dd>{{ word.definition }}</dd>{% endfor %}
+        </dl></section>
+        {% endif %}
 
         <footer>
             {% if publication_id %}

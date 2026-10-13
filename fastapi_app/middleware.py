@@ -90,7 +90,7 @@ class BodyLimitMiddleware:
 
 class SessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if (request.url.path.startswith(('/s/', '/api/dialectics/shared/', '/static/', '/api/author/', '/author/', '/api/library/publications/'))
+        if (request.url.path.startswith(('/s/', '/v/', '/api/dialectics/shared/', '/api/dialectics/shared-material/', '/static/', '/api/author/', '/author/', '/api/library/publications/'))
                 or request.url.path in {'/health', '/favicon.ico', '/api/library'}):
             return await call_next(request)
         # Public pages and unmatched URLs need no private storage identity.
@@ -151,7 +151,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none'"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        if request.url.path.startswith(('/s/', '/api/dialectics/shared/')):
+        if request.url.path.startswith(('/s/', '/v/', '/api/dialectics/shared/', '/api/dialectics/shared-material/')):
             response.headers["Cache-Control"] = "no-store"
             response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=()"

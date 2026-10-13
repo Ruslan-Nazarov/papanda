@@ -1,5 +1,6 @@
 """Simplification preserves existing notes and historical AI requests."""
 import pytest
+from datetime import datetime, timedelta, timezone
 from fastapi_app.models.notes import Note, NoteFamily, NoteActivity
 
 
@@ -53,4 +54,38 @@ async def test_diary_rejects_missing_or_deleted_note(client):
     note = (await client.post('/api/dialectics/save', json={'title':'Deleted', 'blocks':[]})).json()
     await client.delete(f"/api/dialectics/{note['id']}")
     assert (await client.post(f"/api/dialectics/{note['id']}/activity", json=payload)).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_diary_is_scoped_and_legacy_sqlite_times_are_explicit_utc(client, db_session):
+    first, second = Note(title='First', content_json=[]), Note(title='Second', content_json=[])
+    db_session.add_all([first, second])
+    await db_session.flush()
+    old = NoteActivity(note_id=first.id, kind='question_answer',
+        data_json={'question': 'old question'}, created_at=datetime(2026, 10, 9, 3, 51, 26))
+    db_session.add_all([old, NoteActivity(note_id=second.id, kind='ai_request', data_json={'request': 'other note'})])
+    await db_session.commit()
+    entries = (await client.get(f'/api/dialectics/{first.id}/activity')).json()
+    assert len(entries) == 1 and entries[0]['note_id'] == first.id
+    timestamp = datetime.fromisoformat(entries[0]['created_at'])
+    assert timestamp.utcoffset() == timedelta(0)
+    assert timestamp.astimezone(timezone(timedelta(hours=5))).strftime('%H:%M:%S') == '08:51:26'
+    assert old.created_at.hour == 3  # Presentation fix, no rewrite of historical data.
+    all_entries = (await client.get('/api/dialectics/activity/all')).json()
+    assert all(datetime.fromisoformat(e['created_at']).tzinfo for e in all_entries)
+
+
+@pytest.mark.asyncio
+async def test_new_diary_timing_is_preserved_and_naive_start_is_rejected(client):
+    note = (await client.post('/api/dialectics/save', json={'title': 'Timing', 'blocks': []})).json()
+    payload = {'kind': 'ai_request', 'status': 'completed', 'started_at': '2026-10-09T08:51:26+05:00',
+               'duration_ms': 1250, 'request': 'Q', 'text': 'A'}
+    url = f"/api/dialectics/{note['id']}/activity"
+    response = await client.post(url, json=payload)
+    assert response.status_code == 200, response.text
+    assert datetime.fromisoformat(response.json()['created_at']).tzinfo
+    loaded = (await client.get(url)).json()[0]['data']
+    assert loaded['duration_ms'] == 1250
+    assert datetime.fromisoformat(loaded['started_at']).utcoffset() == timedelta(hours=5)
+    assert (await client.post(url, json={**payload, 'started_at': '2026-10-09T08:51:26'})).status_code == 422
 
