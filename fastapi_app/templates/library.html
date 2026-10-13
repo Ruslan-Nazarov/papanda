@@ -17,13 +17,12 @@
     <nav class="library-nav"><strong>papanda</strong><a href="/">{{ _('library_editor') }}</a></nav>
     <h1>{{ _('library_title') }}</h1>
     <p>{{ _('library_intro') }}</p>
-    {% if showcase_url %}<p><a href="{{ showcase_url }}">{{ showcase_title }}</a></p>{% endif %}
     <div class="library-grid">
         {% for item in publications %}
-        <a class="library-card" href="/library/{{ item.id }}">
+        <a class="library-card" href="{{ item.url or ('/library/' ~ item.id) }}">
             <h2>{{ item.title }}</h2>
             {% if item.description %}<p>{{ item.description }}</p>{% endif %}
-            <small>{{ _('library_language_' ~ item.language) }} · {{ _('library_updated') }} {{ item.updated_at[:10] }}</small>
+            <small>{% if item.languages %}{{ item.languages | join(' · ') | upper }}{% else %}{{ _('library_language_' ~ item.language) }}{% endif %}</small>
         </a>
         {% else %}<p>{{ _('library_empty') }}</p>{% endfor %}
     </div>

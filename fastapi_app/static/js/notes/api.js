@@ -1,6 +1,9 @@
 import ApiContracts from './ApiContracts.js';
 
 class NotesAPI {
+    static languageHeaders() {
+        return {'X-Note-Language': typeof document !== 'undefined' ? document.documentElement?.lang || 'ru' : 'ru'};
+    }
     static async extractRequestDocument(file, signal) {
         const form = new FormData();
         form.append('file', file);
@@ -29,7 +32,7 @@ class NotesAPI {
 
     static aiFetch(endpoint, options) {
         return this.captureAI(endpoint, options.body, async () => {
-            const response = await fetch(endpoint, options);
+            const response = await fetch(endpoint, {...options, headers: {...options.headers, ...this.languageHeaders()}});
             if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
             return response;
         });
@@ -38,7 +41,7 @@ class NotesAPI {
     static async _request(endpoint, method = 'GET', body = null, signal = undefined) {
         const options = {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...this.languageHeaders() },
             signal,
         };
         if (body) options.body = JSON.stringify(body);
@@ -68,7 +71,7 @@ class NotesAPI {
     static async _stream(endpoint, body, onDelta, onEvent, options = {}) {
         const res = await fetch(`/api${endpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...this.languageHeaders() },
             body: JSON.stringify(body),
             signal: options.signal,
         });

@@ -190,29 +190,6 @@ async def test_invalid_and_empty_publication_rejected(client):
     assert 'btn-library-publish' in (await client.get('/')).text
 
 
-@pytest.mark.asyncio
-async def test_showcase_has_language_routes_and_only_available_publications(file_client, monkeypatch, tmp_path):
-    from fastapi_app import main
-    manifest = json.loads(main.ECG_SHOWCASE_PATH.read_text(encoding='utf-8'))
-    initial_id, final_id = str(uuid4()), str(uuid4())
-    manifest['languages']['ru']['publications'] = {'initial': initial_id, 'final': final_id}
-    custom = tmp_path / 'showcase.json'
-    custom.write_text(json.dumps(manifest), encoding='utf-8')
-    monkeypatch.setattr(main, 'ECG_SHOWCASE_PATH', custom)
-    library_store.put_publication(initial_id, {'title': 'Initial', 'blocks': [{'id': 'one', 'html': '<p>Public</p>'}]})
-    monkeypatch.setattr(settings, 'DEMO_MODE', True)
-    russian = await file_client.get('/showcase/ecg?lang=ru')
-    assert russian.status_code == 200
-    assert f'href="/library/{initial_id}"' in russian.text
-    assert f'href="/library/{final_id}"' not in russian.text
-    assert '/static/showcase/ecg/original-ai-ru.pdf' in russian.text
-    assert '/showcase/ecg?lang=en' in russian.text
-    english = await file_client.get('/showcase/ecg?lang=en')
-    assert english.status_code == 200
-    assert 'English PDF translation' in english.text
-    assert '<html lang="en">' in english.text
-    assert 'set-cookie' not in russian.headers and 'set-cookie' not in english.headers
-    assert not settings.DEMO_DIR.exists()
 
 
 def test_public_resource_accepts_only_a_valid_internal_publication_link():

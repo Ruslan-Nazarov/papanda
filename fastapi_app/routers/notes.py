@@ -19,6 +19,19 @@ PositiveId = Annotated[int, Path(gt=0)]
 router = APIRouter()
 
 # Categories
+@router.get('/library/{slug}/open', response_model=NoteView)
+async def open_library_note(slug: str, db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import select
+    from fastapi_app.models.notes import Note
+    from fastapi_app.services.deployed_library import find_note, seed_library
+    item = find_note(slug)
+    await seed_library(db)
+    note = (await db.execute(select(Note).where(Note.sync_id == item['source_sync_id']))).scalar_one()
+    if note.is_deleted:
+        from fastapi import HTTPException
+        raise HTTPException(404, 'Restore this note from your trash to open it')
+    return note.use_locale(db.info.get('locale', 'ru'))
+
 @router.get("/categories/all", response_model=List[CategoryView])
 async def get_all_categories(db: AsyncSession = Depends(get_db)):
     return await NotesService.get_categories(db)

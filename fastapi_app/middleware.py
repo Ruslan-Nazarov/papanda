@@ -159,10 +159,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 class LocaleMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        explicit = request.query_params.get('lang') or request.headers.get('x-note-language')
+        if explicit not in {'ru', 'en', 'kz'}:
+            explicit = None
         request.state.locale = request_locale(
-            request.cookies.get("locale"), request.headers.get("Accept-Language", "")
+            explicit or request.cookies.get("locale"), request.headers.get("Accept-Language", "")
         )
-        return await call_next(request)
+        response = await call_next(request)
+        if explicit and request.url.path == '/':
+            response.set_cookie('locale', explicit, max_age=31536000, samesite='lax', secure=request.url.scheme == 'https')
+        return response
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

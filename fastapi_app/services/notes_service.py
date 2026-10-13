@@ -54,16 +54,9 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
         result = await session.execute(stmt)
         notes = list(result.scalars().all())
         
-        # Translate example notes based on locale
+        # Display the selected language without replacing the note's real title.
         for note in notes:
-            if note.is_example:
-                session.expunge(note)
-                if locale == "en":
-                    note.title = "Example Note"
-                elif locale == "kz":
-                    note.title = "Конспект мысалы"
-                else:
-                    note.title = "Пример конспекта"
+            note.use_locale(locale)
                     
         return notes
 

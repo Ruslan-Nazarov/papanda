@@ -18,6 +18,7 @@ function context(extra = {}) {
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});
 }
 function load(ctx, name, symbol) {
+    if (name === 'NoteNoticeManager' && !ctx.renderNotice) load(ctx, 'NoticeLinks', 'renderNotice');
     if (['AIController', 'GenerationChanges'].includes(name) && !ctx.NoteText) load(ctx, 'NoteText');
     if (name === 'NoteText' && !ctx.document.createElement) {
         const doc = new (require('jsdom').JSDOM)('').window.document;

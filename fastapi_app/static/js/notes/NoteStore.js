@@ -44,6 +44,8 @@ class NoteStore {
             delete block.words;
         }
         const data = {id: note.id ?? null, revision: note.revision ?? null, schema_version: note.schema_version || 1,
+            library_slug: note.library_slug || null, language: note.language || 'ru',
+            available_languages: clone(note.available_languages || []),
             title: note.title || '', note_notice: note.note_notice || '',
             category_id: note.category_id ?? null, status: note.status || 'none',
             family_id: note.family_id ?? null, parent_note_id: note.parent_note_id ?? null,

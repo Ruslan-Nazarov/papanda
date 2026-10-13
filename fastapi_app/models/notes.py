@@ -1,9 +1,24 @@
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, JSON, ForeignKey, UniqueConstraint, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Boolean, DateTime, JSON, ForeignKey, UniqueConstraint, Integer, event
+from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym
 from sqlalchemy.sql import func
 from fastapi_app.database import Base
+
+
+def localized_field(name):
+    """One note identity with language-specific text, using the normal editor services."""
+    def get_value(note):
+        document = (note.translations or {}).get(getattr(note, '_active_locale', 'ru'), {})
+        return document[name] if name in document else getattr(note, '_' + name)
+
+    def set_value(note, value):
+        locale = getattr(note, '_active_locale', 'ru')
+        if locale != 'ru' and locale in (note.translations or {}):
+            note.translations = {**note.translations, locale: {**note.translations[locale], name: value}}
+        else:
+            setattr(note, '_' + name, value)
+    return property(get_value, set_value)
 
 class NoteCategory(Base):
     __tablename__ = "note_categories"
@@ -25,11 +40,30 @@ class Note(Base):
     schema_version: Mapped[int] = mapped_column(default=1, server_default='1')
     revision: Mapped[int] = mapped_column(default=1, server_default='1')
     __mapper_args__ = {'version_id_col': revision}
-    title: Mapped[str] = mapped_column(String(150), index=True)
-    note_notice: Mapped[str] = mapped_column(String(5000), default='', server_default='')
-    content_json: Mapped[List[dict]] = mapped_column(JSON, default=list)
-    stickers: Mapped[List[dict]] = mapped_column(JSON, default=list, server_default='[]')
-    dictionary: Mapped[List[dict]] = mapped_column(JSON, default=list, server_default='[]')
+    _title: Mapped[str] = mapped_column('title', String(150), index=True)
+    _note_notice: Mapped[str] = mapped_column('note_notice', String(5000), default='', server_default='')
+    _content_json: Mapped[List[dict]] = mapped_column('content_json', JSON, default=list)
+    _stickers: Mapped[List[dict]] = mapped_column('stickers', JSON, default=list, server_default='[]')
+    _dictionary: Mapped[List[dict]] = mapped_column('dictionary', JSON, default=list, server_default='[]')
+    title = synonym('_title', descriptor=localized_field('title'))
+    note_notice = synonym('_note_notice', descriptor=localized_field('note_notice'))
+    content_json = synonym('_content_json', descriptor=localized_field('content_json'))
+    stickers = synonym('_stickers', descriptor=localized_field('stickers'))
+    dictionary = synonym('_dictionary', descriptor=localized_field('dictionary'))
+    translations: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
+    library_slug: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+
+    def use_locale(self, locale):
+        self._active_locale = locale if locale in (self.translations or {}) else 'ru'
+        return self
+
+    @property
+    def language(self):
+        return getattr(self, '_active_locale', 'ru')
+
+    @property
+    def available_languages(self):
+        return ['ru', *(self.translations or {}).keys()] if self.library_slug else []
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("note_categories.id", ondelete="SET NULL"), nullable=True)
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     is_example: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -51,6 +85,11 @@ class Note(Base):
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
     
     category: Mapped[Optional["NoteCategory"]] = relationship("NoteCategory", lazy="selectin")
+
+@event.listens_for(Note, 'load')
+def select_note_language(note, context):
+    note.use_locale(context.session.info.get('locale', 'ru'))
+
 
 class NoteVersion(Base):
     __tablename__ = "note_versions"

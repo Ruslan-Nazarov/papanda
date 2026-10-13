@@ -16,7 +16,7 @@ from fastapi_app.config import settings
 from fastapi_app.database import get_db
 from fastapi_app.schemas.notes import (
     AttachedConspect, BlockDerivation, NoteBlock, NoteCreate, NoteSticker,
-    RejectedDraft, RequestDocument, Word,
+    RejectedDraft, RequestDocument, Word, NoteView,
 )
 from fastapi_app.services import library_store as store
 from fastapi_app.services.note_transactions import get_note
@@ -180,6 +180,42 @@ def author_only():
     # AccessBoundaryMiddleware additionally enforces loopback, Host and Origin.
 
 
+class DeploymentSelection(BaseModel):
+    revision: int = Field(ge=1)
+
+
+@router.get('/api/author/deployment/{note_id}', dependencies=[Depends(author_only)])
+async def deployment_status(note_id: int, db: AsyncSession = Depends(get_db)):
+    from fastapi_app.services.deployed_library import publication_state
+    return publication_state(await get_note(db, note_id))
+
+
+@router.put('/api/author/deployment/{note_id}', dependencies=[Depends(author_only)])
+async def include_in_deployment(note_id: int, data: DeploymentSelection, db: AsyncSession = Depends(get_db)):
+    from fastapi_app.services.deployed_library import write_selection
+    from fastapi_app.services.note_transactions import require_revision
+    note = await get_note(db, note_id)
+    require_revision(note, data.revision)
+    if note.is_deleted or not note.title.strip() or not note.content_json:
+        raise HTTPException(422, 'Save a nonempty note first')
+    state = await asyncio.to_thread(write_selection, note, True)
+    note.library_slug = state['id']
+    from fastapi_app.services.note_transactions import commit
+    await commit(db)
+    return {**state, 'revision': note.revision}
+
+
+@router.delete('/api/author/deployment/{note_id}', dependencies=[Depends(author_only)])
+async def exclude_from_deployment(note_id: int, db: AsyncSession = Depends(get_db)):
+    from fastapi_app.services.deployed_library import write_selection
+    note = await get_note(db, note_id)
+    state = await asyncio.to_thread(write_selection, note, False)
+    note.library_slug = None
+    from fastapi_app.services.note_transactions import commit
+    await commit(db)
+    return {**state, 'revision': note.revision}
+
+
 def publisher_only(request: Request):
     key = settings.LIBRARY_PUBLISH_KEY
     if not settings.DEMO_MODE or not key:
@@ -262,7 +298,7 @@ async def remove_publication(publication_id: UUID):
     return {'ok': True}
 
 
-@router.post('/api/library/{publication_id}/copy')
+@router.post('/api/library/{publication_id}/copy', response_model=NoteView)
 async def copy_publication(publication_id: UUID, db: AsyncSession = Depends(get_db)):
     item = await asyncio.to_thread(store.get_publication, str(publication_id))
     if not item:

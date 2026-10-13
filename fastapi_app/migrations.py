@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 from fastapi_app.config import settings
 from fastapi_app.services.block_contract import normalize_legacy_blocks
 
-VERSION = 6
+VERSION = 7
 
 
 def _validate(connection, metadata, version=VERSION):
@@ -37,6 +37,8 @@ def _validate(connection, metadata, version=VERSION):
             required -= {'note_notice'}
         if version < 6 and table.name == 'note_versions':
             required -= {'material_token'}
+        if version < 7 and table.name == 'notes':
+            required -= {'translations', 'library_slug'}
         if legacy and table.name == 'notes':
             required -= {'revision', 'schema_version', 'is_example', 'share_token'}
         if required - columns:
@@ -173,6 +175,12 @@ def _migrate(connection):
         if 'material_token' not in columns:
             connection.exec_driver_sql('ALTER TABLE note_versions ADD COLUMN material_token VARCHAR(32)')
         connection.exec_driver_sql('CREATE UNIQUE INDEX IF NOT EXISTS ix_note_versions_material_token ON note_versions (material_token)')
+    if version < 7:
+        columns = {c['name'] for c in inspect(connection).get_columns('notes')}
+        if 'translations' not in columns:
+            connection.exec_driver_sql("ALTER TABLE notes ADD COLUMN translations JSON NOT NULL DEFAULT '{}'")
+        if 'library_slug' not in columns:
+            connection.exec_driver_sql('ALTER TABLE notes ADD COLUMN library_slug VARCHAR(128)')
     connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
     _validate(connection, Base.metadata)
 

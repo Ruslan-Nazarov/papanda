@@ -202,6 +202,9 @@ class NoteView(BaseModel):
     schema_version: Literal[1] = 1
     revision: int
     title: str
+    library_slug: Optional[str] = None
+    language: str = 'ru'
+    available_languages: List[str] = Field(default_factory=list)
     note_notice: str = ''
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)

@@ -36,7 +36,7 @@ class NoteStorageService {
                 if (preserveChanges && AppState.isDirty) await this.saveCurrentNote();
                 if (sequence !== this._loadSequence || epoch !== AppState.documentEpoch) return;
                 AppState.setNote(note);
-                NoteLocation.remember(note.id);
+                NoteLocation.remember(note.id, note.library_slug);
             }
             return note;
         } catch (e) {

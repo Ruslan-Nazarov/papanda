@@ -261,8 +261,10 @@ class App {
             try {
                 const saved = await NoteStorageService.saveCurrentNote();
                 if (!saved.id) { showToast(t('share_need_content'), 'error'); return; }
-                const res = await NotesAPI.request(`/dialectics/${saved.id}/share`, 'POST');
-                const url = window.location.origin + res.path;
+                const path = saved.library_slug
+                    ? '/?' + new URLSearchParams({conspect: saved.library_slug, lang: document.documentElement.lang})
+                    : (await NotesAPI.request(`/dialectics/${saved.id}/share`, 'POST')).path;
+                const url = window.location.origin + path;
                 App.showModal(t('share_title'), `
                     <p style="margin:0 0 10px; color:#475569;">${t('share_hint')}</p>
                     <div style="display:flex; gap:8px;">
@@ -518,6 +520,10 @@ class App {
 
         // --- 10. Note State Listeners ---
         document.addEventListener('noteOpened', () => {
+            const languages = AppState.currentNote.available_languages || [];
+            document.querySelectorAll('[data-lang]').forEach(button => {
+                button.hidden = languages.length > 0 && !languages.includes(button.dataset.lang);
+            });
             // Убираем плашки предыдущего конспекта (просадка генерации / тема невыводима).
             document.getElementById('not-applicable-card')?.remove();
             document.getElementById('gen-degraded-banner')?.remove();
@@ -546,9 +552,12 @@ class App {
         // --- 11. Language Switcher ---
         const langButtons = document.querySelectorAll('[data-lang]');
         langButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const lang = btn.dataset.lang;
-                if (lang) switchLanguage(lang);
+                if (lang) {
+                    if (AppState.isDirty) await NoteStorageService.saveCurrentNote();
+                    switchLanguage(lang);
+                }
             });
         });
     }
@@ -599,6 +608,12 @@ class App {
 
     static async loadInitialState() {
         try {
+            const librarySlug = NoteLocation.initialLibrarySlug();
+            if (librarySlug) {
+                const note = await NotesAPI.request(`/dialectics/library/${encodeURIComponent(librarySlug)}/open`);
+                await NoteStorageService.loadNote(note.id);
+                return;
+            }
             const requestedId = NoteLocation.initialId();
             if (requestedId) {
                 try {

@@ -17,5 +17,7 @@ export function t(key) {
 
 export function switchLanguage(lang) {
     document.cookie = `locale=${lang}; path=/; max-age=31536000`;
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', lang);
+    window.location.assign(url.toString());
 }

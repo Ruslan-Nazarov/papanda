@@ -84,8 +84,12 @@ async def get_db(request: Request = None) -> AsyncSession:
                 raise HTTPException(401, 'Demo session expired; reload the page')
         async with lock:
             engine = await _get_or_create_engine(db_url)
-            async_session = async_sessionmaker(engine, expire_on_commit=False)
+            async_session = async_sessionmaker(engine, expire_on_commit=False,
+                info={'locale': getattr(request.state, 'locale', 'ru') if request else 'ru'})
             async with async_session() as session:
+                if settings.DEMO_MODE and request:
+                    from fastapi_app.services.deployed_library import seed_library
+                    await seed_library(session)
                 if settings.DEMO_MODE and request and request.method not in {'GET', 'HEAD', 'DELETE'}:
                     pages = (await session.execute(text('PRAGMA page_count'))).scalar()
                     free = (await session.execute(text('PRAGMA freelist_count'))).scalar()

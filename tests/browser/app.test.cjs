@@ -18,7 +18,8 @@ async function server() {
     const directory = await fs.mkdtemp(path.join(root, '.cache/browser-r5-'));
     const env = {...process.env, HOST: '127.0.0.1', PORT: String(port), UVICORN_RELOAD: '0', DEMO_MODE: 'false',
         DATABASE_URL: 'sqlite+aiosqlite:///' + path.join(directory, 'test.db').replaceAll('\\','/'),
-        DATA_DIR: directory, DB_DIR: directory, DEMO_DIR: path.join(directory, 'demo')};
+        DATA_DIR: directory, DB_DIR: directory, DEMO_DIR: path.join(directory, 'demo'),
+        PAPANDA_LIBRARY_FILE: path.join(directory, 'library_notes.json')};
     for (const key of ['OPENAI_API_KEY', 'GROQ_API_KEY', 'GOOGLE_API_KEY', 'OPENROUTER_API_KEY', 'CEREBRAS_API_KEY', 'GIGACHAT_AUTH_KEY', 'LIBRARY_PUBLISH_URL', 'LIBRARY_PUBLISH_KEY']) env[key] = '';
     env.SECRET_KEY = 'browser-test-only';
     const python = process.env.TEST_PYTHON || path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
@@ -583,7 +584,7 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                 await page.click('.ai-diary-close');
             }
         });
-        await t.test('library publication, independent copy and withdrawal', async () => {
+        await t.test('deployment selection preserves the full editor and permanent link', async () => {
             await reopenSavedNote();
             await page.click('#btn-note-stickers');
             await page.waitForSelector('#note-stickers-dropdown-menu:not(.hidden)');
@@ -596,31 +597,28 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await reopenSavedNote();
             await page.click('#btn-library-publish');
             await page.waitForSelector('.library-publisher[open]');
-            await page.type('#library-description', 'Public browser example');
-            const previewUrl = await page.$eval('#library-preview', el => el.href);
-            const previewPage = await browser.newPage();
-            await previewPage.goto(previewUrl, {waitUntil: 'networkidle0'});
-            assert((await previewPage.content()).includes('Public browser example'));
-            assert((await previewPage.content()).includes('Public reader sticker'));
-            assert.equal(await previewPage.$$eval('.public-sticker img', els => els.length), 0);
-            await previewPage.close();
             await page.click('#library-publish');
-            await page.waitForSelector('#library-public-link:not([hidden])');
-            const publicUrl = await page.$eval('#library-public-link', el => el.href);
+            await page.waitForSelector('.library-publisher a[href*="conspect="]');
+            const publicUrl = await page.$eval('.library-publisher a[href*="conspect="]', el => el.href);
+            assert(new URL(publicUrl).searchParams.get('lang'));
+            const bundle = JSON.parse(await fs.readFile(path.join(backend.directory, 'library_notes.json'), 'utf8'));
+            assert.equal(bundle.notes.length, 1);
+            assert(bundle.notes[0].languages.ru.stickers.some(sticker => sticker.text === 'Public reader sticker'));
             const reader = await browser.newPage();
             reader.on('pageerror', error => errors.push(error.message));
             await reader.goto(backend.url + '/library', {waitUntil: 'networkidle0'});
-            assert.match(await reader.$eval('.library-card', el => el.textContent), /Public browser example/);
+            assert.equal(await reader.$eval('.library-card', el => el.href), publicUrl);
             await reader.goto(publicUrl, {waitUntil: 'networkidle0'});
-            assert.equal(await reader.$('#btn-library-publish'), null);
-            await Promise.all([reader.waitForNavigation({waitUntil: 'networkidle0'}), reader.click('.library-copy')]);
             await reader.waitForSelector('.dialectics-block');
-            await reader.waitForFunction(() => window.location.search.includes('note='));
+            assert(await reader.$('#btn-save'));
+            assert(await reader.$('.btn-edit'));
+            assert(await reader.$('.btn-sticker'));
+            assert(new URL(await reader.url()).searchParams.has('conspect'));
             assert.equal(await reader.$eval('#note-title', el => el.value), await page.$eval('#note-title', el => el.value));
             await reader.close();
             await page.click('#library-unpublish');
-            await page.waitForSelector('#library-public-link[hidden]');
-            assert.equal((await fetch(publicUrl)).status, 404);
+            await page.waitForFunction(() => !document.querySelector('.library-publisher a[href*="conspect="]'));
+            assert.equal(JSON.parse(await fs.readFile(path.join(backend.directory, 'library_notes.json'), 'utf8')).notes.length, 0);
             await page.click('.library-publisher .library-actions button:last-child');
         });
         await t.test('cancelling the starter preserves the question and restores editing', async () => {

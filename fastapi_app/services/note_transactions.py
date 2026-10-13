@@ -9,7 +9,7 @@ async def get_note(session, note_id):
     note = (await session.execute(select(Note).where(Note.id == note_id))).scalar_one_or_none()
     if note is None:
         raise HTTPException(404, 'Entry not found')
-    return note
+    return note.use_locale(session.info.get('locale', 'ru'))
 
 
 def require_revision(note, revision):

@@ -1,7 +1,7 @@
 {
   "name": "papanda-conspect",
   "private": true,
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Papanda note editor, local frontend build and tests",
   "engines": {
     "node": ">=22.12.0"

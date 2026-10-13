@@ -9,7 +9,10 @@ import './quiet-console.js';
 
 Object.assign(window, {DOMPurify, marked, katex, renderMathInElement});
 
-if (!document.cookie.includes('locale=')) {
+const explicitLanguage = new URLSearchParams(window.location.search).get('lang');
+if (['ru', 'en', 'kz'].includes(explicitLanguage)) {
+    document.cookie = `locale=${explicitLanguage}; path=/; max-age=31536000; SameSite=Lax`;
+} else if (!document.cookie.includes('locale=')) {
     const language = (navigator.language || 'ru').toLowerCase();
     const locale = language.startsWith('ru') ? 'ru' : /^(kk|kz)/.test(language) ? 'kz' : 'en';
     document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Lax`;

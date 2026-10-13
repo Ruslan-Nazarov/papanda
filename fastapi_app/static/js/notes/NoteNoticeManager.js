@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import NoteController from './NoteController.js';
 import { showToast } from './ToastService.js';
 import { t } from '../i18n.js';
+import { renderNotice } from './NoticeLinks.js';
 
 class NoteNoticeManager {
     static init() {
@@ -49,7 +50,7 @@ class NoteNoticeManager {
     static render() {
         if (!this.banner || !this.text) return;
         const notice = AppState.currentNote.note_notice || '';
-        this.text.textContent = notice;
+        renderNotice(this.text, notice);
         this.banner.hidden = !notice || !this.editor.hidden;
         this.button.classList.toggle('has-notice', Boolean(notice));
         document.getElementById('btn-note-notice-remove').hidden = !notice;

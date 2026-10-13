@@ -37,6 +37,8 @@ def isolated_data_settings(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "DEMO_MODE", False)
     monkeypatch.setattr(settings, "DEMO_DELETE_EXPIRED_DATA", False)
     monkeypatch.setattr(settings, "SECRET_KEY", "test-only-secret")
+    from fastapi_app.services import deployed_library
+    monkeypatch.setattr(deployed_library, 'LIBRARY_PATH', tmp_path / 'library_notes.json')
 
 @pytest_asyncio.fixture
 async def test_engine():

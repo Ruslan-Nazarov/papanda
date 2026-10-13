@@ -1,5 +1,7 @@
 {
  "en": {
+  "library_deploy_saved": "Selection saved. It takes effect in the next site deployment.",
+  "library_deploy_hint": "Include this note in the next site deployment with all application features. Translations follow the application language.",
   "derivation_title": "Connection between blocks",
   "derivation_prompt": "Explain how the lower block makes the upper block more concrete and how they are connected.",
   "derivation_format": "Text formatting",
@@ -772,6 +774,8 @@
   "request_document_error": "Could not read document"
  },
  "kz": {
+  "library_deploy_saved": "Таңдау сақталды. Сайттың келесі жарияланымынан кейін күшіне енеді.",
+  "library_deploy_hint": "Конспект сайттың келесі жарияланымына қолданбаның барлық функцияларымен қосылады. Аудармалар қолданба тілімен ауысады.",
   "derivation_title": "Блоктар арасындағы байланыс",
   "derivation_prompt": "Төменгі блок жоғарғы блокты қалай нақтыландыратынын және олардың байланысын түсіндіріңіз.",
   "derivation_format": "Мәтінді пішімдеу",
@@ -1544,6 +1548,8 @@
   "request_document_error": "Құжатты оқу мүмкін болмады"
  },
  "ru": {
+  "library_deploy_saved": "Выбор сохранён. Он вступит в силу после следующего деплоя сайта.",
+  "library_deploy_hint": "Выбранный конспект включается в следующий деплой сайта с полным функционалом приложения. Переводы переключаются через язык приложения.",
   "derivation_title": "Связь между блоками",
   "derivation_prompt": "Опишите, как нижний блок конкретизирует верхний и в чём их связь.",
   "derivation_format": "Форматирование текста",

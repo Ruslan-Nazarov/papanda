@@ -97,12 +97,6 @@ def main(publish=False):
             else:
                 print(json.dumps({'key': key, 'staged': item['publication_id'], 'note_id': item['note_id']}), flush=True)
         write_json(mapping_path, mapping)
-    page_path = ROOT / 'fastapi_app/data/ecg_showcase.json'
-    page = json.loads(page_path.read_text(encoding='utf-8'))
-    for lang in ('ru', 'en'):
-        page['languages'][lang]['publications'] = {name: mapping[f'{lang}-{note_id}']['publication_id']
-            for name, note_id in (('initial', 23), ('final', 24))}
-    write_json(page_path, page)
 
 
 if __name__ == '__main__':

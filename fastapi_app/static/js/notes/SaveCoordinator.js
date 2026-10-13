@@ -64,7 +64,7 @@ class SaveCoordinator {
 
             AppState.acceptSaved(note, res, payload);
             if (active) {
-                NoteLocation.remember(res.id);
+                NoteLocation.remember(res.id, res.library_slug);
             }
             return note;
         }

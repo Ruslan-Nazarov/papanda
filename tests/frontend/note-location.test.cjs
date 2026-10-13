@@ -41,3 +41,12 @@ test('creating a new note clears both saved navigation pointers', () => {
     assert.equal(ctx.NoteLocation.initialId(), undefined);
     assert.equal(window.location.search, '?lang=ru');
 });
+
+test('a published note keeps its permanent bilingual identity after loading or saving', () => {
+    const {ctx, window} = setup('?conspect=ecg-final&lang=en');
+    assert.equal(ctx.NoteLocation.initialLibrarySlug(), 'ecg-final');
+    ctx.NoteLocation.remember(17, 'ecg-final');
+    assert.equal(window.location.search, '?conspect=ecg-final&lang=en');
+    ctx.NoteLocation.clear();
+    assert.equal(window.location.search, '?lang=en');
+});
