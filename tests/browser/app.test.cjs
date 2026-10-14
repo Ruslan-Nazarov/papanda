@@ -877,8 +877,8 @@ test('the four deployed ECG links render full HTML and still open the editor', {
             path.join(backend.directory, 'library_notes.json'));
         browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
         const variants = [
-            ['ecg-original', 'ru', 'ЭКГ', 'Как собрать одноканальный ЭКГ'],
-            ['ecg-original', 'en', 'ECG — Initial Annotated Version', 'ADS1292 internal test generator'],
+            ['ecg-original', 'ru', 'Как собрать одноканальный ЭКГ? (черновик)', 'Как собрать одноканальный ЭКГ'],
+            ['ecg-original', 'en', 'How to Build a Single-Channel ECG Device? (Draft)', 'ADS1292 internal test generator'],
             ['ecg-final', 'ru', 'Как собрать одноканальный ЭКГ?', 'ADS1291'],
             ['ecg-final', 'en', 'How to Build a Single-Channel ECG Device', 'ADS1291'],
         ];

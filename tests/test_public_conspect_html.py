@@ -25,8 +25,8 @@ class TextReader(HTMLParser):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('slug,language,heading,phrase', [
-    ('ecg-original', 'ru', 'ЭКГ', 'Как собрать одноканальный ЭКГ'),
-    ('ecg-original', 'en', 'ECG — Initial Annotated Version', 'ADS1292 internal test generator'),
+    ('ecg-original', 'ru', 'Как собрать одноканальный ЭКГ? (черновик)', 'Как собрать одноканальный ЭКГ'),
+    ('ecg-original', 'en', 'How to Build a Single-Channel ECG Device? (Draft)', 'ADS1292 internal test generator'),
     ('ecg-final', 'ru', 'Как собрать одноканальный ЭКГ?', 'ADS1291'),
     ('ecg-final', 'en', 'How to Build a Single-Channel ECG Device', 'ADS1291'),
 ])

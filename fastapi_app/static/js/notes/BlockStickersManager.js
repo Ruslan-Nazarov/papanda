@@ -266,7 +266,7 @@ class BlockStickersManager {
                 <button class="sticker-panel-close" title="${t('close_word')}">✕</button>
             </div>
             <div class="sticker-panel-form">
-                <input type="text" class="sticker-panel-title-input" placeholder="${t('stk_title_ph')}" maxlength="60">
+                <input type="text" class="sticker-panel-title-input" placeholder="${t('stk_title_ph')}" maxlength="500">
                 <textarea class="sticker-panel-text-input" placeholder="${t('stk_text_ph')}" rows="4"></textarea>
                 <div class="sticker-color-picker">
                     ${STICKER_COLORS.map((c, i) => `

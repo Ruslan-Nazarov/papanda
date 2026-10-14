@@ -32,7 +32,7 @@ class CategoryUpdate(BaseModel):
 
 class NoteSticker(BaseModel):
     id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,128}$')
-    title: str = Field(default='', max_length=150)
+    title: str = Field(default='', max_length=500)
     text: str = Field(max_length=10000)
     color: str = Field(default='#fef9c3', pattern=r'^#[0-9a-fA-F]{6}$')
     created_at: Optional[datetime] = None
