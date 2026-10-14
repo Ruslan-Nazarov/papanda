@@ -8,12 +8,12 @@ import json
 import asyncio
 import uuid
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from fastapi import HTTPException
 
 from fastapi_app.config import settings
@@ -49,7 +49,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
                 )
             )
             
-        stmt = stmt.order_by(Note.updated_at.desc().nulls_last(), Note.created_at.desc())
+        stmt = stmt.order_by(func.coalesce(Note.updated_at, Note.created_at).desc(), Note.id.desc())
         
         result = await session.execute(stmt)
         notes = list(result.scalars().all())
@@ -168,6 +168,13 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
     # Trash
     @staticmethod
     async def get_trash(session: AsyncSession):
+        cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        expired = (await session.execute(select(Note).where(
+            Note.is_deleted == True, Note.deleted_at < cutoff))).scalars().all()
+        for note in expired:
+            await session.delete(note)
+        if expired:
+            await commit(session)
         stmt = select(Note).where(Note.is_deleted == True).order_by(Note.deleted_at.desc())
         result = await session.execute(stmt)
         return result.scalars().all()
@@ -175,6 +182,14 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
     @staticmethod
     async def restore_note(session: AsyncSession, note_id: int):
         note = await NotesService.get_note(session, note_id)
+        if note.is_deleted and note.deleted_at:
+            deleted_at = note.deleted_at
+            if deleted_at.tzinfo is None:
+                deleted_at = deleted_at.replace(tzinfo=timezone.utc)
+            if deleted_at <= datetime.now(timezone.utc) - timedelta(days=30):
+                await session.delete(note)
+                await commit(session)
+                raise HTTPException(status_code=410, detail="Trash retention expired")
         note.is_deleted = False
         note.deleted_at = None
         await commit(session)

@@ -23,8 +23,8 @@ test('AI icon fills only the clicked block, regardless of its internal role', as
     const section = ctx.BlockNormalBuilder.build({id: 'section', role: 'section', title: 'Part'});
     const icon = block.querySelector('.btn-autofill-ai');
     const labeledIcon = labeled.querySelector('.btn-autofill-ai');
-    assert.equal(icon.textContent.trim(), '✦');
-    assert.equal(labeledIcon.textContent.trim(), '✦');
+    assert(icon.querySelector('.ph-sparkle'));
+    assert(labeledIcon.querySelector('.ph-sparkle'));
     assert.equal(section.querySelector('.btn-autofill-ai'), null);
     icon.click();
     labeledIcon.click();

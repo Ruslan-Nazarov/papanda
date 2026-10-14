@@ -14,11 +14,11 @@ function setup(search = '') {
     return {ctx, stored, window};
 }
 
-test('reload stays on the saved note via URL and storage', () => {
+test('ordinary navigation leaves the root URL ready for a fresh start', () => {
     const {ctx, window, stored} = setup('?lang=ru');
     ctx.NoteLocation.remember(22);
-    assert.equal(ctx.NoteLocation.initialId(), '22');
-    assert.equal(window.location.search, '?lang=ru&note=22');
+    assert.equal(ctx.NoteLocation.initialId(), null);
+    assert.equal(window.location.search, '?lang=ru');
     assert.equal(stored.get('papanda_last_note_id'), '22');
 });
 
@@ -28,17 +28,25 @@ test('explicit note wins over last opened note', () => {
     assert.equal(ctx.NoteLocation.initialId(), '22');
 });
 
-test('a root page resumes the last saved note', () => {
+test('a root page ignores the last saved note', () => {
     const {ctx, stored} = setup();
     stored.set('papanda_last_note_id', '22');
-    assert.equal(ctx.NoteLocation.initialId(), '22');
+    assert.equal(ctx.NoteLocation.initialId(), null);
+});
+
+test('an explicit note link stays bookmarkable while that note is open', () => {
+    const {ctx, window} = setup('?note=22&lang=ru');
+    ctx.NoteLocation.remember(22);
+    assert.equal(window.location.search, '?note=22&lang=ru');
+    ctx.NoteLocation.remember(23);
+    assert.equal(window.location.search, '?lang=ru');
 });
 
 test('creating a new note clears both saved navigation pointers', () => {
     const {ctx, window, stored} = setup('?note=22&lang=ru');
     stored.set('papanda_last_note_id', '22');
     ctx.NoteLocation.clear();
-    assert.equal(ctx.NoteLocation.initialId(), undefined);
+    assert.equal(ctx.NoteLocation.initialId(), null);
     assert.equal(window.location.search, '?lang=ru');
 });
 

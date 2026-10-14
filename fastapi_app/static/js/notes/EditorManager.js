@@ -281,7 +281,7 @@ class EditorManager {
                 
                 <div class="modal-tabs">
                     <div class="modal-tab active" data-tab="text">${t('tab_text')}</div>
-                    <div class="modal-tab" data-tab="stickers">🟨 ${t('tab_notes')}</div>
+                    <div class="modal-tab" data-tab="stickers"><i class="ph ph-sticker" aria-hidden="true"></i> ${t('tab_notes')}</div>
                     <div class="modal-tab" data-tab="graphs">${t('tab_graphs')}</div>
                     <div class="modal-tab" data-tab="shapes">${t('tab_shapes')}</div>
                 </div>

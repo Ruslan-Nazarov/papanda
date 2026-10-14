@@ -11,6 +11,7 @@ export class DropdownController {
 
         const closeAllDropdowns = () => {
             allDropdowns.forEach(d => { if (d) d.classList.add('hidden'); });
+            mainMenuDropdown?.querySelectorAll('details[open]').forEach(d => { d.open = false; });
         };
         this.closeAllDropdowns = closeAllDropdowns;
 

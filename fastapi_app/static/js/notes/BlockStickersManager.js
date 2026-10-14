@@ -245,9 +245,8 @@ class BlockStickersManager {
         const btn = document.getElementById('btn-note-stickers');
         if (!btn) return;
         const count = AppState.currentNote.stickers?.length || 0;
-        btn.innerHTML = count > 0 
-            ? `<span class="sub-icon" style="color: #eab308;">🟨</span> ${t('stk_bar_title')} <span class="sticker-sub-badge" style="background: #fef08a; color: #854d0e; font-size: 0.75rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 2px;">${count}</span>`
-            : `<span class="sub-icon" style="color: #eab308;">🟨</span> ${t('stk_bar_title')}`;
+        btn.innerHTML = `<i class="ph ph-sticker sub-icon" aria-hidden="true"></i> ${t('stk_bar_title')}`
+            + (count > 0 ? ` <span class="sticker-sub-badge" style="background: #fef08a; color: #854d0e; font-size: 0.75rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 2px;">${count}</span>` : '');
     }
 
     // ── Shared panel builder ───────────────────────────────────────────────────
@@ -262,8 +261,8 @@ class BlockStickersManager {
 
         panel.innerHTML = `
             <div class="sticker-panel-header">
-                <span>🟨 ${title}</span>
-                <button class="sticker-panel-close" title="${t('close_word')}">✕</button>
+                <span><i class="ph ph-sticker" aria-hidden="true"></i> ${title}</span>
+                <button class="sticker-panel-close" title="${t('close_word')}" aria-label="${t('close_word')}"><i class="ph ph-x" aria-hidden="true"></i></button>
             </div>
             <div class="sticker-panel-form">
                 <input type="text" class="sticker-panel-title-input" placeholder="${t('stk_title_ph')}" maxlength="500">
@@ -404,9 +403,9 @@ class BlockStickersManager {
                 <div class="sticker-card-footer">
                     <span class="sticker-card-date">${HtmlSafety.escape(formatDate(s.created_at))}</span>
                     <span class="sticker-card-actions">
-                        <button class="sticker-copy-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('stk_copy')}" aria-label="${t('stk_copy')}">⧉</button>
-                        <button class="sticker-edit-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_edit')}" aria-label="${t('tt_edit')}">✎</button>
-                        <button class="sticker-delete-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_delete')}" aria-label="${t('tt_delete')}">✕</button>
+                        <button class="sticker-copy-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('stk_copy')}" aria-label="${t('stk_copy')}"><i class="ph ph-copy" aria-hidden="true"></i></button>
+                        <button class="sticker-edit-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_edit')}" aria-label="${t('tt_edit')}"><i class="ph ph-pencil-simple" aria-hidden="true"></i></button>
+                        <button class="sticker-delete-btn" type="button" data-id="${HtmlSafety.escape(s.id)}" title="${t('tt_delete')}" aria-label="${t('tt_delete')}"><i class="ph ph-trash" aria-hidden="true"></i></button>
                     </span>
                 </div>
             </div>

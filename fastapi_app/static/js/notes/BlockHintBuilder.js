@@ -50,13 +50,13 @@ class BlockHintBuilder {
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <button class="btn-dismiss" title="${t('hide')}" style="background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 1L1 13M1 1l12 12"/></svg>
+                    <i class="ph ph-x" aria-hidden="true"></i>
                 </button>
                 
                 <div style="display: flex; gap: 8px; z-index: 2;">
                     ${stepRole.startsWith('step') ? `
                     <button class="btn-autofill-step ai-block-button ai-block-icon" type="button" aria-label="${t('ai_generate_step')}" data-tooltip="${t('ai_generate_step')}">
-                        <span aria-hidden="true">✦</span>
+                        <i class="ph ph-sparkle" aria-hidden="true"></i>
                     </button>
                     ` : ''}
                 </div>
@@ -168,7 +168,7 @@ class BlockHintBuilder {
             <textarea class="anchor-topic-input" rows="3" placeholder="${anchorPh}"
                 style="width:100%; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:10px; padding:11px 14px; font-size:1rem; line-height:1.5; font-family:inherit; resize:vertical; outline:none; background:#fff;"></textarea>
             <button class="btn-anchor-generate" style="margin-top:12px; width:100%; background:linear-gradient(135deg,#fb923c,#ea580c); color:#fff; border:none; border-radius:10px; padding:12px; font-size:0.95rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                <span>✨</span> ${t('anchor_generate_btn')}
+                <i class="ph ph-sparkle" aria-hidden="true"></i> ${t('anchor_generate_btn')}
             </button>
             <div style="text-align:center; margin-top:10px;">
                 <button class="btn-anchor-editor" style="background:transparent; border:none; color:#64748b; font-size:0.82rem; cursor:pointer; text-decoration:underline;">${t('anchor_open_editor')}</button>

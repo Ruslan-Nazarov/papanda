@@ -63,17 +63,17 @@ class App {
         this.loadInitialState();
     }
 
-    static showModal(title, contentHTML) {
+    static showModal(title, contentHTML, {className = ''} = {}) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         
         const dialog = document.createElement('div');
-        dialog.className = 'modal-dialog';
+        dialog.className = `modal-dialog ${className}`.trim();
         
         dialog.innerHTML = `
             <div class="modal-dialog-header">
                 <h2>${title}</h2>
-                <button class="icon-btn btn-close-modal">✕</button>
+                <button class="icon-btn btn-close-modal" type="button" aria-label="${t('close')}"><i class="ph ph-x" aria-hidden="true"></i></button>
             </div>
             <div class="modal-dialog-body">
                 ${contentHTML}
@@ -188,9 +188,11 @@ class App {
                 });
                 if (!confirmed) return;
             }
-            NoteLocation.clear();
-            AppState.setNote({ id: null, title: t('menu_new_note'), blocks: [] });
-            BlockDOMRenderer.renderAll();
+            try {
+                await NoteStorageService.createNewNote();
+            } catch {
+                await DialogService.alert(t('error_word'), t('error_saving'));
+            }
         };
         document.getElementById('menu-item-new-note')?.addEventListener('click', startNewConspect);
         document.getElementById('btn-new-conspect')?.addEventListener('click', startNewConspect);
@@ -206,13 +208,9 @@ class App {
             LoadNotesModalService.show(this, 'trash');
         });
 
-        document.getElementById('menu-item-delete-current')?.addEventListener('click', async () => {
-            DropdownController.closeAll();
-            if (!AppState.currentNote.id) {
-                AppState.setNote({ id: null, title: '', blocks: [] });
-                BlockDOMRenderer.renderAll();
-                return;
-            }
+        document.getElementById('btn-delete-current')?.addEventListener('click', async () => {
+            const noteId = AppState.currentNote.id;
+            if (!noteId) return;
             const confirmed = await DialogService.confirm({
                 title: t('to_trash'),
                 message: `${t('confirm_to_trash_msg')} "${AppState.currentNote.title}"`,
@@ -221,8 +219,13 @@ class App {
             });
             if (confirmed) {
                 try {
-                    await NotesAPI.deleteNote(AppState.currentNote.id);
-                    this.loadInitialState();
+                    if (AppState.currentNote.id !== noteId) return;
+                    if (AppState.isDirty) await NoteStorageService.saveCurrentNote();
+                    if (AppState.currentNote.id !== noteId) return;
+                    await NotesAPI.deleteNote(noteId);
+                    if (AppState.currentNote.id === noteId) {
+                        await NoteStorageService.createNewNote({preserveChanges: false});
+                    }
                 } catch (error) {
                     await DialogService.alert(t('error_word'), error.status === 409
                         ? t('version_material_delete_blocked') : t('trash_move_failed'));
@@ -564,11 +567,13 @@ class App {
 
     static updateSaveStatusUI() {
         const btnSave = document.getElementById('btn-save');
+        const btnDelete = document.getElementById('btn-delete-current');
         const dot = document.getElementById('save-status-dot');
 
         if (btnSave) {
             btnSave.classList.toggle('is-dirty', AppState.isDirty);
         }
+        if (btnDelete) btnDelete.disabled = !AppState.currentNote.id;
 
         if (dot) {
             const isReady = (AppState.currentNote && (AppState.currentNote.status === 'ready' || AppState.currentNote.status === 'done'));

@@ -206,6 +206,77 @@
     background: #f8fafc;
 }
 
+/* The note picker has one scroll area and no generic confirmation action. */
+.load-notes-modal {
+    display: flex;
+    flex-direction: column;
+    width: min(620px, calc(100vw - 24px));
+    max-width: none;
+    max-height: min(760px, calc(100vh - 32px));
+}
+
+.load-notes-modal .modal-dialog-body {
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+}
+
+.load-notes-modal .modal-dialog-footer { display: none; }
+.load-notes-modal .load-notes-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
+}
+.load-notes-modal .premium-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.load-notes-modal .premium-tab-btn .ph { font-size: 1.15rem; }
+.load-notes-modal .load-notes-hint {
+    margin: 0 0 16px;
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+.load-notes-modal .premium-input { width: 100%; box-sizing: border-box; }
+.load-notes-modal .premium-list {
+    max-height: none;
+    overflow: visible;
+    padding: 2px;
+}
+.load-notes-modal .premium-note-card:last-child { margin-bottom: 0; }
+.load-notes-modal .premium-create-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+.load-notes-modal .premium-create-btn .ph,
+.load-notes-modal .premium-restore-btn .ph,
+.load-notes-modal .premium-delete-perm-btn .ph,
+.load-notes-modal .premium-action-btn .ph { font-size: 1.15rem; line-height: 1; }
+.load-notes-modal .load-empty-icon {
+    display: block;
+    margin-bottom: 12px;
+    color: #94a3b8;
+    font-size: 2.5rem;
+}
+.load-notes-modal .premium-note-card:focus-within { border-color: #93c5fd; }
+
+@media (max-width: 768px) {
+    .modal-dialog.load-notes-modal { overflow: hidden !important; }
+}
+
+@media (max-width: 640px) {
+    .modal-dialog.load-notes-modal { max-height: calc(100vh - 24px); }
+    .load-notes-modal .modal-dialog-body { padding: 16px; }
+    .load-notes-modal .premium-tab-btn { padding: 10px 12px; }
+    .load-notes-modal .premium-note-card { padding: 12px; }
+}
+
 .block-sources-modal { width: min(600px, calc(100vw - 24px)); max-width: none; border-radius: 16px; }
 .block-sources-modal [hidden] { display: none !important; }
 .block-sources-modal .modal-dialog-header,

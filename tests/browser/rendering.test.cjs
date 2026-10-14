@@ -91,10 +91,10 @@ test('isolated renderer security regressions', async t => {
                 const icon = block.querySelector('.btn-autofill-ai');
                 icon.click();
                 await new Promise(resolve => setTimeout(resolve, 0));
-                return {icon: icon.textContent.trim(), filledId,
+                return {icon: icon.querySelector('.ph-sparkle') !== null, filledId,
                     sectionHasIcon: !!section.querySelector('.btn-autofill-ai')};
             });
-            assert.deepEqual(result, {icon: '✦', filledId: 'ordinary', sectionHasIcon: false});
+            assert.deepEqual(result, {icon: true, filledId: 'ordinary', sectionHasIcon: false});
         });
         await t.test('step label help opens and closes by keyboard', async () => {
             const result = await page.evaluate(() => {

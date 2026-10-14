@@ -75,8 +75,8 @@ class BlockNormalBuilder {
                     <h2 class="block-title" contenteditable="true"></h2>
                 </div>
                 <div class="block-actions">
-                    <button class="block-action-btn btn-color manual-only" type="button" title="${t('tt_frame_color')}" aria-label="${t('tt_frame_color')}">🎨</button>
-                    <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑</button>
+                    <button class="block-action-btn btn-color manual-only" type="button" title="${t('tt_frame_color')}" aria-label="${t('tt_frame_color')}"><i class="ph ph-palette" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-delete" title="${t('tt_delete')}"><i class="ph ph-trash" aria-hidden="true"></i></button>
                 </div>
             `;
         } else {
@@ -105,12 +105,12 @@ class BlockNormalBuilder {
                         <span class="drag-handle" title="${t('tt_drag')}">⠿</span>
                         <span class="block-number"></span>
                         <div class="block-status-dot"></div>
-                        <button class="btn-collapse-toggle" title="${t('tt_collapse')}">${block.collapsed ? '▶' : '▼'}</button>
+                        <button class="btn-collapse-toggle" title="${t('tt_collapse')}"><i class="ph ${block.collapsed ? 'ph-caret-right' : 'ph-caret-down'}" aria-hidden="true"></i></button>
                         <h3 class="block-title" contenteditable="true"></h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
-                        <button class="btn-autofill-ai ai-block-button ai-block-icon" type="button" aria-label="${t('ai_generate_step')}" data-tooltip="${t('ai_generate_step')}"><span aria-hidden="true">✦</span></button>
-                        <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" type="button" aria-pressed="${Boolean(block.is_pinned)}" title="${t('tt_pin')}">📌</button>
+                        <button class="btn-autofill-ai ai-block-button ai-block-icon" type="button" aria-label="${t('ai_generate_step')}" data-tooltip="${t('ai_generate_step')}"><i class="ph ph-sparkle" aria-hidden="true"></i></button>
+                        <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" type="button" aria-pressed="${Boolean(block.is_pinned)}" title="${t('tt_pin')}"><i class="ph ph-push-pin" aria-hidden="true"></i></button>
                     </div>
                 </div>
                 ${block.tags ? `
@@ -118,19 +118,19 @@ class BlockNormalBuilder {
                 </div>
                 ` : ''}
                 <div class="block-toolbar-row" style="display: flex; align-items: center; gap: 4px;">
-                    <button class="block-action-btn btn-sources manual-only" title="${t('tt_sources')}">ℹ️</button>
-                    <button class="block-action-btn btn-dict manual-only" type="button" title="${t('dict_title')}" aria-label="${t('dict_title')}">📖</button>
-                    <button class="block-action-btn btn-connections manual-only" type="button" title="${t('tt_block_sources')}">🔗</button>
+                    <button class="block-action-btn btn-sources manual-only" title="${t('tt_sources')}"><i class="ph ph-info" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-dict manual-only" type="button" title="${t('dict_title')}" aria-label="${t('dict_title')}"><i class="ph ph-book-open" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-connections manual-only" type="button" title="${t('tt_block_sources')}"><i class="ph ph-link" aria-hidden="true"></i></button>
                     ${(block.rejected_drafts?.length || 0) ? `<button class="block-action-btn btn-draft-archive" type="button" title="${t('ed_archive_title')} (${block.rejected_drafts.length})" aria-label="${t('ed_archive_title')} (${block.rejected_drafts.length})"><i class="ph ph-archive" aria-hidden="true"></i><span class="draft-archive-toolbar-count">${block.rejected_drafts.length}</span></button>` : ''}
-                    <button class="block-action-btn btn-sticker manual-only" title="${t('tt_sticker')}" aria-expanded="false">🟨</button>
-                    <button class="block-action-btn btn-hide manual-only" title="${t('tt_hide_phrases')}">👁️</button>
+                    <button class="block-action-btn btn-sticker manual-only" title="${t('tt_sticker')}" aria-expanded="false"><i class="ph ph-sticker" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-hide manual-only" title="${t('tt_hide_phrases')}"><i class="ph ph-eye" aria-hidden="true"></i></button>
                     <div class="manual-only" style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 3px;"></div>
-                    <button class="block-action-btn btn-edit" title="${t('tt_edit')}">✏️</button>
-                    <button class="block-action-btn btn-clear-format" type="button" title="${t('ed_clear_format')}" aria-label="${t('ed_clear_format')}">🧹</button>
-                    <button class="block-action-btn btn-ai-check manual-only" title="${t('tt_ai_check')}">🔬</button>
-                    <button class="block-action-btn btn-copy" title="${t('tt_copy')}">📋</button>
-                    <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}">🎨</button>
-                    <button class="block-action-btn btn-delete" title="${t('tt_delete')}">🗑️</button>
+                    <button class="block-action-btn btn-edit" title="${t('tt_edit')}"><i class="ph ph-pencil-simple" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-clear-format" type="button" title="${t('ed_clear_format')}" aria-label="${t('ed_clear_format')}"><i class="ph ph-eraser" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-ai-check manual-only" title="${t('tt_ai_check')}"><i class="ph ph-microscope" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-copy" title="${t('tt_copy')}"><i class="ph ph-copy" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}"><i class="ph ph-palette" aria-hidden="true"></i></button>
+                    <button class="block-action-btn btn-delete" title="${t('tt_delete')}"><i class="ph ph-trash" aria-hidden="true"></i></button>
                     <div class="block-author-control" data-author="${author}">
                         <button class="block-author-help-button" type="button" aria-label="${t('block_author_help_title')}" aria-expanded="false" title="${t('block_author_help_title')}"><span aria-hidden="true">i</span></button>
                         <select class="block-author-select" aria-label="${t('block_author_label')}" title="${t('block_author_label')}">
@@ -351,7 +351,7 @@ class BlockNormalBuilder {
                 e.stopPropagation();
                 AppState.updateBlock(block.id, {collapsed: !block.collapsed});
                 div.classList.toggle('collapsed', block.collapsed);
-                collapseBtn.textContent = block.collapsed ? '▶' : '▼';
+                collapseBtn.querySelector('i').className = `ph ${block.collapsed ? 'ph-caret-right' : 'ph-caret-down'}`;
                 const content = div.querySelector('.block-content');
                 if (content) content.style.display = block.collapsed ? 'none' : 'block';
             });

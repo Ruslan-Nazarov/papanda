@@ -76,6 +76,7 @@
         border: 1px solid #f1f5f9;
         border-radius: 10px;
     }
+    .header-right.mobile-open #main-menu-dropdown { width: 100%; }
 
     /* ---------- Шапка конспекта ---------- */
     .note-header-bar {
@@ -85,8 +86,9 @@
         padding: 12px 14px;
     }
     .note-header-left { flex-wrap: wrap; gap: 6px; }
-    .note-title-input { width: 100% !important; font-size: 1.15rem; }
-    .note-header-right { justify-content: space-between; }
+    .note-title-input { flex: 1 0 100%; width: 100%; font-size: 1.15rem; }
+    .note-header-right { justify-content: space-between; flex-wrap: wrap; }
+    .note-header-right #btn-save { margin-left: auto; }
 
     /* ---------- Сабтулбар ---------- */
     .note-sub-bar {

@@ -152,7 +152,7 @@ test('category names containing quotes round trip through rename controls', asyn
     assert.equal(ctx.document.querySelector('category'), null);
 });
 
-test('stale note-list requests cannot replace the trash tab', async () => {
+test('Open and Trash are separate dialogs without cross-navigation or delete controls', async () => {
     const ctx = setup();
     ctx.fetch = async () => ({ok: true, json: async () => []});
     ctx.NotesAPI.getNotes = async () => [];
@@ -165,13 +165,13 @@ test('stale note-list requests cannot replace the trash tab', async () => {
         return {dialog, close: () => dialog.remove()};
     }};
     await ctx.LoadNotesModalService.show(app);
-    let resolve;
-    ctx.NotesAPI.getNotes = () => new Promise(done => {resolve = done;});
-    ctx.document.querySelector('#tab-btn-notes').click();
-    ctx.document.querySelector('#tab-btn-trash').click();
-    await tick();
-    resolve([]);
-    await tick();
-    assert(ctx.document.querySelector('#tab-btn-trash.active'));
-    assert.equal(ctx.document.querySelector('#modal-search'), null);
+    assert(ctx.document.querySelector('#modal-search'));
+    assert.equal(ctx.document.querySelector('#tab-btn-trash'), null);
+    assert.equal(ctx.document.querySelector('.btn-delete-note'), null);
+    assert.equal(ctx.document.querySelector('#btn-create-new-note'), null);
+    await ctx.LoadNotesModalService.show(app, 'trash');
+    const trashDialog = [...ctx.document.querySelectorAll('.modal-dialog-body')].at(-1);
+    assert(trashDialog.textContent.includes('trash_retention_hint'));
+    assert.equal(trashDialog.querySelector('#modal-search'), null);
+    assert.equal(trashDialog.querySelector('#tab-btn-notes'), null);
 });

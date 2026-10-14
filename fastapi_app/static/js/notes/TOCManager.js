@@ -31,11 +31,13 @@ class TOCManager {
         const menu = document.getElementById('toc-dropdown-menu');
         if (!menu) return;
 
-        const blocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
+        const storedBlocks = (AppState.currentNote.blocks || []).filter(b => !b.isDraft);
+        const blocks = [...storedBlocks.filter(b => b.role !== 'anchor'),
+            ...storedBlocks.filter(b => b.role === 'anchor')];
 
         let itemsHTML;
         if (blocks.length === 0) {
-            itemsHTML = `<div style="color: #94a3b8; font-style: italic; padding: 12px 16px; font-size: 0.9rem;">${t('toc_empty')}</div>`;
+            itemsHTML = `<div class="toc-empty">${t('toc_empty')}</div>`;
         } else {
             let sectionNumber = 0;
             itemsHTML = blocks.map((b) => {
@@ -49,9 +51,9 @@ class TOCManager {
                 const displayTitle = isSection ? `${t('section_word')} ${++sectionNumber} · ${titleText}` : titleText;
 
                 if (isSection) {
-                    icon = '📄';
+                    icon = '§';
                 } else if (isAnchor) {
-                    icon = '🧠';
+                    icon = '⌖';
                 }
 
                 return `
@@ -59,25 +61,25 @@ class TOCManager {
                          data-id="${b.id}" 
                          draggable="true" 
                          data-side="${side}"
-                         style="display: flex; align-items: center; gap: 8px; padding: ${isSection ? '8px 10px' : '6px 10px'}; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.92rem; color: #1e293b; user-select: none;">
-                        <span class="toc-drag-handle" title="${t('drag_word')}" style="color: #94a3b8; font-size: 1.1rem; cursor: grab; padding: 0 2px; line-height: 1;">⠿</span>
+                         tabindex="0">
+                        <span class="toc-drag-handle ph ph-dots-six-vertical" title="${t('drag_word')}" aria-hidden="true"></span>
                         <span class="toc-marker" aria-hidden="true">${icon}</span>
-                        <span class="toc-title" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(displayTitle)}</span>
+                        <span class="toc-title">${this.escapeHtml(displayTitle)}</span>
                     </div>
                 `;
             }).join('');
         }
 
         menu.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 8px 16px; border-bottom: 1px solid #f8fafc;">
-                <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #1e293b;">
-                    <span style="font-size: 1.15rem;">📋</span>
+            <div class="toc-panel-header">
+                <div class="toc-panel-heading">
+                    <i class="ph ph-list-numbers" aria-hidden="true"></i>
                     <span>${t('toc_title')}</span>
                 </div>
-                <button class="btn-close-toc" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;">✕</button>
+                <button class="btn-close-toc" type="button" aria-label="${t('close_word')}"><i class="ph ph-x" aria-hidden="true"></i></button>
             </div>
             <div class="toc-side-legend"><span class="toc-legend-left"><b aria-hidden="true">←</b> ${t('toc_left_side')}</span><span class="toc-legend-right"><b aria-hidden="true">→</b> ${t('toc_right_side')}</span></div>
-            <div class="toc-items-list" style="padding: 6px 8px 10px 8px; display: flex; flex-direction: column; gap: 4px; max-height: 380px; overflow-y: auto;">
+            <div class="toc-items-list">
                 ${itemsHTML}
             </div>
         `;
@@ -114,6 +116,12 @@ class TOCManager {
                         targetEl.style.boxShadow = '';
                         targetEl.style.transform = '';
                     }, 1800);
+                }
+            });
+            item.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    item.click();
                 }
             });
 

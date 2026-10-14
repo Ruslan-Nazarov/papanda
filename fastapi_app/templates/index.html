@@ -31,27 +31,27 @@
                 <span>{{ _('app_title') }}</span>
             </div>
             <div class="mode-master-toggle" id="mode-master-toggle" title="{{ _('mode_toggle_title') }}">
-                <button type="button" data-mode="ai" aria-label="{{ _('mode_ai') }}"><span class="mm-ico" aria-hidden="true">✨</span><span class="mm-label">{{ _('mode_ai') }}</span></button>
-                <button type="button" data-mode="manual" aria-label="{{ _('mode_manual') }}"><span class="mm-ico" aria-hidden="true">✍️</span><span class="mm-label">{{ _('mode_manual') }}</span></button>
+                <button type="button" data-mode="ai" aria-label="{{ _('mode_ai') }}"><i class="ph ph-sparkle mm-ico" aria-hidden="true"></i><span class="mm-label">{{ _('mode_ai') }}</span></button>
+                <button type="button" data-mode="manual" aria-label="{{ _('mode_manual') }}"><i class="ph ph-pencil-simple mm-ico" aria-hidden="true"></i><span class="mm-label">{{ _('mode_manual') }}</span></button>
             </div>
             <label class="mode-substep" id="mode-substep" title="{{ _('mode_substep_title') }}">
                 <input type="checkbox" id="toggle-autofill-step"> {{ _('mode_substep') }}
             </label>
         </div>
-        <button class="mobile-nav-toggle" id="btn-mobile-nav" aria-label="{{ _('menu_nav_mobile') }}">☰</button>
+        <button class="mobile-nav-toggle" id="btn-mobile-nav" aria-label="{{ _('menu_nav_mobile') }}"><i class="ph ph-list" aria-hidden="true"></i></button>
         <div class="header-right" id="header-right">
-            <a href="/library" class="nav-pill-btn" style="text-decoration:none;">📚 {{ _('library_title') }}</a>
+            <a href="/library" class="nav-pill-btn" style="text-decoration:none;"><i class="ph ph-books pill-icon" aria-hidden="true"></i> {{ _('library_title') }}</a>
             {% if author_mode %}
             <button type="button" class="nav-pill-btn" id="btn-library-publish">{{ _('library_manage') }}</button>
             {% endif %}
             <!-- Обучение -->
             <button class="nav-pill-btn" id="btn-howto">
-                <span class="pill-icon">🎓</span> {{ _('nav_howto') }}
+                <i class="ph ph-graduation-cap pill-icon" aria-hidden="true"></i> {{ _('nav_howto') }}
             </button>
             <!-- Режим -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-mode">
-                    <span class="pill-icon">🎛</span> {{ _('btn_mode') }}
+                    <i class="ph ph-sliders-horizontal pill-icon" aria-hidden="true"></i> {{ _('btn_mode') }}
                 </button>
                 <div id="mode-dropdown" class="dropdown-menu hidden" style="min-width: 260px;">
                     <div class="mode-dropdown-row">
@@ -79,70 +79,44 @@
 
             <!-- Связи -->
             <button class="nav-pill-btn" id="btn-connections-nav">
-                <span class="pill-icon">🔗</span> {{ _('nav_connections') }}
+                <i class="ph ph-link pill-icon" aria-hidden="true"></i> {{ _('nav_connections') }}
             </button>
 
             <!-- Меню -->
             <div class="dropdown-wrapper">
                 <button class="nav-pill-btn" id="btn-main-menu">
-                    <span class="pill-icon">☰</span> {{ _('nav_menu') }}
+                    <i class="ph ph-list pill-icon" aria-hidden="true"></i> {{ _('nav_menu') }}
                 </button>
-                <div id="main-menu-dropdown" class="dropdown-menu hidden" style="min-width: 230px;">
-                    <div class="menu-item" id="menu-item-ai-diary"><span class="menu-icon">↗</span><span>{{ _('ai_diary_title') }}</span></div>
-                    <div class="menu-item" id="menu-item-ai-full"><span class="menu-icon">✦</span><span>{{ _('ai_generate_full') }}</span></div>
-                    <div class="menu-item" id="menu-item-open-note">
-                        <span class="menu-icon">📁</span>
-                        <span>{{ _('menu_open_note') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-new-note">
-                        <span class="menu-icon">📄</span>
-                        <span>{{ _('menu_new_note') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-back-note">
-                        <span class="menu-icon">‹</span>
-                        <span>{{ _('menu_back') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-trash">
-                        <span class="menu-icon">🗑</span>
-                        <span>{{ _('menu_trash') }}</span>
-                    </div>
-                    <div class="menu-item text-danger" id="menu-item-delete-current">
-                        <span class="menu-icon">🗑</span>
-                        <span>{{ _('menu_delete_note') }}</span>
-                    </div>
+                <div id="main-menu-dropdown" class="dropdown-menu hidden">
+                    <div class="menu-section-label">{{ _('menu_section_notes') }}</div>
+                    <button type="button" class="menu-item" id="menu-item-new-note"><i class="ph ph-file-plus menu-icon" aria-hidden="true"></i><span>{{ _('menu_new_note') }}</span></button>
+                    <button type="button" class="menu-item" id="menu-item-open-note"><i class="ph ph-folder-open menu-icon" aria-hidden="true"></i><span>{{ _('menu_open_note') }}</span></button>
+                    <button type="button" class="menu-item" id="menu-item-back-note"><i class="ph ph-arrow-u-up-left menu-icon" aria-hidden="true"></i><span>{{ _('menu_back') }}</span></button>
                     <div class="menu-divider"></div>
-                    <div class="menu-item" id="menu-item-share">
-                        <span class="menu-icon">🔗</span>
-                        <span>{{ _('menu_share') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-copy-text">
-                        <span class="menu-icon">📋</span>
-                        <span>{{ _('menu_copy_text') }}</span>
-                    </div>
+                    <div class="menu-section-label">{{ _('menu_section_tools') }}</div>
+                    <button type="button" class="menu-item" id="menu-item-ai-full"><i class="ph ph-sparkle menu-icon" aria-hidden="true"></i><span>{{ _('ai_generate_full') }}</span></button>
+                    <button type="button" class="menu-item" id="menu-item-ai-diary"><i class="ph ph-clock-counter-clockwise menu-icon" aria-hidden="true"></i><span>{{ _('ai_diary_title') }}</span></button>
                     <div class="menu-divider"></div>
-                    <div class="menu-section-label">{{ _('menu_export') }}</div>
-                    <div class="menu-item" id="menu-item-export-txt">
-                        <span class="menu-icon">📄</span>
-                        <span>{{ _('menu_export_txt') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-export-md">
-                        <span class="menu-icon">📄</span>
-                        <span>{{ _('menu_export_md_clean') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-export-md-full">
-                        <span class="menu-icon">📦</span>
-                        <span>{{ _('menu_export_md_full') }}</span>
-                    </div>
-                    <div class="menu-item" id="menu-item-export-pdf">
-                        <span class="menu-icon">📄</span>
-                        <span>PDF (.pdf)</span>
-                    </div>
+                    <div class="menu-section-label">{{ _('menu_section_share') }}</div>
+                    <button type="button" class="menu-item" id="menu-item-share"><i class="ph ph-link menu-icon" aria-hidden="true"></i><span>{{ _('menu_share') }}</span></button>
+                    <button type="button" class="menu-item" id="menu-item-copy-text"><i class="ph ph-copy menu-icon" aria-hidden="true"></i><span>{{ _('menu_copy_text') }}</span></button>
+                    <details class="menu-submenu">
+                        <summary class="menu-item"><i class="ph ph-download-simple menu-icon" aria-hidden="true"></i><span>{{ _('menu_export') }}</span><i class="ph ph-caret-down menu-caret" aria-hidden="true"></i></summary>
+                        <div class="menu-submenu-items">
+                            <button type="button" class="menu-item" id="menu-item-export-txt"><i class="ph ph-file-text menu-icon" aria-hidden="true"></i><span>{{ _('menu_export_txt') }}</span></button>
+                            <button type="button" class="menu-item" id="menu-item-export-md"><i class="ph ph-file-md menu-icon" aria-hidden="true"></i><span>{{ _('menu_export_md_clean') }}</span></button>
+                            <button type="button" class="menu-item" id="menu-item-export-md-full"><i class="ph ph-package menu-icon" aria-hidden="true"></i><span>{{ _('menu_export_md_full') }}</span></button>
+                            <button type="button" class="menu-item" id="menu-item-export-pdf"><i class="ph ph-file-pdf menu-icon" aria-hidden="true"></i><span>PDF (.pdf)</span></button>
+                        </div>
+                    </details>
+                    <div class="menu-divider"></div>
+                    <button type="button" class="menu-item" id="menu-item-trash"><i class="ph ph-trash menu-icon" aria-hidden="true"></i><span>{{ _('menu_trash') }}</span></button>
                 </div>
             </div>
             <!-- Смена языка -->
             <div class="dropdown-wrapper" style="margin-left: 4px;">
                 <button class="nav-pill-btn" id="btn-lang-menu" title="{{ _('lang_menu_title') }}">
-                    <span class="pill-icon">🌐</span> {{ _('nav_lang') }}
+                    <i class="ph ph-globe pill-icon" aria-hidden="true"></i> {{ _('nav_lang') }}
                 </button>
                 <div id="lang-menu-dropdown" class="dropdown-menu hidden" style="min-width: 140px;">
                     <div class="menu-item" data-lang="ru">
@@ -181,7 +155,10 @@
                 </button>
                 <div class="save-status-dot-indicator" id="save-status-dot"></div>
                 <button class="btn-save-primary" id="btn-save">
-                    <span class="save-icon">💾</span> {{ _('btn_save') }}
+                    <i class="ph ph-floppy-disk save-icon" aria-hidden="true"></i> {{ _('btn_save') }}
+                </button>
+                <button class="btn-delete-current" id="btn-delete-current" type="button" title="{{ _('menu_delete_note') }}" aria-label="{{ _('menu_delete_note') }}" disabled>
+                    <i class="ph ph-trash" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -190,7 +167,7 @@
         <div class="note-sub-bar">
             <div class="sub-bar-left">
                 <button class="sub-bar-btn sub-bar-btn-primary" id="btn-new-conspect">
-                    <span class="sub-icon">➕</span> {{ _('bar_new_note') }}
+                    <i class="ph ph-file-plus sub-icon" aria-hidden="true"></i> {{ _('bar_new_note') }}
                 </button>
                 <div class="sub-bar-divider"></div>
                 <div class="progress-section">
@@ -204,15 +181,15 @@
                 <div class="sub-bar-divider"></div>
                 <div class="dropdown-wrapper" style="position: relative;">
                     <button class="sub-bar-btn" id="btn-toc">
-                        <span class="sub-icon">📋</span> {{ _('bar_toc') }}
+                        <i class="ph ph-list-numbers sub-icon" aria-hidden="true"></i> {{ _('bar_toc') }}
                     </button>
-                    <div id="toc-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 290px; max-width: 380px; padding: 0; border-radius: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); overflow: hidden; background: #ffffff;">
+                    <div id="toc-dropdown-menu" class="dropdown-menu hidden">
                         <!-- populated by TOCManager -->
                     </div>
                 </div>
                 <div class="dropdown-wrapper" style="position: relative;">
                     <button class="sub-bar-btn" id="btn-search">
-                        <span class="sub-icon">🔍</span> {{ _('bar_search') }}
+                        <i class="ph ph-magnifying-glass sub-icon" aria-hidden="true"></i> {{ _('bar_search') }}
                     </button>
                     <div id="search-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 320px; max-width: 380px; padding: 14px 16px; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); background: #ffffff;">
                         <!-- populated by SearchManager -->
@@ -220,7 +197,7 @@
                 </div>
                 <div class="dropdown-wrapper" style="position: relative;">
                     <button class="sub-bar-btn" id="btn-note-stickers">
-                        <span class="sub-icon" style="color: #eab308;">🟨</span> {{ _('bar_stickers') }}
+                        <i class="ph ph-sticker sub-icon" aria-hidden="true"></i> {{ _('bar_stickers') }}
                     </button>
                     <div id="note-stickers-dropdown-menu" class="dropdown-menu hidden" style="left: 0; right: auto; min-width: 320px; max-width: 360px; padding: 0; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); background: #ffffff;">
                         <!-- populated by BlockStickersManager -->
@@ -228,23 +205,23 @@
                 </div>
                 <div class="dropdown-wrapper materials-wrapper">
                     <button class="sub-bar-btn" id="btn-note-materials" type="button" aria-expanded="false" aria-controls="note-materials-panel">
-                        <span class="sub-icon" aria-hidden="true">📚</span> {{ _('materials_title') }} <span class="materials-count" hidden></span>
+                        <i class="ph ph-books sub-icon" aria-hidden="true"></i> {{ _('materials_title') }} <span class="materials-count" hidden></span>
                     </button>
                     <section id="note-materials-panel" class="dropdown-menu materials-panel hidden" aria-label="{{ _('materials_title') }}"></section>
                 </div>
                 <div class="dropdown-wrapper questions-wrapper">
                     <button class="sub-bar-btn" id="btn-questions" type="button" aria-expanded="false" aria-controls="questions-panel">
-                        <span class="sub-icon" aria-hidden="true">❓</span> {{ _('bar_questions') }} <span class="questions-count" hidden></span>
+                        <i class="ph ph-question sub-icon" aria-hidden="true"></i> {{ _('bar_questions') }} <span class="questions-count" hidden></span>
                     </button>
                     <section id="questions-panel" class="dropdown-menu questions-panel hidden" aria-label="{{ _('questions_title') }}"></section>
                 </div>
                 <button class="sub-bar-btn" id="btn-note-notice" type="button" aria-controls="note-notice-editor" aria-expanded="false">
-                    <span class="sub-icon" aria-hidden="true">📝</span> {{ _('note_notice_title') }}
+                    <i class="ph ph-note-pencil sub-icon" aria-hidden="true"></i> {{ _('note_notice_title') }}
                 </button>
             </div>
             <div class="sub-bar-right">
                 <button class="sub-bar-btn" id="btn-versions">
-                    <span class="sub-icon">🕒</span> <span id="save-time-text">{{ _('saved_at') }}: 12:42</span> <span class="arrow-down">▾</span>
+                    <i class="ph ph-clock-counter-clockwise sub-icon" aria-hidden="true"></i> <span id="save-time-text">{{ _('saved_at') }}: 12:42</span> <i class="ph ph-caret-down arrow-down" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -287,13 +264,13 @@
     <footer class="app-footer">
         <div class="footer-pills-row">
             <button class="footer-pill-btn" id="btn-footer-about">
-                <span class="footer-icon">📖</span> {{ _('footer_about') }}
+                <i class="ph ph-book-open footer-icon" aria-hidden="true"></i> {{ _('footer_about') }}
             </button>
             <button class="footer-pill-btn" id="btn-footer-changelog">
-                <span class="footer-icon">📝</span> {{ _('footer_changelog') }}
+                <i class="ph ph-note-pencil footer-icon" aria-hidden="true"></i> {{ _('footer_changelog') }}
             </button>
             <button class="footer-pill-btn" id="btn-footer-contact">
-                <span class="footer-icon">💬</span> {{ _('footer_contact') }}
+                <i class="ph ph-chat-circle footer-icon" aria-hidden="true"></i> {{ _('footer_contact') }}
             </button>
         </div>
 

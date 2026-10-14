@@ -1,8 +1,14 @@
-// Keep browser reloads attached to the document the user is viewing.
+// The root page always starts with a blank note. Explicit note links still work.
 class NoteLocation {
     static remember(id, slug = null) {
         try { localStorage.setItem('papanda_last_note_id', String(id)); } catch {}
-        this._setURL(id, slug);
+        if (slug) {
+            this._setURL(id, slug);
+        } else if (new URLSearchParams(window.location.search).get('note') !== String(id)) {
+            // Ordinary navigation stays at /, so reopening the app starts fresh.
+            // A matching explicit ?note= link keeps its bookmarkable URL.
+            this._setURL(null);
+        }
     }
 
     static clear() {
@@ -11,9 +17,7 @@ class NoteLocation {
     }
 
     static initialId() {
-        const explicit = new URLSearchParams(window.location.search).get('note');
-        if (explicit) return explicit;
-        try { return localStorage.getItem('papanda_last_note_id'); } catch { return null; }
+        return new URLSearchParams(window.location.search).get('note');
     }
 
     static initialLibrarySlug() {

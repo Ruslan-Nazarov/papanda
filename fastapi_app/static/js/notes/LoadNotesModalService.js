@@ -10,23 +10,24 @@ class LoadNotesModalService {
         let currentSearch = '';
         let currentCategory = '';
         let categories = [];
-        let activeTab = openTab; // 'notes' | 'trash'
+        const isTrash = openTab === 'trash';
         let requestSequence = 0;
         let debounceTimer;
         
-        try {
-            const catRes = await fetch('/api/dialectics/categories/all');
-            if (catRes.ok) categories = await catRes.json();
-        } catch(e) {}
-
-        const modalStyles = '';
+        if (!isTrash) {
+            try {
+                const catRes = await fetch('/api/dialectics/categories/all');
+                if (catRes.ok) categories = await catRes.json();
+            } catch(e) {}
+        }
 
         // --- Notes tab renderer ---
         const renderNotesTab = (notes) => {
             let html = `
                 <div class="premium-modal-content">
+                <p class="load-notes-hint">${t('load_notes_hint')}</p>
                 <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
-                    <input type="text" id="modal-search" class="premium-input" placeholder="${t('load_search_ph')}..." value="${this.escapeHtml(currentSearch)}">
+                    <input type="search" id="modal-search" class="premium-input" aria-label="${t('load_search_ph')}" placeholder="${t('load_search_ph')}" value="${this.escapeHtml(currentSearch)}">
                     <div style="display:flex; gap:12px;">
                         <select id="modal-category" class="premium-select" style="flex:1;">
                             <option value="">${t('all_categories')}</option>
@@ -40,7 +41,7 @@ class LoadNotesModalService {
                         </select>
                     </div>
                 </div>
-                <div class="notes-list premium-list" style="max-height: 380px; overflow-y: auto; overflow-x: hidden; margin-bottom:12px;">
+                <div class="notes-list premium-list">
             `;
 
             const filteredNotes = currentStatus === 'all' ? notes : notes.filter(n => n.status === currentStatus);
@@ -48,7 +49,7 @@ class LoadNotesModalService {
             if (filteredNotes.length === 0) {
                 html += `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; opacity: 0.7;">
-                        <span style="font-size: 3rem; margin-bottom: 12px;">🔍</span>
+                        <i class="ph ph-magnifying-glass load-empty-icon" aria-hidden="true"></i>
                         <p style="color:#64748b; font-weight: 500; font-size: 1.05rem;">${t('load_nothing')}</p>
                     </div>
                 `;
@@ -56,12 +57,13 @@ class LoadNotesModalService {
                 filteredNotes.forEach(n => {
                     const statusColor = n.status === 'ready' ? '#10b981' : (n.status === 'in_progress' ? '#f59e0b' : '#94a3b8');
                     const statusName = n.status === 'ready' ? t('st_ready') : (n.status === 'in_progress' ? t('st_in_progress') : t('st_draft'));
-                    const updatedAt = n.updated_at ? new Date(n.updated_at).toLocaleDateString() : '—';
+                    const date = n.updated_at || n.created_at;
+                    const updatedAt = date ? new Date(date).toLocaleDateString(document.documentElement.lang || 'ru') : '—';
                     
                     html += `
                         <div class="note-item premium-note-card" data-id="${n.id}" style="cursor: pointer;">
                             <div style="min-width:0; flex:1;">
-                                <span class="note-title-link" data-id="${n.id}" style="font-weight: 700; font-size: 1.05rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #0f172a; margin-bottom: 4px; transition: color 0.2s;">
+                                <span class="note-title-link" data-id="${n.id}" title="${this.escapeHtml(n.title || t('untitled'))}" style="font-weight: 700; font-size: 1.05rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #0f172a; margin-bottom: 4px; transition: color 0.2s;">
                                     ${this.escapeHtml(n.title || t('untitled'))}
                                 </span>
                                 <span style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center;">
@@ -71,16 +73,12 @@ class LoadNotesModalService {
                                     <span>${updatedAt}</span>
                                 </span>
                             </div>
-                            <button class="premium-action-btn btn-delete-note" data-id="${n.id}" title="${t('to_trash')}">
-                                <svg style="pointer-events: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            </button>
                         </div>
                     `;
                 });
             }
             html += `
                 </div>
-                <button class="premium-create-btn" id="btn-create-new-note">✨ ${t('create_new_note_full')}</button>
                 </div>
             `;
             return html;
@@ -90,15 +88,16 @@ class LoadNotesModalService {
         const renderTrashTab = (trashedNotes) => {
             if (!trashedNotes || trashedNotes.length === 0) {
                 return `
+                    <p class="load-notes-hint">${t('trash_retention_hint')}</p>
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; opacity: 0.7;">
-                        <span style="font-size: 3.5rem; margin-bottom: 16px;">🗑️</span>
+                        <i class="ph ph-trash load-empty-icon" aria-hidden="true"></i>
                         <p style="color:#64748b; font-weight: 500; font-size: 1.1rem;">${t('trash_empty')}</p>
                     </div>
                 `;
             }
-            let html = `<div class="notes-list premium-list" style="max-height: 420px; overflow-y: auto; overflow-x: hidden;">`;
+            let html = `<p class="load-notes-hint">${t('trash_retention_hint')}</p><div class="notes-list premium-list">`;
             trashedNotes.forEach(n => {
-                const deletedAt = n.deleted_at ? new Date(n.deleted_at).toLocaleDateString() : '—';
+                const deletedAt = n.deleted_at ? new Date(n.deleted_at).toLocaleDateString(document.documentElement.lang || 'ru') : '—';
                 html += `
                     <div class="note-item premium-note-card">
                         <div style="min-width:0; flex:1; padding-right: 12px;">
@@ -109,10 +108,10 @@ class LoadNotesModalService {
                         </div>
                         <div style="display:flex; gap:8px; flex-shrink:0;">
                             <button class="premium-restore-btn btn-restore-note" data-id="${n.id}" title="${t('restore_permanently')}">
-                                <span style="margin-right: 4px;">↩</span> ${t('restore_word')}
+                                <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> ${t('restore_word')}
                             </button>
                             <button class="premium-delete-perm-btn btn-permanent-delete" data-id="${n.id}" title="${t('delete_forever')}">
-                                ✕ ${t('forever_short')}
+                                <i class="ph ph-trash" aria-hidden="true"></i> ${t('forever_short')}
                             </button>
                         </div>
                     </div>
@@ -122,15 +121,6 @@ class LoadNotesModalService {
             return html;
         };
 
-        // --- Tab bar renderer ---
-        const renderTabBar = () => `
-            ${modalStyles}
-            <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #f1f5f9; padding-bottom:0; font-family: 'Inter', system-ui, sans-serif;">
-                <button id="tab-btn-notes" class="premium-tab-btn ${activeTab === 'notes' ? 'active' : ''}">📄 ${t('load_tab_notes')}</button>
-                <button id="tab-btn-trash" class="premium-tab-btn trash ${activeTab === 'trash' ? 'active' : ''}">🗑 ${t('load_tab_trash')}</button>
-            </div>
-        `;
-
         // --- Load and re-render notes tab ---
         const loadNotes = async (dialog) => {
             clearTimeout(debounceTimer);
@@ -138,14 +128,12 @@ class LoadNotesModalService {
             const body = dialog.querySelector('.modal-dialog-body');
             try {
                 const notes = await NotesAPI.getNotes(currentSearch, currentCategory);
-                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'notes') return;
-                body.innerHTML = renderTabBar() + `<div id="tab-content">${renderNotesTab(notes)}</div>`;
-                bindTabButtons(dialog);
+                if (!dialog.isConnected || sequence !== requestSequence) return;
+                body.innerHTML = `<div id="tab-content">${renderNotesTab(notes)}</div>`;
                 bindNotesEvents(dialog, notes);
             } catch(e) {
-                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'notes') return;
-                body.innerHTML = renderTabBar() + `<p style="color:#ef4444;">${t('load_error')}</p>`;
-                bindTabButtons(dialog);
+                if (!dialog.isConnected || sequence !== requestSequence) return;
+                body.innerHTML = `<p style="color:#ef4444;">${t('load_error')}</p>`;
             }
         };
 
@@ -156,27 +144,13 @@ class LoadNotesModalService {
             const body = dialog.querySelector('.modal-dialog-body');
             try {
                 const trashedNotes = await NotesAPI.getTrash();
-                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'trash') return;
-                body.innerHTML = renderTabBar() + `<div id="tab-content">${renderTrashTab(trashedNotes)}</div>`;
-                bindTabButtons(dialog);
+                if (!dialog.isConnected || sequence !== requestSequence) return;
+                body.innerHTML = `<div id="tab-content">${renderTrashTab(trashedNotes)}</div>`;
                 bindTrashEvents(dialog, trashedNotes);
             } catch(e) {
-                if (!dialog.isConnected || sequence !== requestSequence || activeTab !== 'trash') return;
-                body.innerHTML = renderTabBar() + `<p style="color:#ef4444;">${t('trash_load_failed')}</p>`;
-                bindTabButtons(dialog);
+                if (!dialog.isConnected || sequence !== requestSequence) return;
+                body.innerHTML = `<p style="color:#ef4444;">${t('trash_load_failed')}</p>`;
             }
-        };
-
-        // --- Tab button bindings ---
-        const bindTabButtons = (dialog) => {
-            dialog.querySelector('#tab-btn-notes')?.addEventListener('click', () => {
-                activeTab = 'notes';
-                loadNotes(dialog);
-            });
-            dialog.querySelector('#tab-btn-trash')?.addEventListener('click', () => {
-                activeTab = 'trash';
-                loadTrash(dialog);
-            });
         };
 
         // --- Notes tab event bindings ---
@@ -213,7 +187,6 @@ class LoadNotesModalService {
 
             dialog.querySelectorAll('.premium-note-card').forEach(card => {
                 card.addEventListener('click', async (e) => {
-                    if (e.target.closest('.btn-delete-note')) return;
                     const id = card.dataset.id;
                     if (id) {
                         try {
@@ -226,47 +199,6 @@ class LoadNotesModalService {
                 });
             });
 
-            dialog.querySelectorAll('.btn-delete-note').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const id = btn.dataset.id;
-                    const confirmed = await DialogService.confirm({
-                        title: t('to_trash'),
-                        message: t('confirm_to_trash_msg'),
-                        isDestructive: true,
-                        confirmText: t('to_trash')
-                    });
-                    if (confirmed && id) {
-                        try {
-                            await NotesAPI.deleteNote(id);
-                            if (AppState.currentNote && String(AppState.currentNote.id) === String(id)) {
-                                await NoteStorageService.createNewNote({preserveChanges: false});
-                                const remaining = await NotesAPI.getNotes(currentSearch, currentCategory);
-                                if (remaining && remaining.length > 0) {
-                                    await NoteStorageService.loadNote(remaining[0].id);
-                                }
-                            }
-                            loadNotes(dialog);
-                        } catch(err) {
-                            console.error('Delete error:', err);
-                            await DialogService.alert(t('error_word'), err.status === 409
-                                ? t('version_material_delete_blocked') : t('trash_move_failed'));
-                        }
-                    }
-                });
-            });
-
-            const btnNew = dialog.querySelector('#btn-create-new-note');
-            if (btnNew) {
-                btnNew.addEventListener('click', async () => {
-                    try {
-                        await NoteStorageService.createNewNote();
-                        if (dialog.closeModal) dialog.closeModal();
-                    } catch {
-                        await DialogService.alert(t('error_word'), t('error_saving'));
-                    }
-                });
-            }
         };
 
         // --- Trash tab event bindings ---
@@ -319,19 +251,17 @@ class LoadNotesModalService {
         // --- Initial render ---
         try {
             let initialContent;
-            if (activeTab === 'trash') {
+            if (isTrash) {
                 const trashedNotes = await NotesAPI.getTrash();
-                initialContent = renderTabBar() + `<div id="tab-content">${renderTrashTab(trashedNotes)}</div>`;
-                const modal = app.showModal(t('trash_title'), initialContent);
+                initialContent = `<div id="tab-content">${renderTrashTab(trashedNotes)}</div>`;
+                const modal = app.showModal(t('trash_title'), initialContent, {className: 'load-notes-modal'});
                 modal.dialog.closeModal = modal.close;
-                bindTabButtons(modal.dialog);
                 bindTrashEvents(modal.dialog, trashedNotes);
             } else {
                 const initialNotes = await NotesAPI.getNotes();
-                initialContent = renderTabBar() + `<div id="tab-content">${renderNotesTab(initialNotes)}</div>`;
-                const modal = app.showModal(t('load_notes_title'), initialContent);
+                initialContent = `<div id="tab-content">${renderNotesTab(initialNotes)}</div>`;
+                const modal = app.showModal(t('load_notes_title'), initialContent, {className: 'load-notes-modal'});
                 modal.dialog.closeModal = modal.close;
-                bindTabButtons(modal.dialog);
                 bindNotesEvents(modal.dialog, initialNotes);
             }
         } catch(e) {

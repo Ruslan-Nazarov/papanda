@@ -1,5 +1,21 @@
 import pytest
 from httpx import AsyncClient
+from datetime import datetime, timezone
+
+from fastapi_app.models.notes import Note
+from fastapi_app.services.notes_service import NotesService
+
+
+@pytest.mark.asyncio
+async def test_new_note_without_update_date_appears_before_older_edits(db_session):
+    old = Note(title='Старый', created_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
+               updated_at=datetime(2026, 10, 2, tzinfo=timezone.utc))
+    new = Note(title='Новый', created_at=datetime(2026, 10, 3, tzinfo=timezone.utc))
+    db_session.add_all([old, new])
+    await db_session.commit()
+
+    notes = await NotesService.get_all_notes(db_session)
+    assert [note.title for note in notes] == ['Новый', 'Старый']
 
 
 @pytest.mark.asyncio

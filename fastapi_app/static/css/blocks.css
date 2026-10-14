@@ -171,6 +171,18 @@
     background: #f1f5f9;
 }
 
+.block-action-btn .ph,
+.btn-collapse-toggle .ph,
+.btn-pin-toggle .ph,
+.section-add-btn .ph,
+.btn-anchor-generate .ph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
 .btn-sticker, .btn-dict {
     position: relative;
 }

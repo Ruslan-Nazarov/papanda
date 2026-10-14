@@ -122,7 +122,7 @@ class BlockDOMRenderer {
                 <button class="icon-add-btn center" title="${t('add_synthesis')}">+</button>
                 <div class="right-actions">
                     <button class="icon-add-btn right" title="${t('add_antithesis')}">+</button>
-                    <button class="section-add-btn" title="${t('add_section')}">📄 ${t('section_word')}</button>
+                    <button class="section-add-btn" title="${t('add_section')}"><i class="ph ph-file-plus" aria-hidden="true"></i> ${t('section_word')}</button>
                 </div>
             </div>
         `;

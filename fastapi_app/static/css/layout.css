@@ -92,7 +92,25 @@
 }
 
 .nav-pill-btn .pill-icon {
-    font-size: 1rem;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.nav-pill-btn .ph,
+.btn-save-primary .ph,
+.sub-bar-btn .ph,
+.footer-pill-btn .ph {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.sub-bar-btn .sub-icon,
+.footer-pill-btn .footer-icon,
+.btn-save-primary .save-icon {
+    font-size: 1.15rem;
 }
 
 .dropdown-wrapper {
@@ -162,6 +180,85 @@
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+#main-menu-dropdown {
+    width: min(292px, calc(100vw - 24px));
+    max-height: min(640px, calc(100vh - 96px));
+    overflow-y: auto;
+    padding: 8px;
+}
+
+#main-menu-dropdown .menu-section-label {
+    padding: 9px 10px 4px;
+    color: #64748b;
+}
+
+#main-menu-dropdown .menu-item {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+#main-menu-dropdown .menu-item:hover,
+#main-menu-dropdown .menu-item:focus-visible {
+    background: #f1f5f9;
+}
+
+#main-menu-dropdown .menu-item:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+}
+
+#main-menu-dropdown .menu-icon {
+    flex: 0 0 20px;
+    color: #64748b;
+    font-size: 1.15rem;
+}
+
+#main-menu-dropdown .menu-divider {
+    margin: 6px 2px;
+}
+
+#main-menu-dropdown .menu-item.text-danger,
+#main-menu-dropdown .menu-item.text-danger .menu-icon {
+    color: #dc2626;
+}
+
+#main-menu-dropdown .menu-item.text-danger:hover {
+    background: #fef2f2;
+}
+
+#main-menu-dropdown .menu-submenu summary {
+    list-style: none;
+}
+
+#main-menu-dropdown .menu-submenu summary::-webkit-details-marker {
+    display: none;
+}
+
+#main-menu-dropdown .menu-caret {
+    margin-left: auto;
+    color: #64748b;
+    transition: transform 0.15s ease;
+}
+
+#main-menu-dropdown .menu-submenu[open] .menu-caret {
+    transform: rotate(180deg);
+}
+
+#main-menu-dropdown .menu-submenu-items {
+    margin: 2px 0 4px 30px;
+    padding-left: 8px;
+    border-left: 1px solid #e2e8f0;
 }
 
 /* 2. Main Note Card Wrapper & Header Bar */

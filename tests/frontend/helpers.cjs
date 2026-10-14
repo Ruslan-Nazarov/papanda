@@ -12,7 +12,8 @@ function source(name, symbol = name) {
         .replace(/^export (?=const |class |function )/gm, '') + `\n;globalThis.${symbol} = ${symbol};`;
 }
 function context(extra = {}) {
-    return vm.createContext({console, setTimeout, clearTimeout, setInterval, clearInterval, TextDecoder, Response, AbortController, ReadableStream, crypto: require('node:crypto').webcrypto,
+    return vm.createContext({console, setTimeout, clearTimeout, setInterval, clearInterval, TextDecoder, Response, AbortController, ReadableStream, URL, URLSearchParams, crypto: require('node:crypto').webcrypto,
+        window: {location: {href: 'http://localhost/', search: ''}, history: {replaceState() {}}},
         localStorage: {getItem() {return null;}, setItem() {}, removeItem() {}},
         document: {dispatchEvent() {}, getElementById() {return null;}},
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});
