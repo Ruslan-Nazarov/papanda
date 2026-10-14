@@ -45,6 +45,7 @@
 
 .dialectics-block:hover {
     box-shadow: var(--shadow-md);
+    z-index: 2;
 }
 
 .dialectics-block.block-left { 
