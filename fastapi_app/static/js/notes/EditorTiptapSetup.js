@@ -3,6 +3,7 @@ import { Editor } from '@tiptap/core';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
+import { TableKit } from '@tiptap/extension-table';
 
 import InternalLink from './extensions/InternalLink.js';
 import QuestionMark from './extensions/QuestionMark.js';
@@ -39,6 +40,7 @@ export class EditorTiptapSetup {
                 HiddenPhrase, 
                 MathCallout,
                 MathInline,
+                TableKit,
                 CustomQuote,
                 KeyboardEscape,
                 Image.configure({
@@ -52,6 +54,15 @@ export class EditorTiptapSetup {
             editorProps: {
                 transformPastedHTML(html) {
                     return PasteMathTransformer.transformHTML(html);
+                },
+                handlePaste(view, event) {
+                    const clipboard = event.clipboardData;
+                    if (!clipboard || clipboard.getData('text/html') || editor.isActive('codeBlock') || editor.isActive('code')) return false;
+                    const plain = clipboard.getData('text/plain');
+                    if (!plain) return false;
+                    event.preventDefault();
+                    editor.commands.insertContent(PasteMathTransformer.transformTextToHTML(plain));
+                    return true;
                 }
             }
         });

@@ -1,202 +1,152 @@
+import createDOMPurify from 'dompurify';
+import { marked } from 'marked';
+
+// Process text nodes so markup, code and table cell boundaries stay intact.
 class PasteMathTransformer {
-    /**
-     * Transforms pasted HTML by converting KaTeX elements, LaTeX delimiters,
-     * and math callouts into clean TipTap-compatible MathInline and MathCallout nodes.
-     */
-    static transformHTML(html) {
-        if (!html || typeof html !== 'string') return '';
+    static sanitize(html) {
+        return createDOMPurify(window).sanitize(html, {
+            ADD_ATTR: ['formula', 'author'],
+            FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'svg'],
+            FORBID_ATTR: ['style'],
+            ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|internal):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+        });
+    }
 
-        try {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+    static mathNode(doc, formula, display = false) {
+        const span = doc.createElement('span');
+        span.className = 'math-inline';
+        span.setAttribute('formula', formula.trim());
+        span.textContent = formula.trim();
+        if (!display) return span;
+        const callout = doc.createElement('div');
+        callout.className = 'math-callout';
+        const content = doc.createElement('div');
+        content.className = 'math-content';
+        const paragraph = doc.createElement('p');
+        paragraph.append(span);
+        content.append(paragraph);
+        callout.append(content);
+        return callout;
+    }
 
-            // 1. Process all .katex-display blocks (display math)
-            doc.querySelectorAll('.katex-display').forEach(displayEl => {
-                const annotation = displayEl.querySelector('annotation[encoding="application/x-tex"]');
-                let formula;
-                if (annotation) {
-                    formula = annotation.textContent.trim();
-                } else {
-                    formula = displayEl.getAttribute('data-formula') || displayEl.getAttribute('formula') || '';
+    static formulaFromDelimiter(token) {
+        if (token.startsWith('$$') || token.startsWith('\\[')) {
+            return {formula: token.slice(2, -2).trim(), display: true};
+        }
+        if (token.startsWith('\\(')) return {formula: token.slice(2, -2).trim(), display: false};
+        const formula = token.slice(1, -1).trim();
+        // Paired currency signs, including "$10 and $20", are ordinary text.
+        const mathematical = /^[A-Za-z\p{Script=Greek}]$/u.test(formula)
+            || /[\\^_={}+*/<>∑∫]/u.test(formula);
+        return mathematical ? {formula, display: false} : null;
+    }
+
+    static delimiterPattern() {
+        return /(?<!\\)(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([^\n]+?\\\)|\$[^$\n]+?\$)/g;
+    }
+
+    static replaceTextMath(root) {
+        const doc = root.ownerDocument;
+        const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        for (const node of nodes) {
+            if (!node.parentElement || node.parentElement.closest('code, pre, .math-inline, .katex, script, style, textarea')) continue;
+            const source = node.nodeValue;
+            const matches = [...source.matchAll(this.delimiterPattern())];
+            if (!matches.length) continue;
+            const fragment = doc.createDocumentFragment();
+            let offset = 0;
+            let changed = false;
+            for (const match of matches) {
+                const parsed = this.formulaFromDelimiter(match[0]);
+                if (!parsed || !parsed.formula) continue;
+                const parent = node.parentElement;
+                const isolated = parsed.display && parent.matches('p, div')
+                    && parent.textContent.trim() === match[0] && !parent.closest('td, th, li');
+                if (isolated) {
+                    parent.replaceWith(this.mathNode(doc, parsed.formula, true));
+                    changed = false;
+                    break;
                 }
-
-                if (!formula) {
-                    const mathml = displayEl.querySelector('.katex-mathml');
-                    if (mathml) formula = mathml.textContent.trim();
-                }
-
-                if (formula) {
-                    const cleanFormula = this.cleanFormulaString(formula);
-                    const callout = doc.createElement('div');
-                    callout.className = 'math-callout';
-                    const content = doc.createElement('div');
-                    content.className = 'math-content';
-                    const p = doc.createElement('p');
-                    const inline = doc.createElement('span');
-                    inline.className = 'math-inline';
-                    inline.setAttribute('formula', cleanFormula);
-                    inline.textContent = cleanFormula;
-                    p.appendChild(inline);
-                    content.appendChild(p);
-                    callout.appendChild(content);
-                    displayEl.parentNode.replaceChild(callout, displayEl);
-                }
-            });
-
-            // 2. Process all remaining inline .katex elements
-            doc.querySelectorAll('.katex').forEach(katexEl => {
-                if (katexEl.closest('.math-inline') || katexEl.closest('.math-callout')) return;
-
-                const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
-                let formula;
-                if (annotation) {
-                    formula = annotation.textContent.trim();
-                } else {
-                    formula = katexEl.getAttribute('data-formula') || katexEl.getAttribute('formula') || '';
-                }
-
-                if (!formula) {
-                    const mathml = katexEl.querySelector('.katex-mathml');
-                    if (mathml) formula = mathml.textContent.trim();
-                }
-
-                if (formula) {
-                    const cleanFormula = this.cleanFormulaString(formula);
-                    const mathInline = doc.createElement('span');
-                    mathInline.className = 'math-inline';
-                    mathInline.setAttribute('formula', cleanFormula);
-                    mathInline.textContent = cleanFormula;
-                    katexEl.parentNode.replaceChild(mathInline, katexEl);
-                }
-            });
-
-            // 3. Remove all leftover KaTeX internal helper nodes
-            doc.querySelectorAll('.katex-mathml, .katex-html').forEach(el => el.remove());
-
-            // 4. Normalize existing math callouts
-            doc.querySelectorAll('.math-callout, .callout-blue, .formula-callout').forEach(callout => {
-                if (!callout.classList.contains('math-callout')) {
-                    callout.className = 'math-callout';
-                }
-                if (!callout.querySelector('.math-content')) {
-                    const content = doc.createElement('div');
-                    content.className = 'math-content';
-                    const p = doc.createElement('p');
-                    while (callout.firstChild) {
-                        p.appendChild(callout.firstChild);
-                    }
-                    content.appendChild(p);
-                    callout.appendChild(content);
-                }
-            });
-
-            let serialized = doc.body.innerHTML;
-
-            // 5. Convert $$...$$ display math into math-callout with <p><span class="math-inline">
-            serialized = serialized.replace(/(?:\$\$|\\\[)([\s\S]+?)(?:\$\$|\\\])/g, (match, formula) => {
-                const cleanFormula = this.cleanFormulaString(formula);
-                return `<div class="math-callout"><div class="math-content"><p><span class="math-inline" formula="${this.escapeAttr(cleanFormula)}">${this.escapeHtml(cleanFormula)}</span></p></div></div>`;
-            });
-
-            // 6. Convert $...$ or \(...\) inline math into math-inline
-            serialized = serialized.replace(/(?:\$|\\\()([^$\n\r]+?)(?:\$|\\\))/g, (match, formula) => {
-                const cleanFormula = this.cleanFormulaString(formula);
-                if (/^\d+(?:\.\d+)?%?$/.test(cleanFormula.trim())) return match;
-                return `<span class="math-inline" formula="${this.escapeAttr(cleanFormula)}">${this.escapeHtml(cleanFormula)}</span>`;
-            });
-
-            return serialized;
-        } catch (err) {
-            console.error('PasteMathTransformer error:', err);
-            return html;
+                fragment.append(doc.createTextNode(source.slice(offset, match.index)));
+                fragment.append(this.mathNode(doc, parsed.formula));
+                offset = match.index + match[0].length;
+                changed = true;
+            }
+            if (changed && node.parentNode) {
+                fragment.append(doc.createTextNode(source.slice(offset)));
+                node.replaceWith(fragment);
+            }
         }
     }
 
-    /**
-     * Converts plain text with LaTeX markers or equations into rich HTML
-     */
+    static transformHTML(html) {
+        if (!html || typeof html !== 'string') return '';
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('script, style, iframe, object, embed, form, svg').forEach(node => node.remove());
+        // Chat renderers commonly keep the TeX source in a KaTeX annotation.
+        doc.querySelectorAll('.katex-display').forEach(display => {
+            const formula = display.querySelector('annotation[encoding="application/x-tex"]')?.textContent
+                || display.getAttribute('data-formula') || display.getAttribute('formula');
+            if (!formula) return;
+            const parent = display.parentElement;
+            const target = parent?.matches('p') && parent.textContent.trim() === display.textContent.trim()
+                ? parent : display;
+            target.replaceWith(this.mathNode(doc, formula, true));
+        });
+        doc.querySelectorAll('.katex').forEach(katex => {
+            const formula = katex.querySelector('annotation[encoding="application/x-tex"]')?.textContent
+                || katex.getAttribute('data-formula') || katex.getAttribute('formula');
+            if (formula) katex.replaceWith(this.mathNode(doc, formula));
+        });
+        this.replaceTextMath(doc.body);
+        return this.sanitize(doc.body.innerHTML);
+    }
+
     static transformTextToHTML(text) {
         if (!text || typeof text !== 'string') return '';
-
-        let hasMath = false;
-
-        // Display math $$...$$
-        let html = text.replace(/(?:\$\$|\\\[)([\s\S]+?)(?:\$\$|\\\])/g, (match, formula) => {
-            hasMath = true;
-            const cleanFormula = this.cleanFormulaString(formula);
-            return `<div class="math-callout"><div class="math-content"><p><span class="math-inline" formula="${this.escapeAttr(cleanFormula)}">${this.escapeHtml(cleanFormula)}</span></p></div></div>`;
-        });
-
-        // Inline math $...$
-        html = html.replace(/(?:\$|\\\()([^$\n\r]+?)(?:\$|\\\))/g, (match, formula) => {
-            const cleanFormula = this.cleanFormulaString(formula);
-            if (/^\d+(?:\.\d+)?%?$/.test(cleanFormula.trim())) return match;
-            hasMath = true;
-            return `<span class="math-inline" formula="${this.escapeAttr(cleanFormula)}">${this.escapeHtml(cleanFormula)}</span>`;
-        });
-
-        // Split paragraphs
-        const paragraphs = html.split(/\n\s*\n/);
-        const processed = paragraphs.map(p => {
-            const trimmed = p.trim();
-            if (!trimmed) return '';
-            if (trimmed.startsWith('<div class="math-callout">') || trimmed.startsWith('<span class="math-inline">')) {
-                return trimmed;
+        const formulas = [];
+        // Leave fenced and inline code untouched by the math scanner.
+        const guarded = text.split(/(```[\s\S]*?```|`[^`\n]*`)/g).map((part, index) => {
+            if (index % 2) return part;
+            return part.replace(this.delimiterPattern(), token => {
+                const parsed = this.formulaFromDelimiter(token);
+                if (!parsed || !parsed.formula) return token;
+                const id = formulas.push(parsed) - 1;
+                return 'MATHPASTETOKEN' + id + 'END';
+            });
+        }).join('');
+        const doc = new DOMParser().parseFromString(marked.parse(guarded, {gfm: true}), 'text/html');
+        doc.querySelectorAll('script, style, iframe, object, embed, form, svg').forEach(node => node.remove());
+        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        for (const node of nodes) {
+            if (!node.parentElement || node.parentElement.closest('code, pre')) continue;
+            const source = node.nodeValue;
+            const matches = [...source.matchAll(/MATHPASTETOKEN(\d+)END/g)];
+            if (!matches.length) continue;
+            const fragment = doc.createDocumentFragment();
+            let offset = 0;
+            for (const match of matches) {
+                const parsed = formulas[Number(match[1])];
+                if (!parsed) continue;
+                const parent = node.parentElement;
+                if (parsed.display && parent.matches('p') && parent.textContent.trim() === match[0]) {
+                    parent.replaceWith(this.mathNode(doc, parsed.formula, true));
+                    break;
+                }
+                fragment.append(doc.createTextNode(source.slice(offset, match.index)));
+                fragment.append(this.mathNode(doc, parsed.formula));
+                offset = match.index + match[0].length;
             }
-            if (this.isPureFormula(trimmed)) {
-                hasMath = true;
-                const clean = this.cleanFormulaString(trimmed);
-                return `<div class="math-callout"><div class="math-content"><p><span class="math-inline" formula="${this.escapeAttr(clean)}">${this.escapeHtml(clean)}</span></p></div></div>`;
+            if (node.parentNode) {
+                fragment.append(doc.createTextNode(source.slice(offset)));
+                node.replaceWith(fragment);
             }
-            const lines = trimmed.split('\n').map(l => this.escapeHtml(l)).join('<br>');
-            return `<p>${lines}</p>`;
-        }).filter(Boolean);
-
-        return hasMath ? processed.join('') : '';
-    }
-
-    static isPureFormula(text) {
-        if (!text || text.length > 250) return false;
-        const russianWords = text.match(/[а-яА-ЯёЁ]{3,}/g) || [];
-        if (russianWords.length > 2 && !text.includes('\\text{')) return false;
-
-        const hasMathTokens = (
-            text.includes('\\') ||
-            /^[A-Za-z0-9_{}^]+\s*=\s*/.test(text) ||
-            /\b(?:alpha|beta|gamma|delta|Delta|theta|lambda|pi|sigma|nabla|ln|log|sin|cos|tan|tanh|frac|sqrt|sum|int|cdot|approx|pm)\b/i.test(text) ||
-            /^[A-Za-z]_[a-zA-Z0-9{}]/.test(text)
-        );
-
-        return hasMathTokens && (text.includes('=') || text.includes('\\') || text.includes('^') || text.includes('_'));
-    }
-
-    static cleanFormulaString(str) {
-        if (!str) return '';
-        return str
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#039;/g, "'")
-            .replace(/<br\s*[/]?>/gi, '\n')
-            .replace(/<[^>]+>/g, '')
-            .trim();
-    }
-
-    static escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-    static escapeAttr(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;');
+        }
+        return this.sanitize(doc.body.innerHTML);
     }
 }
 

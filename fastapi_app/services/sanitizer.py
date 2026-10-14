@@ -32,6 +32,8 @@ _WRITE_ATTRS = {
     "blockquote": {"class", "author"},
     "a": {"href", "title", "class", "target", "data-internal-links"},  # rel добавляет сам nh3
     "img": {"src", "alt", "title", "width", "height"},
+    "th": {"colspan", "rowspan", "data-colwidth"},
+    "td": {"colspan", "rowspan", "data-colwidth"},
 }
 _WRITE_SCHEMES = {"http", "https", "mailto", "internal"}  # internal:// — ссылки между конспектами
 
@@ -40,7 +42,8 @@ _WRITE_SCHEMES = {"http", "https", "mailto", "internal"}  # internal:// — сс
 _PUBLIC_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "img"}
 _PUBLIC_ATTRS = {"span": {"class", "formula", "data-formula", "data-text-size"},
                  "div": {"class"}, "blockquote": {"class", "author"},
-                 "img": _WRITE_ATTRS["img"]}
+                 "img": _WRITE_ATTRS["img"],
+                 "th": _WRITE_ATTRS["th"], "td": _WRITE_ATTRS["td"]}
 _PUBLIC_LINK_TAGS = _PUBLIC_TAGS | {"a"}
 _PUBLIC_LINK_ATTRS = {**_PUBLIC_ATTRS, "a": {"href", "title"}}
 
@@ -68,6 +71,13 @@ def _safe_image_source(value: str) -> bool:
 
 
 def _filter_attribute(tag: str, attribute: str, value: str):
+    if tag in {'td', 'th'} and attribute in {'colspan', 'rowspan'}:
+        return value if re.fullmatch(r'[1-9][0-9]?', value) else None
+    if tag in {'td', 'th'} and attribute == 'data-colwidth':
+        widths = value.split(',')
+        return value if len(widths) <= 50 and all(
+            re.fullmatch(r'[1-9][0-9]{0,3}', width) for width in widths
+        ) else None
     if tag == 'a' and attribute == 'data-internal-links':
         if len(value) > 4096:
             return None

@@ -33,6 +33,7 @@
     "@tiptap/extension-image": "3.31.3",
     "@tiptap/extension-link": "3.31.3",
     "@tiptap/extension-placeholder": "3.31.3",
+    "@tiptap/extension-table": "3.31.3",
     "@tiptap/extension-underline": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",
     "fabric": "7.4.0",

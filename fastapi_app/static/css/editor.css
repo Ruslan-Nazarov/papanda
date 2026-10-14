@@ -569,6 +569,28 @@
     margin-bottom: 0.5em;
 }
 
+.modal-tiptap-content table,
+.block-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.6em 0;
+}
+
+.modal-tiptap-content th,
+.modal-tiptap-content td,
+.block-content th,
+.block-content td {
+    border: 1px solid #cbd5e1;
+    padding: 0.3em 0.5em;
+    vertical-align: top;
+}
+
+.modal-tiptap-content th,
+.block-content th {
+    background: #f1f5f9;
+    font-weight: 600;
+}
+
 .modal-tiptap-content:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59,130,246,0.1);

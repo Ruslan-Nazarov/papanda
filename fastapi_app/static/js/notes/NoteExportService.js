@@ -43,7 +43,7 @@ class NoteExportService {
                 continue;
             }
             if (block.title) lines.push(`### ${block.title}`, '');
-            const body = this._htmlToText(block.html);
+            const body = this._htmlToMarkdown(block.html);
             if (body) lines.push(body, '');
         }
         return lines.join('\n');
@@ -60,7 +60,7 @@ class NoteExportService {
                 continue;
             }
             if (block.title) lines.push(`### ${block.title}`, '');
-            const body = this._htmlToText(block.html);
+            const body = this._htmlToMarkdown(block.html);
             if (body) lines.push(body, '');
 
             const template = document.createElement('template');
@@ -97,6 +97,60 @@ class NoteExportService {
         template.innerHTML = html || '';
         template.content.querySelectorAll('li').forEach(item => item.prepend('• '));
         return NoteText.fromHtml(template.innerHTML);
+    }
+
+    /** Preserve editable rich blocks when producing the readable Markdown export. */
+    static _htmlToMarkdown(html) {
+        const template = document.createElement('template');
+        template.innerHTML = html || '';
+        const inline = node => {
+            if (node.nodeType === 3) return node.nodeValue || '';
+            if (node.nodeType !== 1) return '';
+            const tag = node.tagName.toLowerCase();
+            if (tag === 'br') return '<br>';
+            if (node.matches('.math-inline[formula]')) return '$' + node.getAttribute('formula') + '$';
+            const body = [...node.childNodes].map(inline).join('');
+            if (node.matches('span[data-type="hidden-phrase"], .hidden-phrase-mark')) {
+                const hint = (node.getAttribute('data-hint') || '').trim();
+                return hint ? body + ' (' + hint + ')' : body;
+            }
+            if (tag === 'strong' || tag === 'b') return '**' + body + '**';
+            if (tag === 'em' || tag === 'i') return '*' + body + '*';
+            if (tag === 'code') return '`' + body + '`';
+            if (tag === 'a' && node.getAttribute('href')) return '[' + body + '](' + node.getAttribute('href') + ')';
+            return body;
+        };
+        const content = node => [...node.childNodes].map(inline).join('').trim();
+        const blocks = node => [...node.children].map(block).filter(Boolean).join('\n\n');
+        const block = node => {
+            const tag = node.tagName.toLowerCase();
+            if (node.matches('.math-callout')) {
+                const formula = node.querySelector('.math-inline[formula]');
+                if (formula && node.textContent.trim() === formula.textContent.trim()) {
+                    return '$$\n' + formula.getAttribute('formula') + '\n$$';
+                }
+                return blocks(node);
+            }
+            if (tag === 'table') {
+                const rows = [...node.querySelectorAll('tr')].map(tr =>
+                    [...tr.children].filter(cell => /^(TH|TD)$/.test(cell.tagName))
+                        .map(cell => content(cell).replace(/\|/g, '\\|').replace(/\n/g, '<br>')));
+                if (!rows.length) return '';
+                const width = Math.max(...rows.map(row => row.length));
+                const line = row => '| ' + Array.from({length: width}, (_, i) => row[i] || '').join(' | ') + ' |';
+                return [line(rows[0]), line(Array(width).fill('---')), ...rows.slice(1).map(line)].join('\n');
+            }
+            if (tag === 'ul' || tag === 'ol') {
+                return [...node.children].filter(child => child.tagName === 'LI')
+                    .map((li, index) => (tag === 'ol' ? (index + 1) + '. ' : '- ') + content(li)).join('\n');
+            }
+            if (tag === 'pre') return '```\n' + node.textContent.replace(/\n$/, '') + '\n```';
+            if (/^h[1-6]$/.test(tag)) return '#'.repeat(Number(tag[1])) + ' ' + content(node);
+            if (tag === 'p' || tag === 'li') return content(node);
+            if (tag === 'blockquote') return blocks(node).split('\n').map(line => '> ' + line).join('\n');
+            return blocks(node) || content(node);
+        };
+        return blocks(template.content).trim();
     }
 
     /**
