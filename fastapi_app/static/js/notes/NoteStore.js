@@ -54,6 +54,8 @@ class NoteStore {
             stickers: clone(note.stickers || []),
             dictionary,
             blocks: blocks.map(block => ({...block,
+                // Закрепление блока действует только до следующего открытия конспекта.
+                is_pinned: false,
                 status: block.status === 'draft' ? 'in_progress' : block.status || 'none',
                 role: block.role || inferRoleFromTitle(block),
                 side: (block.role || inferRoleFromTitle(block)) === 'anchor' ? 'left' : block.side

@@ -101,6 +101,8 @@ test('pinned comparison geometry, rich editor, persistence and cleanup', {timeou
         await page.click('.derivation-save');
         await saveNote();
         await reopen();
+        assert.equal(await page.$eval('#basis .btn-pin-toggle', el => el.getAttribute('aria-pressed')), 'false');
+        await page.click('#basis .btn-pin-toggle');
         await align('right-2');
         assert(await page.$('.derivation-dot.has-derivation'));
         await page.click('.derivation-dot');
@@ -127,7 +129,9 @@ test('pinned comparison geometry, rich editor, persistence and cleanup', {timeou
         await page.click('.derivation-dot');
         await page.click('.derivation-remove');
         await saveNote();
-        await reopen(); await align('right-2');
+        await reopen();
+        await page.click('#basis .btn-pin-toggle');
+        await align('right-2');
         assert.equal(await page.$('.derivation-dot.has-derivation'), null);
         // Unpin through the actual UI; no ghost line remains after a frame.
         await page.click('#basis .btn-pin-toggle');
@@ -152,6 +156,8 @@ test('pinned comparison geometry, rich editor, persistence and cleanup', {timeou
         await page.click('.derivation-save');
         await saveNote();
         await reopen();
+        assert.equal(await page.$eval('#right-2 .btn-pin-toggle', el => el.getAttribute('aria-pressed')), 'false');
+        await page.click('#right-2 .btn-pin-toggle');
         await alignFrom('right-2', 'right-4');
         assert(await page.$('.derivation-dot.has-derivation'));
         await page.click('.derivation-dot');

@@ -110,7 +110,7 @@ class BlockNormalBuilder {
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
                         <button class="btn-autofill-ai ai-block-button ai-block-icon" type="button" aria-label="${t('ai_generate_step')}" data-tooltip="${t('ai_generate_step')}"><span aria-hidden="true">✦</span></button>
-                        <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" title="${t('tt_pin')}">📌</button>
+                        <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" type="button" aria-pressed="${Boolean(block.is_pinned)}" title="${t('tt_pin')}">📌</button>
                     </div>
                 </div>
                 ${block.tags ? `
@@ -319,6 +319,7 @@ class BlockNormalBuilder {
                 AppState.updateBlock(block.id, {is_pinned: !block.is_pinned});
                 div.classList.toggle('pinned-sticky', block.is_pinned);
                 pinBtn.classList.toggle('active', block.is_pinned);
+                pinBtn.setAttribute('aria-pressed', String(Boolean(block.is_pinned)));
             });
         }
 

@@ -25,6 +25,20 @@ test('store isolates input, rejects nested mutations, and preserves document ide
     assert.equal(state.editRevision, 1, 'no-op must not dirty the document again');
 });
 
+test('block pin starts off each time a note is opened', () => {
+    const state = store();
+    const saved = {id: 1, blocks: [{id: 'a', is_pinned: true}]};
+    state.open(saved);
+    assert.equal(state.note.blocks[0].is_pinned, false);
+    assert.equal(state.dirty, false);
+    assert.equal(saved.blocks[0].is_pinned, true);
+
+    state.updateBlock('a', {is_pinned: true});
+    assert.equal(state.note.blocks[0].is_pinned, true);
+    state.open(saved);
+    assert.equal(state.note.blocks[0].is_pinned, false);
+});
+
 test('old block words become one note dictionary without losing distinct meanings', () => {
     const state = store();
     state.open({id: 1, dictionary: [{word: 'ЭКГ', definition: 'Измерение', connections: ''}], blocks: [
