@@ -178,6 +178,7 @@ async def shared_conspect(request: Request, token: str, db=Depends(get_public_db
         request=request, name="shared.html",
         context={"_": _, "locale": locale, "blocks": blocks, "note_title": title,
                  "note_notice": note.note_notice,
+                 "math_symbols": note.math_symbols,
                  "token": token, "algo": algo},
     )
 
@@ -192,6 +193,7 @@ async def shared_version_material(request: Request, token: str, db=Depends(get_p
     return templates.TemplateResponse(request=request, name='shared.html', context={
         '_': get_translator(locale), 'locale': locale, 'blocks': blocks,
         'note_title': version.title, 'note_notice': version.note_notice,
+        'math_symbols': version.math_symbols,
         'algo': get_manual_algorithm(locale), 'material_view': True})
 
 @app.get('/library', response_class=HTMLResponse)
@@ -238,6 +240,7 @@ def render_library_note(request, item, **extra):
         'blocks': blocks, 'description': payload['description'],
         'note_notice': payload['note_notice'], 'stickers': payload['stickers'],
         'dictionary': payload['dictionary'], 'resources': payload['resources'],
+        'math_symbols': payload.get('math_symbols', []),
         'algo': get_manual_algorithm(locale), 'library_view': True, **extra})
 
 

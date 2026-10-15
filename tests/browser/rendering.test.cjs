@@ -24,7 +24,43 @@ test('isolated renderer security regressions', async t => {
         });
         await page.addScriptTag({content: source('BlockCodeRenderer')});
         await page.addScriptTag({content: source('BlockStickersManager')});
+        await page.addScriptTag({content: source('HiddenPhraseTooltip')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
+        await t.test('long right block can be read in the center and returned without changing note data', async () => {
+            await page.addStyleTag({path: path.resolve(__dirname, '../../fastapi_app/static/css/blocks.css')});
+            await page.addStyleTag({path: path.resolve(__dirname, '../../fastapi_app/static/css/components.css')});
+            const result = await page.evaluate(() => {
+                const canvas = document.createElement('div');
+                canvas.id = 'blocks-container';
+                canvas.className = 'dialectics-canvas collapse-titles-only';
+                canvas.style.width = '1100px';
+                document.body.appendChild(canvas);
+                const right = {id: 'reading-right', side: 'right', title: 'Long text',
+                    html: '<p>First paragraph</p><p>Second paragraph</p>', collapsed: true};
+                const left = {id: 'reading-left', side: 'left', title: 'Other block', html: '<p>Other</p>'};
+                const rightEl = BlockNormalBuilder.build(right);
+                const leftEl = BlockNormalBuilder.build(left);
+                canvas.append(rightEl, leftEl);
+                const button = rightEl.querySelector('.btn-reading-view');
+                const initialWidth = rightEl.getBoundingClientRect().width;
+                button.click();
+                const centered = rightEl.classList.contains('reading-centered')
+                    && getComputedStyle(rightEl).alignSelf === 'center'
+                    && rightEl.getBoundingClientRect().width > initialWidth
+                    && getComputedStyle(rightEl.querySelector('.block-content')).display === 'block'
+                    && button.getAttribute('aria-pressed') === 'true';
+                leftEl.querySelector('.btn-reading-view').click();
+                const switched = !rightEl.classList.contains('reading-centered')
+                    && leftEl.classList.contains('reading-centered')
+                    && getComputedStyle(rightEl.querySelector('.block-content')).display === 'none';
+                leftEl.querySelector('.btn-reading-view').click();
+                const returned = !leftEl.classList.contains('reading-centered')
+                    && leftEl.querySelector('.btn-reading-view').getAttribute('aria-pressed') === 'false';
+                canvas.remove();
+                return {centered, switched, returned, savedCollapsed: right.collapsed};
+            });
+            assert.deepEqual(result, {centered: true, switched: true, returned: true, savedCollapsed: true});
+        });
         await t.test('sticker editing keeps its identity and can be cancelled', async () => {
             const result = await page.evaluate(() => {
                 const original = {id: 'st-one', title: 'Old', text: 'Original text',
@@ -170,6 +206,10 @@ test('isolated renderer security regressions', async t => {
         });
         await page.addScriptTag({path: path.resolve(__dirname, '../../node_modules/katex/dist/katex.min.js')});
         await page.addScriptTag({path: path.resolve(__dirname, '../../node_modules/katex/dist/contrib/auto-render.min.js')});
+        await page.addScriptTag({content: source('MathSymbols')});
+        await page.addScriptTag({content: source('FormulaZoom')});
+        await page.addScriptTag({content: source('MathComputedValues')});
+        await page.addScriptTag({content: source('MathSubstitutions')});
         await page.addScriptTag({content: source('BlockMathRenderer')});
         await t.test('AI math renders with delimiters and recovers screenshot equations without changing code', async () => {
             const result = await page.evaluate(() => {

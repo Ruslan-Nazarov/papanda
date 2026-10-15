@@ -2,6 +2,17 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {context, load} = require('./helpers.cjs');
 
+test('word count handles rich multilingual text without counting formula renderings twice', () => {
+    const ctx = context();
+    load(ctx, 'NoteText');
+    assert.equal(ctx.NoteText.wordCount('<p>Русский&nbsp;текст: по-русски, қазақша &amp; English\'s 42.</p>'
+        + '<p><span class="hidden-phrase-mark" data-hint="Два слова">Термин<span class="hp-content">Два слова</span></span></p>'
+        + '<span formula="x^2"><span class="katex">duplicate formula</span><math>more duplicates</math></span>'
+        + '<script>ignored text</script>'), 9);
+    assert.equal(ctx.NoteText.wordCount('<p>Первый</p><p>Второй</p>'), 2);
+    assert.equal(ctx.NoteText.wordCount('<p>… — +</p>'), 0);
+});
+
 test('model context retains paragraphs, entities and original formula without KaTeX duplication', () => {
     const ctx = context();
     load(ctx, 'NoteText');

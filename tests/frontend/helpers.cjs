@@ -19,6 +19,13 @@ function context(extra = {}) {
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});
 }
 function load(ctx, name, symbol) {
+    if (name === 'BlockMathRenderer' && !ctx.MathSymbols) load(ctx, 'MathSymbols');
+    if (name === 'BlockMathRenderer' && !ctx.FormulaZoom) load(ctx, 'FormulaZoom');
+    if (name === 'BlockMathRenderer' && !ctx.MathSubstitutions) {
+        load(ctx, 'MathComputedValues');
+        load(ctx, 'MathSubstitutions');
+    }
+    if (name === 'BlockNormalBuilder' && !ctx.HiddenPhraseTooltip) load(ctx, 'HiddenPhraseTooltip');
     if (name === 'NoteNoticeManager' && !ctx.renderNotice) load(ctx, 'NoticeLinks', 'renderNotice');
     if (['AIController', 'GenerationChanges'].includes(name) && !ctx.NoteText) load(ctx, 'NoteText');
     if (name === 'NoteText' && !ctx.document.createElement) {

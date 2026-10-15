@@ -272,7 +272,7 @@ class MaterialsPanel {
                 const step = ALGORITHM_STEPS.find(item => item.role === 'anchor');
                 const id = crypto.randomUUID();
                 AppState.addBlock({id, role: 'anchor', side: 'left', title: step?.title || '',
-                    html: '', status: 'none', attached_conspects: extracted});
+                    html: '', status: 'in_progress', attached_conspects: extracted});
             } else AppState.updateBlock(anchor.id, {attached_conspects: [...this.documents(), ...extracted]});
         } catch (error) {
             if (!controller.signal.aborted && epoch === AppState.documentEpoch)
@@ -335,7 +335,7 @@ class MaterialsPanel {
         if (!anchor) {
             const step = ALGORITHM_STEPS.find(item => item.role === 'anchor');
             AppState.addBlock({id: crypto.randomUUID(), role: 'anchor', side: 'left', title: step?.title || '',
-                html: '', status: 'none', included_conspects: [entry]});
+                html: '', status: 'in_progress', included_conspects: [entry]});
         } else AppState.updateBlock(anchor.id, {included_conspects: [...this.included(), entry]});
     }
 

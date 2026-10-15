@@ -26,9 +26,6 @@ const AppState = {
         }
     },
 
-    // Flag to show all hints including dismissed ones (toggled via UI)
-    toggleShowHiddenHints: false,
-    
     // Режим работы приложения: 'ai' (ИИ генерирует конспект) | 'manual' (ручной ввод по алгоритму).
     // Управляется ModeManager; isAutoFillEnabled держим синхронно (на него завязан старый код).
     mode: 'manual',
@@ -46,7 +43,7 @@ const AppState = {
     acceptSaved(note, response, payload) { this.store.acceptSaved(note, response, payload); },
 
     normalizeBlockStatus(status) {
-        return status === 'draft' ? 'in_progress' : (status || 'none');
+        return status === 'ready' || status === 'done' ? 'ready' : 'in_progress';
     },
 
     getBlock(blockId) {
@@ -68,8 +65,8 @@ const AppState = {
         let readyCount = 0;
         let total = blocks.length;
         blocks.forEach(b => {
-            if (b.status === 'ready' || b.status === 'done') readyCount += 1;
-            else if (b.status === 'in_progress') readyCount += 0.5;
+            if (this.normalizeBlockStatus(b.status) === 'ready') readyCount += 1;
+            else readyCount += 0.5;
         });
 
         const percent = Math.round((readyCount / total) * 100);

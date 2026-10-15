@@ -1,6 +1,7 @@
 import Lifecycle from './Lifecycle.js';
 import SessionCheckpoints from './SessionCheckpoints.js';
 import AppState from './AppState.js';
+import NoteText from './NoteText.js';
 import NoteStorageService from './NoteStorageService.js';
 import NotesAPI from './api.js';
 import { showToast } from './ToastService.js';
@@ -200,6 +201,32 @@ class NoteController {
         const blocks = AppState.currentNote.blocks.filter(b => b.role !== 'section' && !b.isDraft);
         const total = blocks.length;
 
+        const authorCounts = {ai: 0, ai_checked: 0, ai_edited: 0, human: 0, unset: 0};
+        for (const block of blocks) {
+            const author = Object.hasOwn(authorCounts, block.author) ? block.author : 'unset';
+            authorCounts[author]++;
+        }
+        document.querySelectorAll('[data-author-stat]').forEach(stat => {
+            const count = authorCounts[stat.dataset.authorStat];
+            stat.querySelector('strong').textContent = count;
+            stat.querySelector('small').textContent = `${total ? Math.round(count / total * 100) : 0}%`;
+        });
+
+        const ready = blocks.filter(b => AppState.normalizeBlockStatus(b.status) === 'ready').length;
+        const inProgress = total - ready;
+        const readinessCounts = {ready, in_progress: inProgress};
+        document.querySelectorAll('[data-readiness-stat]').forEach(stat => {
+            stat.querySelector('strong').textContent = readinessCounts[stat.dataset.readinessStat];
+        });
+        const percent = total ? Math.round((ready + inProgress * 0.5) / total * 100) : 0;
+        const totalEl = document.getElementById('statistics-total');
+        const wordsEl = document.getElementById('statistics-words');
+        const percentEl = document.getElementById('statistics-percent');
+        if (totalEl) totalEl.textContent = total;
+        if (wordsEl) wordsEl.textContent = blocks.reduce((count, block) => count + NoteText.wordCount(block.html), 0)
+            .toLocaleString(document.documentElement.lang);
+        if (percentEl) percentEl.textContent = `${percent}%`;
+
         const readyEl = document.getElementById('progress-ready');
         const inProgressEl = document.getElementById('progress-in-progress');
         const textEl = document.getElementById('progress-text');
@@ -211,12 +238,9 @@ class NoteController {
             return;
         }
 
-        const ready = blocks.filter(b => b.status === 'ready' || b.status === 'done').length;
-        const inProgress = blocks.filter(b => b.status === 'in_progress').length;
-
         if (readyEl) readyEl.style.width = `${(ready / total) * 100}%`;
         if (inProgressEl) inProgressEl.style.width = `${(inProgress * 0.5 / total) * 100}%`;
-        if (textEl) textEl.textContent = `${Math.round(((ready + inProgress * 0.5) / total) * 100)}%  ● ${inProgress}  ● ${ready} / ${total}`;
+        if (textEl) textEl.textContent = `${percent}%`;
     }
 
     // ── Toast helper ──────────────────────────────────────────────────────────

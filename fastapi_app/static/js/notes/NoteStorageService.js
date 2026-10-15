@@ -16,7 +16,7 @@ class NoteStorageService {
         if (preserveChanges && AppState.isDirty) await this.saveCurrentNote();
         if (epoch !== AppState.documentEpoch) return;
         ++this._loadSequence;
-        NoteLocation.clear();
+        NoteLocation.clearURL();
         AppState.setNote({id: null, title: t('menu_new_note'), blocks: []});
         return AppState.currentNote;
     }

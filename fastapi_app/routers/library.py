@@ -16,7 +16,7 @@ from fastapi_app.config import settings
 from fastapi_app.database import get_db
 from fastapi_app.schemas.notes import (
     AttachedConspect, BlockDerivation, NoteBlock, NoteCreate, NoteSticker,
-    RejectedDraft, RequestDocument, Word, NoteView,
+    RejectedDraft, RequestDocument, Word, NoteView, MathSymbol,
 )
 from fastapi_app.services import library_store as store
 from fastapi_app.services.note_transactions import get_note
@@ -135,6 +135,7 @@ class PublicBlock(BaseModel):
     stickers: list[NoteSticker] = Field(default_factory=list, max_length=1000)
     sources: list[PublicSource] = Field(default_factory=list, max_length=1000)
     words: list[Word] = Field(default_factory=list, max_length=1000)
+    math_symbols: list[MathSymbol] = Field(default_factory=list, max_length=1000)
     inline_notes: list[PublicInlineNote] = Field(default_factory=list, max_length=1000)
     rejected_drafts: list[RejectedDraft] = Field(default_factory=list, max_length=100)
     derivations: list[BlockDerivation] = Field(default_factory=list, max_length=1000)
@@ -156,6 +157,7 @@ class Publication(BaseModel):
     note_notice: str = Field(default='', max_length=5000)
     stickers: list[NoteSticker] = Field(default_factory=list, max_length=1000)
     dictionary: list[Word] = Field(default_factory=list, max_length=1000)
+    math_symbols: list[MathSymbol] = Field(default_factory=list, max_length=1000)
     resources: list[PublicResource] = Field(default_factory=list, max_length=20)
     blocks: list[PublicBlock] = Field(min_length=1, max_length=1000)
 
@@ -274,6 +276,7 @@ async def snapshot(note, description='', language='ru', resources=None):
         return Publication(title=note.title, language=language, description=description,
                            note_notice=note.note_notice or '', stickers=note.stickers or [],
                            dictionary=note.dictionary or [], resources=resources or [],
+                           math_symbols=note.math_symbols or [],
                            blocks=blocks).model_dump(mode='json')
     except ValidationError:
         raise HTTPException(422, 'Publication requires a title and valid, nonempty blocks') from None
@@ -306,6 +309,7 @@ async def copy_publication(publication_id: UUID, db: AsyncSession = Depends(get_
     return await NotesService.create_note(db, NoteCreate(
         title=item['title'], note_notice=item.get('note_notice', ''),
         stickers=item.get('stickers', []), dictionary=item.get('dictionary', []),
+        math_symbols=item.get('math_symbols', []),
         blocks=[NoteBlock.model_validate({key: value for key, value in b.items()
                                          if key != 'inline_notes'}) for b in item['blocks']]))
 

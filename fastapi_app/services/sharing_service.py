@@ -46,8 +46,10 @@ class SharingService:
 
     @staticmethod
     def public_view(note):
-        return {'title': note.title, 'note_notice': note.note_notice, 'schema_version': getattr(note, 'schema_version', 1), 'content_json': [
+        return {'title': note.title, 'note_notice': note.note_notice, 'math_symbols': note.math_symbols,
+                'schema_version': getattr(note, 'schema_version', 1), 'content_json': [
             {'id': b.get('id'), 'role': b.get('role'), 'title': b.get('title'),
-             'side': b.get('side', 'center'), 'html': sanitize_block_html(b.get('html', ''))}
+             'side': b.get('side', 'center'), 'math_symbols': b.get('math_symbols', []),
+             'html': sanitize_block_html(b.get('html', ''))}
             for b in note.content_json if isinstance(b, dict)
         ]}

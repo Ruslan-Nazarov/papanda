@@ -1,5 +1,6 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import FormulaModalService from '../FormulaModalService.js';
+import MathSymbols from '../MathSymbols.js';
 
 export default Node.create({
     name: 'mathInline',
@@ -14,6 +15,10 @@ export default Node.create({
         return {
             formula: {
                 default: '',
+                // TipTap's default attribute parser coerces "1", "-1" and "0"
+                // to numbers, which are not valid text children in a DOM spec.
+                parseHTML: element => element.getAttribute('formula')
+                    ?? element.getAttribute('data-formula') ?? element.textContent.trim(),
             },
         };
     },
@@ -22,15 +27,13 @@ export default Node.create({
         return [
             {
                 tag: 'span.math-inline',
-                getAttrs: element => ({
-                    formula: element.getAttribute('formula') || element.getAttribute('data-formula') || element.innerText.trim(),
-                }),
             },
         ];
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['span', mergeAttributes(HTMLAttributes, { class: 'math-inline', 'data-formula': HTMLAttributes.formula, formula: HTMLAttributes.formula }), HTMLAttributes.formula];
+        const formula = String(HTMLAttributes.formula ?? '');
+        return ['span', mergeAttributes(HTMLAttributes, { class: 'math-inline', 'data-formula': formula, formula }), formula];
     },
 
     addNodeView() {
@@ -42,10 +45,10 @@ export default Node.create({
             dom.contentEditable = false;
 
             const render = () => {
-                const formula = node.attrs.formula || '';
+                const formula = String(node.attrs.formula ?? '');
                 if (window.katex && formula) {
                     try {
-                        dom.innerHTML = window.katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                        dom.innerHTML = MathSymbols.render(formula, { displayMode: false });
                     } catch (e) {
                         dom.textContent = formula;
                     }
@@ -58,7 +61,8 @@ export default Node.create({
 
             dom.addEventListener('click', (e) => {
                 e.stopPropagation();
-                FormulaModalService.open({ initialFormula: node.attrs.formula }).then(newFormula => {
+                FormulaModalService.open({ initialFormula: node.attrs.formula,
+                    symbolContext: editor.storage.mathSymbols }).then(newFormula => {
                     if (newFormula === null) return;
                     const pos = getPos();
                     if (typeof pos !== 'number') return;

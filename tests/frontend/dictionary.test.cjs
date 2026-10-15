@@ -58,6 +58,40 @@ test('dictionary connection opens its matching concept', () => {
     assert.equal(note.dictionary[1].connections, 'Электрокардиография (ЭКГ), отсутствующий термин');
 });
 
+test('dictionary graph follows aliases, incoming links and safe concept text', () => {
+    const dom = new JSDOM('<html><body></body></html>');
+    const note = {dictionary: [
+        {word: 'Рекуррентная сеть', definition: 'Обрабатывает текст по шагам', connections: ''},
+        {word: 'Числовое представление текста (Вектор)', definition: 'Числа на входе сети',
+            connections: 'Рекуррентная сеть', connection_explanations: {'Рекуррентная сеть': 'Подаётся на вход'}},
+        {word: '<img src=x onerror=alert(1)>', definition: 'Проверка безопасности', connections: 'Вектор, неизвестный термин'}
+    ]};
+    const ctx = context({document: dom.window.document, window: dom.window,
+        AppState: {currentNote: note, updateNote: patch => Object.assign(note, patch)}});
+    load(ctx, 'DictModalService');
+    ctx.DictModalService.show();
+    const document = dom.window.document;
+    document.querySelector('.dict-view-graph').click();
+    assert.equal(document.querySelector('.dict-list').hidden, true);
+    assert.equal(document.querySelector('.dict-graph').hidden, false);
+    assert.equal(document.querySelector('.dict-view-graph').getAttribute('aria-pressed'), 'true');
+    assert.deepEqual([...document.querySelectorAll('.dict-graph-node')].map(node => node.textContent),
+        ['Числовое представление текста (Вектор)', 'Рекуррентная сеть']);
+    document.querySelector('.dict-graph-node:not(.is-selected)').click();
+    assert.equal(document.querySelector('.dict-graph-detail strong').textContent, 'Числовое представление текста (Вектор)');
+    assert.match(document.querySelector('.dict-graph-relations').textContent, /Подаётся на вход/);
+    document.querySelector('.dict-graph-index-item:last-child').click();
+    assert.equal(document.querySelector('.dict-graph-canvas img'), null);
+    assert.equal(document.querySelector('.dict-graph-node.is-missing').textContent, 'неизвестный термин');
+    assert.equal(document.querySelector('.dict-graph-node.is-missing').tagName, 'SPAN');
+    document.querySelector('.dict-graph-edit').click();
+    assert.equal(document.querySelector('.dict-word').value, '<img src=x onerror=alert(1)>');
+    document.querySelector('.dict-cancel').click();
+    assert.equal(document.querySelector('.dict-graph').hidden, false);
+    document.querySelector('.dict-view-list').click();
+    assert.equal(document.querySelector('.dict-list').hidden, false);
+});
+
 test('dictionary connections suggest existing terms after each comma', () => {
     const dom = new JSDOM('<html><body></body></html>');
     const note = {dictionary: [

@@ -1,0 +1,165 @@
+import { t } from '../i18n.js';
+import MathSymbols from './MathSymbols.js';
+
+const EXCLUDED = '.tiptap, [contenteditable="true"], .formula-modal-backdrop, .formula-zoom-dialog, .hidden-phrase-tooltip, .math-symbol-tooltip';
+
+class FormulaZoom {
+    static initialized = false;
+    static active = null;
+
+    static isComplex(element) {
+        const math = element.querySelector('math');
+        if (!math) return false;
+        const fractions = math.querySelectorAll('mfrac');
+        const largeOperator = [...math.querySelectorAll('mo')].some(el => /[∑∏∫∮∬∭]/u.test(el.textContent));
+        // Judge the rendered structure, so formatting commands do not inflate complexity.
+        const structural = fractions.length >= 2 || !!math.querySelector('mtable, mfrac mfrac, mfrac msqrt, mfrac mroot, msqrt mfrac, mroot mfrac')
+            || (largeOperator && !!math.querySelector('msub, msup, msubsup, munder, munderover'))
+            || [...math.querySelectorAll('mi, mn, mo, mtext')].map(el => el.textContent).join('').replace(/\s/g, '').length >= 36;
+        const rect = element.getBoundingClientRect();
+        const width = Math.max(rect.width, element.scrollWidth);
+        const fontSize = parseFloat(window.getComputedStyle(element).fontSize) || 18;
+        const column = element.closest('.block-content, .blk-body');
+        const style = column && window.getComputedStyle(column);
+        const available = column?.clientWidth - (parseFloat(style?.paddingLeft) || 0) - (parseFloat(style?.paddingRight) || 0);
+        return structural || width >= 320 || rect.height >= fontSize * 3
+            || (available > 0 && width > available - 8);
+    }
+
+    static decorate(root) {
+        if (!this.initialized) {
+            this.initialized = true;
+            let frame;
+            window.addEventListener('resize', () => {
+                cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(() => this.scan(document));
+            });
+            document.fonts?.ready.then(() => this.scan(document));
+        }
+        this.scan(root);
+        // Blocks are often rendered before they are inserted into the document.
+        window.requestAnimationFrame?.(() => { if (root.isConnected) this.scan(root); });
+    }
+
+    static scan(root) {
+        root.querySelectorAll('.katex').forEach(element => {
+            if (element.closest(EXCLUDED)) return;
+            const formula = element.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+            if (!formula) return;
+            let host = element.parentElement;
+            const existing = host.classList.contains('math-expandable');
+            if (!this.isComplex(element)) {
+                if (existing) {
+                    host.querySelector(':scope > .math-expand-button')?.remove();
+                    host.replaceWith(element);
+                }
+                return;
+            }
+            if (existing) return;
+            host = document.createElement('span');
+            host.className = 'math-expandable';
+            element.replaceWith(host);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'math-expand-button';
+            button.title = t('formula_expand');
+            button.setAttribute('aria-label', t('formula_expand'));
+            button.setAttribute('aria-haspopup', 'dialog');
+            button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>';
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.open(formula, button);
+            });
+            host.append(element, button);
+        });
+    }
+
+    static open(formula, trigger) {
+        this.active?.close();
+        const dialog = document.createElement('dialog');
+        dialog.className = 'formula-zoom-dialog';
+        dialog.setAttribute('aria-labelledby', 'formula-zoom-title');
+        const header = document.createElement('div');
+        header.className = 'formula-zoom-header';
+        const title = document.createElement('h2');
+        title.id = 'formula-zoom-title';
+        title.textContent = t('formula_view');
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'formula-zoom-close';
+        close.textContent = '×';
+        close.setAttribute('aria-label', t('close'));
+        close.autofocus = true;
+        header.append(title, close);
+        const viewport = document.createElement('div');
+        viewport.className = 'formula-zoom-viewport';
+        viewport.tabIndex = 0;
+        viewport.setAttribute('aria-label', t('formula_view'));
+        const content = document.createElement('div');
+        content.className = 'formula-zoom-content';
+        const source = trigger.closest('.math-expandable')?.querySelector('.katex');
+        let substitutions = [];
+        try { substitutions = JSON.parse(source?.dataset.mathSubstitutions || '{}').ranges || []; } catch { /* Source may be a plain formula. */ }
+        content.innerHTML = MathSymbols.render(formula, {displayMode: true}, substitutions);
+        if (source?.dataset.mathOriginal) content.querySelector('.katex').dataset.mathOriginal = source.dataset.mathOriginal;
+        dialog.dataset.mathSourceBlock = trigger.closest('.dialectics-block, .blk')?.id || '';
+        dialog.mathSource = source;
+        viewport.append(content);
+        const hint = document.createElement('p');
+        hint.className = 'formula-zoom-hint';
+        hint.textContent = t('formula_scroll');
+        hint.hidden = true;
+        const toolbar = document.createElement('div');
+        toolbar.className = 'formula-zoom-toolbar';
+        const label = document.createElement('span');
+        label.textContent = t('formula_scale');
+        const minus = document.createElement('button');
+        minus.type = 'button'; minus.textContent = '−';
+        minus.setAttribute('aria-label', t('formula_zoom_out'));
+        const plus = document.createElement('button');
+        plus.type = 'button'; plus.textContent = '+';
+        plus.setAttribute('aria-label', t('formula_zoom_in'));
+        const value = document.createElement('output');
+        value.setAttribute('aria-live', 'polite');
+        let scale = 150;
+        const updateHint = () => { hint.hidden = viewport.scrollWidth <= viewport.clientWidth + 1; };
+        const update = () => {
+            content.style.fontSize = `${scale / 100}rem`;
+            value.textContent = `${scale}%`;
+            minus.disabled = scale <= 100;
+            plus.disabled = scale >= 250;
+            requestAnimationFrame(updateHint);
+        };
+        minus.addEventListener('click', () => { scale = Math.max(100, scale - 25); update(); });
+        plus.addEventListener('click', () => { scale = Math.min(250, scale + 25); update(); });
+        toolbar.append(label, minus, value, plus);
+        dialog.append(header, viewport, hint, toolbar);
+        document.body.append(dialog);
+        const dismiss = () => dialog.close();
+        const observer = new MutationObserver(() => { if (!trigger.isConnected) dismiss(); });
+        observer.observe(document.body, {childList: true, subtree: true});
+        close.addEventListener('click', dismiss);
+        // A drag used to select the equation must not dismiss the dialog.
+        let backdropDown = false;
+        dialog.addEventListener('pointerdown', event => { backdropDown = event.target === dialog; });
+        dialog.addEventListener('click', event => { if (backdropDown && event.target === dialog) dismiss(); });
+        document.addEventListener('noteOpened', dismiss);
+        document.addEventListener('stateDirty', dismiss);
+        window.addEventListener('resize', updateHint);
+        dialog.addEventListener('close', () => {
+            observer.disconnect();
+            document.removeEventListener('noteOpened', dismiss);
+            document.removeEventListener('stateDirty', dismiss);
+            window.removeEventListener('resize', updateHint);
+            dialog.remove();
+            if (this.active === dialog) this.active = null;
+            if (trigger.isConnected) trigger.focus({preventScroll: true});
+        }, {once: true});
+        this.active = dialog;
+        update();
+        dialog.showModal();
+    }
+}
+
+export default FormulaZoom;

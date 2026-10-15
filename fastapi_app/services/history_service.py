@@ -27,6 +27,7 @@ class HistoryService:
             content_json=note.content_json,
             stickers=note.stickers,
             dictionary=note.dictionary,
+            math_symbols=note.math_symbols,
             is_manual=is_manual
         )
         session.add(new_version)
@@ -68,6 +69,7 @@ class HistoryService:
             content_json=note.content_json,
             stickers=note.stickers,
             dictionary=note.dictionary,
+            math_symbols=note.math_symbols,
             is_manual=data.is_manual
         )
         session.add(new_v)
@@ -91,7 +93,7 @@ class HistoryService:
         # Restoring identical content is a no-op, not another backup of itself.
         if (note.content_json == version.content_json and note.note_notice == version.note_notice
                 and note.stickers == version.stickers
-                and note.dictionary == version.dictionary):
+                and note.dictionary == version.dictionary and note.math_symbols == version.math_symbols):
             return note
 
         # Create safety backup
@@ -102,6 +104,7 @@ class HistoryService:
             content_json=note.content_json,
             stickers=note.stickers,
             dictionary=note.dictionary,
+            math_symbols=note.math_symbols,
             is_manual=True
         )
         session.add(safety_v)
@@ -110,6 +113,7 @@ class HistoryService:
         note.note_notice = version.note_notice
         note.stickers = version.stickers
         note.dictionary = version.dictionary
+        note.math_symbols = version.math_symbols
         await commit(session)
         await session.refresh(note)
         return note

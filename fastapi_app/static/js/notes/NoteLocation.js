@@ -1,5 +1,12 @@
 // The root page always starts with a blank note. Explicit note links still work.
 class NoteLocation {
+    static lastOpenedId() {
+        try {
+            const id = localStorage.getItem('papanda_last_note_id');
+            return /^[1-9]\d*$/.test(id || '') ? id : null;
+        } catch { return null; }
+    }
+
     static remember(id, slug = null) {
         try { localStorage.setItem('papanda_last_note_id', String(id)); } catch {}
         if (slug) {
@@ -12,7 +19,15 @@ class NoteLocation {
     }
 
     static clear() {
+        this.forgetLastOpened();
+        this.clearURL();
+    }
+
+    static forgetLastOpened() {
         try { localStorage.removeItem('papanda_last_note_id'); } catch {}
+    }
+
+    static clearURL() {
         this._setURL(null);
     }
 

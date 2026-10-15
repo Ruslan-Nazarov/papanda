@@ -10,13 +10,29 @@ import AIController from './AIController.js';
 import HtmlSafety from './HtmlSafety.js';
 import BlockStickersManager from './BlockStickersManager.js';
 import DictModalService from './DictModalService.js';
+import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
+import EditorTextPosition from './EditorTextPosition.js';
 
 class BlockNormalBuilder {
     static activeAuthorHelp = null;
     static activeRoleHelp = null;
+    static readingBlockId = null;
+    static readingNote = null;
+
+    static setReadingView(div, active) {
+        div.classList.toggle('reading-centered', active);
+        const button = div.querySelector('.btn-reading-view');
+        if (!button) return;
+        const label = t(active ? 'tt_return_to_column' : 'tt_read_center');
+        button.title = label;
+        button.setAttribute('aria-label', label);
+        button.setAttribute('aria-pressed', String(active));
+        button.querySelector('i').className = `ph ${active ? 'ph-arrows-in-simple' : 'ph-arrows-out-simple'}`;
+    }
 
     static setupHiddenPhrases(container) {
         if (!container) return;
+        HiddenPhraseTooltip.bind(container);
         const phrases = container.querySelectorAll('span[data-type="hidden-phrase"], .hidden-phrase-mark');
         phrases.forEach(phrase => {
             const hint = phrase.getAttribute('data-hint') || '';
@@ -30,7 +46,7 @@ class BlockNormalBuilder {
             if (hint) {
                 const content = phrase.querySelector('.hp-content') || document.createElement('span');
                 content.className = 'hp-content';
-                content.textContent = ` 👁 ${hint}`;
+                HiddenPhraseTooltip.renderHint(content, ` 👁 ${hint}`);
                 phrase.appendChild(content);
             }
 
@@ -48,6 +64,10 @@ class BlockNormalBuilder {
     }
 
     static build(block, onRenderAll) {
+        if (this.readingNote !== AppState.currentNote) {
+            this.readingBlockId = null;
+            this.readingNote = AppState.currentNote;
+        }
         const div = document.createElement('div');
         const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
         const author = ['ai', 'ai_checked', 'ai_edited', 'human'].includes(block.author) ? block.author : '';
@@ -106,6 +126,7 @@ class BlockNormalBuilder {
                         <span class="block-number"></span>
                         <div class="block-status-dot"></div>
                         <button class="btn-collapse-toggle" title="${t('tt_collapse')}"><i class="ph ${block.collapsed ? 'ph-caret-right' : 'ph-caret-down'}" aria-hidden="true"></i></button>
+                        <button class="btn-reading-view" type="button" title="${t('tt_read_center')}" aria-label="${t('tt_read_center')}" aria-pressed="false"><i class="ph ph-arrows-out-simple" aria-hidden="true"></i></button>
                         <h3 class="block-title" contenteditable="true"></h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
@@ -169,8 +190,8 @@ class BlockNormalBuilder {
             || t(block.role === 'section' ? 'section_word' : 'hint_anchor_title');
         const dot = div.querySelector('.block-status-dot');
         if (dot) {
-            dot.dataset.status = block.status || 'none';
-            dot.title = `${t('block_status')}: ${block.status || 'none'}`;
+            dot.dataset.status = block.status === 'ready' || block.status === 'done' ? 'ready' : 'in_progress';
+            dot.title = `${t('block_status')}: ${dot.dataset.status}`;
         }
         const roleHelpButton = div.querySelector('.block-role-help-button');
         if (roleHelpButton) {
@@ -349,11 +370,29 @@ class BlockNormalBuilder {
         if (collapseBtn) {
             collapseBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (this.readingBlockId === block.id) {
+                    this.readingBlockId = null;
+                    this.setReadingView(div, false);
+                }
                 AppState.updateBlock(block.id, {collapsed: !block.collapsed});
                 div.classList.toggle('collapsed', block.collapsed);
                 collapseBtn.querySelector('i').className = `ph ${block.collapsed ? 'ph-caret-right' : 'ph-caret-down'}`;
                 const content = div.querySelector('.block-content');
                 if (content) content.style.display = block.collapsed ? 'none' : 'block';
+            });
+        }
+
+        const readingBtn = div.querySelector('.btn-reading-view');
+        if (readingBtn) {
+            this.setReadingView(div, this.readingBlockId === block.id);
+            readingBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const active = this.readingBlockId !== block.id;
+                const previous = document.querySelector('#blocks-container .dialectics-block.reading-centered');
+                if (previous && previous !== div) this.setReadingView(previous, false);
+                this.readingBlockId = active ? block.id : null;
+                this.setReadingView(div, active);
+                if (active) div.scrollIntoView({behavior: 'smooth', block: 'start'});
             });
         }
 
@@ -380,13 +419,14 @@ class BlockNormalBuilder {
 
         const blockContent = div.querySelector('.block-content');
         if (blockContent) {
-            blockContent.addEventListener('dblclick', () => {
+            blockContent.addEventListener('dblclick', (event) => {
                 // Двойной клик выделяет слово под курсором — это не считаем "выделением".
                 // Не открываем редактор только если пользователь выделил фразу (есть пробелы).
                 const sel = (window.getSelection().toString() || '').trim();
                 if (sel.includes(' ') || sel.includes('\n')) return;
+                const textPosition = EditorTextPosition.capture(blockContent, event);
                 window.getSelection().removeAllRanges();
-                document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div } }));
+                document.dispatchEvent(new CustomEvent('openEditor', { detail: { blockId: block.id, el: div, textPosition } }));
             });
         }
 
@@ -403,8 +443,7 @@ class BlockNormalBuilder {
         if (statusEl) {
             statusEl.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const statuses = ['none', 'ready'];
-                const next = statuses[(statuses.indexOf(block.status || 'none') + 1) % 2];
+                const next = block.status === 'ready' || block.status === 'done' ? 'in_progress' : 'ready';
                 AppState.updateBlock(block.id, {status: next});
                 statusEl.dataset.status = next;
                 if (onRenderAll) onRenderAll();
@@ -450,6 +489,10 @@ class BlockNormalBuilder {
         const btnSticker = div.querySelector('.btn-sticker');
         if (btnSticker) {
             BlockStickersManager._updateBadge(div, block.stickers?.length || 0);
+            // Keep the block's selection when the mouse focuses the toolbar button.
+            btnSticker.addEventListener('mousedown', (e) => {
+                if (e.button === 0 && !window.getSelection()?.isCollapsed) e.preventDefault();
+            });
             btnSticker.addEventListener('click', (e) => {
                 e.stopPropagation();
                 BlockStickersManager.toggleBlockStickersPanel(block, div);

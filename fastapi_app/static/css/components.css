@@ -120,15 +120,6 @@
     align-self: center !important;
 }
 
-.hide-left-column .dialectics-block.block-left {
-    display: none !important;
-}
-.hide-left-column .dialectics-block.block-right {
-    width: 100% !important;
-    max-width: 1200px;
-    align-self: center !important;
-}
-
 .collapse-content .block-content,
 .collapse-content .dialectics-hint,
 .collapse-content .block-toolbar-row,
@@ -137,12 +128,6 @@
 }
 .collapse-content .block-header {
     margin-bottom: 0 !important;
-}
-
-.show-hints .dialectics-hint,
-.show-hints .hint-block,
-.show-hints .block-hint {
-    display: block !important; /* overrides hidden state if they are hidden by default */
 }
 
 /* Toggle Switch Styles */
@@ -222,6 +207,46 @@
 .hide-left-column .dialectics-hint-block.block-left {
     display: none !important;
 }
+.hide-left-column .dialectics-block.block-right,
+.hide-left-column .dialectics-hint-block.block-right {
+    width: 100% !important;
+    max-width: 1200px;
+    align-self: center !important;
+}
+.hide-left-column::before {
+    display: none !important;
+}
+
+.left-column-collapsed-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: .875rem;
+    font-weight: 600;
+}
+.left-column-collapsed-notice[hidden] { display: none; }
+.left-column-collapsed-notice .ph { font-size: 1.15rem; }
+.left-column-collapsed-notice button {
+    border: 0;
+    border-radius: 6px;
+    padding: 5px 8px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font: inherit;
+    cursor: pointer;
+}
+.left-column-collapsed-notice button:hover { background: #bfdbfe; }
+.left-column-collapsed-notice button:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+@media print { .left-column-collapsed-notice { display: none !important; } }
 
 .mode-no-dialectics .dialectics-hint-block {
     display: none !important;
@@ -610,6 +635,22 @@
 .sticker-card.is-editing { outline: 2px solid #f59e0b; outline-offset: 1px; }
 .sticker-card-title { font-weight: 700; font-size: 0.85rem; color: #1f2937; margin-bottom: 2px; }
 .sticker-card-text { font-size: 0.85rem; color: #334155; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+.sticker-quote {
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border-left: 3px solid #d97706;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 0 6px 6px 0;
+    color: #475569;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 180px;
+    overflow-y: auto;
+}
+.sticker-panel-quote { margin-bottom: 0; }
+.sticker-quote[hidden] { display: none; }
 .sticker-card-footer {
     display: flex;
     justify-content: space-between;

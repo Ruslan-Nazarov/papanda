@@ -56,6 +56,17 @@ class Word(BaseModel):
     connections: Optional[str] = None
     connection_explanations: Dict[str, str] = Field(default_factory=dict)
 
+class MathSymbol(BaseModel):
+    symbol: str = Field(min_length=1, max_length=300)
+    definition: str = Field(min_length=1, max_length=5000)
+
+    @field_validator('symbol', 'definition')
+    @classmethod
+    def nonblank(cls, value):
+        if not value.strip() or '\x00' in value:
+            raise ValueError('Symbol and definition must contain readable text')
+        return value.strip()
+
 class RequestDocument(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     text: str = Field(min_length=1, max_length=50_000)
@@ -123,6 +134,7 @@ class BlockContent(BaseModel):
     included_conspects: List[IncludedConspect] = Field(default_factory=list, max_length=20)
     rejected_drafts: List[RejectedDraft] = Field(default_factory=list, max_length=100)
     derivations: List[BlockDerivation] = Field(default_factory=list, max_length=1000)
+    math_symbols: List[MathSymbol] = Field(default_factory=list, max_length=1000)
     
     model_config = ConfigDict(extra="allow")
 
@@ -145,6 +157,7 @@ class NoteCreate(BaseModel):
     blocks: List[NoteBlock]
     stickers: List[NoteSticker] = Field(default_factory=list, max_length=1000)
     dictionary: List[Word] = Field(default_factory=list, max_length=1000)
+    math_symbols: List[MathSymbol] = Field(default_factory=list, max_length=1000)
     is_pinned: bool = False
     is_example: bool = False
     category_id: Optional[int] = Field(default=None, gt=0)
@@ -167,6 +180,7 @@ class NoteUpdate(BaseModel):
     blocks: Optional[List[NoteBlock]] = None
     stickers: Optional[List[NoteSticker]] = Field(default=None, max_length=1000)
     dictionary: Optional[List[Word]] = Field(default=None, max_length=1000)
+    math_symbols: Optional[List[MathSymbol]] = Field(default=None, max_length=1000)
     is_pinned: Optional[bool] = None
     is_example: Optional[bool] = None
     category_id: Optional[int] = Field(default=None, gt=0)
@@ -176,7 +190,7 @@ class NoteUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_explicit_nulls(self):
-        for field in ('title', 'note_notice', 'blocks', 'stickers', 'dictionary', 'is_pinned', 'is_example', 'status', 'sticker_color'):
+        for field in ('title', 'note_notice', 'blocks', 'stickers', 'dictionary', 'math_symbols', 'is_pinned', 'is_example', 'status', 'sticker_color'):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f'{field} cannot be null')
         return self
@@ -194,6 +208,7 @@ class RevisionRequest(BaseModel):
 class PublicNoteView(BaseModel):
     title: str
     note_notice: str = ''
+    math_symbols: List[MathSymbol] = Field(default_factory=list)
     schema_version: Literal[1] = 1
     content_json: List[Dict[str, Any]]
 
@@ -209,6 +224,7 @@ class NoteView(BaseModel):
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)
     dictionary: List[Word] = Field(default_factory=list)
+    math_symbols: List[MathSymbol] = Field(default_factory=list)
     category_id: Optional[int]
     is_pinned: bool
     is_example: bool
@@ -247,6 +263,7 @@ class NoteVersionView(BaseModel):
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)
     dictionary: List[Word] = Field(default_factory=list)
+    math_symbols: List[MathSymbol] = Field(default_factory=list)
     is_manual: bool
     material_token: Optional[str] = None
     created_at: datetime

@@ -9,6 +9,7 @@ import { EditorGraphTab } from './EditorGraphTab.js';
 import { EditorDragBehavior } from './EditorDragBehavior.js';
 import EditorDraftArchive from './EditorDraftArchive.js';
 import NoteText from './NoteText.js';
+import EditorTextPosition from './EditorTextPosition.js';
 import { TEXT_SIZES } from './extensions/TextSize.js';
 
 class EditorManager {
@@ -34,12 +35,12 @@ class EditorManager {
         this.lifecycle = new Lifecycle();
         this.lifecycle.on(document, 'noteOpened', () => this.closeModal(false));
         this.lifecycle.on(document, 'openEditor', (e) => {
-            const { blockId, el } = e.detail;
-            this.openModalEditor(blockId, el);
+            const { blockId, el, textPosition } = e.detail;
+            this.openModalEditor(blockId, el, textPosition);
         });
     }
 
-    static openModalEditor(blockId, blockEl) {
+    static openModalEditor(blockId, blockEl, textPosition = null) {
         if (this.session) {
             this.closeModal(false);
         }
@@ -83,7 +84,10 @@ class EditorManager {
 
         // 1. TipTap
         const tiptapContainer = modalContainer.querySelector('.modal-tiptap-content');
-        this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml);
+        this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml, !textPosition, {
+            note: JSON.parse(JSON.stringify(AppState.currentNote.math_symbols || [])),
+            block: JSON.parse(JSON.stringify(block.math_symbols || [])), blockId,
+        });
         EditorTiptapSetup.bindFormatButtons(modalContainer, () => this.currentEditor, this.session,
             {blockId, noteId: AppState.currentNote.id});
         this.currentEditor.on('update', () => document.dispatchEvent(new Event('editingActivity')));
@@ -122,6 +126,7 @@ class EditorManager {
         // 6. Action buttons
         modalContainer.querySelector('#btn-modal-close')?.addEventListener('click', () => this.closeModal(false));
         modalContainer.querySelector('#btn-modal-ok')?.addEventListener('click', () => this.handleSave());
+        EditorTextPosition.restore(this.currentEditor, textPosition, modalContainer);
     }
 
     static setupTabSwitching(modalContainer, block) {
@@ -177,16 +182,19 @@ class EditorManager {
         const block = AppState.getBlock(this.currentBlockId);
         const isAnchor = block && (block.role === 'step1' || block.role === 'anchor');
         
+        const symbolContext = this.currentEditor?.storage.mathSymbols;
+        if (symbolContext) AppState.updateNote({math_symbols: symbolContext.note});
         AppState.updateBlock(this.currentBlockId, {
             title: newTitle,
             tags: newTags,
             html: newHtml,
+            ...(symbolContext ? {math_symbols: symbolContext.block} : {}),
             rejected_drafts: this.draftArchive.drafts,
             ...(block?.role === 'anchor' && this.draftArchive.hasNewDrafts ? {
                 sourceGoal: NoteText.fromHtml(newHtml), sourceTitle: newTitle, anchorResolved: false,
             } : {}),
             shapesData: shapesData,
-            status: this.currentEditor?.isEmpty ? 'in_progress' : 'ready',
+            // Readiness is set explicitly with the status dot, independently of edits.
             isDraft: false
         });
         this.closeModal(true);

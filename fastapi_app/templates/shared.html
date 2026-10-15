@@ -11,6 +11,7 @@
     {% if not library_view or preview %}<meta name="robots" content="noindex,nofollow">{% endif %}
 
     <link rel="stylesheet" href="{{ asset('vendor.css') }}">
+    <link rel="stylesheet" href="{{ asset('math-symbols.css') }}">
     <script type="module" src="{{ asset('runtime.js') }}"></script>
     <style>
         :root { color-scheme: light; }
@@ -207,6 +208,10 @@
             <a href="/">{{ _('shared_cta') }}</a>
         </footer>
     </div>
+    <script type="application/json" id="math-symbols-data">{"note": {{ math_symbols | default([]) | tojson }}, "blocks": {
+        {% for b in blocks %}{{ b.id | tojson }}: {{ b.get('math_symbols', []) | tojson }}{% if not loop.last %},{% endif %}{% endfor %}
+    }}</script>
+    <script type="application/json" id="i18n-data">{{ {'ms_definition': _('ms_definition'), 'ms_note': _('ms_note'), 'ms_block': _('ms_block'), 'close': _('close'), 'ms_computed_value': _('ms_computed_value'), 'ms_computed_values': _('ms_computed_values'), 'ms_calculation': _('ms_calculation'), 'ms_in_note': _('ms_in_note'), 'ms_original_formula': _('ms_original_formula'), 'ms_substituted_value': _('ms_substituted_value'), 'formula_expand': _('formula_expand'), 'formula_view': _('formula_view'), 'formula_scale': _('formula_scale'), 'formula_scroll': _('formula_scroll'), 'formula_zoom_in': _('formula_zoom_in'), 'formula_zoom_out': _('formula_zoom_out')} | tojson }}</script>
     {% if publication_id %}<script type="module" src="{{ asset('library.js') }}"></script>{% endif %}
 
 </body>

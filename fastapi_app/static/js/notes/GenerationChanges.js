@@ -64,7 +64,7 @@ class GenerationChanges {
             if (!group || !previous.rejected_drafts?.length || group.some(block => block.id === previous.id)) continue;
             const recipient = group.find(block => (block.rejected_drafts?.length || 0) + previous.rejected_drafts.length <= 100);
             if (recipient) recipient.rejected_drafts = [...(recipient.rejected_drafts || []), ...previous.rejected_drafts];
-            else group.push({...previous, html: '', status: 'none', generation_data: null, isDraft: false});
+            else group.push({...previous, html: '', status: 'in_progress', generation_data: null, isDraft: false});
         }
         const seen = new Set(), blocks = [];
         const insert = base => {

@@ -1,5 +1,12 @@
 // The same text extraction binds engine snapshots and supplies model context.
 class NoteText {
+    static wordCount(html) {
+        const template = document.createElement('template');
+        template.innerHTML = html || '';
+        template.content.querySelectorAll('[formula], math, .katex').forEach(node => node.remove());
+        return (this.fromHtml(template.innerHTML).match(/[\p{L}\p{N}]+(?:[’'-][\p{L}\p{N}]+)*/gu) || []).length;
+    }
+
     static fromHtml(html) {
         const template = document.createElement('template');
         template.innerHTML = html || '';

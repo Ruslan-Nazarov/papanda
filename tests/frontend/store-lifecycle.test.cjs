@@ -39,6 +39,23 @@ test('block pin starts off each time a note is opened', () => {
     assert.equal(state.note.blocks[0].is_pinned, false);
 });
 
+test('every block has a ready or in-progress status across store operations', () => {
+    const state = store();
+    state.open({id: 1, blocks: [
+        {id: 'missing'}, {id: 'none', status: 'none'}, {id: 'draft', status: 'draft'},
+        {id: 'done', status: 'done'}, {id: 'ready', status: 'ready'},
+    ]});
+    assert.deepEqual(Array.from(state.note.blocks, block => block.status),
+        ['in_progress', 'in_progress', 'in_progress', 'ready', 'ready']);
+    state.addBlock({id: 'new', status: 'none'});
+    state.updateBlock('ready', {status: 'none'});
+    state.update({blocks: [...state.note.blocks, {id: 'replacement', status: 'none'}]});
+    state.acceptSaved(state.note, {content_json: [
+        {id: 'new', status: 'none'}, {id: 'replacement', status: 'ready'},
+    ]}, {});
+    assert.deepEqual(Array.from(state.note.blocks, block => block.status), ['in_progress', 'ready']);
+});
+
 test('old block words become one note dictionary without losing distinct meanings', () => {
     const state = store();
     state.open({id: 1, dictionary: [{word: 'ЭКГ', definition: 'Измерение', connections: ''}], blocks: [

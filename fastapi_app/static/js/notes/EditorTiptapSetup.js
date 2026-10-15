@@ -17,10 +17,11 @@ import FormulaModalService from './FormulaModalService.js';
 import PasteMathTransformer from './PasteMathTransformer.js';
 import TextSize, { TEXT_SIZES } from './extensions/TextSize.js';
 import BlockCodeRenderer from './BlockCodeRenderer.js';
+import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
 
 import { t } from '../i18n.js';
 export class EditorTiptapSetup {
-    static createEditor(containerEl, currentHtml, autofocus = true) {
+    static createEditor(containerEl, currentHtml, autofocus = true, symbolContext = null) {
         const prepared = document.createElement('div');
         prepared.innerHTML = currentHtml || '';
         BlockCodeRenderer.mergeAdjacent(prepared);
@@ -66,6 +67,9 @@ export class EditorTiptapSetup {
                 }
             }
         });
+        editor.storage.mathSymbols = symbolContext;
+        const disposeHints = HiddenPhraseTooltip.bind(editor.view.dom);
+        editor.on('destroy', disposeHints);
         if (autofocus) editor.view.focus();
         return editor;
     }
@@ -294,7 +298,8 @@ export class EditorTiptapSetup {
                         existingFormula = selectedText.trim();
                     }
 
-                    FormulaModalService.open({ initialFormula: existingFormula }).then(formula => {
+                    FormulaModalService.open({ initialFormula: existingFormula,
+                        symbolContext: currentEditor.storage.mathSymbols }).then(formula => {
                         if (formula === null || formula === '' || currentEditor.isDestroyed) return;
                         currentEditor.chain().focus().insertMathInline({ formula }).run();
                     });

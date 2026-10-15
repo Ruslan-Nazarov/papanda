@@ -13,7 +13,7 @@ from fastapi_app.schemas.notes import NoteCreate
 from fastapi_app.services.note_transactions import commit
 
 LIBRARY_PATH = Path(os.getenv('PAPANDA_LIBRARY_FILE', str(Path(__file__).resolve().parents[1] / 'data/library_notes.json')))
-DOCUMENT_FIELDS = ('title', 'note_notice', 'content_json', 'stickers', 'dictionary')
+DOCUMENT_FIELDS = ('title', 'note_notice', 'content_json', 'stickers', 'dictionary', 'math_symbols')
 
 @lru_cache(maxsize=2)
 def _read(path, stamp):
@@ -86,6 +86,7 @@ async def seed_library(session):
             content_json=[block.model_dump(mode='json') for block in validated.blocks],
             stickers=[sticker.model_dump(mode='json') for sticker in validated.stickers],
             dictionary=[word.model_dump() for word in validated.dictionary],
+            math_symbols=[symbol.model_dump() for symbol in validated.math_symbols],
             status=validated.status, is_pinned=validated.is_pinned,
             sticker_text=validated.sticker_text, sticker_color=validated.sticker_color,
             translations={lang: deepcopy(document) for lang, document in item['languages'].items() if lang != 'ru'},

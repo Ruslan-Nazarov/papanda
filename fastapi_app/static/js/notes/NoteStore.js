@@ -1,6 +1,7 @@
 import { inferRoleFromTitle, ALGORITHM_STEPS } from './BlockConstants.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
+const normalizeBlockStatus = status => status === 'ready' || status === 'done' ? 'ready' : 'in_progress';
 
 // Stable document identity for in-flight saves, read-only views for consumers.
 class NoteStore {
@@ -53,10 +54,11 @@ class NoteStore {
             fork_step: note.fork_step ?? null, long_term_goal: Boolean(note.long_term_goal),
             stickers: clone(note.stickers || []),
             dictionary,
+            math_symbols: clone(note.math_symbols || []),
             blocks: blocks.map(block => ({...block,
                 // Закрепление блока действует только до следующего открытия конспекта.
                 is_pinned: false,
-                status: block.status === 'draft' ? 'in_progress' : block.status || 'none',
+                status: normalizeBlockStatus(block.status),
                 role: block.role || inferRoleFromTitle(block),
                 side: (block.role || inferRoleFromTitle(block)) === 'anchor' ? 'left' : block.side
                     || ALGORITHM_STEPS.find(step => step.role === inferRoleFromTitle(block))?.side || 'center'}))};
@@ -75,6 +77,8 @@ class NoteStore {
     }
 
     update(patch) {
+        if (Array.isArray(patch.blocks)) patch = {...patch, blocks: patch.blocks.map(block =>
+            ({...block, status: normalizeBlockStatus(block.status)}))};
         if (!Object.entries(patch).some(([key, value]) => JSON.stringify(this.#current.data[key]) !== JSON.stringify(value))) return;
         Object.assign(this.#current.data, clone(patch));
         this.touch();
@@ -82,6 +86,7 @@ class NoteStore {
 
     updateBlock(id, patch) {
         const block = this.#current.data.blocks.find(item => item.id === id);
+        if ('status' in patch) patch = {...patch, status: normalizeBlockStatus(patch.status)};
         if (!block || !Object.entries(patch).some(([key, value]) => JSON.stringify(block[key]) !== JSON.stringify(value))) return;
         Object.assign(block, clone(patch));
         this.touch();
@@ -89,7 +94,8 @@ class NoteStore {
 
     addBlock(block, index = -1) {
         const blocks = this.#current.data.blocks;
-        blocks.splice(index >= 0 && index <= blocks.length ? index : blocks.length, 0, clone(block));
+        blocks.splice(index >= 0 && index <= blocks.length ? index : blocks.length, 0,
+            {...clone(block), status: normalizeBlockStatus(block.status)});
         this.touch();
         this.#notify('blockAdded', this.note.blocks.find(item => item.id === block.id));
     }
@@ -113,6 +119,7 @@ class NoteStore {
         // Existing render handlers retain block views across autosaves.
         const previous = new Map(record.data.blocks.map(block => [block.id, block]));
         const blocks = clone(response.content_json || response.blocks || payload.blocks).map(block => {
+            block.status = normalizeBlockStatus(block.status);
             const target = previous.get(block.id);
             if (!target) return block;
             for (const key of Object.keys(target)) if (!(key in block)) delete target[key];
@@ -122,6 +129,7 @@ class NoteStore {
             note_notice: response.note_notice ?? note.note_notice ?? '',
             stickers: response.stickers ?? note.stickers ?? [],
             dictionary: response.dictionary ?? note.dictionary ?? [],
+            math_symbols: response.math_symbols ?? note.math_symbols ?? [],
             category_id: response.category_id ?? null, status: response.status || note.status,
             family_id: response.family_id ?? null, parent_note_id: response.parent_note_id ?? null,
             variant_label: response.variant_label || null, variant_origin: response.variant_origin || 'human',

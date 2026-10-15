@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 from fastapi_app.config import settings
 from fastapi_app.services.block_contract import normalize_legacy_blocks
 
-VERSION = 7
+VERSION = 8
 
 
 def _validate(connection, metadata, version=VERSION):
@@ -39,6 +39,8 @@ def _validate(connection, metadata, version=VERSION):
             required -= {'material_token'}
         if version < 7 and table.name == 'notes':
             required -= {'translations', 'library_slug'}
+        if version < 8 and table.name in {'notes', 'note_versions'}:
+            required -= {'math_symbols'}
         if legacy and table.name == 'notes':
             required -= {'revision', 'schema_version', 'is_example', 'share_token'}
         if required - columns:
@@ -181,6 +183,11 @@ def _migrate(connection):
             connection.exec_driver_sql("ALTER TABLE notes ADD COLUMN translations JSON NOT NULL DEFAULT '{}'")
         if 'library_slug' not in columns:
             connection.exec_driver_sql('ALTER TABLE notes ADD COLUMN library_slug VARCHAR(128)')
+    if version < 8:
+        for table in ('notes', 'note_versions'):
+            columns = {c['name'] for c in inspect(connection).get_columns(table)}
+            if 'math_symbols' not in columns:
+                connection.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN math_symbols JSON NOT NULL DEFAULT '[]'")
     connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
     _validate(connection, Base.metadata)
 

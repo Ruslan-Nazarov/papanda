@@ -1,3 +1,7 @@
+import MathSymbols from './MathSymbols.js';
+import FormulaZoom from './FormulaZoom.js';
+import MathSubstitutions from './MathSubstitutions.js';
+
 class BlockMathRenderer {
     static unescapeHtml(safe) {
         if (!safe) return '';
@@ -172,6 +176,9 @@ class BlockMathRenderer {
             fragment.append(document.createTextNode(text.slice(offset)));
             node.replaceWith(fragment);
         }
+        MathSymbols.decorate(element);
+        MathSubstitutions.decorate(element);
+        FormulaZoom.decorate(element);
     }
 }
 

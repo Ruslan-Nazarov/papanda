@@ -97,6 +97,19 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         const initialTranslations = JSON.parse(await fs.readFile(path.join(root, 'fastapi_app/i18n_data.json'), 'utf8'));
         assert((await page.$eval('.dialectics-hint-block[data-role="anchor"]', el => el.textContent))
             .includes(initialTranslations[initialLocale].hint_anchor_title));
+        await t.test('collapsed left column stays visible and can be restored', async () => {
+            assert.equal(await page.$('#toggle-show-hints'), null);
+            await page.click('#btn-mode');
+            await page.click('#toggle-hide-left + .toggle-slider');
+            assert.equal(await page.$eval('#toggle-hide-left', el => el.checked), true);
+            assert.equal(await page.$eval('#left-column-collapsed-notice', el => el.hidden), false);
+            assert.equal(await page.$eval('.dialectics-hint-block.block-left', el => getComputedStyle(el).display), 'none');
+            assert.equal(await page.$eval('#blocks-container', el => getComputedStyle(el, '::before').display), 'none');
+            await page.click('#btn-restore-left');
+            assert.equal(await page.$eval('#toggle-hide-left', el => el.checked), false);
+            assert.equal(await page.$eval('#left-column-collapsed-notice', el => el.hidden), true);
+            assert.notEqual(await page.$eval('.dialectics-hint-block.block-left', el => getComputedStyle(el).display), 'none');
+        });
         await t.test('manual entry opens through a direct link while the root reload starts fresh', async () => {
             await page.focus('.dialectics-hint-block[data-role="anchor"]');
             await page.keyboard.press('Enter');
@@ -114,6 +127,20 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.reload({waitUntil: 'networkidle0'});
             assert.equal(await page.$eval('#note-title', el => el.value), '');
             assert.equal(new URL(page.url()).searchParams.get('note'), null);
+            const lastOpenedId = await page.evaluate(() => localStorage.getItem('papanda_last_note_id'));
+            await page.click('#btn-main-menu');
+            assert.equal(await page.$eval('#menu-item-last-note', el => el.disabled), false);
+            await page.click('#menu-item-last-note');
+            await page.waitForFunction(id => document.querySelector('#note-title').value === 'R5 browser control'
+                && localStorage.getItem('papanda_last_note_id') === id, {}, lastOpenedId);
+            await page.click('#btn-main-menu');
+            await page.click('#menu-item-new-note');
+            await page.waitForFunction(() => document.querySelector('#note-title').value === 'Новый конспект');
+            assert.equal(await page.evaluate(() => localStorage.getItem('papanda_last_note_id')), lastOpenedId);
+            await page.click('#btn-main-menu');
+            assert.equal(await page.$eval('#menu-item-last-note', el => el.disabled), false);
+            await page.click('#menu-item-last-note');
+            await page.waitForFunction(() => document.querySelector('#note-title').value === 'R5 browser control');
             await reopenSavedNote();
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
@@ -185,9 +212,23 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
         });
         await t.test('block authorship labels can be chosen and survive saving', async () => {
             const select = '.dialectics-block .block-author-select';
+            const assertAuthorStats = async () => {
+                const {expected, actual} = await page.evaluate(() => {
+                    const expected = {ai: 0, ai_checked: 0, ai_edited: 0, human: 0, unset: 0};
+                    document.querySelectorAll('.dialectics-block:not(.block-section) .block-author-select').forEach(el => {
+                        expected[el.value || 'unset']++;
+                    });
+                    const actual = Object.fromEntries([...document.querySelectorAll('[data-author-stat]')]
+                        .map(el => [el.dataset.authorStat, Number(el.querySelector('strong').textContent)]));
+                    return {expected, actual};
+                });
+                assert.deepEqual(actual, expected);
+            };
+            await assertAuthorStats();
             for (const value of ['ai', 'ai_checked', 'ai_edited', 'human']) {
                 await page.select(select, value);
                 assert.equal(await page.$eval('.block-author-control', el => el.dataset.author), value);
+                await assertAuthorStats();
             }
             assert(await page.$eval('.block-author-control', el => {
                 const badge = el.getBoundingClientRect();
@@ -212,11 +253,44 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await reopenSavedNote();
             assert.equal(await page.$eval(select, el => el.value), 'human');
+            await assertAuthorStats();
             await page.select(select, '');
+            await assertAuthorStats();
             await page.click('#btn-save');
             await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
             await reopenSavedNote();
             assert.equal(await page.$eval(select, el => el.value), '');
+            await assertAuthorStats();
+        });
+        await t.test('statistics dropdown is compact, fits the viewport and closes with Escape or outside click', async () => {
+            const viewport = page.viewport();
+            for (const [name, size] of [['desktop', {width:1440, height:1000}], ['mobile', {width:390, height:844}]]) {
+                await page.setViewport(size);
+                assert.equal(await page.$eval('#statistics-panel', el => getComputedStyle(el).display), 'none');
+                await page.click('#btn-statistics');
+                await page.waitForFunction(() => document.querySelector('.note-sub-bar').getAnimations({subtree:true})
+                    .every(animation => animation.playState !== 'running'));
+                assert.equal(await page.$eval('#btn-statistics', el => el.getAttribute('aria-expanded')), 'true');
+                assert(await page.$eval('#statistics-panel', el => {
+                    const rect = el.getBoundingClientRect();
+                    const anchor = document.querySelector('#btn-statistics').getBoundingClientRect();
+                    return rect.left >= 12 && rect.right <= innerWidth - 12 && rect.bottom <= innerHeight - 12
+                        && Math.abs(rect.top - anchor.bottom - 8) < 1;
+                }), 'Statistics must stay within the viewport');
+                assert.equal(await page.$eval('#statistics-total', el => el.textContent), '1');
+                assert.equal(await page.$eval('#statistics-words', el => el.textContent), '4');
+                assert.equal(await page.$eval('[data-author-stat="unset"] small', el => el.textContent), '100%');
+                await page.screenshot({path: path.join(root, `.cache/statistics-${name}.png`)});
+                await page.keyboard.press('Escape');
+                assert.equal(await page.$eval('#btn-statistics', el => el.getAttribute('aria-expanded')), 'false');
+                assert.equal(await page.$eval('#btn-statistics', el => el === document.activeElement), true);
+            }
+            await page.setViewport({width:1440, height:1000});
+            await page.screenshot({path: path.join(root, '.cache/statistics-toolbar.png')});
+            await page.click('#btn-statistics');
+            await page.click('#note-title');
+            assert.equal(await page.$eval('#btn-statistics', el => el.getAttribute('aria-expanded')), 'false');
+            await page.setViewport(viewport);
         });
         await t.test('text size persists in note and editor, and clear removes it from the entire block', async () => {
             await page.click('.dialectics-block .btn-edit');

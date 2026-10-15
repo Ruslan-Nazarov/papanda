@@ -1,0 +1,76 @@
+.math-expandable {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    vertical-align: middle;
+}
+.math-inline:has(.math-expandable) { max-width: 100%; box-sizing: border-box; }
+.math-expandable > .katex { min-width: 0; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.math-expand-button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #8b83ad;
+    cursor: zoom-in;
+    opacity: .55;
+    transition: background .15s, color .15s, opacity .15s;
+}
+.math-expandable:hover > .math-expand-button,
+.math-expand-button:focus-visible { opacity: 1; color: #6250ba; background: #ede9fe; }
+.math-expand-button:focus-visible,
+.formula-zoom-dialog button:focus-visible,
+.formula-zoom-viewport:focus-visible { outline: 2px solid #8b7ad6; outline-offset: 2px; }
+.formula-zoom-dialog {
+    box-sizing: border-box;
+    width: min(760px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: min(80dvh, 720px);
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e6e0f1;
+    border-radius: 20px;
+    background: #fff;
+    color: #334155;
+    box-shadow: 0 24px 80px #1e16422e;
+    font: 14px/1.5 Inter, system-ui, sans-serif;
+}
+.formula-zoom-dialog::backdrop { background: #1e183c42; backdrop-filter: blur(3px); }
+.formula-zoom-dialog[open] { display: flex; flex-direction: column; }
+.formula-zoom-header, .formula-zoom-toolbar, .formula-zoom-hint { flex-shrink: 0; }
+.formula-zoom-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
+.formula-zoom-header h2 { margin: 0; font: inherit; font-size: 15px; font-weight: 600; color: #64748b; }
+.formula-zoom-dialog button { font: inherit; cursor: pointer; }
+.formula-zoom-close { width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #94a3b8; font-size: 24px !important; line-height: 1; }
+.formula-zoom-close:hover { background: #f5f3ff; color: #6250ba; }
+.formula-zoom-viewport { min-height: 0; margin: 0 20px; max-height: calc(min(80dvh, 720px) - 160px); overflow: auto; overscroll-behavior: contain; border: 1px solid #eeeaf6; border-radius: 12px; background: #faf9ff; color: #4338a0; }
+.formula-zoom-content { box-sizing: border-box; width: max-content; min-width: 100%; padding: 30px 24px; text-align: center; }
+.formula-zoom-content .katex { max-width: none; }
+.formula-zoom-content .katex-display { overflow: visible !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+.formula-zoom-hint { margin: 8px 16px 0; color: #94a3b8; text-align: center; font-size: 12px; }
+.formula-zoom-toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px 18px; color: #94a3b8; font-size: 12px; }
+.formula-zoom-toolbar > span { margin-right: 8px; }
+.formula-zoom-toolbar button { width: 32px; height: 32px; border: 1px solid #e8e3f2; border-radius: 8px; background: #fff; color: #6250ba; font-size: 18px; }
+.formula-zoom-toolbar button:hover:enabled { background: #f5f3ff; }
+.formula-zoom-toolbar button:disabled { opacity: .35; cursor: default; }
+.formula-zoom-toolbar output { min-width: 45px; color: #64748b; font-variant-numeric: tabular-nums; text-align: center; }
+@media (pointer: coarse) {
+    .math-expand-button { width: 32px; height: 36px; opacity: .8; }
+    .formula-zoom-dialog button { min-width: 40px; min-height: 40px; }
+}
+@media (max-width: 480px) {
+    .formula-zoom-dialog { border-radius: 16px; }
+    .formula-zoom-header { padding: 12px 14px; }
+    .formula-zoom-viewport { margin: 0 12px; }
+    .formula-zoom-content { padding: 24px 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .math-expand-button { transition: none; } }
+@media print { .math-expand-button, .formula-zoom-dialog { display: none !important; } }

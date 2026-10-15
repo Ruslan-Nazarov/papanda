@@ -2,7 +2,7 @@
     --color-accent: #ea580c;
     --color-primary: #2563eb;
     --color-bg-app: #fff7ee;
-    --color-bg-canvas: #ffffff;
+    --color-bg-canvas: var(--color-bg-app);
     --color-border: #e2e8f0;
     --color-border-dark: #cbd5e1;
     --color-border-focus: #3b82f6;

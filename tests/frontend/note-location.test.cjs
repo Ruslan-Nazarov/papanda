@@ -50,6 +50,22 @@ test('creating a new note clears both saved navigation pointers', () => {
     assert.equal(window.location.search, '?lang=ru');
 });
 
+test('a fresh note clears its URL while keeping the last opened note available', () => {
+    const {ctx, window, stored} = setup('?note=22&lang=ru');
+    stored.set('papanda_last_note_id', '22');
+    ctx.NoteLocation.clearURL();
+    assert.equal(window.location.search, '?lang=ru');
+    assert.equal(ctx.NoteLocation.lastOpenedId(), '22');
+    ctx.NoteLocation.forgetLastOpened();
+    assert.equal(ctx.NoteLocation.lastOpenedId(), null);
+});
+
+test('a malformed saved note ID is ignored', () => {
+    const {ctx, stored} = setup();
+    stored.set('papanda_last_note_id', '22?');
+    assert.equal(ctx.NoteLocation.lastOpenedId(), null);
+});
+
 test('a published note keeps its permanent bilingual identity after loading or saving', () => {
     const {ctx, window} = setup('?conspect=ecg-final&lang=en');
     assert.equal(ctx.NoteLocation.initialLibrarySlug(), 'ecg-final');

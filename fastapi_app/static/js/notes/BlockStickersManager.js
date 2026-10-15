@@ -70,12 +70,44 @@ class BlockStickersManager {
     }
 
     static toggleBlockStickersPanel(block, anchorEl) {
+        const quote = this._selectedBlockText(anchorEl);
         const panel = anchorEl.querySelector('.sticker-panel');
+        if (quote && panel) {
+            panel.querySelector('.sticker-panel-form').setQuote(quote);
+            panel.querySelector('.sticker-panel-text-input').focus();
+            window.getSelection()?.removeAllRanges();
+            return;
+        }
         if (panel) {
             this._closeBlockPanel(panel);
         } else {
-            this.openBlockStickersPanel(block, anchorEl);
+            this.openBlockStickersPanel(block, anchorEl, quote);
+            if (quote) window.getSelection()?.removeAllRanges();
         }
+    }
+
+    static _selectedBlockText(anchorEl) {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !selection.rangeCount) return '';
+        const regions = anchorEl.querySelectorAll('.block-content, .block-title');
+        for (let i = 0; i < selection.rangeCount; i++) {
+            const range = selection.getRangeAt(i);
+            if (![...regions].some(el => el.contains(range.startContainer) && el.contains(range.endContainer))) return '';
+        }
+        return selection.toString().trim();
+    }
+
+    // Store quotes as Markdown in the existing text field so saves, copies and
+    // generation context retain both the source fragment and the comment.
+    static _splitQuote(text = '') {
+        const lines = text.replace(/\r\n?/g, '\n').split('\n');
+        let end = 0;
+        while (end < lines.length && /^>(?: |$)/.test(lines[end])) end++;
+        if (!end) return {quote: '', comment: text};
+        return {
+            quote: lines.slice(0, end).map(line => line.replace(/^> ?/, '')).join('\n'),
+            comment: lines.slice(end).join('\n').replace(/^\n+/, '')
+        };
     }
 
     /**
@@ -83,7 +115,7 @@ class BlockStickersManager {
      * @param {object} block  - AppState block object
      * @param {HTMLElement} anchorEl - the .dialectics-block element
      */
-    static openBlockStickersPanel(block, anchorEl) {
+    static openBlockStickersPanel(block, anchorEl, quote = '') {
         // Remove any existing block sticker panels
         document.querySelectorAll('.dialectics-block .sticker-panel').forEach(p => this._closeBlockPanel(p));
 
@@ -108,14 +140,15 @@ class BlockStickersManager {
             (sticker) => {
                 AppState.updateBlock(block.id, {stickers: (block.stickers || []).map(s => s.id === sticker.id ? sticker : s)});
                 this.openBlockStickersPanel(block, anchorEl);
-            }
+            },
+            quote
         );
 
         // Position below anchor element
         anchorEl.style.position = 'relative';
         anchorEl.appendChild(panel);
         anchorEl.querySelector('.btn-sticker')?.setAttribute('aria-expanded', 'true');
-        panel.querySelector('.sticker-panel-title-input')?.focus();
+        panel.querySelector(quote ? '.sticker-panel-text-input' : '.sticker-panel-title-input')?.focus();
     }
 
     /**
@@ -251,9 +284,10 @@ class BlockStickersManager {
 
     // ── Shared panel builder ───────────────────────────────────────────────────
 
-    static _buildPanel(title, stickers, onAdd, onDelete, onClose, onUpdate) {
+    static _buildPanel(title, stickers, onAdd, onDelete, onClose, onUpdate, initialQuote = '') {
         let selectedColor = STICKER_COLORS[0].color;
         let editingId = null;
+        let quote = initialQuote;
 
         const panel = document.createElement('div');
         panel.className = 'sticker-panel';
@@ -266,6 +300,7 @@ class BlockStickersManager {
             </div>
             <div class="sticker-panel-form">
                 <input type="text" class="sticker-panel-title-input" placeholder="${t('stk_title_ph')}" maxlength="500">
+                <blockquote class="sticker-quote sticker-panel-quote" hidden></blockquote>
                 <textarea class="sticker-panel-text-input" placeholder="${t('stk_text_ph')}" rows="4"></textarea>
                 <div class="sticker-color-picker">
                     ${STICKER_COLORS.map((c, i) => `
@@ -288,6 +323,13 @@ class BlockStickersManager {
         const textInput = panel.querySelector('.sticker-panel-text-input');
         const saveButton = panel.querySelector('.sticker-add-btn');
         const cancelButton = panel.querySelector('.sticker-cancel-btn');
+        const quotePreview = panel.querySelector('.sticker-panel-quote');
+        const setQuote = value => {
+            quote = value;
+            quotePreview.textContent = value;
+            quotePreview.hidden = !value;
+        };
+        setQuote(quote);
         const selectColor = color => {
             selectedColor = color;
             panel.querySelectorAll('.sticker-color-btn').forEach(btn =>
@@ -298,11 +340,17 @@ class BlockStickersManager {
             editingId = null;
             titleInput.value = '';
             textInput.value = '';
+            setQuote('');
             selectColor(STICKER_COLORS[0].color);
             form.style.removeProperty('background');
             saveButton.textContent = 'OK';
             cancelButton.hidden = true;
             panel.querySelectorAll('.sticker-card').forEach(card => card.classList.remove('is-editing'));
+        };
+        // An additional selection can be quoted while this panel is already open.
+        form.setQuote = value => {
+            resetForm();
+            setQuote(value);
         };
 
         // Color picker
@@ -318,7 +366,9 @@ class BlockStickersManager {
                 if (!sticker) return;
                 editingId = sticker.id;
                 titleInput.value = sticker.title || '';
-                textInput.value = sticker.text || '';
+                const content = this._splitQuote(sticker.text || '');
+                setQuote(content.quote);
+                textInput.value = content.comment;
                 selectColor(sticker.color || STICKER_COLORS[0].color);
                 saveButton.textContent = t('save');
                 cancelButton.hidden = false;
@@ -360,7 +410,8 @@ class BlockStickersManager {
 
         // Add or update sticker
         saveButton.addEventListener('click', () => {
-            const text = textInput.value.trim();
+            const comment = textInput.value.trim();
+            const text = [quote ? quote.split('\n').map(line => `> ${line}`).join('\n') : '', comment].filter(Boolean).join('\n\n');
             if (!text) return;
             if (editingId) {
                 const original = stickers.find(s => s.id === editingId);
@@ -399,7 +450,7 @@ class BlockStickersManager {
         return `<div class="sticker-grid">${stickers.map(s => `
             <div class="sticker-card" style="background: ${/^#[0-9a-fA-F]{6}$/.test(s.color) ? s.color : '#fef9c3'}">
                 ${s.title ? `<div class="sticker-card-title">${HtmlSafety.escape(s.title)}</div>` : ''}
-                <div class="sticker-card-text">${HtmlSafety.escape(s.text)}</div>
+                ${this._renderStickerText(s.text)}
                 <div class="sticker-card-footer">
                     <span class="sticker-card-date">${HtmlSafety.escape(formatDate(s.created_at))}</span>
                     <span class="sticker-card-actions">
@@ -410,6 +461,12 @@ class BlockStickersManager {
                 </div>
             </div>
         `).join('')}</div>`;
+    }
+
+    static _renderStickerText(text) {
+        const {quote, comment} = this._splitQuote(text);
+        return (quote ? `<blockquote class="sticker-quote">${HtmlSafety.escape(quote)}</blockquote>` : '')
+            + `<div class="sticker-card-text">${HtmlSafety.escape(comment)}</div>`;
     }
 }
 

@@ -119,16 +119,6 @@ test('edits made while the next note loads are saved before navigation completes
     assert.equal(ctx.AppState.currentNote.id, 2);
 });
 
-test('back navigation retains history when saving or loading fails', async () => {
-    const ctx = setup();
-    ctx.NoteStorageService = {openNote: async () => {throw new Error('offline');}};
-    load(ctx, 'NavHistoryManager');
-    ctx.NavHistoryManager.push(1);
-    ctx.NavHistoryManager.push(2);
-    await assert.rejects(ctx.NavHistoryManager.goBack(), /offline/);
-    assert.deepEqual(Array.from(ctx.NavHistoryManager._navHistory), [1, 2]);
-});
-
 test('dragging cards retains hidden drafts and external text drops are ignored', () => {
     const ctx = setup('<div id="blocks-container"><div class="dialectics-block" data-id="a"></div>' +
         '<div class="dialectics-block" data-id="b"></div><div class="drop-indicator"></div></div>');

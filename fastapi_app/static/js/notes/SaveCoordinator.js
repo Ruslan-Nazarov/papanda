@@ -21,6 +21,7 @@ class SaveCoordinator {
         return JSON.parse(JSON.stringify({title: note.title || '', note_notice: note.note_notice || '', blocks: note.blocks || [],
             stickers: note.stickers || [],
             dictionary: note.dictionary || [],
+            math_symbols: note.math_symbols || [],
             category_id: note.category_id ?? null, status: note.status || 'in_progress'}));
     }
 

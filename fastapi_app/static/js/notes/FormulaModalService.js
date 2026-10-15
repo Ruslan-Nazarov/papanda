@@ -2,10 +2,12 @@ import NotesAPI from './api.js';
 import HtmlSafety from './HtmlSafety.js';
 import { showToast } from './ToastService.js';
 import DialogService from './DialogService.js';
+import FormulaSymbolsEditor from './FormulaSymbolsEditor.js';
 
 import { t } from '../i18n.js';
 class FormulaModalService {
     static currentResolve = null;
+    static cleanup = null;
 
     static SYMBOLS = [
         { name: 'Fraction', latex: '\\frac{a}{b}', desc: 'fraction a/b', label: 'Fraction<br><small>\\frac{}{}</small>' },
@@ -42,14 +44,17 @@ class FormulaModalService {
         { name: 'Infinity', latex: '\\infty', desc: 'infinity inf', label: '∞<br><small>\\infty</small>' }
     ];
 
-    static open({ initialFormula = '', displayMode = false } = {}) {
+    static open({ initialFormula = '', displayMode = false, symbolContext = null, selectedSymbol = '', definitionsOnly = false } = {}) {
+        this.close(null);
         return new Promise((resolve) => {
             this.currentResolve = resolve;
-            this.renderModal(initialFormula, displayMode);
+            this.renderModal(initialFormula, displayMode, symbolContext, selectedSymbol, definitionsOnly);
         });
     }
 
     static close(result = null) {
+        this.cleanup?.();
+        this.cleanup = null;
         const modal = document.getElementById('formula-editor-modal');
         if (modal) modal.remove();
         if (this.currentResolve) {
@@ -58,7 +63,7 @@ class FormulaModalService {
         }
     }
 
-    static renderModal(initialFormula, displayMode) {
+    static renderModal(initialFormula, displayMode, symbolContext, selectedSymbol, definitionsOnly) {
         const existing = document.getElementById('formula-editor-modal');
         if (existing) existing.remove();
 
@@ -67,7 +72,7 @@ class FormulaModalService {
         modal.className = 'formula-modal-backdrop';
 
         modal.innerHTML = `
-            <div class="formula-modal-dialog">
+            <div class="formula-modal-dialog" role="dialog" aria-modal="true" aria-label="${t('fm_title')}">
                 <div class="formula-modal-header">
                     <div class="formula-modal-title">
                         <span class="formula-modal-icon">∤</span>
@@ -108,6 +113,8 @@ class FormulaModalService {
                         <div class="formula-preview-box" id="formula-preview"></div>
                     </div>
 
+                    <div class="formula-definitions-container"></div>
+
                     <!-- Search Symbol -->
                     <div class="formula-search-wrapper">
                         <span class="formula-search-icon">🔍</span>
@@ -137,10 +144,39 @@ class FormulaModalService {
         const preview = modal.querySelector('#formula-preview');
         const searchInput = modal.querySelector('#formula-search');
         const symbolsGrid = modal.querySelector('#formula-symbols-grid');
+        if (definitionsOnly) {
+            input.readOnly = true;
+            modal.querySelector('.formula-modal-title h3').textContent = t('ms_title');
+            modal.querySelectorAll('.formula-ai-card, .formula-search-wrapper, .formula-symbols-grid, .formula-paste-btn')
+                .forEach(el => { el.hidden = true; });
+            modal.querySelector('#btn-formula-save').textContent = t('ms_save');
+        }
+        const definitions = symbolContext ? new FormulaSymbolsEditor(
+            modal.querySelector('.formula-definitions-container'), symbolContext, selectedSymbol) : null;
+        const opener = document.activeElement;
+        const onNoteOpened = () => this.close(null);
+        const onKey = event => {
+            if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); this.close(null); }
+            if (event.key === 'Tab') {
+                const controls = [...modal.querySelectorAll('button, input, select, textarea, summary')]
+                    .filter(el => !el.disabled && el.getClientRects().length);
+                const first = controls[0], last = controls.at(-1);
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+            }
+        };
+        document.addEventListener('noteOpened', onNoteOpened);
+        modal.addEventListener('keydown', onKey, true);
+        this.cleanup = () => {
+            document.removeEventListener('noteOpened', onNoteOpened);
+            modal.removeEventListener('keydown', onKey, true);
+            if (opener?.isConnected) opener.focus();
+        };
 
         // Update live preview
         const updatePreview = () => {
             const val = input.value.trim();
+            definitions?.update(val);
             if (!val) {
                 preview.innerHTML = `<span class="formula-preview-empty">${t('fm_preview_empty')}</span>`;
                 return;
@@ -291,6 +327,7 @@ class FormulaModalService {
         // Save
         modal.querySelector('#btn-formula-save').addEventListener('click', () => {
             const formula = input.value.trim();
+            definitions?.apply();
             this.close(formula);
         });
 
@@ -298,6 +335,8 @@ class FormulaModalService {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) this.close(null);
         });
+        if (selectedSymbol) modal.querySelector('.formula-definition-text')?.focus();
+        else input.focus();
     }
 
     static insertAtCursor(textarea, text) {

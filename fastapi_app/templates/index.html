@@ -70,10 +70,6 @@
                         <span>{{ _('menu_hide_left') }}</span>
                         <label class="toggle-switch"><input type="checkbox" id="toggle-hide-left"><span class="toggle-slider"></span></label>
                     </div>
-                    <div class="mode-dropdown-row">
-                        <span>{{ _('menu_show_hints') }}</span>
-                        <label class="toggle-switch"><input type="checkbox" id="toggle-show-hints"><span class="toggle-slider"></span></label>
-                    </div>
                 </div>
             </div>
 
@@ -91,7 +87,7 @@
                     <div class="menu-section-label">{{ _('menu_section_notes') }}</div>
                     <button type="button" class="menu-item" id="menu-item-new-note"><i class="ph ph-file-plus menu-icon" aria-hidden="true"></i><span>{{ _('menu_new_note') }}</span></button>
                     <button type="button" class="menu-item" id="menu-item-open-note"><i class="ph ph-folder-open menu-icon" aria-hidden="true"></i><span>{{ _('menu_open_note') }}</span></button>
-                    <button type="button" class="menu-item" id="menu-item-back-note"><i class="ph ph-arrow-u-up-left menu-icon" aria-hidden="true"></i><span>{{ _('menu_back') }}</span></button>
+                    <button type="button" class="menu-item" id="menu-item-last-note"><i class="ph ph-clock-counter-clockwise menu-icon" aria-hidden="true"></i><span>{{ _('menu_last_note') }}</span></button>
                     <div class="menu-divider"></div>
                     <div class="menu-section-label">{{ _('menu_section_tools') }}</div>
                     <button type="button" class="menu-item" id="menu-item-ai-full"><i class="ph ph-sparkle menu-icon" aria-hidden="true"></i><span>{{ _('ai_generate_full') }}</span></button>
@@ -170,13 +166,41 @@
                     <i class="ph ph-file-plus sub-icon" aria-hidden="true"></i> {{ _('bar_new_note') }}
                 </button>
                 <div class="sub-bar-divider"></div>
-                <div class="progress-section">
-                    <span class="progress-label">{{ _('progress') }}</span>
-                    <div class="progress-track">
-                        <div class="progress-fill ready" id="progress-ready" style="width: 0%;"></div>
-                        <div class="progress-fill in-progress" id="progress-in-progress" style="width: 0%;"></div>
-                    </div>
-                    <span class="progress-stats" id="progress-text">0% • 0 / 0</span>
+                <div class="dropdown-wrapper statistics-wrapper">
+                    <button class="sub-bar-btn statistics-trigger" id="btn-statistics" type="button" aria-expanded="false" aria-controls="statistics-panel">
+                        <i class="ph ph-chart-pie-slice sub-icon" aria-hidden="true"></i> {{ _('stats_title') }}
+                        <span class="statistics-trigger-percent" id="statistics-percent">0%</span>
+                        <i class="ph ph-caret-down statistics-caret" aria-hidden="true"></i>
+                    </button>
+                    <section class="dropdown-menu statistics-panel hidden" id="statistics-panel" aria-label="{{ _('stats_title') }}">
+                        <header class="statistics-header">
+                            <strong>{{ _('stats_title') }}</strong>
+                            <span class="statistics-summary">
+                                <span>{{ _('stats_total') }} <strong id="statistics-total">0</strong></span>
+                                <span>{{ _('stats_words') }} <strong id="statistics-words">0</strong></span>
+                            </span>
+                        </header>
+                        <div class="statistics-section">
+                            <div class="statistics-section-heading">
+                                <span>{{ _('progress') }}</span>
+                                <strong id="progress-text">0%</strong>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill ready" id="progress-ready" style="width: 0%;"></div>
+                                <div class="progress-fill in-progress" id="progress-in-progress" style="width: 0%;"></div>
+                            </div>
+                            <div class="readiness-stat" data-readiness-stat="ready"><span>{{ _('public_status_ready') }}</span><strong>0</strong></div>
+                            <div class="readiness-stat" data-readiness-stat="in_progress"><span>{{ _('public_status_in_progress') }}</span><strong>0</strong></div>
+                        </div>
+                        <div class="statistics-section author-stats" role="group" aria-label="{{ _('block_author_label') }}">
+                            <div class="statistics-section-heading">{{ _('block_author_label') }}</div>
+                            <div class="author-stat" data-author-stat="ai"><span>{{ _('block_author_ai') }}</span><strong>0</strong><small>0%</small></div>
+                            <div class="author-stat" data-author-stat="ai_checked"><span>{{ _('block_author_ai_checked') }}</span><strong>0</strong><small>0%</small></div>
+                            <div class="author-stat" data-author-stat="ai_edited"><span>{{ _('block_author_ai_edited') }}</span><strong>0</strong><small>0%</small></div>
+                            <div class="author-stat" data-author-stat="human"><span>{{ _('block_author_human') }}</span><strong>0</strong><small>0%</small></div>
+                            <div class="author-stat" data-author-stat="unset"><span>{{ _('block_author_none') }}</span><strong>0</strong><small>0%</small></div>
+                        </div>
+                    </section>
                 </div>
                 <div class="sub-bar-divider"></div>
                 <div class="dropdown-wrapper" style="position: relative;">
@@ -254,6 +278,11 @@
                 </details>
             </section>
             </template>
+            <div class="left-column-collapsed-notice" id="left-column-collapsed-notice" hidden>
+                <i class="ph ph-sidebar-simple" aria-hidden="true"></i>
+                <span>{{ _('menu_left_collapsed') }}</span>
+                <button type="button" id="btn-restore-left">{{ _('menu_restore_left') }}</button>
+            </div>
             <div class="dialectics-canvas" id="blocks-container">
                 <!-- Блоки рендерятся динамически -->
             </div>

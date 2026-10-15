@@ -18,7 +18,6 @@ import SearchManager from './SearchManager.js';
 import BlockStickersManager from './BlockStickersManager.js';
 import DialogService from './DialogService.js';
 import DropdownController from './DropdownController.js';
-import NavHistoryManager from './NavHistoryManager.js';
 import ConceptSelectionMenu from './ConceptSelectionMenu.js';
 import ModeManager from './ModeManager.js';
 import OnboardingTour from './OnboardingTour.js';
@@ -29,6 +28,7 @@ import RequestDocuments from './RequestDocuments.js';
 import MaterialsPanel from './MaterialsPanel.js';
 import QuestionsManager from './QuestionsManager.js';
 import NoteNoticeManager from './NoteNoticeManager.js';
+import MathSymbolController from './MathSymbolController.js';
 import { showToast } from './ToastService.js';
 import { t, switchLanguage } from '../i18n.js';
 
@@ -40,6 +40,7 @@ class App {
         // Initialize managers
         BlockDnDManager.init();
         EditorManager.init();
+        MathSymbolController.init();
         NoteVersionsService.init();
         CategoryManager.init();
         TOCManager.init();
@@ -106,6 +107,8 @@ class App {
             }
 
             if (container.querySelector('.katex, .math-callout, .math-inline')) {
+                container.querySelectorAll('.math-expand-button').forEach(el => el.remove());
+                container.querySelectorAll('.math-expandable').forEach(el => el.replaceWith(...el.childNodes));
                 container.querySelectorAll('.katex').forEach(katexEl => {
                     const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
                     let formula;
@@ -178,6 +181,30 @@ class App {
             LoadNotesModalService.show(this);
         });
 
+        const lastNoteButton = document.getElementById('menu-item-last-note');
+        const refreshLastNoteButton = () => {
+            if (lastNoteButton) {
+                const lastId = NoteLocation.lastOpenedId();
+                lastNoteButton.disabled = !lastId || lastId === String(AppState.currentNote.id);
+            }
+        };
+        document.getElementById('btn-main-menu')?.addEventListener('click', refreshLastNoteButton);
+        refreshLastNoteButton();
+        lastNoteButton?.addEventListener('click', async () => {
+            DropdownController.closeAll();
+            const lastId = NoteLocation.lastOpenedId();
+            if (!lastId || lastId === String(AppState.currentNote.id)) return;
+            try {
+                await NoteStorageService.openNote(lastId);
+            } catch (error) {
+                if (error.status === 404 && NoteLocation.lastOpenedId() === lastId) {
+                    NoteLocation.forgetLastOpened();
+                    refreshLastNoteButton();
+                }
+                showToast(t('note_load_failed'), 'error');
+            }
+        });
+
         const startNewConspect = async () => {
             DropdownController.closeAll();
             if (AppState.isDirty) {
@@ -196,12 +223,6 @@ class App {
         };
         document.getElementById('menu-item-new-note')?.addEventListener('click', startNewConspect);
         document.getElementById('btn-new-conspect')?.addEventListener('click', startNewConspect);
-
-        document.getElementById('menu-item-back-note')?.addEventListener('click', async () => {
-            DropdownController.closeAll();
-            try { await NavHistoryManager.goBack(); }
-            catch { showToast(t('note_load_failed'), 'error'); }
-        });
 
         document.getElementById('menu-item-trash')?.addEventListener('click', async () => {
             DropdownController.closeAll();
@@ -224,6 +245,7 @@ class App {
                     if (AppState.currentNote.id !== noteId) return;
                     await NotesAPI.deleteNote(noteId);
                     if (AppState.currentNote.id === noteId) {
+                        if (NoteLocation.lastOpenedId() === String(noteId)) NoteLocation.forgetLastOpened();
                         await NoteStorageService.createNewNote({preserveChanges: false});
                     }
                 } catch (error) {
@@ -292,8 +314,13 @@ class App {
         const toggleTwoColumn = document.getElementById('toggle-two-column');
         const toggleKeepTitles = document.getElementById('toggle-keep-titles');
         const toggleHideLeft = document.getElementById('toggle-hide-left');
-        const toggleShowHints = document.getElementById('toggle-show-hints');
+        const collapsedLeftNotice = document.getElementById('left-column-collapsed-notice');
         const cont = document.getElementById('blocks-container');
+        const setLeftColumnCollapsed = (collapsed) => {
+            toggleHideLeft.checked = collapsed;
+            cont.classList.toggle('hide-left-column', collapsed);
+            collapsedLeftNotice.hidden = !collapsed;
+        };
         // Главный переключатель режимов и «По шагам» — в ModeManager.
 
         if (toggleDialectics) {
@@ -308,8 +335,7 @@ class App {
             toggleTwoColumn.addEventListener('change', (e) => {
                 cont.classList.toggle('single-column-mode', !e.target.checked);
                 if (!e.target.checked && toggleHideLeft) {
-                    toggleHideLeft.checked = false;
-                    cont.classList.remove('hide-left-column');
+                    setLeftColumnCollapsed(false);
                 }
             });
         }
@@ -322,7 +348,7 @@ class App {
 
         if (toggleHideLeft) {
             toggleHideLeft.addEventListener('change', (e) => {
-                cont.classList.toggle('hide-left-column', e.target.checked);
+                setLeftColumnCollapsed(e.target.checked);
                 if (e.target.checked && toggleTwoColumn) {
                     toggleTwoColumn.checked = true;
                     cont.classList.remove('single-column-mode');
@@ -330,13 +356,7 @@ class App {
             });
         }
 
-        if (toggleShowHints) {
-            toggleShowHints.addEventListener('change', (e) => {
-                cont.classList.toggle('show-hints', e.target.checked);
-                AppState.toggleShowHiddenHints = e.target.checked;
-                BlockDOMRenderer.renderAll();
-            });
-        }
+        document.getElementById('btn-restore-left')?.addEventListener('click', () => setLeftColumnCollapsed(false));
 
         // --- 5. Internal Links Handler ---
         document.addEventListener('mouseover', (e) => {
@@ -532,9 +552,6 @@ class App {
             document.getElementById('gen-degraded-banner')?.remove();
             const titleInput = document.getElementById('note-title');
             if (titleInput) titleInput.value = AppState.currentNote.title || '';
-            if (AppState.currentNote.id) {
-                NavHistoryManager.push(AppState.currentNote.id);
-            }
             BlockDOMRenderer.renderAll();
             NoteController.updateProgress();
             this.updateSaveStatusUI();
@@ -547,7 +564,6 @@ class App {
             this.updateSaveStatusUI();
         });
         document.addEventListener('noteSaved', () => {
-            if (AppState.currentNote.id) NavHistoryManager.push(AppState.currentNote.id);
             this.updateSaveStatusUI();
             this.updateSaveTime();
         });
@@ -604,7 +620,7 @@ class App {
             role,
             title,
             html: '',
-            status: 'none',
+            status: 'in_progress',
             is_pinned: false
         };
         AppState.addBlock(block, index);
@@ -632,7 +648,8 @@ class App {
                 } catch (e) {
                     // A transient load failure must not silently become a new note.
                     if (e.status !== 404) throw e;
-                    NoteLocation.clear();
+                    if (NoteLocation.lastOpenedId() === String(requestedId)) NoteLocation.forgetLastOpened();
+                    NoteLocation.clearURL();
                 }
             }
             AppState.setNote({ id: null, title: '', blocks: [] });

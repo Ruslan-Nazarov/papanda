@@ -32,12 +32,10 @@ class BlockDOMRenderer {
         });
 
         const dismissedHints = AppState.dismissedHints || [];
-        const showHidden = AppState.toggleShowHiddenHints;
 
         for (const step of ALGORITHM_STEPS) {
             if (!existingRoles.has(step.role)) {
-                const isDismissed = dismissedHints.includes(step.role);
-                if (isDismissed && !showHidden) {
+                if (dismissedHints.includes(step.role)) {
                     continue;
                 }
                 return step;

@@ -44,7 +44,22 @@ class DictModalService {
                         <input class="dict-search" type="search" placeholder="${t('dict_search')}" aria-label="${t('dict_search')}">
                         <button class="dict-add action-btn" type="button">${t('dict_add_btn')}</button>
                     </div>
+                    <div class="dict-view-switch" role="group" aria-label="${t('dict_view_label')}">
+                        <button class="dict-view-list is-active" type="button" aria-pressed="true">${t('dict_view_list')}</button>
+                        <button class="dict-view-graph" type="button" aria-pressed="false">${t('dict_view_graph')}</button>
+                    </div>
                     <div class="dict-list"></div>
+                    <div class="dict-graph" hidden>
+                        <div class="dict-graph-heading">
+                            <div><strong>${t('dict_graph_title')}</strong><p>${t('dict_graph_hint')}</p></div>
+                            <span class="dict-graph-count"></span>
+                        </div>
+                        <div class="dict-graph-scroll"><div class="dict-graph-canvas"></div></div>
+                        <div class="dict-graph-overflow" hidden></div>
+                        <div class="dict-graph-detail"></div>
+                        <div class="dict-graph-index-heading">${t('dict_graph_all')}</div>
+                        <div class="dict-graph-index"></div>
+                    </div>
                 </div>
                 <div class="dict-editor" hidden>
                     <h3 class="dict-editor-title"></h3>
@@ -72,6 +87,14 @@ class DictModalService {
         const view = dialog.querySelector('.dict-view');
         const editor = dialog.querySelector('.dict-editor');
         const list = dialog.querySelector('.dict-list');
+        const graph = dialog.querySelector('.dict-graph');
+        const graphScroll = dialog.querySelector('.dict-graph-scroll');
+        const graphCanvas = dialog.querySelector('.dict-graph-canvas');
+        const graphDetail = dialog.querySelector('.dict-graph-detail');
+        const graphIndex = dialog.querySelector('.dict-graph-index');
+        const graphOverflow = dialog.querySelector('.dict-graph-overflow');
+        const listSwitch = dialog.querySelector('.dict-view-list');
+        const graphSwitch = dialog.querySelector('.dict-view-graph');
         const search = dialog.querySelector('.dict-search');
         const wordInput = dialog.querySelector('.dict-word');
         const definitionInput = dialog.querySelector('.dict-definition');
@@ -84,6 +107,8 @@ class DictModalService {
         let editingIndex = null;
         let suggestions = [];
         let activeSuggestion = -1;
+        let graphActive = false;
+        let selectedGraphIndex = 0;
         const explanationDrafts = new Map();
         const splitConnections = value => String(value || '').split(/[,;\n]/).map(part => part.trim()).filter(Boolean);
         const normalize = value => value.trim().toLocaleLowerCase();
@@ -228,6 +253,7 @@ class DictModalService {
             footer.hidden = false;
             editingIndex = null;
             renderList();
+            if (graphActive) renderGraph();
             search.focus();
         };
         const showEditor = (index = null) => {
@@ -322,6 +348,170 @@ class DictModalService {
                 list.appendChild(empty);
             }
         };
+        const graphMatches = (entry, query) => [entry.word, entry.definition, entry.connections,
+            ...Object.values(entry.connection_explanations || {})].some(value =>
+            String(value || '').toLocaleLowerCase().includes(query));
+        const renderGraph = () => {
+            if (!graphActive) return;
+            const words = AppState.currentNote?.dictionary || [];
+            const query = search.value.trim().toLocaleLowerCase();
+            if (selectedGraphIndex >= words.length) selectedGraphIndex = Math.max(0, words.length - 1);
+            const selected = words[selectedGraphIndex];
+            graphCanvas.replaceChildren();
+            graphDetail.replaceChildren();
+            graphIndex.replaceChildren();
+            graphOverflow.hidden = true;
+            dialog.querySelector('.dict-graph-count').textContent = `${t('dict_graph_count')}: ${words.length}`;
+            if (!selected) {
+                const empty = document.createElement('p');
+                empty.className = 'dict-graph-empty';
+                empty.textContent = t('dict_empty');
+                graphCanvas.appendChild(empty);
+                return;
+            }
+
+            // Resolve aliases just as the list view does, and include links pointing to the focus.
+            const related = new Map();
+            const addRelated = (index, name) => {
+                if (index === selectedGraphIndex) return;
+                const key = index === null ? `missing:${normalize(name)}` : `entry:${index}`;
+                if (!related.has(key)) related.set(key, {index, name: index === null ? name : words[index].word});
+            };
+            splitConnections(selected.connections).forEach(name => {
+                const target = findEntry(words, name);
+                addRelated(target ? words.indexOf(target) : null, name);
+            });
+            words.forEach((entry, index) => {
+                if (index !== selectedGraphIndex && splitConnections(entry.connections).some(name =>
+                    findEntry([selected], name) === selected)) addRelated(index, entry.word);
+            });
+            const neighbors = [...related.values()];
+            const visible = neighbors.slice(0, 8);
+            const positions = visible.map((_, index) => {
+                if (visible.length === 1) return {x: 80, y: 50};
+                const angle = -Math.PI / 2 + index * 2 * Math.PI / visible.length;
+                return {x: 50 + 33 * Math.cos(angle), y: 50 + 32 * Math.sin(angle)};
+            });
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.setAttribute('preserveAspectRatio', 'none');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.classList.add('dict-graph-lines');
+            positions.forEach(({x, y}) => {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                for (const [key, value] of Object.entries({x1: 50, y1: 50, x2: x, y2: y})) line.setAttribute(key, value);
+                svg.appendChild(line);
+            });
+            graphCanvas.appendChild(svg);
+            const makeNode = (name, x, y, className, onClick) => {
+                const node = document.createElement(onClick ? 'button' : 'span');
+                if (onClick) {
+                    node.type = 'button';
+                    node.addEventListener('click', onClick);
+                }
+                node.className = `dict-graph-node ${className}`;
+                node.style.left = `${x}%`;
+                node.style.top = `${y}%`;
+                node.textContent = name;
+                node.title = className === 'is-missing' ? `${name} — ${t('dict_graph_missing')}` : name;
+                graphCanvas.appendChild(node);
+            };
+            visible.forEach((neighbor, index) => {
+                const {x, y} = positions[index];
+                makeNode(neighbor.name, x, y, neighbor.index === null ? 'is-missing' : '',
+                    neighbor.index === null ? null : () => {
+                        selectedGraphIndex = neighbor.index;
+                        renderGraph();
+                        graphCanvas.querySelector('.dict-graph-node.is-selected')?.focus({preventScroll: true});
+                    });
+            });
+            makeNode(selected.word, 50, 50, 'is-selected', () => graphDetail.querySelector('.dict-graph-edit')?.focus());
+            if (neighbors.length > visible.length) {
+                graphOverflow.textContent = `${t('dict_graph_more')} ${neighbors.length - visible.length}`;
+                graphOverflow.hidden = false;
+            }
+
+            const detailTitle = document.createElement('strong');
+            detailTitle.textContent = selected.word;
+            const edit = document.createElement('button');
+            edit.type = 'button';
+            edit.className = 'dict-edit dict-graph-edit';
+            edit.textContent = t('tt_edit');
+            edit.addEventListener('click', () => showEditor(selectedGraphIndex));
+            const detailHeader = document.createElement('div');
+            detailHeader.className = 'dict-graph-detail-header';
+            detailHeader.append(detailTitle, edit);
+            const definition = document.createElement('p');
+            definition.textContent = selected.definition || '';
+            graphDetail.append(detailHeader, definition);
+            if (neighbors.length) {
+                const relationList = document.createElement('div');
+                relationList.className = 'dict-graph-relations';
+                neighbors.forEach(neighbor => {
+                    const row = document.createElement('div');
+                    const name = neighbor.index === null ? document.createElement('span') : document.createElement('button');
+                    if (neighbor.index !== null) {
+                        name.type = 'button';
+                        name.addEventListener('click', () => {
+                            selectedGraphIndex = neighbor.index;
+                            renderGraph();
+                            graphCanvas.querySelector('.dict-graph-node.is-selected')?.focus({preventScroll: true});
+                        });
+                    }
+                    name.textContent = neighbor.name;
+                    if (neighbor.index === null) name.title = t('dict_graph_missing');
+                    row.appendChild(name);
+                    const counterpart = neighbor.index === null ? null : words[neighbor.index];
+                    const explanation = explanationFor(selected, neighbor.name)
+                        || (counterpart ? explanationFor(counterpart, selected.word) : '');
+                    if (explanation) {
+                        const caption = document.createElement('span');
+                        caption.textContent = explanation;
+                        row.appendChild(caption);
+                    }
+                    relationList.appendChild(row);
+                });
+                graphDetail.appendChild(relationList);
+            } else {
+                const noLinks = document.createElement('small');
+                noLinks.textContent = t('dict_graph_no_links');
+                graphDetail.appendChild(noLinks);
+            }
+            const matches = words.map((entry, index) => ({entry, index}))
+                .filter(({entry}) => graphMatches(entry, query));
+            if (!matches.length) {
+                const empty = document.createElement('p');
+                empty.className = 'dict-empty';
+                empty.textContent = t('dict_no_results');
+                graphIndex.appendChild(empty);
+            }
+            matches.forEach(({entry, index}) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'dict-graph-index-item';
+                button.setAttribute('aria-pressed', String(index === selectedGraphIndex));
+                button.textContent = entry.word;
+                button.addEventListener('click', () => {
+                    selectedGraphIndex = index;
+                    renderGraph();
+                    graphIndex.querySelector('[aria-pressed="true"]')?.focus({preventScroll: true});
+                });
+                graphIndex.appendChild(button);
+            });
+            graphScroll.scrollLeft = Math.max(0, (graphScroll.scrollWidth - graphScroll.clientWidth) / 2);
+        };
+        const setGraphActive = active => {
+            graphActive = active;
+            list.hidden = active;
+            graph.hidden = !active;
+            dialog.classList.toggle('dict-modal-graph', active);
+            listSwitch.classList.toggle('is-active', !active);
+            graphSwitch.classList.toggle('is-active', active);
+            listSwitch.setAttribute('aria-pressed', String(!active));
+            graphSwitch.setAttribute('aria-pressed', String(active));
+            if (active) renderGraph();
+            else renderList();
+        };
         const onKeydown = event => {
             if (event.key !== 'Escape') return;
             if (!connectionOptions.hidden) { event.preventDefault(); hideSuggestions(); return; }
@@ -334,7 +524,16 @@ class DictModalService {
         dialog.querySelector('.dict-done').addEventListener('click', close);
         dialog.querySelector('.dict-add').addEventListener('click', () => showEditor());
         dialog.querySelector('.dict-cancel').addEventListener('click', showView);
-        search.addEventListener('input', renderList);
+        listSwitch.addEventListener('click', () => setGraphActive(false));
+        graphSwitch.addEventListener('click', () => setGraphActive(true));
+        search.addEventListener('input', () => {
+            if (graphActive) {
+                const query = search.value.trim().toLocaleLowerCase();
+                const first = (AppState.currentNote?.dictionary || []).findIndex(entry => graphMatches(entry, query));
+                if (query && first >= 0) selectedGraphIndex = first;
+                renderGraph();
+            } else renderList();
+        });
         connectionsInput.addEventListener('input', () => { renderSuggestions(); renderExplanationFields(); });
         connectionsInput.addEventListener('click', renderSuggestions);
         connectionsInput.addEventListener('keydown', event => {
@@ -366,6 +565,7 @@ class DictModalService {
                 connection_explanations: explanations};
             if (editingIndex === null) words.push(entry);
             else words[editingIndex] = entry;
+            selectedGraphIndex = editingIndex === null ? words.length - 1 : editingIndex;
             // Keep each resolved relationship and its explanation identical at both ends.
             const oldTargets = new Set(splitConnections(previous?.connections).map(name => findEntry(words, name)).filter(Boolean));
             const newTargets = new Set(splitConnections(entry.connections).map(name => findEntry(words, name)).filter(target => target && target !== entry));

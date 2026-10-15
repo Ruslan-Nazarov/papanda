@@ -1,0 +1,63 @@
+@import "./formula-zoom.css";
+
+.katex [data-math-symbol], .katex [data-math-value] {
+    cursor: help;
+    border-radius: 3px;
+}
+.katex [data-math-symbol]:hover:not(:has([data-math-symbol]:hover)), .katex [data-math-symbol]:focus-visible {
+    background: #ede9fe;
+    outline: 1px solid #c4b5fd;
+    outline-offset: 2px;
+}
+.katex [data-math-value]:hover, .katex [data-math-value]:focus-visible {
+    background: #ede9fe;
+    outline: 1px solid #c4b5fd;
+    outline-offset: 2px;
+}
+.math-symbol-original { margin-top: 8px; }
+.math-symbol-original > small { margin-bottom: 4px; }
+.math-symbol-tooltip-heading > span { min-width: 0; overflow-x: auto; padding: 3px 0; }
+.math-symbol-tooltip {
+    position: fixed;
+    z-index: 12000;
+    width: max-content;
+    max-width: min(350px, calc(100vw - 16px));
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    padding: 14px 16px;
+    border: 1px solid #ddd6fe;
+    border-radius: 10px;
+    background: #fff;
+    color: #1e293b;
+    box-shadow: 0 8px 28px #1e1b4b26;
+    font: 14px/1.5 Inter, sans-serif;
+    overflow-wrap: anywhere;
+}
+.math-symbol-tooltip-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.math-symbol-tooltip-heading > button { border: 0; background: transparent; color: #64748b; font-size: 22px; cursor: pointer; }
+.math-symbol-definition { margin: 10px 0; white-space: pre-wrap; }
+.math-symbol-definition .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.math-symbol-tooltip small { display: block; color: #64748b; }
+.math-symbol-values { margin-top: 12px; border-top: 1px solid #ede9fe; padding-top: 12px; }
+.math-symbol-values > strong { font-size: 13px; font-weight: 600; }
+.math-symbol-values ol { list-style: none; margin: 0; padding: 0; }
+.math-symbol-values li { margin-top: 12px; }
+.math-symbol-values li + li { padding-top: 10px; border-top: 1px solid #f1f5f9; }
+.math-symbol-value-formula { max-width: 100%; overflow-x: auto; padding: 3px 0 6px; }
+.math-symbol-values small { font-size: 12px; overflow-wrap: anywhere; }
+.math-symbol-edit { display: block; margin-top: 10px; border: 0; padding: 4px 0; background: transparent; color: #6d28d9; cursor: pointer; }
+.formula-definitions { border: 1px solid #ddd6fe; border-radius: 10px; padding: 12px; margin: 12px 0; }
+.formula-definitions summary { color: #5b21b6; font-weight: 500; cursor: pointer; }
+.formula-definition-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.formula-definition-chips button { background: #fff; border: 1px solid #e2e8f0; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+.formula-definition-chips button[aria-pressed="true"] { background: #f5f3ff; border-color: #8b5cf6; }
+.formula-definition-fields label { display: block; font-size: 13px; margin-top: 12px; color: #475569; }
+.formula-definition-text, .formula-definition-scope { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; background: #fff; color: #1e293b; }
+.formula-definition-text { resize: vertical; min-height: 80px; }
+.formula-definition-origin, .formula-definition-empty { font-size: 12px; line-height: 1.5; color: #64748b; margin: 10px 0; }
+.formula-definition-delete { background: transparent; border: 0; padding: 4px 0; color: #b91c1c; cursor: pointer; font-size: 12px; }
+.formula-modal-backdrop [hidden] { display: none !important; }
+@media (pointer: coarse) {
+    .math-symbol-tooltip button, .formula-definition-chips button, .formula-definition-delete { min-height: 44px; }
+    .formula-definition-text, .formula-definition-scope { font-size: 16px; }
+}

@@ -151,6 +151,18 @@ class DialogService {
                                     const button = addTarget(`internal://note/${note.id}/block/${block.id}`, block.title,
                                         `${note.title || t('untitled')} → ${label}`, label);
                                     button.classList.add('internal-links-block');
+                                    if (context.noteId != null && context.blockId != null
+                                        && String(note.id) === String(context.noteId)
+                                        && String(block.id) === String(context.blockId)) {
+                                        button.classList.add('is-current');
+                                        button.setAttribute('aria-current', 'location');
+                                        const dot = document.createElement('span');
+                                        dot.className = 'internal-links-current-dot';
+                                        dot.title = t('picker_you_are_here');
+                                        dot.setAttribute('role', 'img');
+                                        dot.setAttribute('aria-label', t('picker_you_are_here'));
+                                        button.appendChild(dot);
+                                    }
                                     button.dataset.search = `${note.title || t('untitled')} ${label}`.toLocaleLowerCase();
                                     blocksArea.appendChild(button);
                                 });

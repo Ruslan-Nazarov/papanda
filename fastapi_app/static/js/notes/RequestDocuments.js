@@ -91,7 +91,7 @@ class RequestDocuments {
                 const step = ALGORITHM_STEPS.find(item => item.role === 'anchor');
                 const id = crypto.randomUUID();
                 AppState.addBlock({id, role: 'anchor', side: 'left', title: step?.title || '',
-                    html: '', status: 'none', request_document: result});
+                    html: '', status: 'in_progress', request_document: result});
                 anchor = AppState.getBlock(id);
                 this.renderCanvas();
             } else {
