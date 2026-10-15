@@ -74,9 +74,11 @@ export class DropdownController {
         window.addEventListener('resize', () => {
             if (!panel.classList.contains('hidden')) position();
         });
-        new ResizeObserver(() => {
+        const observer = new ResizeObserver(() => {
             if (!panel.classList.contains('hidden')) position();
-        }).observe(button.closest('.note-sub-bar'));
+        });
+        observer.observe(button.closest('.note-sub-bar'));
+        observer.observe(button);
         window.addEventListener('scroll', close, {passive: true});
         document.addEventListener('noteOpened', close);
         new MutationObserver(() => {

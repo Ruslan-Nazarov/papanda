@@ -88,8 +88,8 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
             assert.equal(await page.evaluate(() => document.activeElement.matches('#softmax .math-expand-button')), true);
             assert.equal(await page.$eval('#softmax .math-inline', el => el.getAttribute('formula')), String.raw`p_i=\frac{e^{z_i}}{\sum_{j=0}^{5}e^{z_j}}`);
         });
-        await t.test('symbol definitions retain their separate interaction', async () => {
-            await page.hover('#softmax [aria-label="p_{i}"] .mathnormal');
+        await t.test('keyboard focus opens symbol definitions without expanding the formula', async () => {
+            await page.focus('#softmax [aria-label="p_{i}"]');
             await page.waitForSelector('.math-symbol-tooltip');
             assert.equal(await page.$eval('.math-symbol-definition', el => el.textContent), 'Вероятность');
             assert.equal(await page.$('.formula-zoom-dialog'), null);
@@ -106,7 +106,7 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
                     scrolls: viewport.scrollWidth > viewport.clientWidth, pageFits: document.documentElement.scrollWidth <= innerWidth};
             });
             assert.deepEqual(layout, {fits: true, scrolls: true, pageFits: true});
-            assert.equal(await page.$eval('.formula-zoom-hint', el => el.hidden), false);
+            await page.waitForFunction(() => !document.querySelector('.formula-zoom-hint').hidden);
             await page.screenshot({path: path.join(root, 'tmp/formula-zoom-mobile.png')});
             await page.mouse.click(3, 3);
             await page.waitForSelector('.formula-zoom-dialog', {hidden: true});
