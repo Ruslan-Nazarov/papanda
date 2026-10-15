@@ -276,7 +276,11 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
                     const anchor = document.querySelector('#btn-statistics').getBoundingClientRect();
                     return rect.left >= 12 && rect.right <= innerWidth - 12 && rect.bottom <= innerHeight - 12
                         && Math.abs(rect.top - anchor.bottom - 8) < 1;
-                }), 'Statistics must stay within the viewport');
+                }), 'Statistics must stay within the viewport: ' + JSON.stringify(await page.$eval('#statistics-panel', el => ({
+                    panel: el.getBoundingClientRect().toJSON(),
+                    anchor: document.querySelector('#btn-statistics').getBoundingClientRect().toJSON(),
+                    viewport: {width: innerWidth, height: innerHeight},
+                }))));
                 assert.equal(await page.$eval('#statistics-total', el => el.textContent), '1');
                 assert.equal(await page.$eval('#statistics-words', el => el.textContent), '4');
                 assert.equal(await page.$eval('[data-author-stat="unset"] small', el => el.textContent), '100%');
