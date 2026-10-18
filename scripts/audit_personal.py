@@ -3,6 +3,7 @@ import argparse
 import io
 import json
 import marshal
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -20,6 +21,21 @@ TOKEN_PATTERNS = (
 )
 PRIVATE_NAMES = {'.env', 'settings.env', '.git', '.ssh', '.claude',
                  'backups', 'library_notes.json', 'example_notes.json'}
+
+
+def local_markers(root, home=None, environ=None):
+    home = Path.home() if home is None else Path(home)
+    environ = os.environ if environ is None else environ
+    markers = [str(root), root.as_posix()]
+    hosted_account = (environ.get('GITHUB_ACTIONS') == 'true'
+                      and environ.get('RUNNER_ENVIRONMENT') == 'github-hosted'
+                      and home.name.lower() in {'runneradmin', 'runner'})
+    # Upstream Windows wheels can contain their own GitHub-hosted build paths.
+    # A hosted runner's generic account is not the author's private identity.
+    # Always retain the project path; retain all home markers for local/self-hosted builds.
+    if not hosted_account:
+        markers.extend((str(home), home.name))
+    return tuple(markers)
 
 
 class Audit:
@@ -63,7 +79,7 @@ def main():
     values = dotenv_values(root / '.env', interpolate=False)
     secrets = {key: value for key, value in values.items()
                if value and len(value) >= 12 and any(word in key for word in ('KEY', 'TOKEN', 'PASSWORD'))}
-    audit = Audit(secrets, (str(root), root.as_posix(), str(Path.home()), Path.home().name))
+    audit = Audit(secrets, local_markers(root))
     if args.staged:
         names = subprocess.check_output(['git', 'diff', '--cached', '--name-only', '-z',
                                           '--diff-filter=ACMR'], cwd=root).decode('utf-8').split('\0')
