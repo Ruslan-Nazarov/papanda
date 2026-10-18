@@ -26,6 +26,9 @@ class TrustedSchemeMiddleware:
 
 class AccessBoundaryMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        if settings.APP_EDITION == 'personal' and (
+                request.url.path.startswith(('/api/author/', '/author/', '/api/library', '/library'))):
+            return JSONResponse({'detail': 'Not found'}, 404)
         if not settings.DEMO_MODE:
             try:
                 local = ipaddress.ip_address(request.client.host).is_loopback
@@ -151,6 +154,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none'"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if settings.APP_EDITION == 'personal':
+            response.headers['Content-Security-Policy'] = (
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+                "font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; "
+                "frame-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; "
+                "base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
         if request.url.path.startswith(('/s/', '/v/', '/api/dialectics/shared/', '/api/dialectics/shared-material/')):
             response.headers["Cache-Control"] = "no-store"
             response.headers["Referrer-Policy"] = "no-referrer"

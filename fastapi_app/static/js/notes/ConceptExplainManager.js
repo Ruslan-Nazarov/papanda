@@ -1,7 +1,8 @@
+import PasteMathTransformer from './PasteMathTransformer.js';
+import BlockMathRenderer from './BlockMathRenderer.js';
+
 export function renderStreamMarkdown(container, fullText) {
-    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-        container.innerHTML = DOMPurify.sanitize(marked.parse(fullText));
-    } else {
-        container.textContent = fullText;
-    }
+    // Preserve TeX before Markdown consumes backslashes, underscores and tables.
+    container.innerHTML = PasteMathTransformer.transformTextToHTML(fullText);
+    BlockMathRenderer.renderMath(container);
 }

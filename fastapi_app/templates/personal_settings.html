@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}{{ w.settings }} — Papanda Personal{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/personal-settings.css">{% endblock %}
+{% block content %}
+<main class="personal-settings">
+    <a href="/">← {{ w.back }}</a>
+    <h1>{{ w.settings }}</h1>
+    <p>{{ w.local_data }}</p>
+    <p>{{ w.hint }}</p>
+    {% if saved %}<p class="personal-saved" role="status">{{ w.saved }}</p>{% endif %}
+    <form method="post" action="/personal/settings" autocomplete="off">
+        <label for="personal-provider">{{ w.provider }}</label>
+        <select name="provider" id="personal-provider">
+            {% for id, item in providers.items() %}<option value="{{ id }}" data-model="{{ item[3] }}" {% if id == provider %}selected{% endif %}>{{ item[0] }}</option>{% endfor %}
+        </select>
+        <label for="personal-model">{{ w.model }}</label>
+        <input id="personal-model" name="model" value="{{ model }}" maxlength="200" required>
+        <label for="personal-key">{{ w.key }}</label>
+        <input id="personal-key" name="api_key" type="password" maxlength="4096" autocomplete="new-password" spellcheck="false" aria-describedby="key-status key-hint">
+        <p id="key-status">{{ w.stored if configured else w.missing }}</p>
+        <p id="key-hint">{{ w.key_hint }}</p>
+        <label class="personal-clear"><input name="clear" type="checkbox" value="true"> {{ w.clear }}</label>
+        <button type="submit">{{ w.save }}</button>
+    </form>
+</main>
+{% endblock %}
+{% block scripts %}<script src="/static/js/personal-settings.js"></script>{% endblock %}

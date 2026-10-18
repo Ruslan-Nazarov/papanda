@@ -41,6 +41,7 @@ def any_llm_key_configured() -> bool:
         settings.GROQ_API_KEY, settings.GOOGLE_API_KEY, settings.OPENROUTER_API_KEY,
         settings.CEREBRAS_API_KEY,
         settings.GIGACHAT_AUTH_KEY,
+        settings.OPENAI_API_KEY if settings.APP_EDITION == 'personal' else '',
     )
     return any(k and k not in _PLACEHOLDER_KEYS for k in keys)
 
@@ -147,6 +148,21 @@ class BaseLLMProvider(ABC):
                     yield delta
         if not finished:
             raise GenerationError('incomplete_stream', 'Provider stream ended before completion')
+
+
+class PersonalOpenAIProvider(BaseLLMProvider):
+    def __init__(self):
+        super().__init__(api_key=settings.OPENAI_API_KEY,
+                         base_url='https://api.openai.com/v1',
+                         model_name=settings.DIALECTIC_OPENAI_MODEL, name='OpenAI')
+
+    def _build_kwargs(self, *args, **kwargs):
+        options = super()._build_kwargs(*args, **kwargs)
+        if options['model'].startswith(('gpt-5', 'o1', 'o3', 'o4')):
+            options.pop('temperature', None)
+            if 'max_tokens' in options:
+                options['max_completion_tokens'] = options.pop('max_tokens')
+        return options
 
 
 class GroqProvider(BaseLLMProvider):
@@ -295,6 +311,8 @@ class LLMRegistry:
     def __init__(self):
         self.providers = [GroqProvider(), CerebrasProvider(), GeminiProvider(),
                           GroqAltProvider(), OpenRouterProvider(), GigaChatProvider()]
+        if settings.APP_EDITION == 'personal':
+            self.providers.append(PersonalOpenAIProvider())
         self._start_idx = 0
 
     def _order(self, prefer=None, fast=False):

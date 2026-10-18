@@ -26,7 +26,7 @@ class DialogService {
                     <div class="internal-links-selected" aria-live="polite"></div>
                     <div class="internal-links-error" role="status"></div>
                     <div class="internal-links-actions">
-                        ${context.isEditing ? `<button type="button" class="internal-links-delete">${t('tt_delete')}</button>` : ''}
+                        ${context.isEditing ? `<button type="button" class="internal-links-delete" title="${t('ed_unlink_hint')}">${t('ed_unlink')}</button>` : ''}
                         <button type="button" class="internal-links-cancel">${t('cancel')}</button>
                         <button type="button" class="internal-links-confirm" disabled>${t('insert_word')}</button>
                     </div>

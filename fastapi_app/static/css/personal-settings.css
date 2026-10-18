@@ -1,0 +1,8 @@
+.personal-settings { max-width: 660px; margin: 48px auto; padding: 28px; color: #1e293b; }
+.personal-settings h1 { font-size: 28px; margin: 24px 0; }
+.personal-settings p { line-height: 1.6; }
+.personal-settings form { display: grid; gap: 12px; margin-top: 28px; }
+.personal-settings input:not([type="checkbox"]), .personal-settings select { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; background: white; }
+.personal-settings button { padding: 12px; border: 0; border-radius: 8px; background: #2563eb; color: white; font: inherit; cursor: pointer; }
+.personal-settings .personal-clear { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+.personal-settings .personal-saved { padding: 16px; background: #ecfdf5; border-radius: 8px; }

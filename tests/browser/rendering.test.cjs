@@ -25,6 +25,9 @@ test('isolated renderer security regressions', async t => {
         await page.addScriptTag({content: source('BlockCodeRenderer')});
         await page.addScriptTag({content: source('BlockStickersManager')});
         await page.addScriptTag({content: source('HiddenPhraseTooltip')});
+        await page.addScriptTag({content: source('BlockHistoryControls')});
+        await page.addScriptTag({content: source('BlockTableControls')});
+        await page.addScriptTag({content: source('NoteText')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
         await t.test('long right block can be read in the center and returned without changing note data', async () => {
             await page.addStyleTag({path: path.resolve(__dirname, '../../fastapi_app/static/css/blocks.css')});

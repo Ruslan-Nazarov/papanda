@@ -92,6 +92,19 @@ export class EditorTiptapSetup {
         return this.applyToText(editor, chain => chain.unsetAllMarks().clearNodes(), true);
     }
 
+    static selectionHasLink(editor) {
+        const {selection, doc, schema} = editor.state;
+        return editor.isActive('link') || (!selection.empty
+            && doc.rangeHasMark(selection.from, selection.to, schema.marks.link));
+    }
+
+    static removeLink(editor) {
+        if (!this.selectionHasLink(editor)) return false;
+        const chain = editor.chain().focus();
+        if (editor.state.selection.empty) chain.extendMarkRange('link');
+        return chain.unsetLink().run();
+    }
+
     static clearBlockHtml(html) {
         const container = document.createElement('div');
         const editor = this.createEditor(container, html, false);
@@ -187,7 +200,8 @@ export class EditorTiptapSetup {
                     strike: 'strike', 
                     code: 'code', 
                     quote: 'customQuote',
-                    math: 'mathCallout'
+                    math: 'mathCallout',
+                    link: 'link'
                 };
                 if (formatMap[format]) {
                     btn.classList.toggle('is-active', editor.isActive(formatMap[format]));
@@ -315,10 +329,12 @@ export class EditorTiptapSetup {
                         ? attrs.targets : attrs.href?.startsWith('internal://note/')
                             ? [{url: attrs.href, text: selectedText || attrs.href, label: selectedText || attrs.href}] : [];
 
-                    DialogService.selectInternalLinks({...linkContext, isEditing, existingLinks}).then(selection => {
+                    DialogService.selectInternalLinks({...linkContext,
+                        isEditing: this.selectionHasLink(currentEditor), existingLinks}).then(selection => {
                         if (selection === null || currentEditor.isDestroyed) return;
+                        currentEditor.commands.setTextSelection({from, to});
                         if (!selection.length) {
-                            currentEditor.chain().focus().extendMarkRange('link').unsetLink().run();
+                            this.removeLink(currentEditor);
                         } else {
                             const url = selection[0].url;
                             const targets = selection.length > 1 ? selection : null;

@@ -30,9 +30,11 @@ test('dictionary keeps both explanations through browser save and reload', {time
     let browser;
     try {
         let ready = false;
-        for (let i = 0; i < 120; i++) {
+        const deadline = Date.now() + 45_000;
+        while (Date.now() < deadline) {
             if (child.exitCode !== null) throw new Error(log);
-            if (await fetch(url + '/health').then(response => response.ok).catch(() => false)) {ready = true; break;}
+            if (await fetch(url + '/health', {signal: AbortSignal.timeout(2000)})
+                .then(response => response.ok).catch(() => false)) {ready = true; break;}
             await new Promise(resolve => setTimeout(resolve, 100));
         }
         assert(ready, 'Test server did not start: ' + log);
@@ -53,7 +55,7 @@ test('dictionary keeps both explanations through browser save and reload', {time
                 body: JSON.stringify({title: 'Проверка словаря', blocks: [
                     {id: 'manual-1', side: 'left', title: 'Измерение', html: '<p>Микроконтроллер получает результаты измерений.</p>'}
                 ], dictionary: [
-                    {word: 'Микроконтроллер', definition: '', connections: first,
+                    {word: 'Микроконтроллер', definition: String.raw`Результат вычислений — \(\tanh\).`, connections: first,
                         connection_explanations: {[first]: 'АЦП выполняет измерения'}},
                     {word: first, definition: '', connections: 'Микроконтроллер',
                         connection_explanations: {'Микроконтроллер': 'АЦП выполняет измерения'}},
@@ -65,6 +67,13 @@ test('dictionary keeps both explanations through browser save and reload', {time
         await page.goto(`${url}/?note=${noteId}`, {waitUntil: 'networkidle0'});
         await page.waitForSelector('.dialectics-block .btn-dict');
         await page.click('.dialectics-block .btn-dict');
+        assert.equal(await page.$$eval('.dict-entry p .katex', formulas => formulas.length), 1);
+        assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundColor), 'rgb(234, 88, 12)');
+        await page.hover('.dict-done');
+        assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundColor), 'rgb(194, 65, 12)');
+        await page.click('.dict-view-graph');
+        assert.equal(await page.$$eval('.dict-graph-detail p .katex', formulas => formulas.length), 1);
+        await page.click('.dict-view-list');
         await page.click('.dict-edit');
         assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
             ['АЦП выполняет измерения']);

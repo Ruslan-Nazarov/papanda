@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} — Papanda Personal{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/personal-settings.css">{% endblock %}
+{% block content %}
+<main class="personal-settings">
+    <a href="/">← {{ w.back }}</a>
+    <h1>{{ page_title }}</h1>
+    <p>{{ w.local_data }}</p>
+    <p>{{ w.privacy if page == 'privacy' else w.terms }}</p>
+    <p>{{ w.hint }}</p>
+    <p>Papanda Personal · <a href="https://creativecommons.org/licenses/by-nc/4.0/" rel="noreferrer">CC BY-NC 4.0</a></p>
+</main>
+{% endblock %}

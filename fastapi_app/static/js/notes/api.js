@@ -143,7 +143,7 @@ class NotesAPI {
         if (categoryId) url += `category_id=${encodeURIComponent(categoryId)}&`;
         return this.request(url); 
     }
-    static getNote(id) { return this.request(`/dialectics/${id}`).then(ApiContracts.noteResponse); }
+    static getNote(id, signal) { return this.request(`/dialectics/${id}`, 'GET', null, signal).then(ApiContracts.noteResponse); }
     static getActivity(id) { return this.request(`/dialectics/${id}/activity`); }
     static addActivity(id, data) { return this.request(`/dialectics/${id}/activity`, 'POST', data); }
     static createNote(data) { return this.request('/dialectics/save', 'POST', data).then(ApiContracts.noteResponse); }

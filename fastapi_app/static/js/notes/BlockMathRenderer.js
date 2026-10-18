@@ -38,7 +38,7 @@ class BlockMathRenderer {
                 ? firstLine.firstElementChild : null;
             if (firstLine.children.length && !markedText) return;
             try {
-                window.katex.render(formula, markedText || firstLine, { displayMode: true, throwOnError: false });
+                window.katex.render(formula, markedText || firstLine, { displayMode: true, throwOnError: false, trust: false });
             } catch (e) {
                 console.error('KaTeX error in math-callout:', e);
             }
@@ -47,88 +47,23 @@ class BlockMathRenderer {
         // 2. Render custom TipTap mathInline elements (.math-inline)
         element.querySelectorAll('.math-inline').forEach(el => {
             if (el.querySelector('.katex')) return;
-            const rawFormula = el.getAttribute('formula') || el.innerText.trim();
+            if (el.closest('pre, code')) return;
+            const rawFormula = el.getAttribute('formula') || el.textContent.trim();
             const formula = this.unescapeHtml(rawFormula);
             if (formula) {
                 try {
-                    window.katex.render(formula, el, { displayMode: false, throwOnError: false });
+                    const content = el.closest('.math-callout .math-content');
+                    const displayMode = el.dataset.mathDisplay === 'true' || !!content?.firstElementChild?.contains(el);
+                    window.katex.render(formula, el, { displayMode, throwOnError: false, trust: false });
                 } catch (e) {
                     console.error('KaTeX error in math-inline:', e);
                 }
             }
         });
 
-        // 3. Render paragraphs and block contents
-        const targets = element.querySelectorAll ? element.querySelectorAll('.block-content p, .block-content li, .block-content > div') : [element];
-        targets.forEach(target => {
-            if (target.closest('.math-callout, pre, code') || target.querySelector('.katex')) return;
-            let html = target.innerHTML;
-            if (!html || !html.trim()) return;
-
-            let changed = false;
-
-            // A. Display math ($$...$$ or \[...\])
-            html = html.replace(/(?:\$\$|\\\[)([\s\S]+?)(?:\$\$|\\\])/g, (match, formula) => {
-                changed = true;
-                const cleanFormula = this.unescapeHtml(formula).replace(/<br\s*[/]?>/gi, '\n').trim();
-                try {
-                    return window.katex.renderToString(cleanFormula, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
-            });
-
-            // A2. Bare [ … ] display math — markdown ate the backslash of \[ … \].
-            //     Only fires when the brackets clearly wrap a formula (contain = \ ^ _).
-            html = html.replace(/(^|>|<br\s*\/?>|\n)\s*\[\s*([^[\]<>\n]*[=\\^_][^[\]<>\n]*?)\s*\]\s*(?=$|<|\n)/g, (match, pre, formula) => {
-                changed = true;
-                const cleanFormula = this.unescapeHtml(formula).trim().replace(/\.\s*$/, '');
-                try {
-                    return pre + window.katex.renderToString(cleanFormula, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
-            });
-
-            // B. Standalone raw LaTeX environments: \begin{pmatrix}... \end{pmatrix}, etc.
-            html = html.replace(/((?:[A-Za-z0-9_{}^\\'\s]+\s*=\s*)?\\begin\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}[\s\S]+?\\end\{(?:pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}(?:\s*\\begin\{matrix\}[\s\S]+?\\end\{matrix\})?)/g, (match, formula) => {
-                changed = true;
-                const cleanFormula = this.unescapeHtml(formula).replace(/<br\s*[/]?>/gi, '\n').trim();
-                try {
-                    return window.katex.renderToString(cleanFormula, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
-            });
-
-            // C. Inline math ($...$ or \(...\))
-            html = html.replace(/(?:\$|\\\()([^$\n]+?)(?:\$|\\\))/g, (match, formula) => {
-                changed = true;
-                const cleanFormula = this.unescapeHtml(formula).trim();
-                try {
-                    return window.katex.renderToString(cleanFormula, { displayMode: false, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
-            });
-
-            // D. Standalone inline LaTeX Greek/math tokens (e.g. \alpha, \beta, \cdot, etc.) inside regular prose
-            html = html.replace(/(?<=\s|^|>|\()(\\(?:alpha|beta|gamma|delta|Delta|epsilon|theta|lambda|mu|pi|sigma|Sigma|phi|omega|Omega|cdot|times|approx|ne|le|ge|pm)[a-zA-Z0-9_^{}]*)(?=\s|$|<|[,.?!;)])/g, (match, token) => {
-                changed = true;
-                const cleanToken = this.unescapeHtml(token).trim();
-                try {
-                    return window.katex.renderToString(cleanToken, { displayMode: false, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
-            });
-
-            if (changed) {
-                target.innerHTML = html;
-            }
-        });
-
-        // 4. Auto-render standard delimiters using KaTeX auto-render if available
+        // Parse standard delimiters once in text nodes. Replacing innerHTML
+        // used to corrupt attributes, code and TeX annotations already rendered.
+        this.joinMathLines(element);
         if (typeof window.renderMathInElement === 'function') {
             try {
                 window.renderMathInElement(element, {
@@ -139,12 +74,15 @@ class BlockMathRenderer {
                         { left: '\\(', right: '\\)', display: false }
                     ],
                     throwOnError: false,
+                    trust: false,
                     ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"]
                 });
             } catch (e) {
                 console.warn('KaTeX renderMathInElement error:', e);
             }
         }
+
+        this.renderLegacyMath(element);
 
         // Older AI answers sometimes omit delimiters. Recover only explicit
         // algebraic equalities with powers; never interpret arbitrary prose as TeX.
@@ -169,7 +107,7 @@ class BlockMathRenderer {
                 const formula = match[0].replace(/·/g, '\\cdot ');
                 span.className = 'math-inline';
                 span.setAttribute('formula', formula);
-                window.katex.render(formula, span, {displayMode: false, throwOnError: false});
+                window.katex.render(formula, span, {displayMode: false, throwOnError: false, trust: false});
                 fragment.append(span);
                 offset = match.index + match[0].length;
             }
@@ -179,6 +117,64 @@ class BlockMathRenderer {
         MathSymbols.decorate(element);
         MathSubstitutions.decorate(element);
         FormulaZoom.decorate(element);
+    }
+
+    static joinMathLines(element) {
+        // Old saved paragraphs can have <br> inside display delimiters. KaTeX
+        // needs adjacent text nodes; preserve line breaks outside those formulas.
+        const parents = new Set([...element.querySelectorAll('br')].map(br => br.parentElement));
+        for (const parent of parents) {
+            if (parent.closest('pre, code, textarea, .katex, .math-inline')) continue;
+            const nodes = [...parent.childNodes];
+            if (nodes.some(node => node.nodeType !== 3 && node.nodeName !== 'BR')) continue;
+            const text = nodes.map(node => node.nodeName === 'BR' ? '\n' : node.textContent).join('');
+            const formulas = [...text.matchAll(/\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]/g)];
+            let offset = 0;
+            for (const node of nodes) {
+                if (node.nodeName === 'BR') {
+                    if (formulas.some(match => match.index < offset && offset < match.index + match[0].length)) {
+                        node.replaceWith(document.createTextNode('\n'));
+                    }
+                    offset++;
+                } else offset += node.textContent.length;
+            }
+            parent.normalize();
+        }
+    }
+
+    static renderLegacyMath(element) {
+        // Recover older content whose Markdown parser stripped delimiters.
+        // Each pass skips rendered math and never rewrites surrounding markup.
+        const rules = [
+            {pattern: /(?:[A-Za-z0-9_{}^\\'\s]+\s*=\s*)?\\begin\{(pmatrix|matrix|bmatrix|vmatrix|aligned|cases)\}[\s\S]+?\\end\{\1\}/g, display: true},
+            {pattern: /(?:^|\n)\s*\[\s*([^[\]<>\n]*[=\\^_][^[\]<>\n]*?)\s*\]\s*(?=$|\n)/g,
+                display: true, formula: match => match[1].trim().replace(/\.\s*$/, '')},
+            {pattern: /(?<=\s|^|\()(\\(?:alpha|beta|gamma|delta|Delta|epsilon|theta|lambda|mu|pi|sigma|Sigma|phi|omega|Omega|cdot|times|approx|ne|le|ge|pm)[a-zA-Z0-9_^{}]*)(?=\s|$|[,.?!;)])/g, display: false},
+        ];
+        for (const rule of rules) {
+            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+            const nodes = [];
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                if (!node.parentElement?.closest('code, pre, textarea, script, style, .katex, .math-inline, .math-callout')) nodes.push(node);
+            }
+            for (const node of nodes) {
+                const matches = [...node.textContent.matchAll(rule.pattern)];
+                if (!matches.length) continue;
+                const fragment = document.createDocumentFragment();
+                let offset = 0;
+                for (const match of matches) {
+                    fragment.append(document.createTextNode(node.textContent.slice(offset, match.index)));
+                    const span = document.createElement('span');
+                    window.katex.render(rule.formula ? rule.formula(match) : match[0].trim(), span,
+                        {displayMode: rule.display, throwOnError: false, trust: false});
+                    fragment.append(span);
+                    offset = match.index + match[0].length;
+                }
+                fragment.append(document.createTextNode(node.textContent.slice(offset)));
+                node.replaceWith(fragment);
+            }
+        }
     }
 }
 

@@ -70,10 +70,13 @@ class CheckoutDeploymentTests(unittest.TestCase):
                           'exit 0\n')
         python.chmod(0o755)
 
-    def deploy(self, **extra_env):
+    def deploy(self, bundle=None, bundle_checksum=None, **extra_env):
         env = {**os.environ, 'PATH': f'{self.fake_bin}{os.pathsep}{os.environ["PATH"]}',
                'PAPANDA_APP_DIR': str(self.app), 'COMMAND_LOG': str(self.log), **extra_env}
-        return subprocess.run(['bash', str(SCRIPT), self.revision, str(self.archive), self.checksum],
+        command = ['bash', str(SCRIPT), self.revision, str(self.archive), self.checksum]
+        if bundle:
+            command.extend([str(bundle), bundle_checksum])
+        return subprocess.run(command,
                               env=env, capture_output=True, text=True)
 
     def test_deploys_tested_commit_and_assets_preserving_settings_and_data(self):
@@ -95,6 +98,27 @@ class CheckoutDeploymentTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.git(self.app, 'rev-parse', 'HEAD'), self.old)
         self.assertEqual(self.log.read_text(), '')
+
+    def test_bundle_deploys_without_access_to_private_origin(self):
+        bundle = self.root / 'revision.bundle'
+        self.git(self.origin, 'bundle', 'create', str(bundle), 'HEAD')
+        self.git(self.app, 'remote', 'set-url', 'origin', str(self.root / 'unavailable-private-origin'))
+        result = self.deploy(bundle=bundle, bundle_checksum=hashlib.sha256(bundle.read_bytes()).hexdigest())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.git(self.app, 'rev-parse', 'HEAD'), self.revision)
+        self.assertEqual((self.app / '.env').read_text(), 'existing configuration')
+        self.assertEqual((self.app / 'data/note.db').read_bytes(), b'existing user data')
+
+    def test_bundle_mismatch_stops_before_checkout_or_restart(self):
+        bundle = self.root / 'revision.bundle'
+        self.git(self.origin, 'bundle', 'create', str(bundle), 'HEAD')
+        for checksum in ['0' * 64, hashlib.sha256(bundle.read_bytes()).hexdigest()]:
+            if checksum != '0' * 64:
+                self.revision = self.old  # valid bundle, wrong requested commit
+            result = self.deploy(bundle=bundle, bundle_checksum=checksum)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(self.git(self.app, 'rev-parse', 'HEAD'), self.old)
+            self.assertEqual(self.log.read_text(), '')
 
     def test_dependency_failure_does_not_restart_service(self):
         result = self.deploy(FAIL_INSTALL='1')

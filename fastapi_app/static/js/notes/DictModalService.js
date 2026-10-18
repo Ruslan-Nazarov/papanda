@@ -4,6 +4,20 @@ import { t } from '../i18n.js';
 class DictModalService {
     static activeClose = null;
 
+    static renderMath(element) {
+        // Entries are inserted as plain text; only delimited TeX is rendered.
+        window.renderMathInElement?.(element, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '$', right: '$', display: false},
+            ],
+            throwOnError: false,
+            trust: false,
+        });
+    }
+
     static updateBadges() {
         const count = AppState.currentNote?.dictionary?.length || 0;
         document.querySelectorAll('.dialectics-block .btn-dict').forEach(button => {
@@ -23,7 +37,7 @@ class DictModalService {
         });
     }
 
-    static show() {
+    static show(initialWord = '') {
         this.activeClose?.();
         const previousFocus = document.activeElement;
         const overlay = document.createElement('div');
@@ -79,7 +93,7 @@ class DictModalService {
                     </div>
                 </div>
             </div>
-            <div class="modal-dialog-footer"><button class="dict-done action-btn primary" type="button">${t('dict_done')}</button></div>
+            <div class="modal-dialog-footer"><button class="dict-done" type="button">${t('dict_done')}</button></div>
         `;
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
@@ -96,6 +110,7 @@ class DictModalService {
         const listSwitch = dialog.querySelector('.dict-view-list');
         const graphSwitch = dialog.querySelector('.dict-view-graph');
         const search = dialog.querySelector('.dict-search');
+        search.value = typeof initialWord === 'string' ? initialWord : '';
         const wordInput = dialog.querySelector('.dict-word');
         const definitionInput = dialog.querySelector('.dict-definition');
         const connectionsInput = dialog.querySelector('.dict-connections');
@@ -347,6 +362,7 @@ class DictModalService {
                 empty.textContent = t(words.length ? 'dict_no_results' : 'dict_empty');
                 list.appendChild(empty);
             }
+            this.renderMath(list);
         };
         const graphMatches = (entry, query) => [entry.word, entry.definition, entry.connections,
             ...Object.values(entry.connection_explanations || {})].some(value =>
@@ -498,6 +514,7 @@ class DictModalService {
                 });
                 graphIndex.appendChild(button);
             });
+            this.renderMath(graph);
             graphScroll.scrollLeft = Math.max(0, (graphScroll.scrollWidth - graphScroll.clientWidth) / 2);
         };
         const setGraphActive = active => {

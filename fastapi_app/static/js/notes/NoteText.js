@@ -1,5 +1,22 @@
 // The same text extraction binds engine snapshots and supplies model context.
 class NoteText {
+    static mathRanges(text) {
+        // Saved answers also contain multiline single-dollar math and bare TeX
+        // environments. Excerpts must never start or end inside either form.
+        return [...text.matchAll(/(?<!\\)(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^$]+?\$|\\begin\{(aligned|align\*?|equation\*?|[pbBvV]?matrix|cases|gathered)\}[\s\S]+?\\end\{\2\})/g)]
+            .map(match => ({start: match.index, end: match.index + match[0].length}));
+    }
+
+    static excerpt(text, offset = 0, limit = 1200, formulas = this.mathRanges(text)) {
+        let start = offset;
+        const atStart = formulas.find(item => item.start < start && start < item.end);
+        if (atStart) start = atStart.end - atStart.start <= limit ? atStart.start : atStart.end;
+        let end = Math.min(text.length, start + limit);
+        const atEnd = formulas.find(item => item.start < end && end < item.end);
+        if (atEnd) end = atEnd.start;
+        return text.slice(start, end).trim();
+    }
+
     static wordCount(html) {
         const template = document.createElement('template');
         template.innerHTML = html || '';
@@ -18,6 +35,13 @@ class NoteText {
             // Display controls are derived from data-hint, not additional content.
             if (node.nodeType === 1 && node.matches('.hp-arrow, .hp-content')) return '';
             if (node.nodeName === 'BR') return '\n';
+            if (node.nodeType === 1 && node.matches('.katex-display, .katex')) {
+                const formula = node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+                if (formula) {
+                    const delimiter = node.matches('.katex-display') ? '$$' : '$';
+                    return delimiter + formula + delimiter;
+                }
+            }
             if (node.nodeType === 1 && node.hasAttribute('formula')) {
                 const delimiter = node.closest('.math-callout') ? '$$' : '$';
                 return delimiter + node.getAttribute('formula') + delimiter;

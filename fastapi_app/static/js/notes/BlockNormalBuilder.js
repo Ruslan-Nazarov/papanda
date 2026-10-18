@@ -12,6 +12,9 @@ import BlockStickersManager from './BlockStickersManager.js';
 import DictModalService from './DictModalService.js';
 import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
 import EditorTextPosition from './EditorTextPosition.js';
+import BlockHistoryControls from './BlockHistoryControls.js';
+import BlockTableControls from './BlockTableControls.js';
+import NoteText from './NoteText.js';
 
 class BlockNormalBuilder {
     static activeAuthorHelp = null;
@@ -177,6 +180,8 @@ class BlockNormalBuilder {
                 <div class="block-content">${HtmlSafety.rich(block.html || `<p>${t('block_text_ph')}</p>`)}</div>
             `;
         }
+
+        BlockHistoryControls.mount(div, block.id, onRenderAll);
 
         // Old automatic anchor titles stay in saved notes; update only their display.
         const oldQuestion = ['Что вам нужно понять?', 'Что вам надо объяснить?',
@@ -532,9 +537,8 @@ class BlockNormalBuilder {
         if (btnCopy) {
             btnCopy.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const contentEl = div.querySelector('.block-content');
                 const titleText = (block.title || '').trim();
-                const bodyText = contentEl ? contentEl.innerText.trim() : (block.html || '').replace(/<[^>]+>/g, '').trim();
+                const bodyText = NoteText.fromHtml(block.html);
                 const fullText = titleText ? `${titleText}\n\n${bodyText}` : bodyText;
                 
                 try {
@@ -562,6 +566,7 @@ class BlockNormalBuilder {
 
         // Preserve existing unfenced code snippets as readable code blocks.
         BlockCodeRenderer.render(div.querySelector('.block-content'));
+        BlockTableControls.mount(div.querySelector('.block-content'), block);
         // Math rendering
         BlockMathRenderer.renderMath(div);
 

@@ -12,6 +12,10 @@ backups/
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest-*/
+.claude/
+tmp/
+local-server*.log
 
 # Данные пользователя
 data/
@@ -38,3 +42,10 @@ prompts/14_rag_tool_manager.py
 # Reproducible frontend output (npm ci && npm run build)
 fastapi_app/static/dist/
 release.json
+
+# Generated distributions, documents, screenshots and recordings
+output/
+
+# Local environment variants can contain credentials
+.env.*
+!.env.example

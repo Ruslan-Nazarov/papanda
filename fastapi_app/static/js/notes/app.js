@@ -106,9 +106,9 @@ class App {
                 container.appendChild(selection.getRangeAt(i).cloneContents());
             }
 
-            if (container.querySelector('.katex, .math-callout, .math-inline')) {
-                container.querySelectorAll('.math-expand-button').forEach(el => el.remove());
-                container.querySelectorAll('.math-expandable').forEach(el => el.replaceWith(...el.childNodes));
+            if (container.querySelector('.katex, .math-callout, .math-inline, .table-fold')) {
+                container.querySelectorAll('.math-expand-button, .table-fold-toggle, .table-fold-all').forEach(el => el.remove());
+                container.querySelectorAll('.math-expandable, .table-fold, .table-fold-body').forEach(el => el.replaceWith(...el.childNodes));
                 container.querySelectorAll('.katex').forEach(katexEl => {
                     const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
                     let formula;

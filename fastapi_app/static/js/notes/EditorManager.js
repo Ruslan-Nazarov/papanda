@@ -81,12 +81,16 @@ class EditorManager {
         });
 
         modalContainer.classList.remove('hidden');
+        const titleInput = modalContainer.querySelector('#modal-block-title');
+        titleInput.value = currentTitle;
+        this.setupTitleAutosize(titleInput);
 
         // 1. TipTap
         const tiptapContainer = modalContainer.querySelector('.modal-tiptap-content');
         this.currentEditor = EditorTiptapSetup.createEditor(tiptapContainer, currentHtml, !textPosition, {
             note: JSON.parse(JSON.stringify(AppState.currentNote.math_symbols || [])),
             block: JSON.parse(JSON.stringify(block.math_symbols || [])), blockId,
+            blocks: JSON.parse(JSON.stringify(AppState.currentNote.blocks.map(({id, title, math_symbols}) => ({id, title, math_symbols})))),
         });
         EditorTiptapSetup.bindFormatButtons(modalContainer, () => this.currentEditor, this.session,
             {blockId, noteId: AppState.currentNote.id});
@@ -127,6 +131,29 @@ class EditorManager {
         modalContainer.querySelector('#btn-modal-close')?.addEventListener('click', () => this.closeModal(false));
         modalContainer.querySelector('#btn-modal-ok')?.addEventListener('click', () => this.handleSave());
         EditorTextPosition.restore(this.currentEditor, textPosition, modalContainer);
+    }
+
+    static setupTitleAutosize(input) {
+        const resize = () => {
+            // Measure from one row so deleting text also shrinks the field.
+            input.style.height = 'auto';
+            input.style.height = `${input.scrollHeight}px`;
+        };
+        this.session.on(input, 'input', resize);
+        resize();
+
+        if (typeof ResizeObserver !== 'undefined') {
+            let previousWidth = input.getBoundingClientRect().width;
+            const observer = new ResizeObserver(() => {
+                const width = input.getBoundingClientRect().width;
+                if (width > 0 && width !== previousWidth) {
+                    previousWidth = width;
+                    resize();
+                }
+            });
+            observer.observe(input);
+            this.session.own(() => observer.disconnect());
+        }
     }
 
     static setupTabSwitching(modalContainer, block) {
@@ -265,7 +292,7 @@ class EditorManager {
                         <button class="format-btn" data-format="strike" style="text-decoration: line-through;">S</button>
                         <button class="format-btn" data-format="question" style="color: #ef4444; font-weight: bold;" title="${t('ed_tt_question')}">?</button>
                         <button class="format-btn" data-format="hidden" style="color: #7c3aed;" title="${t('ed_tt_hidden')}">👁</button>
-                        <button class="format-btn" data-format="link">🔗</button>
+                        <button class="format-btn" data-format="link" title="${t('dlg_internal_link')}" aria-label="${t('dlg_internal_link')}">🔗</button>
                         <button class="format-btn" data-format="math" style="color: #2563eb; font-weight: bold;" title="${t('ed_tt_math')}" aria-label="${t('ed_tt_math')}">∑</button>
                         <button class="format-btn" data-format="latex" style="color: #8b5cf6; font-weight: 800; font-size: 0.78rem; letter-spacing: -0.5px;" title="${t('ed_tt_latex')}">LTX</button>
                         <div class="editor-size-control">
@@ -296,9 +323,9 @@ class EditorManager {
 
                 <div class="modal-body">
                     <div id="tab-text" class="tab-content" style="display: block;">
-                        <div class="editor-field">
-                            <label>${t('title').toLowerCase()}:</label>
-                            <input type="text" class="modal-title-input" value="${this.escapeHtml(currentTitle)}">
+                        <div class="editor-field editor-title-field">
+                            <label for="modal-block-title">${t('title').toLowerCase()}:</label>
+                            <textarea id="modal-block-title" class="modal-title-input" rows="1">${this.escapeHtml(currentTitle)}</textarea>
                         </div>
                         <div class="editor-field">
                             <label>${t('tags').toLowerCase()}:</label>

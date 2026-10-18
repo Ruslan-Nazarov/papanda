@@ -80,3 +80,25 @@ test('a transposed vector retains an independent operand and transpose target', 
     assert.ok(Array.from(symbols.candidates(formula), entry => entry.symbol).includes('h_{t}'));
     assert.equal(root.querySelector('annotation').textContent, formula);
 });
+
+test('unbraced TeX accents and fonts keep every part interactive, including block 12 transposes', () => {
+    const {MathSymbols: symbols, document} = setup();
+    const root = document.getElementById('math');
+    for (const formula of [String.raw`W_{\mathrm{out}}=E^{\mathsf T},`,
+        String.raw`z=h_{\mathrm{att}}E^{\mathsf T}.`,
+        String.raw`\hat x+\vec y+\mathbf\alpha`]) {
+        root.innerHTML = symbols.render(formula);
+        assert.equal(root.querySelector('.katex-error'), null, formula);
+        assert.ok(root.querySelector('[data-math-symbol]'), formula);
+        assert.equal(root.querySelector('annotation').textContent, formula);
+        for (const {symbol} of symbols.candidates(formula)) {
+            // Common bases of indexed atoms are inherited; transpose operands
+            // and formatted arguments must also have their own actual targets.
+            if (symbol === 'W' || symbol === 'h') continue;
+            assert.ok(root.querySelector(`[data-math-symbol="${symbols.encode(symbol)}"]`), symbol);
+        }
+    }
+    assert.equal(symbols.normalize(String.raw`E^{\mathsf T}`), symbols.normalize(String.raw`E^{\mathsf{T}}`));
+    assert.equal(symbols.normalize(String.raw`\mathbf\mathsf T`), String.raw`\mathbf{\mathsf{T}}`);
+    assert.equal(symbols.resolve(String.raw`\hat x`, [{symbol: String.raw`\hat{x}`, definition: 'Estimate'}]).definition, 'Estimate');
+});

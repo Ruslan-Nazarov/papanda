@@ -12,12 +12,13 @@ class PasteMathTransformer {
         });
     }
 
-    static mathNode(doc, formula, display = false) {
+    static mathNode(doc, formula, display = false, embedded = false) {
         const span = doc.createElement('span');
         span.className = 'math-inline';
         span.setAttribute('formula', formula.trim());
         span.textContent = formula.trim();
         if (!display) return span;
+        if (embedded) {span.dataset.mathDisplay = 'true'; return span;}
         const callout = doc.createElement('div');
         callout.className = 'math-callout';
         const content = doc.createElement('div');
@@ -42,7 +43,7 @@ class PasteMathTransformer {
     }
 
     static delimiterPattern() {
-        return /(?<!\\)(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([^\n]+?\\\)|\$[^$\n]+?\$)/g;
+        return /(?<!\\)(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^$]+?\$)/g;
     }
 
     static replaceTextMath(root) {
@@ -70,7 +71,7 @@ class PasteMathTransformer {
                     break;
                 }
                 fragment.append(doc.createTextNode(source.slice(offset, match.index)));
-                fragment.append(this.mathNode(doc, parsed.formula));
+                fragment.append(this.mathNode(doc, parsed.formula, parsed.display, true));
                 offset = match.index + match[0].length;
                 changed = true;
             }
@@ -138,7 +139,7 @@ class PasteMathTransformer {
                     break;
                 }
                 fragment.append(doc.createTextNode(source.slice(offset, match.index)));
-                fragment.append(this.mathNode(doc, parsed.formula));
+                fragment.append(this.mathNode(doc, parsed.formula, parsed.display, true));
                 offset = match.index + match[0].length;
             }
             if (node.parentNode) {

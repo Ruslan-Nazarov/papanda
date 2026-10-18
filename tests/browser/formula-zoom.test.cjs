@@ -41,6 +41,8 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
         await page.evaluate(() => {
             window.formulas = {
                 simple: 'x^2', fraction: String.raw`\frac{a}{b}`, formatted: String.raw`\displaystyle\mathcal{A}=\mathbf{x}`,
+                tanh: String.raw`\tanh(a)=\frac{e^a-e^{-a}}{e^a+e^{-a}}.`,
+                indexedFraction: String.raw`\frac{x_i}{y_j}`,
                 softmax: String.raw`p_i=\frac{e^{z_i}}{\sum_{j=0}^{5}e^{z_j}}`,
                 nested: String.raw`\frac{1}{1+\frac{a}{b}}`, matrix: String.raw`\begin{pmatrix}a&b\\c&d\end{pmatrix}`,
                 adaptive: 'a+b+c+d+e+f', wide: 'a+b+c+d+e+f+g+h+i+j+k+l+m+n',
@@ -59,10 +61,28 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
         await t.test('threshold uses structure and rendered size; rerendering is idempotent', async () => {
             await page.evaluate(() => document.fonts.ready);
             for (const id of ['simple', 'fraction', 'formatted', 'editor']) assert.equal(await page.$(`#${id} .math-expand-button`), null, id);
-            for (const id of ['softmax', 'nested', 'matrix', 'wide']) assert.ok(await page.$(`#${id} .math-expand-button`), id);
+            for (const id of ['tanh', 'indexedFraction', 'softmax', 'nested', 'matrix', 'wide']) assert.ok(await page.$(`#${id} .math-expand-button`), id);
             await page.evaluate(() => { BlockMathRenderer.renderMath(document.body); FormulaZoom.scan(document); });
             assert.equal(await page.$$eval('#softmax .math-expand-button', els => els.length), 1);
             assert.equal(await page.$eval('#softmax annotation', el => el.textContent), String.raw`p_i=\frac{e^{z_i}}{\sum_{j=0}^{5}e^{z_j}}`);
+        });
+        await t.test('compact fractions with small scripts expand on desktop and mobile', async () => {
+            for (const width of [1000, 390]) {
+                await page.setViewport({width, height: 844, isMobile: true, hasTouch: true});
+                await page.evaluate(() => FormulaZoom.scan(document));
+                assert.equal(await page.$('#tanh.math-formula-wide, #tanh .math-formula-wide'), null);
+                await page.tap('#tanh .math-expand-button');
+                await page.waitForSelector('.formula-zoom-dialog[open]');
+                assert.equal(await page.$eval('.formula-zoom-content annotation', el => el.textContent), String.raw`\tanh(a)=\frac{e^a-e^{-a}}{e^a+e^{-a}}.`);
+                assert.equal(await page.evaluate(() => {
+                    const small = document.querySelector('#tanh .katex-html .msupsub .mord');
+                    const enlarged = document.querySelector('.formula-zoom-content .katex-html .msupsub .mord');
+                    return parseFloat(getComputedStyle(enlarged).fontSize) > parseFloat(getComputedStyle(small).fontSize);
+                }), true);
+                await page.click('.formula-zoom-close');
+                await page.waitForFunction(() => !document.querySelector('.formula-zoom-dialog'));
+            }
+            await page.setViewport({width: 1000, height: 800, isMobile: true, hasTouch: true});
         });
         await t.test('size-dependent controls appear and disappear as the column changes width', async () => {
             assert.equal(await page.$('#adaptive .math-expand-button'), null);
@@ -71,6 +91,52 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
             await page.evaluate(() => { document.getElementById('note').style.width = ''; FormulaZoom.scan(document); });
             assert.equal(await page.$('#adaptive .math-expand-button'), null);
             assert.equal(await page.$eval('#adaptive annotation', el => el.textContent), 'a+b+c+d+e+f');
+            assert.equal(await page.$('#adaptive .math-formula-wide'), null);
+        });
+        await t.test('long inline calculations have a separate readable row and preserve source formulas', async () => {
+            await page.setViewport({width: 1226, height: 800, isMobile: true, hasTouch: true});
+            await page.evaluate(() => {
+                const chain = document.createElement('section');
+                chain.id = 'chain';
+                chain.className = 'block-content';
+                chain.innerHTML = '<p>Теперь выбранное «на» нужно обработать как новое входное слово:</p><p id="calculation"></p>';
+                chain.style.cssText = 'box-sizing:border-box;padding:24px;max-width:1160px;background:white;border-left:4px solid #ec4899;margin-top:24px';
+                const formulas = [String.raw`x_{\text{на}}=[0.15;\,-0.33;\,0.72].`,
+                    String.raw`h_5=\tanh(h_4+x_{\text{на}})`,
+                    String.raw`\approx[\tanh(0.533425+0.15);\,\tanh(-0.325720-0.33);\,\tanh(0.732975+0.72)]`,
+                    String.raw`\approx[0.593742;\,-0.575508;\,0.896280].`];
+                formulas.forEach((formula, index) => {
+                    const span = document.createElement('span');
+                    span.className = 'math-inline';
+                    span.id = `step-${index}`;
+                    span.setAttribute('formula', formula);
+                    chain.lastElementChild.append(span, ' ');
+                });
+                document.body.append(chain);
+                BlockMathRenderer.renderMath(chain);
+            });
+            await page.evaluate(() => document.fonts.ready);
+            await page.evaluate(() => FormulaZoom.scan(document));
+            const geometry = () => page.evaluate(() => {
+                const rect = id => document.getElementById(id).getBoundingClientRect();
+                return {separate: rect('step-2').top >= rect('step-1').bottom,
+                    resultBelow: rect('step-3').top >= rect('step-2').bottom,
+                    fits: rect('step-2').right <= rect('calculation').right + 1,
+                    shortInline: !document.getElementById('step-1').classList.contains('math-formula-wide'),
+                    pageFits: document.documentElement.scrollWidth <= innerWidth};
+            });
+            assert.deepEqual(await geometry(), {separate: true, resultBelow: true, fits: true, shortInline: true, pageFits: true});
+            await fs.mkdir(path.join(root, 'tmp'), {recursive: true});
+            await (await page.$('#chain')).screenshot({path: path.join(root, 'tmp/long-formulas-desktop.png')});
+            await page.setViewport({width: 390, height: 844, isMobile: true, hasTouch: true});
+            await page.evaluate(() => FormulaZoom.scan(document));
+            const mobile = await geometry();
+            assert.equal(mobile.fits && mobile.pageFits && mobile.separate && mobile.resultBelow, true);
+            assert.equal(await page.$eval('#step-2', el => el.querySelector('annotation').textContent === el.getAttribute('formula')), true);
+            assert.equal(await page.$eval('#step-2 .katex', el => el.scrollWidth > el.clientWidth), true);
+            await (await page.$('#chain')).screenshot({path: path.join(root, 'tmp/long-formulas-mobile.png')});
+            await page.setViewport({width: 1000, height: 800, isMobile: true, hasTouch: true});
+            await page.evaluate(() => document.getElementById('chain').remove());
         });
         await t.test('button opens a native modal; scale, keyboard focus, Escape and source remain correct', async () => {
             await page.click('#softmax .math-expand-button');
@@ -84,7 +150,7 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
             await fs.mkdir(path.join(root, 'tmp'), {recursive: true});
             await page.screenshot({path: path.join(root, 'tmp/formula-zoom-desktop.png')});
             await page.keyboard.press('Escape');
-            await page.waitForSelector('.formula-zoom-dialog', {hidden: true});
+            await page.waitForFunction(() => !document.querySelector('.formula-zoom-dialog'));
             assert.equal(await page.evaluate(() => document.activeElement.matches('#softmax .math-expand-button')), true);
             assert.equal(await page.$eval('#softmax .math-inline', el => el.getAttribute('formula')), String.raw`p_i=\frac{e^{z_i}}{\sum_{j=0}^{5}e^{z_j}}`);
         });

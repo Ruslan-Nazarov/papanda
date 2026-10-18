@@ -49,6 +49,16 @@ def _sse(token_gen: AsyncIterator[str]) -> StreamingResponse:
                     yield {"delta": tok}
     return _sse_response(as_events())
 
+class NotePassage(BaseModel):
+    block_id: str = Field(max_length=128)
+    title: str = Field(default="", max_length=500)
+    text: str = Field(max_length=1200)
+    kind: Literal['block', 'dictionary', 'link', 'draft', 'version'] = 'block'
+    reference: str = Field(default='', max_length=500)
+    url: str = Field(default='', max_length=2000)
+    reason: str = Field(default='', max_length=2000)
+
+
 class ExplainRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
     note_title: str = Field(default="", max_length=255)
@@ -56,6 +66,7 @@ class ExplainRequest(BaseModel):
     context_after: Optional[str] = Field(default="", max_length=5_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
     question: str = Field(default="", max_length=2_000)
+    note_passages: List[NotePassage] = Field(default_factory=list, max_length=5)
 
 class TextMathRequest(BaseModel):
     text: str = Field(..., max_length=10_000)
@@ -137,6 +148,7 @@ async def explain_concept(request: Request, data: ExplainRequest):
         history=data.history or [],
         locale=locale,
         question=data.question,
+        note_passages=[passage.model_dump(exclude_unset=True) for passage in data.note_passages],
     )
     return {"result": result, "user_query": data.text}
 
@@ -152,6 +164,7 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         history=data.history or [],
         locale=locale,
         question=data.question,
+        note_passages=[passage.model_dump(exclude_unset=True) for passage in data.note_passages],
     ))
 
 @router.post("/text-math")

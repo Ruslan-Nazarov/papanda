@@ -95,27 +95,29 @@ class MathSymbolTooltip {
                 popup.append(section);
             }
             if (values.length) {
-                const section = document.createElement('section');
+                const section = document.createElement('details');
                 section.className = 'math-symbol-values';
-                const title = document.createElement('strong');
-                title.textContent = t(values.length === 1 ? 'ms_computed_value' : 'ms_computed_values');
+                const title = document.createElement('summary');
+                title.textContent = `${t(values.length === 1 ? 'ms_computed_value' : 'ms_computed_values')} (${values.length})`;
                 const list = document.createElement('ol');
-                for (const [index, value] of values.entries()) {
+                for (const value of values) {
                     const item = document.createElement('li');
                     const result = document.createElement('div');
                     result.className = 'math-symbol-value-formula';
                     result.innerHTML = window.katex.renderToString(`${value.symbol} ${value.relation} ${value.value}`,
                         {throwOnError: false, trust: false});
+                    item.append(result);
                     const source = document.createElement('small');
-                    source.textContent = [values.length > 1 ? `${t('ms_calculation')} ${index + 1}` : '',
-                        value.title, value.context].filter(Boolean).join(' · ') || t('ms_in_note');
-                    item.append(result, source);
+                    source.textContent = value.blockNumber
+                        ? `${t('ms_source_block')} ${value.blockNumber}${value.blockTitle ? `: ${value.blockTitle}` : ''}`
+                        : t('ms_calculation');
+                    item.append(source);
                     list.appendChild(item);
                 }
                 section.append(title, list);
                 popup.appendChild(section);
             }
-            if (onEdit && !substitution && !originals.length && !element.closest('.formula-zoom-dialog')) {
+            if (onEdit && !substitution && !originals.length) {
                 const edit = document.createElement('button');
                 edit.type = 'button'; edit.className = 'math-symbol-edit';
                 edit.textContent = t(entry ? 'ms_edit' : 'ms_add');
@@ -125,9 +127,13 @@ class MathSymbolTooltip {
                 popup.appendChild(edit);
             }
             (element.closest('dialog[open]') || document.body).appendChild(popup);
-            const rect = element.getBoundingClientRect(), size = popup.getBoundingClientRect();
-            popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - size.width - 8))}px`;
-            popup.style.top = `${rect.bottom + size.height + 8 < window.innerHeight ? rect.bottom + 6 : Math.max(8, rect.top - size.height - 6)}px`;
+            const position = () => {
+                const rect = element.getBoundingClientRect(), size = popup.getBoundingClientRect();
+                popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - size.width - 8))}px`;
+                popup.style.top = `${rect.bottom + size.height + 8 < window.innerHeight ? rect.bottom + 6 : Math.max(8, rect.top - size.height - 6)}px`;
+            };
+            position();
+            popup.addEventListener('toggle', position, true);
             const previous = element.getAttribute('aria-describedby');
             element.setAttribute('aria-describedby', [previous, popup.id].filter(Boolean).join(' '));
             popup.addEventListener('mouseenter', () => clearTimeout(this.hideTimer));

@@ -21,6 +21,8 @@ async function main() {
         }
     }
     await fs.writeFile(path.join(root, 'fastapi_app/static/dist/manifest.json'), JSON.stringify(manifest, null, 2)+'\n');
+    await fs.mkdir(path.join(root, '.cache'), {recursive: true});
+    await fs.writeFile(path.join(root, '.cache/frontend-outputs.json'), JSON.stringify(Object.keys(result.metafile.outputs)));
     console.log('Built local frontend:', Object.keys(manifest).join(', '));
 }
 main().catch(error => {console.error(error); process.exitCode = 1;});

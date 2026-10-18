@@ -7,17 +7,41 @@ class FormulaZoom {
     static initialized = false;
     static active = null;
 
+    static naturalWidth(element) {
+        const html = element.querySelector('.katex-html');
+        const bases = [...element.querySelectorAll('.katex-html > .base')];
+        return Math.max(html?.scrollWidth || 0, html?.getBoundingClientRect().width || 0,
+            bases.reduce((width, base) => width + base.getBoundingClientRect().width, 0));
+    }
+
+    static layout(element) {
+        if (element.closest('.katex-display, .math-callout')) return;
+        const host = element.closest('.math-inline') || element.closest('.math-expandable');
+        const column = host?.parentElement?.closest('p, li, td, th, .block-content, .blk-body');
+        if (!host || !column || !element.isConnected) return;
+        const style = window.getComputedStyle(column);
+        const available = column.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
+        if (available <= 0) return;
+        const width = this.naturalWidth(element);
+        // Long calculations get their own row; the threshold follows the reading column.
+        // Measure the formula itself so a previous block layout cannot keep it wide.
+        host.classList.toggle('math-formula-wide', width > Math.min(420, Math.max(220, available * .72))
+            || width + 48 > available);
+    }
+
     static isComplex(element) {
         const math = element.querySelector('math');
         if (!math) return false;
         const fractions = math.querySelectorAll('mfrac');
+        // Scripts inside a fraction shrink twice, even in a short formula.
+        const smallFractionScripts = [...fractions].some(fraction => fraction.querySelector('msub, msup, msubsup'));
         const largeOperator = [...math.querySelectorAll('mo')].some(el => /[∑∏∫∮∬∭]/u.test(el.textContent));
         // Judge the rendered structure, so formatting commands do not inflate complexity.
-        const structural = fractions.length >= 2 || !!math.querySelector('mtable, mfrac mfrac, mfrac msqrt, mfrac mroot, msqrt mfrac, mroot mfrac')
+        const structural = smallFractionScripts || fractions.length >= 2 || !!math.querySelector('mtable, mfrac mfrac, mfrac msqrt, mfrac mroot, msqrt mfrac, mroot mfrac')
             || (largeOperator && !!math.querySelector('msub, msup, msubsup, munder, munderover'))
             || [...math.querySelectorAll('mi, mn, mo, mtext')].map(el => el.textContent).join('').replace(/\s/g, '').length >= 36;
         const rect = element.getBoundingClientRect();
-        const width = Math.max(rect.width, element.scrollWidth);
+        const width = this.naturalWidth(element);
         const fontSize = parseFloat(window.getComputedStyle(element).fontSize) || 18;
         const column = element.closest('.block-content, .blk-body');
         const style = column && window.getComputedStyle(column);
@@ -53,9 +77,13 @@ class FormulaZoom {
                     host.querySelector(':scope > .math-expand-button')?.remove();
                     host.replaceWith(element);
                 }
+                element.closest('.math-inline')?.classList.remove('math-formula-wide');
                 return;
             }
-            if (existing) return;
+            if (existing) {
+                this.layout(element);
+                return;
+            }
             host = document.createElement('span');
             host.className = 'math-expandable';
             element.replaceWith(host);
@@ -72,6 +100,7 @@ class FormulaZoom {
                 this.open(formula, button);
             });
             host.append(element, button);
+            this.layout(element);
         });
     }
 

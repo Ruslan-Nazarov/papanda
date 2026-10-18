@@ -551,6 +551,37 @@
     background: transparent;
 }
 
+.editor-title-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-top: 7px;
+}
+
+.editor-title-field label {
+    width: auto;
+}
+
+.editor-title-field .modal-title-input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: calc(1.5em + 16px);
+    max-height: calc(9em + 16px);
+    flex: none;
+    font-family: var(--font-main);
+    line-height: 1.5;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    resize: none;
+}
+
+.editor-title-field:focus-within {
+    border-color: #3b82f6;
+}
+
 .modal-tiptap-content {
     background: white;
     border: 1px solid var(--color-border-light);
@@ -589,6 +620,45 @@
 .block-content th {
     background: #f1f5f9;
     font-weight: 600;
+}
+
+.table-fold { min-width: 0; max-width: 100%; margin: 0.65em 0 1em; }
+.table-fold-toggle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid #dbe3ee;
+    border-radius: 7px;
+    background: #f8fafc;
+    color: #475569;
+    font: inherit;
+    font-size: 0.8rem;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+}
+.table-fold-toggle:hover { border-color: #a5b4fc; background: #eef2ff; }
+.table-fold-toggle:focus-visible, .table-fold-all:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.table-fold-caret { width: 6px; height: 6px; margin: 0 3px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); }
+.table-fold-toggle[aria-expanded="true"] .table-fold-caret { transform: rotate(45deg) translateY(-2px); }
+.table-fold-label { font-weight: 600; }
+.table-fold-size { color: #64748b; font-size: 0.75rem; }
+.table-fold-action { margin-left: auto; color: #4f46e5; font-weight: 600; }
+.table-fold-body { max-width: 100%; overflow-x: auto; }
+.table-fold-body[hidden] { display: none; }
+.block-content .table-fold-body > table { width: max-content; min-width: 100%; margin: 6px 0 0; }
+.table-fold-all { margin: 0 0 0.5em; padding: 6px 0; border: 0; background: none; color: #4f46e5; font: inherit; font-size: 0.8rem; cursor: pointer; user-select: none; }
+.table-fold-all:hover { text-decoration: underline; }
+@media print {
+    .table-fold-toggle, .table-fold-all { display: none !important; }
+    .table-fold-body[hidden] { display: block !important; }
+    .table-fold-body { overflow: visible; }
+    .block-content .table-fold-body > table { width: 100%; min-width: 0; }
 }
 
 .modal-tiptap-content:focus {

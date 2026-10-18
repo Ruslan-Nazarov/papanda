@@ -5,7 +5,7 @@
 После проверок push в `main` обновляет существующую установку `/root/papanda`.
 Ручной `workflow_dispatch` на main работает так же; PR и другие ветки только проверяются.
 Workflow использует SSH secrets `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`,
-`SERVER_KNOWN_HOSTS` (repository или environment `production`). Для существующей
+`SERVER_KNOWN_HOSTS` на уровне **Repository secrets**. Для существующей
 установки `SERVER_USER=root`. Переменная `PAPANDA_RELEASES_READY` больше не используется.
 
 `scripts/deploy_checkout.sh` проверяет SHA256 CI-архива и отсутствие изменений
@@ -17,6 +17,19 @@ Workflow использует SSH secrets `SERVER_HOST`, `SERVER_USER`, `SERVER_
 Проверка не открывает `/` и не создаёт демо-сессии; доступность создания новых
 сессий зависит отдельно от установленного лимита `DEMO_MAX_SESSIONS`.
 SSH и ошибки команд видны в логе Actions.
+
+CI также передаёт `revision.bundle` с проверенной Git-версией и отдельной SHA256.
+Сервер проверяет bundle и точное совпадение `FETCH_HEAD` с ожидаемым SHA,
+затем обновляет checkout из этого файла. Доступ сервера к GitHub не требуется:
+репозиторий может быть приватным. Прежний вызов скрипта с тремя аргументами
+сохраняет `git fetch origin main` для совместимости с ручными старыми релизами.
+
+После перевода репозитория в private локальный push сохраняет прежний remote
+и использует авторизацию владельца. GitHub Actions выполняет checkout своим
+`GITHUB_TOKEN`. На GitHub Free environment secrets в приватном репозитории
+не работают: `SERVER_*` должны быть repository secrets. Текущий deploy job
+не использует environment `production`, чтобы работать на GitHub Free.
+Приватные репозитории расходуют квоту минут Actions своего тарифа.
 
 Сервис запускается из `/root/papanda` через `/root/papanda/venv/bin/uvicorn`.
 Данные остаются в `/root/papanda/data`, настройки — в `/root/papanda/.env` и

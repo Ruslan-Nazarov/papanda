@@ -2,6 +2,11 @@ import { inferRoleFromTitle, ALGORITHM_STEPS } from './BlockConstants.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const normalizeBlockStatus = status => status === 'ready' || status === 'done' ? 'ready' : 'in_progress';
+const VERSION_FIELDS = ['title', 'html', 'tags', 'shapesData', 'math_symbols',
+    'sourceGoal', 'sourceTitle', 'anchorResolved', 'author', 'generation_data'];
+const versionOf = block => clone(Object.fromEntries(VERSION_FIELDS.filter(key => key in block)
+    .map(key => [key, block[key]])));
+const HISTORY_LIMIT = 5;
 
 // Stable document identity for in-flight saves, read-only views for consumers.
 class NoteStore {
@@ -9,6 +14,7 @@ class NoteStore {
     #current;
     #epoch = 0;
     #notify;
+    #blockHistory = new Map();
 
     constructor(notify = () => {}) {
         this.#notify = notify;
@@ -64,6 +70,7 @@ class NoteStore {
                     || ALGORITHM_STEPS.find(step => step.role === inferRoleFromTitle(block))?.side || 'center'}))};
         const record = {data, view: this.#readonly(data), dirty: false, revision: 0};
         this.#current = record;
+        this.#blockHistory.clear();
         this.#records.set(record.view, record);
         this.#epoch++;
         if (notify) this.#notify('noteOpened', record.view);
@@ -80,6 +87,13 @@ class NoteStore {
         if (Array.isArray(patch.blocks)) patch = {...patch, blocks: patch.blocks.map(block =>
             ({...block, status: normalizeBlockStatus(block.status)}))};
         if (!Object.entries(patch).some(([key, value]) => JSON.stringify(this.#current.data[key]) !== JSON.stringify(value))) return;
+        if (Array.isArray(patch.blocks)) {
+            const next = new Map(patch.blocks.map(block => [block.id, block]));
+            for (const block of this.#current.data.blocks) {
+                if (next.has(block.id)) this.#rememberBlock(block, next.get(block.id));
+                else this.#blockHistory.delete(block.id);
+            }
+        }
         Object.assign(this.#current.data, clone(patch));
         this.touch();
     }
@@ -88,8 +102,46 @@ class NoteStore {
         const block = this.#current.data.blocks.find(item => item.id === id);
         if ('status' in patch) patch = {...patch, status: normalizeBlockStatus(patch.status)};
         if (!block || !Object.entries(patch).some(([key, value]) => JSON.stringify(block[key]) !== JSON.stringify(value))) return;
+        this.#rememberBlock(block, {...block, ...patch});
         Object.assign(block, clone(patch));
         this.touch();
+    }
+
+    #rememberBlock(before, after) {
+        const snapshot = versionOf(before);
+        if (JSON.stringify(snapshot) === JSON.stringify(versionOf(after))) return;
+        const history = this.#blockHistory.get(before.id) || {past: [], future: []};
+        history.past.push(snapshot);
+        if (history.past.length > HISTORY_LIMIT) history.past.shift();
+        history.future = [];
+        this.#blockHistory.set(before.id, history);
+    }
+
+    blockHistory(id) {
+        const history = this.#blockHistory.get(id);
+        const undo = history?.past.length || 0, redo = history?.future.length || 0;
+        return {undo, redo, position: undo + 1, total: undo + redo + 1};
+    }
+
+    previousBlockVersions(id) {
+        // A detached copy lets context search inspect history without restoring it.
+        return clone(this.#blockHistory.get(id)?.past || []);
+    }
+
+    restoreBlockVersion(id, direction) {
+        if (direction !== 'undo' && direction !== 'redo') return false;
+        const block = this.#current.data.blocks.find(item => item.id === id);
+        const history = this.#blockHistory.get(id);
+        const from = direction === 'undo' ? history?.past : history?.future;
+        if (!block || !from?.length) return false;
+        const to = direction === 'undo' ? history.future : history.past;
+        to.push(versionOf(block));
+        const snapshot = from.pop();
+        // Keep position, pinning, readiness and the explicit draft archive independent.
+        for (const key of VERSION_FIELDS) delete block[key];
+        Object.assign(block, clone(snapshot));
+        this.touch();
+        return true;
     }
 
     addBlock(block, index = -1) {

@@ -6,6 +6,8 @@ trap 'echo "Deployment failed at line $LINENO; see the preceding command output.
 revision=${1:?Expected Git revision}
 archive=${2:?Expected release archive}
 checksum=${3:?Expected archive checksum}
+bundle=${4:-}
+bundle_checksum=${5:-}
 app_dir=${PAPANDA_APP_DIR:-/root/papanda}
 # Check the public site through the existing nginx proxy.
 health_url=${PAPANDA_HEALTH_URL:-https://papanda.kz}
@@ -24,8 +26,18 @@ if [[ "$(systemctl show papanda --property=WorkingDirectory --value)" != "$app_d
 fi
 # Refuse to discard server-side edits to tracked files.
 git diff --quiet HEAD --
-git fetch origin main
-git merge-base --is-ancestor "$revision" origin/main
+if [[ -n "$bundle" ]]; then
+    # CI transfers its authenticated checkout: production needs no GitHub credentials.
+    [[ "$bundle_checksum" =~ ^[a-f0-9]{64}$ ]]
+    printf '%s  %s\n' "$bundle_checksum" "$bundle" | sha256sum --check --status
+    git bundle verify "$bundle"
+    git fetch --no-tags "$bundle" HEAD
+    [[ "$(git rev-parse FETCH_HEAD)" == "$revision" ]]
+else
+    # Retain compatibility with older, manually supplied releases.
+    git fetch origin main
+    git merge-base --is-ancestor "$revision" origin/main
+fi
 git rev-parse HEAD > .last_deploy_rev
 git reset --hard "$revision"
 

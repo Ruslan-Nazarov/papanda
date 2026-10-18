@@ -3,6 +3,50 @@ const assert = require('node:assert/strict');
 const {JSDOM} = require('jsdom');
 const {context, load} = require('./helpers.cjs');
 
+test('dictionary renders TeX in definitions and connections in both views, preserving safe source text', () => {
+    const dom = new JSDOM('<!doctype html><html><body></body></html>');
+    const definition = String.raw`Функция — \(\tanh\). Также $x^2$, $$y = 2$$ и \[z = 3\]. <img src=x onerror=alert(1)>`;
+    const explanation = String.raw`Применяем \(\tanh\) к каждой координате.`;
+    const note = {dictionary: [
+        {word: 'Функция активации', definition, connections: 'Скрытое состояние',
+            connection_explanations: {'Скрытое состояние': explanation}},
+        {word: 'Скрытое состояние', definition: '', connections: ''},
+    ]};
+    const ctx = context({document: dom.window.document, window: dom.window,
+        AppState: {currentNote: note, updateNote: patch => Object.assign(note, patch)}});
+    const renderMathInElement = require('katex/contrib/auto-render');
+    dom.window.renderMathInElement = (element, options) => {
+        const previousDocument = global.document;
+        const previousNode = global.Node;
+        global.document = dom.window.document;
+        global.Node = dom.window.Node;
+        try { renderMathInElement(element, options); }
+        finally { global.document = previousDocument; global.Node = previousNode; }
+    };
+    load(ctx, 'DictModalService');
+    ctx.DictModalService.show();
+    const document = dom.window.document;
+    assert.equal(document.querySelectorAll('.dict-entry p .katex').length, 4);
+    assert.equal(document.querySelectorAll('.dict-entry small .katex').length, 1);
+    assert.equal(document.querySelector('.dict-entry img'), null);
+    assert.ok(document.querySelector('.dict-entry p').textContent.includes('<img src=x onerror=alert(1)>'));
+    document.querySelector('.dict-search').dispatchEvent(new dom.window.Event('input'));
+    assert.equal(document.querySelectorAll('.dict-list .katex').length, 5);
+    document.querySelector('.dict-view-graph').click();
+    assert.equal(document.querySelectorAll('.dict-graph-detail p .katex').length, 4);
+    assert.equal(document.querySelectorAll('.dict-graph-relations .katex').length, 1);
+    assert.equal(document.querySelector('.dict-graph-detail img'), null);
+    document.querySelector('.dict-graph-edit').click();
+    assert.equal(document.querySelector('.dict-definition').value, definition);
+    assert.equal(document.querySelector('.dict-connection-explanation').value, explanation);
+    document.querySelector('.dict-save').click();
+    assert.equal(document.querySelectorAll('.dict-graph-detail .katex').length, 5);
+    assert.equal(note.dictionary[0].definition, definition);
+    assert.equal(note.dictionary[0].connection_explanations['Скрытое состояние'], explanation);
+    assert.equal(document.querySelector('.katex-error'), null);
+    document.querySelector('.dict-done').click();
+});
+
 test('note dictionary separates reading from editing and saves to the note', () => {
     const dom = new JSDOM('<html><body><button id="open">Open</button></body></html>');
     dom.window.confirm = () => true;

@@ -32,7 +32,7 @@ class HiddenPhraseTooltip {
         else active.phrase.setAttribute('aria-describedby', active.describedBy);
     }
 
-    static show(phrase, root) {
+    static show(phrase, root, render = null) {
         clearTimeout(this.hideTimer);
         if (this.active?.phrase === phrase) return;
         this.hide();
@@ -42,17 +42,23 @@ class HiddenPhraseTooltip {
         tooltip.className = 'hidden-phrase-tooltip';
         tooltip.id = `hidden-phrase-tooltip-${++this.nextId}`;
         tooltip.setAttribute('role', 'tooltip');
-        this.renderHint(tooltip, hint);
+        if (render) {
+            tooltip.classList.add('source-preview');
+            render(tooltip, hint);
+        } else this.renderHint(tooltip, hint);
         document.body.appendChild(tooltip);
 
         const anchor = phrase.getBoundingClientRect();
-        const rect = tooltip.getBoundingClientRect();
         const margin = 12;
+        const belowSpace = window.innerHeight - margin - anchor.bottom - 6;
+        const aboveSpace = anchor.top - margin - 6;
+        const below = belowSpace >= Math.min(480, aboveSpace);
+        // A long scrollable preview must leave its source button clickable.
+        tooltip.style.maxHeight = `${Math.max(0, Math.min(480, below ? belowSpace : aboveSpace))}px`;
+        const rect = tooltip.getBoundingClientRect();
         const left = Math.max(margin, Math.min(anchor.left + anchor.width / 2 - rect.width / 2,
             window.innerWidth - rect.width - margin));
-        const below = anchor.bottom + 6;
-        const top = below + rect.height <= window.innerHeight - margin ? below
-            : Math.max(margin, anchor.top - rect.height - 6);
+        const top = below ? anchor.bottom + 6 : Math.max(margin, anchor.top - rect.height - 6);
         tooltip.style.left = `${left}px`;
         tooltip.style.top = `${top}px`;
         const describedBy = phrase.getAttribute('aria-describedby');
@@ -89,14 +95,14 @@ class HiddenPhraseTooltip {
         this.hideTimer = setTimeout(() => this.hide(), 120);
     }
 
-    static bind(root) {
+    static bind(root, {selector = PHRASE_SELECTOR, render = null} = {}) {
         if (this.bindings.has(root)) return this.bindings.get(root);
         const enter = event => {
-            const phrase = event.target.closest?.(PHRASE_SELECTOR);
-            if (phrase && root.contains(phrase)) this.show(phrase, root);
+            const phrase = event.target.closest?.(selector);
+            if (phrase && root.contains(phrase)) this.show(phrase, root, render);
         };
         const leave = event => {
-            const phrase = event.target.closest?.(PHRASE_SELECTOR);
+            const phrase = event.target.closest?.(selector);
             if (phrase && !phrase.contains(event.relatedTarget)) this.scheduleHide();
         };
         root.addEventListener('mouseover', enter);

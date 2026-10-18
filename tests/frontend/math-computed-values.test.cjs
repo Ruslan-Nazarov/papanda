@@ -75,9 +75,28 @@ test('indexes prior calculations across blocks, removes repetitions and skips fu
     const target = current.querySelectorAll('.katex')[3].querySelector(`[data-math-symbol="${symbols.encode('h_{t}')}"]`);
     const found = plain(values.forElement('h_t', target));
     assert.deepEqual(found.map(entry => entry.value), ['[0,0,0]', '[0.1,0.2,0.3]', '[0.4,0.5,0.6]']);
-    assert.deepEqual(found.map(entry => entry.title), ['initial', 'steps', 'steps']);
-    assert.equal(found[2].context, 'Шаг 2');
+    assert.deepEqual(found.map(entry => entry.blockId), ['initial', 'steps', 'steps']);
+    assert.deepEqual(found.map(entry => entry.blockNumber), [1, 2, 2]);
+    assert.deepEqual(found.map(entry => entry.blockTitle), ['initial', 'steps', 'steps']);
+    assert.ok(found.every(entry => !('title' in entry) && !('context' in entry)),
+        'source metadata must stay separate from values and surrounding prose');
     const before = root.innerHTML;
     values.forElement('h_t', target);
     assert.equal(root.innerHTML, before, 'indexing must not modify saved content or rendered formulas');
+});
+
+test('source labels follow rendered block order and titles in shared notes, including unnamed blocks', () => {
+    const {values, symbols, document} = setup();
+    document.body.innerHTML = '<div class="blk" id="first"><h3>Начальное состояние</h3><div class="blk-body"></div></div>'
+        + '<div class="blk" id="second"><div class="blk-body"></div></div>';
+    document.querySelector('#first .blk-body').innerHTML = symbols.render('h_0=[0,0]');
+    document.querySelector('#second .blk-body').innerHTML = symbols.render('h_1=[1,2]') + symbols.render('z=h_t+b');
+    const target = document.querySelector('#second .katex:last-child [data-math-symbol]');
+    const found = plain(values.forElement('h_t', target));
+    assert.deepEqual(found.map(({blockId, blockNumber, blockTitle}) => ({blockId, blockNumber, blockTitle})), [
+        {blockId: 'first', blockNumber: 1, blockTitle: 'Начальное состояние'},
+        {blockId: 'second', blockNumber: 2, blockTitle: ''},
+    ]);
+    document.querySelector('#first h3').textContent = 'Переименованный блок';
+    assert.equal(values.forElement('h_t', target)[0].blockTitle, 'Переименованный блок');
 });

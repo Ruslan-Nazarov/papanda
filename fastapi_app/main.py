@@ -14,6 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from fastapi_app.routers import notes, ai, library
+from fastapi_app.routers import personal
 from fastapi_app.config import ensure_secret_key, settings
 from fastapi_app.services.security_store import demo_instance_lock
 from fastapi_app.middleware import (
@@ -49,7 +50,7 @@ async def lifespan(app: FastAPI):
 
         # Import examples from json
         examples_path = Path(__file__).parent / "data" / "example_notes.json"
-        if not settings.DEMO_MODE and examples_path.exists():
+        if not settings.DEMO_MODE and settings.APP_EDITION != 'personal' and examples_path.exists():
             async for session in get_db():
                 await NotesService.import_examples_from_file(session, str(examples_path))
 
@@ -97,12 +98,14 @@ templates.env.globals['public_url'] = public_url
 app.include_router(notes.router, prefix="/api/dialectics", tags=["notes"])
 app.include_router(ai.router, prefix="/api/ai/dialectics", tags=["ai"])
 app.include_router(library.router, tags=["library"])
+app.include_router(personal.router, tags=['personal'])
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     locale = getattr(request.state, "locale", "ru")
     slug = request.query_params.get('conspect')
-    public_note = public_conspect(slug, locale) if slug and locale in {'ru', 'en'} else None
+    personal_edition = settings.APP_EDITION == 'personal'
+    public_note = public_conspect(slug, locale) if slug and not personal_edition and locale in {'ru', 'en'} else None
     _ = get_translator(locale)
     # Тексты алгоритма для ручного режима (подсказки блоков) — инлайним в
     # страницу как inert JSON #algorithm-data, источник prompts/7_*.json.
@@ -112,7 +115,8 @@ async def index(request: Request):
         request=request, name="index.html",
         context={"_": _, "locale": locale, "algorithm_json": algorithm_json,
                    "i18n_json": i18n_json, "app_version": VERSION,
-                   "last_update": RELEASE_DATE, "author_mode": not settings.DEMO_MODE,
+                   "last_update": RELEASE_DATE, "author_mode": not settings.DEMO_MODE and not personal_edition,
+                   "personal_edition": personal_edition, "personal_words": personal.words(locale),
                    "public_note": public_note},
     )
 
@@ -148,6 +152,11 @@ async def legal_page(request: Request):
     locale = req_lang if req_lang in ("ru", "en", "kz") else getattr(request.state, "locale", "ru")
     doc_locale = locale if locale in ("ru", "en", "kz") else "ru"
     _ = get_translator(locale)
+    if settings.APP_EDITION == 'personal':
+        return templates.TemplateResponse(request=request, name='personal_legal.html', context={
+            '_': _, 'locale': locale, 'page': page, 'w': personal.words(locale),
+            'page_title': _('footer_privacy') if page == 'privacy' else _('footer_terms'),
+        })
     titles = {
         "privacy": {"ru": "Политика конфиденциальности", "en": "Privacy Policy", "kz": "Құпиялылық саясаты"},
         "terms": {"ru": "Правила использования", "en": "Terms of Use", "kz": "Пайдалану ережелері"},

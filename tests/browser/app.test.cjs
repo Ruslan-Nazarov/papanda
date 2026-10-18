@@ -28,9 +28,11 @@ async function server() {
     child.stdout.on('data', data => {log += data;});
     child.stderr.on('data', data => {log += data;});
     const url = `http://127.0.0.1:${port}`;
-    for (let i = 0; i < 120; i++) {
+    const deadline = Date.now() + 45_000;
+    while (Date.now() < deadline) {
         if (child.exitCode !== null) throw new Error(log);
-        if (await fetch(url+'/health').then(res => res.ok).catch(() => false)) return {child, url, directory, log: () => log};
+        if (await fetch(url+'/health', {signal: AbortSignal.timeout(2000)})
+            .then(res => res.ok).catch(() => false)) return {child, url, directory, log: () => log};
         await new Promise(resolve => setTimeout(resolve, 100));
     }
     child.kill();

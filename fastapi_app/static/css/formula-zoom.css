@@ -7,6 +7,32 @@
 }
 .math-inline:has(.math-expandable) { max-width: 100%; box-sizing: border-box; }
 .math-expandable > .katex { min-width: 0; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.math-inline.math-formula-wide,
+.math-expandable.math-formula-wide {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0;
+    padding: 10px 14px;
+    border: 1px solid #e8e3f2;
+    border-radius: 10px;
+    background: #faf9ff;
+    text-align: left;
+}
+.math-inline.math-formula-wide > .math-expandable { display: flex; width: 100%; }
+.math-formula-wide.math-expandable { display: flex; }
+.math-formula-wide .katex,
+.math-formula-wide.math-expandable > .katex {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 4px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #d3cbe8 transparent;
+}
+.math-inline.math-formula-wide:hover { background: #f7f5ff; border-color: #d8cfec; }
 .math-expand-button {
     flex: 0 0 auto;
     display: inline-flex;

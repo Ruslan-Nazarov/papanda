@@ -218,7 +218,7 @@ class NoteController {
         document.querySelectorAll('[data-readiness-stat]').forEach(stat => {
             stat.querySelector('strong').textContent = readinessCounts[stat.dataset.readinessStat];
         });
-        const percent = total ? Math.round((ready + inProgress * 0.5) / total * 100) : 0;
+        const percent = total ? Math.round(ready / total * 100) : 0;
         const totalEl = document.getElementById('statistics-total');
         const wordsEl = document.getElementById('statistics-words');
         const percentEl = document.getElementById('statistics-percent');
@@ -239,7 +239,7 @@ class NoteController {
         }
 
         if (readyEl) readyEl.style.width = `${(ready / total) * 100}%`;
-        if (inProgressEl) inProgressEl.style.width = `${(inProgress * 0.5 / total) * 100}%`;
+        if (inProgressEl) inProgressEl.style.width = `${(inProgress / total) * 100}%`;
         if (textEl) textEl.textContent = `${percent}%`;
     }
 

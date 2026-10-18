@@ -9,7 +9,7 @@
   "scripts": {
     "check:js": "node scripts/check-js.cjs",
     "test": "node --test tests/frontend/*.test.cjs",
-    "test:browser": "node --test tests/browser/*.test.cjs",
+    "test:browser": "node --test --test-concurrency=4 tests/browser/*.test.cjs",
     "build": "node scripts/build-frontend.cjs",
     "lint": "eslint fastapi_app/static/js",
     "check:types": "tsc -p jsconfig.json"

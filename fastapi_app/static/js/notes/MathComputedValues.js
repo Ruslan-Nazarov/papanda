@@ -168,6 +168,7 @@ class MathComputedValues {
     static forElement(symbol, element) {
         element = element.closest('.formula-zoom-dialog')?.mathSource || element;
         const root = element.closest('#blocks-container') || element.ownerDocument;
+        const blocks = [...root.querySelectorAll('.dialectics-block, .blk')];
         const formulas = [...root.querySelectorAll('.block-content .katex, .blk > .blk-body .katex')]
             .filter(node => !node.closest('.tiptap, .hp-content, .math-symbol-tooltip, details, pre, code'));
         const current = formulas.indexOf(element.closest('.katex'));
@@ -177,25 +178,14 @@ class MathComputedValues {
             const formula = node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
             if (!formula) continue;
             const block = node.closest('.dialectics-block, .blk');
-            const title = block?.querySelector('.block-title, .blk-title')?.textContent.trim() || '';
-            const paragraph = node.closest('p, li') || node.closest('.math-inline, .math-content') || node;
-            const range = node.ownerDocument.createRange();
-            range.setStart(paragraph, 0); range.setEndBefore(node);
-            const prefix = range.cloneContents();
-            prefix.querySelectorAll('.katex').forEach(el => el.remove());
-            let context = prefix.textContent.trim();
-            if (!context) {
-                const previous = paragraph.previousElementSibling?.cloneNode(true);
-                previous?.querySelectorAll('.katex').forEach(el => el.remove());
-                context = previous?.textContent.trim() || '';
-            }
-            context = context.replace(/\s+/g, ' ').slice(-150);
             for (const result of this.extract(formula)) {
                 if (!this.matches(symbol, result.symbol)) continue;
                 const key = JSON.stringify([result.symbol, this.clean(result.value).replace(/\s/g, '')]);
                 if (seen.has(key)) continue;
                 seen.add(key);
-                results.push({...result, blockId: block?.id || '', title, context, position: index});
+                results.push({...result, blockId: block?.id || '', position: index,
+                    blockNumber: blocks.indexOf(block) + 1,
+                    blockTitle: block?.querySelector('.block-title, :scope > h3')?.textContent.trim() || ''});
             }
         }
         return results;

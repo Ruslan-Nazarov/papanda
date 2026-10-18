@@ -177,7 +177,7 @@ class PublishRequest(BaseModel):
 
 
 def author_only():
-    if settings.DEMO_MODE:
+    if settings.DEMO_MODE or settings.APP_EDITION == 'personal':
         raise HTTPException(404, 'Not found')
     # AccessBoundaryMiddleware additionally enforces loopback, Host and Origin.
 
@@ -220,7 +220,7 @@ async def exclude_from_deployment(note_id: int, db: AsyncSession = Depends(get_d
 
 def publisher_only(request: Request):
     key = settings.LIBRARY_PUBLISH_KEY
-    if not settings.DEMO_MODE or not key:
+    if settings.APP_EDITION == 'personal' or not settings.DEMO_MODE or not key:
         raise HTTPException(404, 'Publishing is disabled')
     supplied = request.headers.get('authorization', '')
     if not secrets.compare_digest(supplied.encode(), ('Bearer ' + key).encode()):

@@ -12,8 +12,39 @@ class MathSymbols {
         return value.split('-').map(part => String.fromCodePoint(parseInt(part, 16))).join('');
     }
     static normalize(symbol) {
-        return String(symbol || '').trim().replace(/\s+/g, '')
+        return this.braceWrapperArguments(String(symbol || '')).trim().replace(/\s+/g, '')
             .replace(/([_^])([^{}\\])/g, '$1{$2}');
+    }
+
+    static argumentEnd(text, start, depth = 0) {
+        if (depth > 16 || start >= text.length) return start;
+        const group = this.groupEnd(text, start);
+        if (group > start) return group;
+        const token = text.slice(start).match(/^(?:\\([A-Za-z]+|.)|[^\s{}_^])/);
+        if (!token) return start;
+        let end = start + token[0].length;
+        if (ATOM_WRAPPERS.has(token[1])) {
+            while (end < text.length && /\s/.test(text[end])) end++;
+            end = this.argumentEnd(text, end, depth + 1);
+        }
+        return end;
+    }
+
+    static braceWrapperArguments(text, depth = 0) {
+        // TeX permits both \\mathsf T and \\mathsf{T}. Keep their keys equal
+        // and never insert an interactive wrapper between a command and its argument.
+        if (depth > 16) return text;
+        let result = '', offset = 0;
+        for (const match of text.matchAll(/\\([A-Za-z]+)\s*/g)) {
+            if (match.index < offset || !ATOM_WRAPPERS.has(match[1])) continue;
+            const start = match.index + match[0].length;
+            if (text[start] === '{') continue;
+            const end = this.argumentEnd(text, start);
+            if (end === start) continue;
+            result += text.slice(offset, match.index) + `\\${match[1]}{${this.braceWrapperArguments(text.slice(start, end), depth + 1)}}`;
+            offset = end;
+        }
+        return result + text.slice(offset);
     }
 
     static groupEnd(text, start) {
@@ -44,7 +75,7 @@ class MathSymbols {
                 const count = ATOM_WRAPPERS.has(name) ? 1 : RAW_ARGUMENTS.get(name) || 0;
                 for (let arg = 0; arg < count; arg++) {
                     while (/\s/.test(text[i] || '') && i < text.length) i++;
-                    const end = this.groupEnd(text, i);
+                    const end = ATOM_WRAPPERS.has(name) ? this.argumentEnd(text, i) : this.groupEnd(text, i);
                     if (end === i) break;
                     i = end;
                 }
@@ -106,7 +137,7 @@ class MathSymbols {
     static isTranspose(atom, script, formula) {
         const content = script.braced ? formula.slice(script.start + 1, script.end - 1)
             : formula.slice(script.start, script.end);
-        return script.operator === '^' && /^(?:\\top|\\intercal|\\(?:mathsf|mathrm)\{T\})$/.test(content.trim());
+        return script.operator === '^' && /^(?:\\top|\\intercal|\\(?:mathsf|mathrm)\{T\})$/.test(this.normalize(content));
     }
 
     static resolve(symbol, note = [], block = []) {

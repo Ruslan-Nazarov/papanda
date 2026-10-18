@@ -40,7 +40,11 @@
         </div>
         <button class="mobile-nav-toggle" id="btn-mobile-nav" aria-label="{{ _('menu_nav_mobile') }}"><i class="ph ph-list" aria-hidden="true"></i></button>
         <div class="header-right" id="header-right">
+            {% if personal_edition %}
+            <a href="/personal/settings" class="nav-pill-btn" style="text-decoration:none;">{{ personal_words.settings }}</a>
+            {% else %}
             <a href="/library" class="nav-pill-btn" style="text-decoration:none;"><i class="ph ph-books pill-icon" aria-hidden="true"></i> {{ _('library_title') }}</a>
+            {% endif %}
             {% if author_mode %}
             <button type="button" class="nav-pill-btn" id="btn-library-publish">{{ _('library_manage') }}</button>
             {% endif %}
@@ -94,7 +98,7 @@
                     <button type="button" class="menu-item" id="menu-item-ai-diary"><i class="ph ph-clock-counter-clockwise menu-icon" aria-hidden="true"></i><span>{{ _('ai_diary_title') }}</span></button>
                     <div class="menu-divider"></div>
                     <div class="menu-section-label">{{ _('menu_section_share') }}</div>
-                    <button type="button" class="menu-item" id="menu-item-share"><i class="ph ph-link menu-icon" aria-hidden="true"></i><span>{{ _('menu_share') }}</span></button>
+                    {% if not personal_edition %}<button type="button" class="menu-item" id="menu-item-share"><i class="ph ph-link menu-icon" aria-hidden="true"></i><span>{{ _('menu_share') }}</span></button>{% endif %}
                     <button type="button" class="menu-item" id="menu-item-copy-text"><i class="ph ph-copy menu-icon" aria-hidden="true"></i><span>{{ _('menu_copy_text') }}</span></button>
                     <details class="menu-submenu">
                         <summary class="menu-item"><i class="ph ph-download-simple menu-icon" aria-hidden="true"></i><span>{{ _('menu_export') }}</span><i class="ph ph-caret-down menu-caret" aria-hidden="true"></i></summary>
@@ -185,12 +189,13 @@
                                 <span>{{ _('progress') }}</span>
                                 <strong id="progress-text">0%</strong>
                             </div>
-                            <div class="progress-track">
+                            <div class="progress-track" aria-describedby="progress-explanation">
                                 <div class="progress-fill ready" id="progress-ready" style="width: 0%;"></div>
                                 <div class="progress-fill in-progress" id="progress-in-progress" style="width: 0%;"></div>
                             </div>
                             <div class="readiness-stat" data-readiness-stat="ready"><span>{{ _('public_status_ready') }}</span><strong>0</strong></div>
                             <div class="readiness-stat" data-readiness-stat="in_progress"><span>{{ _('public_status_in_progress') }}</span><strong>0</strong></div>
+                            <p class="statistics-explanation" id="progress-explanation">{{ _('stats_progress_explanation') }}</p>
                         </div>
                         <div class="statistics-section author-stats" role="group" aria-label="{{ _('block_author_label') }}">
                             <div class="statistics-section-heading">{{ _('block_author_label') }}</div>
@@ -304,14 +309,14 @@
         </div>
 
         <div class="footer-credits">
-            papanda version {{ app_version }} (last update {{ last_update }})<br>
+            papanda{% if personal_edition %} Personal{% endif %} version {{ app_version }} (last update {{ last_update }})<br>
             designed and developed by <strong>ruslan nazarov</strong><br>
             CC BY-NC 4.0 License
         </div>
         <div class="footer-legal">
             <a href="/privacy">{{ _('footer_privacy') }}</a> ·
             <a href="/terms">{{ _('footer_terms') }}</a><br>
-            <span class="footer-legal-note">{{ _('footer_data_note') }}</span>
+            <span class="footer-legal-note">{{ personal_words.local_data if personal_edition else _('footer_data_note') }}</span>
         </div>
     </footer>
 

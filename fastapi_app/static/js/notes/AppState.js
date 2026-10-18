@@ -51,6 +51,9 @@ const AppState = {
     },
 
     updateBlock(blockId, updates) { this.store.updateBlock(blockId, updates); },
+    blockHistory(blockId) { return this.store.blockHistory(blockId); },
+    previousBlockVersions(blockId) { return this.store.previousBlockVersions(blockId); },
+    restoreBlockVersion(blockId, direction) { return this.store.restoreBlockVersion(blockId, direction); },
     addBlock(block, index = -1) { this.store.addBlock(block, index); },
     removeBlock(blockId) { this.store.removeBlock(blockId); },
     markDirty() { this.store.touch(); },

@@ -4,8 +4,10 @@ import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from pathlib import Path
+from typing import Literal
 
 class Settings(BaseSettings):
+    APP_EDITION: Literal['author', 'personal'] = 'author'
     GROQ_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
     CEREBRAS_API_KEY: str = ""

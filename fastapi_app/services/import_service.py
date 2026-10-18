@@ -30,8 +30,10 @@ async def extract_pdf(data):
         # Pass only operating-system essentials, never provider credentials.
         env = {key: value for key, value in os.environ.items()
                if key.upper() in {'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'PATH'}}
+        worker = [sys.executable, '--pdf-worker'] if getattr(sys, 'frozen', False) else [
+            sys.executable, '-I', str(Path(__file__).with_name('pdf_worker.py'))]
         process = await asyncio.create_subprocess_exec(
-            sys.executable, '-I', str(Path(__file__).with_name('pdf_worker.py')),
+            *worker,
             str(settings.PDF_MAX_PAGES), str(settings.PDF_MEMORY_BYTES), str(settings.MAX_UPLOAD_BYTES),
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL, env=env,

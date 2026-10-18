@@ -59,8 +59,8 @@
     background: #f5f3ff;
     border: 1px solid #ddd6fe;
     border-radius: 6px;
-    padding: 2px 7px;
-    margin: 0 2px;
+    padding: 4px 9px;
+    margin: 5px 2px;
     font-size: 0.95em;
     color: #4338ca;
     display: inline-flex;
@@ -74,6 +74,7 @@
     background: #ede9fe;
     border-color: #c4b5fd;
 }
+.math-inline[data-math-display="true"] { display: block; max-width: 100%; overflow-x: auto; }
 
 /* ==========================================================================
    Connections Modal Styles (Связи)
@@ -500,7 +501,6 @@
 .math-inline {
     display: inline-block;
     vertical-align: middle;
-    margin: 0 2px;
 }
 
 .math-inline-rendered {

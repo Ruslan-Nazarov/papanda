@@ -26,6 +26,10 @@ function load(ctx, name, symbol) {
         load(ctx, 'MathSubstitutions');
     }
     if (name === 'BlockNormalBuilder' && !ctx.HiddenPhraseTooltip) load(ctx, 'HiddenPhraseTooltip');
+    if (name === 'ConceptSelectionMenu' && !ctx.HiddenPhraseTooltip) load(ctx, 'HiddenPhraseTooltip');
+    if (name === 'BlockNormalBuilder' && !ctx.BlockHistoryControls) load(ctx, 'BlockHistoryControls');
+    if (name === 'BlockNormalBuilder' && !ctx.BlockTableControls) load(ctx, 'BlockTableControls');
+    if (name === 'BlockNormalBuilder' && !ctx.NoteText) load(ctx, 'NoteText');
     if (name === 'NoteNoticeManager' && !ctx.renderNotice) load(ctx, 'NoticeLinks', 'renderNotice');
     if (['AIController', 'GenerationChanges'].includes(name) && !ctx.NoteText) load(ctx, 'NoteText');
     if (name === 'NoteText' && !ctx.document.createElement) {

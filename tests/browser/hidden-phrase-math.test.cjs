@@ -86,6 +86,9 @@ test('hidden explanations render TeX in editor tooltips and expanded blocks with
             AppState: {currentNote: {}}, BlockStickersManager: {_updateBadge() {}},
             BlockCodeRenderer: {render() {}}, BlockMathRenderer: {renderMath() {}},
         }));
+        await page.addScriptTag({content: source('BlockHistoryControls')});
+        await page.addScriptTag({content: source('BlockTableControls')});
+        await page.addScriptTag({content: source('NoteText')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
         await t.test('reading view renders expanded formulas and removes detached tooltips', async () => {
             await page.evaluate(() => document.body.appendChild(BlockNormalBuilder.build({id: 'hint-block', title: 'Блок', html: hintHtml})));

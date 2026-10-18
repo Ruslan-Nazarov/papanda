@@ -481,6 +481,12 @@ input:checked + .toggle-slider:before {
 }
 .statistics-section-heading strong { color: #475569; font-size: 0.82rem; letter-spacing: 0; }
 .statistics-panel .progress-track { width: 100%; height: 7px; margin-bottom: 10px; }
+.statistics-explanation {
+    margin: 10px 0 0;
+    color: #64748b;
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
 .author-stat, .readiness-stat {
     display: flex;
     align-items: center;

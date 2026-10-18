@@ -62,8 +62,51 @@ async def test_explain_concept_endpoint(client: AsyncClient):
             history=[{"role": "user", "content": "Поясни подробнее"}],
             locale="русском",
             question="Какое противоречие здесь разрешается?",
+            note_passages=[],
         )
         client.cookies.delete("locale")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("streaming", [False, True])
+async def test_explain_forwards_note_passages(client, streaming):
+    passages = [
+        {"block_id": "b", "title": "Определение", "text": "Скрытое состояние — вектор."},
+        {"block_id": "", "kind": "dictionary", "reference": "Состояние", "title": "Состояние", "text": "Вектор памяти"},
+        {"block_id": "b", "kind": "link", "url": "internal://note/2/block/a", "reference": "linked_content",
+         "title": "Связанный блок", "text": "Состояние хранит память"},
+        {"block_id": "b", "kind": "draft", "reference": "d1", "title": "Черновик", "text": "Состояние — число",
+         "reason": "Нужен вектор"},
+        {"block_id": "b", "kind": "version", "reference": "1", "title": "Предыдущая версия", "text": "Старый текст"},
+    ]
+
+    async def chunks(**kwargs):
+        yield "Ответ [1]"
+
+    method = "explain_concept_stream" if streaming else "explain_concept"
+    mock = MagicMock(side_effect=chunks) if streaming else AsyncMock(return_value="Ответ [1]")
+    with patch(f"fastapi_app.routers.ai.ai_service.{method}", mock):
+        suffix = "/stream" if streaming else ""
+        response = await client.post(f"/api/ai/dialectics/explain-concept{suffix}",
+                                     json={"text": "скрытое состояние", "note_passages": passages})
+    assert response.status_code == 200
+    assert mock.call_args.kwargs["note_passages"] == passages
+    assert "Ответ [1]" in response.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("passages", [
+    [{"block_id": "b", "text": "x"}] * 6,
+    [{"block_id": "b", "text": "x" * 1201}],
+    [{"block_id": "b", "text": "x", "kind": "instructions"}],
+    [{"block_id": "b", "text": "x", "reason": "x" * 2001}],
+])
+async def test_explain_rejects_unbounded_note_context(client, passages):
+    with patch("fastapi_app.routers.ai.ai_service.explain_concept", new_callable=AsyncMock) as generate:
+        response = await client.post("/api/ai/dialectics/explain-concept",
+                                     json={"text": "state", "note_passages": passages})
+    assert response.status_code == 422
+    generate.assert_not_awaited()
 
 
 @pytest.mark.asyncio
