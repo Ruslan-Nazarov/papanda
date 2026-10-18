@@ -52,7 +52,8 @@ reload выключайте. Для demo — один worker (проверяет
 доступна без ключа; свой ключ и модель пользователь добавляет в «Настройки ИИ».
 Настройки применяются после закрытия окна запуска и повторного запуска программы.
 
-Готовый архив: `output/personal/Papanda-Personal-<версия>-Windows-x64.zip`.
+Скачать готовую программу: [Papanda Personal — Releases](https://github.com/Ruslan-Nazarov/papanda/releases).
+В разделе **Assets** выберите `Papanda-Personal-<версия>-Windows-x64.zip`.
 Нужно распаковать его целиком и запустить `Papanda.exe`. Python и Node на компьютере
 пользователя не нужны. Данные хранятся отдельно: `%LOCALAPPDATA%/Papanda/Personal`.
 Для резервной копии закройте приложение и скопируйте эту папку целиком; для
@@ -67,8 +68,15 @@ npm run build
 .\.venv\Scripts\python.exe scripts/build_personal.py --tools .cache/personal-build-tools
 ```
 
-Workflow **Build Papanda Personal for Windows** запускается вручную и сохраняет
-ZIP с SHA256 как artifact. Он не публикует файлы и не запускает деплой сайта.
+Workflow **Build Papanda Personal for Windows** запускается через **Actions → Run workflow**.
+По умолчанию он собирает программу, проверяет запуск и сохранение после перезапуска,
+а затем публикует ZIP с SHA256 в GitHub Releases с тегом `personal-v<версия>`.
+Снимите флажок **publish**, чтобы получить только artifact без публикации.
+Публикация также запускается при отправке тега `personal-v<версия>`; версия тега
+должна совпадать с `fastapi_app/version.py`. Уже существующий релиз не заменяется:
+для следующего выпуска увеличьте версию приложения. Локальный архив сборки находится
+в `output/personal/`. Этот workflow не запускает деплой сайта и не использует
+ключи ИИ или доступ к серверу.
 Для запуска без упаковки: `.\.venv\Scripts\python.exe run_personal.py`.
 Сборщик автоматически проверяет ZIP, включая скомпилированный Python, на наличие
 ключей из локального `.env`, типичных секретов, локальных путей автора и файлов

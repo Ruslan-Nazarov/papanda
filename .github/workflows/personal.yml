@@ -2,6 +2,13 @@ name: Build Papanda Personal for Windows
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified ZIP to GitHub Releases
+        type: boolean
+        default: true
+  push:
+    tags: ['personal-v*']
 
 permissions:
   contents: read
@@ -21,6 +28,8 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - name: Validate the personal release version
+        run: python scripts/publish_personal.py --check
       - name: Install build dependencies
         run: |
           python -m venv .venv
@@ -40,3 +49,26 @@ jobs:
             output/personal/*.sha256
           if-no-files-found: error
           retention-days: 30
+
+  release:
+    needs: personal
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: papanda-personal-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: Papanda-Personal-Windows-x64
+          path: output/personal
+      - name: Publish the verified Windows archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_personal.py
