@@ -16,7 +16,7 @@ from fastapi_app.config import settings
 from fastapi_app.database import get_db
 from fastapi_app.schemas.notes import (
     AttachedConspect, BlockDerivation, NoteBlock, NoteCreate, NoteSticker,
-    RejectedDraft, RequestDocument, Word, NoteView, MathSymbol,
+    RejectedDraft, RequestDocument, Word, NoteView, MathSymbol, MathNumberDefinition,
 )
 from fastapi_app.services import library_store as store
 from fastapi_app.services.note_transactions import get_note
@@ -136,6 +136,7 @@ class PublicBlock(BaseModel):
     sources: list[PublicSource] = Field(default_factory=list, max_length=1000)
     words: list[Word] = Field(default_factory=list, max_length=1000)
     math_symbols: list[MathSymbol] = Field(default_factory=list, max_length=1000)
+    math_number_definitions: list[MathNumberDefinition] = Field(default_factory=list, max_length=1000)
     inline_notes: list[PublicInlineNote] = Field(default_factory=list, max_length=1000)
     rejected_drafts: list[RejectedDraft] = Field(default_factory=list, max_length=100)
     derivations: list[BlockDerivation] = Field(default_factory=list, max_length=1000)

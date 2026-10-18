@@ -3,6 +3,7 @@
    <script type="application/json" id="i18n-data">. Раньше здесь лежала
    копия таблицы на ~1700 строк, расходившаяся с i18n.py. */
 
+/** @type {Record<string, string>} */
 let TRANSLATIONS = {};
 try {
     const el = typeof document !== 'undefined' && document.getElementById('i18n-data');
@@ -11,10 +12,12 @@ try {
     // Нет данных — t() вернёт сам ключ, интерфейс не падает.
 }
 
+/** @param {string} key @returns {string} */
 export function t(key) {
     return (TRANSLATIONS && TRANSLATIONS[key]) || key;
 }
 
+/** @param {string} lang */
 export function switchLanguage(lang) {
     document.cookie = `locale=${lang}; path=/; max-age=31536000`;
     const url = new URL(window.location.href);

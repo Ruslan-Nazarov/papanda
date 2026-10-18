@@ -11,6 +11,17 @@ from fastapi_app.services.generation import dialectic_v3_pipeline as pipeline_mo
 from fastapi_app.services.generation.dialectic_v3_pipeline import DialecticV3Pipeline, build_generation_result
 
 
+@pytest.mark.asyncio
+async def test_missing_provider_returns_failed_terminal_instead_of_unhandled_server_error(monkeypatch):
+    for name in ('OPENAI_API_KEY', 'GIGACHAT_AUTH_KEY', 'GROQ_API_KEY', 'CEREBRAS_API_KEY', 'OPENROUTER_API_KEY'):
+        monkeypatch.setattr(pipeline_module.conspect_settings, name, '')
+    events = [event async for event in DialecticV3Pipeline().stream_generate_full({'target_goal': 'Контроль'}, 'ru')]
+    assert events[-1][0] == '__terminal__'
+    assert events[-1][1]['status'] == 'failed'
+    assert 'no provider configured' in events[-1][1]['error_message']
+    assert events[-1][1]['updated_steps'] == {}
+
+
 @pytest.fixture(autouse=True)
 def no_live_presentation(monkeypatch):
     async def present(ctx, world, keys):

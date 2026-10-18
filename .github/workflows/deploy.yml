@@ -14,6 +14,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/playwright-browsers
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -34,6 +36,7 @@ jobs:
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
           npm ci
           sudo env "PATH=$PATH" "PUPPETEER_CACHE_DIR=$HOME/.cache/puppeteer" node node_modules/puppeteer/lib/puppeteer/node/cli.js browsers install chrome --install-deps
+          npx playwright install --with-deps firefox webkit
       - name: Build and verify
         run: |
           npm run build
@@ -44,6 +47,7 @@ jobs:
           python -m pip check
           python -m pytest -q -p no:cacheprovider
           npm run test:browser
+          npm run test:cross-browser
       - name: Audit all locked dependencies
         run: |
           python scripts/audit_dependencies.py

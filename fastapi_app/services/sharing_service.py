@@ -50,6 +50,7 @@ class SharingService:
                 'schema_version': getattr(note, 'schema_version', 1), 'content_json': [
             {'id': b.get('id'), 'role': b.get('role'), 'title': b.get('title'),
              'side': b.get('side', 'center'), 'math_symbols': b.get('math_symbols', []),
+             'math_number_definitions': b.get('math_number_definitions', []),
              'html': sanitize_block_html(b.get('html', ''))}
             for b in note.content_json if isinstance(b, dict)
         ]}

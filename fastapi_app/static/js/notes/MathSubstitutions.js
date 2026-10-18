@@ -129,11 +129,66 @@ class MathSubstitutions {
                 const expression = text.replace(/[.,;]\s*$/, '').trimEnd();
                 return {text: expression, start, tree: this.parse(expression)};
             });
-            return {...statement, parts, lhs: MathComputedValues.symbol(parts[0].text)?.symbol};
+            return {...statement, parts, lhs: this.resultSymbol(parts[0].text)};
         });
         if (this.descriptions.size >= 256) this.descriptions.clear();
         this.descriptions.set(formula, result);
         return result;
+    }
+
+    static resultSymbol(text) {
+        const symbol = MathComputedValues.symbol(text)?.symbol;
+        if (symbol) return symbol;
+        // A coordinate of a product is an explicit result too: (x_1 W_hx)_2.
+        const clean = text.replace(/\\(?:left|right)\b/g, '').trim();
+        return /^\(.+\)_(?:\{[\d,\s]+\}|\d+)$/.test(clean) && MathSymbols.atoms(clean).length
+            ? MathSymbols.normalize(clean) : null;
+    }
+
+    static numericMeanings(formula, ranges, known) {
+        const numbers = MathSymbols.numbers(formula);
+        for (const range of ranges) {
+            const tokens = numbers.filter(number => number.start >= range.start && number.end <= range.end);
+            const value = MathComputedValues.clean(range.value);
+            const matrix = value.match(/^\\begin\{([^}]+)\}([\s\S]*?)\\end\{\1\}$/);
+            const vector = !matrix && /^(?:\[.*\]|\([^)]*[,;][^)]*\))$/.test(value);
+            const scalar = !matrix && !vector && tokens.length === 1
+                && MathSymbols.numberKey(value.replace(/^\((.*)\)$/, '$1')) === MathSymbols.numberKey(tokens[0].value);
+            if (!matrix && !vector && !scalar) continue;
+            // Only plain numeric cells receive coordinates. Fractions and roots
+            // retain their whole-expression hint instead of labelling numerator digits.
+            const cells = matrix ? matrix[2].split(/\\\\|&/).map(cell => MathComputedValues.clean(cell))
+                : vector ? value.slice(1, -1).split(/[,;]/).map(cell => cell.trim()) : [value];
+            if ((matrix || vector) && (cells.length !== tokens.length
+                || cells.some(cell => !/^[+−-]?\s*(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(cell)))) continue;
+            const columns = matrix ? matrix[2].split('\\\\')[0].split('&').length : 1;
+            tokens.forEach((number, index) => {
+                const coordinate = matrix && columns > 1 ? `${Math.floor(index / columns) + 1},${index % columns + 1}` : `${index + 1}`;
+                number.symbol = scalar ? range.symbol : `(${range.symbol})_{${coordinate}}`;
+                number.sourceSymbol = range.symbol;
+                if (scalar) number.expressionValue = range.value;
+                if (range.original) number.original = range.original;
+                const key = MathSymbols.numberKey(number.value);
+                if (!known.has(key)) known.set(key, new Map());
+                known.get(key).set(number.symbol, {symbol: number.symbol, sourceSymbol: number.sourceSymbol, original: number.original});
+            });
+        }
+        for (const number of numbers) {
+            if (number.symbol) continue;
+            let meanings = known.get(MathSymbols.numberKey(number.value));
+            // A negative bias is often written as z - 0.112436 rather than
+            // z + (-0.112436). Keep its sign when that explicit value is known.
+            const minus = formula.slice(0, number.start).match(/[−-]\s*$/);
+            if (!meanings && minus) {
+                meanings = known.get('-' + MathSymbols.numberKey(number.value));
+                if (meanings?.size === 1) {
+                    number.start -= minus[0].length;
+                    number.value = formula.slice(number.start, number.end);
+                }
+            }
+            if (meanings?.size === 1) Object.assign(number, meanings.values().next().value);
+        }
+        return numbers;
     }
 
     static match(template, actual, text, facts) {
@@ -162,19 +217,23 @@ class MathSubstitutions {
         return visit(template, actual) && ranges.length ? ranges : null;
     }
 
-    static analyze(formula, previous = []) {
-        const templates = [], facts = new Map(), ranges = [], originals = [];
-        const add = source => {
-            for (const statement of this.describe(source)) {
-                if (!statement.lhs) continue;
-                for (const part of statement.parts.slice(1)) {
-                    if (part.tree && !MathComputedValues.isLiteral(part.text)) templates.push({lhs: statement.lhs, part,
-                        original: `${statement.parts[0].text} ${statement.relations[0]} ${part.text}`});
-                }
+    static addSource(source, {templates, facts}) {
+        for (const statement of this.describe(source)) {
+            if (!statement.lhs) continue;
+            for (const part of statement.parts.slice(1)) {
+                if (part.tree && !MathComputedValues.isLiteral(part.text)) templates.push({lhs: statement.lhs, part,
+                    original: `${statement.parts[0].text} ${statement.relations[0]} ${part.text}`});
             }
-            for (const result of MathComputedValues.extract(source)) facts.set(result.symbol, this.literalKey(result.value));
-        };
-        previous.forEach(add);
+        }
+        for (const result of MathComputedValues.extract(source)) facts.set(result.symbol, this.literalKey(result.value));
+    }
+
+    static analyze(formula, previous = [], context = null) {
+        const sources = context || {templates: [], facts: new Map()};
+        previous.forEach(source => this.addSource(source, sources));
+        // A formula may extend its own chain, without leaking partial templates
+        // into the chronological context shared by the rest of the document.
+        const templates = [...sources.templates], facts = sources.facts, ranges = [], originals = [];
         for (const statement of this.describe(formula)) {
             if (!statement.lhs) continue;
             for (const part of statement.parts.slice(1)) {
@@ -211,18 +270,20 @@ class MathSubstitutions {
     }
 
     static refresh(root) {
-        const previous = [];
+        const context = {templates: [], facts: new Map()};
+        const known = new Map();
         root.querySelectorAll('.block-content .katex, .blk-body .katex').forEach(element => {
             if (element.closest(SUBSTITUTION_EXCLUDED)) return;
             const formula = element.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
             if (!formula) return;
-            const result = this.analyze(formula, previous);
-            previous.push(formula);
-            const signature = JSON.stringify(result);
+            const result = this.analyze(formula, [], context);
+            const numbers = this.numericMeanings(formula, result.ranges, known);
+            this.addSource(formula, context);
+            const signature = JSON.stringify({...result, numbers});
             if (element.dataset.mathSubstitutions === signature) return;
-            if (!result.ranges.length && !element.dataset.mathSubstitutions) return;
+            if (!result.ranges.length && !numbers.length && !element.dataset.mathSubstitutions) return;
             const template = document.createElement('template');
-            template.innerHTML = MathSymbols.render(formula, {displayMode: !!element.closest('.katex-display')}, result.ranges);
+            template.innerHTML = MathSymbols.render(formula, {displayMode: !!element.closest('.katex-display')}, result.ranges, numbers);
             const rendered = template.content.querySelector('.katex');
             if (!rendered || template.content.querySelector('.katex-error')) return;
             rendered.dataset.mathSubstitutions = signature;
@@ -232,7 +293,14 @@ class MathSubstitutions {
     }
 
     static decorate(root) {
+        // Dialog answers have no substitutions from note blocks. Rendering one
+        // must not re-analyze every equation in the underlying note each time.
+        if (!root.querySelector('.block-content .katex, .blk-body .katex')) return;
         this.refresh(root);
+        this.scheduleRefresh();
+    }
+
+    static scheduleRefresh() {
         if (this.scheduled || !window.requestAnimationFrame) return;
         this.scheduled = true;
         window.requestAnimationFrame(() => {

@@ -157,7 +157,7 @@ class App {
         document.getElementById('menu-item-ai-full')?.addEventListener('click', async () => {
             DropdownController.closeAll();
             try { await AIController.generateFull(() => BlockDOMRenderer.renderAll()); }
-            catch (error) { const {showToast} = await import('./ToastService.js'); showToast(error.message, 'error'); }
+            catch (error) { showToast(error.message, 'error'); }
         });
         if (headerRight && btnMobileNav) {
             btnMobileNav.addEventListener('click', (e) => {
@@ -282,7 +282,6 @@ class App {
 
         document.getElementById('menu-item-share')?.addEventListener('click', async () => {
             DropdownController.closeAll();
-            const { showToast } = await import('./ToastService.js');
             try {
                 const saved = await NoteStorageService.saveCurrentNote();
                 if (!saved.id) { showToast(t('share_need_content'), 'error'); return; }
@@ -402,7 +401,6 @@ class App {
                         
                         try {
                             await NoteStorageService.loadNote(noteId);
-                            BlockDOMRenderer.renderAll();
                             if (blockId) {
                                 setTimeout(() => {
                                     const blockEl = document.getElementById(blockId);
@@ -447,11 +445,9 @@ class App {
 
                     this.updateSaveStatusUI();
                     this.updateSaveTime();
-                    const { showToast } = await import('./ToastService.js');
                     showToast(t('note_and_version_saved'));
                 } catch (e) {
                     console.error('Save failed:', e);
-                    const { showToast } = await import('./ToastService.js');
                     showToast(t('save_error'), 'error');
                 }
             });
@@ -465,7 +461,6 @@ class App {
                 AppState.updateNote({status: newStatus});
                 this.updateSaveStatusUI();
 
-                const { showToast } = await import('./ToastService.js');
                 const isReady = (newStatus === 'ready');
 
                 try {

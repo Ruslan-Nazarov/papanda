@@ -1,17 +1,44 @@
 import MathSymbols from './MathSymbols.js';
 import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
 import MathComputedValues from './MathComputedValues.js';
+import MathDefinitionContext from './MathDefinitionContext.js';
+import MathDefinitionSuggestion from './MathDefinitionSuggestion.js';
 import { t } from '../i18n.js';
 
-const TARGET = '[data-math-symbol], [data-math-value], .katex[data-math-original]';
+const TARGET = '[data-math-symbol], [data-math-value], [data-math-number], .katex[data-math-original]';
 
 class MathSymbolTooltip {
     static active = null;
     static dispose = null;
     static hideTimer = null;
+    static highlighted = [];
+
+    static highlight(element) {
+        this.highlighted.forEach(node => node.classList.remove('math-number-match'));
+        this.highlighted = [];
+        const targets = element.matches('[data-math-number]') ? [element] : [...element.querySelectorAll('[data-math-number]')];
+        const scope = element.closest('.formula-zoom-dialog, .dialectics-block, .blk');
+        if (targets.length !== 1 || !scope) return;
+        try {
+            const key = MathSymbols.numberKey(JSON.parse(MathSymbols.decode(targets[0].dataset.mathNumber)).value);
+            const matches = [];
+            scope.querySelectorAll('[data-math-number]').forEach(node => {
+                if (node.closest('.tiptap, [contenteditable="true"], .math-symbol-tooltip')) return;
+                const number = JSON.parse(MathSymbols.decode(node.dataset.mathNumber));
+                if (MathSymbols.numberKey(number.value) === key) matches.push(node);
+            });
+            // The hovered number alone is not a match: require another occurrence.
+            if (matches.length < 2) return;
+            matches.forEach(node => node.classList.add('math-number-match'));
+            this.highlighted = matches;
+        } catch { /* Ignore invalid metadata in imported HTML. */ }
+    }
 
     static hide() {
         clearTimeout(this.hideTimer);
+        this.hideTimer = null;
+        this.highlighted.forEach(node => node.classList.remove('math-number-match'));
+        this.highlighted = [];
         if (!this.active) return;
         const {element, popup, previous, cleanup} = this.active;
         this.active = null;
@@ -21,7 +48,7 @@ class MathSymbolTooltip {
         else element.setAttribute('aria-describedby', previous);
     }
 
-    static bind(root, {getContext, onEdit} = {}) {
+    static bind(root, {getContext, onEdit, onSuggest, onAccept, onRemoveNumber} = {}) {
         this.dispose?.();
         let touchTarget = null;
         const touchStart = event => {
@@ -31,6 +58,7 @@ class MathSymbolTooltip {
         };
         const cancelTouch = () => { touchTarget = null; };
         const schedule = () => {
+            clearTimeout(this.hideTimer);
             if (!this.active?.pinned) this.hideTimer = setTimeout(() => this.hide(), 160);
         };
         const target = event => event.target.closest?.(TARGET);
@@ -44,18 +72,29 @@ class MathSymbolTooltip {
             }
             if (this.active?.pinned && !pinned) return;
             this.hide();
-            let symbol, substitution, originals = [];
+            let symbol, substitution, number, originals = [];
             try {
-                if (element.dataset.mathValue) {
+                if (element.dataset.mathNumber) {
+                    number = JSON.parse(MathSymbols.decode(element.dataset.mathNumber));
+                    if (number.symbol) {
+                        substitution = {...number, value: number.expressionValue || number.value};
+                        symbol = number.symbol;
+                        if (number.original) originals = [number.original];
+                    }
+                } else if (element.dataset.mathValue) {
                     substitution = JSON.parse(MathSymbols.decode(element.dataset.mathValue));
                     symbol = substitution.symbol;
                     if (substitution.original) originals = [substitution.original];
                 } else if (element.dataset.mathSymbol) symbol = MathSymbols.decode(element.dataset.mathSymbol);
                 else originals = JSON.parse(MathSymbols.decode(element.dataset.mathOriginal));
             } catch { return; }
-            const entry = symbol && MathSymbols.resolve(symbol, context.note, context.block);
+            const mathTarget = MathDefinitionContext.target(element, symbol, number, originals);
+            const numberEntry = number && (context.numberDefinitions || []).find(item => MathDefinitionContext.sameNumber(item, mathTarget));
+            const entry = numberEntry ? {...numberEntry, scope: 'block'} : symbol && (MathSymbols.resolve(symbol, context.note, context.block)
+                || (number?.sourceSymbol && MathSymbols.resolve(number.sourceSymbol, context.note, context.block)));
             const values = symbol && !substitution ? MathComputedValues.forElement(symbol, element) : [];
-            if (!entry && !onEdit && !values.length && !substitution && !originals.length) return;
+            if (!entry && !onEdit && !values.length && !substitution && !originals.length && !number) return;
+            this.highlight(element);
             const popup = document.createElement('div');
             popup.className = 'math-symbol-tooltip';
             popup.id = 'math-symbol-tooltip';
@@ -66,6 +105,7 @@ class MathSymbolTooltip {
             const label = document.createElement('span');
             if (symbol) label.innerHTML = window.katex.renderToString(substitution ? `${symbol} = ${substitution.value}` : symbol,
                 {throwOnError: false, trust: false});
+            else if (number) label.innerHTML = window.katex.renderToString(number.value, {throwOnError: false, trust: false});
             else label.textContent = t('ms_original_formula');
             const close = document.createElement('button');
             close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', t('close'));
@@ -73,11 +113,12 @@ class MathSymbolTooltip {
             heading.append(label, close);
             const text = document.createElement('div');
             text.className = 'math-symbol-definition';
-            HiddenPhraseTooltip.renderHint(text, entry?.definition || (substitution ? t('ms_substituted_value') : t('ms_undefined')));
+            HiddenPhraseTooltip.renderHint(text, entry?.definition || (substitution ? t('ms_substituted_value')
+                : number ? t('ms_number_unassigned') : t('ms_undefined')));
             const origin = document.createElement('small');
             origin.textContent = entry ? t(entry.scope === 'block' ? 'ms_block' : 'ms_note') : '';
             popup.append(heading);
-            if (symbol) popup.append(text, origin);
+            if (symbol || number) popup.append(text, origin);
             if (originals.length) {
                 const section = document.createElement('section');
                 section.className = 'math-symbol-original';
@@ -117,7 +158,7 @@ class MathSymbolTooltip {
                 section.append(title, list);
                 popup.appendChild(section);
             }
-            if (onEdit && !substitution && !originals.length) {
+            if (onEdit && symbol && !substitution && !originals.length) {
                 const edit = document.createElement('button');
                 edit.type = 'button'; edit.className = 'math-symbol-edit';
                 edit.textContent = t(entry ? 'ms_edit' : 'ms_add');
@@ -126,9 +167,23 @@ class MathSymbolTooltip {
                 });
                 popup.appendChild(edit);
             }
+            let cancelSuggestion;
+            if (onSuggest && onAccept && (!entry || numberEntry) && (symbol || number)) {
+                const selection = {symbol, number, numberDefinition: numberEntry, element, context, target: mathTarget};
+                cancelSuggestion = MathDefinitionSuggestion.mount(popup, {
+                    initial: numberEntry?.definition || '',
+                    suggest: signal => onSuggest({...selection, signal}),
+                    accept: definition => onAccept({...selection, definition}),
+                    remove: numberEntry && onRemoveNumber ? () => onRemoveNumber(selection) : null,
+                    pin: () => { clearTimeout(this.hideTimer); if (this.active) this.active.pinned = true; },
+                    position: () => position(),
+                });
+            }
             (element.closest('dialog[open]') || document.body).appendChild(popup);
+            let anchorRect;
             const position = () => {
                 const rect = element.getBoundingClientRect(), size = popup.getBoundingClientRect();
+                anchorRect = {top: rect.top, left: rect.left, bottom: rect.bottom, right: rect.right};
                 popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - size.width - 8))}px`;
                 popup.style.top = `${rect.bottom + size.height + 8 < window.innerHeight ? rect.bottom + 6 : Math.max(8, rect.top - size.height - 6)}px`;
             };
@@ -141,7 +196,8 @@ class MathSymbolTooltip {
             popup.addEventListener('focusin', () => { if (this.active) this.active.pinned = true; });
             const observer = new MutationObserver(() => { if (!element.isConnected) this.hide(); });
             observer.observe(document.body, {childList: true, subtree: true});
-            this.active = {element, popup, previous, pinned, cleanup: () => observer.disconnect()};
+            this.active = {element, popup, previous, pinned, position, get anchorRect() { return anchorRect; },
+                cleanup: () => { observer.disconnect(); cancelSuggestion?.(); }};
         };
         const enter = event => { const el = target(event); if (el && root.contains(el)) show(el); };
         const leave = event => { const el = target(event); if (el && !el.contains(event.relatedTarget)) schedule(); };
@@ -156,15 +212,23 @@ class MathSymbolTooltip {
         };
         const key = event => {
             if (event.key === 'Escape' && this.active) {
-                if (this.active.element.closest('dialog')) event.preventDefault();
+                event.preventDefault();
                 event.stopImmediatePropagation(); this.hide();
             }
             else if (['Enter', ' '].includes(event.key) && target(event)) {
                 event.preventDefault(); event.stopPropagation(); show(target(event), true);
             }
         };
-        const scroll = event => { if (this.active && !this.active.popup.contains(event.target)) this.hide(); };
+        const scroll = event => {
+            if (!this.active || this.active.popup.contains(event.target)) return;
+            // Native dialogs and scrollIntoView can deliver a scroll notification
+            // after hover has already measured the final position. It is not a
+            // new movement of this target and must not dismiss its new tooltip.
+            const rect = this.active.element.getBoundingClientRect();
+            if (['top', 'left', 'bottom', 'right'].some(key => Math.abs(rect[key] - this.active.anchorRect[key]) > .5)) this.hide();
+        };
         const hide = () => this.hide();
+        const resize = () => this.active?.position();
         root.addEventListener('mouseover', enter);
         root.addEventListener('mouseout', leave);
         root.addEventListener('focusin', enter);
@@ -177,7 +241,7 @@ class MathSymbolTooltip {
         document.addEventListener('scroll', scroll, true);
         document.addEventListener('noteOpened', hide);
         document.addEventListener('stateDirty', hide);
-        window.addEventListener('resize', hide);
+        window.addEventListener('resize', resize);
         this.dispose = () => {
             this.hide();
             root.removeEventListener('mouseover', enter); root.removeEventListener('mouseout', leave);
@@ -186,7 +250,7 @@ class MathSymbolTooltip {
             root.removeEventListener('touchstart', touchStart, true); root.removeEventListener('touchmove', cancelTouch, true);
             root.removeEventListener('touchcancel', cancelTouch, true);
             document.removeEventListener('scroll', scroll, true); document.removeEventListener('noteOpened', hide);
-            document.removeEventListener('stateDirty', hide); window.removeEventListener('resize', hide);
+            document.removeEventListener('stateDirty', hide); window.removeEventListener('resize', resize);
             this.dispose = null;
         };
         return this.dispose;

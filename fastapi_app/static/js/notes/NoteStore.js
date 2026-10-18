@@ -2,7 +2,7 @@ import { inferRoleFromTitle, ALGORITHM_STEPS } from './BlockConstants.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const normalizeBlockStatus = status => status === 'ready' || status === 'done' ? 'ready' : 'in_progress';
-const VERSION_FIELDS = ['title', 'html', 'tags', 'shapesData', 'math_symbols',
+const VERSION_FIELDS = ['title', 'html', 'tags', 'shapesData', 'math_symbols', 'math_number_definitions',
     'sourceGoal', 'sourceTitle', 'anchorResolved', 'author', 'generation_data'];
 const versionOf = block => clone(Object.fromEntries(VERSION_FIELDS.filter(key => key in block)
     .map(key => [key, block[key]])));
@@ -94,7 +94,19 @@ class NoteStore {
                 else this.#blockHistory.delete(block.id);
             }
         }
-        Object.assign(this.#current.data, clone(patch));
+        const changes = clone(patch);
+        if (Array.isArray(changes.blocks)) {
+            // Retained cards and their handlers keep live views across reorders
+            // and bulk AI updates, just as they do across autosaves.
+            const previous = new Map(this.#current.data.blocks.map(block => [block.id, block]));
+            changes.blocks = changes.blocks.map(block => {
+                const target = previous.get(block.id);
+                if (!target) return block;
+                for (const key of Object.keys(target)) if (!(key in block)) delete target[key];
+                return Object.assign(target, block);
+            });
+        }
+        Object.assign(this.#current.data, changes);
         this.touch();
     }
 
@@ -102,7 +114,7 @@ class NoteStore {
         const block = this.#current.data.blocks.find(item => item.id === id);
         if ('status' in patch) patch = {...patch, status: normalizeBlockStatus(patch.status)};
         if (!block || !Object.entries(patch).some(([key, value]) => JSON.stringify(block[key]) !== JSON.stringify(value))) return;
-        this.#rememberBlock(block, {...block, ...patch});
+        if (Object.keys(patch).some(key => VERSION_FIELDS.includes(key))) this.#rememberBlock(block, {...block, ...patch});
         Object.assign(block, clone(patch));
         this.touch();
     }

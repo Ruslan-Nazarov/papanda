@@ -129,6 +129,109 @@ test('numeric substitutions recover original symbols on hover, touch and in the 
             await page.evaluate(() => AppState.setNote({id: 2, blocks: []}));
             assert.equal(await page.$('.math-symbol-tooltip'), null);
         });
+        await t.test('recurrent calculations show coordinate meanings and highlight only exact numbers within their block', async () => {
+            await page.setViewport({width: 1024, height: 1000, isMobile: true, hasTouch: true});
+            await page.evaluate(() => {
+                const math = formula => {
+                    const span = document.createElement('span'); span.className = 'math-inline';
+                    span.setAttribute('formula', formula); span.textContent = formula;
+                    return span.outerHTML;
+                };
+                const product = String.raw`\begin{aligned}(x_1W_{hx})_1&=(-0.24)\cdot0.988340+0.31\cdot(-0.000290)+0.18\cdot(-0.042236)\\&\approx-0.247684,\end{aligned}`;
+                const state = String.raw`\begin{aligned}h_1&\approx\tanh[-0.247684-0.112436;0.317809+0.107522;0.173451-0.073507]\\&=\tanh[-0.360120;0.425331;0.099944]\\&\approx[-0.345320;0.401412;0.099612].\end{aligned}`;
+                AppState.setNote({id: 3, revision: 1, blocks: [
+                    {id: 'vectors', title: 'Вход и смещение', side: 'center', math_symbols: [], html: '<p>'
+                        + math('x_1=[-0.24;0.31;0.18]') + '</p><p>' + math('b=[-0.112436;0.107522;-0.073507]') + '</p>'},
+                    {id: 'recurrent', title: 'Первое слово', side: 'center', math_symbols: [
+                        {symbol: 'x_1', definition: 'Входной вектор первого слова'},
+                    ], html: '<p>Для первого слова вычисляем координаты произведения:</p><p>' + math(product)
+                        + '</p><p>Добавляем обновлённое смещение:</p><p>' + math(state)
+                        + '</p><p>' + math('0.247684+(-0.24768)+(-0.2476840)') + '</p>'},
+                    {id: 'matrix', title: 'Матрица', side: 'center', html: '<p>'
+                        + math(String.raw`X_{\mathrm{emb}}=\begin{bmatrix}-0.24&0.31&0.18\\0.41&-0.12&0.55\end{bmatrix}`)
+                        + '</p><p>' + math('0.55+0.550+(-0.55)') + '</p>'},
+                    {id: 'other-calculation', title: 'Другой блок', side: 'center', html: '<p>' + math('q=-0.247684') + '</p><p>' + math('r=-0.12') + '</p>'},
+                ]});
+                window.recurrentHtml = AppState.getBlock('recurrent').html;
+                BlockDOMRenderer.renderAll();
+            });
+            await page.waitForFunction(() => [...document.querySelectorAll('#recurrent [data-math-number]')]
+                .some(el => JSON.parse(MathSymbols.decode(el.dataset.mathNumber)).symbol === '(x_{1}W_{hx})_{1}'));
+            const numericPoint = async (value, scope = '#recurrent') => page.$$eval(`${scope} [data-math-number]`, async (nodes, wanted) => {
+                const el = nodes.find(node => JSON.parse(MathSymbols.decode(node.dataset.mathNumber)).value === wanted);
+                if (!el) throw new Error('Missing numeric target: ' + wanted);
+                el.scrollIntoView({block: 'center'});
+                await new Promise(requestAnimationFrame);
+                await new Promise(requestAnimationFrame);
+                const rect = el.getBoundingClientRect();
+                return {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
+            }, value);
+            await page.mouse.move(1, 1);
+            let p = await numericPoint('-0.12', '#matrix');
+            await page.mouse.move(p.x, p.y);
+            await page.waitForSelector('.math-symbol-tooltip');
+            assert.equal(await page.$eval('.math-symbol-tooltip-heading annotation', el => el.textContent), '(X_{\\mathrm{emb}})_{2,2} = -0.12');
+            assert.deepEqual(await page.$eval('#matrix [data-math-value]', matrix => ({
+                matrixOutline: getComputedStyle(matrix).outlineStyle,
+                cellOutlines: [...matrix.querySelectorAll('[data-math-number]')].filter(el => getComputedStyle(el).outlineStyle !== 'none').length,
+            })), {matrixOutline: 'none', cellOutlines: 1});
+            assert.equal(await page.$$eval('.math-number-match', nodes => nodes.length), 0);
+            await page.screenshot({path: path.join(root, 'tmp/math-matrix-hover.png')});
+            await page.keyboard.press('Escape');
+
+            p = await numericPoint('0.55', '#matrix');
+            await page.mouse.move(p.x, p.y);
+            await page.waitForSelector('.math-symbol-tooltip');
+            assert.deepEqual(await page.$$eval('#matrix .math-number-match', nodes => nodes.map(el => JSON.parse(MathSymbols.decode(el.dataset.mathNumber)).value)), ['0.55', '0.55']);
+            await page.keyboard.press('Escape');
+
+            p = await numericPoint('-0.247684');
+            await page.mouse.move(p.x, p.y);
+            await page.waitForSelector('.math-symbol-tooltip');
+            assert.equal(await page.$eval('.math-symbol-tooltip-heading annotation', el => el.textContent), '(x_{1}W_{hx})_{1} = -0.247684');
+            assert.equal(await page.$$eval('#recurrent .math-number-match', nodes => nodes.length), 2);
+            assert.equal(await page.$$eval('#other-calculation .math-number-match, #vectors .math-number-match', nodes => nodes.length), 0);
+            assert.deepEqual(await page.$$eval('#recurrent .math-number-match', nodes => nodes.map(el => JSON.parse(MathSymbols.decode(el.dataset.mathNumber)).value)),
+                ['-0.247684', '-0.247684']);
+            await page.screenshot({path: path.join(root, 'tmp/math-numbers-recurrent.png')});
+            await page.mouse.move(1, 1);
+            await page.waitForFunction(() => !document.querySelector('.math-number-match'));
+
+            p = await numericPoint('-0.24');
+            await page.mouse.move(p.x, p.y);
+            await page.waitForSelector('.math-symbol-tooltip');
+            assert.equal(await page.$eval('.math-symbol-tooltip-heading annotation', el => el.textContent), '(x_{1})_{1} = -0.24');
+            assert.equal(await page.$eval('.math-symbol-definition', el => el.textContent), 'Входной вектор первого слова');
+            await page.keyboard.press('Escape');
+
+            await page.$$eval('#recurrent [data-math-number]', nodes => nodes.find(el =>
+                JSON.parse(MathSymbols.decode(el.dataset.mathNumber)).value === '-0.360120').focus());
+            await page.waitForSelector('.math-symbol-tooltip');
+            assert.match(await page.$eval('.math-symbol-definition', el => el.textContent), /обозначение не указано/);
+            assert.equal(await page.$$eval('.math-number-match', nodes => nodes.length), 0);
+            assert.equal(await page.$('.math-symbol-edit'), null);
+            await page.keyboard.press('Escape');
+
+            await page.click('#recurrent .math-expand-button');
+            await page.waitForSelector('.formula-zoom-dialog[open]');
+            p = await numericPoint('-0.247684', '.formula-zoom-dialog');
+            await page.mouse.move(p.x, p.y);
+            await page.waitForSelector('.formula-zoom-dialog .math-symbol-tooltip');
+            assert.equal(await page.$eval('.math-symbol-tooltip-heading annotation', el => el.textContent), '(x_{1}W_{hx})_{1} = -0.247684');
+            assert.equal(await page.$$eval('.formula-zoom-dialog .math-number-match', nodes => nodes.length), 0);
+            // Pin the number hint so its hover timeout cannot race Escape.
+            await page.mouse.click(p.x, p.y);
+            await page.keyboard.press('Escape');
+            await page.click('.formula-zoom-close');
+            await page.waitForSelector('.formula-zoom-dialog', {hidden: true});
+            assert.equal(await page.evaluate(() => AppState.getBlock('recurrent').html === recurrentHtml), true);
+            assert.equal(await page.$$eval('.katex-error', nodes => nodes.length), 0);
+            p = await numericPoint('-0.247684');
+            await page.mouse.move(p.x, p.y);
+            await page.waitForSelector('.math-number-match');
+            await page.evaluate(() => AppState.setNote({id: 4, blocks: []}));
+            assert.equal(await page.$('.math-symbol-tooltip, .math-number-match'), null);
+        });
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });

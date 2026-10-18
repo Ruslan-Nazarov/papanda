@@ -83,7 +83,7 @@ def _builder_model_spec() -> str:
     if conspect_settings.OPENROUTER_API_KEY:
         chain.append(f"openrouter:{conspect_settings.OPENROUTER_MODEL}")
     if not chain:
-        raise RuntimeError("dialectic_v3 engine: no provider configured (need OPENAI_API_KEY, "
+        raise GenerationError('ai_disabled', "dialectic_v3 engine: no provider configured (need OPENAI_API_KEY, "
                            "GIGACHAT_AUTH_KEY, GROQ_API_KEY, CEREBRAS_API_KEY or OPENROUTER_API_KEY)")
     return ",".join(chain)
 

@@ -34,7 +34,6 @@ class ModeManager {
             stepChk.addEventListener('change', (e) => {
                 AppState.isAutoFillStepByStep = e.target.checked;
                 try { localStorage.setItem(STEP_KEY, e.target.checked ? '1' : '0'); } catch {}
-                BlockDOMRenderer.renderAll();
             });
         }
 

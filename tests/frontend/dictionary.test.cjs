@@ -169,6 +169,80 @@ test('dictionary connections suggest existing terms after each comma', () => {
     assert.equal(note.dictionary[3].connections, 'ЭКГ, Эхо');
 });
 
+test('graph hints show safe definitions and alias connection explanations without selecting another concept', () => {
+    const dom = new JSDOM('<html><body></body></html>');
+    const note = {dictionary: [
+        {word: 'Сеть', definition: 'Определение <img src=x onerror=alert(1)>', connections: 'Вектор'},
+        {word: 'Числовое представление (Вектор)', definition: 'Набор чисел', connections: '',
+            connection_explanations: {'Сеть': 'Подаётся [на вход](internal://note/1/block/b1)'}},
+    ]};
+    const ctx = context({document: dom.window.document, window: dom.window,
+        AppState: {currentNote: note, updateNote: patch => Object.assign(note, patch)}});
+    load(ctx, 'DictModalService');
+    ctx.DictModalService.show();
+    const document = dom.window.document;
+    document.querySelector('.dict-view-graph').click();
+    const hover = element => element.dispatchEvent(new dom.window.MouseEvent('mouseover', {bubbles: true}));
+    const selected = document.querySelector('.dict-graph-node.is-selected');
+    hover(selected);
+    let tooltip = document.querySelector('.dict-graph-tooltip');
+    assert.equal(tooltip.querySelector('p').textContent, note.dictionary[0].definition);
+    assert.equal(tooltip.querySelector('img'), null);
+    assert.equal(selected.getAttribute('aria-describedby'), tooltip.id);
+    hover(document.querySelector('.dict-graph-edge-hit'));
+    tooltip = document.querySelector('.dict-graph-tooltip');
+    assert.equal(tooltip.querySelector('strong').textContent, 'Сеть ↔ Числовое представление (Вектор)');
+    assert.equal(tooltip.querySelector('a').textContent, 'на вход');
+    assert.equal(document.querySelector('.dict-graph-node.is-selected'), selected);
+    assert.equal(selected.hasAttribute('aria-describedby'), false);
+    const marker = document.querySelector('.dict-graph-edge-info');
+    marker.focus();
+    assert.equal(marker.getAttribute('aria-describedby'), document.querySelector('[role="tooltip"]').id);
+    document.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+    assert.equal(document.querySelector('[role="tooltip"]'), null);
+    assert.ok(document.querySelector('.dict-modal'));
+    marker.click();
+    assert.ok(document.querySelector('.dict-graph-tooltip'));
+    document.querySelector('.dict-graph-tooltip a').click();
+    assert.equal(document.querySelector('.dict-modal'), null);
+    assert.equal(document.querySelector('[role="tooltip"]'), null);
+    dom.window.close();
+});
+
+test('graph hints identify missing content and disappear when the graph changes or closes', () => {
+    const dom = new JSDOM('<html><body></body></html>');
+    const note = {dictionary: [
+        {word: 'Понятие', definition: '', connections: 'Неизвестное'},
+    ]};
+    const ctx = context({document: dom.window.document, window: dom.window,
+        AppState: {currentNote: note, updateNote: patch => Object.assign(note, patch)}});
+    load(ctx, 'DictModalService');
+    ctx.DictModalService.show();
+    const document = dom.window.document;
+    document.querySelector('.dict-view-graph').click();
+    document.querySelector('.dict-graph-node.is-selected').focus();
+    assert.equal(document.querySelector('.dict-graph-tooltip p').textContent, 'dict_graph_no_definition');
+    document.querySelector('.dict-graph-node.is-missing').focus();
+    assert.equal(document.querySelector('.dict-graph-tooltip p').textContent, 'dict_graph_missing');
+    document.querySelector('.dict-graph-edge-info').click();
+    assert.equal(document.querySelector('.dict-graph-tooltip p').textContent, 'dict_graph_no_explanation');
+    document.querySelector('.dict-view-list').click();
+    assert.equal(document.querySelector('[role="tooltip"]'), null);
+    document.querySelector('.dict-view-graph').click();
+    document.querySelector('.dict-graph-edge-info').click();
+    document.querySelector('.dict-graph-edit').click();
+    assert.equal(document.querySelector('[role="tooltip"]'), null);
+    document.querySelector('.dict-cancel').click();
+    document.querySelector('.dict-graph-edge-info').click();
+    const search = document.querySelector('.dict-search');
+    search.dispatchEvent(new dom.window.Event('input'));
+    assert.equal(document.querySelector('[role="tooltip"]'), null);
+    document.querySelector('.dict-graph-edge-info').click();
+    document.querySelector('.dict-done').click();
+    assert.equal(document.querySelector('[role="tooltip"]'), null);
+    dom.window.close();
+});
+
 test('dictionary connection explanation is shared, editable from either concept, and removed with the link', () => {
     const dom = new JSDOM('<html><body></body></html>');
     const note = {dictionary: [

@@ -19,14 +19,34 @@ function context(extra = {}) {
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});
 }
 function load(ctx, name, symbol) {
+    if (name === 'MathSymbols' && !ctx.MathTex) load(ctx, 'MathTex');
+    if (name === 'DictModalService' && !ctx.HiddenPhraseTooltip) {
+        ctx.MutationObserver ||= ctx.window.MutationObserver;
+        load(ctx, 'HiddenPhraseTooltip');
+    }
+    if (name === 'ConceptSelectionMenu' && !ctx.StreamMarkdownRenderer) load(ctx, 'StreamMarkdownRenderer');
+    if (name === 'StreamMarkdownRenderer' && !ctx.PasteMathTransformer) {
+        ctx.createDOMPurify = require('dompurify');
+        ctx.marked = require('marked').marked;
+        ctx.DOMParser = ctx.window.DOMParser;
+        ctx.NodeFilter = ctx.window.NodeFilter;
+        load(ctx, 'PasteMathTransformer');
+        ctx.BlockMathRenderer ||= {renderMath() {}};
+    }
     if (name === 'BlockMathRenderer' && !ctx.MathSymbols) load(ctx, 'MathSymbols');
     if (name === 'BlockMathRenderer' && !ctx.FormulaZoom) load(ctx, 'FormulaZoom');
     if (name === 'BlockMathRenderer' && !ctx.MathSubstitutions) {
         load(ctx, 'MathComputedValues');
         load(ctx, 'MathSubstitutions');
     }
+    if (name === 'BlockDOMRenderer' && !ctx.MathSubstitutions) {
+        if (!ctx.MathSymbols) load(ctx, 'MathSymbols');
+        load(ctx, 'MathComputedValues');
+        load(ctx, 'MathSubstitutions');
+    }
     if (name === 'BlockNormalBuilder' && !ctx.HiddenPhraseTooltip) load(ctx, 'HiddenPhraseTooltip');
     if (name === 'ConceptSelectionMenu' && !ctx.HiddenPhraseTooltip) load(ctx, 'HiddenPhraseTooltip');
+    if (name === 'ConceptSelectionMenu' && !ctx.ConceptChatInsertion) load(ctx, 'ConceptChatInsertion');
     if (name === 'BlockNormalBuilder' && !ctx.BlockHistoryControls) load(ctx, 'BlockHistoryControls');
     if (name === 'BlockNormalBuilder' && !ctx.BlockTableControls) load(ctx, 'BlockTableControls');
     if (name === 'BlockNormalBuilder' && !ctx.NoteText) load(ctx, 'NoteText');

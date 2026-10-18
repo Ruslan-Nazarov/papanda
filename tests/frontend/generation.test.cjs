@@ -252,7 +252,7 @@ test('late result is kept in the original note diary after navigation', async ()
 
 test('a roleless block is filled without replacing its neighbors', async () => {
     let payload, checkpoints = 0;
-    const ctx = setup({NotesAPI: {
+    const ctx = setup({DialogService: {confirm: async () => true}, NotesAPI: {
         fillBlock: async body => {payload = body; return {content: 'Generated explanation'};},
         createCheckpoint: async () => {checkpoints++;},
     }});
@@ -268,7 +268,8 @@ test('a roleless block is filled without replacing its neighbors', async () => {
 });
 
 test('a labeled block is filled without replacing another block with the same role family', async () => {
-    const ctx = setup({NotesAPI: {fillBlock: async () => ({content: 'Only this block'})}});
+    const ctx = setup({DialogService: {confirm: async () => true},
+        NotesAPI: {fillBlock: async () => ({content: 'Only this block'})}});
     const neighbor = ctx.AppState.getBlock('two-b').html;
     await ctx.AIController.generateBlock('two-a');
     assert.equal(ctx.AppState.getBlock('two-a').html, '<p>Only this block</p>');
@@ -277,7 +278,8 @@ test('a labeled block is filled without replacing another block with the same ro
 
 test('editing while a roleless block is being generated preserves the edit', async () => {
     let finish;
-    const ctx = setup({NotesAPI: {fillBlock: () => new Promise(resolve => {finish = resolve;})}});
+    const ctx = setup({DialogService: {confirm: async () => true},
+        NotesAPI: {fillBlock: () => new Promise(resolve => {finish = resolve;})}});
     ctx.AppState.addBlock({id: 'custom', title: 'Record the signal', html: 'Original'});
     const running = ctx.AIController.generateBlock('custom');
     await new Promise(setImmediate);
@@ -285,4 +287,79 @@ test('editing while a roleless block is being generated preserves the edit', asy
     finish({content: 'Generated explanation'});
     await assert.rejects(running, /gen_conflict_title/);
     assert.equal(ctx.AppState.getBlock('custom').html, 'User edit');
+});
+
+test('cancelling generation preserves rich content without saving, requesting or interrupting another run', async () => {
+    const unexpected = () => assert.fail('Cancelled generation must have no side effects');
+    let prompts = 0;
+    const ctx = setup({
+        DialogService: {confirm: async options => {
+            prompts++;
+            assert.equal(options.title, 'gen_replace_block_title');
+            assert.equal(options.message, 'gen_replace_block_message');
+            assert.equal(options.confirmText, 'gen_replace_block_confirm');
+            assert.equal(options.focusCancel, true);
+            return false;
+        }},
+        NoteStorageService: {saveCurrentNote: unexpected},
+        GlobalLoader: {show: unexpected, hide: unexpected}, showToast: unexpected,
+        NotesAPI: {fillBlock: unexpected, createCheckpoint: unexpected},
+    });
+    ctx.AIController._activeRun = {controller: {abort: unexpected}};
+    for (const html of ['<p>Existing <b>text</b></p>',
+        '<p><span formula="x^2"></span></p>', '<p><img src="drawing.png"></p>',
+        '<table><tbody><tr><td></td></tr></tbody></table>']) {
+        ctx.AppState.addBlock({id: 'custom-' + prompts, title: 'Block', html});
+        const before = JSON.stringify(ctx.AppState.currentNote);
+        assert.equal(await ctx.AIController.generateBlock('custom-' + prompts, unexpected), null);
+        assert.equal(JSON.stringify(ctx.AppState.currentNote), before);
+    }
+    assert.equal(prompts, 4);
+});
+
+test('empty editor markup and a title alone do not require generation confirmation', async () => {
+    let requests = 0;
+    const ctx = setup({DialogService: {confirm: () => assert.fail('An empty block needs no confirmation')},
+        NotesAPI: {fillBlock: async () => {requests++; return {content: 'New text'};}}});
+    for (const html of [undefined, '', ' \n ', '<p><br></p>', '<p>&nbsp; </p><p><br></p>']) {
+        const id = 'empty-' + requests;
+        ctx.AppState.addBlock({id, title: 'A title does not fill the body', html});
+        await ctx.AIController.generateBlock(id);
+        assert.equal(ctx.AppState.getBlock(id).html, '<p>New text</p>');
+    }
+    assert.equal(requests, 5);
+});
+
+test('confirmation is awaited before any AI request or content replacement', async () => {
+    let confirm, requests = 0;
+    const ctx = setup({DialogService: {confirm: () => new Promise(resolve => {confirm = resolve;})},
+        NotesAPI: {fillBlock: async () => {requests++; return {content: 'Approved replacement'};}}});
+    const running = ctx.AIController.generateBlock('two-a');
+    await new Promise(setImmediate);
+    assert.equal(requests, 0);
+    assert.equal(ctx.AppState.getBlock('two-a').html, 'old-a');
+    confirm(true);
+    await running;
+    assert.equal(requests, 1);
+    assert.equal(ctx.AppState.getBlock('two-a').html, '<p>Approved replacement</p>');
+});
+
+test('a confirmation cannot replace a block changed, removed or reopened while the dialog was open', async () => {
+    for (const change of [
+        ctx => ctx.AppState.updateBlock('two-a', {html: 'New user text'}),
+        ctx => ctx.AppState.removeBlock('two-a'),
+        ctx => ctx.AppState.setNote({...plain(ctx.AppState.currentNote), id: 2}),
+    ]) {
+        let confirm;
+        const unexpected = () => assert.fail('An outdated confirmation must not start generation');
+        const ctx = setup({DialogService: {confirm: () => new Promise(resolve => {confirm = resolve;})},
+            NoteStorageService: {saveCurrentNote: unexpected}, NotesAPI: {fillBlock: unexpected}});
+        const running = ctx.AIController.generateBlock('two-a');
+        await new Promise(setImmediate);
+        change(ctx);
+        const before = JSON.stringify(ctx.AppState.currentNote);
+        confirm(true);
+        assert.equal(await running, null);
+        assert.equal(JSON.stringify(ctx.AppState.currentNote), before);
+    }
 });

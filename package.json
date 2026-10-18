@@ -1,7 +1,7 @@
 {
   "name": "papanda-conspect",
   "private": true,
-  "version": "0.12.3",
+  "version": "0.12.4",
   "description": "Papanda note editor, local frontend build and tests",
   "engines": {
     "node": ">=22.12.0"
@@ -10,6 +10,7 @@
     "check:js": "node scripts/check-js.cjs",
     "test": "node --test tests/frontend/*.test.cjs",
     "test:browser": "node --test --test-concurrency=4 tests/browser/*.test.cjs",
+    "test:cross-browser": "node --test --test-concurrency=1 tests/cross-browser/*.test.cjs",
     "build": "node scripts/build-frontend.cjs",
     "lint": "eslint fastapi_app/static/js",
     "check:types": "tsc -p jsconfig.json"
@@ -22,6 +23,7 @@
     "globals": "17.12.0",
     "jsdom": "26.1.0",
     "marked": "12.0.2",
+    "playwright": "1.64.1",
     "puppeteer": "25.9.0",
     "typescript": "7.0.2"
   },

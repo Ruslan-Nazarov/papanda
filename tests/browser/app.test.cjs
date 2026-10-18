@@ -101,8 +101,8 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             .includes(initialTranslations[initialLocale].hint_anchor_title));
         await t.test('collapsed left column stays visible and can be restored', async () => {
             assert.equal(await page.$('#toggle-show-hints'), null);
-            await page.click('#btn-mode');
-            await page.click('#toggle-hide-left + .toggle-slider');
+            await page.locator('#btn-mode').click();
+            await page.locator('#toggle-hide-left + .toggle-slider').click();
             assert.equal(await page.$eval('#toggle-hide-left', el => el.checked), true);
             assert.equal(await page.$eval('#left-column-collapsed-notice', el => el.hidden), false);
             assert.equal(await page.$eval('.dialectics-hint-block.block-left', el => getComputedStyle(el).display), 'none');
@@ -147,11 +147,43 @@ test('local editor user flows, lifecycle and CSP', {timeout: 120_000}, async t =
             assert.match(await page.$eval('#blocks-container', el => el.textContent), /Ручной текст контрольного конспекта/);
             assert.equal(await page.$eval('#note-title', el => el.value), 'R5 browser control');
         });
+        await t.test('question toolbar dialog saves, reloads, appears in Questions and removes its mark', async () => {
+            await page.click('.dialectics-block .btn-edit');
+            await page.focus('.tiptap');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('A');
+            await page.keyboard.up('Control');
+            await page.click('[data-format="question"]');
+            await page.waitForSelector('#dialog-prompt-input', {visible: true});
+            await page.type('#dialog-prompt-input', 'Что нужно уточнить?');
+            await page.screenshot({path: path.join(root, '.cache/editor-question-dialog.png')});
+            await page.click('.btn-confirm-dialog');
+            assert.equal(await page.$eval('.tiptap .question-mark-text', el => el.dataset.question), 'Что нужно уточнить?');
+            await page.click('#btn-modal-ok');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$eval('.block-content .question-mark-text', el => el.dataset.question), 'Что нужно уточнить?');
+            await page.click('#btn-questions');
+            assert.match(await page.$eval('.questions-item', el => el.textContent), /Что нужно уточнить/);
+            await page.click('.questions-close');
+            await page.click('.dialectics-block .btn-edit');
+            await page.click('.tiptap .question-mark-text');
+            await page.click('[data-format="question"]');
+            await page.click('.btn-delete-dialog');
+            await page.click('#btn-modal-ok');
+            await page.click('#btn-save');
+            await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
+            await reopenSavedNote();
+            assert.equal(await page.$('.block-content .question-mark-text'), null);
+            assert.equal(await page.$eval('#btn-questions .questions-count', el => el.hidden), true);
+        });
         await t.test('note dictionary is shared and survives editing and reload', async () => {
             assert.equal(await page.$$('.dialectics-block .btn-dict').then(items => items.length), 1);
             assert.equal(await page.$$('.dialectics-block .dict-badge').then(items => items.length), 0);
             await page.click('.dialectics-block .btn-dict');
-            assert.equal(await page.$eval('.dict-add', el => getComputedStyle(el).backgroundColor), 'rgb(234, 88, 12)');
+            assert.equal(await page.$eval('.dict-add', el => getComputedStyle(el).backgroundImage),
+                await page.$eval('#btn-new-conspect', el => getComputedStyle(el).backgroundImage));
             await page.click('.dict-add');
             await page.type('.dict-word', 'ЭКГ');
             await page.type('.dict-definition', 'Электрокардиограмма');

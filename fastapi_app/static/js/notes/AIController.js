@@ -176,9 +176,8 @@ class AIController {
 
     /**
      * Отчёт о качестве прогона генерации. Приходит событием { report } в конце.
-     * Если что-то просело (упали на резервного провайдера, судья не подтвердил,
-     * блоки короткие/пропали) — показываем баннер, чтобы пользователь понимал:
-     * это не ошибка метода, а нагрузка на ИИ, и стоит пересобрать.
+     * Показывает фактическую причину неполного результата из отчёта.
+     * Смена провайдера сама по себе не доказывает перегрузку или снижение качества.
      */
     static applyReport(report, onRenderAll) {
         AppState.setViewMetadata({genReport: report || null});
@@ -263,13 +262,23 @@ class AIController {
 
     static async generateBlock(blockId, onRenderAll) {
         this.init();
-        this._activeRun?.controller.abort();
         BlockDOMParser.syncDOMToState();
-        await NoteStorageService.saveCurrentNote();
         const note = AppState.currentNote;
-        const index = note.blocks.findIndex(block => block.id === blockId);
-        if (index < 0 || note.blocks[index].role === 'section') return null;
-        const block = note.blocks[index];
+        const epoch = AppState.documentEpoch;
+        const block = AppState.getBlock(blockId);
+        if (!block || block.role === 'section') return null;
+        const html = block.html;
+        if (NoteText.hasContent(html) && !await DialogService.confirm({
+            title: t('gen_replace_block_title'), message: t('gen_replace_block_message'),
+            confirmText: t('gen_replace_block_confirm'), focusCancel: true,
+        })) return null;
+        const sameBlock = () => AppState.currentNote === note && AppState.documentEpoch === epoch
+            && AppState.getBlock(blockId) === block && block.html === html;
+        if (!sameBlock()) return null;
+        this._activeRun?.controller.abort();
+        await NoteStorageService.saveCurrentNote();
+        if (!sameBlock()) return null;
+        const index = note.blocks.findIndex(item => item.id === blockId);
         const nearby = offset => {
             const neighbor = note.blocks[index + offset];
             return neighbor ? `${neighbor.title || ''}\n${NoteText.fromHtml(neighbor.html || '')}`.trim().slice(0, 5000) : '';
@@ -277,6 +286,7 @@ class AIController {
         const run = {note, epoch: AppState.documentEpoch, editRevision: AppState.editRevision,
             revision: note.revision, controller: new AbortController()};
         this._activeRun = run;
+        showToast(t('toast_gen_started'));
         GlobalLoader.show(t('ed_ai_analyzing'), () => run.controller.abort());
         try {
             const response = await NotesAPI.fillBlock({

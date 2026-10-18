@@ -132,7 +132,26 @@ export class EditorTiptapSetup {
         }).run();
     }
 
+    static syncSelectionFromDOM(editor) {
+        if (!editor || editor.isDestroyed) return;
+        const {view, state} = editor;
+        const selection = view.dom.ownerDocument.getSelection();
+        if (!selection || selection.isCollapsed
+            || !view.dom.contains(selection.anchorNode) || !view.dom.contains(selection.focusNode)) return;
+        // selectionchange is asynchronous: a toolbar action can run before
+        // ProseMirror has read the selection that is already visible on screen.
+        const anchor = view.posAtDOM(selection.anchorNode, selection.anchorOffset);
+        const head = view.posAtDOM(selection.focusNode, selection.focusOffset);
+        if (anchor !== state.selection.anchor || head !== state.selection.head) {
+            editor.commands.setTextSelection({from: anchor, to: head});
+        }
+    }
+
     static bindFormatButtons(modalContainer, getEditor, session, linkContext = {}) {
+        const preserveSelection = event => {
+            this.syncSelectionFromDOM(getEditor());
+            event.preventDefault();
+        };
         const codeControl = modalContainer.querySelector('.editor-code-control');
         const codeMenuButton = codeControl?.querySelector('.editor-code-menu-button');
         const codeMenu = codeControl?.querySelector('.editor-code-menu');
@@ -141,8 +160,11 @@ export class EditorTiptapSetup {
             codeMenu.hidden = !open;
             codeMenuButton.setAttribute('aria-expanded', String(open));
         };
-        codeMenuButton?.addEventListener('mousedown', event => event.preventDefault());
-        codeMenuButton?.addEventListener('click', () => setCodeMenuOpen(codeMenu.hidden));
+        codeMenuButton?.addEventListener('mousedown', preserveSelection);
+        codeMenuButton?.addEventListener('click', () => {
+            this.syncSelectionFromDOM(getEditor());
+            setCodeMenuOpen(codeMenu.hidden);
+        });
         codeMenu?.querySelectorAll('[data-code-action]').forEach(option => {
             option.addEventListener('mousedown', event => event.preventDefault());
             option.addEventListener('click', () => {
@@ -215,9 +237,10 @@ export class EditorTiptapSetup {
             updateFormatButtons();
         }
 
-        sizeButton?.addEventListener('mousedown', event => event.preventDefault());
+        sizeButton?.addEventListener('mousedown', preserveSelection);
         sizeButton?.addEventListener('click', event => {
             event.preventDefault();
+            this.syncSelectionFromDOM(getEditor());
             setSizeMenuOpen(sizeMenu.hidden);
         });
         sizeOptions.forEach(option => {
@@ -244,12 +267,13 @@ export class EditorTiptapSetup {
 
         modalContainer.querySelectorAll('.format-btn[data-format]').forEach(btn => {
             // Keep the editor selection when a toolbar button is pressed.
-            btn.addEventListener('mousedown', event => event.preventDefault());
+            btn.addEventListener('mousedown', preserveSelection);
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const format = btn.dataset.format;
                 const currentEditor = getEditor();
                 if (!currentEditor) return;
+                this.syncSelectionFromDOM(currentEditor);
                 
                 if (format === 'bold') currentEditor.chain().focus().toggleBold().run();
                 if (format === 'italic') currentEditor.chain().focus().toggleItalic().run();

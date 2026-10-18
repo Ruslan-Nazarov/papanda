@@ -85,6 +85,25 @@ test('bulk AI replacements record versions by block id; reordering and note meta
     assert.equal(state.note.blocks[0].id, 'b');
 });
 
+test('bulk updates retain live block views for existing reading controls', () => {
+    const state = store();
+    const first = block(state);
+    const second = block(state, 'b');
+    state.update({blocks: [...state.note.blocks].reverse().map(item => ({...item,
+        ...(item.id === 'a' ? {title: 'Changed', status: 'ready'} : {})}))});
+    assert.equal(block(state), first);
+    assert.equal(block(state, 'b'), second);
+    assert.equal(first.title, 'Changed');
+    assert.equal(first.status, 'ready');
+    assert.equal(state.blockHistory('a').undo, 1);
+    state.updateBlock('a', {status: 'in_progress'});
+    assert.equal(first.status, 'in_progress');
+    state.update({blocks: [{id: 'a', html: 'Replacement'}]});
+    assert.equal(block(state), first);
+    assert.equal(first.title, undefined, 'a replacement must remove fields absent from the new block');
+    assert.equal(first.html, 'Replacement');
+});
+
 test('autosaves retain history without serializing it; reopening and deleting clear it', () => {
     const state = store();
     state.updateBlock('a', {html: '<p>Saved</p>'});

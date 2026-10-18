@@ -7,6 +7,7 @@ class NoteLocation {
         } catch { return null; }
     }
 
+    /** @param {string | number} id @param {string | null} [slug] */
     static remember(id, slug = null) {
         try { localStorage.setItem('papanda_last_note_id', String(id)); } catch {}
         if (slug) {
@@ -39,6 +40,7 @@ class NoteLocation {
         return new URLSearchParams(window.location.search).get('conspect');
     }
 
+    /** @param {string | number | null} id @param {string | null} [slug] */
     static _setURL(id, slug = null) {
         try {
             const url = new URL(window.location.href);

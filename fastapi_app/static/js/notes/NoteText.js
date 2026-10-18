@@ -1,5 +1,12 @@
 // The same text extraction binds engine snapshots and supplies model context.
 class NoteText {
+    static hasContent(html) {
+        if (this.fromHtml(html)) return true;
+        const template = document.createElement('template');
+        template.innerHTML = html || '';
+        return !!template.content.querySelector('img, svg, math, canvas, video, audio, iframe, object, embed, table, hr, [formula]');
+    }
+
     static mathRanges(text) {
         // Saved answers also contain multiline single-dollar math and bare TeX
         // environments. Excerpts must never start or end inside either form.
@@ -33,7 +40,7 @@ class NoteText {
             if (node.nodeType !== 1 && node.nodeType !== 11) return '';
             if (['SCRIPT', 'STYLE', 'TEMPLATE'].includes(node.nodeName)) return '';
             // Display controls are derived from data-hint, not additional content.
-            if (node.nodeType === 1 && node.matches('.hp-arrow, .hp-content')) return '';
+            if (node.nodeType === 1 && node.matches('.hp-arrow, .hp-content, .math-expand-button, .math-calculation-button')) return '';
             if (node.nodeName === 'BR') return '\n';
             if (node.nodeType === 1 && node.matches('.katex-display, .katex')) {
                 const formula = node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;

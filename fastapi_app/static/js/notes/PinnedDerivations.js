@@ -7,11 +7,27 @@ class PinnedDerivations {
     static session = null;
     static frame = null;
     static pairs = new Map();
+    static container = null;
+    static observed = new Set();
+
+    static observeBlocks(container) {
+        const blocks = new Set(container.querySelectorAll('.dialectics-block'));
+        for (const el of this.observed) if (!blocks.has(el)) this.resize.unobserve?.(el);
+        for (const el of blocks) if (!this.observed.has(el)) this.resize.observe(el);
+        this.observed = blocks;
+    }
 
     static mount(container) {
+        if (this.container === container && this.session && !this.session.disposed) {
+            this.observeBlocks(container);
+            this.schedule();
+            return;
+        }
         this.session?.dispose();
         const session = new Lifecycle();
         this.session = session;
+        this.container = container;
+        this.observed = new Set();
         this.pairs = new Map();
         const overlay = document.createElement('div');
         overlay.className = 'pinned-derivations';
@@ -25,14 +41,16 @@ class PinnedDerivations {
             if (this.frame !== null || session.disposed) return;
             this.frame = requestAnimationFrame(() => { this.frame = null; this.update(container, overlay); });
         };
+        this.schedule = schedule;
         session.on(window, 'scroll', schedule, {passive: true, capture: true});
         session.on(window, 'resize', schedule);
         session.on(document, 'stateDirty', schedule);
         session.on(document, 'noteSaved', schedule);
         session.on(document, 'noteOpened', () => { DerivationEditor.close(); this.pairs.clear(); overlay.replaceChildren(); schedule(); });
         const resize = new ResizeObserver(schedule);
+        this.resize = resize;
         resize.observe(container);
-        for (const el of container.querySelectorAll('.dialectics-block')) resize.observe(el);
+        this.observeBlocks(container);
         session.own(() => resize.disconnect());
         const mutations = new MutationObserver(schedule);
         mutations.observe(container, {subtree: true, childList: true, attributes: true, characterData: true});
@@ -41,7 +59,7 @@ class PinnedDerivations {
     }
 
     static update(container, overlay) {
-        const allElements = [...container.querySelectorAll('.dialectics-block')];
+        const allElements = [...container.querySelectorAll('.dialectics-block:not(.reading-minimized)')];
         if (!container.isConnected || window.matchMedia('(max-width: 768px)').matches
             || container.classList.contains('single-column-mode')
             || container.classList.contains('hide-left-column')) {

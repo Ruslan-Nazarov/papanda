@@ -209,6 +209,7 @@ test('isolated renderer security regressions', async t => {
         });
         await page.addScriptTag({path: path.resolve(__dirname, '../../node_modules/katex/dist/katex.min.js')});
         await page.addScriptTag({path: path.resolve(__dirname, '../../node_modules/katex/dist/contrib/auto-render.min.js')});
+        await page.addScriptTag({content: source('MathTex')});
         await page.addScriptTag({content: source('MathSymbols')});
         await page.addScriptTag({content: source('FormulaZoom')});
         await page.addScriptTag({content: source('MathComputedValues')});

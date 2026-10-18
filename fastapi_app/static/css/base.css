@@ -1,5 +1,11 @@
 :root {
     --color-accent: #ea580c;
+    --color-accent-hover: #c2410c;
+    --color-accent-soft: #fff7ed;
+    --color-accent-soft-hover: #ffedd5;
+    --color-accent-border: #fed7aa;
+    --color-accent-gradient: linear-gradient(135deg, #fb923c, var(--color-accent));
+    --color-accent-gradient-hover: linear-gradient(135deg, #f97316, var(--color-accent-hover));
     --color-primary: #2563eb;
     --color-bg-app: #fff7ee;
     --color-bg-canvas: var(--color-bg-app);

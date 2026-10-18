@@ -87,3 +87,69 @@ test('decorations retain TeX, avoid index digits and editors, and clear when an 
     sub.refresh(document);
     assert.equal(content.querySelector('[data-math-value]'), null);
 });
+
+test('coordinate calculations retain the lhs across aligned continuation rows and reuse explicit numeric coordinates', () => {
+    const {sub, symbols, document} = setup();
+    const product = String.raw`\begin{aligned}(x_1W_{hx})_1&=(-0.24)\cdot0.988340+0.31\cdot(-0.000290)+0.18\cdot(-0.042236)\\&\approx-0.247684,\end{aligned}`;
+    const state = String.raw`\begin{aligned}h_1&\approx\tanh[-0.247684-0.112436;0.317809+0.107522;0.173451-0.073507]\\&=\tanh[-0.360120;0.425331;0.099944]\\&\approx[-0.345320;0.401412;0.099612].\end{aligned}`;
+    const formulas = [String.raw`x_1=[-0.24;0.31;0.18]`,
+        String.raw`W_{hx}=\begin{bmatrix}0.988340&0.009805\\-0.000290&1.009774\end{bmatrix}`,
+        String.raw`b=[-0.112436;0.107522;-0.073507]`, product, state];
+    const content = document.getElementById('content');
+    content.innerHTML = formulas.map((formula, index) => `<p id="eq-${index}">${symbols.render(formula)}</p>`).join('');
+    sub.refresh(document);
+    const numbers = index => [...document.querySelectorAll(`#eq-${index} [data-math-number]`)]
+        .map(el => JSON.parse(symbols.decode(el.dataset.mathNumber)));
+    const productNumbers = numbers(3);
+    assert.equal(productNumbers.find(n => n.value === '-0.247684').symbol, '(x_{1}W_{hx})_{1}');
+    assert.equal(productNumbers.find(n => n.value === '-0.24').symbol, '(x_{1})_{1}');
+    assert.equal(productNumbers.find(n => n.value === '0.988340').symbol, '(W_{hx})_{1,1}');
+    assert.equal(productNumbers.find(n => n.value === '-0.000290').symbol, '(W_{hx})_{2,1}');
+    const stateNumbers = numbers(4);
+    assert.equal(stateNumbers.find(n => n.value === '-0.247684').symbol, '(x_{1}W_{hx})_{1}');
+    assert.equal(stateNumbers.find(n => n.value === '-0.112436').symbol, '(b)_{1}');
+    assert.equal(stateNumbers.find(n => n.value === '-0.345320').symbol, '(h_{1})_{1}');
+    assert.equal(stateNumbers.find(n => n.value === '-0.360120').symbol, undefined, 'do not invent meanings for unassigned intermediate values');
+    formulas.forEach((formula, index) => {
+        assert.equal(document.querySelector(`#eq-${index} annotation`).textContent, formula);
+        for (const number of numbers(index)) assert.equal(formula.slice(number.start, number.end), number.value);
+    });
+    assert.equal(document.querySelector('.katex-error'), null);
+    document.getElementById('eq-3').remove();
+    sub.refresh(document);
+    assert.equal(numbers(4).find(n => n.value === '-0.247684').symbol, undefined, 'removed results must not leave stale associations');
+});
+
+test('equal values keep direct meanings and ambiguous or differently written values are not assigned a symbol', () => {
+    const {sub, symbols, document} = setup();
+    document.getElementById('content').innerHTML = ['a=0.1', 'b=0.1', 'y=0.1+0.10'].map(f => symbols.render(f)).join('');
+    sub.refresh(document);
+    const numbers = [...document.querySelectorAll('[data-math-number]')].map(el => JSON.parse(symbols.decode(el.dataset.mathNumber)));
+    assert.deepEqual(numbers.map(number => number.symbol), ['a', 'b', undefined, undefined]);
+});
+
+test('one chronological pass matches independent analysis without reindexing earlier formulas', () => {
+    const {sub, symbols, document} = setup();
+    const formulas = [original, 'a=0.90', String.raw`\alpha=0.1`, 'g=0.5397',
+        String.raw`v_{1,\text{новое}}=0.90-0.1*0.5397=0.84603`,
+        'y=a+b', 'y=0.1+0.2=0.3', 'y=c+d', 'y=0.1+0.2',
+        ...Array.from({length: 40}, (_, i) => `x_{${i}}=${i + 10}`)];
+    const known = new Map();
+    const expected = formulas.map((formula, index) => {
+        const result = sub.analyze(formula, formulas.slice(0, index));
+        const numbers = sub.numericMeanings(formula, result.ranges, known);
+        return result.ranges.length || numbers.length ? JSON.stringify({...result, numbers}) : undefined;
+    });
+    const content = document.getElementById('content');
+    content.innerHTML = formulas.map(formula => symbols.render(formula)).join('');
+    let sources = 0;
+    const addSource = sub.addSource;
+    sub.addSource = function(...args) {sources++; return addSource.apply(this, args);};
+    sub.refresh(document);
+    assert.equal(sources, formulas.length);
+    const rendered = [...content.querySelectorAll('.katex')];
+    assert.deepEqual(rendered.map(el => el.dataset.mathSubstitutions), expected);
+    sub.refresh(document);
+    assert.equal(sources, formulas.length * 2);
+    assert(rendered.every((el, i) => el === content.querySelectorAll('.katex')[i]));
+});

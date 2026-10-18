@@ -95,7 +95,7 @@ class MathComputedValues {
     }
 
     static statements(formula) {
-        const text = formula.replace(/\\(?:begin|end)\{(?:aligned|align\*?|gathered|gather\*?|split)\}/g, '');
+        let text = formula.replace(/\\(?:begin|end)\{(?:aligned|align\*?|gathered|gather\*?|split)\}/g, '');
         const statements = [];
         let parts = [], relations = [], offset = 0, level = 0, environment = 0;
         const piece = value => value.trim().replace(/^&+\s*|\s*&+$/g, '').trim();
@@ -109,6 +109,14 @@ class MathComputedValues {
             if (env) { environment += env[1] === 'begin' ? 1 : -1; i += env[0].length; continue; }
             const spacing = text.slice(i).match(/^\\(?:quad|qquad)\b/);
             const row = text.startsWith('\\\\', i);
+            const continuation = row && !level && !environment && text.slice(i + 2)
+                .match(/^(?:\[[^\]]*\])?\s*&*\s*(?=(?:\\(?:approx|simeq|coloneqq|coloneq)\b|:=|=|≈|≃))/);
+            if (continuation) {
+                const end = i + 2 + continuation[0].length;
+                text = text.slice(0, i) + ' '.repeat(end - i) + text.slice(end);
+                i = end;
+                continue;
+            }
             const nextAssignment = text[i] === ',' && /^\s*(?:[A-Za-z]|\\[A-Za-z]+)(?:[^=,;]*)(?:=|\\approx)/.test(text.slice(i + 1));
             if (!level && !environment && (row || spacing || text[i] === ';' || nextAssignment)) {
                 flush(i);

@@ -1,18 +1,25 @@
 @import "./formula-zoom.css";
 
-.katex [data-math-symbol], .katex [data-math-value] {
+.katex [data-math-symbol], .katex [data-math-value], .katex [data-math-number] {
     cursor: help;
     border-radius: 3px;
 }
-.katex [data-math-symbol]:hover:not(:has([data-math-symbol]:hover)), .katex [data-math-symbol]:focus-visible {
+.katex [data-math-number] {
+    /* Empty alignment columns can overlap the glyphs in an aligned equation. */
+    position: relative;
+    z-index: 1;
+}
+/* A matrix and its cells are nested targets; outline only the hovered target. */
+.katex :is([data-math-symbol], [data-math-value], [data-math-number]):hover:not(:has(:is([data-math-symbol], [data-math-value], [data-math-number]):hover)),
+.katex :is([data-math-symbol], [data-math-value], [data-math-number]):focus-visible {
     background: #ede9fe;
     outline: 1px solid #c4b5fd;
     outline-offset: 2px;
 }
-.katex [data-math-value]:hover, .katex [data-math-value]:focus-visible {
-    background: #ede9fe;
-    outline: 1px solid #c4b5fd;
-    outline-offset: 2px;
+.katex .math-number-match {
+    background: #fef08a;
+    box-shadow: 0 0 0 2px #fde047;
+    border-radius: 3px;
 }
 .math-symbol-original { margin-top: 8px; }
 .math-symbol-original > small { margin-bottom: 4px; }
@@ -49,6 +56,42 @@
 .math-symbol-value-formula { max-width: 100%; overflow-x: auto; padding: 3px 0 6px; }
 .math-symbol-values small { font-size: 12px; overflow-wrap: anywhere; }
 .math-symbol-edit { display: block; margin-top: 10px; border: 0; padding: 4px 0; background: transparent; color: #6d28d9; cursor: pointer; }
+.math-symbol-tooltip.has-definition-draft { width: 440px; max-width: calc(100vw - 24px); padding: 18px; border-radius: 14px; }
+.math-symbol-tooltip.has-definition-draft > :is(.math-symbol-definition, .math-symbol-edit, small) { display: none; }
+.math-symbol-tooltip.has-definition-draft .math-symbol-tooltip-heading { padding-bottom: 12px; border-bottom: 1px solid #ede9fe; }
+.math-definition-suggestion { margin-top: 10px; border-top: 1px solid #ede9fe; padding-top: 10px; }
+.has-definition-draft .math-definition-suggestion { margin-top: 12px; padding-top: 0; border-top: 0; }
+.math-definition-suggestion [hidden] { display: none !important; }
+.math-definition-suggestion button { border: 1px solid #ddd6fe; border-radius: 8px; padding: 9px 12px; background: #f5f3ff; color: #5b21b6; font: inherit; line-height: 1.4; cursor: pointer; }
+.math-definition-suggestion button:disabled { opacity: .6; cursor: default; }
+.math-definition-suggestion button:focus-visible, .math-definition-sources > summary:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 3px; }
+.math-definition-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.math-definition-status { flex: 1 1 180px; font-size: 12px; line-height: 1.6; color: #475569; }
+.math-definition-status:empty { display: none; }
+.math-definition-suggestion[data-state="found"] .math-definition-status { color: #47605a; font-weight: 500; }
+.math-definition-suggestion[data-state="uncertain"] .math-definition-status { color: #92400e; font-weight: 600; }
+.has-definition-draft .math-definition-toolbar > button { padding: 4px 0; border: 0; border-radius: 3px; background: transparent; color: #64748b; font-size: 12px; }
+.has-definition-draft .math-definition-toolbar > button:hover { color: #6d28d9; text-decoration: underline; }
+.math-definition-preview { margin-top: 12px; padding: 15px 16px; border: 1px solid #e8e5f0; border-radius: 10px; background: #faf9fd; font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
+.math-definition-preview .katex-display, .math-definition-sources .katex-display, .math-definition-reason .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.math-definition-result label { display: block; margin-top: 14px; font-size: 12px; color: #475569; }
+.math-definition-proposal { display: block; width: 100%; box-sizing: border-box; min-height: 144px; max-height: 50dvh; margin: 6px 0 0; padding: 12px; border: 1px solid #c4b5fd; border-radius: 8px; color: #1e293b; background: #fff; resize: vertical; font: 14px/1.7 Inter, sans-serif; }
+.math-definition-proposal:focus { outline: 2px solid #ede9fe; border-color: #8b5cf6; }
+.math-definition-sources { margin-top: 12px; color: #475569; font-size: 12px; }
+.math-definition-sources > summary { width: fit-content; padding: 4px 0; cursor: pointer; }
+.math-definition-sources > summary::marker { color: #8b5cf6; }
+.math-definition-source-count { display: inline-block; min-width: 18px; margin-left: 6px; border-radius: 5px; background: #f1eef8; text-align: center; font-size: 11px; }
+.math-definition-reason { margin: 10px 0; font-weight: 400; line-height: 1.65; white-space: pre-wrap; }
+.math-definition-source { margin-top: 12px; }
+.math-definition-source > small { font-size: 12px; font-weight: 500; }
+.math-definition-source blockquote { margin: 6px 0 0; padding: 2px 0 2px 10px; border-left: 2px solid #ddd6fe; line-height: 1.65; white-space: pre-wrap; }
+.math-definition-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #ede9fe; }
+.math-definition-actions .math-definition-edit { padding: 9px 0; border: 0; background: transparent; color: #6d28d9; font-size: 13px; }
+.math-definition-actions .math-definition-accept { margin-left: auto; border-color: #7c3aed; background: #7c3aed; color: #fff; font-size: 13px; font-weight: 500; }
+.math-definition-actions .math-definition-accept:hover:not(:disabled) { border-color: #6d28d9; background: #6d28d9; }
+.math-definition-result .math-definition-save-scope { margin-top: 7px; color: #64748b; text-align: right; font-size: 11px; }
+.math-definition-result .formula-definition-delete { display: block; margin-top: 8px; color: #b91c1c; background: transparent; border: 0; }
+@media (pointer: coarse) { .math-definition-proposal { font-size: 16px; } }
 .formula-definitions { border: 1px solid #ddd6fe; border-radius: 10px; padding: 12px; margin: 12px 0; }
 .formula-definitions summary { color: #5b21b6; font-weight: 500; cursor: pointer; }
 .formula-definition-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }

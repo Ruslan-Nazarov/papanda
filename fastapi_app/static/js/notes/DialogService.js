@@ -352,7 +352,7 @@ class DialogService {
             const cancelBtn = dialog.querySelector('.btn-cancel-dialog');
             const closeBtn = dialog.querySelector('.btn-close-dialog');
 
-            confirmBtn.focus();
+            (options.focusCancel ? cancelBtn : confirmBtn).focus();
             confirmBtn.addEventListener('click', () => finish(true));
             cancelBtn.addEventListener('click', () => finish(false));
             closeBtn.addEventListener('click', () => finish(false));

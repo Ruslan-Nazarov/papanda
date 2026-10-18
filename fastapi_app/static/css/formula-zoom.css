@@ -52,8 +52,29 @@
 .math-expandable:hover > .math-expand-button,
 .math-expand-button:focus-visible { opacity: 1; color: #6250ba; background: #ede9fe; }
 .math-expand-button:focus-visible,
+.math-calculation-button:focus-visible,
 .formula-zoom-dialog button:focus-visible,
 .formula-zoom-viewport:focus-visible { outline: 2px solid #8b7ad6; outline-offset: 2px; }
+.math-expandable:has(> .math-calculation-button) { flex-wrap: wrap; }
+.math-calculation-button {
+    flex: 0 0 auto;
+    margin-left: auto;
+    min-height: 28px;
+    padding: 4px 9px;
+    border: 1px solid #ddd6fe;
+    border-radius: 6px;
+    background: #f5f3ff;
+    color: #6250ba;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.math-calculation-button:hover { background: #ede9fe; border-color: #c4b5fd; }
+.math-calculation-button:disabled { opacity: .5; cursor: wait; }
+@media (pointer: coarse) { .math-calculation-button { min-height: 40px; } }
 .formula-zoom-dialog {
     box-sizing: border-box;
     width: min(760px, calc(100vw - 32px));
@@ -99,4 +120,4 @@
     .formula-zoom-content { padding: 24px 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .math-expand-button { transition: none; } }
-@media print { .math-expand-button, .formula-zoom-dialog { display: none !important; } }
+@media print { .math-expand-button, .math-calculation-button, .formula-zoom-dialog { display: none !important; } }

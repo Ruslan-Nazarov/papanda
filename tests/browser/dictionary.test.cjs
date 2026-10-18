@@ -9,7 +9,7 @@ const puppeteer = require('puppeteer');
 
 const root = path.resolve(__dirname, '../..');
 
-test('dictionary keeps both explanations through browser save and reload', {timeout: 90_000}, async () => {
+test('dictionary keeps explanations and block links through browser save, reload and navigation', {timeout: 90_000}, async () => {
     const probe = net.createServer();
     probe.listen(0, '127.0.0.1');
     await once(probe, 'listening');
@@ -28,6 +28,8 @@ test('dictionary keeps both explanations through browser save and reload', {time
     child.stderr.on('data', data => {log += data;});
     const url = `http://127.0.0.1:${port}`;
     let browser;
+    let page;
+    const errors = [];
     try {
         let ready = false;
         const deadline = Date.now() + 45_000;
@@ -39,8 +41,13 @@ test('dictionary keeps both explanations through browser save and reload', {time
         }
         assert(ready, 'Test server did not start: ' + log);
         browser = await puppeteer.launch({headless: true, args: process.env.CI ? ['--no-sandbox'] : []});
-        const page = await browser.newPage();
-        const errors = [];
+        page = await browser.newPage();
+        const hoverGraph = async selector => {
+            await page.$eval(selector, element => element.scrollIntoView({block: 'center', inline: 'center', behavior: 'instant'}));
+            // Let auto-scroll finish before hovering: scrolling dismisses previews.
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+            await page.hover(selector);
+        };
         page.on('pageerror', error => errors.push(error.message));
         await page.evaluateOnNewDocument(() => {
             localStorage.setItem('dialectics_onboarding_seen', '1');
@@ -68,12 +75,40 @@ test('dictionary keeps both explanations through browser save and reload', {time
         await page.waitForSelector('.dialectics-block .btn-dict');
         await page.click('.dialectics-block .btn-dict');
         assert.equal(await page.$$eval('.dict-entry p .katex', formulas => formulas.length), 1);
-        assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundColor), 'rgb(234, 88, 12)');
+        assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundImage),
+            await page.$eval('#btn-new-conspect', button => getComputedStyle(button).backgroundImage));
         await page.hover('.dict-done');
-        assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundColor), 'rgb(194, 65, 12)');
+        assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundImage),
+            'linear-gradient(135deg, rgb(249, 115, 22), rgb(194, 65, 12))');
         await page.click('.dict-view-graph');
         assert.equal(await page.$$eval('.dict-graph-detail p .katex', formulas => formulas.length), 1);
+        await hoverGraph('.dict-graph-node.is-selected');
+        await page.waitForSelector('.dict-graph-tooltip');
+        assert.equal(await page.$eval('.dict-graph-tooltip strong', title => title.textContent), 'Микроконтроллер');
+        assert.equal(await page.$$eval('.dict-graph-tooltip .katex', formulas => formulas.length), 1);
+        if (process.env.DICTIONARY_SCREENSHOTS) {
+            await page.screenshot({path: path.join(root, 'output/dictionary-graph-definition.png')});
+        }
+        await page.keyboard.press('Escape');
+        assert.equal(await page.$('.dict-graph-tooltip'), null);
+        assert.ok(await page.$('.dict-modal'));
+        // Hover the actual stroke away from its midpoint marker and both node cards.
+        const strokePoint = await page.evaluate(() => {
+            const marker = document.querySelector('.dict-graph-edge-info').getBoundingClientRect();
+            const neighbor = document.querySelector('.dict-graph-node:not(.is-selected)').getBoundingClientRect();
+            return {x: (marker.right + neighbor.left) / 2, y: marker.top + marker.height / 2};
+        });
+        await page.mouse.move(strokePoint.x, strokePoint.y);
+        await page.waitForSelector('.dict-graph-tooltip');
+        assert.equal(await page.$eval('.dict-graph-tooltip p', content => content.textContent), 'АЦП выполняет измерения');
+        await hoverGraph('.dict-graph-edge-info');
+        await page.waitForSelector('.dict-graph-tooltip');
+        assert.equal(await page.$eval('.dict-graph-tooltip p', content => content.textContent), 'АЦП выполняет измерения');
+        if (process.env.DICTIONARY_SCREENSHOTS) {
+            await page.screenshot({path: path.join(root, 'output/dictionary-graph-connection.png')});
+        }
         await page.click('.dict-view-list');
+        assert.equal(await page.$('.dict-graph-tooltip'), null);
         await page.click('.dict-edit');
         assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
             ['АЦП выполняет измерения']);
@@ -94,7 +129,37 @@ test('dictionary keeps both explanations through browser save and reload', {time
         }
         assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
             ['АЦП выполняет измерения', 'Обмен данными по SPI']);
+        await page.$eval('.dict-definition', field => {
+            field.focus();
+            field.setSelectionRange(0, 'Результат'.length);
+        });
+        await page.click('.dict-editor > .dict-text-field .dict-insert-link');
+        await page.waitForSelector('.internal-links-note');
+        await page.keyboard.press('Escape');
+        await page.waitForSelector('.internal-links-dialog', {hidden: true});
+        assert.equal(await page.$eval('.dict-editor', editor => editor.hidden), false);
+        assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
+            ['АЦП выполняет измерения', 'Обмен данными по SPI']);
+        if (process.env.DICTIONARY_SCREENSHOTS) {
+            await fs.mkdir(path.join(root, 'output'), {recursive: true});
+            await page.screenshot({path: path.join(root, 'output/dictionary-block-links-editor.png')});
+        }
+        await page.click('.dict-editor > .dict-text-field .dict-insert-link');
+        await page.waitForSelector('.internal-links-note');
+        await page.click('.internal-links-expand');
+        await page.waitForSelector('.internal-links-block');
+        await page.click('.internal-links-block');
+        await page.click('.internal-links-confirm');
+        await page.waitForSelector('.internal-links-dialog', {hidden: true});
+        const linkedDefinition = await page.$eval('.dict-definition', field => field.value);
+        assert.ok(linkedDefinition.startsWith(`[Результат](internal://note/${noteId}/block/manual-1)`));
         await page.click('.dict-save');
+        assert.equal(await page.$eval('.dict-entry p a', link => link.textContent), 'Результат');
+        assert.equal(await page.$$eval('.dict-entry p .katex', formulas => formulas.length), 1);
+        await page.click('.dict-view-graph');
+        assert.equal(await page.$eval('.dict-graph-detail p a', link => link.getAttribute('href')),
+            `internal://note/${noteId}/block/manual-1`);
+        await page.click('.dict-view-list');
         await page.click('.dict-done');
         const saveResponse = page.waitForResponse(response => response.url() === `${url}/api/dialectics/${noteId}`
             && response.request().method() === 'PATCH');
@@ -108,7 +173,39 @@ test('dictionary keeps both explanations through browser save and reload', {time
         await page.click('.dict-edit');
         assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
             ['АЦП выполняет измерения', 'Обмен данными по SPI']);
+        assert.equal(await page.$eval('.dict-definition', field => field.value), linkedDefinition);
+        await page.click('.dict-cancel');
+        if (process.env.DICTIONARY_SCREENSHOTS) {
+            await page.screenshot({path: path.join(root, 'output/dictionary-block-links-reading.png')});
+            await page.setViewport({width: 390, height: 844});
+            await page.click('.dict-edit');
+            assert.equal(await page.$eval('.dict-modal', dialog => dialog.scrollWidth <= dialog.clientWidth), true);
+            await page.screenshot({path: path.join(root, 'output/dictionary-block-links-mobile.png')});
+            await page.click('.dict-cancel');
+        }
+        await page.setViewport({width: 390, height: 844});
+        await page.click('.dict-view-graph');
+        await hoverGraph('.dict-graph-node.is-selected');
+        await page.waitForSelector('.dict-graph-tooltip a');
+        assert.equal(await page.$eval('.dict-graph-tooltip', tooltip => {
+            const rect = tooltip.getBoundingClientRect();
+            return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight;
+        }), true);
+        if (process.env.DICTIONARY_SCREENSHOTS) {
+            await page.screenshot({path: path.join(root, 'output/dictionary-graph-mobile.png')});
+        }
+        await page.click('.dict-graph-tooltip a');
+        await page.waitForSelector('.dict-modal', {hidden: true});
+        await page.waitForFunction(() => document.getElementById('manual-1').style.boxShadow.includes('3px'));
+        assert.equal(await page.evaluate(() => new URL(location.href).searchParams.get('note')), String(noteId));
         assert.deepEqual(errors, []);
+    } catch (error) {
+        if (page && process.env.DICTIONARY_SCREENSHOTS) {
+            await fs.mkdir(path.join(root, 'output'), {recursive: true});
+            await page.screenshot({path: path.join(root, 'output/dictionary-browser-failure.png')});
+            console.error('Browser errors:', errors);
+        }
+        throw error;
     } finally {
         await browser?.close();
         if (process.platform === 'win32' && child.pid && child.exitCode === null) {

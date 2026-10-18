@@ -61,8 +61,9 @@ class RequestDocuments {
             return;
         }
         const topic = block.querySelector('.anchor-topic-input');
-        if (topic) topic.insertAdjacentElement('afterend', this.panel);
-        else block.appendChild(this.panel);
+        if (topic) {
+            if (topic.nextElementSibling !== this.panel) topic.insertAdjacentElement('afterend', this.panel);
+        } else if (this.panel.parentElement !== block) block.appendChild(this.panel);
         this.render();
     }
 

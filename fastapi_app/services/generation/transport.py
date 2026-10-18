@@ -73,8 +73,14 @@ async def until_disconnect(request, operation):
     work = asyncio.create_task(operation)
 
     async def watch():
-        while not await request.is_disconnected():
-            await asyncio.sleep(0.1)
+        # The validated JSON body has already been consumed by FastAPI. Reading
+        # ASGI disconnect directly avoids polling is_disconnected(): its inner
+        # cancellation scope can swallow the watcher's cancellation and leave
+        # the response waiting forever in the cleanup gather.
+        while True:
+            message = await request.receive()
+            if message['type'] == 'http.disconnect':
+                return
 
     watcher = asyncio.create_task(watch())
     try:

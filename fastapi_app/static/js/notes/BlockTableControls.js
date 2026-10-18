@@ -3,6 +3,11 @@ import { t } from '../i18n.js';
 
 class BlockTableControls {
     static nextId = 0;
+    static refreshers = new WeakMap();
+
+    static update(container, block) {
+        this.refreshers.get(container)?.(block);
+    }
 
     static mount(container, block) {
         if (!container || container.closest('.tiptap, [contenteditable="true"]')) return;
@@ -94,6 +99,11 @@ class BlockTableControls {
             });
             container.prepend(allButton);
         }
+        this.refreshers.set(container, current => {
+            const collapsed = new Set(current.collapsed_tables || []);
+            entries.forEach(entry => {entry.collapsed = collapsed.has(entry.key);});
+            refresh();
+        });
         refresh();
     }
 }

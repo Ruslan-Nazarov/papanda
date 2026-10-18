@@ -1,4 +1,4 @@
-# Papanda / Conspect 0.12.0
+# Papanda / Conspect 0.12.4
 
 Редактор конспектов: ручной режим по умолчанию, дополнительная ИИ-генерация,
 история, формулы, категории и публичные ссылки. Backend: FastAPI + SQLAlchemy +
@@ -193,6 +193,9 @@ npm run check:types
 npm run check:js
 npm test
 npm run test:browser
+$env:PLAYWRIGHT_BROWSERS_PATH = Join-Path (Get-Location).Path '.cache/playwright-browsers'
+npx playwright install firefox webkit
+npm run test:cross-browser
 ```
 
 На Linux используйте `.venv/bin/python`. `npm ci` устанавливает Puppeteer и
@@ -200,6 +203,14 @@ npm run test:browser
 Логические тесты `npm test` и проверка синтаксиса не требуют браузера.
 Для установки только пакетов: `npm ci --ignore-scripts`, затем при необходимости
 `npx puppeteer browsers install chrome`.
+Для межбраузерной проверки на Linux: `PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright-browsers" npx playwright install --with-deps firefox webkit`,
+затем `npm run test:cross-browser`. Эти проверки используют временные данные и
+подставные ответы ИИ. WebKit не заменяет Safari на настоящем iPhone.
+
+Живые проверки ИИ запускаются отдельно, осознанно используя настроенные ключи:
+`python scripts/verify_live_ai.py --live --pipeline`. Без `--live` запросов нет;
+ответы и метрики пишутся в `.cache/live-acceptance`, пользовательская БД не меняется.
+Для отдельных сценариев есть `--only calculation incorrect_calculation`.
 
 Python-тесты используют временные каталоги и отключённые ключи ИИ. Фикстура
 `file_client` запускает настоящий lifespan и get_db с файловой SQLite.

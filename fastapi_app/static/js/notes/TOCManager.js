@@ -40,6 +40,7 @@ class TOCManager {
             itemsHTML = `<div class="toc-empty">${t('toc_empty')}</div>`;
         } else {
             let sectionNumber = 0;
+            let blockNumber = 0;
             itemsHTML = blocks.map((b) => {
                 inferRoleFromTitle(b);
                 const isSection = b.role === 'section';
@@ -64,6 +65,7 @@ class TOCManager {
                          tabindex="0">
                         <span class="toc-drag-handle ph ph-dots-six-vertical" title="${t('drag_word')}" aria-hidden="true"></span>
                         <span class="toc-marker" aria-hidden="true">${icon}</span>
+                        ${isSection ? '' : `<span class="toc-number">${++blockNumber}.</span>`}
                         <span class="toc-title">${this.escapeHtml(displayTitle)}</span>
                     </div>
                 `;

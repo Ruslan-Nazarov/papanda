@@ -46,6 +46,7 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
                 softmax: String.raw`p_i=\frac{e^{z_i}}{\sum_{j=0}^{5}e^{z_j}}`,
                 nested: String.raw`\frac{1}{1+\frac{a}{b}}`, matrix: String.raw`\begin{pmatrix}a&b\\c&d\end{pmatrix}`,
                 adaptive: 'a+b+c+d+e+f', wide: 'a+b+c+d+e+f+g+h+i+j+k+l+m+n',
+                attention: String.raw`R^{(1)}=\frac{Q^{(1)}(K^{(1)})^{\mathsf T}}{\sqrt2}.`,
             };
             window.sourceHtml = Object.entries(formulas).map(([id, formula]) => {
                 const span = document.createElement('span');
@@ -55,8 +56,10 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
             document.getElementById('note').innerHTML = sourceHtml;
             document.getElementById('editor').innerHTML = '<span class="math-inline" formula="' + formulas.softmax + '"></span>';
             BlockMathRenderer.renderMath(document.body);
-            MathSymbolTooltip.bind(document, {getContext: element => element.closest('#note')
-                ? {note: [{symbol: 'p', definition: 'Вероятность'}], block: []} : null});
+            MathSymbolTooltip.bind(document, {getContext: element => element.closest('#note, .formula-zoom-dialog')
+                ? {note: [{symbol: 'p', definition: 'Вероятность'}, {symbol: 'R', definition: 'Матрица оценок'},
+                    {symbol: 'Q', definition: 'Матрица запросов'}, {symbol: 'K', definition: 'Матрица ключей'},
+                    {symbol: String.raw`\mathsf{T}`, definition: 'Транспонирование'}], block: []} : null});
         });
         await t.test('threshold uses structure and rendered size; rerendering is idempotent', async () => {
             await page.evaluate(() => document.fonts.ready);
@@ -160,6 +163,51 @@ test('complex formulas expand accessibly without interrupting simple formulas, s
             assert.equal(await page.$eval('.math-symbol-definition', el => el.textContent), 'Вероятность');
             assert.equal(await page.$('.formula-zoom-dialog'), null);
             await page.keyboard.press('Escape');
+        });
+        await t.test('attention operands and bare root numbers can be clicked in the note and enlarged view', async subtest => {
+            subtest.after(async () => {
+                await page.evaluate(() => { MathSymbolTooltip.hide(); FormulaZoom.active?.close(); });
+                await page.waitForFunction(() => !document.querySelector('.formula-zoom-dialog'));
+            });
+            for (const width of [1000, 390]) {
+                await page.setViewport({width, height: 844, isMobile: true, hasTouch: true});
+                for (const enlarged of [false, true]) {
+                    if (enlarged) {
+                        await page.tap('#attention .math-expand-button');
+                        await page.waitForSelector('.formula-zoom-dialog[open]');
+                    }
+                    const scope = enlarged ? '.formula-zoom-content' : '#attention';
+                    await page.$eval(scope, el => el.scrollIntoView({block: 'center', inline: 'nearest'}));
+                    // Complete the scroll before tapping; a pending scroll event
+                    // correctly dismisses tooltips and must not race the next tap.
+                    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+                    for (const [label, definition] of [['R^{(1)}', 'Матрица оценок'], ['Q^{(1)}', 'Матрица запросов'],
+                        ['K^{(1)}', 'Матрица ключей'], [String.raw`\mathsf{T}`, 'Транспонирование'], ['2', translations.ms_number_unassigned]]) {
+                        const selector = `${scope} [aria-label=${JSON.stringify(label)}]`;
+                        // Hit the actual glyph, since the surrounding scripts can
+                        // make the expression's bounding-box centre fall on whitespace.
+                        const point = await page.$eval(selector, el => {
+                            const glyph = el.querySelector('.mathnormal, .mord') || el;
+                            const rect = glyph.getBoundingClientRect();
+                            return {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
+                        });
+                        await page.touchscreen.tap(point.x, point.y);
+                        await page.waitForFunction(selector => MathSymbolTooltip.active?.element.matches(selector)
+                            && MathSymbolTooltip.active.pinned, {}, selector);
+                        assert.ok((await page.$eval('.math-symbol-definition', el => el.textContent)).includes(definition), label);
+                        if (enlarged) assert.ok(await page.$('.formula-zoom-dialog .math-symbol-tooltip'));
+                        if (enlarged && label === 'Q^{(1)}') await page.screenshot({path: path.join(root, `tmp/attention-definition-${width}.png`)});
+                        await page.keyboard.press('Escape');
+                        if (enlarged) assert.ok(await page.$('.formula-zoom-dialog[open]'));
+                    }
+                    assert.equal(await page.$eval(`${scope} annotation`, el => el.textContent),
+                        String.raw`R^{(1)}=\frac{Q^{(1)}(K^{(1)})^{\mathsf T}}{\sqrt2}.`);
+                    if (enlarged) {
+                        await page.click('.formula-zoom-close');
+                        await page.waitForFunction(() => !document.querySelector('.formula-zoom-dialog'));
+                    }
+                }
+            }
         });
         await t.test('mobile formulas fit the page and long expanded formulas scroll inside the dialog', async () => {
             await page.setViewport({width: 360, height: 740, isMobile: true, hasTouch: true});

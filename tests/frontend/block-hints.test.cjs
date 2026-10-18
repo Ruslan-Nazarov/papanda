@@ -42,7 +42,7 @@ test('a divider below a visible block inserts the new block below it when the an
     const document = new JSDOM('<div id="blocks-container"></div>').window.document;
     const ctx = context({document, CustomEvent: document.defaultView.CustomEvent,
         BlockHintBuilder: {pendingAnchor() {return null;}},
-        BlockNormalBuilder: {build(block) {
+        BlockNormalBuilder: {syncReadingState() {}, build(block) {
             const el = document.createElement('div');
             el.className = 'dialectics-block';
             el.dataset.id = block.id;

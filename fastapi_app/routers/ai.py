@@ -11,7 +11,9 @@ import aiofiles.os
 
 from fastapi_app.services.import_service import read_upload
 from fastapi_app.services.request_document import extract_request_document, MAX_DOCUMENT_BYTES
-from fastapi_app.schemas.notes import RequestDocument
+from fastapi_app.schemas.notes import RequestDocument, MathSymbol, MathNumberDefinition
+from fastapi_app.schemas.math_suggestions import MathDefinitionRequest, MathDefinitionSuggestion
+from fastapi_app.services.math_suggestions import parse_suggestion
 from fastapi_app.services.ai_service import ai_service
 from fastapi_app.services.locale_utils import normalize_locale
 from fastapi_app.services.abuse_guard import reserve_generation
@@ -66,6 +68,19 @@ class ExplainRequest(BaseModel):
     context_after: Optional[str] = Field(default="", max_length=5_000)
     history: Optional[List[dict]] = Field(default=[], max_length=30)
     question: str = Field(default="", max_length=2_000)
+    note_passages: List[NotePassage] = Field(default_factory=list, max_length=5)
+
+
+class CalculationRequest(BaseModel):
+    formula: str = Field(min_length=1, max_length=20_000, pattern=r'\S')
+    original_formulas: List[Annotated[str, Field(max_length=20_000)]] = Field(default_factory=list, max_length=3)
+    math_symbols: List[MathSymbol] = Field(default_factory=list, max_length=80)
+    number_definitions: List[MathNumberDefinition] = Field(default_factory=list, max_length=80)
+    note_title: str = Field(default='', max_length=255)
+    context_before: str = Field(default='', max_length=500)
+    context_after: str = Field(default='', max_length=5_000)
+    history: List[dict] = Field(default_factory=list, max_length=6)
+    question: str = Field(default='', max_length=2_000)
     note_passages: List[NotePassage] = Field(default_factory=list, max_length=5)
 
 class TextMathRequest(BaseModel):
@@ -166,6 +181,26 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         question=data.question,
         note_passages=[passage.model_dump(exclude_unset=True) for passage in data.note_passages],
     ))
+
+@router.post('/explain-calculation/stream')
+@limiter.limit('10/minute')
+async def explain_calculation_stream(request: Request, data: CalculationRequest):
+    locale = normalize_locale(getattr(request.state, 'locale', 'ru'))
+    return _sse(ai_service.explain_calculation_stream(data.model_dump(), locale=locale))
+
+
+@router.post('/math-definition', response_model=MathDefinitionSuggestion)
+@limiter.limit('10/minute')
+async def suggest_math_definition(request: Request, data: MathDefinitionRequest):
+    locale = normalize_locale(getattr(request.state, 'locale', 'ru'))
+    raw = await ai_service.suggest_math_definition(data.model_dump(), locale=locale)
+    if not raw or raw.startswith(('AI disabled:', 'Error calling AI:')):
+        raise HTTPException(status_code=503, detail='AI suggestion is unavailable')
+    try:
+        return parse_suggestion(raw, [passage.model_dump() for passage in data.passages])
+    except (ValueError, TypeError, KeyError):
+        raise HTTPException(status_code=502, detail='AI returned an invalid suggestion')
+
 
 @router.post("/text-math")
 @limiter.limit("10/minute")

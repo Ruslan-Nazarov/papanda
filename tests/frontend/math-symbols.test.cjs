@@ -102,3 +102,74 @@ test('unbraced TeX accents and fonts keep every part interactive, including bloc
     assert.equal(symbols.normalize(String.raw`\mathbf\mathsf T`), String.raw`\mathbf{\mathsf{T}}`);
     assert.equal(symbols.resolve(String.raw`\hat x`, [{symbol: String.raw`\hat{x}`, definition: 'Estimate'}]).definition, 'Estimate');
 });
+
+test('numbers have complete interactive targets without annotating indices, powers, prose or TeX options', () => {
+    const {MathSymbols: symbols, document} = setup();
+    const formula = String.raw`\begin{aligned}(x_1W_{hx})_1&=(-0.24)\cdot0.988340+0.31^2\\&\approx-0.247684\end{aligned}+\sqrt[3]{8}+\text{step 12}`;
+    const root = document.getElementById('math');
+    root.innerHTML = symbols.render(formula);
+    const numbers = [...root.querySelectorAll('[data-math-number]')].map(el => JSON.parse(symbols.decode(el.dataset.mathNumber)));
+    assert.deepEqual(numbers.map(number => number.value), ['-0.24', '0.988340', '0.31', '-0.247684', '8']);
+    assert.ok(numbers.every(number => formula.slice(number.start, number.end) === number.value));
+    assert.ok([...root.querySelectorAll('[data-math-number]')].every(el => el.tabIndex === 0));
+    assert.equal(root.querySelector('.katex-error'), null);
+    assert.equal(root.querySelector('annotation').textContent, formula);
+    assert.notEqual(symbols.numberKey('-0.247684'), symbols.numberKey('0.247684'));
+    assert.notEqual(symbols.numberKey('0.10'), symbols.numberKey('0.1'));
+    assert.notEqual(symbols.numberKey('12345678901234567890'), symbols.numberKey('12345678901234567891'));
+    assert.equal(symbols.numberKey('− 0.247684'), symbols.numberKey('-0.247684'));
+});
+
+test('bare TeX arguments stay interactive without changing token boundaries or source positions', () => {
+    const {MathSymbols: symbols, document} = setup();
+    const root = document.getElementById('math');
+    const formulas = [String.raw`R^{(1)}
+=\frac{Q^{(1)}(K^{(1)})^{\mathsf T}}{\sqrt2}.`,
+        String.raw`\sqrt2`, String.raw`\sqrt12`, String.raw`\sqrt[3]2`, String.raw`\sqrt x`,
+        String.raw`\frac12`, String.raw`\frac xy`, String.raw`\frac1x`, String.raw`\frac x2`,
+        String.raw`\dfrac23`, String.raw`\tfrac ab`, String.raw`\binom nk`, String.raw`\overset ab`,
+        String.raw`\underset xy`, String.raw`\overline x`, String.raw`\underbrace x`,
+        String.raw`\boxed x`, String.raw`\phantom2+x`, String.raw`\textcolor{blue}x`, "\\sqrt% root\n2",
+        String.raw`\text{Scores}_i = \frac{Q_i K_i^T}{\sqrt{d_k}} + M_{mask}`];
+    for (const formula of formulas) {
+        root.innerHTML = symbols.render(formula);
+        assert.equal(root.querySelector('.katex-error'), null, formula);
+        assert.ok(root.querySelector('[data-math-symbol], [data-math-number]'), formula);
+        for (const atom of symbols.atoms(formula)) {
+            assert.ok(root.querySelector(`[data-math-symbol="${symbols.encode(atom.symbol)}"]`), `${formula}: ${atom.symbol}`);
+        }
+        const numbers = [...root.querySelectorAll('[data-math-number]')].map(el => JSON.parse(symbols.decode(el.dataset.mathNumber)));
+        assert.equal(numbers.length, symbols.numbers(formula).length, formula);
+        for (const number of numbers) assert.equal(formula.slice(number.start, number.end), number.value, formula);
+        assert.equal(root.querySelector('annotation').textContent, formula);
+    }
+    root.innerHTML = symbols.render(String.raw`\sqrt12`);
+    assert.equal(root.querySelector('msqrt').textContent, '1', 'a bare root consumes one TeX token');
+    assert.equal(root.querySelector('msqrt').nextElementSibling.textContent, '2');
+    root.innerHTML = symbols.render(String.raw`\frac12`);
+    assert.deepEqual([...root.querySelector('mfrac').children].map(el => el.textContent), ['1', '2']);
+});
+
+test('dimensions and raw text never disable the mathematical targets around them', () => {
+    const {MathSymbols: symbols, document} = setup();
+    const root = document.getElementById('math');
+    for (const spacing of [String.raw`\kern2pt`, String.raw`\kern{2pt}`, String.raw`\mkern3mu`, String.raw`\hspace{4pt}`,
+        String.raw`\hskip4pt`, String.raw`\rule[5pt]{6pt}{7pt}`, String.raw`\text{step 8}`]) {
+        const formula = `x+${spacing}y=9`;
+        assert.doesNotThrow(() => katex.renderToString(formula, {throwOnError: true}), formula);
+        root.innerHTML = symbols.render(formula);
+        assert.equal(root.querySelector('.katex-error'), null, formula);
+        assert.deepEqual([...root.querySelectorAll('[data-math-number]')].map(el => JSON.parse(symbols.decode(el.dataset.mathNumber)).value), ['9'], formula);
+        for (const key of ['x', 'y', '=']) assert.ok(root.querySelector(`[aria-label="${key}"]`), formula);
+        assert.equal(root.querySelector('[aria-label="p"]'), null, formula);
+        assert.equal(root.querySelector('annotation').textContent, formula);
+    }
+    const formula = String.raw`\begin{aligned}x&=\sqrt2\\[6pt]y&=\frac12\end{aligned}`;
+    root.innerHTML = symbols.render(formula);
+    assert.equal(root.querySelector('.katex-error'), null);
+    assert.equal(root.querySelectorAll('[data-math-number]').length, 3);
+    assert.ok(root.querySelector('[aria-label="x"]'));
+    assert.ok(root.querySelector('[aria-label="y"]'));
+    assert.equal(root.querySelector('[aria-label="p"]'), null);
+    assert.equal(root.querySelector('annotation').textContent, formula);
+});

@@ -3,10 +3,17 @@ import BlockNormalBuilder from './BlockNormalBuilder.js';
 import BlockHintBuilder from './BlockHintBuilder.js';
 import RequestDocuments from './RequestDocuments.js';
 import PinnedDerivations from './PinnedDerivations.js';
+import MathSubstitutions from './MathSubstitutions.js';
 import { ALGORITHM_STEPS, inferRoleFromTitle } from './BlockConstants.js';
 import { t } from '../i18n.js';
 
+// These fields can change the card's controls without changing its body.
+const PRESENTATION_FIELDS = ['title', 'status', 'side', 'is_pinned', 'collapsed', 'author', 'border_color'];
+
 class BlockDOMRenderer {
+    static renderedBlocks = new WeakMap();
+    static renderedHints = new WeakMap();
+
     /**
      * Compute which hint to show next based on saved content in the note.
      * Steps are sequentially evaluated: anchor -> step1 -> step2 -> step3 -> step4 -> step5.
@@ -45,13 +52,14 @@ class BlockDOMRenderer {
     }
 
     /**
-     * Full canvas re-render.
+     * Reconcile the canvas, retaining unchanged cards and their rendered math.
      * Renders all other blocks sequentially, followed by upcoming hints,
      * and keeps the "Что вам нужно понять" (anchor) block at the very bottom on the left.
      */
-    static renderAll() {
+    static renderAll({reuseUnchanged = true} = {}) {
         const container = document.getElementById('blocks-container');
         if (!container) return;
+        BlockNormalBuilder.syncReadingState();
 
         const noDialectics = container.classList.contains('mode-no-dialectics');
         // В режиме ИИ-генерации подсказки-блоки не показываем вовсе —
@@ -68,46 +76,99 @@ class BlockDOMRenderer {
         const nonAnchorBlocks = allBlocks.filter(b => b.role !== 'anchor');
         const anchorBlocks = allBlocks.filter(b => b.role === 'anchor' && b.id !== pendingAnchor?.id);
 
-        container.innerHTML = '';
+        // Every caller gets incremental rendering, including drag/drop, mode
+        // switches, history, deletion, generation and editor cancellation.
+        const existing = new Map([...container.children].filter(el => el.classList.contains('dialectics-block'))
+            .map(el => [el.dataset.id, el]));
+        const oldCards = [...existing.values()];
+        const dividers = [...container.children].filter(el => el.classList.contains('block-divider'));
+        let dividerIndex = 0;
+        const divider = index => {
+            const el = dividers[dividerIndex++] || this.createDivider(index);
+            if (el.dataset.index !== String(index)) el.dataset.index = String(index);
+            return el;
+        };
+        const build = block => {
+            const previous = existing.get(block.id);
+            const snapshot = this.renderedBlocks.get(previous);
+            // Only inputs used to build the body/toolbar structure belong here.
+            // Definitions, attachments and server-added defaults must not rebuild math.
+            const data = JSON.stringify([block.role || null, block.html || '', block.tags || '',
+                !!block.anchorResolved, block.rejected_drafts?.length || 0]);
+            const presentation = JSON.stringify([...PRESENTATION_FIELDS.map(key => block[key]),
+                block.collapsed_tables || [], block.sources?.length || 0, block.stickers?.length || 0,
+                AppState.currentNote.dictionary?.length || 0]);
+            if (reuseUnchanged && snapshot?.epoch === AppState.documentEpoch && snapshot.data === data) {
+                if (snapshot.presentation !== presentation) {
+                    BlockNormalBuilder.updatePresentation(previous, block);
+                    snapshot.presentation = presentation;
+                }
+                return previous;
+            }
+            const el = BlockNormalBuilder.build(block, () => this.renderAll());
+            this.renderedBlocks.set(el, {epoch: AppState.documentEpoch, data, presentation});
+            return el;
+        };
+        const buildHint = step => {
+            const previous = container.querySelector('.dialectics-hint-block');
+            const key = `${step.role}:${step.side}:${AppState.mode}`;
+            const snapshot = this.renderedHints.get(previous);
+            if (reuseUnchanged && snapshot?.epoch === AppState.documentEpoch && snapshot.key === key) return previous;
+            const el = BlockHintBuilder.build(step.role, step.side, () => this.renderAll());
+            this.renderedHints.set(el, {epoch: AppState.documentEpoch, key});
+            return el;
+        };
+        const storedIndices = new Map(storedBlocks.map((block, index) => [block.id, index]));
+        const children = [];
         // 1. Render all non-anchor blocks
         let sectionNumber = 0;
         nonAnchorBlocks.forEach((block) => {
             // Anchor blocks are displayed last, even when stored earlier. Divider
             // indices must refer to the stored array used by NoteStore.addBlock.
-            const storedIndex = storedBlocks.findIndex(item => item.id === block.id);
-            container.appendChild(this.createDivider(storedIndex));
-            const el = BlockNormalBuilder.build(block, () => this.renderAll());
+            const storedIndex = storedIndices.get(block.id);
+            children.push(divider(storedIndex));
+            const el = build(block);
             if (block.role === 'section') {
-                el.querySelector('.section-number').textContent = String(++sectionNumber);
+                const number = el.querySelector('.section-number');
+                if (number.textContent !== String(++sectionNumber)) number.textContent = String(sectionNumber);
             }
-            container.appendChild(el);
+            children.push(el);
         });
 
         // 2. Render next dialectics hint if active and not anchor (e.g. step1..step5 hint grows above anchor)
         if (showHints && !noDialectics && nextStep && nextStep.role !== 'anchor') {
-            container.appendChild(this.createDivider(storedBlocks.length));
-            const hintEl = BlockHintBuilder.build(nextStep.role, nextStep.side, () => this.renderAll());
-            container.appendChild(hintEl);
+            children.push(divider(storedBlocks.length), buildHint(nextStep));
         }
 
         // 3. Render anchor blocks at the bottom, left
         anchorBlocks.forEach((block) => {
-            container.appendChild(this.createDivider(storedBlocks.length));
-            const el = BlockNormalBuilder.build(block, () => this.renderAll());
-            container.appendChild(el);
+            children.push(divider(storedBlocks.length));
+            children.push(build(block));
         });
 
         // 4. If next step is anchor (note is empty / no anchor yet)
         if (showHints && !noDialectics && nextStep && nextStep.role === 'anchor') {
-            container.appendChild(this.createDivider(storedBlocks.length));
-            const hintEl = BlockHintBuilder.build(nextStep.role, nextStep.side, () => this.renderAll());
-            container.appendChild(hintEl);
+            children.push(divider(storedBlocks.length), buildHint(nextStep));
         }
 
         // Divider after the last block
-        container.appendChild(this.createDivider(storedBlocks.length));
+        children.push(divider(storedBlocks.length));
+        // Leave reused cards connected so selection, focus and reading controls
+        // survive saving a different block.
+        const retained = new Set(children);
+        for (const child of [...container.childNodes]) {
+            if (!retained.has(child)) child.remove();
+        }
+        let cursor = container.firstChild;
+        for (const child of children) {
+            if (child === cursor) cursor = cursor.nextSibling;
+            else container.insertBefore(child, cursor);
+        }
         RequestDocuments.mount(container);
         PinnedDerivations.mount(container);
+        // Only content changes and card order affect formula dependencies.
+        const cards = children.filter(el => el.classList.contains('dialectics-block'));
+        if (cards.length !== oldCards.length || cards.some((el, i) => el !== oldCards[i])) MathSubstitutions.scheduleRefresh();
     }
 
     static createDivider(index) {

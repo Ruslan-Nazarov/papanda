@@ -23,10 +23,11 @@ if (['ru', 'en', 'kz'].includes(explicitLanguage)) {
 
 if (document.body.dataset.page === 'shared') {
     const data = JSON.parse(document.getElementById('math-symbols-data')?.textContent || '{}');
+    const numbers = JSON.parse(document.getElementById('math-number-definitions-data')?.textContent || '{}');
     MathSymbolTooltip.bind(document, {getContext: element => {
         const block = element.closest('.blk')
             || document.getElementById(element.closest('.formula-zoom-dialog')?.dataset.mathSourceBlock || '');
-        return block ? {note: data.note || [], block: data.blocks?.[block.id] || []} : null;
+        return block ? {note: data.note || [], block: data.blocks?.[block.id] || [], numberDefinitions: numbers[block.id] || []} : null;
     }});
     document.querySelectorAll('.blk-body').forEach(el => {
         HiddenPhraseTooltip.bind(el);

@@ -34,7 +34,7 @@ class BlockHistoryControls {
             button.addEventListener('click', event => {
                 event.stopPropagation();
                 if (note !== AppState.currentNote) return;
-                if (document.querySelector('.modal-editor-floating')) {
+                if (document.querySelector('.modal-editor-floating, .editor-dock')) {
                     showToast(t('block_history_close_editor'));
                     return;
                 }

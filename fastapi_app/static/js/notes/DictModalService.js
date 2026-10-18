@@ -1,11 +1,36 @@
 import AppState from './AppState.js';
+import DialogService from './DialogService.js';
+import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
 import { t } from '../i18n.js';
 
 class DictModalService {
     static activeClose = null;
 
+    static textLinks(text) {
+        return [...String(text || '').matchAll(/\[((?:\\.|[^\]\\])*)\]\((internal:\/\/note\/[a-zA-Z0-9_-]+(?:\/block\/[a-zA-Z0-9_-]+)?)\)/g)];
+    }
+
+    static linkLabel(label) {
+        return label.replace(/\\([\\[\]])/g, '$1');
+    }
+
+    static renderText(element, text = '') {
+        element.replaceChildren();
+        let offset = 0;
+        for (const match of this.textLinks(text)) {
+            element.append(text.slice(offset, match.index));
+            const link = document.createElement('a');
+            link.className = 'dict-block-reference';
+            link.href = match[2];
+            link.textContent = this.linkLabel(match[1]);
+            element.appendChild(link);
+            offset = match.index + match[0].length;
+        }
+        element.append(text.slice(offset));
+    }
+
     static renderMath(element) {
-        // Entries are inserted as plain text; only delimited TeX is rendered.
+        // Text and internal link labels stay plain text; only delimited TeX is rendered.
         window.renderMathInElement?.(element, {
             delimiters: [
                 {left: '$$', right: '$$', display: true},
@@ -78,7 +103,7 @@ class DictModalService {
                 <div class="dict-editor" hidden>
                     <h3 class="dict-editor-title"></h3>
                     <label>${t('dict_word_label')}<input class="dict-word" type="text" maxlength="150" placeholder="${t('dict_word_ph')}"></label>
-                    <label>${t('dict_definition_label')}<textarea class="dict-definition" rows="5" maxlength="10000" placeholder="${t('dict_expl_ph')}"></textarea></label>
+                    <div class="dict-text-field"><label>${t('dict_definition_label')}<textarea class="dict-definition" rows="5" maxlength="10000" placeholder="${t('dict_expl_ph')}"></textarea></label></div>
                     <label for="dict-connections-input">${t('dict_connections')}</label>
                     <div class="dict-connections-field">
                         <input id="dict-connections-input" class="dict-connections" type="text" placeholder="${t('dict_conn_ph')}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dict-connection-options" autocomplete="off">
@@ -124,6 +149,7 @@ class DictModalService {
         let activeSuggestion = -1;
         let graphActive = false;
         let selectedGraphIndex = 0;
+        let linkPickerOpen = false;
         const explanationDrafts = new Map();
         const splitConnections = value => String(value || '').split(/[,;\n]/).map(part => part.trim()).filter(Boolean);
         const normalize = value => value.trim().toLocaleLowerCase();
@@ -134,6 +160,71 @@ class DictModalService {
             const key = Object.keys(entry?.connection_explanations || {}).find(key => normalize(key) === normalize(name));
             return key ? entry.connection_explanations[key] : '';
         };
+        const hideGraphHint = () => {
+            if (HiddenPhraseTooltip.active?.root === graphCanvas) HiddenPhraseTooltip.hide();
+        };
+        const renderGraphHint = (tooltip, hint) => {
+            tooltip.classList.add('dict-graph-tooltip');
+            const separator = hint.indexOf('\n\n');
+            const title = document.createElement('strong');
+            title.textContent = hint.slice(0, separator);
+            const content = document.createElement('p');
+            this.renderText(content, hint.slice(separator + 2));
+            tooltip.append(title, content);
+            this.renderMath(tooltip);
+            tooltip.addEventListener('click', event => {
+                if (event.target.closest('a.dict-block-reference')) close();
+            });
+        };
+        const disposeGraphHints = HiddenPhraseTooltip.bind(graphCanvas, {
+            selector: '[data-hint]', render: renderGraphHint,
+        });
+        const addLinkButton = field => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'dict-insert-link';
+            button.textContent = t('dict_helper_link');
+            button.addEventListener('mousedown', event => event.preventDefault());
+            button.addEventListener('click', async () => {
+                if (linkPickerOpen) return;
+                const original = field.value;
+                let start = field.selectionStart;
+                let end = field.selectionEnd;
+                const existing = this.textLinks(original).find(match => start >= match.index
+                    && end <= match.index + match[0].length && start < match.index + match[0].length);
+                const label = existing ? this.linkLabel(existing[1]) : original.slice(start, end);
+                if (existing) { start = existing.index; end = start + existing[0].length; }
+                linkPickerOpen = true;
+                button.disabled = true;
+                try {
+                    const targets = await DialogService.selectInternalLinks({
+                        noteId: AppState.currentNote.id,
+                        isEditing: Boolean(existing),
+                        existingLinks: existing ? [{url: existing[2], text: label, label}] : [],
+                    });
+                    if (!overlay.isConnected || !field.isConnected || editor.hidden || field.value !== original) return;
+                    if (targets !== null) {
+                        const escapeLabel = value => value.replace(/[\\[\]]/g, '\\$&');
+                        const replacement = targets.length ? targets.map((target, index) =>
+                            `[${escapeLabel((index === 0 && label) || target.text || target.label || t('dict_link_sample'))}](${target.url})`).join(', ') : label;
+                        if (original.length - (end - start) + replacement.length > field.maxLength) {
+                            error.textContent = t('dict_text_too_long').replace('{limit}', String(field.maxLength));
+                            error.hidden = false;
+                        } else {
+                            field.setRangeText(replacement, start, end, 'end');
+                            field.dispatchEvent(new window.Event('input', {bubbles: true}));
+                            error.hidden = true;
+                        }
+                    }
+                    field.focus();
+                } finally {
+                    linkPickerOpen = false;
+                    button.disabled = false;
+                }
+            });
+            field.parentElement.after(button);
+        };
+        addLinkButton(definitionInput);
         const renderExplanationFields = () => {
             [...explanationFields.querySelectorAll('textarea[data-connection]')].forEach(field => {
                 explanationDrafts.set(normalize(field.dataset.connection), field.value);
@@ -169,7 +260,11 @@ class DictModalService {
                     || (target && old ? explanationFor(target, old.word) : ''));
                 field.placeholder = t('dict_connection_explanation_ph');
                 label.appendChild(field);
-                explanationFields.appendChild(label);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'dict-text-field';
+                wrapper.appendChild(label);
+                explanationFields.appendChild(wrapper);
+                addLinkButton(field);
             });
         };
 
@@ -255,6 +350,7 @@ class DictModalService {
 
         const close = () => {
             hideSuggestions();
+            disposeGraphHints();
             overlay.remove();
             document.removeEventListener('noteOpened', close);
             document.removeEventListener('keydown', onKeydown);
@@ -274,6 +370,7 @@ class DictModalService {
         const showEditor = (index = null) => {
             const item = index === null ? null : AppState.currentNote.dictionary?.[index];
             if (index !== null && !item) return;
+            hideGraphHint();
             editingIndex = index;
             wordInput.value = item?.word || '';
             definitionInput.value = item?.definition || '';
@@ -313,7 +410,7 @@ class DictModalService {
                 const title = document.createElement('strong');
                 title.textContent = entry.word;
                 const definition = document.createElement('p');
-                definition.textContent = entry.definition || '';
+                this.renderText(definition, entry.definition || '');
                 content.append(title, definition);
                 if (entry.connections) {
                     const connections = document.createElement('small');
@@ -344,7 +441,7 @@ class DictModalService {
                 Object.entries(entry.connection_explanations || {}).forEach(([name, explanation]) => {
                     if (!explanation) return;
                     const detail = document.createElement('small');
-                    detail.textContent = `${name}: ${explanation}`;
+                    this.renderText(detail, `${name}: ${explanation}`);
                     content.appendChild(detail);
                 });
                 const edit = document.createElement('button');
@@ -352,7 +449,21 @@ class DictModalService {
                 edit.className = 'dict-edit';
                 edit.textContent = t('tt_edit');
                 edit.addEventListener('click', () => showEditor(index));
-                card.append(content, edit);
+                const openGraph = document.createElement('button');
+                openGraph.type = 'button';
+                openGraph.className = 'dict-open-graph';
+                openGraph.textContent = t('dict_view_graph');
+                openGraph.setAttribute('aria-label', `${t('dict_view_graph')}: ${entry.word}`);
+                openGraph.addEventListener('click', () => {
+                    selectedGraphIndex = index;
+                    setGraphActive(true);
+                    dialog.querySelector('.modal-dialog-body').scrollTop = 0;
+                    graphSwitch.focus({preventScroll: true});
+                });
+                const actions = document.createElement('div');
+                actions.className = 'dict-entry-actions';
+                actions.append(edit, openGraph);
+                card.append(content, actions);
                 card.dataset.dictIndex = String(index);
                 list.appendChild(card);
             });
@@ -369,6 +480,7 @@ class DictModalService {
             String(value || '').toLocaleLowerCase().includes(query));
         const renderGraph = () => {
             if (!graphActive) return;
+            hideGraphHint();
             const words = AppState.currentNote?.dictionary || [];
             const query = search.value.trim().toLocaleLowerCase();
             if (selectedGraphIndex >= words.length) selectedGraphIndex = Math.max(0, words.length - 1);
@@ -401,7 +513,13 @@ class DictModalService {
                 if (index !== selectedGraphIndex && splitConnections(entry.connections).some(name =>
                     findEntry([selected], name) === selected)) addRelated(index, entry.word);
             });
-            const neighbors = [...related.values()];
+            const explanationTo = (entry, name, target) => Object.entries(entry?.connection_explanations || {})
+                .find(([key]) => normalize(key) === normalize(name) || (target && findEntry([target], key)))?.[1] || '';
+            const neighbors = [...related.values()].map(neighbor => {
+                const counterpart = neighbor.index === null ? null : words[neighbor.index];
+                return {...neighbor, explanation: explanationTo(selected, neighbor.name, counterpart)
+                    || explanationTo(counterpart, selected.word, selected)};
+            });
             const visible = neighbors.slice(0, 8);
             const positions = visible.map((_, index) => {
                 if (visible.length === 1) return {x: 80, y: 50};
@@ -413,13 +531,32 @@ class DictModalService {
             svg.setAttribute('preserveAspectRatio', 'none');
             svg.setAttribute('aria-hidden', 'true');
             svg.classList.add('dict-graph-lines');
-            positions.forEach(({x, y}) => {
+            positions.forEach(({x, y}, index) => {
+                const neighbor = visible[index];
+                const hint = `${selected.word} ↔ ${neighbor.name}\n\n${neighbor.explanation || t('dict_graph_no_explanation')}`;
+                const edge = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                edge.classList.add('dict-graph-edge');
+                edge.dataset.hint = hint;
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 for (const [key, value] of Object.entries({x1: 50, y1: 50, x2: x, y2: y})) line.setAttribute(key, value);
-                svg.appendChild(line);
+                const hitArea = line.cloneNode();
+                hitArea.classList.add('dict-graph-edge-hit');
+                edge.append(line, hitArea);
+                svg.appendChild(edge);
+                const marker = document.createElement('button');
+                marker.type = 'button';
+                marker.className = 'dict-graph-edge-info';
+                // Leave room for the larger card at the center of the graph.
+                marker.style.left = `${50 + (x - 50) * .55}%`;
+                marker.style.top = `${50 + (y - 50) * .55}%`;
+                marker.textContent = 'i';
+                marker.dataset.hint = hint;
+                marker.setAttribute('aria-label', `${t('dict_connection_explanation')}: ${selected.word} ↔ ${neighbor.name}`);
+                marker.addEventListener('click', () => HiddenPhraseTooltip.show(marker, graphCanvas, renderGraphHint));
+                graphCanvas.appendChild(marker);
             });
             graphCanvas.appendChild(svg);
-            const makeNode = (name, x, y, className, onClick) => {
+            const makeNode = (name, definition, x, y, className, onClick) => {
                 const node = document.createElement(onClick ? 'button' : 'span');
                 if (onClick) {
                     node.type = 'button';
@@ -429,19 +566,20 @@ class DictModalService {
                 node.style.left = `${x}%`;
                 node.style.top = `${y}%`;
                 node.textContent = name;
-                node.title = className === 'is-missing' ? `${name} — ${t('dict_graph_missing')}` : name;
+                node.dataset.hint = `${name}\n\n${className === 'is-missing' ? t('dict_graph_missing') : definition || t('dict_graph_no_definition')}`;
+                if (!onClick) node.tabIndex = 0;
                 graphCanvas.appendChild(node);
             };
             visible.forEach((neighbor, index) => {
                 const {x, y} = positions[index];
-                makeNode(neighbor.name, x, y, neighbor.index === null ? 'is-missing' : '',
+                makeNode(neighbor.name, words[neighbor.index]?.definition, x, y, neighbor.index === null ? 'is-missing' : '',
                     neighbor.index === null ? null : () => {
                         selectedGraphIndex = neighbor.index;
                         renderGraph();
                         graphCanvas.querySelector('.dict-graph-node.is-selected')?.focus({preventScroll: true});
                     });
             });
-            makeNode(selected.word, 50, 50, 'is-selected', () => graphDetail.querySelector('.dict-graph-edit')?.focus());
+            makeNode(selected.word, selected.definition, 50, 50, 'is-selected', () => graphDetail.querySelector('.dict-graph-edit')?.focus());
             if (neighbors.length > visible.length) {
                 graphOverflow.textContent = `${t('dict_graph_more')} ${neighbors.length - visible.length}`;
                 graphOverflow.hidden = false;
@@ -458,7 +596,7 @@ class DictModalService {
             detailHeader.className = 'dict-graph-detail-header';
             detailHeader.append(detailTitle, edit);
             const definition = document.createElement('p');
-            definition.textContent = selected.definition || '';
+            this.renderText(definition, selected.definition || '');
             graphDetail.append(detailHeader, definition);
             if (neighbors.length) {
                 const relationList = document.createElement('div');
@@ -477,12 +615,10 @@ class DictModalService {
                     name.textContent = neighbor.name;
                     if (neighbor.index === null) name.title = t('dict_graph_missing');
                     row.appendChild(name);
-                    const counterpart = neighbor.index === null ? null : words[neighbor.index];
-                    const explanation = explanationFor(selected, neighbor.name)
-                        || (counterpart ? explanationFor(counterpart, selected.word) : '');
+                    const explanation = neighbor.explanation;
                     if (explanation) {
                         const caption = document.createElement('span');
-                        caption.textContent = explanation;
+                        this.renderText(caption, explanation);
                         row.appendChild(caption);
                     }
                     relationList.appendChild(row);
@@ -518,6 +654,7 @@ class DictModalService {
             graphScroll.scrollLeft = Math.max(0, (graphScroll.scrollWidth - graphScroll.clientWidth) / 2);
         };
         const setGraphActive = active => {
+            hideGraphHint();
             graphActive = active;
             list.hidden = active;
             graph.hidden = !active;
@@ -530,7 +667,8 @@ class DictModalService {
             else renderList();
         };
         const onKeydown = event => {
-            if (event.key !== 'Escape') return;
+            if (event.key !== 'Escape' || linkPickerOpen) return;
+            if (HiddenPhraseTooltip.active?.root === graphCanvas) { event.preventDefault(); hideGraphHint(); return; }
             if (!connectionOptions.hidden) { event.preventDefault(); hideSuggestions(); return; }
             event.preventDefault();
             if (!editor.hidden) showView();
@@ -538,6 +676,9 @@ class DictModalService {
         };
 
         dialog.querySelector('.dict-close').addEventListener('click', close);
+        dialog.addEventListener('click', event => {
+            if (event.target.closest('a.dict-block-reference')) close();
+        });
         dialog.querySelector('.dict-done').addEventListener('click', close);
         dialog.querySelector('.dict-add').addEventListener('click', () => showEditor());
         dialog.querySelector('.dict-cancel').addEventListener('click', showView);

@@ -8,6 +8,10 @@ from contextlib import aclosing
 from collections import OrderedDict
 from typing import Dict, Optional
 import aiofiles
+from fastapi_app.services.calculation_explanation import (
+    calculation_system_prompt, calculation_user_prompt, calculation_history,
+)
+from fastapi_app.services.calculation_check import check_equalities, mismatch_notice
 
 
 class _TTLCache:
@@ -282,6 +286,11 @@ class AIService:
             "Контекст блока нужен для понимания, а не для пересказа. "
             "Если спрашивают, как сделать, дай конкретные шаги, что измерить или проверить и как оценить результат. "
             "Не выдумывай отсутствующие в контексте численные нормы или характеристики. "
+            "В формулах различай исходные значения, отклонения и квадраты отклонений: "
+            "слагаемые среднего квадрата отклонений сами по себе не являются дисперсиями. "
+            "Если вопрос сравнивает деление на n и n−1, объясни различие определения дисперсии "
+            "набора и несмещённой выборочной оценки, не меняя заданное в конспекте определение. "
+            "Математические обозначения оформляй в $LaTeX$. "
             "Не добавляй исторический обзор и формальные разделы без запроса. "
             f"Пиши кратко на языке: {locale}."
         )
@@ -301,6 +310,22 @@ class AIService:
         )) as g:
             async for d in g:
                 yield d
+
+    async def explain_calculation_stream(self, data, locale="русском"):
+        payload = {key: value for key, value in data.items() if key != "history"}
+        payload['arithmetic_checks'] = check_equalities(payload['formula'])
+        notice = mismatch_notice(payload['arithmetic_checks'], locale)
+        if notice:
+            yield notice
+        payload["note_passages"] = [dict(passage, source=index)
+                                    for index, passage in enumerate(payload.get("note_passages", []), 1)]
+        async with aclosing(self._generate_stream(
+            calculation_system_prompt(locale), calculation_user_prompt(payload),
+            history=calculation_history(data.get("history")), max_tokens=8000,
+            task="calculation", reasoning_effort="medium",
+        )) as g:
+            async for delta in g:
+                yield delta
 
     async def fill_block(self, note_title: str, block_title: str, block_text: str,
                          context_before: str, context_after: str, locale: str = "русском") -> str:
@@ -338,6 +363,14 @@ class AIService:
         async with aclosing(self._generate_stream(sys_prompt, self._check_prompt(note_text, locale), history=history, max_tokens=1600, task="check")) as g:
             async for d in g:
                 yield d
+
+    async def suggest_math_definition(self, context: dict, locale: str = 'русском') -> str:
+        from fastapi_app.services.math_suggestions import suggestion_prompt
+        return await self._generate(
+            suggestion_prompt(locale), json.dumps(context, ensure_ascii=False),
+            {"type": "json_object"}, max_tokens=1400, temperature=0.1,
+            task='what_is', reasoning_effort='low',
+        )
 
     async def edit_math(self, instruction: str, formula: str) -> str:
         sys_prompt = (

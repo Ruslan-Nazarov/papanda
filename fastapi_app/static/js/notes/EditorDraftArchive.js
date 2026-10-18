@@ -71,12 +71,19 @@ export default class EditorDraftArchive {
             const stamp = Number.isNaN(date.getTime()) ? '' : date.toLocaleString(document.documentElement.lang || 'ru',
                 {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
             const preview = NoteText.fromHtml(draft.html).replace(/\s+/g, ' ').trim();
-            item.innerHTML = `<summary><span class="draft-archive-chevron" aria-hidden="true">›</span><span class="draft-archive-summary"><span class="draft-archive-meta"><strong>${t('ed_archive_variant')} ${this.drafts.length - index}</strong><time>${esc(stamp)}</time><span class="draft-archive-badge">${t('ed_archive_rejected')}</span></span><span class="draft-archive-preview">${esc(preview || t('ed_archive_media'))}</span></span></summary>
+            item.innerHTML = `<summary><span class="draft-archive-chevron" aria-hidden="true">›</span><span class="draft-archive-summary"><span class="draft-archive-meta"><strong>${t('ed_archive_variant')} ${this.drafts.length - index}</strong><time>${esc(stamp)}</time><span class="draft-archive-comment" hidden><i class="ph ph-chat-circle-text" aria-hidden="true"></i>${t('ed_archive_comment')}</span><span class="draft-archive-badge">${t('ed_archive_rejected')}</span></span><span class="draft-archive-preview">${esc(preview || t('ed_archive_media'))}</span></span></summary>
                 <div class="draft-archive-content">${HtmlSafety.rich(draft.html)}</div>
                 <label class="draft-archive-reason">${t('ed_archive_reason')}<textarea rows="2" maxlength="2000" placeholder="${t('ed_archive_reason_hint')}"></textarea></label>`;
             const reason = item.querySelector('textarea');
+            const comment = item.querySelector('.draft-archive-comment');
             reason.value = draft.reason || '';
-            reason.addEventListener('input', () => { draft.reason = reason.value; });
+            const updateReason = () => {
+                draft.reason = reason.value;
+                comment.hidden = !reason.value.trim();
+                comment.title = reason.value.trim();
+            };
+            updateReason();
+            reason.addEventListener('input', updateReason);
             this.host.appendChild(item);
         });
         this.updateActions();

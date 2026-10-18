@@ -1,26 +1,32 @@
 // Ownership of listeners, timers and disposable widgets for one mounted surface.
 class Lifecycle {
+    /** @type {Array<() => void>} */
     #cleanups = [];
     disposed = false;
 
+    /** @template {() => void} T @param {T} cleanup @returns {T} */
     own(cleanup) {
         if (this.disposed) cleanup();
         else this.#cleanups.push(cleanup);
         return cleanup;
     }
 
+    /** @param {EventTarget | null | undefined} target @param {string} event
+     * @param {EventListenerOrEventListenerObject} listener @param {boolean | AddEventListenerOptions} [options] */
     on(target, event, listener, options) {
         if (!target) return;
         target.addEventListener(event, listener, options);
         this.own(() => target.removeEventListener(event, listener, options));
     }
 
+    /** @param {() => void} callback @param {number} delay */
     timeout(callback, delay) {
         const id = setTimeout(() => {if (!this.disposed) callback();}, delay);
         this.own(() => clearTimeout(id));
         return id;
     }
 
+    /** @param {() => void} callback @param {number} delay */
     interval(callback, delay) {
         const id = setInterval(() => {if (!this.disposed) callback();}, delay);
         this.own(() => clearInterval(id));

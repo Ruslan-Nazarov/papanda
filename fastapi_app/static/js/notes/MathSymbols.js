@@ -1,3 +1,5 @@
+import MathTex from './MathTex.js';
+
 // TeX atoms, not substring replacements: indexed expressions retain their
 // complete meaning, with independent targets for symbols inside their scripts.
 const SYMBOL_COMMANDS = new Set(('alpha beta gamma delta epsilon varepsilon zeta eta theta vartheta iota kappa lambda mu nu xi pi varpi rho varrho sigma varsigma tau upsilon phi varphi chi psi omega Gamma Delta Theta Lambda Xi Pi Sigma Upsilon Phi Psi Omega partial nabla infty ell Re Im sin cos tan cot sinh cosh tanh log ln exp min max det dim gcd lim sum prod int iint oint cdot times div pm mp le leq ge geq ne neq approx equiv in notin subset subseteq supset supseteq to mapsto rightarrow leftarrow Rightarrow Leftrightarrow forall exists top intercal').split(' '));
@@ -48,21 +50,15 @@ class MathSymbols {
     }
 
     static groupEnd(text, start) {
-        const close = text[start] === '{' ? '}' : text[start] === '[' ? ']' : null;
-        if (!close) return start;
-        let depth = 0;
-        for (let i = start; i < text.length; i++) {
-            if (text[i] === '\\') { i++; continue; }
-            if (text[i] === text[start]) depth++;
-            if (text[i] === close && --depth === 0) return i + 1;
-        }
-        return start;
+        return MathTex.groupEnd(text, start);
     }
 
     static atoms(formula) {
         const text = String(formula || '');
         const atoms = [];
+        const ignored = new Map(MathTex.scan(text).ignored.map(range => [range.start, range.end]));
         for (let i = 0; i < text.length;) {
+            if (ignored.has(i)) { i = ignored.get(i); continue; }
             const start = i;
             let eligible = /[A-Za-z\u0370-\u03ff=+−*-]/.test(text[i]);
             if (text[i] === '%') { const end = text.indexOf('\n', i); i = end < 0 ? text.length : end; continue; }
@@ -180,24 +176,85 @@ class MathSymbols {
         return annotated + formula.slice(offset);
     }
 
-    static render(formula, options = {}, substitutions = []) {
+    static numbers(formula) {
+        const ranges = [];
+        const syntax = MathTex.scan(formula);
+        const ignored = new Map(syntax.ignored.map(range => [range.start, range.end]));
+        const boundaries = syntax.groups.flatMap(range => [range.start, range.end]).sort((a, b) => a - b);
+        for (let pos = 0; pos < formula.length;) {
+            if (ignored.has(pos)) { pos = ignored.get(pos); continue; }
+            const rest = formula.slice(pos);
+            if (rest[0] === '%') { const end = formula.indexOf('\n', pos); pos = end < 0 ? formula.length : end; continue; }
+            if (rest[0] === '_' || rest[0] === '^') {
+                pos++;
+                while (/\s/.test(formula[pos] || '') && pos < formula.length) pos++;
+                pos = this.argumentEnd(formula, pos) || pos + 1;
+                continue;
+            }
+            const command = rest.match(/^\\([A-Za-z]+|.)/);
+            if (command) {
+                pos += command[0].length;
+                const count = RAW_ARGUMENTS.get(command[1]) || (command[1] === 'hspace' || command[1] === 'vspace' ? 1 : 0);
+                for (let arg = 0; arg < count; arg++) {
+                    while (/\s/.test(formula[pos] || '') && pos < formula.length) pos++;
+                    pos = this.groupEnd(formula, pos) || pos;
+                }
+                if (command[1] === 'sqrt' && formula[pos] === '[') pos = this.groupEnd(formula, pos) || pos + 1;
+                continue;
+            }
+            // Include unary signs, while keeping the subtraction in a-b outside b.
+            const unary = !formula.slice(0, pos).trimEnd() || /[=≈≃([{&,+*/;-]$/.test(formula.slice(0, pos).trimEnd())
+                || /\\(?:approx|simeq|cdot|times|div|left|right)\s*$/.test(formula.slice(0, pos))
+                || /(?:\\begin\{[^}]+\}|\\\\)\s*$/.test(formula.slice(0, pos));
+            const number = rest.match(unary ? /^[+−-]?\s*(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/
+                : /^(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/);
+            if (number && !/^\s/.test(number[0])) {
+                const limit = pos + number[0].length;
+                const end = boundaries.find(boundary => boundary > pos && boundary < limit) || limit;
+                ranges.push({start: pos, end, value: formula.slice(pos, end)});
+                pos = end;
+            } else pos++;
+        }
+        return ranges;
+    }
+
+    static numberKey(value) {
+        // Exact written value, including sign and precision. Never round numbers
+        // or coerce long decimal strings through JavaScript's Number type.
+        return value.replace(/−/g, '-').replace(/\s/g, '');
+    }
+
+    static render(formula, options = {}, substitutions = [], numbers = this.numbers(formula)) {
         const allowed = new Set();
         const allowedValues = new Set();
+        const allowedNumbers = new Set();
+        const numericText = (start, end) => {
+            let result = '', cursor = start;
+            for (const number of numbers) {
+                if (number.start < cursor || number.end > end) continue;
+                const id = this.encode(JSON.stringify(number));
+                allowedNumbers.add(id);
+                result += formula.slice(cursor, number.start) + `\\htmlData{math-number=${id}}{${formula.slice(number.start, number.end)}}`;
+                cursor = number.end;
+            }
+            return result + formula.slice(cursor, end);
+        };
         let prepared = '', offset = 0;
         for (const replacement of [...substitutions].sort((a, b) => a.start - b.start)) {
             if (!Number.isInteger(replacement.start) || !Number.isInteger(replacement.end)
                 || replacement.start < offset || replacement.end <= replacement.start || replacement.end > formula.length) continue;
             const id = this.encode(JSON.stringify(replacement));
             allowedValues.add(id);
-            prepared += formula.slice(offset, replacement.start) + `\\htmlData{math-value=${id}}{${formula.slice(replacement.start, replacement.end)}}`;
+            prepared += numericText(offset, replacement.start) + `\\htmlData{math-value=${id}}{${numericText(replacement.start, replacement.end)}}`;
             offset = replacement.end;
         }
-        prepared += formula.slice(offset);
-        const annotated = this.annotate(prepared, allowed);
+        prepared += numericText(offset, formula.length);
+        const annotated = MathTex.groupArguments(this.annotate(prepared, allowed));
         const html = window.katex.renderToString(annotated, {...options, throwOnError: false,
             strict: false, trust: context => context.command === '\\htmlData'
                 && Object.keys(context.attributes).length === 1
-                && (allowed.has(context.attributes['data-math-symbol']) || allowedValues.has(context.attributes['data-math-value']))});
+                && (allowed.has(context.attributes['data-math-symbol']) || allowedValues.has(context.attributes['data-math-value'])
+                    || allowedNumbers.has(context.attributes['data-math-number']))});
         // Preserve original TeX for copying, export and subsequent rendering.
         const template = document.createElement('template');
         template.innerHTML = html;
@@ -217,6 +274,12 @@ class MathSymbols {
             el.setAttribute('tabindex', '0');
             el.setAttribute('aria-label', `${value.symbol} = ${value.value}`);
         });
+        template.content.querySelectorAll('[data-math-number]').forEach(el => {
+            const number = JSON.parse(this.decode(el.dataset.mathNumber));
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('aria-label', number.symbol ? `${number.symbol} = ${number.value}` : number.value);
+        });
         template.content.querySelector('.katex')?.setAttribute('data-symbols-rendered', 'true');
         return template.innerHTML;
     }
@@ -225,7 +288,7 @@ class MathSymbols {
         if (!window.katex) return;
         root.querySelectorAll('.katex:not([data-symbols-rendered])').forEach(el => {
             const formula = el.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
-            if (!formula || !this.atoms(formula).length) return;
+            if (!formula || (!this.atoms(formula).length && !this.numbers(formula).length)) return;
             const template = document.createElement('template');
             template.innerHTML = this.render(formula, {displayMode: !!el.closest('.katex-display')});
             const rendered = template.content.querySelector('.katex');

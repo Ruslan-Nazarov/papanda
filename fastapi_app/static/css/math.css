@@ -63,8 +63,9 @@
     margin: 5px 2px;
     font-size: 0.95em;
     color: #4338ca;
-    display: inline-flex;
-    align-items: center;
+    /* Keep trailing punctuation in the same text run as the formula. */
+    display: inline;
+    white-space: nowrap;
     vertical-align: middle;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
@@ -75,6 +76,13 @@
     border-color: #c4b5fd;
 }
 .math-inline[data-math-display="true"] { display: block; max-width: 100%; overflow-x: auto; }
+
+/* Bind closing punctuation, including ellipses and editor atom boundaries,
+   without adding invisible characters to saved or copied text. */
+.math-inline:not(:has(.katex-display)):not(.math-formula-wide)::after,
+.katex:not(.katex-display .katex)::after {
+    content: '\2060';
+}
 
 /* ==========================================================================
    Connections Modal Styles (Связи)
@@ -143,6 +151,7 @@
 .katex {
     font-size: 1.05em;
     max-width: 100%;
+    white-space: nowrap;
 }
 
 .dialectics-block .block-content {
@@ -498,11 +507,6 @@
 }
 
 /* Math Inline Nodes */
-.math-inline {
-    display: inline-block;
-    vertical-align: middle;
-}
-
 .math-inline-rendered {
     cursor: pointer;
     padding: 1px 4px;

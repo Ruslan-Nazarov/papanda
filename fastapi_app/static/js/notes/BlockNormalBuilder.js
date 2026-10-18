@@ -21,6 +21,97 @@ class BlockNormalBuilder {
     static activeRoleHelp = null;
     static readingBlockId = null;
     static readingNote = null;
+    static minimizedReadings = new Map();
+    static readingDock = null;
+    static readingDocument = null;
+
+    static syncReadingState() {
+        if (this.readingDocument !== document) {
+            this.readingDocument = document;
+            document.addEventListener('noteOpened', () => this.syncReadingState());
+            document.addEventListener('stateDirty', () => {
+                this.syncReadingState();
+                this.renderReadingDock();
+            });
+        }
+        let changed = false;
+        if (this.readingNote !== AppState.currentNote) {
+            this.readingBlockId = null;
+            this.minimizedReadings.clear();
+            this.readingNote = AppState.currentNote;
+            changed = true;
+        }
+        const blocks = AppState.currentNote?.blocks;
+        if (Array.isArray(blocks)) {
+            for (const id of this.minimizedReadings.keys()) {
+                if (!blocks.some(block => block.id === id && block.role !== 'section' && !block.isDraft)) {
+                    this.minimizedReadings.delete(id);
+                    changed = true;
+                }
+            }
+            if (this.readingBlockId && !blocks.some(block => block.id === this.readingBlockId)) this.readingBlockId = null;
+        }
+        if (changed) this.renderReadingDock();
+    }
+
+    static minimizeReading(div) {
+        const id = div.dataset.id;
+        this.minimizedReadings.set(id, {
+            top: Math.min(96, div.getBoundingClientRect().top),
+            title: div.querySelector('.block-title').textContent.trim(),
+        });
+        if (this.readingBlockId === id) this.readingBlockId = null;
+        this.setReadingView(div, false);
+        div.classList.add('reading-minimized');
+        this.renderReadingDock();
+        [...this.readingDock.children].find(button => button.dataset.blockId === id)?.focus({preventScroll: true});
+    }
+
+    static restoreReading(id) {
+        this.syncReadingState();
+        const saved = this.minimizedReadings.get(id);
+        const div = document.getElementById(id);
+        if (!saved || !div) return;
+        const previous = document.querySelector('#blocks-container .dialectics-block.reading-centered');
+        if (previous && previous !== div) this.setReadingView(previous, false);
+        this.minimizedReadings.delete(id);
+        div.classList.remove('reading-minimized');
+        this.readingBlockId = id;
+        this.setReadingView(div, true);
+        this.renderReadingDock();
+        div.querySelector('.btn-minimize-reading').focus({preventScroll: true});
+        window.scrollBy({top: div.getBoundingClientRect().top - saved.top, behavior: 'instant'});
+    }
+
+    static renderReadingDock() {
+        this.readingDock?.remove();
+        this.readingDock = null;
+        if (!this.minimizedReadings.size) return;
+        const dock = document.createElement('nav');
+        dock.className = 'reading-dock';
+        dock.setAttribute('aria-label', t('reading_minimized'));
+        for (const [id, saved] of this.minimizedReadings) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'reading-dock-item';
+            button.dataset.blockId = id;
+            const block = (AppState.currentNote?.blocks || []).find(block => block.id === id);
+            const title = (block?.title ?? saved.title).trim() || t('ed_untitled');
+            button.title = `${t('reading_restore')}: ${title}`;
+            button.setAttribute('aria-label', button.title);
+            const label = document.createElement('span');
+            label.textContent = title;
+            const icon = document.createElement('span');
+            icon.className = 'reading-dock-restore';
+            icon.textContent = '↑';
+            icon.setAttribute('aria-hidden', 'true');
+            button.append(label, icon);
+            button.addEventListener('click', () => this.restoreReading(id));
+            dock.append(button);
+        }
+        document.body.append(dock);
+        this.readingDock = dock;
+    }
 
     static setReadingView(div, active) {
         div.classList.toggle('reading-centered', active);
@@ -66,11 +157,76 @@ class BlockNormalBuilder {
         BlockColorPicker.open(block, buttonEl, div);
     }
 
-    static build(block, onRenderAll) {
-        if (this.readingNote !== AppState.currentNote) {
-            this.readingBlockId = null;
-            this.readingNote = AppState.currentNote;
+    static updatePresentation(div, block) {
+        const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
+        const oldQuestion = ['Что вам нужно понять?', 'Что вам надо объяснить?',
+            'What do you need to explain?', 'Нені түсіндіру керек?'];
+        const oldResult = ['Теперь вы поняли', 'Now you understand', 'Енді түсіндіңіз'];
+        const displayTitle = baseRole === 'anchor' && oldQuestion.includes(block.title)
+            ? t('hint_anchor_title')
+            : baseRole === 'anchor' && oldResult.includes(block.title)
+                ? t('anchor_resolved_label') : block.title;
+        const title = div.querySelector('.block-title');
+        const text = displayTitle || t(block.role === 'section' ? 'section_word' : 'hint_anchor_title');
+        if (title.textContent !== text) title.textContent = text;
+        const dot = div.querySelector('.block-status-dot');
+        if (dot) {
+            const status = block.status === 'ready' || block.status === 'done' ? 'ready' : 'in_progress';
+            if (dot.dataset.status !== status) dot.dataset.status = status;
+            const label = `${t('block_status')}: ${status}`;
+            if (dot.title !== label) dot.title = label;
         }
+        const side = block.role === 'section' ? 'center' : block.side || 'left';
+        for (const value of ['left', 'center', 'right']) {
+            if (div.classList.contains(`block-${value}`) !== (value === side)) div.classList.toggle(`block-${value}`, value === side);
+        }
+        if (div.classList.contains('pinned-sticky') !== !!block.is_pinned) div.classList.toggle('pinned-sticky', !!block.is_pinned);
+        const pin = div.querySelector('.btn-pin-toggle');
+        if (pin && pin.getAttribute('aria-pressed') !== String(!!block.is_pinned)) {
+            pin.classList.toggle('active', !!block.is_pinned);
+            pin.setAttribute('aria-pressed', String(!!block.is_pinned));
+        }
+        if (div.classList.contains('collapsed') !== !!block.collapsed) {
+            div.classList.toggle('collapsed', !!block.collapsed);
+            const content = div.querySelector('.block-content');
+            if (content) content.style.display = block.collapsed ? 'none' : 'block';
+            const icon = div.querySelector('.btn-collapse-toggle i');
+            if (icon) icon.className = `ph ${block.collapsed ? 'ph-caret-right' : 'ph-caret-down'}`;
+        }
+        const colorProperty = block.role === 'section' ? '--section-accent' : 'border-left-color';
+        if (block.border_color) BlockColorPicker.applyColor(div, block.border_color);
+        else div.style.removeProperty(colorProperty);
+        const select = div.querySelector('.block-author-select');
+        if (select) {
+            const author = ['ai', 'ai_checked', 'ai_edited', 'human'].includes(block.author) ? block.author : '';
+            if (select.value !== author) select.value = author;
+            const control = select.closest('.block-author-control');
+            if (control.dataset.author !== author) control.dataset.author = author;
+        }
+        for (const [selector, badgeClass, label, count] of [
+            ['.btn-dict', 'dict-badge', t('dict_title'), AppState.currentNote?.dictionary?.length || 0],
+            ['.btn-connections', 'sources-badge', t('tt_block_sources'), block.sources?.length || 0],
+            ['.btn-sticker', 'sticker-badge', t('tt_sticker'), block.stickers?.length || 0],
+        ]) {
+            const button = div.querySelector(selector);
+            if (!button) continue;
+            const name = `${label} (${count})`;
+            if (button.getAttribute('aria-label') !== name) button.setAttribute('aria-label', name);
+            let badge = button.querySelector(`.${badgeClass}`);
+            if (!count) {badge?.remove(); continue;}
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = badgeClass;
+                badge.setAttribute('aria-hidden', 'true');
+                button.append(badge);
+            }
+            if (badge.textContent !== String(count)) badge.textContent = String(count);
+        }
+        BlockTableControls.update?.(div.querySelector('.block-content'), block);
+    }
+
+    static build(block, onRenderAll) {
+        if (this.readingNote !== AppState.currentNote || this.readingDocument !== document) this.syncReadingState();
         const div = document.createElement('div');
         const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
         const author = ['ai', 'ai_checked', 'ai_edited', 'human'].includes(block.author) ? block.author : '';
@@ -133,6 +289,7 @@ class BlockNormalBuilder {
                         <h3 class="block-title" contenteditable="true"></h3>
                     </div>
                     <div class="block-header-right" style="display: flex; align-items: center; gap: 4px;">
+                        <button class="btn-minimize-reading" type="button" title="${t('reading_minimize')}" aria-label="${t('reading_minimize')}">−</button>
                         <button class="btn-autofill-ai ai-block-button ai-block-icon" type="button" aria-label="${t('ai_generate_step')}" data-tooltip="${t('ai_generate_step')}"><i class="ph ph-sparkle" aria-hidden="true"></i></button>
                         <button class="btn-pin-toggle manual-only ${block.is_pinned ? 'active' : ''}" type="button" aria-pressed="${Boolean(block.is_pinned)}" title="${t('tt_pin')}"><i class="ph ph-push-pin" aria-hidden="true"></i></button>
                     </div>
@@ -183,21 +340,7 @@ class BlockNormalBuilder {
 
         BlockHistoryControls.mount(div, block.id, onRenderAll);
 
-        // Old automatic anchor titles stay in saved notes; update only their display.
-        const oldQuestion = ['Что вам нужно понять?', 'Что вам надо объяснить?',
-            'What do you need to explain?', 'Нені түсіндіру керек?'];
-        const oldResult = ['Теперь вы поняли', 'Now you understand', 'Енді түсіндіңіз'];
-        const displayTitle = baseRole === 'anchor' && oldQuestion.includes(block.title)
-            ? t('hint_anchor_title')
-            : baseRole === 'anchor' && oldResult.includes(block.title)
-                ? t('anchor_resolved_label') : block.title;
-        div.querySelector('.block-title').textContent = displayTitle
-            || t(block.role === 'section' ? 'section_word' : 'hint_anchor_title');
-        const dot = div.querySelector('.block-status-dot');
-        if (dot) {
-            dot.dataset.status = block.status === 'ready' || block.status === 'done' ? 'ready' : 'in_progress';
-            dot.title = `${t('block_status')}: ${dot.dataset.status}`;
-        }
+        this.updatePresentation(div, block);
         const roleHelpButton = div.querySelector('.block-role-help-button');
         if (roleHelpButton) {
             const label = roleHelpButton.closest('.block-role-label');
@@ -354,9 +497,7 @@ class BlockNormalBuilder {
         if (btnAutofill) {
             btnAutofill.addEventListener('click', async (e) => {
                 e.stopPropagation();
-
-                showToast(t('toast_gen_started'));
-                
+                btnAutofill.disabled = true;
                 try {
                     const result = await AIController.generateBlock(block.id, onRenderAll);
                     if (result) showToast(t('toast_gen_ok'));
@@ -365,6 +506,8 @@ class BlockNormalBuilder {
                     const msg = (err && err.message && !/^HTTP Error/.test(err.message))
                         ? err.message : t('toast_gen_err');
                     showToast(msg, 'error');
+                } finally {
+                    btnAutofill.disabled = false;
                 }
             });
         }
@@ -390,6 +533,7 @@ class BlockNormalBuilder {
         const readingBtn = div.querySelector('.btn-reading-view');
         if (readingBtn) {
             this.setReadingView(div, this.readingBlockId === block.id);
+            div.classList.toggle('reading-minimized', this.minimizedReadings.has(block.id));
             readingBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const active = this.readingBlockId !== block.id;
@@ -400,6 +544,10 @@ class BlockNormalBuilder {
                 if (active) div.scrollIntoView({behavior: 'smooth', block: 'start'});
             });
         }
+        div.querySelector('.btn-minimize-reading')?.addEventListener('click', event => {
+            event.stopPropagation();
+            this.minimizeReading(div);
+        });
 
         // Bind editor — карандаш всегда открывает редактор (в любом режиме и статусе)
         const btnEdit = div.querySelector('.btn-edit');
@@ -451,21 +599,13 @@ class BlockNormalBuilder {
                 const next = block.status === 'ready' || block.status === 'done' ? 'in_progress' : 'ready';
                 AppState.updateBlock(block.id, {status: next});
                 statusEl.dataset.status = next;
-                if (onRenderAll) onRenderAll();
+                statusEl.title = `${t('block_status')}: ${next}`;
+                // stateDirty already updates progress and schedules autosave.
             });
         }
 
         const btnDict = div.querySelector('.btn-dict');
         if (btnDict) {
-            const count = AppState.currentNote?.dictionary?.length || 0;
-            btnDict.setAttribute('aria-label', `${t('dict_title')} (${count})`);
-            if (count > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'dict-badge';
-                badge.setAttribute('aria-hidden', 'true');
-                badge.textContent = String(count);
-                btnDict.appendChild(badge);
-            }
             btnDict.addEventListener('click', () => DictModalService.show());
         }
 
@@ -481,9 +621,6 @@ class BlockNormalBuilder {
         // Bind Block Sources / Links (🔗)
         const btnConnections = div.querySelector('.btn-connections');
         if (btnConnections) {
-            const count = block.sources?.length || 0;
-            btnConnections.setAttribute('aria-label', `${t('tt_block_sources')} (${count})`);
-            if (count) btnConnections.insertAdjacentHTML('beforeend', `<span class="sources-badge" aria-hidden="true">${count}</span>`);
             btnConnections.addEventListener('click', async () => {
                 const BlockMetaModalService = (await import('./BlockMetaModalService.js')).default;
                 BlockMetaModalService.showSourcesModal(block.id);
@@ -493,7 +630,6 @@ class BlockNormalBuilder {
         // Bind Sticker / Color
         const btnSticker = div.querySelector('.btn-sticker');
         if (btnSticker) {
-            BlockStickersManager._updateBadge(div, block.stickers?.length || 0);
             // Keep the block's selection when the mouse focuses the toolbar button.
             btnSticker.addEventListener('mousedown', (e) => {
                 if (e.button === 0 && !window.getSelection()?.isCollapsed) e.preventDefault();

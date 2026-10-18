@@ -81,6 +81,7 @@ class FormulaZoom {
                 return;
             }
             if (existing) {
+                this.addCalculationButton(host, element);
                 this.layout(element);
                 return;
             }
@@ -100,8 +101,37 @@ class FormulaZoom {
                 this.open(formula, button);
             });
             host.append(element, button);
+            this.addCalculationButton(host, element);
             this.layout(element);
         });
+    }
+
+    static addCalculationButton(host, element) {
+        // Public shared pages render the same math, but have no private AI dialog.
+        if (!element.closest('.dialectics-block .block-content')
+            || host.querySelector(':scope > .math-calculation-button')) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'math-calculation-button';
+        button.textContent = t('calculation_button');
+        button.title = t('calculation_hint');
+        button.setAttribute('aria-label', t('calculation_hint'));
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.addEventListener('click', async event => {
+            event.preventDefault();
+            event.stopPropagation();
+            button.disabled = true;
+            try {
+                const {default: CalculationExplanation} = await import('./CalculationExplanation.js');
+                if (element.isConnected) await CalculationExplanation.open(element);
+            } catch (error) {
+                console.error('Calculation explanation:', error);
+                button.title = t('whatis_error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+        host.append(button);
     }
 
     static open(formula, trigger) {
@@ -128,9 +158,13 @@ class FormulaZoom {
         const content = document.createElement('div');
         content.className = 'formula-zoom-content';
         const source = trigger.closest('.math-expandable')?.querySelector('.katex');
-        let substitutions = [];
-        try { substitutions = JSON.parse(source?.dataset.mathSubstitutions || '{}').ranges || []; } catch { /* Source may be a plain formula. */ }
-        content.innerHTML = MathSymbols.render(formula, {displayMode: true}, substitutions);
+        let substitutions = [], numbers;
+        try {
+            const parsed = JSON.parse(source?.dataset.mathSubstitutions || '{}');
+            substitutions = parsed.ranges || [];
+            numbers = parsed.numbers;
+        } catch { /* Source may be a plain formula. */ }
+        content.innerHTML = MathSymbols.render(formula, {displayMode: true}, substitutions, numbers);
         if (source?.dataset.mathOriginal) content.querySelector('.katex').dataset.mathOriginal = source.dataset.mathOriginal;
         dialog.dataset.mathSourceBlock = trigger.closest('.dialectics-block, .blk')?.id || '';
         dialog.mathSource = source;
@@ -169,6 +203,12 @@ class FormulaZoom {
         const observer = new MutationObserver(() => { if (!trigger.isConnected) dismiss(); });
         observer.observe(document.body, {childList: true, subtree: true});
         close.addEventListener('click', dismiss);
+        dialog.addEventListener('cancel', event => {
+            const tooltip = dialog.querySelector('.math-symbol-tooltip');
+            if (!tooltip) return;
+            event.preventDefault();
+            tooltip.querySelector('.math-symbol-tooltip-heading button')?.click();
+        });
         // A drag used to select the equation must not dismiss the dialog.
         let backdropDown = false;
         dialog.addEventListener('pointerdown', event => { backdropDown = event.target === dialog; });

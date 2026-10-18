@@ -67,6 +67,23 @@ class MathSymbol(BaseModel):
             raise ValueError('Symbol and definition must contain readable text')
         return value.strip()
 
+class MathNumberDefinition(BaseModel):
+    formula: str = Field(min_length=1, max_length=20_000)
+    start: int = Field(ge=0)
+    end: int = Field(ge=1)
+    value: str = Field(min_length=1, max_length=1000)
+    definition: str = Field(min_length=1, max_length=5000)
+
+    @model_validator(mode='after')
+    def valid_occurrence(self):
+        if not 0 <= self.start < self.end <= len(self.formula) or self.formula[self.start:self.end] != self.value:
+            raise ValueError('The number must match its position in the formula')
+        if not self.definition.strip() or '\x00' in self.definition:
+            raise ValueError('Definition must contain readable text')
+        self.definition = self.definition.strip()
+        return self
+
+
 class RequestDocument(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     text: str = Field(min_length=1, max_length=50_000)
@@ -135,6 +152,7 @@ class BlockContent(BaseModel):
     rejected_drafts: List[RejectedDraft] = Field(default_factory=list, max_length=100)
     derivations: List[BlockDerivation] = Field(default_factory=list, max_length=1000)
     math_symbols: List[MathSymbol] = Field(default_factory=list, max_length=1000)
+    math_number_definitions: List[MathNumberDefinition] = Field(default_factory=list, max_length=1000)
     
     model_config = ConfigDict(extra="allow")
 

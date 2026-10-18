@@ -189,10 +189,29 @@ async def test_disconnect_cancels_json_provider_work():
             cancelled.set()
     async def disconnected():
         await started.wait()
-        return True
+        return {'type': 'http.disconnect'}
     with pytest.raises(ClientDisconnect):
-        await until_disconnect(MagicMock(is_disconnected=disconnected), work())
+        await until_disconnect(MagicMock(receive=disconnected), work())
     assert cancelled.is_set()
+
+
+@pytest.mark.asyncio
+async def test_fast_json_result_does_not_wait_for_a_disconnect_or_leave_a_watcher():
+    closed = asyncio.Event()
+
+    async def receive():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            closed.set()
+
+    async def work():
+        await asyncio.sleep(0)
+        return {'status': 'failed', 'reason': 'AI disabled'}
+
+    result = await asyncio.wait_for(until_disconnect(MagicMock(receive=receive), work()), .5)
+    assert result['status'] == 'failed'
+    assert closed.is_set()
 
 
 def test_algorithm_extraction_handles_escaped_markdown_without_changing_author_lines():

@@ -1,6 +1,6 @@
 import AppState from './AppState.js';
 import NotesAPI from './api.js';
-import { renderStreamMarkdown } from './ConceptExplainManager.js';
+import StreamMarkdownRenderer from './StreamMarkdownRenderer.js';
 
 import { t } from '../i18n.js';
 class AICheckModalService {
@@ -46,9 +46,13 @@ class AICheckModalService {
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
 
+        let activeRequest;
         const close = () => {
+            activeRequest?.abort();
+            document.removeEventListener('noteOpened', close);
             if (document.body.contains(overlay)) document.body.removeChild(overlay);
         };
+        document.addEventListener('noteOpened', close);
         dialog.querySelector('.btn-close-modal').addEventListener('click', close);
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) close();
@@ -59,6 +63,11 @@ class AICheckModalService {
         const sendBtn = dialog.querySelector('#ai-check-send-btn');
 
         const sendQuery = async (queryText = '') => {
+            if (activeRequest || !overlay.isConnected) return;
+            const controller = new AbortController();
+            activeRequest = controller;
+            sendBtn.disabled = true;
+            let renderer;
             respArea.innerHTML = `
                 <div style="color: #64748b; text-align: center; padding: 40px 0;">
                     <span class="typing-dot">●</span> <span class="typing-dot">●</span> <span class="typing-dot">●</span>
@@ -74,22 +83,22 @@ class AICheckModalService {
                     </div>
                 `;
                 const streamBody = respArea.querySelector('#ai-check-stream-body');
-                let last = 0;
+                renderer = new StreamMarkdownRenderer(streamBody, {signal: controller.signal, input});
                 const full = await NotesAPI.stream(
                     '/ai/dialectics/check-ai/stream',
                     {
                         text: `${block.title || ''}\n${block.html || ''}`,
                         history: queryText ? [{ role: 'user', content: queryText }] : []
                     },
-                    (_d, acc) => {
-                        const now = Date.now();
-                        if (now - last > 60) { last = now; renderStreamMarkdown(streamBody, acc + ' ▍'); }
-                    }
+                    (_d, acc) => renderer.update(acc), undefined, {signal: controller.signal}
                 );
-                renderStreamMarkdown(streamBody, full || t('aicheck_done'));
-                return;
+                if (!await renderer.finish(full || t('aicheck_done')) && renderer.error) throw renderer.error;
             } catch {
-                respArea.textContent = t('aicheck_unavailable');
+                if (!controller.signal.aborted) respArea.textContent = t('aicheck_unavailable');
+            } finally {
+                renderer?.dispose();
+                activeRequest = null;
+                sendBtn.disabled = false;
             }
         };
 
@@ -98,7 +107,7 @@ class AICheckModalService {
 
         const handleFollowUp = () => {
             const val = input.value.trim();
-            if (!val) return;
+            if (!val || activeRequest) return;
             input.value = '';
             sendQuery(val);
         };

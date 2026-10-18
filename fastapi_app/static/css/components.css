@@ -299,7 +299,7 @@
 .mode-master-toggle button:hover:not(.active) { color: #1e293b; }
 .mode-master-toggle button .mm-ico { font-size: 0.95rem; line-height: 1; }
 .mode-master-toggle button.active {
-    background: linear-gradient(135deg, #fb923c, #ea580c);
+    background: var(--color-accent-gradient);
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
 }
@@ -1208,6 +1208,7 @@
 .toc-item.toc-side-right .toc-marker { color: #be185d; background: #fce7f3; }
 .toc-item.toc-side-center .toc-marker { color: #7c3aed; background: #ede9fe; }
 .toc-item.toc-anchor-item .toc-marker { color: #c2410c; background: #ffedd5; }
+.toc-item .toc-number { flex: none; min-width: 2ch; color: #64748b; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
 .toc-item .toc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toc-item.toc-section-item .toc-title { font-weight: 700; }
 .toc-item.toc-anchor-item .toc-title { font-weight: 600; }
