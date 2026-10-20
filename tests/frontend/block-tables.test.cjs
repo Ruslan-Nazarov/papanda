@@ -45,7 +45,7 @@ test('table folds are independent, survive save/reopen, and leave editable HTML 
     assert.equal(ctx.NoteExportService.buildMarkdown(ctx.AppState.currentNote), originalExport);
     block.querySelector('.table-fold-all').click();
     assert.equal(ctx.AppState.getBlock('a').collapsed_tables.length, 2);
-    assert.equal(block.querySelector('.table-fold-all').textContent, 'tables_expand_all');
+    assert.equal(block.querySelector('.table-fold-all').title, 'tables_expand_all');
     block.querySelector('.table-fold-all').click();
     assert.equal(ctx.AppState.getBlock('a').collapsed_tables.length, 0);
     assert.equal(block.querySelectorAll('.table-fold-body[hidden]').length, 0);

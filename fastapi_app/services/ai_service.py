@@ -54,11 +54,14 @@ PROMPT_MAP = {
     "check_ai":  "6_проверка_промпт.md",
     "format_short": "формат_кратко.md",
     "format_check": "формат_отчета_проверки.md",
+    "article": "5_статьи_промпт.md",
+    "article_exposition": "изложение_статьи.md",
 }
 
 PROMPT_CHAINS = {
     "what_is": ["base", "restore", "what_is", "format_short"],
     "check_ai": ["check_ai", "format_check"],
+    "article_exposition": ["base", "restore", "article", "article_exposition"],
 }
 
 from fastapi_app.services.llm_provider import llm_registry, any_llm_key_configured, TASK_ROUTES
@@ -310,6 +313,16 @@ class AIService:
         )) as g:
             async for d in g:
                 yield d
+
+    async def explain_article_stream(self, article, locale="русском"):
+        prompt = await self.get_bundled_prompt("article_exposition")
+        prompt += f"\n\nЯзык ответа: {locale}."
+        async with aclosing(self._generate_stream(
+            prompt, json.dumps(article, ensure_ascii=False),
+            max_tokens=8000, task="article_exposition", reasoning_effort="medium",
+        )) as stream:
+            async for delta in stream:
+                yield delta
 
     async def explain_calculation_stream(self, data, locale="русском"):
         payload = {key: value for key, value in data.items() if key != "history"}

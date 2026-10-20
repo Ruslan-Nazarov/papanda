@@ -38,10 +38,13 @@ class BlockHistoryControls {
                     showToast(t('block_history_close_editor'));
                     return;
                 }
+                const scrollLeft = group.closest('.block-toolbar-actions')?.scrollLeft || 0;
                 if (!AppState.restoreBlockVersion(blockId, direction)) return;
                 render?.();
                 const replacement = [...document.querySelectorAll('.block-version-controls')]
                     .find(control => control.dataset.blockId === blockId);
+                const toolbar = replacement?.closest('.block-toolbar-actions');
+                if (toolbar) toolbar.scrollLeft = scrollLeft;
                 const active = replacement?.querySelector(`.btn-block-${direction}:not(:disabled)`)
                     || replacement?.querySelector('button:not(:disabled)');
                 active?.focus({preventScroll: true});

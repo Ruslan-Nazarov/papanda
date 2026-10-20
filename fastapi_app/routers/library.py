@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_app.config import settings
 from fastapi_app.database import get_db
 from fastapi_app.schemas.notes import (
+    DictionaryTag,
     AttachedConspect, BlockDerivation, NoteBlock, NoteCreate, NoteSticker,
     RejectedDraft, RequestDocument, Word, NoteView, MathSymbol, MathNumberDefinition,
 )
@@ -158,6 +159,7 @@ class Publication(BaseModel):
     note_notice: str = Field(default='', max_length=5000)
     stickers: list[NoteSticker] = Field(default_factory=list, max_length=1000)
     dictionary: list[Word] = Field(default_factory=list, max_length=1000)
+    dictionary_tags: list[DictionaryTag] = Field(default_factory=list, max_length=100)
     math_symbols: list[MathSymbol] = Field(default_factory=list, max_length=1000)
     resources: list[PublicResource] = Field(default_factory=list, max_length=20)
     blocks: list[PublicBlock] = Field(min_length=1, max_length=1000)
@@ -276,7 +278,7 @@ async def snapshot(note, description='', language='ru', resources=None):
                   for b in note.content_json if isinstance(b, dict)]
         return Publication(title=note.title, language=language, description=description,
                            note_notice=note.note_notice or '', stickers=note.stickers or [],
-                           dictionary=note.dictionary or [], resources=resources or [],
+                           dictionary=note.dictionary or [], dictionary_tags=note.dictionary_tags or [], resources=resources or [],
                            math_symbols=note.math_symbols or [],
                            blocks=blocks).model_dump(mode='json')
     except ValidationError:
@@ -309,7 +311,7 @@ async def copy_publication(publication_id: UUID, db: AsyncSession = Depends(get_
         raise HTTPException(404, 'Not found')
     return await NotesService.create_note(db, NoteCreate(
         title=item['title'], note_notice=item.get('note_notice', ''),
-        stickers=item.get('stickers', []), dictionary=item.get('dictionary', []),
+        stickers=item.get('stickers', []), dictionary=item.get('dictionary', []), dictionary_tags=item.get('dictionary_tags', []),
         math_symbols=item.get('math_symbols', []),
         blocks=[NoteBlock.model_validate({key: value for key, value in b.items()
                                          if key != 'inline_notes'}) for b in item['blocks']]))

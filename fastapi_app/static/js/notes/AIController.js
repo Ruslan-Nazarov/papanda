@@ -9,6 +9,7 @@ import BlockDOMParser from './BlockDOMParser.js';
 import DialogService from './DialogService.js';
 import NoteStorageService from './NoteStorageService.js';
 import NoteText from './NoteText.js';
+import NoteDocument from './NoteDocument.js';
 import { showToast } from './ToastService.js';
 
 import { t } from '../i18n.js';
@@ -331,9 +332,7 @@ class AIController {
         await NoteStorageService.saveCurrentNote();
         const copy = GenerationChanges.build(run.snapshot, result,
             text => this.contentToHtml(text), ALGORITHM_STEPS);
-        await NotesAPI.createNote({title:copy.title, note_notice:copy.note_notice || '', blocks:copy.blocks,
-            stickers:copy.stickers || [], dictionary:copy.dictionary || [],
-            category_id:copy.category_id, status:'in_progress'});
+        await NotesAPI.createNote({...NoteDocument.payload(copy), status: 'in_progress'});
         showToast(t('gen_copy_saved'));
     }
 

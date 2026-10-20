@@ -3,6 +3,7 @@ import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
 import MathComputedValues from './MathComputedValues.js';
 import MathDefinitionContext from './MathDefinitionContext.js';
 import MathDefinitionSuggestion from './MathDefinitionSuggestion.js';
+import MathProvenanceView from './MathProvenanceView.js';
 import { t } from '../i18n.js';
 
 const TARGET = '[data-math-symbol], [data-math-value], [data-math-number], .katex[data-math-original]';
@@ -12,15 +13,21 @@ class MathSymbolTooltip {
     static dispose = null;
     static hideTimer = null;
     static highlighted = [];
+    static highlightModes = {value: true, provenance: true};
 
     static highlight(element) {
-        this.highlighted.forEach(node => node.classList.remove('math-number-match'));
+        this.highlighted.forEach(node => node.classList.remove('math-number-match', 'math-provenance-match'));
         this.highlighted = [];
         const targets = element.matches('[data-math-number]') ? [element] : [...element.querySelectorAll('[data-math-number]')];
         const scope = element.closest('.formula-zoom-dialog, .dialectics-block, .blk');
         if (targets.length !== 1 || !scope) return;
         try {
-            const key = MathSymbols.numberKey(JSON.parse(MathSymbols.decode(targets[0].dataset.mathNumber)).value);
+            const selected = JSON.parse(MathSymbols.decode(targets[0].dataset.mathNumber));
+            const groups = {value: [], provenance: []};
+            if (selected.provenance?.length) {
+                groups.provenance = MathProvenanceView.targets(targets[0], selected);
+            }
+            const key = MathSymbols.numberKey(selected.value);
             const matches = [];
             scope.querySelectorAll('[data-math-number]').forEach(node => {
                 if (node.closest('.tiptap, [contenteditable="true"], .math-symbol-tooltip')) return;
@@ -28,16 +35,48 @@ class MathSymbolTooltip {
                 if (MathSymbols.numberKey(number.value) === key) matches.push(node);
             });
             // The hovered number alone is not a match: require another occurrence.
-            if (matches.length < 2) return;
-            matches.forEach(node => node.classList.add('math-number-match'));
-            this.highlighted = matches;
+            if (matches.length >= 2) groups.value = matches;
+            this.highlighted = [...new Set([...groups.value, ...groups.provenance])];
+            this.setHighlightGroup(groups, 'value', this.highlightModes.value);
+            this.setHighlightGroup(groups, 'provenance', this.highlightModes.provenance);
+            return groups;
         } catch { /* Ignore invalid metadata in imported HTML. */ }
+    }
+
+    static setHighlightGroup(groups, kind, enabled) {
+        const className = kind === 'value' ? 'math-number-match' : 'math-provenance-match';
+        groups[kind].forEach(node => node.classList.toggle(className, enabled));
+    }
+
+    static highlightControls(groups) {
+        if (!groups || !Object.values(groups).some(nodes => nodes.length)) return null;
+        const controls = document.createElement('fieldset');
+        controls.className = 'math-highlight-controls';
+        const legend = document.createElement('legend');
+        legend.textContent = t('ms_highlight_controls'); controls.append(legend);
+        for (const kind of ['value', 'provenance']) {
+            const label = document.createElement('label');
+            label.className = `math-highlight-option math-highlight-${kind}`;
+            const input = document.createElement('input');
+            input.type = 'checkbox'; input.dataset.highlightKind = kind;
+            input.disabled = !groups[kind].length;
+            input.checked = !input.disabled && this.highlightModes[kind];
+            const sample = document.createElement('span');
+            sample.className = 'math-highlight-sample'; sample.setAttribute('aria-hidden', 'true');
+            const text = document.createElement('span'); text.textContent = t(`ms_highlight_${kind}`);
+            input.addEventListener('change', () => {
+                this.highlightModes[kind] = input.checked;
+                this.setHighlightGroup(groups, kind, input.checked);
+            });
+            label.append(input, sample, text); controls.append(label);
+        }
+        return controls;
     }
 
     static hide() {
         clearTimeout(this.hideTimer);
         this.hideTimer = null;
-        this.highlighted.forEach(node => node.classList.remove('math-number-match'));
+        this.highlighted.forEach(node => node.classList.remove('math-number-match', 'math-provenance-match'));
         this.highlighted = [];
         if (!this.active) return;
         const {element, popup, previous, cleanup} = this.active;
@@ -94,7 +133,7 @@ class MathSymbolTooltip {
                 || (number?.sourceSymbol && MathSymbols.resolve(number.sourceSymbol, context.note, context.block)));
             const values = symbol && !substitution ? MathComputedValues.forElement(symbol, element) : [];
             if (!entry && !onEdit && !values.length && !substitution && !originals.length && !number) return;
-            this.highlight(element);
+            const highlightGroups = this.highlight(element);
             const popup = document.createElement('div');
             popup.className = 'math-symbol-tooltip';
             popup.id = 'math-symbol-tooltip';
@@ -113,12 +152,15 @@ class MathSymbolTooltip {
             heading.append(label, close);
             const text = document.createElement('div');
             text.className = 'math-symbol-definition';
-            HiddenPhraseTooltip.renderHint(text, entry?.definition || (substitution ? t('ms_substituted_value')
+            HiddenPhraseTooltip.renderHint(text, entry?.definition || (number?.provenanceRole === 'constant' ? t('ms_provenance_constant') : substitution ? t('ms_substituted_value')
                 : number ? t('ms_number_unassigned') : t('ms_undefined')));
             const origin = document.createElement('small');
             origin.textContent = entry ? t(entry.scope === 'block' ? 'ms_block' : 'ms_note') : '';
             popup.append(heading);
+            const highlightControls = this.highlightControls(highlightGroups);
+            if (highlightControls) popup.append(highlightControls);
             if (symbol || number) popup.append(text, origin);
+            MathProvenanceView.mount(popup, element, number || substitution, () => this.hide());
             if (originals.length) {
                 const section = document.createElement('section');
                 section.className = 'math-symbol-original';
@@ -227,7 +269,7 @@ class MathSymbolTooltip {
             const rect = this.active.element.getBoundingClientRect();
             if (['top', 'left', 'bottom', 'right'].some(key => Math.abs(rect[key] - this.active.anchorRect[key]) > .5)) this.hide();
         };
-        const hide = () => this.hide();
+        const hide = () => { this.hide(); MathProvenanceView.clearNavigation(); };
         const resize = () => this.active?.position();
         root.addEventListener('mouseover', enter);
         root.addEventListener('mouseout', leave);
@@ -244,6 +286,7 @@ class MathSymbolTooltip {
         window.addEventListener('resize', resize);
         this.dispose = () => {
             this.hide();
+            MathProvenanceView.clearNavigation();
             root.removeEventListener('mouseover', enter); root.removeEventListener('mouseout', leave);
             root.removeEventListener('focusin', enter); root.removeEventListener('focusout', leave);
             root.removeEventListener('click', click, true); document.removeEventListener('keydown', key, true);

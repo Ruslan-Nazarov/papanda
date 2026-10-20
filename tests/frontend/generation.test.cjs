@@ -145,6 +145,12 @@ test('edits during generation are preserved and result can be saved as an ordina
         addActivity: async () => {},
         createNote: async note => {saved = note;},
     }, DialogService: {confirm: async () => true}});
+    const annotations = {
+        dictionary_tags: [{id: 'math', name: 'Mathematics', color: '#2563eb'}],
+        dictionary: [{word: 'Matrix', definition: 'Numbers', tags: ['math']}],
+        math_symbols: [{symbol: 'x', definition: 'Input', unit: ''}],
+    };
+    ctx.AppState.updateNote(annotations);
     const running = ctx.AIController.generateStep(2);
     await new Promise(setImmediate);
     ctx.AppState.updateBlock('one', {html: 'new manual edit'});
@@ -153,6 +159,9 @@ test('edits during generation are preserved and result can be saved as an ordina
     assert.equal(ctx.AppState.getBlock('one').html, 'new manual edit');
     assert.equal(ctx.AppState.getBlock('two-a').html, 'old-a');
     assert.equal(saved.blocks.find(b => b.role === 'step2').html, '<p>new two</p>');
+    for (const [field, value] of Object.entries(annotations)) assert.deepEqual(plain(saved[field]), value);
+    assert.equal(saved.id, undefined);
+    assert.equal(saved.revision, undefined);
 });
 
 test('late result does not mutate a different loaded document', async () => {

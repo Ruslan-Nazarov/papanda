@@ -40,7 +40,7 @@ class NoteText {
             if (node.nodeType !== 1 && node.nodeType !== 11) return '';
             if (['SCRIPT', 'STYLE', 'TEMPLATE'].includes(node.nodeName)) return '';
             // Display controls are derived from data-hint, not additional content.
-            if (node.nodeType === 1 && node.matches('.hp-arrow, .hp-content, .math-expand-button, .math-calculation-button')) return '';
+            if (node.nodeType === 1 && node.matches('.hp-arrow, .hp-content, .math-expand-button, .math-calculation-button, .calculation-fold-toggle, .calculation-fold-all')) return '';
             if (node.nodeName === 'BR') return '\n';
             if (node.nodeType === 1 && node.matches('.katex-display, .katex')) {
                 const formula = node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;

@@ -1,5 +1,6 @@
 import MathSymbols from './MathSymbols.js';
 import MathComputedValues from './MathComputedValues.js';
+import MathProvenance from './MathProvenance.js';
 
 const SUBSTITUTION_EXCLUDED = '.tiptap, [contenteditable="true"], .hp-content, .hidden-phrase-tooltip, .math-symbol-tooltip, .formula-modal-backdrop, .formula-zoom-dialog, details, pre, code';
 const FUNCTIONS = new Set(['\\sin', '\\cos', '\\tan', '\\tanh', '\\sinh', '\\cosh', '\\log', '\\ln', '\\exp']);
@@ -121,11 +122,9 @@ class MathSubstitutions {
 
     static describe(formula) {
         if (this.descriptions.has(formula)) return this.descriptions.get(formula);
-        let cursor = 0;
         const result = MathComputedValues.statements(formula).map(statement => {
-            const parts = statement.parts.map(text => {
-                const start = formula.indexOf(text, cursor);
-                if (start >= 0) cursor = start + text.length;
+            const parts = statement.parts.map((text, index) => {
+                const start = statement.ranges[index].start;
                 const expression = text.replace(/[.,;]\s*$/, '').trimEnd();
                 return {text: expression, start, tree: this.parse(expression)};
             });
@@ -272,14 +271,25 @@ class MathSubstitutions {
     static refresh(root) {
         const context = {templates: [], facts: new Map()};
         const known = new Map();
-        root.querySelectorAll('.block-content .katex, .blk-body .katex').forEach(element => {
-            if (element.closest(SUBSTITUTION_EXCLUDED)) return;
-            const formula = element.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+        const scope = root.closest?.('#blocks-container') || root;
+        const elements = [...scope.querySelectorAll('.block-content .katex, .blk-body .katex')]
+            .filter(element => !element.closest(SUBSTITUTION_EXCLUDED));
+        const provenance = new MathProvenance(elements);
+        provenance.records.forEach(record => {
+            const {element, formula} = record;
             if (!formula) return;
             const result = this.analyze(formula, [], context);
             const numbers = this.numericMeanings(formula, result.ranges, known);
+            const linked = provenance.process(record, numbers);
+            // Structural links take precedence over legacy value hints. Keep
+            // non-overlapping legacy ranges for unsupported scalar notation.
+            result.ranges = result.ranges.filter(range => !linked.some(link => link.start < range.end && link.end > range.start)
+                && !numbers.some(number => (number.provenanceAmbiguous || number.provenanceRole === 'constant')
+                    && number.start < range.end && number.end > range.start))
+                .concat(linked).sort((a, b) => a.start - b.start);
             this.addSource(formula, context);
             const signature = JSON.stringify({...result, numbers});
+            element.dataset.mathProvenanceId = record.id;
             if (element.dataset.mathSubstitutions === signature) return;
             if (!result.ranges.length && !numbers.length && !element.dataset.mathSubstitutions) return;
             const template = document.createElement('template');
@@ -287,9 +297,12 @@ class MathSubstitutions {
             const rendered = template.content.querySelector('.katex');
             if (!rendered || template.content.querySelector('.katex-error')) return;
             rendered.dataset.mathSubstitutions = signature;
+            rendered.dataset.mathProvenanceId = record.id;
             if (result.originals.length) rendered.dataset.mathOriginal = MathSymbols.encode(JSON.stringify(result.originals));
             element.replaceWith(rendered);
+            record.element = rendered;
         });
+        provenance.publish(elements[0]?.ownerDocument || root.ownerDocument || root);
     }
 
     static decorate(root) {

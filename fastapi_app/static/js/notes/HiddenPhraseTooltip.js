@@ -66,7 +66,13 @@ class HiddenPhraseTooltip {
 
         const hide = () => this.hide();
         const onScroll = event => { if (!tooltip.contains(event.target)) hide(); };
-        const onKey = event => { if (event.key === 'Escape') hide(); };
+        const onKey = event => {
+            if (event.key === 'Escape' && !event.defaultPrevented) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                hide();
+            }
+        };
         const onPointer = event => { if (!tooltip.contains(event.target) && !phrase.contains(event.target)) hide(); };
         const observer = new MutationObserver(() => {
             if (!phrase.isConnected || phrase.getAttribute('data-hint') !== hint
@@ -78,13 +84,13 @@ class HiddenPhraseTooltip {
         tooltip.addEventListener('mouseenter', () => clearTimeout(this.hideTimer));
         tooltip.addEventListener('mouseleave', () => this.scheduleHide());
         document.addEventListener('scroll', onScroll, true);
-        document.addEventListener('keydown', onKey);
+        document.addEventListener('keydown', onKey, true);
         document.addEventListener('pointerdown', onPointer);
         window.addEventListener('resize', hide);
         this.active = {phrase, tooltip, root, describedBy, cleanup: () => {
             observer.disconnect();
             document.removeEventListener('scroll', onScroll, true);
-            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('keydown', onKey, true);
             document.removeEventListener('pointerdown', onPointer);
             window.removeEventListener('resize', hide);
         }};

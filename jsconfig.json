@@ -12,6 +12,8 @@
   },
   "files": [
     "fastapi_app/static/js/notes/ApiContracts.js",
+    "fastapi_app/static/js/notes/NoteDocument.js",
+    "fastapi_app/static/js/notes/NoteSnapshot.js",
     "fastapi_app/static/js/notes/GlobalLoader.js",
     "fastapi_app/static/js/notes/Lifecycle.js",
     "fastapi_app/static/js/notes/NoteLocation.js",

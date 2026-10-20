@@ -59,12 +59,14 @@ test('dictionary keeps explanations and block links through browser save, reload
         const second = 'SPI (Serial Peripheral Interface)';
         const noteId = await page.evaluate(async ({first, second}) => {
             const response = await fetch('/api/dialectics/save', {method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title: 'Проверка словаря', blocks: [
+                body: JSON.stringify({title: 'Проверка словаря', dictionary_tags: [
+                    {id: 'electronics', name: 'Электроника', color: '#2563eb'},
+                    {id: 'signals', name: 'Измерения', color: '#0d9488'}], blocks: [
                     {id: 'manual-1', side: 'left', title: 'Измерение', html: '<p>Микроконтроллер получает результаты измерений.</p>'}
                 ], dictionary: [
-                    {word: 'Микроконтроллер', definition: String.raw`Результат вычислений — \(\tanh\).`, connections: first,
+                    {word: 'Микроконтроллер', tags: ['electronics'], definition: String.raw`Результат вычислений — \(\tanh\).`, connections: first,
                         connection_explanations: {[first]: 'АЦП выполняет измерения'}},
-                    {word: first, definition: '', connections: 'Микроконтроллер',
+                    {word: first, tags: ['signals'], definition: '', connections: 'Микроконтроллер',
                         connection_explanations: {'Микроконтроллер': 'АЦП выполняет измерения'}},
                     {word: second, definition: '', connections: ''}
                 ]})});
@@ -80,6 +82,16 @@ test('dictionary keeps explanations and block links through browser save, reload
         await page.hover('.dict-done');
         assert.equal(await page.$eval('.dict-done', button => getComputedStyle(button).backgroundImage),
             'linear-gradient(135deg, rgb(249, 115, 22), rgb(194, 65, 12))');
+        await page.click('.dict-tag-filters [data-tag-id="electronics"]');
+        assert.equal(await page.$$eval('.dict-entry', items => items.length), 1);
+        await page.click('.dict-tag-filters [data-tag-id=""]');
+        await page.click('.dict-tag-settings summary');
+        await page.$eval('.dict-tag-setting[data-tag-id="electronics"] input[type=text]', input => {input.value = 'Электронные компоненты';});
+        await page.$eval('.dict-tag-setting[data-tag-id="electronics"] input[type=color]', input => {input.value = '#7c3aed';});
+        await page.click('.dict-tag-setting[data-tag-id="electronics"] button[type=submit]');
+        assert.equal(await page.$eval('.dict-entry .dict-tag', tag => tag.textContent), 'Электронные компоненты');
+        if (process.env.DICTIONARY_SCREENSHOTS) await page.screenshot({path: path.join(root, 'output/dictionary-tags-settings.png')});
+        await page.click('.dict-tag-settings summary');
         await page.click('.dict-view-graph');
         assert.equal(await page.$$eval('.dict-graph-detail p .katex', formulas => formulas.length), 1);
         await hoverGraph('.dict-graph-node.is-selected');
@@ -110,6 +122,7 @@ test('dictionary keeps explanations and block links through browser save, reload
         await page.click('.dict-view-list');
         assert.equal(await page.$('.dict-graph-tooltip'), null);
         await page.click('.dict-edit');
+        await page.click('.dict-tag-picker [data-tag-id="signals"]');
         assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
             ['АЦП выполняет измерения']);
         await page.$eval('.dict-connections', (input, names) => {
@@ -174,6 +187,9 @@ test('dictionary keeps explanations and block links through browser save, reload
         assert.deepEqual(await page.$$eval('textarea[data-connection]', fields => fields.map(field => field.value)),
             ['АЦП выполняет измерения', 'Обмен данными по SPI']);
         assert.equal(await page.$eval('.dict-definition', field => field.value), linkedDefinition);
+        assert.deepEqual(await page.$$eval('.dict-tag-picker [aria-pressed="true"]', tags => tags.map(tag => tag.dataset.tagId)), ['electronics', 'signals']);
+        assert.equal(await page.$eval('.dict-tag-picker [data-tag-id="electronics"]', tag => tag.textContent), 'Электронные компоненты');
+        assert.equal(await page.$eval('.dict-tag-picker [data-tag-id="electronics"]', tag => tag.style.getPropertyValue('--tag-color')), '#7c3aed');
         await page.click('.dict-cancel');
         if (process.env.DICTIONARY_SCREENSHOTS) {
             await page.screenshot({path: path.join(root, 'output/dictionary-block-links-reading.png')});

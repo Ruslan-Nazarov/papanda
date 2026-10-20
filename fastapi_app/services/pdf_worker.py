@@ -2,6 +2,38 @@
 import io
 import os
 import sys
+import json
+
+
+class SourcePagesError(ValueError):
+    """A requested range must not fall back to an unrelated source excerpt."""
+
+
+def extract_pages(reader, max_pages, options=None):
+    if reader.is_encrypted:
+        raise ValueError('Encrypted PDF')
+    requested = options.get('pages') if options else None
+    start, end = requested if requested else (1, len(reader.pages))
+    if requested and (start < 1 or end < start or end > len(reader.pages)):
+        raise SourcePagesError('Requested PDF pages do not exist')
+    if end - start + 1 > max_pages:
+        raise ValueError('Too many PDF pages')
+    chunks, remaining = [], options['max_chars'] if options else 15000
+    for index in range(start - 1, end):
+        chunk = reader.pages[index].extract_text() or ''
+        if options:
+            # Separators count too. At exactly the limit, inspect subsequent
+            # pages instead of silently accepting only a prefix of the source.
+            remaining -= len(chunk) + (1 if chunks else 0)
+            if remaining < 0:
+                raise OverflowError('Source text exceeds the character limit')
+        else:
+            chunk = chunk[:remaining]
+            remaining -= len(chunk)
+        chunks.append(chunk)
+        if not options and remaining <= 0:
+            break
+    return '\n'.join(chunks)
 
 
 def limit_memory(limit):
@@ -49,15 +81,12 @@ if __name__ == '__main__':
         if len(data) > int(sys.argv[3]) or not data.startswith(b'%PDF-'):
             raise ValueError('Invalid PDF')
         reader = PdfReader(io.BytesIO(data), strict=True)
-        if reader.is_encrypted or len(reader.pages) > int(sys.argv[1]):
-            raise ValueError('PDF encrypted or too many pages')
-        chunks, remaining = [], 15000
-        for page in reader.pages:
-            chunk = (page.extract_text() or '')[:remaining]
-            chunks.append(chunk)
-            remaining -= len(chunk)
-            if remaining <= 0:
-                break
-        sys.stdout.buffer.write('\n'.join(chunks).encode('utf-8'))
+        options = json.loads(sys.argv[4]) if len(sys.argv) > 4 else None
+        text = extract_pages(reader, int(sys.argv[1]), options)
+        sys.stdout.buffer.write(text.encode('utf-8'))
+    except SourcePagesError:
+        sys.exit(4)
+    except OverflowError:
+        sys.exit(3)
     except Exception:
         sys.exit(2)

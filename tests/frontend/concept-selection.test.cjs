@@ -62,8 +62,9 @@ test('calculation action keeps the complete chosen formula, definitions and deta
     saved.innerHTML = ctx.AppState.getBlock('current').html;
     assert.equal(saved.querySelectorAll('.math-inline').length, 2);
     assert.match(saved.children[1].textContent, /Второй/);
-    assert.equal(saved.children[2].tagName, 'BLOCKQUOTE');
-    assert.match(saved.children[3].textContent, /после/);
+    assert.equal(saved.children.length, 2);
+    assert(saved.children[1].querySelector('[data-type="concept-chat"]'));
+    assert.match(saved.children[1].textContent, /после/);
     assert.doesNotMatch(saved.innerHTML, /math-calculation-button|class="katex/);
 });
 
@@ -87,12 +88,15 @@ test('chat changes the note only on save and follows the selected repeated occur
     dom.window.document.querySelector('.concept-explain-save').click();
     const result = dom.window.document.createElement('div');
     result.innerHTML = ctx.AppState.getBlock('current').html;
-    assert.equal(result.children[0].outerHTML, '<p style="text-align: right">термин; <strong>термин</strong></p>');
-    assert.equal(result.children[1].tagName, 'BLOCKQUOTE');
-    assert.equal(result.children[2].textContent, ' и продолжение.');
-    assert.equal(result.children[3].textContent, 'Конец.');
-    assert.match(result.querySelector('blockquote').textContent, /Первый ответ.*Уточняющий вопрос.*Второй ответ/s);
-    assert.equal(result.querySelector('.math-inline').getAttribute('formula'), 'q_1');
+    assert.equal(result.children.length, 2);
+    const marker = result.querySelector('[data-type="concept-chat"]');
+    const data = ctx.SavedConceptChat.read(marker);
+    assert.equal(marker.parentElement.tagName, 'STRONG');
+    assert.equal(result.children[0].textContent, 'термин; термин💬 и продолжение.');
+    assert.equal(result.children[1].textContent, 'Конец.');
+    assert.equal(data.turns[0].answer, 'Первый **ответ**: $q_1$.');
+    assert.equal(data.turns[1].question, 'Уточняющий вопрос');
+    assert.match(data.turns[1].answer, /Второй ответ/);
     assert.equal(result.querySelector('[onerror]'), null);
     assert.equal(dom.window.document.querySelector('.concept-explain-save'), null);
     assert.equal(ctx.AppState.isDirty, true);
@@ -130,7 +134,7 @@ test('saving next to rendered math and hidden phrases preserves source markup an
     dom.window.document.querySelector('.concept-explain-save').click();
     const saved = ctx.AppState.getBlock('current').html;
     assert(saved.startsWith('<p style="text-align:center">\\[Q=XW\\]</p>'));
-    assert.match(saved, /data-hint="Подсказка">Матрица<\/span><\/p><blockquote/);
+    assert.match(saved, /data-hint="Подсказка">Матрица<span data-type="concept-chat"/);
     assert.doesNotMatch(saved, /hp-arrow|hp-content|class="katex/);
 });
 

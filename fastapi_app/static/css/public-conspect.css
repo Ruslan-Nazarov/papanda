@@ -18,3 +18,5 @@ html.public-js body.public-loading .public-app-loading { min-height: 100vh; disp
 .public-conspect dt { font-weight: 700; }
 .public-conspect dd { margin: 0 0 12px; white-space: pre-wrap; }
 .public-conspect footer { padding-top: 20px; }
+
+.public-conspect-tag { display: inline-block; margin: 4px; padding: 2px 8px; border: 1px solid #cbd5e1; border-radius: 999px; color: #475569; font-size: .8rem; }

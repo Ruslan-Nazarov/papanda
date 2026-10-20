@@ -9,6 +9,7 @@ function source(name, symbol = name) {
     return fs.readFileSync(path.join(root, name + '.js'), 'utf8')
         .replace(/^import .*;\r?\n/gm, '')
         .replace(/^export default .*;\r?$/gm, '')
+        .replace(/^export default (?=class )/gm, '')
         .replace(/^export (?=const |class |function )/gm, '') + `\n;globalThis.${symbol} = ${symbol};`;
 }
 function context(extra = {}) {
@@ -19,7 +20,18 @@ function context(extra = {}) {
         CustomEvent: class {}, Event: class {}, t: key => key, ...extra});
 }
 function load(ctx, name, symbol) {
+    if (name === 'BlockNormalBuilder' && !ctx.BlockReadingView) load(ctx, 'BlockReadingView');
+    if (name === 'DictModalService' && !ctx.DictionaryGraph) load(ctx, 'DictionaryGraph');
+    if (['SaveCoordinator', 'AIController'].includes(name) && !ctx.NoteDocument) load(ctx, 'NoteDocument');
+    if (name === 'MathProvenance' && !ctx.MathExpression) load(ctx, 'MathExpression');
+    if (name === 'MathSubstitutions' && !ctx.MathProvenance) load(ctx, 'MathProvenance');
+    if (name === 'MathSymbolTooltip' && !ctx.MathProvenance) load(ctx, 'MathProvenance');
+    if (name === 'MathSymbolTooltip' && !ctx.MathProvenanceView) load(ctx, 'MathProvenanceView');
+    if (['ConceptSelectionMenu', 'BlockNormalBuilder'].includes(name) && !ctx.SavedConceptChat) load(ctx, 'SavedConceptChat');
+    if (['FormulaZoom', 'BlockNormalBuilder'].includes(name) && !ctx.CalculationFolds) load(ctx, 'CalculationFolds');
+    if (name === 'CalculationFolds' && !ctx.AppState) load(ctx, 'AppState');
     if (name === 'MathSymbols' && !ctx.MathTex) load(ctx, 'MathTex');
+    if (name === 'DictModalService' && !ctx.DictionaryTags) load(ctx, 'DictionaryTags');
     if (name === 'DictModalService' && !ctx.HiddenPhraseTooltip) {
         ctx.MutationObserver ||= ctx.window.MutationObserver;
         load(ctx, 'HiddenPhraseTooltip');

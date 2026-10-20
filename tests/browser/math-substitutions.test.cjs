@@ -59,9 +59,11 @@ test('numeric substitutions recover original symbols on hover, touch and in the 
             MathSymbolController.init();
         });
         await page.waitForSelector('#example [data-math-value]');
-        const point = async (value, scope = '#example') => page.$$eval(`${scope} [data-math-value]`, (nodes, wanted) => {
+        const point = async (value, scope = '#example') => page.$$eval(`${scope} [data-math-value]`, async (nodes, wanted) => {
             const element = nodes.find(node => JSON.parse(MathSymbols.decode(node.dataset.mathValue)).value === wanted);
             if (!element) throw new Error('Missing numeric target: ' + wanted);
+            element.scrollIntoView({block: 'center'});
+            await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
             const rect = element.getBoundingClientRect();
             return {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
         }, value);
@@ -182,7 +184,8 @@ test('numeric substitutions recover original symbols on hover, touch and in the 
             p = await numericPoint('0.55', '#matrix');
             await page.mouse.move(p.x, p.y);
             await page.waitForSelector('.math-symbol-tooltip');
-            assert.deepEqual(await page.$$eval('#matrix .math-number-match', nodes => nodes.map(el => JSON.parse(MathSymbols.decode(el.dataset.mathNumber)).value)), ['0.55', '0.55']);
+            assert.equal(await page.$$eval('#matrix .math-number-match', nodes => nodes.length), 2, 'equal literals receive the value marker independently of provenance');
+            assert.equal(await page.$$eval('#matrix .math-provenance-match', nodes => nodes.length), 1, 'only the selected source cell receives the source marker');
             await page.keyboard.press('Escape');
 
             p = await numericPoint('-0.247684');

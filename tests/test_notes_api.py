@@ -59,7 +59,7 @@ async def test_note_notice_survives_save_versions_and_public_view(client: AsyncC
 @pytest.mark.asyncio
 async def test_note_dictionary_is_shared_and_restored_with_versions(client: AsyncClient):
     entry = {"word": "ЭКГ", "definition": "Измерение активности сердца", "connections": "сердце",
-             "connection_explanations": {}}
+             "connection_explanations": {}, "tags": []}
     created = await client.post('/api/dialectics/save', json={"title": "Тест словаря", "blocks": [], "dictionary": [entry]})
     assert created.status_code == 200, created.text
     note = created.json()
@@ -81,7 +81,7 @@ async def test_note_dictionary_is_shared_and_restored_with_versions(client: Asyn
 async def test_dictionary_explanations_survive_save_and_reload(client: AsyncClient):
     entry = {"word": "Микроконтроллер", "definition": "Управляет измерениями",
              "connections": "SPI, АЦП", "connection_explanations": {
-                 "SPI": "Обмен данными по SPI", "АЦП": "АЦП выполняет измерения"}}
+                 "SPI": "Обмен данными по SPI", "АЦП": "АЦП выполняет измерения"}, "tags": []}
     created = await client.post('/api/dialectics/save', json={
         "title": "Проверка объяснений связей", "blocks": [], "dictionary": [entry]})
     assert created.status_code == 200, created.text

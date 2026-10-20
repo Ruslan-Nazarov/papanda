@@ -10,6 +10,7 @@ import NotesAPI from './api.js';
 import LoadNotesModalService from './LoadNotesModalService.js';
 import ConnectionsModalService from './ConnectionsModalService.js';
 import NoteExportService from './NoteExportService.js';
+import NoteImportService from './NoteImportService.js';
 import NoteVersionsService from './NoteVersionsService.js';
 import FooterModalsService from './FooterModalsService.js';
 import CategoryManager from './CategoryManager.js';
@@ -106,9 +107,9 @@ class App {
                 container.appendChild(selection.getRangeAt(i).cloneContents());
             }
 
-            if (container.querySelector('.katex, .math-callout, .math-inline, .table-fold')) {
-                container.querySelectorAll('.math-expand-button, .table-fold-toggle, .table-fold-all').forEach(el => el.remove());
-                container.querySelectorAll('.math-expandable, .table-fold, .table-fold-body').forEach(el => el.replaceWith(...el.childNodes));
+            if (container.querySelector('.katex, .math-callout, .math-inline, .table-fold, .calculation-fold')) {
+                container.querySelectorAll('.math-expand-button, .math-calculation-button, .table-fold-toggle, .table-fold-all, .calculation-fold-toggle, .calculation-fold-all').forEach(el => el.remove());
+                container.querySelectorAll('.math-expandable, .table-fold, .table-fold-body, .calculation-fold, .calculation-fold-body').forEach(el => el.replaceWith(...el.childNodes));
                 container.querySelectorAll('.katex').forEach(katexEl => {
                     const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]');
                     let formula;
@@ -273,6 +274,11 @@ class App {
         document.getElementById('menu-item-export-md-full')?.addEventListener('click', () => {
             DropdownController.closeAll();
             NoteExportService.exportFullMarkdown();
+        });
+
+        document.getElementById('menu-item-import-snapshot')?.addEventListener('click', () => {
+            DropdownController.closeAll();
+            NoteImportService.chooseFile();
         });
 
         document.getElementById('menu-item-export-pdf')?.addEventListener('click', () => {

@@ -89,5 +89,6 @@ def public_conspect(slug, language):
         'notice': _notice_html(source.get('note_notice', '')),
         'blocks': blocks, 'stickers': source.get('stickers') or [],
         'dictionary': source.get('dictionary') or [],
+        'dictionary_tags': source.get('dictionary_tags') or [],
         'math_symbols': source.get('math_symbols') or [],
     }

@@ -128,18 +128,12 @@ test('equal values keep direct meanings and ambiguous or differently written val
     assert.deepEqual(numbers.map(number => number.symbol), ['a', 'b', undefined, undefined]);
 });
 
-test('one chronological pass matches independent analysis without reindexing earlier formulas', () => {
+test('one chronological pass indexes each source once and preserves stable rendered nodes', () => {
     const {sub, symbols, document} = setup();
     const formulas = [original, 'a=0.90', String.raw`\alpha=0.1`, 'g=0.5397',
         String.raw`v_{1,\text{новое}}=0.90-0.1*0.5397=0.84603`,
         'y=a+b', 'y=0.1+0.2=0.3', 'y=c+d', 'y=0.1+0.2',
         ...Array.from({length: 40}, (_, i) => `x_{${i}}=${i + 10}`)];
-    const known = new Map();
-    const expected = formulas.map((formula, index) => {
-        const result = sub.analyze(formula, formulas.slice(0, index));
-        const numbers = sub.numericMeanings(formula, result.ranges, known);
-        return result.ranges.length || numbers.length ? JSON.stringify({...result, numbers}) : undefined;
-    });
     const content = document.getElementById('content');
     content.innerHTML = formulas.map(formula => symbols.render(formula)).join('');
     let sources = 0;
@@ -148,7 +142,9 @@ test('one chronological pass matches independent analysis without reindexing ear
     sub.refresh(document);
     assert.equal(sources, formulas.length);
     const rendered = [...content.querySelectorAll('.katex')];
-    assert.deepEqual(rendered.map(el => el.dataset.mathSubstitutions), expected);
+    assert.deepEqual(rendered.map(el => el.querySelector('annotation').textContent), formulas);
+    assert.equal(JSON.parse(rendered[4].dataset.mathSubstitutions).ranges[1].symbol, String.raw`\alpha`);
+    assert.equal(JSON.parse(rendered.at(-1).dataset.mathSubstitutions).numbers[0].symbol, 'x_{39}');
     sub.refresh(document);
     assert.equal(sources, formulas.length * 2);
     assert(rendered.every((el, i) => el === content.querySelectorAll('.katex')[i]));

@@ -214,7 +214,11 @@
     <script type="application/json" id="math-number-definitions-data">{
         {% for b in blocks %}{{ b.id | tojson }}: {{ b.get('math_number_definitions', []) | tojson }}{% if not loop.last %},{% endif %}{% endfor %}
     }</script>
-    <script type="application/json" id="i18n-data">{{ {'ms_definition': _('ms_definition'), 'ms_note': _('ms_note'), 'ms_block': _('ms_block'), 'close': _('close'), 'ms_computed_value': _('ms_computed_value'), 'ms_computed_values': _('ms_computed_values'), 'ms_calculation': _('ms_calculation'), 'ms_in_note': _('ms_in_note'), 'ms_original_formula': _('ms_original_formula'), 'ms_substituted_value': _('ms_substituted_value'), 'formula_expand': _('formula_expand'), 'formula_view': _('formula_view'), 'formula_scale': _('formula_scale'), 'formula_scroll': _('formula_scroll'), 'formula_zoom_in': _('formula_zoom_in'), 'formula_zoom_out': _('formula_zoom_out')} | tojson }}</script>
+    <script type="application/json" id="i18n-data">{
+        {% for key in ['ms_definition', 'ms_note', 'ms_block', 'close', 'ms_computed_value', 'ms_computed_values', 'ms_calculation', 'ms_in_note', 'ms_original_formula', 'ms_substituted_value', 'ms_number_unassigned', 'ms_provenance', 'ms_highlight_provenance', 'ms_highlight_value', 'ms_highlight_controls', 'ms_provenance_rule', 'ms_provenance_expansion', 'ms_provenance_source', 'ms_provenance_calculation', 'ms_provenance_jump', 'ms_provenance_return', 'ms_provenance_constant', 'ms_provenance_ambiguous', 'formula_expand', 'formula_view', 'formula_scale', 'formula_scroll', 'formula_zoom_in', 'formula_zoom_out'] %}
+        {{ key | tojson }}: {{ _(key) | tojson }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    }</script>
     {% if publication_id %}<script type="module" src="{{ asset('library.js') }}"></script>{% endif %}
 
 </body>

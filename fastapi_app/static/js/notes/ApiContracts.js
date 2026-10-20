@@ -1,7 +1,11 @@
 // @ts-check
 /** @typedef {{id: string, side: string, html?: string, role?: string|null, status?: string, [key: string]: unknown}} NoteBlock */
 /** @typedef {{id: string, title: string, text: string, color: string, created_at?: string|null}} NoteSticker */
-/** @typedef {{id: number, revision: number, title: string, note_notice?: string, content_json: NoteBlock[], stickers?: NoteSticker[], category_id: number|null, status: string}} NoteResponse */
+/** @typedef {{word: string, definition: string, connections?: string|null, connection_explanations?: Record<string,string>, tags?: string[]}} DictionaryEntry */
+/** @typedef {{id: string, name: string, color: string}} DictionaryTag */
+/** @typedef {{symbol: string, definition: string}} MathSymbol */
+/** @typedef {{title: string, note_notice: string, blocks: NoteBlock[], stickers: NoteSticker[], dictionary: DictionaryEntry[], dictionary_tags: DictionaryTag[], math_symbols: MathSymbol[], category_id: number|null, status: string}} NotePayload */
+/** @typedef {{id: number, revision: number, title: string, note_notice?: string, content_json: NoteBlock[], stickers?: NoteSticker[], dictionary?: DictionaryEntry[], dictionary_tags?: DictionaryTag[], math_symbols?: MathSymbol[], category_id: number|null, status: string}} NoteResponse */
 /** @typedef {'completed'|'partial'|'failed'|'cancelled'|'not_applicable'} RunStatus */
 /** @typedef {{content: string, status: string, author?: string}} GeneratedStep */
 /** @typedef {{run_id: string, status: RunStatus, source_revision: number|null, updated_steps: Record<string, GeneratedStep>, replace_bases: string[]}} GenerationResponse */

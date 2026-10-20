@@ -45,16 +45,47 @@ class CategoryView(CategoryBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
 
+class SourceExposition(BaseModel):
+    text: str = Field(min_length=1, max_length=100_000, pattern=r'\S')
+    scope: Literal['article', 'section', 'excerpt']
+    selection: str = Field(default='', max_length=500)
+
+
 class Source(BaseModel):
     url: Optional[str] = None
     title: Optional[str] = None
     quote: Optional[str] = None
+    selection: str = Field(default='', max_length=500)
+    exposition: Optional[SourceExposition] = None
+
+class DictionaryTag(BaseModel):
+    id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,64}$')
+    name: str = Field(min_length=1, max_length=60)
+    color: str = Field(default='#2563eb', pattern=r'^#[0-9a-fA-F]{6}$')
+
+    @field_validator('name')
+    @classmethod
+    def readable_name(cls, value):
+        value = value.strip()
+        if not value or '\x00' in value:
+            raise ValueError('Tag name must contain readable text')
+        return value
+
 
 class Word(BaseModel):
     word: str
     definition: str
     connections: Optional[str] = None
     connection_explanations: Dict[str, str] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list, max_length=100)
+
+    @field_validator('tags')
+    @classmethod
+    def valid_tags(cls, value):
+        import re
+        if any(not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', tag) for tag in value):
+            raise ValueError('Invalid dictionary tag ID')
+        return list(dict.fromkeys(value))
 
 class MathSymbol(BaseModel):
     symbol: str = Field(min_length=1, max_length=300)
@@ -175,6 +206,7 @@ class NoteCreate(BaseModel):
     blocks: List[NoteBlock]
     stickers: List[NoteSticker] = Field(default_factory=list, max_length=1000)
     dictionary: List[Word] = Field(default_factory=list, max_length=1000)
+    dictionary_tags: List[DictionaryTag] = Field(default_factory=list, max_length=100)
     math_symbols: List[MathSymbol] = Field(default_factory=list, max_length=1000)
     is_pinned: bool = False
     is_example: bool = False
@@ -182,6 +214,14 @@ class NoteCreate(BaseModel):
     status: Status = "none"
     sticker_text: Optional[str] = Field(default=None, max_length=500)
     sticker_color: str = Field(default="#fff9c4", max_length=20)
+
+    @field_validator('dictionary_tags', check_fields=False)
+    @classmethod
+    def unique_dictionary_tags(cls, tags):
+        if tags is not None and (len({tag.id for tag in tags}) != len(tags)
+                                 or len({tag.name.casefold() for tag in tags}) != len(tags)):
+            raise ValueError('Dictionary tag IDs and names must be unique')
+        return tags
 
     @field_validator('blocks', check_fields=False)
     @classmethod
@@ -198,6 +238,7 @@ class NoteUpdate(BaseModel):
     blocks: Optional[List[NoteBlock]] = None
     stickers: Optional[List[NoteSticker]] = Field(default=None, max_length=1000)
     dictionary: Optional[List[Word]] = Field(default=None, max_length=1000)
+    dictionary_tags: Optional[List[DictionaryTag]] = Field(default=None, max_length=100)
     math_symbols: Optional[List[MathSymbol]] = Field(default=None, max_length=1000)
     is_pinned: Optional[bool] = None
     is_example: Optional[bool] = None
@@ -208,10 +249,18 @@ class NoteUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_explicit_nulls(self):
-        for field in ('title', 'note_notice', 'blocks', 'stickers', 'dictionary', 'math_symbols', 'is_pinned', 'is_example', 'status', 'sticker_color'):
+        for field in ('title', 'note_notice', 'blocks', 'stickers', 'dictionary', 'dictionary_tags', 'math_symbols', 'is_pinned', 'is_example', 'status', 'sticker_color'):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f'{field} cannot be null')
         return self
+
+    @field_validator('dictionary_tags', check_fields=False)
+    @classmethod
+    def unique_dictionary_tags(cls, tags):
+        if tags is not None and (len({tag.id for tag in tags}) != len(tags)
+                                 or len({tag.name.casefold() for tag in tags}) != len(tags)):
+            raise ValueError('Dictionary tag IDs and names must be unique')
+        return tags
 
     @field_validator('blocks', check_fields=False)
     @classmethod
@@ -242,6 +291,7 @@ class NoteView(BaseModel):
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)
     dictionary: List[Word] = Field(default_factory=list)
+    dictionary_tags: List[DictionaryTag] = Field(default_factory=list)
     math_symbols: List[MathSymbol] = Field(default_factory=list)
     category_id: Optional[int]
     is_pinned: bool
@@ -281,6 +331,7 @@ class NoteVersionView(BaseModel):
     content_json: List[BlockContent]
     stickers: List[NoteSticker] = Field(default_factory=list)
     dictionary: List[Word] = Field(default_factory=list)
+    dictionary_tags: List[DictionaryTag] = Field(default_factory=list)
     math_symbols: List[MathSymbol] = Field(default_factory=list)
     is_manual: bool
     material_token: Optional[str] = None

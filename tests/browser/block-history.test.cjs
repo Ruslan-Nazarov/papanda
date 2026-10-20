@@ -82,9 +82,11 @@ test('block versions work from the reading toolbar, across editor saves and on m
             await page.setViewport({width: 390, height: 844, isMobile: true, hasTouch: true});
             await page.tap('#a .btn-block-redo');
             assert.equal(await page.$eval('#a .block-content', el => el.textContent), 'Версия 4');
-            const fits = await page.$eval('#a .block-version-controls', el => {
+            const fits = await page.$eval('#a .btn-block-redo', el => {
                 const rect = el.getBoundingClientRect();
-                return rect.left >= 0 && rect.right <= innerWidth && document.documentElement.scrollWidth <= innerWidth;
+                const strip = el.closest('.block-toolbar-actions').getBoundingClientRect();
+                return rect.left >= strip.left && rect.right <= strip.right
+                    && document.documentElement.scrollWidth <= innerWidth;
             });
             assert.equal(fits, true);
             await (await page.$('#a')).screenshot({path: path.join(root, 'tmp/block-history-mobile.png')});

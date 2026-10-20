@@ -803,7 +803,8 @@
 
 .block-toolbar-row {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap;
     gap: 4px;
     background: #f8fafc;
     border: 1px solid #f1f5f9;
@@ -812,12 +813,26 @@
     margin-bottom: 10px;
 }
 
+.block-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 2px;
+    padding: 3px;
+    margin: -3px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.block-toolbar-actions::-webkit-scrollbar { display: none; }
+.block-toolbar-actions > * { flex-shrink: 0; }
+
 .block-toolbar-row .block-action-btn {
     background: transparent;
     border: none;
     font-size: 0.95rem;
     cursor: pointer;
-    padding: 3px 6px;
+    padding: 3px 4px;
     border-radius: 4px;
     transition: background 0.15s;
 }
@@ -825,6 +840,22 @@
 .block-toolbar-row .block-action-btn:hover {
     background: #e2e8f0;
 }
+.block-toolbar-row .block-action-btn .ph { font-size: 1rem; }
+
+.block-fold-controls {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 2px;
+    padding-left: 6px;
+    border-left: 1px solid #e2e8f0;
+}
+.block-fold-controls:empty { display: none; }
+.block-fold-controls:not(:empty) + .block-author-control { margin-left: 0; }
+.block-toolbar-row .block-fold-all { color: #64748b; }
+.block-toolbar-row .block-fold-all[aria-pressed="true"] { background: #ede9fe; color: #6d28d9; }
+.block-toolbar-row .block-fold-all:focus-visible { outline: 2px solid #8b7ad6; outline-offset: 2px; }
+@media print { .block-fold-controls { display: none; } }
 
 .block-version-controls {
     display: inline-flex;
@@ -937,6 +968,25 @@
 .block-author-explainer dd { margin: 0; color: #475569; overflow-wrap: anywhere; }
 
 /* Hidden Phrase (Скрытые фразы / сноски) */
+.concept-chat-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: 0 4px;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    background: #eef2ff;
+    font-size: 16px;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+}
+.concept-chat-marker:hover { background: #e0e7ff; }
+.concept-chat-marker:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+
 .hidden-phrase-mark, .hidden-phrase, span[data-type="hidden-phrase"] {
     background: #e0f2f1; /* Teal distinguishes hidden text from violet formulas. */
     border-radius: 4px;

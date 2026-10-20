@@ -96,7 +96,7 @@ class BlockDOMRenderer {
             const data = JSON.stringify([block.role || null, block.html || '', block.tags || '',
                 !!block.anchorResolved, block.rejected_drafts?.length || 0]);
             const presentation = JSON.stringify([...PRESENTATION_FIELDS.map(key => block[key]),
-                block.collapsed_tables || [], block.sources?.length || 0, block.stickers?.length || 0,
+                block.collapsed_tables || [], block.collapsed_calculations || [], block.sources?.length || 0, block.stickers?.length || 0,
                 AppState.currentNote.dictionary?.length || 0]);
             if (reuseUnchanged && snapshot?.epoch === AppState.documentEpoch && snapshot.data === data) {
                 if (snapshot.presentation !== presentation) {

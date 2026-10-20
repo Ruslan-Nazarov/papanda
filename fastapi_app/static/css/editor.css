@@ -697,6 +697,46 @@ body:has(.editor-dock):has(.reading-dock) .modal-editor-floating.expanded {
 }
 
 .table-fold { min-width: 0; max-width: 100%; margin: 0.65em 0 1em; }
+.table-fold-header { display: flex; align-items: stretch; gap: 6px; }
+.table-fold-header .table-fold-toggle { flex: 1; min-width: 0; width: auto; }
+.table-view-open, .table-view-close {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 40px; min-height: 40px; padding: 8px; border: 1px solid #dbe3ee;
+    border-radius: 7px; background: #f8fafc; color: #4f46e5; cursor: pointer;
+}
+.table-view-open:hover, .table-view-close:hover { border-color: #a5b4fc; background: #eef2ff; }
+.table-view-open:focus-visible, .table-view-close:focus-visible, .table-view-viewport:focus-visible {
+    outline: 2px solid #6366f1; outline-offset: 2px;
+}
+.table-view-dialog {
+    box-sizing: border-box; width: calc(100vw - 48px); max-width: 1600px;
+    max-height: calc(100dvh - 48px); margin: auto; padding: 0;
+    border: 1px solid #dbe3ee; border-radius: 14px; background: white; color: #334155;
+    box-shadow: 0 24px 80px #0f172a40; font: inherit; overflow: hidden;
+}
+.table-view-dialog[open] { display: flex; flex-direction: column; }
+.table-view-dialog::backdrop { background: #0f172a80; }
+html:has(.table-view-dialog[open]) { overflow: hidden; }
+.table-view-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-shrink: 0; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;
+}
+.table-view-header h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.table-view-close { font-size: 26px; line-height: 1; }
+.table-view-viewport { min-height: 0; padding: 16px 20px; overflow: auto; overscroll-behavior: contain; }
+.table-view-viewport table { width: 100%; border-collapse: collapse; margin: 0; }
+.table-view-viewport th, .table-view-viewport td {
+    border: 1px solid #cbd5e1; padding: 10px 12px; vertical-align: top;
+    white-space: normal; overflow-wrap: anywhere; line-height: 1.5;
+}
+.table-view-viewport th { background: #f1f5f9; font-weight: 600; }
+.table-view-viewport img { max-width: 100%; height: auto; }
+@media (max-width: 600px) {
+    .table-view-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 10px; }
+    .table-view-header { padding: 12px; }
+    .table-view-viewport { padding: 12px; }
+    .table-view-viewport table { min-width: 560px; }
+}
 .table-fold-toggle {
     display: flex;
     align-items: center;
@@ -726,10 +766,9 @@ body:has(.editor-dock):has(.reading-dock) .modal-editor-floating.expanded {
 .table-fold-body { max-width: 100%; overflow-x: auto; }
 .table-fold-body[hidden] { display: none; }
 .block-content .table-fold-body > table { width: max-content; min-width: 100%; margin: 6px 0 0; }
-.table-fold-all { margin: 0 0 0.5em; padding: 6px 0; border: 0; background: none; color: #4f46e5; font: inherit; font-size: 0.8rem; cursor: pointer; user-select: none; }
-.table-fold-all:hover { text-decoration: underline; }
 @media print {
-    .table-fold-toggle, .table-fold-all { display: none !important; }
+    .table-fold-header, .table-fold-toggle, .table-fold-all, .table-view-dialog { display: none !important; }
+    html:has(.table-view-dialog[open]) { overflow: visible; }
     .table-fold-body[hidden] { display: block !important; }
     .table-fold-body { overflow: visible; }
     .block-content .table-fold-body > table { width: 100%; min-width: 0; }

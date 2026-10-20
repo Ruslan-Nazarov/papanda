@@ -142,7 +142,6 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    .block-toolbar-row { flex-wrap: wrap; }
     .block-toolbar-row .block-action-btn { padding: 6px 9px; font-size: 1.05rem; }
     .block-header-right .block-action-btn,
     .btn-pin-toggle { padding: 4px 6px; }

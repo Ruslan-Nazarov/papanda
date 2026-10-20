@@ -1,3 +1,4 @@
+import BlockReadingView from './BlockReadingView.js';
 import AppState from './AppState.js';
 import AICheckModalService from './AICheckModalService.js';
 import { showToast } from './ToastService.js';
@@ -14,115 +15,14 @@ import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
 import EditorTextPosition from './EditorTextPosition.js';
 import BlockHistoryControls from './BlockHistoryControls.js';
 import BlockTableControls from './BlockTableControls.js';
+import CalculationFolds from './CalculationFolds.js';
 import NoteText from './NoteText.js';
+import SavedConceptChat from './SavedConceptChat.js';
 
 class BlockNormalBuilder {
     static activeAuthorHelp = null;
     static activeRoleHelp = null;
-    static readingBlockId = null;
-    static readingNote = null;
-    static minimizedReadings = new Map();
-    static readingDock = null;
-    static readingDocument = null;
-
-    static syncReadingState() {
-        if (this.readingDocument !== document) {
-            this.readingDocument = document;
-            document.addEventListener('noteOpened', () => this.syncReadingState());
-            document.addEventListener('stateDirty', () => {
-                this.syncReadingState();
-                this.renderReadingDock();
-            });
-        }
-        let changed = false;
-        if (this.readingNote !== AppState.currentNote) {
-            this.readingBlockId = null;
-            this.minimizedReadings.clear();
-            this.readingNote = AppState.currentNote;
-            changed = true;
-        }
-        const blocks = AppState.currentNote?.blocks;
-        if (Array.isArray(blocks)) {
-            for (const id of this.minimizedReadings.keys()) {
-                if (!blocks.some(block => block.id === id && block.role !== 'section' && !block.isDraft)) {
-                    this.minimizedReadings.delete(id);
-                    changed = true;
-                }
-            }
-            if (this.readingBlockId && !blocks.some(block => block.id === this.readingBlockId)) this.readingBlockId = null;
-        }
-        if (changed) this.renderReadingDock();
-    }
-
-    static minimizeReading(div) {
-        const id = div.dataset.id;
-        this.minimizedReadings.set(id, {
-            top: Math.min(96, div.getBoundingClientRect().top),
-            title: div.querySelector('.block-title').textContent.trim(),
-        });
-        if (this.readingBlockId === id) this.readingBlockId = null;
-        this.setReadingView(div, false);
-        div.classList.add('reading-minimized');
-        this.renderReadingDock();
-        [...this.readingDock.children].find(button => button.dataset.blockId === id)?.focus({preventScroll: true});
-    }
-
-    static restoreReading(id) {
-        this.syncReadingState();
-        const saved = this.minimizedReadings.get(id);
-        const div = document.getElementById(id);
-        if (!saved || !div) return;
-        const previous = document.querySelector('#blocks-container .dialectics-block.reading-centered');
-        if (previous && previous !== div) this.setReadingView(previous, false);
-        this.minimizedReadings.delete(id);
-        div.classList.remove('reading-minimized');
-        this.readingBlockId = id;
-        this.setReadingView(div, true);
-        this.renderReadingDock();
-        div.querySelector('.btn-minimize-reading').focus({preventScroll: true});
-        window.scrollBy({top: div.getBoundingClientRect().top - saved.top, behavior: 'instant'});
-    }
-
-    static renderReadingDock() {
-        this.readingDock?.remove();
-        this.readingDock = null;
-        if (!this.minimizedReadings.size) return;
-        const dock = document.createElement('nav');
-        dock.className = 'reading-dock';
-        dock.setAttribute('aria-label', t('reading_minimized'));
-        for (const [id, saved] of this.minimizedReadings) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'reading-dock-item';
-            button.dataset.blockId = id;
-            const block = (AppState.currentNote?.blocks || []).find(block => block.id === id);
-            const title = (block?.title ?? saved.title).trim() || t('ed_untitled');
-            button.title = `${t('reading_restore')}: ${title}`;
-            button.setAttribute('aria-label', button.title);
-            const label = document.createElement('span');
-            label.textContent = title;
-            const icon = document.createElement('span');
-            icon.className = 'reading-dock-restore';
-            icon.textContent = '↑';
-            icon.setAttribute('aria-hidden', 'true');
-            button.append(label, icon);
-            button.addEventListener('click', () => this.restoreReading(id));
-            dock.append(button);
-        }
-        document.body.append(dock);
-        this.readingDock = dock;
-    }
-
-    static setReadingView(div, active) {
-        div.classList.toggle('reading-centered', active);
-        const button = div.querySelector('.btn-reading-view');
-        if (!button) return;
-        const label = t(active ? 'tt_return_to_column' : 'tt_read_center');
-        button.title = label;
-        button.setAttribute('aria-label', label);
-        button.setAttribute('aria-pressed', String(active));
-        button.querySelector('i').className = `ph ${active ? 'ph-arrows-in-simple' : 'ph-arrows-out-simple'}`;
-    }
+    static syncReadingState() { BlockReadingView.syncReadingState(); }
 
     static setupHiddenPhrases(container) {
         if (!container) return;
@@ -223,10 +123,11 @@ class BlockNormalBuilder {
             if (badge.textContent !== String(count)) badge.textContent = String(count);
         }
         BlockTableControls.update?.(div.querySelector('.block-content'), block);
+        CalculationFolds.update(div.querySelector('.block-content'), block);
     }
 
     static build(block, onRenderAll) {
-        if (this.readingNote !== AppState.currentNote || this.readingDocument !== document) this.syncReadingState();
+        if (BlockReadingView.readingNote !== AppState.currentNote || BlockReadingView.readingDocument !== document) this.syncReadingState();
         const div = document.createElement('div');
         const baseRole = typeof block.role === 'string' ? block.role.split('.')[0] : block.role;
         const author = ['ai', 'ai_checked', 'ai_edited', 'human'].includes(block.author) ? block.author : '';
@@ -298,7 +199,8 @@ class BlockNormalBuilder {
                 <div class="block-tags" style="padding: 0 16px 8px 46px; display: flex; flex-wrap: wrap; gap: 6px;">
                 </div>
                 ` : ''}
-                <div class="block-toolbar-row" style="display: flex; align-items: center; gap: 4px;">
+                <div class="block-toolbar-row">
+                    <div class="block-toolbar-actions">
                     <button class="block-action-btn btn-sources manual-only" title="${t('tt_sources')}"><i class="ph ph-info" aria-hidden="true"></i></button>
                     <button class="block-action-btn btn-dict manual-only" type="button" title="${t('dict_title')}" aria-label="${t('dict_title')}"><i class="ph ph-book-open" aria-hidden="true"></i></button>
                     <button class="block-action-btn btn-connections manual-only" type="button" title="${t('tt_block_sources')}"><i class="ph ph-link" aria-hidden="true"></i></button>
@@ -312,6 +214,8 @@ class BlockNormalBuilder {
                     <button class="block-action-btn btn-copy" title="${t('tt_copy')}"><i class="ph ph-copy" aria-hidden="true"></i></button>
                     <button class="block-action-btn btn-color manual-only" title="${t('tt_frame_color')}"><i class="ph ph-palette" aria-hidden="true"></i></button>
                     <button class="block-action-btn btn-delete" title="${t('tt_delete')}"><i class="ph ph-trash" aria-hidden="true"></i></button>
+                    </div>
+                    <div class="block-fold-controls"></div>
                     <div class="block-author-control" data-author="${author}">
                         <button class="block-author-help-button" type="button" aria-label="${t('block_author_help_title')}" aria-expanded="false" title="${t('block_author_help_title')}"><span aria-hidden="true">i</span></button>
                         <select class="block-author-select" aria-label="${t('block_author_label')}" title="${t('block_author_label')}">
@@ -338,6 +242,7 @@ class BlockNormalBuilder {
             `;
         }
 
+        SavedConceptChat.compactLegacy(div);
         BlockHistoryControls.mount(div, block.id, onRenderAll);
 
         this.updatePresentation(div, block);
@@ -518,9 +423,9 @@ class BlockNormalBuilder {
         if (collapseBtn) {
             collapseBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (this.readingBlockId === block.id) {
-                    this.readingBlockId = null;
-                    this.setReadingView(div, false);
+                if (BlockReadingView.readingBlockId === block.id) {
+                    BlockReadingView.readingBlockId = null;
+                    BlockReadingView.setReadingView(div, false);
                 }
                 AppState.updateBlock(block.id, {collapsed: !block.collapsed});
                 div.classList.toggle('collapsed', block.collapsed);
@@ -532,21 +437,21 @@ class BlockNormalBuilder {
 
         const readingBtn = div.querySelector('.btn-reading-view');
         if (readingBtn) {
-            this.setReadingView(div, this.readingBlockId === block.id);
-            div.classList.toggle('reading-minimized', this.minimizedReadings.has(block.id));
+            BlockReadingView.setReadingView(div, BlockReadingView.readingBlockId === block.id);
+            div.classList.toggle('reading-minimized', BlockReadingView.minimizedReadings.has(block.id));
             readingBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const active = this.readingBlockId !== block.id;
+                const active = BlockReadingView.readingBlockId !== block.id;
                 const previous = document.querySelector('#blocks-container .dialectics-block.reading-centered');
-                if (previous && previous !== div) this.setReadingView(previous, false);
-                this.readingBlockId = active ? block.id : null;
-                this.setReadingView(div, active);
+                if (previous && previous !== div) BlockReadingView.setReadingView(previous, false);
+                BlockReadingView.readingBlockId = active ? block.id : null;
+                BlockReadingView.setReadingView(div, active);
                 if (active) div.scrollIntoView({behavior: 'smooth', block: 'start'});
             });
         }
         div.querySelector('.btn-minimize-reading')?.addEventListener('click', event => {
             event.stopPropagation();
-            this.minimizeReading(div);
+            BlockReadingView.minimizeReading(div);
         });
 
         // Bind editor — карандаш всегда открывает редактор (в любом режиме и статусе)

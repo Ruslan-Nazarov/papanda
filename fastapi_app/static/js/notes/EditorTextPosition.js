@@ -1,20 +1,20 @@
 // Reading mode adds KaTeX and hint decorations that are absent from the editor.
-const DECORATIONS = '.hp-arrow, .hp-content';
+const POSITION_DECORATIONS = '.hp-arrow, .hp-content, .calculation-fold-toggle, .calculation-fold-all';
 const TEXTBLOCKS = 'p, h1, h2, h3, h4, h5, h6, pre, li, td, th';
 
 export default class EditorTextPosition {
     static clean(fragment, atoms = '') {
         const copy = fragment.cloneNode(true);
-        copy.querySelectorAll(DECORATIONS).forEach(el => el.remove());
-        copy.querySelectorAll('.math-inline, .katex, img').forEach(el => el.replaceWith(atoms));
+        copy.querySelectorAll(POSITION_DECORATIONS).forEach(el => el.remove());
+        copy.querySelectorAll('.math-inline, .katex, img, span[data-type="concept-chat"]').forEach(el => el.replaceWith(atoms));
         copy.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
         return copy.textContent || '';
     }
 
     static capture(container, event) {
         const paragraphs = [...container.querySelectorAll(TEXTBLOCKS)].filter(el =>
-            !el.closest(DECORATIONS) && ![...el.querySelectorAll(TEXTBLOCKS)]
-                .some(child => !child.closest(DECORATIONS)));
+            !el.closest(POSITION_DECORATIONS) && ![...el.querySelectorAll(TEXTBLOCKS)]
+                .some(child => !child.closest(POSITION_DECORATIONS)));
         const paragraph = paragraphs.find(el => el === event.target || el.contains(event.target));
         if (!paragraph) return null;
 

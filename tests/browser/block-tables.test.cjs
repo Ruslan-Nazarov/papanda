@@ -61,7 +61,7 @@ test('tables fold with keyboard and touch, persist through saves, and stay compl
             assert.equal(await page.$('.modal-editor-floating'), null, 'double-clicking a fold must not open the editor');
             await page.click('.table-fold-all');
             assert.equal(await page.$$eval('.table-fold-body[hidden]', els => els.length), 3);
-            assert.equal(await page.$eval('.table-fold-all', el => el.textContent), 'Развернуть все таблицы');
+            assert.equal(await page.$eval('.table-fold-all', el => el.title), 'Развернуть все таблицы');
             await page.click('.btn-copy');
             const copy = await page.evaluate(() => window.copied);
             assert(copy.includes('W 9') && copy.includes('b 3') && copy.includes('D 9'));
@@ -80,6 +80,30 @@ test('tables fold with keyboard and touch, persist through saves, and stay compl
             assert.equal(result.html, result.original);
             assert(result.markdown.includes('W 9') && result.markdown.includes('D 9'));
             assert.equal(await page.$$eval('.table-fold-body[hidden]', els => els.length), 3);
+        });
+        await t.test('popup opens folded tables, traps focus, and closes without changing content or folds', async () => {
+            const before = await page.evaluate(() => JSON.stringify(AppState.getBlock('a')));
+            await page.focus('.table-view-open');
+            await page.keyboard.press('Enter');
+            await page.waitForSelector('.table-view-dialog[open]');
+            assert.equal(await page.$$eval('.table-view-dialog tbody tr', els => els.length), 9);
+            assert.equal(await page.$eval('.table-view-dialog', el => el.getBoundingClientRect().width > 1000), true);
+            assert.equal(await page.$eval('.table-view-close', el => document.activeElement === el), true);
+            await page.keyboard.press('Tab');
+            await page.evaluate(() => document.querySelector('.table-view-open').focus());
+            assert.equal(await page.evaluate(() => !!document.activeElement.closest('.table-view-dialog')), true);
+            await page.keyboard.press('Escape');
+            await page.waitForSelector('.table-view-dialog', {hidden: true});
+            assert.equal(await page.$eval('.table-view-open', el => document.activeElement === el), true);
+            assert.equal(await page.evaluate(() => JSON.stringify(AppState.getBlock('a'))), before);
+            assert.equal(await page.$$eval('.table-fold-body[hidden]', els => els.length), 3);
+            await page.click('.table-view-open', {clickCount: 2});
+            assert.equal(await page.$('.modal-editor-floating'), null);
+            await page.click('.table-view-close');
+            await page.waitForSelector('.table-view-dialog', {hidden: true});
+            await page.click('.table-view-open');
+            await page.mouse.click(2, 2);
+            await page.waitForSelector('.table-view-dialog', {hidden: true});
         });
         await t.test('editor shows all table rows and does not receive fold controls', async () => {
             await page.click('.btn-edit');
@@ -111,6 +135,30 @@ test('tables fold with keyboard and touch, persist through saves, and stay compl
             assert.equal(await page.$eval('.table-fold-body', el => el.scrollWidth > el.clientWidth), true,
                 'a wide table scrolls inside the block');
             await (await page.$('#a')).screenshot({path: path.join(root, 'tmp/table-folds-mobile.png')});
+            await page.tap('.table-view-open');
+            await page.waitForSelector('.table-view-dialog[open]');
+            assert.equal(await page.$eval('.table-view-dialog', el => {
+                const rect = el.getBoundingClientRect();
+                return rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight;
+            }), true);
+            assert.equal(await page.$eval('.table-view-viewport', el => el.scrollWidth > el.clientWidth), true);
+            await page.screenshot({path: path.join(root, 'tmp/table-popup-mobile.png')});
+            await page.tap('.table-view-close');
+            await page.waitForSelector('.table-view-dialog', {hidden: true});
+        });
+        await t.test('large popup scrolls internally and is removed when its source block disappears', async () => {
+            await page.setViewport({width: 1440, height: 900, isMobile: true, hasTouch: true});
+            await page.evaluate(() => {
+                const table = document.querySelector('.table-fold-body table');
+                const row = table.rows[table.rows.length - 1];
+                for (let i = 0; i < 100; i++) row.parentElement.append(row.cloneNode(true));
+            });
+            await page.click('.table-view-open');
+            assert.equal(await page.$eval('.table-view-viewport', el => el.scrollHeight > el.clientHeight), true);
+            assert.equal(await page.$eval('.table-view-dialog', el => el.getBoundingClientRect().bottom <= innerHeight), true);
+            await page.screenshot({path: path.join(root, 'tmp/table-popup-desktop.png')});
+            await page.evaluate(() => BlockDOMRenderer.renderAll({reuseUnchanged: false}));
+            await page.waitForSelector('.table-view-dialog', {hidden: true});
         });
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }

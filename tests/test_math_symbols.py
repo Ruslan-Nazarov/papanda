@@ -41,6 +41,9 @@ async def test_math_symbols_survive_reload_versions_sharing_and_removal(client):
     assert page.status_code == 200, page.text
     data = json.loads(re.search(r'id="math-symbols-data">(.*?)</script>', page.text, re.S)[1])
     assert data == {'note': shared, 'blocks': {'network': local}}
+    translations = json.loads(re.search(r'id="i18n-data">(.*?)</script>', page.text, re.S)[1])
+    for key in ('ms_provenance', 'ms_provenance_jump', 'ms_provenance_return', 'ms_provenance_ambiguous'):
+        assert translations[key] and translations[key] != key
 
 
 @pytest.mark.asyncio

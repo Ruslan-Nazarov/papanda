@@ -60,6 +60,7 @@ class NoteStore {
             fork_step: note.fork_step ?? null, long_term_goal: Boolean(note.long_term_goal),
             stickers: clone(note.stickers || []),
             dictionary,
+            dictionary_tags: clone(note.dictionary_tags || []),
             math_symbols: clone(note.math_symbols || []),
             blocks: blocks.map(block => ({...block,
                 // Закрепление блока действует только до следующего открытия конспекта.
@@ -193,6 +194,7 @@ class NoteStore {
             note_notice: response.note_notice ?? note.note_notice ?? '',
             stickers: response.stickers ?? note.stickers ?? [],
             dictionary: response.dictionary ?? note.dictionary ?? [],
+            dictionary_tags: response.dictionary_tags ?? note.dictionary_tags ?? [],
             math_symbols: response.math_symbols ?? note.math_symbols ?? [],
             category_id: response.category_id ?? null, status: response.status || note.status,
             family_id: response.family_id ?? null, parent_note_id: response.parent_note_id ?? null,

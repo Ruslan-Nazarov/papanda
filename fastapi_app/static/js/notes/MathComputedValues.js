@@ -95,14 +95,21 @@ class MathComputedValues {
     }
 
     static statements(formula) {
-        let text = formula.replace(/\\(?:begin|end)\{(?:aligned|align\*?|gathered|gather\*?|split)\}/g, '');
+        // Keep source offsets intact: provenance links point into the original TeX.
+        let text = formula.replace(/\\(?:begin|end)\{(?:aligned|align\*?|gathered|gather\*?|split)\}/g, match => ' '.repeat(match.length));
         const statements = [];
-        let parts = [], relations = [], offset = 0, level = 0, environment = 0;
-        const piece = value => value.trim().replace(/^&+\s*|\s*&+$/g, '').trim();
+        let parts = [], ranges = [], relations = [], offset = 0, level = 0, environment = 0;
+        const piece = end => {
+            const raw = text.slice(offset, end);
+            const value = raw.trim().replace(/^&+\s*|\s*&+$/g, '').trim();
+            const start = offset + (value ? raw.indexOf(value) : raw.length);
+            ranges.push({start, end: start + value.length});
+            return value;
+        };
         const flush = end => {
-            parts.push(piece(text.slice(offset, end)));
-            if (relations.length) statements.push({parts, relations});
-            parts = []; relations = [];
+            parts.push(piece(end));
+            if (relations.length) statements.push({parts, relations, ranges});
+            parts = []; ranges = []; relations = [];
         };
         for (let i = 0; i < text.length;) {
             const env = text.slice(i).match(/^\\(begin|end)\{[^}]+\}/);
@@ -110,7 +117,7 @@ class MathComputedValues {
             const spacing = text.slice(i).match(/^\\(?:quad|qquad)\b/);
             const row = text.startsWith('\\\\', i);
             const continuation = row && !level && !environment && text.slice(i + 2)
-                .match(/^(?:\[[^\]]*\])?\s*&*\s*(?=(?:\\(?:approx|simeq|coloneqq|coloneq)\b|:=|=|≈|≃))/);
+                .match(/^(?:\[[^\]]*\])?\s*&*\s*(?=(?:\\(?:approx|simeq|coloneqq|coloneq)\b|:=|=|≈|≃|[+−-]))/);
             if (continuation) {
                 const end = i + 2 + continuation[0].length;
                 text = text.slice(0, i) + ' '.repeat(end - i) + text.slice(end);
@@ -126,7 +133,7 @@ class MathComputedValues {
             if (!level && !environment) {
                 const relation = text.slice(i).match(/^(?:\\(?:approx|simeq|coloneqq|coloneq)(?![A-Za-z])|:=|=|≈|≃)/);
                 if (relation) {
-                    parts.push(piece(text.slice(offset, i)));
+                    parts.push(piece(i));
                     relations.push(/approx|simeq|≈|≃/.test(relation[0]) ? '\\approx' : '=');
                     i += relation[0].length; offset = i; continue;
                 }

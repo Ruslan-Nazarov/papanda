@@ -43,7 +43,9 @@
     </section>
     {% endfor %}
     {% if public_note.dictionary %}<section class="public-conspect-dictionary"><h2>{{ _('public_dictionary') }}</h2><dl>
-        {% for word in public_note.dictionary %}<dt>{{ word.word }}</dt><dd>{{ word.definition }}</dd>{% endfor %}
+        {% for word in public_note.dictionary %}<dt>{{ word.word }}</dt><dd>{{ word.definition }}
+            {% for tag in public_note.dictionary_tags %}{% if tag.id in (word.tags or []) %}<span class="public-conspect-tag">{{ tag.name }}</span>{% endif %}{% endfor %}
+        </dd>{% endfor %}
     </dl></section>{% endif %}
     <footer><a href="/library?lang={{ public_note.language }}">{{ _('library_title') }}</a></footer>
 </article>

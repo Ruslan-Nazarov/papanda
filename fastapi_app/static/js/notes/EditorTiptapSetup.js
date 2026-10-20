@@ -18,12 +18,15 @@ import PasteMathTransformer from './PasteMathTransformer.js';
 import TextSize, { TEXT_SIZES } from './extensions/TextSize.js';
 import BlockCodeRenderer from './BlockCodeRenderer.js';
 import HiddenPhraseTooltip from './HiddenPhraseTooltip.js';
+import ConceptChat from './extensions/ConceptChat.js';
+import SavedConceptChat from './SavedConceptChat.js';
 
 import { t } from '../i18n.js';
 export class EditorTiptapSetup {
     static createEditor(containerEl, currentHtml, autofocus = true, symbolContext = null) {
         const prepared = document.createElement('div');
         prepared.innerHTML = currentHtml || '';
+        SavedConceptChat.compactLegacy(prepared);
         BlockCodeRenderer.mergeAdjacent(prepared);
         const editor = new Editor({
             element: containerEl,
@@ -39,6 +42,7 @@ export class EditorTiptapSetup {
                 Placeholder.configure({ placeholder: t('tip_placeholder') }),
                 QuestionMark, 
                 HiddenPhrase, 
+                ConceptChat,
                 MathCallout,
                 MathInline,
                 TableKit,

@@ -94,7 +94,17 @@ test('real editor across Chromium, Firefox and WebKit with isolated sessions', {
                 await page.locator('#btn-save').click();
                 await page.waitForFunction(() => !document.querySelector('#btn-save').classList.contains('is-dirty'));
                 await page.reload({waitUntil: 'networkidle'});
-                await page.locator('#calculation blockquote').waitFor();
+                const savedChat = page.locator('#calculation [data-type="concept-chat"]');
+                await savedChat.waitFor();
+                const requestsBeforeReopen = requests.length;
+                await savedChat.click();
+                await page.locator('.saved-concept-chat-modal').waitFor();
+                assert.match(await page.locator('.saved-concept-chat-modal').textContent(),
+                    /Нужда: восстановить пропущенное сокращение/);
+                assert.equal(await page.locator('.saved-concept-chat-modal .katex-error').count(), 0);
+                assert.equal(requests.length, requestsBeforeReopen, 'saved chat must reopen without another AI call');
+                await page.keyboard.press('Escape');
+                await page.locator('.saved-concept-chat-modal').waitFor({state: 'detached'});
                 assert.match(await page.locator('#calculation .block-content').textContent(), /Правка редактора/);
                 assert.equal(await page.locator('#calculation .katex-error').count(), 0);
                 violations.push(...await page.evaluate(() => window.acceptanceViolations || []));

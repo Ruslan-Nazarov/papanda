@@ -14,6 +14,7 @@ class RoutePolicy:
 
 
 TASK_ROUTES = {
+    'article_exposition': ('Gemini', 'Cerebras', 'GigaChat', 'Groq'),
     'calculation': ('Gemini', 'Cerebras', 'GigaChat', 'Groq'),
     'step_stream': ('GigaChat', 'Cerebras', 'Gemini', 'Groq'),
     'skeleton': ('Cerebras', 'Gemini', 'GigaChat', 'Groq'),

@@ -17,6 +17,7 @@ import nh3
 # MathInline      → <span class="math-inline" formula data-formula>
 # HiddenPhrase    → <span data-type="hidden-phrase" data-hint data-expanded class>
 # QuestionMark    → <span data-question class="question-mark-text">
+# ConceptChat     → <span data-type="concept-chat" data-chat class role tabindex aria-* title>
 # InternalLink    → <a href=(http/https/mailto/internal://note/…) data-internal-links target rel class>
 
 _INLINE_MARKS = {"strong", "b", "em", "i", "u", "s", "strike", "code", "mark", "sub", "sup"}
@@ -27,7 +28,8 @@ _BLOCKS = {"p", "br", "ul", "ol", "li", "pre", "blockquote", "hr",
 _WRITE_TAGS = _INLINE_MARKS | _BLOCKS | {"span", "div", "a", "img"}
 _WRITE_ATTRS = {
     "span": {"class", "formula", "data-formula", "data-type", "data-hint",
-             "data-expanded", "data-question", "data-text-size", "style"},
+             "data-expanded", "data-question", "data-text-size", "style", "data-chat",
+             "role", "tabindex", "aria-label", "aria-haspopup", "title"},
     "div": {"class"},
     "blockquote": {"class", "author"},
     "a": {"href", "title", "class", "target", "data-internal-links"},  # rel добавляет сам nh3

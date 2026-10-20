@@ -1,9 +1,12 @@
 import AppState from './AppState.js';
 import HtmlSafety from './HtmlSafety.js';
+import ArticleExpositionModal from './ArticleExpositionModal.js';
 import { ALGORITHM_TEXTS, ALGORITHM_STEPS, inferRoleFromTitle } from './BlockConstants.js';
 
 import { t } from '../i18n.js';
 class BlockMetaModalService {
+    static sourcesClose = null;
+
     static showInfoModal(blockId) {
         const block = AppState.getBlock(blockId);
         if (!block) return;
@@ -64,6 +67,10 @@ class BlockMetaModalService {
     static showSourcesModal(blockId) {
         const block = AppState.getBlock(blockId);
         if (!block) return;
+        this.sourcesClose?.();
+        const note = AppState.currentNote;
+        const previousFocus = document.activeElement;
+        const isCurrent = () => AppState.currentNote === note && AppState.getBlock(blockId) === block;
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.style.zIndex = '1200';
@@ -130,8 +137,10 @@ class BlockMetaModalService {
                         <strong>${this.escapeHtml(src.title || src.url)}</strong>
                         ${HtmlSafety.link(src.url) ? `<a href="${HtmlSafety.escape(HtmlSafety.link(src.url))}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(src.url)}</a>` : ''}
                         ${src.quote ? `<blockquote>${this.escapeHtml(src.quote)}</blockquote>` : ''}
+                        ${src.selection ? `<small class="block-source-selection">${this.escapeHtml(src.selection)}</small>` : ''}
                     </div>
                     <div class="block-source-actions">
+                        <button class="block-sources-icon-btn btn-explain-src ${src.exposition ? 'has-exposition' : ''}" type="button" data-idx="${idx}" title="${t(src.exposition ? 'article_exposition_open_saved' : 'article_exposition_btn')}" aria-label="${t(src.exposition ? 'article_exposition_open_saved' : 'article_exposition_btn')}" ${!(src.url?.trim() || src.quote?.trim()) ? 'disabled' : ''}>✦</button>
                         <button class="block-sources-icon-btn btn-edit-src" type="button" data-idx="${idx}" title="${t('tt_edit')}" aria-label="${t('tt_edit')}">✎</button>
                         <button class="block-sources-icon-btn btn-del-src" type="button" data-idx="${idx}" title="${t('tt_delete')}" aria-label="${t('tt_delete')}">✕</button>
                     </div>
@@ -161,13 +170,37 @@ class BlockMetaModalService {
             urlInput.focus();
         };
         renderList();
-        const close = () => overlay.remove();
+        const close = () => {
+            overlay.remove();
+            document.removeEventListener('noteOpened', close);
+            document.removeEventListener('stateDirty', checkOwner);
+            if (this.sourcesClose === close) this.sourcesClose = null;
+            if (isCurrent() && previousFocus?.isConnected) previousFocus.focus({preventScroll: true});
+        };
+        const checkOwner = () => { if (!isCurrent()) close(); };
+        this.sourcesClose = close;
+        document.addEventListener('noteOpened', close);
+        document.addEventListener('stateDirty', checkOwner);
         dialog.querySelector('.btn-close-modal').addEventListener('click', close);
         dialog.querySelector('.btn-done').addEventListener('click', close);
         overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        overlay.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !e.defaultPrevented && !overlay.inert) {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+            }
+        });
         dialog.querySelector('.btn-new-src').addEventListener('click', () => openForm());
         dialog.querySelector('.btn-cancel-src').addEventListener('click', closeForm);
         list.addEventListener('click', e => {
+            if (!overlay.isConnected || !isCurrent()) return close();
+            const explain = e.target.closest('.btn-explain-src');
+            if (explain) {
+                const source = block.sources[Number(explain.dataset.idx)];
+                if (source) ArticleExpositionModal.show(source, block, {sourceIndex: Number(explain.dataset.idx), onSaved: renderList});
+                return;
+            }
             const edit = e.target.closest('.btn-edit-src');
             const del = e.target.closest('.btn-del-src');
             if (edit) openForm(Number(edit.dataset.idx));
@@ -180,18 +213,24 @@ class BlockMetaModalService {
         });
         form.addEventListener('submit', e => {
             e.preventDefault();
+            if (!overlay.isConnected || !isCurrent()) return close();
             const url = urlInput.value.trim();
             const title = titleInput.value.trim();
             const quote = quoteInput.value.trim();
             if (!url && !title && !quote) return;
             const sources = [...(block.sources || [])];
             if (editingIndex === null) sources.push({url, title, quote});
-            else sources[editingIndex] = {...sources[editingIndex], url, title, quote};
+            else {
+                const old = sources[editingIndex];
+                const changed = old.url !== url || old.title !== title || old.quote !== quote;
+                sources[editingIndex] = {...old, url, title, quote, exposition: changed ? null : old.exposition};
+            }
             AppState.updateBlock(block.id, {sources});
             renderList();
             updateBadge();
             closeForm();
         });
+        dialog.querySelector('.btn-close-modal').focus({preventScroll: true});
     }
 
     static escapeHtml(str) {

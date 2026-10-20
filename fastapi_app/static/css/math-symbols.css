@@ -12,16 +12,38 @@
 /* A matrix and its cells are nested targets; outline only the hovered target. */
 .katex :is([data-math-symbol], [data-math-value], [data-math-number]):hover:not(:has(:is([data-math-symbol], [data-math-value], [data-math-number]):hover)),
 .katex :is([data-math-symbol], [data-math-value], [data-math-number]):focus-visible {
-    background: #ede9fe;
-    outline: 1px solid #c4b5fd;
+    background: var(--math-highlight-fill, #ede9fe);
+    outline: var(--math-highlight-outline, 1px solid #c4b5fd);
     outline-offset: 2px;
 }
 .katex .math-number-match {
-    background: #fef08a;
-    box-shadow: 0 0 0 2px #fde047;
+    --math-highlight-fill: #fef08a;
+    background: var(--math-highlight-fill);
+    --math-highlight-outline: 1px dashed #b45309;
+    outline: var(--math-highlight-outline);
+    outline-offset: 2px;
     border-radius: 3px;
 }
 .math-symbol-original { margin-top: 8px; }
+.math-provenance { margin-top: 12px; border-top: 1px solid #ede9fe; padding-top: 10px; }
+.math-provenance > strong { font-size: 13px; }
+.math-provenance ol { list-style: none; padding: 0; margin: 0; }
+.math-provenance li { margin-top: 12px; }
+.math-provenance li + li { border-top: 1px solid #f1f5f9; padding-top: 10px; }
+.math-provenance-jump { border: 0; padding: 5px 0; background: transparent; color: #6d28d9; font: inherit; font-size: 12px; cursor: pointer; }
+.katex .math-provenance-match, .math-provenance-focus, .math-provenance-destination { --math-highlight-fill: transparent; background: var(--math-highlight-fill); border-bottom: 2px solid #0d9488; border-radius: 0; }
+.katex .math-number-match:is(.math-provenance-match, .math-provenance-destination) { --math-highlight-fill: #fef08a; }
+.math-highlight-controls { min-inline-size: 0; margin: 10px 0 0; padding: 5px 0 0; border: 0; font-size: 12px; }
+.math-highlight-controls legend { padding: 0; color: #64748b; }
+.math-highlight-option { display: flex; align-items: center; gap: 8px; min-height: 30px; cursor: pointer; }
+.math-highlight-option:has(input:disabled) { opacity: .55; cursor: default; }
+.math-highlight-option input { margin: 0; accent-color: #6d28d9; }
+.math-highlight-sample { display: inline-block; flex: 0 0 18px; width: 18px; height: 12px; box-sizing: border-box; }
+.math-highlight-value .math-highlight-sample { background: #fef08a; outline: 1px dashed #b45309; outline-offset: 1px; border-radius: 2px; }
+.math-highlight-provenance .math-highlight-sample { border-bottom: 2px solid #0d9488; }
+@media (pointer: coarse) { .math-highlight-option { min-height: 44px; } }
+.math-provenance-return { position: fixed; bottom: 16px; right: 16px; z-index: 11999; max-width: calc(100vw - 32px); padding: 10px 14px; background: #fff; color: #5b21b6; border: 1px solid #c4b5fd; border-radius: 8px; box-shadow: 0 4px 18px #1e1b4b26; font: 14px/1.5 Inter, sans-serif; cursor: pointer; }
+.math-provenance-jump:focus-visible, .math-provenance-return:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 3px; }
 .math-symbol-original > small { margin-bottom: 4px; }
 .math-symbol-tooltip-heading > span { min-width: 0; overflow-x: auto; padding: 3px 0; }
 .math-symbol-tooltip {

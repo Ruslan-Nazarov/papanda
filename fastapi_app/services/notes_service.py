@@ -1,4 +1,4 @@
-from fastapi_app.services.history_service import HistoryService
+from fastapi_app.services.history_service import HistoryService, version_content
 from fastapi_app.services.category_service import CategoryService
 from fastapi_app.services.connection_service import ConnectionService
 from fastapi_app.services.sharing_service import SharingService
@@ -71,6 +71,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
             content_json=blocks_data,
             stickers=[s.model_dump(mode='json') for s in data.stickers],
             dictionary=[w.model_dump() for w in data.dictionary],
+            dictionary_tags=[w.model_dump() for w in data.dictionary_tags],
             math_symbols=[s.model_dump() for s in data.math_symbols],
             is_pinned=data.is_pinned,
             is_example=data.is_example,
@@ -87,11 +88,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
         initial_version = NoteVersion(
             note_id=new_note.id,
             title="Создание конспекта",
-            note_notice=new_note.note_notice,
-            content_json=blocks_data,
-            stickers=new_note.stickers,
-            dictionary=new_note.dictionary,
-            math_symbols=new_note.math_symbols,
+            **version_content(new_note),
             is_manual=True
         )
         session.add(initial_version)
@@ -133,7 +130,11 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
         if data.stickers is not None:
             note.stickers = [s.model_dump(mode='json') for s in data.stickers]
         if data.dictionary is not None:
-            note.dictionary = [w.model_dump() for w in data.dictionary]
+            previous_tags = {entry.get('word'): entry.get('tags', []) for entry in note.dictionary or []}
+            note.dictionary = [{**word.model_dump(), 'tags': word.tags if 'tags' in word.model_fields_set
+                                else previous_tags.get(word.word, [])} for word in data.dictionary]
+        if data.dictionary_tags is not None:
+            note.dictionary_tags = [tag.model_dump() for tag in data.dictionary_tags]
         if data.math_symbols is not None:
             note.math_symbols = [s.model_dump() for s in data.math_symbols]
         if 'sticker_text' in data.model_fields_set:
@@ -233,6 +234,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
                 "content_json": ex.content_json,
                 "stickers": ex.stickers,
                 "dictionary": ex.dictionary,
+                "dictionary_tags": ex.dictionary_tags,
                 "math_symbols": ex.math_symbols,
                 "is_pinned": ex.is_pinned,
                 "sticker_text": ex.sticker_text,
@@ -277,6 +279,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
                         blocks=normalize_legacy_blocks(data.get("content_json", []), sync_id),
                         stickers=data.get('stickers', []),
                         dictionary=data.get('dictionary', []),
+                        dictionary_tags=data.get('dictionary_tags', []),
                         math_symbols=data.get('math_symbols', []),
                         is_pinned=data.get("is_pinned", False),
                         sticker_text=data.get("sticker_text"),
@@ -288,6 +291,7 @@ class NotesService(HistoryService, CategoryService, ConnectionService, SharingSe
                         content_json=[b.model_dump() for b in validated.blocks],
                         stickers=[s.model_dump(mode='json') for s in validated.stickers],
                         dictionary=[w.model_dump() for w in validated.dictionary],
+                        dictionary_tags=[w.model_dump() for w in validated.dictionary_tags],
                         math_symbols=[s.model_dump() for s in validated.math_symbols],
                         is_pinned=validated.is_pinned,
                         is_example=True,

@@ -48,6 +48,37 @@ def test_no_json_raises():
 from fastapi_app.services.sanitizer import sanitize_on_write, sanitize_block_html
 
 
+def test_saved_chat_payload_survives_write_sanitization():
+    import html
+    import json
+    from html.parser import HTMLParser
+
+    data = {"version": 1, "fragment": "Матрица <Q>", "calculation": False, "turns": [
+        {"question": "Почему?", "answer": 'Ответ: $q_1$. <img src=x onerror="alert(1)">',
+         "sources": [{"block_id": "b1", "note_id": "12", "title": "Источник", "text": "Фрагмент"}]}]}
+    encoded = html.escape(json.dumps(data, ensure_ascii=False), quote=True)
+    source = (f'<p>Матрица <span data-type="concept-chat" data-chat="{encoded}" '
+              'class="concept-chat-marker" role="button" tabindex="0" aria-label="Чат" '
+              'aria-haspopup="dialog" title="Чат" onclick="alert(1)">💬</span> и текст.</p>')
+    cleaned = sanitize_on_write(source)
+
+    class Reader(HTMLParser):
+        attrs = None
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'span':
+                self.attrs = dict(attrs)
+
+    reader = Reader()
+    reader.feed(cleaned)
+    assert json.loads(reader.attrs['data-chat']) == data
+    assert reader.attrs['role'] == 'button'
+    assert reader.attrs['tabindex'] == '0'
+    assert reader.attrs['aria-haspopup'] == 'dialog'
+    assert 'onclick' not in reader.attrs
+    assert 'data-chat' not in sanitize_block_html(source)
+
+
 @pytest.mark.parametrize("html,must_keep", [
     ("<p><strong>ж</strong><em>к</em><u>п</u><s>з</s><code>c</code></p>",
      ["<strong>", "<em>", "<u>", "<s>", "<code>"]),

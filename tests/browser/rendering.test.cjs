@@ -28,6 +28,9 @@ test('isolated renderer security regressions', async t => {
         await page.addScriptTag({content: source('BlockHistoryControls')});
         await page.addScriptTag({content: source('BlockTableControls')});
         await page.addScriptTag({content: source('NoteText')});
+        await page.addScriptTag({content: source('SavedConceptChat')});
+        await page.addScriptTag({content: source('CalculationFolds')});
+        await page.addScriptTag({content: source('BlockReadingView')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
         await t.test('long right block can be read in the center and returned without changing note data', async () => {
             await page.addStyleTag({path: path.resolve(__dirname, '../../fastapi_app/static/css/blocks.css')});
@@ -213,6 +216,8 @@ test('isolated renderer security regressions', async t => {
         await page.addScriptTag({content: source('MathSymbols')});
         await page.addScriptTag({content: source('FormulaZoom')});
         await page.addScriptTag({content: source('MathComputedValues')});
+        await page.addScriptTag({content: source('MathExpression')});
+        await page.addScriptTag({content: source('MathProvenance')});
         await page.addScriptTag({content: source('MathSubstitutions')});
         await page.addScriptTag({content: source('BlockMathRenderer')});
         await t.test('AI math renders with delimiters and recovers screenshot equations without changing code', async () => {

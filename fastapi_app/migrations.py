@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 from fastapi_app.config import settings
 from fastapi_app.services.block_contract import normalize_legacy_blocks
 
-VERSION = 8
+VERSION = 9
 
 
 def _validate(connection, metadata, version=VERSION):
@@ -41,6 +41,8 @@ def _validate(connection, metadata, version=VERSION):
             required -= {'translations', 'library_slug'}
         if version < 8 and table.name in {'notes', 'note_versions'}:
             required -= {'math_symbols'}
+        if version < 9 and table.name in {'notes', 'note_versions'}:
+            required -= {'dictionary_tags'}
         if legacy and table.name == 'notes':
             required -= {'revision', 'schema_version', 'is_example', 'share_token'}
         if required - columns:
@@ -188,6 +190,23 @@ def _migrate(connection):
             columns = {c['name'] for c in inspect(connection).get_columns(table)}
             if 'math_symbols' not in columns:
                 connection.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN math_symbols JSON NOT NULL DEFAULT '[]'")
+    if version < 9:
+        from fastapi_app.services.dictionary_tags import categorize_dictionary
+        for table in ('notes', 'note_versions'):
+            columns = {c['name'] for c in inspect(connection).get_columns(table)}
+            if 'dictionary_tags' not in columns:
+                connection.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN dictionary_tags JSON NOT NULL DEFAULT '[]'")
+        for row in connection.exec_driver_sql('SELECT id, dictionary, dictionary_tags, translations FROM notes').all():
+            words, tags = categorize_dictionary(json.loads(row[1] or '[]'), json.loads(row[2] or '[]'))
+            translations = json.loads(row[3] or '{}')
+            for locale, document in translations.items():
+                if 'dictionary' not in document:
+                    continue
+                document['dictionary'], document['dictionary_tags'] = categorize_dictionary(
+                    document.get('dictionary', []), document.get('dictionary_tags', []), locale)
+            connection.exec_driver_sql('UPDATE notes SET dictionary=?, dictionary_tags=?, translations=? WHERE id=?',
+                                      (json.dumps(words, ensure_ascii=False), json.dumps(tags, ensure_ascii=False),
+                                       json.dumps(translations, ensure_ascii=False), row[0]))
     connection.exec_driver_sql(f'PRAGMA user_version={VERSION}')
     _validate(connection, Base.metadata)
 

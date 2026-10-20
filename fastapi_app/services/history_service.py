@@ -8,6 +8,16 @@ from fastapi_app.schemas.notes import NoteVersionCreate
 from fastapi_app.services.note_transactions import get_note, commit, require_revision
 from fastapi_app.services.security_store import register_share, remove_share
 
+VERSION_CONTENT_FIELDS = (
+    'note_notice', 'content_json', 'stickers', 'dictionary', 'dictionary_tags', 'math_symbols',
+)
+
+
+def version_content(document):
+    """Content only: identity, publication and checkpoint titles stay with callers."""
+    return {field: getattr(document, field) for field in VERSION_CONTENT_FIELDS}
+
+
 class HistoryService:
     @staticmethod
     async def create_checkpoint(session: AsyncSession, note_id: int, title: str, is_manual: bool = True):
@@ -23,11 +33,7 @@ class HistoryService:
         new_version = NoteVersion(
             note_id=note.id,
             title=title,
-            note_notice=note.note_notice,
-            content_json=note.content_json,
-            stickers=note.stickers,
-            dictionary=note.dictionary,
-            math_symbols=note.math_symbols,
+            **version_content(note),
             is_manual=is_manual
         )
         session.add(new_version)
@@ -65,11 +71,7 @@ class HistoryService:
         new_v = NoteVersion(
             note_id=note.id,
             title=data.title,
-            note_notice=note.note_notice,
-            content_json=note.content_json,
-            stickers=note.stickers,
-            dictionary=note.dictionary,
-            math_symbols=note.math_symbols,
+            **version_content(note),
             is_manual=data.is_manual
         )
         session.add(new_v)
@@ -91,29 +93,20 @@ class HistoryService:
             raise HTTPException(status_code=404, detail="Version not found")
 
         # Restoring identical content is a no-op, not another backup of itself.
-        if (note.content_json == version.content_json and note.note_notice == version.note_notice
-                and note.stickers == version.stickers
-                and note.dictionary == version.dictionary and note.math_symbols == version.math_symbols):
+        if version_content(note) == version_content(version):
             return note
 
         # Create safety backup
         safety_v = NoteVersion(
             note_id=note.id,
             title=f"Перед восстановлением: {version.title}",
-            note_notice=note.note_notice,
-            content_json=note.content_json,
-            stickers=note.stickers,
-            dictionary=note.dictionary,
-            math_symbols=note.math_symbols,
+            **version_content(note),
             is_manual=True
         )
         session.add(safety_v)
 
-        note.content_json = version.content_json
-        note.note_notice = version.note_notice
-        note.stickers = version.stickers
-        note.dictionary = version.dictionary
-        note.math_symbols = version.math_symbols
+        for field, value in version_content(version).items():
+            setattr(note, field, value)
         await commit(session)
         await session.refresh(note)
         return note

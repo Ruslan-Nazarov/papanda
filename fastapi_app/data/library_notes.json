@@ -3726,37 +3726,64 @@
               "word": "ЭКГ",
               "definition": "метод исследования работы сердца, основанный на регистрации его электрической активности. Во время работы сердца электрические процессы создают небольшую разность потенциалов между различными участками поверхности тела. Электрокардиограф измеряет изменения этой разности во времени и записывает их в виде графика — электрокардиограммы. По электрокардиограмме можно определить частоту и ритм сердечных сокращений, выявить нарушения электрической проводимости сердца и признаки некоторых сердечных заболеваний.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Одноканальный электрокардиограф (ЭКГ)",
               "definition": "прибор, который измеряет изменение разности электрических потенциалов между двумя точками тела и регистрирует его в виде электрокардиограммы по одному измерительному каналу. Он позволяет оценивать частоту и ритм сердечных сокращений, а также выявлять некоторые нарушения работы сердца.",
               "connections": "ЭКГ",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Аналого-цифровой преобразователь (АЦП)",
               "definition": "электронное устройство, которое через определённые промежутки времени измеряет электрическое напряжение, определяет, какому из доступных уровней оно соответствует, и записывает результат в виде двоичного числа для последующей обработки и сохранения.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Тренировочный стенд (ТС)",
               "definition": "лабораторная система, на которой с помощью искусственно воспроизводимого ЭКГ-сигнала собирают, настраивают и проверяют работу электрокардиографа, сравнивая результаты измерений с заранее известными характеристиками сигнала без подключения прибора к человеку.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Микроконтроллер",
               "definition": "небольшое электронное устройство, которое выполняет записанную в его памяти программу, получает данные от подключённых компонентов, обрабатывает их и управляет их работой; в нашем ЭКГ микроконтроллер управляет АЦП, принимает результаты измерений и организует их сохранение и передачу.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             }
           ],
           "status": "none",
           "is_pinned": false,
           "sticker_text": null,
-          "sticker_color": "#fff9c4"
+          "sticker_color": "#fff9c4",
+          "dictionary_tags": [
+            {
+              "id": "ecg",
+              "name": "ЭКГ и физиология",
+              "color": "#dc2626"
+            },
+            {
+              "id": "electronics",
+              "name": "Электроника",
+              "color": "#0284c7"
+            }
+          ]
         },
         "en": {
           "title": "How to Build a Single-Channel ECG Device? (Draft)",
@@ -7600,37 +7627,69 @@
               "word": "ECG",
               "definition": "a method of examining heart function based on recording its electrical activity. As the heart functions, electrical processes create a small potential difference between different areas of the body's surface. An electrocardiograph measures changes in this difference over time and records them as a graph—an electrocardiogram. An electrocardiogram can be used to determine the rate and rhythm of heart contractions, identify disturbances in the heart's electrical conduction, and detect signs of some heart diseases.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Single-channel electrocardiograph (ECG)",
               "definition": "a device that measures the change in electric potential difference between two points on the body and records it as an electrocardiogram through a single measurement channel. It allows the rate and rhythm of heart contractions to be assessed and some disturbances in heart function to be identified.",
               "connections": "ECG",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Analog-to-digital converter (ADC)",
               "definition": "an electronic device that measures electrical voltage at specified time intervals, determines which of the available levels it corresponds to, and records the result as a binary number for subsequent processing and storage.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Training test bench (TTB)",
               "definition": "a laboratory system on which an artificially reproduced ECG signal is used to assemble, configure, and test an electrocardiograph, comparing the measurement results with known signal characteristics without connecting the device to a person.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "training"
+              ]
             },
             {
               "word": "Microcontroller",
               "definition": "a small electronic device that executes a program stored in its memory, receives data from connected components, processes the data, and controls the components' operation; in our ECG device, the microcontroller controls the ADC, receives measurement results, and organizes their storage and transmission.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             }
           ],
           "status": "none",
           "is_pinned": false,
           "sticker_text": null,
-          "sticker_color": "#fff9c4"
+          "sticker_color": "#fff9c4",
+          "dictionary_tags": [
+            {
+              "id": "ecg",
+              "name": "ECG and physiology",
+              "color": "#dc2626"
+            },
+            {
+              "id": "electronics",
+              "name": "Electronics",
+              "color": "#0284c7"
+            },
+            {
+              "id": "training",
+              "name": "Neural network training",
+              "color": "#d97706"
+            }
+          ]
         }
       },
       "legacy_links": {
@@ -9085,25 +9144,37 @@
               "word": "Электрическая активность сердца",
               "definition": "совокупность электрических процессов в клетках сердца, которые обеспечивают возникновение и распространение возбуждения сердечной мышцы.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Сердечный ритм",
               "definition": "последовательность сердечных сокращений, характеризующаяся их частотой и регулярностью.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Ион",
               "definition": "атом или группа атомов, имеющие положительный либо отрицательный электрический заряд из-за потери или присоединения электронов.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Электрический потенциал",
               "definition": "величина, показывающая потенциальную энергию электрического заряда в определённой точке, приходящуюся на единицу заряда.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Разность электрических потенциалов",
@@ -9112,25 +9183,37 @@
               "connection_explanations": {
                 "Входное сопротивление": "входное сопротивление влияет на то, насколько измеренная разность потенциалов соответствует существовавшей до подключения прибора.",
                 "Дифференциальное измерение": "Разность электрических потенциалов — величина, которую мы хотим определить между двумя точками. Дифференциальное измерение — способ её определения, при котором устройство непосредственно измеряет разность напряжений на двух входах. Дифференциальное измерение позволяет определить разность электрических потенциалов между двумя точками. В нашем электрокардиографе именно изменение этой разности между выбранными электродами используется для получения ЭКГ-сигнала."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Волна возбуждения",
               "definition": "процесс последовательного распространения изменения электрического состояния от одних клеток сердечной мышцы к другим.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Отведение ЭКГ",
               "definition": "способ регистрации электрической активности сердца, при котором измеряется изменение разности потенциалов между определёнными точками тела.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Электрод",
               "definition": "проводящий элемент, обеспечивающий электрический контакт между поверхностью тела и измерительным устройством.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Период",
@@ -9139,7 +9222,10 @@
               "connection_explanations": {
                 "Частота дискретизации": "Частота дискретизации определяет, через какой период времени выполняются последовательные измерения сигнала. При частоте 500 Гц этот период составляет 1/500 секунды, или 2 миллисекунды. Его не следует путать с периодом повторения сердечных циклов.",
                 "Интервал R–R": "интервал R–R показывает продолжительность между последовательными повторениями характерного электрического события сердечного цикла. При постоянной длительности интервалов он соответствует периоду повторения этих событий."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Частота дискретизации",
@@ -9147,7 +9233,10 @@
               "connections": "Период",
               "connection_explanations": {
                 "Период": "Частота дискретизации определяет, через какой период времени выполняются последовательные измерения сигнала. При частоте 500 Гц этот период составляет 1/500 секунды, или 2 миллисекунды. Его не следует путать с периодом повторения сердечных циклов."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Дифференциальное измерение",
@@ -9155,7 +9244,10 @@
               "connections": "Разность электрических потенциалов",
               "connection_explanations": {
                 "Разность электрических потенциалов": "Разность электрических потенциалов — величина, которую мы хотим определить между двумя точками. Дифференциальное измерение — способ её определения, при котором устройство непосредственно измеряет разность напряжений на двух входах. Дифференциальное измерение позволяет определить разность электрических потенциалов между двумя точками. В нашем электрокардиографе именно изменение этой разности между выбранными электродами используется для получения ЭКГ-сигнала."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Микроконтроллер",
@@ -9173,7 +9265,10 @@
                 "API (Application Programming Interface)": "программа микроконтроллера ESP32-S3 может обращаться к API сервера через Wi-Fi. В этом случае микроконтроллер передаёт данные, а API определяет, как принимающая система должна обработать запрос.",
                 "Стабилизатор напряжения": "стабилизатор обеспечивает необходимые электрические условия для работы микроконтроллера. Сам микроконтроллер выполняет программу, а стабилизатор поддерживает его питание.",
                 "Цифровой фильтр": "программа микроконтроллера может выполнять вычисления цифрового фильтра. В нашем проекте такую обработку можно первоначально выполнять и на компьютере после получения данных."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Аналого-цифровой преобразователь (АЦП)",
@@ -9183,7 +9278,10 @@
                 "Микроконтроллер": "АЦП преобразует измеряемое напряжение в число, а микроконтроллер получает это число и выполняет с ним действия, предусмотренные программой.",
                 "SPI (Serial Peripheral Interface)": "АЦП преобразует электрическое напряжение в число, а SPI позволяет передать это число микроконтроллеру.",
                 "Цифровой фильтр": "АЦП преобразует электрическое напряжение в последовательность чисел, а цифровой фильтр обрабатывает эту последовательность, чтобы уменьшить влияние помех."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "SPI (Serial Peripheral Interface)",
@@ -9192,7 +9290,10 @@
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер использует SPI, чтобы отправлять команды измерительной микросхеме и получать результаты её работы.",
                 "Аналого-цифровой преобразователь (АЦП)": "АЦП преобразует электрическое напряжение в число, а SPI позволяет передать это число микроконтроллеру."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Плата разработки",
@@ -9200,7 +9301,10 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер выполняет программу, а плата разработки создаёт условия для его работы и взаимодействия с другими компонентами."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Прошивка",
@@ -9208,7 +9312,10 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер является устройством, выполняющим команды, а прошивка определяет последовательность этих команд. Изменяя прошивку, можно изменять поведение микроконтроллера без изменения его электронной схемы."
-              }
+              },
+              "tags": [
+                "software"
+              ]
             },
             {
               "word": "Регистр",
@@ -9216,7 +9323,10 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер выполняет программу, которая через SPI читает и изменяет содержимое регистров ADS1291. Благодаря этому программа может управлять работой измерительной микросхемы."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Печатная плата",
@@ -9224,7 +9334,10 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер ESP32-S3 уже установлен на готовой плате разработки. Для ADS1291 мы создаём отдельную плату, чтобы её можно было подключить к микроконтроллеру и обеспечить необходимые условия для работы."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Буфер данных",
@@ -9233,13 +9346,20 @@
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер помещает полученные от ADS1291 значения в буфер, чтобы временные задержки передачи на компьютер не мешали своевременно принимать новые измерения.",
                 "Энергонезависимая память": "буфер временно удерживает поступающие результаты измерений, а энергонезависимая память позволяет сохранять их для последующего использования."
-              }
+              },
+              "tags": [
+                "software"
+              ]
             },
             {
               "word": "Артефакт ЭКГ",
               "definition": "изменение на кардиограмме, вызванное не электрической активностью сердца, а условиями регистрации или обработки сигнала. Например, смещение графика из-за движения электрода.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg",
+                "signals"
+              ]
             },
             {
               "word": "Цифровой фильтр",
@@ -9248,7 +9368,10 @@
               "connection_explanations": {
                 "Аналого-цифровой преобразователь (АЦП)": "АЦП преобразует электрическое напряжение в последовательность чисел, а цифровой фильтр обрабатывает эту последовательность, чтобы уменьшить влияние помех.",
                 "Микроконтроллер": "программа микроконтроллера может выполнять вычисления цифрового фильтра. В нашем проекте такую обработку можно первоначально выполнять и на компьютере после получения данных."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Гальваническая развязка",
@@ -9256,7 +9379,10 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "микроконтроллер может обмениваться цифровыми данными с устройством, находящимся по другую сторону изоляционного барьера, через специально предназначенный для этого интерфейс."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Входное сопротивление",
@@ -9264,7 +9390,10 @@
               "connections": "Разность электрических потенциалов",
               "connection_explanations": {
                 "Разность электрических потенциалов": "входное сопротивление влияет на то, насколько измеренная разность потенциалов соответствует существовавшей до подключения прибора."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Интервал R–R",
@@ -9272,7 +9401,10 @@
               "connections": "Период",
               "connection_explanations": {
                 "Период": "интервал R–R показывает продолжительность между последовательными повторениями характерного электрического события сердечного цикла. При постоянной длительности интервалов он соответствует периоду повторения этих событий."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Энергонезависимая память",
@@ -9280,7 +9412,10 @@
               "connections": "Буфер данных",
               "connection_explanations": {
                 "Буфер данных": "буфер временно удерживает поступающие результаты измерений, а энергонезависимая память позволяет сохранять их для последующего использования."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "API (Application Programming Interface)",
@@ -9288,7 +9423,10 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "программа микроконтроллера ESP32-S3 может обращаться к API сервера через Wi-Fi. В этом случае микроконтроллер передаёт данные, а API определяет, как принимающая система должна обработать запрос."
-              }
+              },
+              "tags": [
+                "software"
+              ]
             },
             {
               "word": "Стабилизатор напряжения",
@@ -9296,19 +9434,47 @@
               "connections": "Микроконтроллер",
               "connection_explanations": {
                 "Микроконтроллер": "стабилизатор обеспечивает необходимые электрические условия для работы микроконтроллера. Сам микроконтроллер выполняет программу, а стабилизатор поддерживает его питание."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Погрешность измерения",
               "definition": "различие между значением величины, полученным измерительным устройством, и её опорным значением, принимаемым для сравнения.\n\nНапример, если источник задаёт напряжение 1,00 мВ, а прибор показывает 0,98 мВ, погрешность составляет −0,02 мВ, или −2% от заданного значения.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "signals"
+              ]
             }
           ],
           "status": "none",
           "is_pinned": false,
           "sticker_text": null,
-          "sticker_color": "#fff9c4"
+          "sticker_color": "#fff9c4",
+          "dictionary_tags": [
+            {
+              "id": "ecg",
+              "name": "ЭКГ и физиология",
+              "color": "#dc2626"
+            },
+            {
+              "id": "signals",
+              "name": "Измерения и сигналы",
+              "color": "#0d9488"
+            },
+            {
+              "id": "electronics",
+              "name": "Электроника",
+              "color": "#0284c7"
+            },
+            {
+              "id": "software",
+              "name": "Программирование и данные",
+              "color": "#4f46e5"
+            }
+          ]
         },
         "en": {
           "title": "How to Build a Single-Channel ECG Device",
@@ -10774,25 +10940,37 @@
               "word": "Electrical activity of the heart",
               "definition": "the set of electrical processes in heart cells that generate and propagate excitation of the heart muscle.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Heart rhythm",
               "definition": "a sequence of heart contractions characterized by their frequency and regularity.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Ion",
               "definition": "an atom or group of atoms with a positive or negative electric charge due to the loss or gain of electrons.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Electric potential",
               "definition": "a quantity indicating the potential energy of an electric charge at a given point per unit of charge.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Electric potential difference",
@@ -10801,25 +10979,35 @@
               "connection_explanations": {
                 "Input impedance": "input impedance affects how closely the measured potential difference corresponds to the potential difference that existed before the instrument was connected.",
                 "Differential measurement": "Electric potential difference is the quantity we want to determine between two points. Differential measurement is a method of determining it in which the device directly measures the voltage difference between two inputs. Differential measurement makes it possible to determine the electric potential difference between two points. In our electrocardiograph, it is the change in this difference between the selected electrodes that is used to obtain the ECG signal."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Wave of excitation",
               "definition": "the process by which a change in electrical state propagates sequentially from one group of heart muscle cells to another.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": []
             },
             {
               "word": "ECG lead",
               "definition": "a method of recording the electrical activity of the heart by measuring the change in potential difference between specific points on the body.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg"
+              ]
             },
             {
               "word": "Electrode",
               "definition": "a conductive element that provides electrical contact between the body surface and a measuring device.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Period",
@@ -10828,7 +11016,10 @@
               "connection_explanations": {
                 "Sampling rate": "The sampling rate determines the time interval between successive signal measurements. At a rate of 500 Hz, this interval is 1/500 of a second, or 2 milliseconds. It should not be confused with the repetition period of cardiac cycles.",
                 "R–R interval": "the R–R interval indicates the time between successive occurrences of a characteristic electrical event in the cardiac cycle. When the intervals have a constant duration, it corresponds to the repetition period of these events."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Sampling rate",
@@ -10836,7 +11027,10 @@
               "connections": "Period",
               "connection_explanations": {
                 "Period": "The sampling rate determines the time interval between successive signal measurements. At a rate of 500 Hz, this interval is 1/500 of a second, or 2 milliseconds. It should not be confused with the repetition period of cardiac cycles."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Differential measurement",
@@ -10844,7 +11038,10 @@
               "connections": "Electric potential difference",
               "connection_explanations": {
                 "Electric potential difference": "Electric potential difference is the quantity we want to determine between two points. Differential measurement is a method of determining it in which the device directly measures the voltage difference between two inputs. Differential measurement makes it possible to determine the electric potential difference between two points. In our electrocardiograph, it is the change in this difference between the selected electrodes that is used to obtain the ECG signal."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Microcontroller",
@@ -10862,7 +11059,10 @@
                 "API (Application Programming Interface)": "the program running on the ESP32-S3 microcontroller can access the server's API via Wi-Fi. In this case, the microcontroller transmits data, while the API defines how the receiving system should process the request.",
                 "Voltage regulator": "the voltage regulator provides the electrical conditions necessary for the microcontroller to operate. The microcontroller itself executes the program, while the voltage regulator maintains its power supply.",
                 "Digital filter": "the microcontroller's program can perform digital filter calculations. In our project, this processing can initially also be performed on the computer after the data is received."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Analog-to-digital converter (ADC)",
@@ -10872,7 +11072,10 @@
                 "Microcontroller": "the ADC converts the measured voltage into a number, and the microcontroller receives this number and performs the actions specified by the program.",
                 "SPI (Serial Peripheral Interface)": "the ADC converts electrical voltage into a number, while SPI allows this number to be transmitted to the microcontroller.",
                 "Digital filter": "the ADC converts electrical voltage into a sequence of numbers, while the digital filter processes this sequence to reduce the influence of interference."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "SPI (Serial Peripheral Interface)",
@@ -10881,7 +11084,10 @@
               "connection_explanations": {
                 "Microcontroller": "the microcontroller uses SPI to send commands to the measurement integrated circuit and receive the results of its operation.",
                 "Analog-to-digital converter (ADC)": "the ADC converts electrical voltage into a number, while SPI allows this number to be transmitted to the microcontroller."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Development board",
@@ -10889,7 +11095,10 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the microcontroller executes the program, while the development board provides the conditions for its operation and interaction with other components."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Firmware",
@@ -10897,7 +11106,10 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the microcontroller is a device that executes commands, while the firmware determines the sequence of these commands. Changing the firmware allows the behavior of the microcontroller to be changed without changing its electronic circuit."
-              }
+              },
+              "tags": [
+                "software"
+              ]
             },
             {
               "word": "Register",
@@ -10905,7 +11117,10 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the microcontroller executes a program that reads and changes the contents of the ADS1291 registers via SPI. This enables the program to control the operation of the measurement integrated circuit."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Printed circuit board",
@@ -10913,7 +11128,10 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the ESP32-S3 microcontroller is already installed on a ready-made development board. We are creating a separate board for the ADS1291 so that it can be connected to the microcontroller and provided with the necessary operating conditions."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Data buffer",
@@ -10922,13 +11140,20 @@
               "connection_explanations": {
                 "Microcontroller": "the microcontroller places the values received from the ADS1291 in a buffer so that delays in transmission to the computer do not interfere with the timely reception of new measurements.",
                 "Nonvolatile memory": "the buffer temporarily holds incoming measurement results, while nonvolatile memory allows them to be saved for later use."
-              }
+              },
+              "tags": [
+                "software"
+              ]
             },
             {
               "word": "ECG artifact",
               "definition": "a change in the cardiogram caused not by the electrical activity of the heart, but by the conditions of signal recording or processing. For example, a shift in the graph due to electrode movement.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "ecg",
+                "signals"
+              ]
             },
             {
               "word": "Digital filter",
@@ -10937,7 +11162,10 @@
               "connection_explanations": {
                 "Analog-to-digital converter (ADC)": "the ADC converts electrical voltage into a sequence of numbers, while the digital filter processes this sequence to reduce the influence of interference.",
                 "Microcontroller": "the microcontroller's program can perform digital filter calculations. In our project, this processing can initially also be performed on the computer after the data is received."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Galvanic isolation",
@@ -10945,7 +11173,10 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the microcontroller can exchange digital data with a device on the other side of an isolation barrier through an interface specifically designed for this purpose."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Input impedance",
@@ -10953,7 +11184,10 @@
               "connections": "Electric potential difference",
               "connection_explanations": {
                 "Electric potential difference": "input impedance affects how closely the measured potential difference corresponds to the potential difference that existed before the instrument was connected."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "R–R interval",
@@ -10961,7 +11195,10 @@
               "connections": "Period",
               "connection_explanations": {
                 "Period": "the R–R interval indicates the time between successive occurrences of a characteristic electrical event in the cardiac cycle. When the intervals have a constant duration, it corresponds to the repetition period of these events."
-              }
+              },
+              "tags": [
+                "signals"
+              ]
             },
             {
               "word": "Nonvolatile memory",
@@ -10969,7 +11206,10 @@
               "connections": "Data buffer",
               "connection_explanations": {
                 "Data buffer": "the buffer temporarily holds incoming measurement results, while nonvolatile memory allows them to be saved for later use."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "API (Application Programming Interface)",
@@ -10977,7 +11217,10 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the program running on the ESP32-S3 microcontroller can access the server's API via Wi-Fi. In this case, the microcontroller transmits data, while the API defines how the receiving system should process the request."
-              }
+              },
+              "tags": [
+                "software"
+              ]
             },
             {
               "word": "Voltage regulator",
@@ -10985,19 +11228,47 @@
               "connections": "Microcontroller",
               "connection_explanations": {
                 "Microcontroller": "the voltage regulator provides the electrical conditions necessary for the microcontroller to operate. The microcontroller itself executes the program, while the voltage regulator maintains its power supply."
-              }
+              },
+              "tags": [
+                "electronics"
+              ]
             },
             {
               "word": "Measurement error",
               "definition": "the difference between the value of a quantity obtained by a measuring device and its reference value used for comparison.\n\nFor example, if a source supplies a voltage of 1.00 mV and the instrument reads 0.98 mV, the measurement error is −0.02 mV, or −2% of the set value.",
               "connections": "",
-              "connection_explanations": {}
+              "connection_explanations": {},
+              "tags": [
+                "signals"
+              ]
             }
           ],
           "status": "none",
           "is_pinned": false,
           "sticker_text": null,
-          "sticker_color": "#fff9c4"
+          "sticker_color": "#fff9c4",
+          "dictionary_tags": [
+            {
+              "id": "ecg",
+              "name": "ECG and physiology",
+              "color": "#dc2626"
+            },
+            {
+              "id": "signals",
+              "name": "Measurements and signals",
+              "color": "#0d9488"
+            },
+            {
+              "id": "electronics",
+              "name": "Electronics",
+              "color": "#0284c7"
+            },
+            {
+              "id": "software",
+              "name": "Programming and data",
+              "color": "#4f46e5"
+            }
+          ]
         }
       },
       "legacy_links": {

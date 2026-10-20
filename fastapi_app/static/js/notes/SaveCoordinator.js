@@ -2,6 +2,7 @@ import AppState from './AppState.js';
 import NotesAPI from './api.js';
 import BlockDOMParser from './BlockDOMParser.js';
 import NoteLocation from './NoteLocation.js';
+import NoteDocument from './NoteDocument.js';
 
 class SaveCoordinator {
     static _jobs = new WeakMap();
@@ -18,11 +19,7 @@ class SaveCoordinator {
 
     static _payload(note) {
         // Snapshot nested blocks as well: later editor mutations cannot change a request.
-        return JSON.parse(JSON.stringify({title: note.title || '', note_notice: note.note_notice || '', blocks: note.blocks || [],
-            stickers: note.stickers || [],
-            dictionary: note.dictionary || [],
-            math_symbols: note.math_symbols || [],
-            category_id: note.category_id ?? null, status: note.status || 'in_progress'}));
+        return NoteDocument.payload(note);
     }
 
     static saveCurrentNote() {

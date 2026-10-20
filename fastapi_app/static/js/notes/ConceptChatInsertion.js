@@ -1,8 +1,8 @@
 import PasteMathTransformer from './PasteMathTransformer.js';
 
 // Reading decorations must not affect positions in the saved, editable HTML.
-const DECORATIONS = '.hp-arrow, .hp-content, .math-expand-button, .math-calculation-button';
-const ATOMS = '.math-inline, .katex-display, .katex, img, br';
+const DECORATIONS = '.hp-arrow, .hp-content, .math-expand-button, .math-calculation-button, .calculation-fold-toggle, .calculation-fold-all';
+const ATOMS = '.math-inline, .katex-display, .katex, img, br, span[data-type="concept-chat"]';
 
 class ConceptChatInsertion {
     static parts(root) {
@@ -72,6 +72,10 @@ class ConceptChatInsertion {
             else if (remaining) range.setStartAfter(part.node);
             else range.setStartBefore(part.node);
             range.collapse(true);
+            if (chat.matches('span[data-type="concept-chat"]')) {
+                range.insertNode(chat);
+                return root.innerHTML;
+            }
             // Split only the enclosing text block. Lists, table cells and
             // callouts keep their structure, and the selected words stay intact.
             const element = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;

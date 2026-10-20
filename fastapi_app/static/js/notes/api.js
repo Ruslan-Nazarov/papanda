@@ -77,7 +77,7 @@ class NotesAPI {
         });
         if (!res.ok || !res.body) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || `HTTP Error ${res.status}`);
+            throw Object.assign(new Error(typeof err.detail === 'string' ? err.detail : `HTTP Error ${res.status}`), {status: res.status});
         }
         const reader = res.body.getReader();
         const decoder = new TextDecoder();

@@ -28,6 +28,9 @@ test('mouse click preserves a block selection and opens a quoted sticker with co
         await page.addScriptTag({content: source('BlockHistoryControls')});
         await page.addScriptTag({content: source('BlockTableControls')});
         await page.addScriptTag({content: source('NoteText')});
+        await page.addScriptTag({content: source('SavedConceptChat')});
+        await page.addScriptTag({content: source('CalculationFolds')});
+        await page.addScriptTag({content: source('BlockReadingView')});
         await page.addScriptTag({content: source('BlockNormalBuilder')});
         await page.addStyleTag({path: path.resolve(__dirname, '../../fastapi_app/static/css/components.css')});
         await page.addStyleTag({content: 'body {font: 16px sans-serif; padding: 24px;} .dialectics-block {width: 550px;}'});

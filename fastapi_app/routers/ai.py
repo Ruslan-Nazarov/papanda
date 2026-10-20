@@ -11,6 +11,7 @@ import aiofiles.os
 
 from fastapi_app.services.import_service import read_upload
 from fastapi_app.services.request_document import extract_request_document, MAX_DOCUMENT_BYTES
+from fastapi_app.services.article_exposition import prepare_article
 from fastapi_app.schemas.notes import RequestDocument, MathSymbol, MathNumberDefinition
 from fastapi_app.schemas.math_suggestions import MathDefinitionRequest, MathDefinitionSuggestion
 from fastapi_app.services.math_suggestions import parse_suggestion
@@ -69,6 +70,21 @@ class ExplainRequest(BaseModel):
     history: Optional[List[dict]] = Field(default=[], max_length=30)
     question: str = Field(default="", max_length=2_000)
     note_passages: List[NotePassage] = Field(default_factory=list, max_length=5)
+
+
+class ArticleExpositionRequest(BaseModel):
+    url: str = Field(default='', max_length=2000)
+    title: str = Field(default='', max_length=1000)
+    quote: str = Field(default='', max_length=100_000)
+    selection: str = Field(default='', max_length=500)
+    note_title: str = Field(default='', max_length=255)
+    block_title: str = Field(default='', max_length=500)
+
+    @model_validator(mode='after')
+    def require_content(self):
+        if not self.url.strip() and not self.quote.strip():
+            raise ValueError('A source URL or excerpt is required')
+        return self
 
 
 class CalculationRequest(BaseModel):
@@ -181,6 +197,23 @@ async def explain_concept_stream(request: Request, data: ExplainRequest):
         question=data.question,
         note_passages=[passage.model_dump(exclude_unset=True) for passage in data.note_passages],
     ))
+
+@router.post('/explain-article/stream')
+@limiter.limit('10/minute')
+async def explain_article_stream(request: Request, data: ArticleExpositionRequest):
+    await reserve_generation(request)
+    article = await until_disconnect(request, prepare_article(data))
+    locale = normalize_locale(getattr(request.state, 'locale', 'ru'))
+
+    async def events():
+        yield {'status': 'article_loaded', 'source_scope': article['scope'], 'selection': article['selection']}
+        async with aclosing(ai_service.explain_article_stream(article, locale=locale)) as stream:
+            async for delta in stream:
+                if delta:
+                    yield {'delta': delta}
+
+    return _sse_response(events())
+
 
 @router.post('/explain-calculation/stream')
 @limiter.limit('10/minute')

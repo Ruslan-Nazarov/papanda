@@ -9,7 +9,7 @@ import BlockMetaModalService from './BlockMetaModalService.js';
 import { renderStreamMarkdown } from './ConceptExplainManager.js';
 import StreamMarkdownRenderer from './StreamMarkdownRenderer.js';
 import ConceptChatInsertion from './ConceptChatInsertion.js';
-import PasteMathTransformer from './PasteMathTransformer.js';
+import SavedConceptChat from './SavedConceptChat.js';
 import BlockDOMRenderer from './BlockDOMRenderer.js';
 import BlockMathRenderer from './BlockMathRenderer.js';
 import { t } from '../i18n.js';
@@ -21,6 +21,15 @@ import { t } from '../i18n.js';
 class ConceptSelectionMenu {
     static init() {
         this._btn = null;
+        const openSaved = event => {
+            const marker = event.target.closest?.(SavedConceptChat.selector);
+            if (!marker || (event.type === 'keydown' && !['Enter', ' '].includes(event.key))) return;
+            event.preventDefault();
+            event.stopPropagation();
+            this.openSaved(marker);
+        };
+        document.addEventListener('click', openSaved, true);
+        document.addEventListener('keydown', openSaved, true);
         document.addEventListener('mouseup', (e) => this._onMouseUp(e));
         document.addEventListener('selectionchange', () => {
             const sel = window.getSelection();
@@ -77,15 +86,16 @@ class ConceptSelectionMenu {
         if (this._btn) { this._btn.remove(); this._btn = null; }
     }
 
-    static _modal(fragment, calculation = false) {
+    static _modal(fragment, calculation = false, {saved = false} = {}) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay concept-explain-modal' + (calculation ? ' calculation-explain-modal' : '');
+        if (saved) overlay.classList.add('saved-concept-chat-modal');
         overlay.style.zIndex = '3100';
         overlay.innerHTML = `
-            <div class="modal-dialog" style="max-width:${calculation ? 820 : 560}px;width:92%;" role="dialog" aria-modal="true" aria-label="${t(calculation ? 'calculation_title' : 'whatis_title')}">
+            <div class="modal-dialog" style="max-width:${calculation || saved ? 820 : 560}px;width:92%;" role="dialog" aria-modal="true" aria-label="${t(calculation ? 'calculation_title' : 'whatis_title')}">
                 <div class="modal-dialog-header">
                     <h2>${t(calculation ? 'calculation_title' : 'whatis_title')}</h2>
-                    <button class="icon-btn btn-close-modal">✕</button>
+                    <button class="icon-btn btn-close-modal" type="button" aria-label="${t('close')}">✕</button>
                 </div>
                 <div class="modal-dialog-body">
                     <div class="concept-explain-fragment" style="margin-bottom:10px;padding:8px 12px;background:#eff6ff;border-radius:8px;color:#1e40af;font-size:0.9rem;"></div>
@@ -101,6 +111,7 @@ class ConceptSelectionMenu {
                 </div>
             </div>`;
         document.body.appendChild(overlay);
+        if (saved) overlay.querySelector('.concept-explain-footer').remove();
         const preview = overlay.querySelector('.concept-explain-fragment');
         if (calculation) {
             const formula = document.createElement('span');
@@ -119,21 +130,24 @@ class ConceptSelectionMenu {
         const onKey = event => {
             if (event.key === 'Escape' && !event.defaultPrevented
                 && !document.querySelector('.formula-zoom-dialog[open], .math-symbol-tooltip')) close();
+            if (event.key === 'Tab') {
+                const controls = [...overlay.querySelectorAll('button, a[href], input, [tabindex="0"]')]
+                    .filter(element => !element.disabled && element.getClientRects().length);
+                const first = controls[0], last = controls.at(-1);
+                if (event.shiftKey && document.activeElement === first) {event.preventDefault(); last?.focus();}
+                else if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first?.focus();}
+            }
         };
         const close = () => {
             controller.abort();
             disposePreviews();
             overlay.remove();
             document.removeEventListener('noteOpened', close);
-            if (calculation) {
-                document.removeEventListener('keydown', onKey);
-                if (returnFocus?.isConnected) returnFocus.focus({preventScroll: true});
-            }
+            document.removeEventListener('keydown', onKey);
+            if (returnFocus?.isConnected) returnFocus.focus({preventScroll: true});
         };
-        if (calculation) {
-            document.addEventListener('keydown', onKey);
-            overlay.querySelector('.btn-close-modal').focus({preventScroll: true});
-        }
+        document.addEventListener('keydown', onKey);
+        overlay.querySelector('.btn-close-modal').focus({preventScroll: true});
         document.addEventListener('noteOpened', close);
         overlay.querySelector('.btn-close-modal').addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
@@ -157,38 +171,49 @@ class ConceptSelectionMenu {
         label.textContent = t('whatis_sources');
         panel.appendChild(label);
         sources.forEach((source, index) => {
-            const isLink = source.kind === 'link' && /^(https?:\/\/|internal:\/\/note\/)/.test(source.url || '');
+            const remoteBlock = source.note_id && String(source.note_id) !== String(AppState.currentNote?.id)
+                && source.block_id && !source.kind;
+            const rawURL = remoteBlock
+                ? `internal://note/${encodeURIComponent(source.note_id)}/block/${encodeURIComponent(source.block_id)}` : source.url;
+            const url = rawURL ? HtmlSafety.link(rawURL) : '';
+            const isLink = !!url && (source.kind === 'link' || remoteBlock);
             const button = document.createElement(isLink ? 'a' : 'button');
             if (isLink) {
-                button.setAttribute('href', source.url);
-                if (/^https?:/.test(source.url)) {button.target = '_blank'; button.rel = 'noopener noreferrer';}
+                button.setAttribute('href', url);
+                if (/^https?:/.test(url)) {button.target = '_blank'; button.rel = 'noopener noreferrer';}
             } else button.type = 'button';
             button.className = 'concept-explain-source';
             const kind = {dictionary: 'dict_title', link: 'whatis_link', draft: 'whatis_draft', version: 'whatis_version'}[source.kind];
             const prefix = kind ? `${t(kind)}: ` : '';
             HiddenPhraseTooltip.renderHint(button, `[${index + 1}] ${prefix}${source.title || t('block_word')}`);
-            const preview = source.text + (source.reason ? `\n\n${t('ed_archive_reason')}: ${source.reason}` : '');
+            const preview = String(source.text || source.title || '') + (source.reason ? `\n\n${t('ed_archive_reason')}: ${source.reason}` : '');
             button.dataset.hint = preview;
             button.style.cssText = 'display:block;margin-top:6px;text-align:left;color:#1d4ed8;background:#eff6ff;border:0;border-radius:6px;padding:6px 10px;cursor:pointer;';
+            const showDetails = () => {
+                HiddenPhraseTooltip.hide();
+                let details = button.nextElementSibling;
+                if (details?.classList.contains('concept-source-details')) {
+                    details.remove(); button.setAttribute('aria-expanded', 'false'); return;
+                }
+                details = document.createElement('div');
+                details.className = 'concept-source-details';
+                renderStreamMarkdown(details, preview);
+                button.after(details);
+                if (Array.isArray(source.targets)) {
+                    const anchor = document.createElement('div');
+                    details.append(anchor);
+                    this._showSources(anchor, source.targets, close);
+                }
+                button.setAttribute('aria-expanded', 'true');
+            };
             button.addEventListener('click', () => {
                 if (isLink) {close(); return;}
                 if (source.kind === 'dictionary') {close(); DictModalService.show(source.reference || source.title); return;}
                 if (source.kind === 'link') {close(); BlockMetaModalService.showSourcesModal(source.block_id); return;}
-                if (['draft', 'version'].includes(source.kind)) {
-                    HiddenPhraseTooltip.hide();
-                    let details = button.nextElementSibling;
-                    if (!details?.classList.contains('concept-source-details')) {
-                        details = document.createElement('div');
-                        details.className = 'concept-source-details';
-                        renderStreamMarkdown(details, preview);
-                        button.after(details);
-                        button.setAttribute('aria-expanded', 'true');
-                    } else {details.remove(); button.setAttribute('aria-expanded', 'false');}
-                    return;
-                }
+                if (['draft', 'version', 'legacy'].includes(source.kind)) {showDetails(); return;}
                 const target = Array.from(document.querySelectorAll('.dialectics-block'))
                     .find(el => el.dataset.id === source.block_id);
-                if (!target) return;
+                if (!target) {showDetails(); return;}
                 if (target.classList.contains('collapsed')) target.querySelector('.btn-collapse-toggle')?.click();
                 close();
                 target.scrollIntoView?.({behavior: 'smooth', block: 'center'});
@@ -204,7 +229,7 @@ class ConceptSelectionMenu {
         for (const node of nodes) {
             const fragment = document.createDocumentFragment();
             let offset = 0;
-            for (const match of node.textContent.matchAll(/\[(\d+)\]/g)) {
+            for (const match of node.textContent.matchAll(/\[(?:source\s+)?(\d+)\]/gi)) {
                 const sourceButton = panel.querySelectorAll('.concept-explain-source')[Number(match[1]) - 1];
                 if (!sourceButton) continue;
                 fragment.append(document.createTextNode(node.textContent.slice(offset, match.index)));
@@ -221,6 +246,56 @@ class ConceptSelectionMenu {
             }
             if (offset) {fragment.append(document.createTextNode(node.textContent.slice(offset))); node.replaceWith(fragment);}
         }
+    }
+
+    static openSaved(marker) {
+        const data = SavedConceptChat.read(marker);
+        if (!data || document.querySelector('.saved-concept-chat-modal')) return;
+        marker.focus({preventScroll: true});
+        const {target, messages, close} = this._modal(data.fragment, !!data.calculation, {saved: true});
+        target.remove();
+        if (data.legacyHTML !== undefined) {
+            const legacy = document.createElement('div');
+            legacy.innerHTML = HtmlSafety.rich(data.legacyHTML);
+            let answer = document.createElement('div');
+            messages.append(answer);
+            for (const child of [...legacy.childNodes]) {
+                const items = child.nodeType === 1 ? [...child.querySelectorAll('span, a')]
+                    .filter(item => /^\[\d+\]\s/.test(item.textContent)) : [];
+                if (child.nodeName === 'P' && items.length) {
+                    BlockMathRenderer.renderMath(answer);
+                    this._showSources(answer, items.map(item => this._legacySource(item)), close);
+                    answer = document.createElement('div');
+                    messages.append(answer);
+                } else answer.append(child);
+            }
+            BlockMathRenderer.renderMath(answer);
+            return;
+        }
+        for (const turn of data.turns) {
+            if (turn.question) {
+                const question = document.createElement('div');
+                question.className = 'saved-concept-chat-question';
+                HiddenPhraseTooltip.renderHint(question, turn.question);
+                messages.append(question);
+            }
+            const answer = document.createElement('div');
+            answer.className = 'concept-explain-answer';
+            messages.append(answer);
+            renderStreamMarkdown(answer, turn.answer);
+            this._showSources(answer, turn.sources, close);
+        }
+    }
+
+    static _legacySource(item) {
+        const title = item.textContent.replace(/^\[\d+\]\s*/, '');
+        const url = HtmlSafety.link(item.getAttribute('href'));
+        if (url) return {kind: 'link', title, url, text: title};
+        const matches = (AppState.currentNote?.blocks || []).filter(block => NoteText.fromHtml(block.title || '') === title);
+        const sources = matches.map(block => ({block_id: block.id, title,
+            text: NoteText.excerpt(NoteText.fromHtml(block.html || ''), 0, 1200)}));
+        if (sources.length === 1) return sources[0];
+        return {kind: 'legacy', title, text: title, targets: sources};
     }
 
     static async _context(query, signal) {
@@ -354,38 +429,9 @@ class ConceptSelectionMenu {
                 notice.hidden = false;
                 return;
             }
-            const chat = document.createElement('blockquote');
-            chat.className = 'custom-quote';
-            const heading = document.createElement('p');
-            const label = document.createElement('strong');
-            label.textContent = `${t(calculation ? 'calculation_title' : 'whatis_title')}: «${text}»`;
-            heading.append(label);
-            chat.append(heading);
-            for (const turn of turns) {
-                if (turn.question) {
-                    const question = document.createElement('p');
-                    const label = document.createElement('strong');
-                    label.textContent = turn.question;
-                    question.append(label);
-                    chat.append(question);
-                }
-                const answer = document.createElement('div');
-                answer.innerHTML = PasteMathTransformer.transformTextToHTML(turn.answer);
-                chat.append(...answer.childNodes);
-                if (turn.sources.length) {
-                    const sources = document.createElement('p');
-                    sources.textContent = t('whatis_sources');
-                    turn.sources.forEach((source, index) => {
-                        sources.append(document.createElement('br'));
-                        const url = HtmlSafety.link(source.url);
-                        const item = document.createElement(url ? 'a' : 'span');
-                        if (url) item.setAttribute('href', url);
-                        item.textContent = `[${index + 1}] ${source.title || t('block_word')}`;
-                        sources.append(item);
-                    });
-                    chat.append(sources);
-                }
-            }
+            const chat = SavedConceptChat.create({version: 1, fragment: text, calculation: !!calculation,
+                turns: turns.map(turn => ({...turn, sources: turn.sources.map(source => ({...source,
+                    note_id: String(AppState.currentNote.id || '')}))}))});
             const html = ConceptChatInsertion.insert(anchor, chat);
             if (html === null) return;
             AppState.updateBlock(blockId, {html});

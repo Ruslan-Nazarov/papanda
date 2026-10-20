@@ -1,11 +1,14 @@
 import { t } from '../i18n.js';
 import MathSymbols from './MathSymbols.js';
+import CalculationFolds from './CalculationFolds.js';
 
 const EXCLUDED = '.tiptap, [contenteditable="true"], .formula-modal-backdrop, .formula-zoom-dialog, .hidden-phrase-tooltip, .math-symbol-tooltip';
 
 class FormulaZoom {
     static initialized = false;
     static active = null;
+    static columnObserver = null;
+    static columnWidths = new WeakMap();
 
     static naturalWidth(element) {
         const html = element.querySelector('.katex-html');
@@ -23,10 +26,17 @@ class FormulaZoom {
         const available = column.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
         if (available <= 0) return;
         const width = this.naturalWidth(element);
-        // Long calculations get their own row; the threshold follows the reading column.
+        const wrapper = element.parentElement;
+        const wrapperStyle = window.getComputedStyle(wrapper);
+        const controls = [...wrapper.querySelectorAll(':scope > button')];
+        const controlsWidth = controls.reduce((total, button) => total + button.getBoundingClientRect().width, 0)
+            + controls.length * (parseFloat(wrapperStyle.columnGap) || 0);
+        // Matrices and multiline calculations get their own row. Adjacent inline
+        // atoms can otherwise form one unbreakable run wider than the column.
         // Measure the formula itself so a previous block layout cannot keep it wide.
-        host.classList.toggle('math-formula-wide', width > Math.min(420, Math.max(220, available * .72))
-            || width + 48 > available);
+        host.classList.toggle('math-formula-wide', !!element.querySelector('math mtable')
+            || width > Math.min(420, Math.max(220, available * .72))
+            || width + controlsWidth + 32 > available);
     }
 
     static isComplex(element) {
@@ -59,7 +69,27 @@ class FormulaZoom {
                 frame = requestAnimationFrame(() => this.scan(document));
             });
             document.fonts?.ready.then(() => this.scan(document));
+            if (window.ResizeObserver) {
+                this.columnObserver = new ResizeObserver(entries => {
+                    for (const {target, contentRect} of entries) {
+                        if (!target.isConnected) {
+                            this.columnObserver.unobserve(target);
+                            this.columnWidths.delete(target);
+                            continue;
+                        }
+                        // Opening a collapsed card or changing its reading width
+                        // does not emit a window resize event. Ignore height-only
+                        // changes caused by the formula layout itself.
+                        if (this.columnWidths.get(target) === contentRect.width) continue;
+                        this.columnWidths.set(target, contentRect.width);
+                        if (contentRect.width > 0) this.scan(target);
+                    }
+                });
+            }
         }
+        const columns = [...root.querySelectorAll('.block-content, .blk-body')];
+        if (root.matches?.('.block-content, .blk-body')) columns.push(root);
+        columns.forEach(column => this.columnObserver?.observe(column));
         this.scan(root);
         // Blocks are often rendered before they are inserted into the document.
         window.requestAnimationFrame?.(() => { if (root.isConnected) this.scan(root); });
@@ -104,6 +134,7 @@ class FormulaZoom {
             this.addCalculationButton(host, element);
             this.layout(element);
         });
+        CalculationFolds.decorate(root);
     }
 
     static addCalculationButton(host, element) {
@@ -113,9 +144,9 @@ class FormulaZoom {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'math-calculation-button';
-        button.textContent = t('calculation_button');
-        button.title = t('calculation_hint');
-        button.setAttribute('aria-label', t('calculation_hint'));
+        button.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2M8 18h2m4 0h2"/></svg>';
+        button.title = t('calculation_button');
+        button.setAttribute('aria-label', t('calculation_button'));
         button.setAttribute('aria-haspopup', 'dialog');
         button.addEventListener('click', async event => {
             event.preventDefault();
